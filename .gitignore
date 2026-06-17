@@ -1,0 +1,45 @@
+# Dépendances
+node_modules/
+.pnpm-store/
+
+# Environnements — JAMAIS de secrets dans le dépôt (menaces §4.1)
+.env
+.env.*
+!.env.example
+# Notes personnelles contenant des secrets (chaîne de connexion Neon, etc.)
+/important.txt
+# Clé de signature release Android (= identité permanente de l'app) + ses mots de passe — JAMAIS dans le dépôt
+APP/apps/mobile/android/app/ulamu-release.keystore
+APP/apps/mobile/android/keystore.properties
+
+# Builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+apps/mobile/android/app/build/
+apps/desktop/release/
+
+# Fichiers téléversés par les utilisateurs (avatars, médias de session) — jamais dans le dépôt
+APP/apps/api/uploads/
+
+# Bases et caches locaux
+*.sqlite
+*.db
+.turbo/
+coverage/
+
+# Obsidian (réglages locaux du coffre)
+.obsidian/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

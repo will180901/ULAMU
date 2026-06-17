@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ulamu — CG-01 Couleurs & Tokens</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ─────────────────────────────────────────────
+     CSS TOKENS — ULAMU DESIGN SYSTEM
+     CG-01 : Couleurs & Tokens
+  ───────────────────────────────────────────── */
+
+  :root {
+    --radius-sm:   4px;
+    --radius-md:   6px;
+    --radius-lg:   10px;
+    --radius-xl:   14px;
+
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10:40px;
+    --space-12:48px;
+    --space-16:64px;
+
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    /* ── ACCENT : Bleu Cobalt ── */
+    --accent-50:  #EBF0FA;
+    --accent-100: #C6D4F2;
+    --accent-200: #9DB5E8;
+    --accent-300: #6F92DA;
+    --accent-400: #4B75CD;
+    --accent-500: #2756A6; /* BASE */
+    --accent-600: #1F479A; /* Hover */
+    --accent-700: #163588;
+    --accent-800: #0E2568;
+    --accent-900: #091849;
+
+    /* Alias sémantiques accent */
+    --accent:           var(--accent-500);
+    --accent-hover:     var(--accent-600);
+    --accent-subtle:    var(--accent-100);
+    --accent-fg:        #FFFFFF;
+    --accent-border:    var(--accent-300);
+  }
+
+  /* ══════════════════════════════════════════
+     LIGHT THEME
+  ══════════════════════════════════════════ */
+  [data-theme="light"] {
+    /* Fonds */
+    --bg-base:       #FAFAFA;
+    --bg-subtle:     #F4F4F5;
+    --bg-muted:      #EBEBEC;
+    --bg-elevated:   #FFFFFF;
+    --bg-overlay:    rgba(255,255,255,0.82);
+
+    /* Surfaces glass */
+    --glass-bg:      rgba(255,255,255,0.72);
+    --glass-blur:    12px;
+    --glass-border:  rgba(0,0,0,0.07);
+
+    /* Texte */
+    --text-primary:   #111112;
+    --text-secondary: #3F3F46;
+    --text-tertiary:  #71717A;
+    --text-disabled:  #A1A1AA;
+    --text-inverse:   #FFFFFF;
+    --text-accent:    var(--accent-600);
+
+    /* Bordures */
+    --border-subtle:  rgba(0,0,0,0.07);
+    --border-default: rgba(0,0,0,0.12);
+    --border-strong:  rgba(0,0,0,0.22);
+
+    /* Ombres */
+    --shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md:  0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg:  0 4px 16px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+
+    /* Sémantiques */
+    --success-bg:    #F0FAF3;
+    --success-text:  #2B6B40;
+    --success-border:#A8D5B5;
+    --success-dot:   #3D9A5C;
+
+    --warning-bg:    #FEF9EC;
+    --warning-text:  #7A5515;
+    --warning-border:#EDD68A;
+    --warning-dot:   #C49128;
+
+    --error-bg:      #FDF2F2;
+    --error-text:    #7A2323;
+    --error-border:  #E8AAAA;
+    --error-dot:     #C44040;
+
+    --info-bg:       #F0F5FD;
+    --info-text:     #1D3F7A;
+    --info-border:   #A8C0E8;
+    --info-dot:      var(--accent-500);
+
+    /* Grain */
+    --grain-opacity: 0.035;
+
+    /* Sidebar / Topbar */
+    --nav-bg:        rgba(255,255,255,0.78);
+    --nav-border:    rgba(0,0,0,0.08);
+  }
+
+  /* ══════════════════════════════════════════
+     DARK THEME
+  ══════════════════════════════════════════ */
+  [data-theme="dark"] {
+    --bg-base:       #111113;
+    --bg-subtle:     #18181B;
+    --bg-muted:      #222226;
+    --bg-elevated:   #2A2A2F;
+    --bg-overlay:    rgba(17,17,19,0.88);
+
+    --glass-bg:      rgba(28,28,33,0.72);
+    --glass-blur:    14px;
+    --glass-border:  rgba(255,255,255,0.07);
+
+    --text-primary:   #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary:  #71717A;
+    --text-disabled:  #52525B;
+    --text-inverse:   #111112;
+    --text-accent:    var(--accent-300);
+
+    --border-subtle:  rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.10);
+    --border-strong:  rgba(255,255,255,0.18);
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.35);
+    --shadow-md:  0 2px 10px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30);
+    --shadow-lg:  0 6px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.35);
+
+    --success-bg:    #0F2318;
+    --success-text:  #6DBF8A;
+    --success-border:#1F4A30;
+    --success-dot:   #4CAF6E;
+
+    --warning-bg:    #241B09;
+    --warning-text:  #D4A430;
+    --warning-border:#4A3512;
+    --warning-dot:   #C49128;
+
+    --error-bg:      #200F0F;
+    --error-text:    #E07070;
+    --error-border:  #3D1A1A;
+    --error-dot:     #C44040;
+
+    --info-bg:       #0C1528;
+    --info-text:     #7AAAE0;
+    --info-border:   #1A2E55;
+    --info-dot:      var(--accent-300);
+
+    --grain-opacity: 0.055;
+
+    --nav-bg:        rgba(17,17,19,0.82);
+    --nav-border:    rgba(255,255,255,0.07);
+  }
+
+  /* ─── RESET ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: background 0.25s linear, color 0.25s linear;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ─── GRAIN OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0 var(--space-8);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    text-decoration: none;
+  }
+
+  .logo-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 16px; height: 16px; }
+
+  .logo-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  .topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-default);
+  }
+
+  .module-breadcrumb {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-family: var(--font-body);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .module-breadcrumb .tag {
+    background: var(--accent-subtle);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-border);
+  }
+
+  [data-theme="dark"] .module-breadcrumb .tag {
+    background: rgba(39,86,166,0.18);
+    color: var(--accent-300);
+    border-color: rgba(111,146,218,0.25);
+  }
+
+  /* ─── THEME TOGGLE ─── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background: var(--bg-muted);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.25s linear;
+  }
+
+  .theme-toggle:hover { border-color: var(--border-strong); }
+
+  .toggle-option {
+    padding: 5px 12px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    color: var(--text-tertiary);
+    transition: all 0.25s linear;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .toggle-option.active {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .page {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: var(--space-12) var(--space-8) var(--space-16);
+  }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header {
+    margin-bottom: var(--space-12);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .module-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  [data-theme="dark"] .module-id { color: var(--accent-300); }
+
+  .module-id::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  [data-theme="dark"] .module-id::before { background: var(--accent-300); }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: var(--text-primary);
+    line-height: 1.15;
+    margin-bottom: var(--space-4);
+  }
+
+  .page-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    max-width: 680px;
+  }
+
+  /* ─── SECTION ─── */
+  .section {
+    margin-bottom: var(--space-12);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  .section-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin-bottom: var(--space-6);
+  }
+
+  /* ─── SWATCH GRID ─── */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: var(--space-3);
+  }
+
+  .swatch-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .swatch-group-label {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .swatch {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    cursor: default;
+    transition: transform 0.2s linear, box-shadow 0.2s linear;
+  }
+
+  .swatch:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .swatch-color {
+    height: 64px;
+    width: 100%;
+  }
+
+  .swatch-info {
+    padding: 8px 9px;
+    background: var(--bg-elevated);
+  }
+
+  .swatch-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .swatch-hex {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    display: block;
+  }
+
+  .swatch-base-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── ACCENT SCALE ROW ─── */
+  .accent-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .accent-chip {
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    transition: transform 0.2s linear, box-shadow 0.2s linear;
+    cursor: default;
+  }
+
+  .accent-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  .accent-chip-color { height: 48px; }
+
+  .accent-chip-meta {
+    padding: 5px 7px;
+    background: var(--bg-elevated);
+  }
+
+  .accent-chip-step {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    display: block;
+  }
+
+  .accent-chip-hex {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-disabled);
+    display: block;
+  }
+
+  .accent-chip.is-base .accent-chip-meta {
+    background: var(--accent-500);
+  }
+
+  .accent-chip.is-base .accent-chip-step,
+  .accent-chip.is-base .accent-chip-hex {
+    color: rgba(255,255,255,0.85);
+  }
+
+  /* ─── GRAY SCALE ─── */
+  .gray-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: var(--space-2);
+  }
+
+  /* ─── SEMANTIC COLORS ─── */
+  .semantic-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+  }
+
+  .semantic-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .semantic-header {
+    padding: var(--space-5) var(--space-5) var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .semantic-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .semantic-label {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+  }
+
+  .semantic-body {
+    padding: 0 var(--space-5) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .semantic-token-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .token-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+
+  .token-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+  }
+
+  .token-chip-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .token-chip-hex {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* ─── SEMANTIC PREVIEW ─── */
+  .semantic-preview {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  /* ─── TOKEN TABLE ─── */
+  .token-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  .token-table thead {
+    background: var(--bg-muted);
+  }
+
+  .token-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .token-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+  }
+
+  .token-table tr:last-child td { border-bottom: none; }
+
+  .token-table tr:hover td { background: var(--bg-subtle); }
+
+  .tt-token {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-accent);
+    background: var(--bg-muted);
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    display: inline-block;
+  }
+
+  .tt-value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .tt-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: inline-block;
+    border: 1px solid var(--border-default);
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  .tt-usage {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ─── USAGE RULES ─── */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+
+  .rule-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    padding: var(--space-5);
+    background: var(--bg-subtle);
+  }
+
+  .rule-card.forbidden {
+    border-color: var(--error-border);
+    background: var(--error-bg);
+  }
+
+  .rule-card.allowed {
+    border-color: var(--success-border);
+    background: var(--success-bg);
+  }
+
+  .rule-card-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .rule-card.forbidden .rule-card-title { color: var(--error-text); }
+  .rule-card.allowed .rule-card-title   { color: var(--success-text); }
+
+  .rule-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .rule-list li {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    padding-left: var(--space-4);
+    position: relative;
+  }
+
+  .rule-list li::before {
+    position: absolute;
+    left: 0;
+    top: 1px;
+  }
+
+  .rule-card.forbidden .rule-list li::before { content: '✕'; color: var(--error-dot); font-size: 11px; }
+  .rule-card.allowed   .rule-list li::before { content: '✓'; color: var(--success-dot); font-size: 11px; }
+
+  /* ─── GRADIENT DEMO ─── */
+  .gradient-demo {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .chart-area {
+    position: relative;
+    height: 140px;
+    margin-top: var(--space-4);
+  }
+
+  .chart-area svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* ─── COLOR USAGE MAP ─── */
+  .usage-map {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .usage-sidebar-preview {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
+    height: 340px;
+    background: var(--bg-base);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-topbar {
+    height: 40px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .preview-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .preview-body {
+    display: flex;
+    flex: 1;
+  }
+
+  .preview-sidebar {
+    width: 52px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-right: 1px solid var(--border-subtle);
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .preview-nav-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-nav-icon.active { background: var(--accent); }
+  .preview-nav-icon.idle   { background: var(--bg-muted); }
+
+  .preview-content {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .preview-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+  }
+
+  .preview-card-line {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-muted);
+    margin-bottom: 5px;
+  }
+
+  .preview-card-line.accent { background: var(--accent-200); }
+  [data-theme="dark"] .preview-card-line.accent { background: var(--accent-700); }
+
+  .preview-btn {
+    height: 24px;
+    width: 70px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    margin-top: 4px;
+  }
+
+  /* ─── COLOR ANNOTATION ─── */
+  .annotation-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .annotation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .annotation-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    border: 1px solid var(--border-default);
+    margin-top: 1px;
+  }
+
+  .annotation-text { flex: 1; }
+  .annotation-token {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-accent);
+    margin-bottom: 2px;
+    display: block;
+  }
+  .annotation-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ─── FOOTER ─── */
+  .page-footer {
+    margin-top: var(--space-16);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-meta {
+    font-size: 12px;
+    color: var(--text-disabled);
+    font-family: var(--font-mono);
+  }
+
+  .footer-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: var(--font-body);
+  }
+
+  .footer-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success-dot);
+  }
+
+  /* ─── MISC ─── */
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .chip {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--border-default);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+  }
+
+  .chip.accent-chip-tag {
+    background: rgba(39,86,166,0.1);
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+
+  [data-theme="dark"] .chip.accent-chip-tag {
+    background: rgba(39,86,166,0.2);
+    border-color: rgba(111,146,218,0.3);
+    color: var(--accent-300);
+  }
+
+  .info-banner {
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    font-size: 13px;
+    color: var(--info-text);
+    line-height: 1.6;
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    margin-bottom: var(--space-6);
+  }
+
+  .info-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    opacity: 0.8;
+  }
+
+  /* Tooltip on swatch hover */
+  .swatch:hover .swatch-hex { color: var(--text-accent); }
+
+  /* Responsive tweaks */
+  @media (max-width: 900px) {
+    .semantic-grid { grid-template-columns: 1fr 1fr; }
+    .accent-row    { grid-template-columns: repeat(5, 1fr); }
+    .gray-row      { grid-template-columns: repeat(5, 1fr); }
+    .rules-grid    { grid-template-columns: 1fr; }
+    .usage-map     { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: var(--space-8) var(--space-4) var(--space-12); }
+    .topbar { padding: 0 var(--space-4); }
+    .page-title { font-size: 24px; }
+    .semantic-grid { grid-template-columns: 1fr; }
+    .accent-row { grid-template-columns: repeat(5,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity="0.9"/>
+          <rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="white" opacity="0.7"/>
+        </svg>
+      </div>
+      <span class="logo-name">ulamu</span>
+    </a>
+    <div class="topbar-divider"></div>
+    <div class="module-breadcrumb">
+      <span class="tag">CG-01</span>
+      Couleurs &amp; Tokens
+    </div>
+  </div>
+
+  <!-- Toggle -->
+  <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Basculer le thème">
+    <div class="toggle-option" id="opt-light">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Clair
+    </div>
+    <div class="toggle-option" id="opt-dark">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>
+      Sombre
+    </div>
+  </div>
+</header>
+
+<!-- ── PAGE ── -->
+<main class="page">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header">
+    <div class="module-id">Design System · Module CG-01</div>
+    <h1 class="page-title">Couleurs &amp; Tokens</h1>
+    <p class="page-desc">Fondations chromatiques du système de design Ulamu. Ce document définit l'intégralité de la palette, les design tokens, les règles d'usage par contexte, et les contraintes absolues concernant les dégradés. Toute couleur utilisée dans l'interface doit être référencée ici.</p>
+  </div>
+
+  <!-- ─────────────────────────────────
+       1. COULEUR D'ACCENT PRINCIPALE
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">01 — Couleur d'accent principale</h2>
+      <span class="section-subtitle">Bleu Cobalt · #2756A6</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="info-banner">
+      <svg class="info-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>
+      <span>L'accent est la <strong>seule couleur non-neutre</strong> de l'interface. Elle est réservée aux actions primaires, liens actifs, états de focus, et indicateurs d'état. Elle ne doit jamais décorer — elle doit toujours <em>signifier</em>.</span>
+    </div>
+
+    <!-- Accent scale -->
+    <div class="accent-row">
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#EBF0FA"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">50</span>
+          <span class="accent-chip-hex">#EBF0FA</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#C6D4F2"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">100</span>
+          <span class="accent-chip-hex">#C6D4F2</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#9DB5E8"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">200</span>
+          <span class="accent-chip-hex">#9DB5E8</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#6F92DA"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">300</span>
+          <span class="accent-chip-hex">#6F92DA</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#4B75CD"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">400</span>
+          <span class="accent-chip-hex">#4B75CD</span>
+        </div>
+      </div>
+      <div class="accent-chip is-base">
+        <div class="accent-chip-color" style="background:#2756A6"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">500 · BASE</span>
+          <span class="accent-chip-hex">#2756A6</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#1F479A"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">600</span>
+          <span class="accent-chip-hex">#1F479A</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#163588"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">700</span>
+          <span class="accent-chip-hex">#163588</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#0E2568"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">800</span>
+          <span class="accent-chip-hex">#0E2568</span>
+        </div>
+      </div>
+      <div class="accent-chip">
+        <div class="accent-chip-color" style="background:#091849"></div>
+        <div class="accent-chip-meta">
+          <span class="accent-chip-step">900</span>
+          <span class="accent-chip-hex">#091849</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alias tokens accent -->
+    <table class="token-table" style="margin-top: var(--space-6)">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Valeur</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tt-token">--accent</span></td>
+          <td><span class="tt-swatch" style="background:#2756A6"></span><span class="tt-value">#2756A6 (500)</span></td>
+          <td class="tt-usage">Boutons primaires, liens actifs, icône active dans la sidebar</td>
+        </tr>
+        <tr>
+          <td><span class="tt-token">--accent-hover</span></td>
+          <td><span class="tt-swatch" style="background:#1F479A"></span><span class="tt-value">#1F479A (600)</span></td>
+          <td class="tt-usage">État hover des éléments portant --accent</td>
+        </tr>
+        <tr>
+          <td><span class="tt-token">--accent-subtle</span></td>
+          <td><span class="tt-swatch" style="background:#C6D4F2"></span><span class="tt-value">#C6D4F2 (100)</span></td>
+          <td class="tt-usage">Fond des badges, tags, et labels accent en mode clair</td>
+        </tr>
+        <tr>
+          <td><span class="tt-token">--accent-fg</span></td>
+          <td><span class="tt-swatch" style="background:#FFFFFF; border-color:#ccc"></span><span class="tt-value">#FFFFFF</span></td>
+          <td class="tt-usage">Texte/icônes sur fond --accent (ratio WCAG AA garanti)</td>
+        </tr>
+        <tr>
+          <td><span class="tt-token">--accent-border</span></td>
+          <td><span class="tt-swatch" style="background:#6F92DA"></span><span class="tt-value">#6F92DA (300)</span></td>
+          <td class="tt-usage">Bordure des éléments accent (focus ring, badges)</td>
+        </tr>
+        <tr>
+          <td><span class="tt-token">--text-accent</span></td>
+          <td><span class="tt-swatch" style="background:#1F479A"></span><span class="tt-value">600 (light) · 300 (dark)</span></td>
+          <td class="tt-usage">Texte de lien, label actif, token code dans la doc</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─────────────────────────────────
+       2. ÉCHELLE DE GRIS NEUTRES
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">02 — Échelle de gris neutres</h2>
+      <span class="section-subtitle">Style Notion · gris purs sans teinte bleue</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <!-- Light grays -->
+    <div style="margin-bottom: var(--space-3)">
+      <p style="font-size:12px; color:var(--text-tertiary); font-family:var(--font-mono); margin-bottom:var(--space-2)">MODE CLAIR — Neutral Gray</p>
+      <div class="gray-row">
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#FAFAFA"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 50</span><span class="accent-chip-hex">#FAFAFA</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#F4F4F5"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 100</span><span class="accent-chip-hex">#F4F4F5</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#EBEBEC"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 200</span><span class="accent-chip-hex">#EBEBEC</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#D4D4D8"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 300</span><span class="accent-chip-hex">#D4D4D8</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#A1A1AA"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 400</span><span class="accent-chip-hex">#A1A1AA</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#71717A"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 500</span><span class="accent-chip-hex">#71717A</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#52525B"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 600</span><span class="accent-chip-hex">#52525B</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#3F3F46"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 700</span><span class="accent-chip-hex">#3F3F46</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#27272A"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 800</span><span class="accent-chip-hex">#27272A</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#111112"></div><div class="accent-chip-meta"><span class="accent-chip-step">Gray 900</span><span class="accent-chip-hex">#111112</span></div></div>
+      </div>
+    </div>
+
+    <!-- Dark grays -->
+    <div style="background:var(--bg-muted); border-radius:var(--radius-lg); padding:var(--space-5); border:1px solid var(--border-subtle); margin-top:var(--space-4)">
+      <p style="font-size:12px; color:var(--text-tertiary); font-family:var(--font-mono); margin-bottom:var(--space-3)">MODE SOMBRE — Surface tokens</p>
+      <div class="gray-row">
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#111113; border:1px solid #333"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">bg-base</span><span class="accent-chip-hex" style="color:#666">#111113</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#18181B"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">bg-subtle</span><span class="accent-chip-hex" style="color:#666">#18181B</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#222226"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">bg-muted</span><span class="accent-chip-hex" style="color:#666">#222226</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#2A2A2F"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">bg-elevated</span><span class="accent-chip-hex" style="color:#666">#2A2A2F</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#3A3A3F"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">border</span><span class="accent-chip-hex" style="color:#666">#3A3A3F</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#52525B"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">disabled</span><span class="accent-chip-hex" style="color:#666">#52525B</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#71717A"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">tertiary</span><span class="accent-chip-hex" style="color:#666">#71717A</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#A1A1AA"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">secondary</span><span class="accent-chip-hex" style="color:#666">#A1A1AA</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#D4D4D8"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">primary</span><span class="accent-chip-hex" style="color:#666">#D4D4D8</span></div></div>
+        <div class="accent-chip"><div class="accent-chip-color" style="background:#F4F4F5"></div><div class="accent-chip-meta" style="background:#1a1a1d"><span class="accent-chip-step" style="color:#888">high</span><span class="accent-chip-hex" style="color:#666">#F4F4F5</span></div></div>
+      </div>
+    </div>
+
+    <!-- Text tokens table -->
+    <table class="token-table" style="margin-top:var(--space-6)">
+      <thead><tr><th>Token texte</th><th>Valeur light</th><th>Valeur dark</th><th>Rôle</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tt-token">--text-primary</span></td><td><span class="tt-swatch" style="background:#111112"></span><span class="tt-value">#111112</span></td><td><span class="tt-swatch" style="background:#F4F4F5; border-color:#555"></span><span class="tt-value">#F4F4F5</span></td><td class="tt-usage">Titres, labels importants, contenu principal</td></tr>
+        <tr><td><span class="tt-token">--text-secondary</span></td><td><span class="tt-swatch" style="background:#3F3F46"></span><span class="tt-value">#3F3F46</span></td><td><span class="tt-swatch" style="background:#A1A1AA"></span><span class="tt-value">#A1A1AA</span></td><td class="tt-usage">Corps de texte, descriptions, métadonnées</td></tr>
+        <tr><td><span class="tt-token">--text-tertiary</span></td><td><span class="tt-swatch" style="background:#71717A"></span><span class="tt-value">#71717A</span></td><td><span class="tt-swatch" style="background:#71717A"></span><span class="tt-value">#71717A</span></td><td class="tt-usage">Placeholders, hints, timestamps, légendes</td></tr>
+        <tr><td><span class="tt-token">--text-disabled</span></td><td><span class="tt-swatch" style="background:#A1A1AA"></span><span class="tt-value">#A1A1AA</span></td><td><span class="tt-swatch" style="background:#52525B"></span><span class="tt-value">#52525B</span></td><td class="tt-usage">Éléments désactivés, non-interactifs</td></tr>
+        <tr><td><span class="tt-token">--text-inverse</span></td><td><span class="tt-swatch" style="background:#FFFFFF; border-color:#ccc"></span><span class="tt-value">#FFFFFF</span></td><td><span class="tt-swatch" style="background:#111112"></span><span class="tt-value">#111112</span></td><td class="tt-usage">Texte sur fond coloré (ex: bouton accent)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─────────────────────────────────
+       3. COULEURS SÉMANTIQUES
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">03 — Couleurs sémantiques</h2>
+      <span class="section-subtitle">Désaturées · Intégrées au monochrome</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="semantic-grid">
+
+      <!-- SUCCESS -->
+      <div class="semantic-card">
+        <div class="semantic-header" style="background:var(--success-bg)">
+          <div class="semantic-dot" style="background:var(--success-dot)"></div>
+          <span class="semantic-label" style="color:var(--success-text)">Succès</span>
+        </div>
+        <div class="semantic-body" style="margin-top:var(--space-3)">
+          <div class="semantic-token-row">
+            <span class="token-name">--success-bg</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#F0FAF3"></div><span class="token-chip-hex">#F0FAF3 / #0F2318</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--success-text</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#2B6B40"></div><span class="token-chip-hex">#2B6B40 / #6DBF8A</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--success-dot</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#3D9A5C"></div><span class="token-chip-hex">#3D9A5C / #4CAF6E</span></div>
+          </div>
+          <div class="semantic-preview" style="background:var(--success-bg); border:1px solid var(--success-border); color:var(--success-text)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+            Consultation confirmée
+          </div>
+        </div>
+      </div>
+
+      <!-- WARNING -->
+      <div class="semantic-card">
+        <div class="semantic-header" style="background:var(--warning-bg)">
+          <div class="semantic-dot" style="background:var(--warning-dot)"></div>
+          <span class="semantic-label" style="color:var(--warning-text)">Avertissement</span>
+        </div>
+        <div class="semantic-body" style="margin-top:var(--space-3)">
+          <div class="semantic-token-row">
+            <span class="token-name">--warning-bg</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#FEF9EC"></div><span class="token-chip-hex">#FEF9EC / #241B09</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--warning-text</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#7A5515"></div><span class="token-chip-hex">#7A5515 / #D4A430</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--warning-dot</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#C49128"></div><span class="token-chip-hex">#C49128 (×2)</span></div>
+          </div>
+          <div class="semantic-preview" style="background:var(--warning-bg); border:1px solid var(--warning-border); color:var(--warning-text)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 14h14L8 1zm0 4v4m0 2v1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+            Stock faible — pharmacie
+          </div>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div class="semantic-card">
+        <div class="semantic-header" style="background:var(--error-bg)">
+          <div class="semantic-dot" style="background:var(--error-dot)"></div>
+          <span class="semantic-label" style="color:var(--error-text)">Erreur</span>
+        </div>
+        <div class="semantic-body" style="margin-top:var(--space-3)">
+          <div class="semantic-token-row">
+            <span class="token-name">--error-bg</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#FDF2F2"></div><span class="token-chip-hex">#FDF2F2 / #200F0F</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--error-text</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#7A2323"></div><span class="token-chip-hex">#7A2323 / #E07070</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--error-dot</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#C44040"></div><span class="token-chip-hex">#C44040 (×2)</span></div>
+          </div>
+          <div class="semantic-preview" style="background:var(--error-bg); border:1px solid var(--error-border); color:var(--error-text)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM7 5h2v5H7V5zm0 6h2v2H7v-2z"/></svg>
+            Connexion échouée
+          </div>
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div class="semantic-card">
+        <div class="semantic-header" style="background:var(--info-bg)">
+          <div class="semantic-dot" style="background:var(--info-dot)"></div>
+          <span class="semantic-label" style="color:var(--info-text)">Information</span>
+        </div>
+        <div class="semantic-body" style="margin-top:var(--space-3)">
+          <div class="semantic-token-row">
+            <span class="token-name">--info-bg</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#F0F5FD"></div><span class="token-chip-hex">#F0F5FD / #0C1528</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--info-text</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#1D3F7A"></div><span class="token-chip-hex">#1D3F7A / #7AAAE0</span></div>
+          </div>
+          <div class="semantic-token-row">
+            <span class="token-name">--info-dot</span>
+            <div class="token-chip"><div class="token-chip-swatch" style="background:#2756A6"></div><span class="token-chip-hex">--accent-500 / --accent-300</span></div>
+          </div>
+          <div class="semantic-preview" style="background:var(--info-bg); border:1px solid var(--info-border); color:var(--info-text)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>
+            Synchronisation en cours
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────
+       4. TOKENS DE SURFACE & FONDS
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">04 — Tokens de surface &amp; fonds</h2>
+      <span class="section-subtitle">Hierarchy des fonds · mode clair &amp; sombre</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4)">
+      <!-- Light surfaces -->
+      <div>
+        <p style="font-size:11px;font-family:var(--font-mono);color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--space-3)">Mode Clair</p>
+        <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+          <div style="border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-subtle)">
+            <div style="height:36px; background:#FAFAFA; display:flex; align-items:center; padding:0 12px"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-base · #FAFAFA</span></div>
+            <div style="height:36px; background:#F4F4F5; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(0,0,0,0.05)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-subtle · #F4F4F5</span></div>
+            <div style="height:36px; background:#EBEBEC; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(0,0,0,0.05)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-muted · #EBEBEC</span></div>
+            <div style="height:36px; background:#FFFFFF; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(0,0,0,0.05)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-elevated · #FFFFFF</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Dark surfaces -->
+      <div>
+        <p style="font-size:11px;font-family:var(--font-mono);color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--space-3)">Mode Sombre</p>
+        <div style="border-radius:var(--radius-md); overflow:hidden; border:1px solid rgba(255,255,255,0.08)">
+          <div style="height:36px; background:#111113; display:flex; align-items:center; padding:0 12px"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-base · #111113</span></div>
+          <div style="height:36px; background:#18181B; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(255,255,255,0.04)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-subtle · #18181B</span></div>
+          <div style="height:36px; background:#222226; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(255,255,255,0.04)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-muted · #222226</span></div>
+          <div style="height:36px; background:#2A2A2F; display:flex; align-items:center; padding:0 12px; border-top:1px solid rgba(255,255,255,0.04)"><span style="font-family:var(--font-mono);font-size:11px;color:#71717A">--bg-elevated · #2A2A2F</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glass tokens -->
+    <div style="margin-top:var(--space-6)">
+      <p style="font-size:11px;font-family:var(--font-mono);color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--space-3)">Glassmorphism — Sidebar · Topbar · Toasts</p>
+      <table class="token-table">
+        <thead><tr><th>Token</th><th>Light</th><th>Dark</th><th>Application</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tt-token">--glass-bg</span></td><td class="tt-value">rgba(255,255,255, 0.72)</td><td class="tt-value">rgba(28,28,33, 0.72)</td><td class="tt-usage">Fond semi-transparent des surfaces glass</td></tr>
+          <tr><td><span class="tt-token">--glass-blur</span></td><td class="tt-value">12px</td><td class="tt-value">14px</td><td class="tt-usage">backdrop-filter: blur() appliqué à la surface</td></tr>
+          <tr><td><span class="tt-token">--glass-border</span></td><td class="tt-value">rgba(0,0,0, 0.07)</td><td class="tt-value">rgba(255,255,255, 0.07)</td><td class="tt-usage">Bordure subtile de la surface glass</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────
+       5. RÈGLE DES DÉGRADÉS
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">05 — Règle absolue des dégradés</h2>
+      <span class="section-subtitle">Aucun dégradé dans l'interface · exception graphiques uniquement</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="rules-grid">
+      <div class="rule-card forbidden">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>
+          Dégradés INTERDITS
+        </div>
+        <ul class="rule-list">
+          <li>Boutons (primaires, secondaires, destructifs)</li>
+          <li>Arrière-plans de page et de section</li>
+          <li>Cartes et conteneurs</li>
+          <li>Sidebar et topbar</li>
+          <li>Badges, tags, et labels</li>
+          <li>Textes et titres</li>
+          <li>Bordures et séparateurs</li>
+          <li>Icônes et illustrations d'interface</li>
+        </ul>
+      </div>
+      <div class="rule-card allowed">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          Dégradés AUTORISÉS (1 seul cas)
+        </div>
+        <ul class="rule-list">
+          <li>Area fill sous les courbes de graphiques statistiques uniquement</li>
+          <li>Direction obligatoire : vertical, du haut vers le bas</li>
+          <li>Couleur de départ : couleur de la courbe à 20% d'opacité max</li>
+          <li>Couleur d'arrivée : transparente (opacity 0)</li>
+          <li>Effet discret, jamais dominant visuellement</li>
+          <li>Interdit sur les barres, donut, et gauge — area chart uniquement</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Visual gradient demo -->
+    <div class="gradient-demo" style="margin-top:var(--space-6)">
+      <p style="font-size:12px; font-family:var(--font-mono); color:var(--text-tertiary); margin-bottom:var(--space-2)">EXEMPLE VISUEL — Dégradé autorisé sous courbe de graphique</p>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:var(--space-4); line-height:1.6">La courbe reste nette et colorée. Le dégradé sous la courbe est discret, débutant à 18% d'opacité et finissant à 0% — il donne du volume sans distraire.</p>
+      <div class="chart-area">
+        <svg viewBox="0 0 800 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2756A6" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#2756A6" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="35" x2="800" y2="35" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="0" y1="70" x2="800" y2="70" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="0" y1="105" x2="800" y2="105" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+          <!-- Area fill -->
+          <path d="M0,95 C80,85 160,40 260,55 C360,70 440,30 540,45 C640,60 720,35 800,50 L800,140 L0,140 Z" fill="url(#areaGrad)"/>
+          <!-- Curve -->
+          <path d="M0,95 C80,85 160,40 260,55 C360,70 440,30 540,45 C640,60 720,35 800,50" fill="none" stroke="#2756A6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Dots -->
+          <circle cx="0"   cy="95" r="3.5" fill="#2756A6"/>
+          <circle cx="260" cy="55" r="3.5" fill="#2756A6"/>
+          <circle cx="440" cy="30" r="4.5" fill="#2756A6" stroke="var(--bg-elevated)" stroke-width="2"/>
+          <circle cx="540" cy="45" r="3.5" fill="#2756A6"/>
+          <circle cx="800" cy="50" r="3.5" fill="#2756A6"/>
+          <!-- Tooltip mockup -->
+          <rect x="390" y="2" width="120" height="26" rx="4" fill="var(--bg-elevated)" stroke="var(--border-default)" stroke-width="1"/>
+          <circle cx="406" cy="15" r="4" fill="#2756A6"/>
+          <rect x="416" y="9" width="50" height="5" rx="2" fill="var(--bg-muted)"/>
+          <rect x="416" y="17" width="30" height="4" rx="2" fill="var(--bg-muted)"/>
+        </svg>
+      </div>
+      <div class="chip-row">
+        <span class="chip">fill: url(#areaGrad)</span>
+        <span class="chip">stop-opacity: 0.18 → 0</span>
+        <span class="chip accent-chip-tag">stroke: #2756A6</span>
+        <span class="chip">stroke-width: 2.5px</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────
+       6. MAP D'USAGE COULEURS / UI
+  ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">06 — Carte d'usage couleurs</h2>
+      <span class="section-subtitle">Quel token · pour quel composant</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="usage-map">
+      <!-- UI Preview -->
+      <div class="usage-sidebar-preview">
+        <div class="preview-topbar">
+          <div class="preview-dot" style="background:var(--accent)"></div>
+          <div style="flex:1; height:8px; background:var(--bg-muted); border-radius:4px; max-width:80px"></div>
+          <div style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted)"></div>
+        </div>
+        <div class="preview-body">
+          <div class="preview-sidebar">
+            <div class="preview-nav-icon active">
+              <div style="width:10px;height:10px;border-radius:2px;background:white;opacity:0.9"></div>
+            </div>
+            <div class="preview-nav-icon idle"></div>
+            <div class="preview-nav-icon idle"></div>
+            <div class="preview-nav-icon idle"></div>
+            <div style="flex:1"></div>
+            <div class="preview-nav-icon idle"></div>
+          </div>
+          <div class="preview-content">
+            <div class="preview-card">
+              <div class="preview-card-line accent" style="width:60%"></div>
+              <div class="preview-card-line" style="width:90%"></div>
+              <div class="preview-card-line" style="width:75%"></div>
+              <div class="preview-btn"></div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-line" style="width:50%"></div>
+              <div class="preview-card-line" style="width:80%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Annotations -->
+      <div class="annotation-list">
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--glass-bg); backdrop-filter:blur(8px); border-color:var(--glass-border)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--glass-bg · --glass-border</span>
+            <span class="annotation-desc">Sidebar gauche et Topbar — fond semi-transparent avec flou, bordure harmonique</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--accent)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--accent (500)</span>
+            <span class="annotation-desc">Icône active dans la sidebar, bouton primaire, indicateur d'état actif</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--bg-elevated)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--bg-elevated</span>
+            <span class="annotation-desc">Cards, surfaces élevées, modales — fond le plus clair/lumineux de la hiérarchie</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--bg-muted)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--bg-muted</span>
+            <span class="annotation-desc">Barres de navigation secondaires, en-têtes de tableaux, sections distinctes</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--text-secondary); border-radius:3px"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--text-secondary</span>
+            <span class="annotation-desc">Corps de texte, labels de formulaires, descriptions de cartes</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--border-subtle)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--border-subtle</span>
+            <span class="annotation-desc">Séparateurs de tableaux (1px), bordures de cards et composants courants</span>
+          </div>
+        </div>
+        <div class="annotation-item">
+          <div class="annotation-swatch" style="background:var(--accent-200)"></div>
+          <div class="annotation-text">
+            <span class="annotation-token">--accent (200)</span>
+            <span class="annotation-desc">Ligne ou titre de section mis en avant dans une card, sans surcharger</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="page-footer">
+    <div class="footer-meta">ulamu · Design System · CG-01 · v1.0</div>
+    <div class="footer-badge">
+      <div class="footer-badge-dot"></div>
+      Document validé — Phase 2 en cours
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('opt-light').classList.toggle('active', isDark);
+    document.getElementById('opt-dark').classList.toggle('active', !isDark);
+  }
+
+  // Init toggle state
+  (function() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.getElementById('opt-dark').classList.toggle('active', isDark);
+    document.getElementById('opt-light').classList.toggle('active', !isDark);
+  })();
+</script>
+
+</body>
+</html>

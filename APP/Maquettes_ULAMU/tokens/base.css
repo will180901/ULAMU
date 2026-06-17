@@ -1,0 +1,44 @@
+/* ─────────────────────────────────────────────
+   ULAMU — Base & reset
+   Reset minimal + grain atmosphérique global sur le body.
+───────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background var(--dur-moderate) linear, color var(--dur-moderate) linear;
+}
+
+/* Grain atmosphérique global — brouillard de fond sérigraphié */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: var(--grain-svg);
+  background-size: var(--grain-size);
+}
+
+::selection { background: rgba(39,86,166,0.28); color: var(--text-primary); }
+
+a { color: var(--text-accent); text-decoration: none; }
+
+/* Focus ring accessible commun */
+:focus-visible {
+  outline: 3px solid rgba(39,86,166,0.35);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

@@ -1,0 +1,84 @@
+/**
+ * Succès — confirmation d'inscription ou de connexion → entrée dans l'app.
+ */
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import React, {useEffect, useRef} from 'react';
+import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
+import {AuthScreen, Badge, Card, CobaltHeader, FloatCard, PrimaryButton, VerifiedBadge} from '../components/ui';
+import {Icon} from '../components/Icon';
+import {AuthStackParamList} from '../navigation/types';
+import {useAuth} from '../state/AuthContext';
+import {fonts, Palette} from '../theme';
+import {useTheme, useThemedStyles} from '../state/ThemeContext';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'Success'>;
+
+export function SuccessScreen({route}: Props) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const isRegister = route.params?.context === 'register';
+  const {activatePending} = useAuth();
+  const pop = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(pop, {toValue: 1, duration: 350, easing: Easing.bezier(0.34, 1.56, 0.64, 1), useNativeDriver: true}).start();
+  }, [pop]);
+  const scale = pop.interpolate({inputRange: [0, 1], outputRange: [0.6, 1]});
+
+  return (
+    <AuthScreen>
+      <CobaltHeader paddingBottom={40}>
+        <View style={styles.headerCenter}>
+          <Animated.View style={[styles.circle, {transform: [{scale}], opacity: pop}]}>
+            <Icon name="check-circle" size={34} color="#fff" strokeWidth={2} />
+          </Animated.View>
+          <Text style={styles.title}>{isRegister ? 'Compte créé' : 'Connexion réussie'}</Text>
+          <Text style={styles.subtitle}>Bienvenue sur ULAMU.</Text>
+        </View>
+      </CobaltHeader>
+
+      <FloatCard>
+        <Card>
+          <View style={styles.recapRow}>
+            <Icon name="user" size={20} variant="tile" />
+            <View style={styles.flex}>
+              <Text style={styles.recapLabel}>Vous accédez à</Text>
+              <View style={styles.recapDest}>
+                <Text style={styles.recapDestText}>Mon espace patient</Text>
+                <VerifiedBadge size={16} />
+              </View>
+            </View>
+            <Badge tone="success" dot>
+              Sécurisé
+            </Badge>
+          </View>
+        </Card>
+
+        <View style={{marginTop: 16}}>
+          <PrimaryButton title="Accéder à mon espace" iconRight="arrow-right" onPress={activatePending} />
+        </View>
+      </FloatCard>
+    </AuthScreen>
+  );
+}
+
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    flex: {flex: 1},
+    headerCenter: {alignItems: 'center', paddingTop: 6},
+    circle: {
+      width: 66,
+      height: 66,
+      borderRadius: 33,
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.28)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {fontFamily: fonts.display, fontSize: 25, letterSpacing: -0.6, color: '#fff', marginTop: 16},
+    subtitle: {fontFamily: fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.82)', marginTop: 5},
+    recapRow: {flexDirection: 'row', alignItems: 'center', gap: 12},
+    recapLabel: {fontFamily: fonts.body, fontSize: 11, color: colors.textTertiary},
+    recapDest: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2},
+    recapDestText: {fontFamily: fonts.display, fontSize: 15, color: colors.textPrimary},
+  });

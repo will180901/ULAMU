@@ -1,0 +1,29 @@
+<!-- @dsCard group="Spacing" viewport="700x200" name="Atmosphère — Grain & Glass" subtitle="Overlay sérigraphié + surfaces glass floutées" -->
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { background: var(--bg-base); padding: 24px 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .panel { position: relative; height: 132px; border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; }
+  .grain-demo { background: var(--accent-500); }
+  .grain-demo::after { content: ''; position: absolute; inset: 0; background-image: var(--grain-svg); background-size: var(--grain-size); opacity: 0.14; }
+  .lbl { position: relative; font-family: var(--font-mono); font-size: 11px; color: #fff; font-weight: 600; }
+  /* glass */
+  .glass-wrap { position: relative; background: var(--bg-subtle); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(26px); }
+  .glass { position: relative; width: 78%; padding: 18px; border-radius: var(--radius-lg); background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border); box-shadow: var(--shadow-lg); }
+  .glass .t { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .glass .s { font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
+</style>
+</head>
+<body>
+  <div class="panel grain-demo"><span class="lbl">grain · --grain-btn</span></div>
+  <div class="panel glass-wrap">
+    <span class="blob" style="width:90px;height:90px;background:#2756A6;top:-10px;left:10px"></span>
+    <span class="blob" style="width:80px;height:80px;background:#4CAF6E;bottom:-14px;right:18px"></span>
+    <div class="glass"><div class="t">Surface glass</div><div class="s">blur 12–14px · --glass-bg</div></div>
+  </div>
+</body>
+</html>

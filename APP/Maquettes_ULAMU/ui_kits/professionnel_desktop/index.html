@@ -1,0 +1,46 @@
+<!-- @dsCard group="App professionnel (desktop)" viewport="1280x720" -->
+<!-- @startingPoint section="ULAMU — App professionnel" subtitle="Cockpit desktop soignant : tableau de bord + session de consultation" viewport="1280x720" -->
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ULAMU — App professionnel</title>
+<script>
+  try {
+    const t = localStorage.getItem('ulamu-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="icon" href="../../assets/favicon.svg" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  html, body { height: 100%; }
+  body { background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #stage { width: 1280px; height: 800px; transform-origin: center; flex-shrink: 0; }
+  #root { height: 100%; }
+  .app { width: 100%; height: 100%; display: flex; background: var(--bg-base); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xl); }
+</style>
+</head>
+<body>
+  <div id="stage"><div id="root"></div></div>
+  <script type="text/babel" src="./desktop.jsx"></script>
+  <script type="text/babel" src="./pages.jsx"></script>
+  <script type="text/babel" src="./chat-pro.jsx"></script>
+  <script type="text/babel" src="./cockpit.jsx"></script>
+  <script type="text/babel">
+    ReactDOM.createRoot(document.getElementById('root')).render(<window.ProApp />);
+    function fit() {
+      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+      document.getElementById('stage').style.transform = `scale(${s})`;
+    }
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit);
+    setTimeout(fit, 120); fit();
+  </script>
+</body>
+</html>

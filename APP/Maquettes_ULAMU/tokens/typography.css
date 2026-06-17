@@ -1,0 +1,66 @@
+/* ─────────────────────────────────────────────
+   ULAMU — Typographie (CG-02)
+   Display : Plus Jakarta Sans · Body : Inter · Mono : JetBrains Mono
+   Échelle nommée : display-2xl → caption + code.
+───────────────────────────────────────────── */
+
+:root {
+  /* Familles */
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Tailles de l'échelle */
+  --fs-display-2xl: 40px;
+  --fs-display-xl:  32px;
+  --fs-display-lg:  24px;
+  --fs-display-md:  20px;
+  --fs-display-sm:  18px;
+  --fs-text-xl:     18px;
+  --fs-text-lg:     16px;
+  --fs-text-md:     15px;
+  --fs-text-sm:     13px;
+  --fs-text-xs:     12px;
+  --fs-label-lg:    14px;
+  --fs-label-md:    13px;
+  --fs-label-sm:    12px;
+  --fs-caption:     11px;
+  --fs-code:        13px;
+  --fs-code-sm:     11px;
+
+  /* Graisses */
+  --fw-light:    300; /* @kind font */
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+  --fw-extra:    800; /* @kind font */
+
+  /* Interlignes */
+  --lh-tight:   1.15; /* @kind other */
+  --lh-snug:    1.3; /* @kind other */
+  --lh-normal:  1.5; /* @kind other */
+  --lh-relaxed: 1.6; /* @kind other */
+  --lh-loose:   1.65; /* @kind other */
+}
+
+/* ── Classes d'échelle typographique (optionnelles) ── */
+.ts-display-2xl { font-family: var(--font-display); font-size: var(--fs-display-2xl); font-weight: 800; letter-spacing: -1px;    line-height: 1.1;  color: var(--text-primary); }
+.ts-display-xl  { font-family: var(--font-display); font-size: var(--fs-display-xl);  font-weight: 800; letter-spacing: -0.8px;  line-height: 1.15; color: var(--text-primary); }
+.ts-display-lg  { font-family: var(--font-display); font-size: var(--fs-display-lg);  font-weight: 700; letter-spacing: -0.5px;  line-height: 1.2;  color: var(--text-primary); }
+.ts-display-md  { font-family: var(--font-display); font-size: var(--fs-display-md);  font-weight: 700; letter-spacing: -0.3px;  line-height: 1.25; color: var(--text-primary); }
+.ts-display-sm  { font-family: var(--font-display); font-size: var(--fs-display-sm);  font-weight: 600; letter-spacing: -0.2px;  line-height: 1.3;  color: var(--text-primary); }
+
+.ts-text-xl { font-family: var(--font-body); font-size: var(--fs-text-xl); font-weight: 400; line-height: 1.65; color: var(--text-primary); }
+.ts-text-lg { font-family: var(--font-body); font-size: var(--fs-text-lg); font-weight: 400; line-height: 1.6;  color: var(--text-primary); }
+.ts-text-md { font-family: var(--font-body); font-size: var(--fs-text-md); font-weight: 400; line-height: 1.6;  color: var(--text-secondary); }
+.ts-text-sm { font-family: var(--font-body); font-size: var(--fs-text-sm); font-weight: 400; line-height: 1.55; color: var(--text-secondary); }
+.ts-text-xs { font-family: var(--font-body); font-size: var(--fs-text-xs); font-weight: 400; line-height: 1.5;  color: var(--text-tertiary); }
+
+.ts-label-lg { font-family: var(--font-body); font-size: var(--fs-label-lg); font-weight: 500; line-height: 1.4; letter-spacing: 0.01em; color: var(--text-primary); }
+.ts-label-md { font-family: var(--font-body); font-size: var(--fs-label-md); font-weight: 500; line-height: 1.4; color: var(--text-primary); }
+.ts-label-sm { font-family: var(--font-body); font-size: var(--fs-label-sm); font-weight: 500; line-height: 1.4; color: var(--text-secondary); }
+.ts-caption  { font-family: var(--font-body); font-size: var(--fs-caption);  font-weight: 400; line-height: 1.45; color: var(--text-tertiary); }
+
+.ts-code    { font-family: var(--font-mono); font-size: var(--fs-code);    font-weight: 400; line-height: 1.6; color: var(--text-secondary); }
+.ts-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); font-weight: 500; line-height: 1.5; letter-spacing: 0.04em; color: var(--text-tertiary); }

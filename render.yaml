@@ -1,0 +1,39 @@
+# Blueprint d'hébergement ULAMU — lu automatiquement par Render (https://render.com).
+# Déploie l'API NestJS (apps/api) en service web. La base de données est gérée séparément (Neon).
+#
+# À la création du Blueprint sur Render, une SEULE variable est à renseigner à la main :
+#   DATABASE_URL  (la "connection string" Neon, marquée sync:false ci-dessous = secret, non versionné)
+services:
+  - type: web
+    name: ulamu-api
+    runtime: node
+    region: frankfurt          # même région que la base Neon (latence minimale)
+    plan: free                 # gratuit (se met en veille après ~15 min d'inactivité, se réveille à la 1re requête)
+    rootDir: APP/apps/api       # le serveur est autonome dans ce dossier
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    startCommand: npm run start:prod   # applique les migrations puis démarre le serveur
+    healthCheckPath: /health
+    autoDeploy: true           # redéploie automatiquement à chaque "git push"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL
+        sync: false            # ← à coller dans le tableau de bord Render (secret)
+      - key: SECRETBOX_KEY
+        sync: false            # ← à coller dans le tableau de bord Render (secret, 32 octets base64 : "openssl rand -base64 32")
+                               # Chiffre au repos messages de session + médias + secrets TOTP (AES-256-GCM).
+                               # Sans cette variable, une clé de repli FIXE et connue du code source est utilisée
+                               # (dev uniquement) — le chiffrement ne protège alors plus rien en production.
+      - key: MOMO_WEBHOOK_SECRET
+        generateValue: true    # Render génère un secret aléatoire (le vrai paiement viendra plus tard)
+      - key: OTP_ECHO
+        value: "true"          # PILOTE : pas de vrai SMS → le code de vérif est renvoyé à l'app pour affichage.
+                               # ⚠️ À retirer (ou mettre "false") avant l'ouverture au public réel.
+      # MODE VITRINE (démo sans vrais soignants ni vrai paiement) : le soignant « accepte » et le paiement
+      # « se confirme » automatiquement, pour que les testeurs déroulent tout le parcours. ⚠️ À RETIRER au lancement réel.
+      - key: HANDSHAKE_AUTOCONFIRM_MS
+        value: "3000"          # le soignant virtuel accepte la consultation après 3 s
+      - key: MOMO_AUTOCONFIRM_MS
+        value: "4000"          # le paiement Mobile Money se valide tout seul après 4 s (aucun argent réel)

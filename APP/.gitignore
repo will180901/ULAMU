@@ -1,0 +1,37 @@
+# Dépendances
+node_modules/
+.pnpm-store/
+
+# Environnements — JAMAIS de secrets dans le dépôt (menaces §4.1)
+.env
+.env.*
+!.env.example
+
+# Builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+apps/mobile/android/app/build/
+apps/desktop/release/
+
+# Bases et caches locaux
+*.sqlite
+*.db
+.turbo/
+coverage/
+
+# Obsidian (réglages locaux du coffre)
+.obsidian/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

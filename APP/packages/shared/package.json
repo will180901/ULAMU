@@ -1,0 +1,23 @@
+{
+  "name": "@ulamu/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Utilitaires partagés ULAMU : validation, client API typé, machine d'authentification, clés des paramètres PM-xx.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:unit": "jest"
+  },
+  "dependencies": {
+    "@ulamu/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  }
+}

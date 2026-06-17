@@ -1,0 +1,1377 @@
+// Schéma Prisma ULAMU — périmètre Chantier 1 (M01-M04) + socle transverse.
+// Source : docs/cahier_des_charges/01_architecture_fonctionnelle/modele_donnees_global.md
+// Règles : tables immuables (audit, consentements, décisions, versions de contrat) = insertion seule —
+// aucune route d'update ne doit exister sur elles (vérifié en revue de migration).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Socle transverse
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Référentiel des paramètres métier PM-01 → PM-40 (RT §3 : jamais de chiffre en dur).
+model PlatformParameter {
+  key         String   @id // "PM-17"
+  value       String // valeur sérialisée (string/number/duration ISO)
+  description String
+  effectiveAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// Motif outbox (ADR-11) : écrit dans la MÊME transaction que l'action métier.
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  type        String // "m01.account.patient_created", "audit.event", "notify.request"…
+  payload     Json
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([processedAt, createdAt])
+}
+
+/// Idempotence des écritures (ADR-12) : une clé client = un seul effet.
+model IdempotencyKey {
+  key        String   @id // UUID fourni par le client
+  actorId    String?
+  endpoint   String
+  resultHash String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D1 — Identité & Accès (M01, M02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum AccountType {
+  PATIENT
+  PROFESSIONAL
+  FACILITY_MEMBER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum ProfessionalCategory {
+  GENERAL_PRACTITIONER
+  SPECIALIST
+  DENTIST
+  MIDWIFE
+  NURSE
+  COMMUNITY_HEALTH_WORKER
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN_FINANCE
+  ADMIN_VERIFICATION
+  ADMIN_MAP
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  /// Identifiant racine (règle 1 du dictionnaire) — format E.164, ex. +242061234567
+  phone        String        @unique
+  /// Identifiant de connexion alternatif (D-049) — stocké en minuscules. Le téléphone reste la racine.
+  username     String?       @unique
+  passwordHash String
+  type         AccountType
+  status       AccountStatus @default(ACTIVE)
+  email        String?
+  closedAt     DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  patientProfile        PatientProfile?
+  professionalProfile   ProfessionalProfile?
+  facilityMemberProfile FacilityMemberProfile?
+  adminRole             AdminRoleAssignment?
+  loginSessions         LoginSession[]
+  totpSecret            TotpSecret?
+  consents              ConsentRecord[]
+  facilityMemberships   FacilityMember[]
+}
+
+model PatientProfile {
+  accountId        String   @id
+  account          Account  @relation(fields: [accountId], references: [id])
+  firstName        String
+  lastName         String
+  birthDate        DateTime
+  sex              String // "M" | "F"
+  district         String // arrondissement
+  emergencyContact String?
+  avatarKey        String? // clé de stockage de la photo de profil (StorageService) — null = initiales
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ProfessionalProfile {
+  accountId String               @id
+  account   Account              @relation(fields: [accountId], references: [id])
+  firstName String
+  lastName  String
+  category  ProfessionalCategory
+  specialty String?
+  biography String?
+  district  String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  verificationCase VerificationCase?
+}
+
+model AdminRoleAssignment {
+  accountId  String    @id
+  account    Account   @relation(fields: [accountId], references: [id])
+  role       AdminRole
+  assignedBy String
+  assignedAt DateTime  @default(now())
+}
+
+/// Session de connexion opaque et révocable (EF-01-05). Le jeton n'est stocké que haché.
+model LoginSession {
+  id           String    @id @default(uuid())
+  accountId    String
+  account      Account   @relation(fields: [accountId], references: [id])
+  tokenHash    String    @unique
+  client       String // "mobile" | "desktop"
+  deviceLabel  String?
+  createdAt    DateTime  @default(now())
+  lastActiveAt DateTime  @default(now())
+  revokedAt    DateTime?
+
+  @@index([accountId, revokedAt])
+}
+
+enum OtpPurpose {
+  REGISTRATION
+  PASSWORD_RESET
+  PHONE_CHANGE_OLD
+  PHONE_CHANGE_NEW
+  SENSITIVE_ACTION
+}
+
+/// Code OTP SMS — usage unique, jamais stocké en clair (RM-01 / menaces T-11).
+model OtpCode {
+  id         String     @id @default(uuid())
+  phone      String
+  purpose    OtpPurpose
+  codeHash   String
+  expiresAt  DateTime // PM-17
+  consumedAt DateTime?
+  attempts   Int        @default(0)
+  createdAt  DateTime   @default(now())
+
+  @@index([phone, purpose, createdAt])
+}
+
+/// Journal des tentatives de connexion — alimente le blocage PM-18 et l'audit C5.
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  phone     String
+  success   Boolean
+  client    String?
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+/// Preuve légale de consentement (EF-01-08) — insertion seule.
+model ConsentRecord {
+  id              String   @id @default(uuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id])
+  documentType    String // "CGU" | "PRIVACY"
+  documentVersion String
+  acceptedAt      DateTime @default(now())
+}
+
+/// Secret TOTP (EF-01-10) — secret chiffré au repos, codes de secours hachés.
+model TotpSecret {
+  accountId       String           @id
+  account         Account          @relation(fields: [accountId], references: [id])
+  encryptedSecret String
+  enabled         Boolean          @default(false)
+  enabledAt       DateTime?
+  backupCodes     TotpBackupCode[]
+}
+
+model TotpBackupCode {
+  id         String     @id @default(uuid())
+  accountId  String
+  totp       TotpSecret @relation(fields: [accountId], references: [accountId])
+  codeHash   String
+  consumedAt DateTime?
+}
+
+// ── M02 — Structures ────────────────────────────────────────────────────────
+
+enum FacilityType {
+  PHARMACY
+  LABORATORY
+}
+
+enum FacilityStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model Facility {
+  id        String         @id @default(uuid())
+  type      FacilityType
+  name      String
+  district  String
+  quarter   String
+  latitude  Float? // jamais exposée sans dévoilement (règle 5 du dictionnaire)
+  longitude Float?
+  phone     String? // ligne de contact révélée au dévoilement (EF-12-04) — jamais en recherche anonyme
+  hours     String?
+  status    FacilityStatus @default(ACTIVE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  members          FacilityMember[]
+  invitations      FacilityInvitation[]
+  verificationCase VerificationCase?
+}
+
+enum FacilityMemberRole {
+  OWNER
+  MEMBER
+}
+
+model FacilityMember {
+  id         String             @id @default(uuid())
+  facilityId String
+  facility   Facility           @relation(fields: [facilityId], references: [id])
+  accountId  String
+  account    Account            @relation(fields: [accountId], references: [id])
+  role       FacilityMemberRole
+  /// Droits internes (EF-02-05) : ["stock", "dispense", "stats"]
+  rights     String[]
+  active     Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([facilityId, accountId])
+  @@index([accountId, active])
+}
+
+/// Identité minimale d'un membre de structure (D-003 : la pharmacie est l'entité, le membre une personne).
+model FacilityMemberProfile {
+  accountId String   @id
+  account   Account  @relation(fields: [accountId], references: [id])
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Intention de transfert de titularité (EF-02-06) : l'OTP est lié à UNE cible précise,
+/// les deux parties confirment (CU-02-05). Expire avec les OTP (PM-17).
+model OwnershipTransferIntent {
+  id            String    @id @default(uuid())
+  facilityId    String
+  fromAccountId String
+  toAccountId   String
+  toMemberId    String
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([facilityId, consumedAt])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+model FacilityInvitation {
+  id             String           @id @default(uuid())
+  facilityId     String
+  facility       Facility         @relation(fields: [facilityId], references: [id])
+  phone          String
+  proposedRights String[]
+  status         InvitationStatus @default(PENDING)
+  expiresAt      DateTime // PM-22
+  createdAt      DateTime         @default(now())
+  decidedAt      DateTime?
+
+  @@index([phone, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D2 — Confiance & Conformité (M03, M04)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum VerificationStatus {
+  DRAFT // à compléter
+  SUBMITTED // déposé
+  IN_REVIEW // en examen
+  VERIFIED
+  REJECTED
+  NEEDS_INFO // complément demandé
+  REVOKED
+}
+
+/// Dossier de vérification (M03) — pour un professionnel OU une structure.
+model VerificationCase {
+  id             String               @id @default(uuid())
+  /// Exactement un des deux sujets est renseigné.
+  professionalId String?              @unique
+  professional   ProfessionalProfile? @relation(fields: [professionalId], references: [accountId])
+  facilityId     String?              @unique
+  facility       Facility?            @relation(fields: [facilityId], references: [id])
+  status         VerificationStatus   @default(DRAFT)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  documents SupportingDocument[]
+  decisions VerificationDecision[]
+  agreement DigitalAgreement?
+}
+
+model SupportingDocument {
+  id        String           @id @default(uuid())
+  caseId    String
+  case      VerificationCase @relation(fields: [caseId], references: [id])
+  kind      String // "ID", "DIPLOMA", "LICENSE", "PHOTO", "ADDRESS_PROOF"
+  fileKey   String // clé S3 — jamais public (RM-03-03)
+  expiresAt DateTime?
+  createdAt DateTime         @default(now())
+}
+
+/// Décision motivée — insertion seule (RM-03-02).
+model VerificationDecision {
+  id        String           @id @default(uuid())
+  caseId    String
+  case      VerificationCase @relation(fields: [caseId], references: [id])
+  decision  String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED"
+  reasons   String
+  adminId   String
+  createdAt DateTime         @default(now())
+}
+
+/// Contrat numérique (D-011) — chaque version signée est conservée à vie (RM-03-05).
+model DigitalAgreement {
+  id        String           @id @default(uuid())
+  caseId    String           @unique
+  case      VerificationCase @relation(fields: [caseId], references: [id])
+  createdAt DateTime         @default(now())
+
+  versions AgreementVersion[]
+}
+
+model AgreementVersion {
+  id            String           @id @default(uuid())
+  agreementId   String
+  agreement     DigitalAgreement @relation(fields: [agreementId], references: [id])
+  version       Int
+  commissionPct Int // lu de PM-01 au moment de la génération
+  bodyHash      String // empreinte sha256 du texte du contrat
+  signedAt      DateTime?
+  signedBy      String? // accountId du signataire
+  effectiveAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@unique([agreementId, version])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D4 — Carnet (M07) — mémoire médicale à vie, entrées IMMUABLES (RM-07-02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum RecordEntryType {
+  CONSULTATION_REPORT
+  PRESCRIPTION
+  LAB_RESULTS
+  VITALS
+  ALLERGY
+  MEDICAL_HISTORY
+  VACCINATION
+  PERSONAL_NOTE
+}
+
+enum RecordProvenance {
+  DECLARED_BY_PATIENT
+  RECORDED_BY_PROFESSIONAL
+  SYSTEM
+}
+
+/// Le Carnet (D-020) : exactement UN propriétaire — patient OU sous-profil (Carnet familial D-033).
+model HealthRecord {
+  id               String      @id @default(uuid())
+  patientAccountId String?     @unique
+  subProfileId     String?     @unique
+  subProfile       SubProfile? @relation(fields: [subProfileId], references: [id])
+  createdAt        DateTime    @default(now())
+
+  entries HealthRecordEntry[]
+}
+
+/// Entrée du Carnet — INSERTION SEULE (RM-07-02) : une correction = une nouvelle entrée
+/// qui référence l'ancienne (supersedesId), l'historique reste visible.
+model HealthRecordEntry {
+  id           String           @id @default(uuid())
+  recordId     String
+  record       HealthRecord     @relation(fields: [recordId], references: [id])
+  type         RecordEntryType
+  provenance   RecordProvenance
+  authorId     String? // accountId de l'auteur (null = système)
+  sourceRef    String? // "session:uuid", "mission:uuid"…
+  payload      Json // contenu structuré (diagnostic, mesures, libellé d'allergie…)
+  supersedesId String? // correction d'une entrée précédente (RM-07-02)
+  createdAt    DateTime         @default(now())
+
+  @@index([recordId, type, createdAt])
+}
+
+enum SubProfileStatus {
+  DEPENDENT
+  TRANSFERRED
+}
+
+/// Intention de transfert du Carnet familial (CU-07-05) : l'OTP du tuteur est LIÉ à un
+/// sous-profil précis (D-048) — un OTP « action sensible » d'une autre action ne peut pas
+/// servir au transfert. Expire avec les OTP (PM-17). Même motif que OwnershipTransferIntent (M02).
+model SubProfileClaimIntent {
+  id                String    @id @default(uuid())
+  subProfileId      String
+  guardianAccountId String
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([subProfileId, consumedAt])
+}
+
+/// Personne à charge (Carnet familial, D-033) — transfert à la majorité (CU-07-05).
+model SubProfile {
+  id                String           @id @default(uuid())
+  guardianAccountId String
+  firstName         String
+  lastName          String
+  birthDate         DateTime
+  sex               String
+  status            SubProfileStatus @default(DEPENDENT)
+  transferredToId   String? // accountId du compte qui a revendiqué le Carnet
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  healthRecord HealthRecord?
+
+  @@index([guardianAccountId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D3 — Soin (M05 Annuaire, M06 Poignée de main & Session) ⭐
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum CareOfferKind {
+  STANDARD
+  FOLLOW_UP
+}
+
+/// Offre de consultation (EF-05-02) : durée PM-09, prix ≥ PM-06 commission incluse (D-010).
+model CareOffer {
+  id             String        @id @default(uuid())
+  professionalId String
+  label          String
+  durationMin    Int
+  priceXaf       Int
+  kind           CareOfferKind @default(STANDARD)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([professionalId, active])
+}
+
+enum PresenceState {
+  ONLINE
+  DO_NOT_DISTURB
+  OFFLINE
+}
+
+/// Présence desktop (EF-05-05/06) — battement de cœur, bascule auto PM-26.
+model PresenceStatus {
+  accountId       String        @id
+  state           PresenceState @default(OFFLINE)
+  since           DateTime      @default(now())
+  lastHeartbeatAt DateTime      @default(now())
+}
+
+/// Indicateurs publics de réactivité/notation (EF-05-01) — recalculés depuis les événements M06.
+model ProfessionalStats {
+  professionalId   String   @id
+  initiationsTotal Int      @default(0)
+  confirmedTotal   Int      @default(0)
+  confirmDelaySumS Int      @default(0)
+  ratingSum        Int      @default(0)
+  ratingCount      Int      @default(0)
+  incidentsTotal   Int      @default(0) // sessions remboursées D-008
+  updatedAt        DateTime @updatedAt
+}
+
+/// Cloche « m'avertir quand il est disponible » (EF-05-06, CU-05-05).
+model AvailabilityAlert {
+  id             String    @id @default(uuid())
+  patientId      String
+  professionalId String
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime
+  notifiedAt     DateTime?
+
+  @@unique([patientId, professionalId])
+  @@index([professionalId, notifiedAt])
+}
+
+enum HandshakeStatus {
+  INITIATED
+  CONFIRMED
+  PAID
+  EXPIRED
+  REFUSED
+  ABANDONED
+}
+
+/// La poignée de main (D-007) : initiation → confirmation (PM-07) → paiement. JAMAIS de
+/// paiement sans confirmation valide (RM-06-01, invariant n° 1 de la liste rouge).
+model Handshake {
+  id               String          @id @default(uuid())
+  patientAccountId String
+  professionalId   String
+  offerId          String
+  /// Session « pour » une personne à charge (Carnet familial, CU-07-04).
+  subProfileId     String?
+  status           HandshakeStatus @default(INITIATED)
+  initiatedAt      DateTime        @default(now())
+  confirmedAt      DateTime?
+  confirmExpiresAt DateTime?
+  refusalReason    String?
+  decidedAt        DateTime?
+
+  session CareSession?
+
+  @@index([professionalId, status])
+  @@index([patientAccountId, status])
+}
+
+enum CareSessionStatus {
+  PREPARING
+  ACTIVE
+  ENDED
+  REFUNDED
+}
+
+/// La Session (D-006) : messagerie chronométrée — l'horloge du SERVEUR fait foi (RM-06-02).
+model CareSession {
+  id                String            @id @default(uuid())
+  handshakeId       String            @unique
+  handshake         Handshake         @relation(fields: [handshakeId], references: [id])
+  patientAccountId  String
+  professionalId    String
+  subProfileId      String?
+  status            CareSessionStatus @default(PREPARING)
+  durationMin       Int
+  /// orderRef du paiement C1 : "handshake:<id>" — référence OPAQUE côté M13 (RM-13-01).
+  orderRef          String            @unique
+  paidAt            DateTime          @default(now())
+  startedAt         DateTime?
+  endsAt            DateTime?
+  endedAt           DateTime?
+  extensionTotalSec Int               @default(0)
+  reportDepositedAt DateTime?
+  /// Curseurs de lecture pour les accusés 3 états (façon messagerie) — mis à jour à l'ouverture du fil.
+  patientLastReadAt      DateTime?
+  professionalLastReadAt DateTime?
+
+  messages        SessionMessage[]
+  preConsultation PreConsultation?
+  rating          SessionRating?
+  recordAccesses  SessionRecordAccess[]
+
+  @@index([professionalId, status])
+  @@index([patientAccountId, status])
+}
+
+enum SessionMessageKind {
+  TEXT
+  PHOTO
+  VOICE
+  DOCUMENT
+}
+
+/// Message de session — n'existe QUE dans une session active (RM-06-03).
+/// clientMsgId = clé d'idempotence de la file offline (ADR-12) : un rejeu ne duplique jamais.
+model SessionMessage {
+  id          String             @id @default(uuid())
+  sessionId   String
+  session     CareSession        @relation(fields: [sessionId], references: [id])
+  senderId    String
+  kind        SessionMessageKind
+  body        String? // texte / légende / durée vocale — JAMAIS dans l'audit ni les notifications (RM-06-06)
+  fileKey     String? // vocal/document (clé unique)
+  mediaKeys   String[]           @default([]) // album de photos (plusieurs clés en une bulle)
+  clientMsgId String
+  createdAt   DateTime           @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
+  editedAt    DateTime? // édition ≤ 15 min par l'auteur
+  deletedAt   DateTime? // suppression « pour tout le monde » (soft delete), ≤ 15 min par l'auteur
+  replyToId   String? // citation/réponse à un message de la même session
+  replyTo     SessionMessage?    @relation("reply", fields: [replyToId], references: [id])
+  replies     SessionMessage[]   @relation("reply")
+  hiddenFor   SessionMessageHidden[]
+  reactions   SessionMessageReaction[]
+
+  @@unique([sessionId, clientMsgId])
+  @@index([sessionId, createdAt])
+}
+
+/// Réaction emoji — 1 par (message, participant) ; bascule via soft-delete + upsert (retirer = deletedAt
+/// maintenant ; re-taper après retrait « ressuscite » plutôt que recréer, sinon la contrainte d'unicité
+/// bloquerait un second clic après un premier retrait — même principe que SessionMessageHidden).
+model SessionMessageReaction {
+  messageId String
+  message   SessionMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  accountId String
+  emoji     String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@id([messageId, accountId])
+  @@index([messageId])
+}
+
+/// « Supprimer pour moi » — masque un message pour un participant précis (sans limite de temps).
+model SessionMessageHidden {
+  messageId String
+  message   SessionMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  accountId String
+
+  @@id([messageId, accountId])
+  @@index([accountId])
+}
+
+/// Pré-consultation gratuite (D-019) : lue par le professionnel avant la session.
+model PreConsultation {
+  sessionId   String      @id
+  session     CareSession @relation(fields: [sessionId], references: [id])
+  symptoms    String
+  sinceWhen   String?
+  attachments String[]
+  submittedAt DateTime    @default(now())
+}
+
+/// Notation 1-5 (PM-13) — une par session, par le patient (D-021).
+model SessionRating {
+  sessionId String      @id
+  session   CareSession @relation(fields: [sessionId], references: [id])
+  patientId String
+  score     Int
+  comment   String?
+  createdAt DateTime    @default(now())
+}
+
+/// Trace d'accès au Carnet pendant la session (RM-06-05) — lecture seule, tracée C5.
+model SessionRecordAccess {
+  id        String      @id @default(uuid())
+  sessionId String
+  session   CareSession @relation(fields: [sessionId], references: [id])
+  openedAt  DateTime    @default(now())
+  closedAt  DateTime?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D7 — Argent (M13) — « l'Argent est aveugle » : références métier OPAQUES (C1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PaymentOperator {
+  MTN_MOMO
+  AIRTEL_MONEY
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum EarningsHolderType {
+  PROFESSIONAL
+  FACILITY
+}
+
+/// Encaissement Mobile Money (EF-13-01). orderRef = référence métier opaque (RM-13-01),
+/// UNIQUE : un même ordre rejoué ne débite jamais deux fois (RM-13-04, ADR-12).
+model Payment {
+  id            String          @id @default(uuid())
+  orderRef      String          @unique
+  payerId       String
+  amountXaf     Int
+  operator      PaymentOperator
+  status        PaymentStatus   @default(INITIATED)
+  aggregatorRef String?         @unique
+  failReason    String?
+  createdAt     DateTime        @default(now())
+  confirmedAt   DateTime?
+  refundedAt    DateTime?
+
+  split    PaymentSplit?
+  receipts Receipt[]
+
+  @@index([payerId, createdAt])
+}
+
+/// Répartition commission/bénéficiaire (EF-13-02) — calculée au taux du contrat (RM-13-07).
+/// capturedAt NULL = part « en attente » (capture différée EF-13-03, RM-06-04).
+model PaymentSplit {
+  paymentId     String              @id
+  payment       Payment             @relation(fields: [paymentId], references: [id])
+  holderType    EarningsHolderType?
+  holderId      String?
+  grossXaf      Int
+  commissionXaf Int
+  netXaf        Int
+  capturedAt    DateTime?
+  reversedAt    DateTime?
+}
+
+/// Reçu numérique systématique (EF-13-05, D-010) — insertion seule.
+/// Un paiement peut avoir DEUX reçus : PAYMENT puis REFUND (CU-13-03) — clé composite.
+model Receipt {
+  seq       Int      @id @default(autoincrement())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  number    String   @unique // "RC-2026-000001"
+  kind      String // "PAYMENT" | "REFUND"
+  createdAt DateTime @default(now())
+
+  @@unique([paymentId, kind])
+}
+
+/// Gains d'un professionnel ou d'une structure (EF-13-06).
+/// RM-13-02 : le solde ne bouge JAMAIS sans EarningsEntry correspondante (même transaction).
+model EarningsAccount {
+  id           String             @id @default(uuid())
+  holderType   EarningsHolderType
+  holderId     String
+  availableXaf Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  entries     EarningsEntry[]
+  withdrawals Withdrawal[]
+
+  @@unique([holderType, holderId])
+}
+
+enum EarningsEntryType {
+  CREDIT
+  WITHDRAWAL
+  REVERSAL
+}
+
+model EarningsEntry {
+  id        String            @id @default(uuid())
+  accountId String
+  account   EarningsAccount   @relation(fields: [accountId], references: [id])
+  type      EarningsEntryType
+  /// Signé : crédit > 0, retrait/contre-passation < 0. sum(amountXaf) == availableXaf (invariant n° 3).
+  amountXaf Int
+  reference String // orderRef, withdrawal:id…
+  createdAt DateTime          @default(now())
+
+  @@index([accountId, createdAt])
+}
+
+enum WithdrawalStatus {
+  PENDING
+  EXECUTED
+  FAILED
+}
+
+/// Retrait vers le MoMo du titulaire — 0 % ULAMU (PM-02), exécution ≤ PM-36 (EF-13-07).
+model Withdrawal {
+  id            String           @id @default(uuid())
+  accountId     String
+  account       EarningsAccount  @relation(fields: [accountId], references: [id])
+  requestedBy   String
+  amountXaf     Int
+  operator      PaymentOperator
+  phone         String
+  status        WithdrawalStatus @default(PENDING)
+  /// Net réellement viré et frais opérateur — figés à l'exécution (réconciliation stable même si PM change).
+  netXaf        Int?
+  feeXaf        Int?
+  aggregatorRef String?
+  failReason    String?
+  requestedAt   DateTime         @default(now())
+  executedAt    DateTime?
+
+  @@index([accountId, requestedAt])
+  @@index([status, requestedAt])
+}
+
+enum ManualRefundStatus {
+  PENDING_SECOND_APPROVAL
+  EXECUTED
+  REJECTED
+}
+
+/// Remboursement manuel (litige, EF-13-10) : double validation au-delà de PM-35 (RM-13-06).
+model ManualRefundRequest {
+  id          String             @id @default(uuid())
+  paymentId   String
+  reason      String
+  requestedBy String // admin 1
+  approvedBy  String? // admin 2 (≠ admin 1)
+  status      ManualRefundStatus
+  createdAt   DateTime           @default(now())
+  decidedAt   DateTime?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D8 — Communication (M14) — service aveugle au métier (C4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  READ
+}
+
+/// Notification du centre in-app + push (EF-14-01/02/07). Rétention PM-37.
+model Notification {
+  id        String              @id @default(uuid())
+  accountId String
+  template  String // clé du catalogue (EF-14-03) — jamais de texte libre
+  payload   Json
+  category  String // "care" | "money" | "reminder" | "system" | "critical"
+  channel   NotificationChannel
+  priority  String              @default("normal") // "critical" | "normal" | "low"
+  status    NotificationStatus  @default(QUEUED)
+  attempts  Int                 @default(0)
+  createdAt DateTime            @default(now())
+  sentAt    DateTime?
+  readAt    DateTime?
+
+  @@index([accountId, createdAt])
+  @@index([status, priority])
+}
+
+/// Préférences par catégorie (EF-14-04) — les critiques ne sont PAS désactivables (RM-14-02).
+model NotificationPreference {
+  id        String   @id @default(uuid())
+  accountId String
+  category  String
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, category])
+}
+
+/// Rappel de prise de médicament — propre au patient (CRUD), jamais partagé. Les heures sont
+/// stockées en "HH:MM,HH:MM" ; la notification programmée à l'heure dite relève du push (lot natif).
+model MedicationReminder {
+  id               String    @id @default(uuid())
+  patientAccountId String
+  medicationName   String
+  dosage           String?
+  times            String // "08:00,20:00"
+  active           Boolean   @default(true)
+  lastTakenAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([patientAccountId, active])
+}
+
+/// Jeton de notification push d'un appareil (FCM/APNs) — un compte peut avoir plusieurs appareils.
+/// EF-14 : la livraison push réelle passe par la passerelle FCM ; ici on garde la cible par appareil.
+model DeviceToken {
+  id         String   @id @default(uuid())
+  accountId  String
+  token      String   @unique
+  platform   String // "android" | "ios"
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([accountId])
+}
+
+// ── M04 — Audit & Signalements ──────────────────────────────────────────────
+
+/// Journal d'audit — insertion seule, chaîné par empreinte (EF-04-02).
+model AuditEvent {
+  seq       BigInt   @id @default(autoincrement())
+  actorId   String?
+  actorType String? // "patient" | "professional" | "admin" | "system"
+  action    String // "m01.login.blocked", "m03.case.decided"…
+  resource  String? // "account:uuid", "case:uuid"
+  /// Contexte minimal — JAMAIS de contenu médical (RM-04-03).
+  context   Json?
+  prevHash  String
+  hash      String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  DISMISSED
+  ACTION_TAKEN
+}
+
+enum ReportTargetType {
+  PROFILE
+  FACILITY
+  SESSION_MESSAGE
+}
+
+/// Signalement (EF-04-05) — le signaleur reste anonyme vis-à-vis du signalé (RM-04-04).
+model UserReport {
+  id         String           @id @default(uuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reasonCode String
+  reasonText String?
+  status     ReportStatus     @default(OPEN)
+  createdAt  DateTime         @default(now())
+
+  decisions ModerationDecision[]
+
+  @@index([status, createdAt])
+}
+
+/// Décision de modération — insertion seule.
+model ModerationDecision {
+  id        String     @id @default(uuid())
+  reportId  String
+  report    UserReport @relation(fields: [reportId], references: [id])
+  decision  String // "DISMISSED" | "WARNING" | "ESCALATED_M16" | "ESCALATED_M03"
+  reasons   String
+  adminId   String
+  createdAt DateTime   @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D5 — Prescription (M09 Ordonnance & Délivrance)
+// Source : docs/cahier_des_charges/02_modules/M09_ordonnance_delivrance.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Référentiel médicaments (DCI + noms commerciaux) — géré par l'Équipe ULAMU.
+/// Conditionne le garde-fou allergies (EF-09-03) et la recherche M12.
+model Medicament {
+  id              String   @id @default(uuid())
+  dci             String // dénomination commune internationale
+  commercialNames String[]
+  form            String? // comprimé, sirop, injectable…
+  dosage          String? // "500 mg"
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([dci])
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  PARTIALLY_DISPENSED
+  DISPENSED
+  EXPIRED
+  CANCELLED
+}
+
+/// Ordonnance scellée (D-014, EF-09-04) — créée UNIQUEMENT depuis une session active (RM-09-01).
+/// L'ÉTAT vit côté serveur (RM-09-02) : le QR n'est qu'une clé opaque, jamais une preuve.
+/// Immuable une fois scellée (RM-09-05) : annuler/expirer ne se réactive pas, on en crée une nouvelle.
+model Prescription {
+  id               String             @id @default(uuid())
+  /// Session M06 d'origine — "session:<uuid>" reste la source (CU-09-01).
+  sessionId        String
+  prescriberId     String
+  patientAccountId String
+  /// Ordonnance « pour » une personne à charge (Carnet familial, cohérent avec M06/M07).
+  subProfileId     String?
+  /// Clé opaque encodée dans le QR (RM-09-02) — forte, aléatoire, jamais devinable.
+  qrToken          String             @unique
+  /// Empreinte sha256 du contenu scellé = signature plateforme (EF-09-04).
+  bodyHash         String
+  status           PrescriptionStatus @default(ACTIVE)
+  expiresAt        DateTime // PM-10 (30 jours)
+  cancelledAt      DateTime?
+  cancelReason     String?
+  createdAt        DateTime           @default(now())
+  /// Touché à chaque transition (délivrance, annulation) : sert de garde conditionnelle
+  /// anti-TOCTOU (D-046) pour « réclamer » l'ordonnance dans un état délivrable (RM-09-05).
+  updatedAt        DateTime           @updatedAt
+
+  lines         PrescriptionLine[]
+  dispensations Dispensation[]
+
+  @@index([patientAccountId, status])
+  @@index([status, expiresAt])
+}
+
+/// Ligne de prescription. Hors référentiel (EF-09-02) : medicamentId null + freeText renseigné
+/// (texte libre, SANS garde-fou automatique, remontée à l'enrichissement).
+model PrescriptionLine {
+  id             String       @id @default(uuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  medicamentId   String?
+  freeText       String?
+  posology       String
+  durationDays   Int?
+  qtyPrescribed  Int
+  /// Cumul délivré, toujours ≤ qtyPrescribed (D5 §dictionnaire) — incrémenté par chaque Delivrance.
+  qtyDispensed   Int          @default(0)
+
+  dispensationLines DispensationLine[]
+
+  @@index([prescriptionId])
+}
+
+/// Délivrance en pharmacie (CU-09-02) — IMMUABLE ; émet C3 (décrément stock M11) et C2 (Carnet M07).
+/// RM-09-03 : structure vérifiée (C6) + membre porteur du droit « dispense » (M02) + connexion active.
+model Dispensation {
+  id             String       @id @default(uuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  facilityId     String
+  memberId       String
+  createdAt      DateTime     @default(now())
+
+  lines DispensationLine[]
+
+  @@index([prescriptionId, createdAt])
+  @@index([facilityId, createdAt])
+}
+
+model DispensationLine {
+  id                 String           @id @default(uuid())
+  dispensationId     String
+  dispensation       Dispensation     @relation(fields: [dispensationId], references: [id])
+  prescriptionLineId String
+  prescriptionLine   PrescriptionLine @relation(fields: [prescriptionLineId], references: [id])
+  quantity           Int
+}
+
+/// Trace du garde-fou allergies franchi avec motif explicite (EF-09-03) — insertion seule (aussi audit C5).
+/// « Garde-fou, pas verrou » : le prescripteur peut continuer, mais tout passage est tracé.
+model AllergyOverride {
+  id             String   @id @default(uuid())
+  prescriptionId String
+  /// Médicament en cause (libellé) — jamais relié au contenu du Carnet dans l'audit (RM-04-03).
+  lineLabel      String
+  allergyLabel   String // allergie active du Carnet en cause
+  reason         String // motif explicite du prescripteur
+  prescriberId   String
+  createdAt      DateTime @default(now())
+
+  @@index([prescriptionId])
+}
+
+/// File d'enrichissement du référentiel : lignes hors référentiel signalées à l'Équipe ULAMU (EF-09-02).
+model ReferentialEnrichmentItem {
+  id             String    @id @default(uuid())
+  prescriptionId String
+  lineId         String
+  text           String
+  flaggedAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  @@index([resolvedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D6 — Disponibilité & Localisation (M11 Stocks & Catalogues, M12 Recherche & Dévoilement)
+// Sources : M11_stocks_catalogues.md, M12_recherche_devoilement.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Stock d'une pharmacie PAR LOT (EF-11-01). RM-11-01 : quantité jamais négative, toute
+/// variation passe par un StockMovement tracé. RM-11-03 : un lot périmé ne compte jamais.
+model StockItem {
+  id           String   @id @default(uuid())
+  facilityId   String
+  medicamentId String
+  lotCode      String
+  quantity     Int      @default(0)
+  expiryDate   DateTime
+  /// Prix de vente libre (RM-11-04) — visible APRÈS dévoilement seulement.
+  priceXaf     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  movements StockMovement[]
+
+  @@unique([facilityId, medicamentId, lotCode])
+  @@index([facilityId, medicamentId])
+  @@index([medicamentId, expiryDate])
+}
+
+enum StockMovementType {
+  ENTRY // approvisionnement (EF-11-02)
+  EXIT // sortie manuelle motivée : vente hors ULAMU, perte, péremption (EF-11-03)
+  DISPENSE // décrément automatique d'une délivrance ULAMU (C3, EF-11-04)
+  CORRECTION // inventaire / correction motivée (EF-11-09)
+}
+
+/// Journal des mouvements — IMMUABLE (EF-11-06) : la somme signée des mouvements d'un lot
+/// est égale à StockItem.quantity (invariant de cohérence, RM-11-01).
+model StockMovement {
+  id          String            @id @default(uuid())
+  stockItemId String
+  stockItem   StockItem         @relation(fields: [stockItemId], references: [id])
+  facilityId  String
+  type        StockMovementType
+  /// Signé : ENTRY/CORRECTION+ > 0 ; EXIT/DISPENSE < 0.
+  quantity    Int
+  reason      String? // obligatoire pour EXIT et CORRECTION (EF-11-03)
+  reference   String? // "dispensation:uuid", "inventory:uuid", "import:uuid"…
+  memberId    String? // null = système (le décrément C3 n'est pas une action du pharmacien)
+  createdAt   DateTime          @default(now())
+
+  @@index([stockItemId, createdAt])
+  @@index([facilityId, createdAt])
+}
+
+/// Seuil de stock faible par produit (EF-11-05) — configurable par la pharmacie.
+model StockThreshold {
+  id           String @id @default(uuid())
+  facilityId   String
+  medicamentId String
+  lowStock     Int
+
+  @@unique([facilityId, medicamentId])
+}
+
+/// Confirmation hebdomadaire « stock à jour » (EF-11-08, CU-11-03) — insertion seule.
+model FreshnessConfirmation {
+  id          String   @id @default(uuid())
+  facilityId  String
+  confirmedBy String
+  confirmedAt DateTime @default(now())
+
+  @@index([facilityId, confirmedAt])
+}
+
+/// État de fraîcheur dénormalisé (EF-11-08, RM-11-06) : lastFreshAt = max(dernier mouvement,
+/// dernière confirmation). Une pharmacie dont lastFreshAt remonte à plus de PM-33 est EXCLUE
+/// de la recherche M12 (anti R-03 : la fiabilité avant l'exhaustivité).
+model FacilityStockState {
+  facilityId  String   @id
+  lastFreshAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum DisclosureStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  SERVED
+  EXPIRED
+  REFUNDED
+}
+
+/// Dévoilement payé (D-009, D-023, EF-12-03) — révèle UNE pharmacie pour PM-08 (24 h).
+/// RM-12-01 (règle d'or) : aucune identité de structure n'est jamais exposée sans un
+/// dévoilement ACTIVE rattaché au compte du patient (RM-12-05 : personnel, non transférable).
+model Disclosure {
+  id               String           @id @default(uuid())
+  patientAccountId String
+  district         String
+  /// Pharmacie révélée (choix algorithmique RM-12-04) — posée à la confirmation du paiement.
+  facilityId       String?
+  /// Référence opaque C1 : "disclosure:<id>" (RM-13-01). 100 % ULAMU (PM-03, pas de bénéficiaire).
+  orderRef         String           @unique
+  status           DisclosureStatus @default(PENDING_PAYMENT)
+  /// Produits recherchés : [{ medicamentId, quantity }] — base de la réservation et du re-dévoilement.
+  requestedItems   Json
+  paidAt           DateTime?
+  expiresAt        DateTime? // paidAt + PM-08
+  servedAt         DateTime?
+  /// Re-dévoilement gratuit (EF-12-06, Q-004) : chaîne vers le dévoilement signalé « non disponible ».
+  supersedesId     String?
+  createdAt        DateTime         @default(now())
+
+  reservation Reservation?
+
+  @@index([patientAccountId, status])
+  @@index([status, expiresAt])
+}
+
+enum ReservationStatus {
+  ACTIVE
+  SERVED
+  EXPIRED
+}
+
+/// Réservation 24 h (EF-12-05) — les quantités dévoilées sont DÉDUITES du disponible publié
+/// (RM-12-02 : publié = stock réel − réservations actives ; pas de double promesse).
+/// Servie ou expirée = quantités libérées immédiatement (RM-12-03).
+model Reservation {
+  id           String            @id @default(uuid())
+  disclosureId String            @unique
+  disclosure   Disclosure        @relation(fields: [disclosureId], references: [id])
+  facilityId   String
+  status       ReservationStatus @default(ACTIVE)
+  createdAt    DateTime          @default(now())
+  servedAt     DateTime?
+  expiresAt    DateTime
+
+  lines ReservationLine[]
+
+  @@index([facilityId, status])
+  @@index([status, expiresAt])
+}
+
+model ReservationLine {
+  id            String      @id @default(uuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  medicamentId  String
+  quantity      Int
+}
+
+enum StrikeStatus {
+  ACTIVE
+  CONTESTED
+  CANCELLED
+}
+
+/// Strike de fiabilité (EF-12-07) : produit promis mais manquant à l'arrivée. 3 ACTIVE en
+/// 30 jours → exclusion temporaire PM-34 de la recherche. Contestable (arbitrage M16).
+model ReliabilityStrike {
+  id           String       @id @default(uuid())
+  facilityId   String
+  disclosureId String?
+  reason       String
+  status       StrikeStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+
+  @@index([facilityId, status, createdAt])
+}
+
+/// Cloche « me prévenir si disponible » (EF-12-06, CU-12-01) — notification unique à réapparition.
+model ProductAvailabilityAlert {
+  id               String    @id @default(uuid())
+  patientAccountId String
+  district         String
+  medicamentIds    String[]
+  createdAt        DateTime  @default(now())
+  notifiedAt       DateTime?
+
+  @@index([notifiedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D10 — Pilotage & Administration (M16)
+// Source : docs/cahier_des_charges/02_modules/M16_pilotage_administration.md
+// RM-16-01 : le Pilotage LIT seulement les domaines métier ; ses seules écritures PROPRES
+// sont les sanctions, l'historique des paramètres et les procédures support (ci-dessous).
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum SanctionType {
+  SUSPENSION
+  REACTIVATION
+  BAN
+}
+
+enum SanctionStatus {
+  EXECUTED // suspension/réactivation appliquée immédiatement
+  PENDING_SECOND_APPROVAL // bannissement en attente du 2ᵉ admin (EF-16-07)
+  REVERSED // levée d'une sanction
+  REJECTED // 2ᵉ admin refuse le bannissement
+}
+
+/// Sanction de compte (EF-16-03/07) — insertion seule. Le BANNISSEMENT exige une double
+/// validation par deux admins DISTINCTS (RM-16-04, même esprit que PM-35). Tout est motivé + audité (RM-16-03).
+model AccountSanction {
+  id          String         @id @default(uuid())
+  accountId   String
+  type        SanctionType
+  reason      String
+  requestedBy String
+  approvedBy  String? // 2ᵉ admin distinct (BAN uniquement)
+  status      SanctionStatus
+  createdAt   DateTime       @default(now())
+  decidedAt   DateTime?
+
+  @@index([accountId, createdAt])
+  @@index([status, createdAt])
+}
+
+/// Historique des changements de paramètres plateforme (EF-16-04) — insertion seule.
+/// Le Super Admin seul modifie un PM-xx ; un changement de taux déclenche l'avenant (M03/D-022).
+model ParameterChange {
+  id          String   @id @default(uuid())
+  key         String // "PM-03"
+  oldValue    String
+  newValue    String
+  effectiveAt DateTime
+  changedBy   String
+  reason      String
+  createdAt   DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+enum SupportProcedureType {
+  PHONE_CHANGE // CU-01-05 : patient ayant perdu son numéro
+  OWNER_UNREACHABLE // CU-02-05 : titulaire de structure injoignable
+  RECORD_TRANSFER // CU-07-05 : transfert de Carnet
+  OTHER
+}
+
+enum SupportProcedureStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+/// Procédure support guidée et auditée (EF-16-03, CU-16-04) — la TRACE des interventions
+/// sensibles. L'effet réel reste exécuté par les procédures des modules propriétaires (RM-16-01) :
+/// M16 guide, motive et journalise, il n'agit pas « hors procédure ».
+model SupportProcedure {
+  id            String                 @id @default(uuid())
+  type          SupportProcedureType
+  accountId     String?
+  steps         Json // étapes guidées + horodatages
+  justification String
+  executedBy    String
+  status        SupportProcedureStatus @default(OPEN)
+  createdAt     DateTime               @default(now())
+  completedAt   DateTime?
+
+  @@index([type, status])
+}

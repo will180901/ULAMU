@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-10 Iconographie &amp; Assets</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --accent-300:#6F92DA;--accent-500:#2756A6;--accent-600:#1F479A;
+  --accent-100:#C6D4F2;--accent-200:#9DB5E8;
+  --radius-sm:4px;--radius-md:6px;--radius-lg:10px;--radius-xl:14px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;
+  --sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;
+  --grain-svg:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"]{
+  --bg-base:#FAFAFA;--bg-subtle:#F4F4F5;--bg-muted:#EBEBEC;--bg-elevated:#FFFFFF;
+  --glass-bg:rgba(255,255,255,0.72);--glass-blur:12px;--glass-border:rgba(0,0,0,0.07);
+  --text-primary:#111112;--text-secondary:#3F3F46;--text-tertiary:#71717A;--text-disabled:#A1A1AA;
+  --text-accent:var(--accent-600);
+  --border-subtle:rgba(0,0,0,0.07);--border-default:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+  --grain-opacity:0.035;--grain-btn:0.06;
+  --success-bg:#F0FAF3;--success-text:#2B6B40;--success-border:#A8D5B5;--success-dot:#3D9A5C;
+  --warning-bg:#FEF9EC;--warning-text:#7A5515;--warning-border:#EDD68A;--warning-dot:#C49128;
+  --error-bg:#FDF2F2;--error-text:#7A2323;--error-border:#E8AAAA;--error-dot:#C44040;
+  --info-bg:#F0F5FD;--info-text:#1D3F7A;--info-border:#A8C0E8;
+}
+[data-theme="dark"]{
+  --bg-base:#111113;--bg-subtle:#18181B;--bg-muted:#222226;--bg-elevated:#2A2A2F;
+  --glass-bg:rgba(28,28,33,0.72);--glass-blur:14px;--glass-border:rgba(255,255,255,0.07);
+  --text-primary:#F4F4F5;--text-secondary:#A1A1AA;--text-tertiary:#71717A;--text-disabled:#52525B;
+  --text-accent:var(--accent-300);
+  --border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);
+  --shadow-lg:0 6px 24px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.35);
+  --grain-opacity:0.055;--grain-btn:0.09;
+  --success-bg:#0F2318;--success-text:#6DBF8A;--success-border:#1F4A30;--success-dot:#4CAF6E;
+  --warning-bg:#241B09;--warning-text:#D4A430;--warning-border:#4A3512;--warning-dot:#C49128;
+  --error-bg:#200F0F;--error-text:#E07070;--error-border:#3D1A1A;--error-dot:#C44040;
+  --info-bg:#0C1528;--info-text:#7AAAE0;--info-border:#1A2E55;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;transition:background .25s linear,color .25s linear;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain-opacity);background-image:var(--grain-svg);background-size:180px 180px}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.tl{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.lm{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.ln{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.tdv{width:1px;height:20px;background:var(--border-default)}
+.mbc{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.mbc .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .mbc .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.ttog{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer}
+.topt{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px;font-family:var(--font-body)}
+.topt.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+
+/* ── PAGE ── */
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.ph{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.mid{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .mid{color:var(--accent-300)}
+.mid::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.pt{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.pd{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.sec{margin-bottom:var(--sp-12)}
+.shd{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.stit{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.ssub{font-size:13px;color:var(--text-tertiary)}
+.sdiv{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+.dw{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-8);box-shadow:var(--shadow-sm)}
+.dsl{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.dsl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.tk{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle);display:inline-block}
+.tv{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.tu{font-size:11px;color:var(--text-secondary);line-height:1.5}
+.tt{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:12px;margin-top:var(--sp-6)}
+.tt thead{background:var(--bg-muted)}
+.tt th{padding:9px 13px;text-align:left;font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.tt td{padding:9px 13px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+.tt tr:hover td{background:var(--bg-subtle)}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rc{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rc.f{border-color:#E8AAAA;background:#FDF2F2}
+.rc.a{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rc.f{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rc.a{border-color:#1F4A30;background:#0F2318}
+.rt{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rc.f .rt{color:#7A2323}.rc.a .rt{color:#2B6B40}
+[data-theme="dark"] .rc.f .rt{color:#E07070}[data-theme="dark"] .rc.a .rt{color:#6DBF8A}
+.rl{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rl li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rl li::before{position:absolute;left:0;top:1px}
+.rc.f .rl li::before{content:'✕';color:#C44040;font-size:11px}
+.rc.a .rl li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ═══════════════════════════
+   01 — SYSTÈME D'ICÔNES
+═══════════════════════════ */
+.system-specs{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4);margin-bottom:var(--sp-6)}
+.spec-card{background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4)}
+.spec-card-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-2)}
+.spec-card-val{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-0.3px;line-height:1}
+.spec-card-sub{font-size:11px;color:var(--text-tertiary);margin-top:4px}
+
+/* Grid anatomy */
+.grid-anatomy{display:flex;align-items:center;justify-content:center;gap:var(--sp-8);padding:var(--sp-8);background:var(--bg-subtle);border-radius:var(--radius-xl);border:1px solid var(--border-subtle);margin-bottom:var(--sp-6)}
+.anatomy-box{position:relative;width:96px;height:96px}
+.anatomy-box svg{position:absolute;inset:0;width:100%;height:100%}
+.anatomy-label{text-align:center;margin-top:var(--sp-3);font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)}
+.anatomy-legend{display:flex;flex-direction:column;gap:var(--sp-2)}
+.anatomy-legend-item{display:flex;align-items:center;gap:var(--sp-2);font-size:11px;color:var(--text-secondary)}
+.aleg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ═══════════════════════════
+   02 — TAILLES
+═══════════════════════════ */
+.size-row{display:flex;align-items:flex-end;gap:var(--sp-8);padding:var(--sp-8);background:var(--bg-subtle);border-radius:var(--radius-xl);border:1px solid var(--border-subtle);flex-wrap:wrap}
+.size-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)}
+.size-icon-wrap{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+.size-label{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);text-align:center}
+.size-px{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-accent);text-align:center}
+
+/* ═══════════════════════════
+   03 — CATALOGUE
+═══════════════════════════ */
+.cat-section{margin-bottom:var(--sp-8)}
+.cat-title{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.cat-title::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:var(--sp-3)}
+.icon-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-3) var(--sp-2);background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);cursor:default;transition:background .2s linear,box-shadow .2s linear,border-color .2s linear}
+.icon-item:hover{background:var(--bg-muted);box-shadow:var(--shadow-sm);border-color:var(--border-default)}
+.icon-item.active-icon{background:rgba(39,86,166,0.10);border-color:rgba(39,86,166,0.25)}
+[data-theme="dark"] .icon-item.active-icon{background:rgba(39,86,166,0.18);border-color:rgba(111,146,218,0.30)}
+.icon-item svg{color:var(--text-secondary);flex-shrink:0;transition:color .2s linear}
+.icon-item:hover svg{color:var(--text-primary)}
+.icon-item.active-icon svg{color:var(--accent-500)}
+[data-theme="dark"] .icon-item.active-icon svg{color:var(--accent-300)}
+.icon-name{font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);text-align:center;line-height:1.3;word-break:break-word}
+
+/* ═══════════════════════════
+   04 — COULEUR DES ICÔNES
+═══════════════════════════ */
+.color-rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.color-rule-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.color-rule-demo{height:100px;display:flex;align-items:center;justify-content:center;gap:var(--sp-4);padding:var(--sp-4);border-bottom:1px solid var(--border-subtle)}
+.color-rule-meta{padding:var(--sp-4)}
+.crm-ctx{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.crm-tok{font-family:var(--font-mono);font-size:11px;color:var(--text-accent);margin-bottom:3px}
+.crm-desc{font-size:11px;color:var(--text-tertiary);line-height:1.5}
+
+/* icon color contexts */
+.ic-bg-primary{background:var(--accent-500);width:40px;height:40px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.ic-bg-primary::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:var(--grain-btn);pointer-events:none}
+.ic-bg-sidebar{background:var(--glass-bg);backdrop-filter:blur(8px);border:1px solid var(--glass-border);width:48px;height:160px;border-radius:var(--radius-lg);padding:8px 6px;display:flex;flex-direction:column;gap:6px;align-items:center;position:relative;overflow:hidden}
+.ic-bg-sidebar::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:calc(var(--grain-opacity)*0.9);pointer-events:none}
+.ic-nav-slot{width:32px;height:28px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center}
+.ic-nav-slot.act{background:rgba(39,86,166,0.14)}
+
+/* ═══════════════════════════
+   05 — ASCII INTERDIT
+═══════════════════════════ */
+.ascii-compare{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden}
+.ascii-col{padding:var(--sp-6)}
+.ascii-col.bad{background:var(--error-bg);border-right:1px solid var(--error-border)}
+.ascii-col.good{background:var(--success-bg)}
+.ascii-col-header{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-5);display:flex;align-items:center;gap:var(--sp-2)}
+.ascii-col.bad .ascii-col-header{color:var(--error-text)}
+.ascii-col.good .ascii-col-header{color:var(--success-text)}
+.ascii-row{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.ascii-col.bad .ascii-row{border-color:var(--error-border)}
+.ascii-col.good .ascii-row{border-color:var(--success-border)}
+.ascii-row:last-child{border-bottom:none}
+.ascii-char{font-size:20px;width:32px;text-align:center;flex-shrink:0;line-height:1}
+.ascii-svg{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ascii-info{flex:1}
+.ascii-name{font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-primary)}
+.ascii-col.bad .ascii-name{color:var(--error-text)}
+.ascii-col.good .ascii-name{color:var(--success-text)}
+.ascii-reason{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+
+/* ═══════════════════════════
+   06 — LOGO MARK & ASSETS
+═══════════════════════════ */
+.logo-specs{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6)}
+.logo-demo-area{display:flex;flex-direction:column;gap:var(--sp-4)}
+.logo-variant{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-5);border-radius:var(--radius-xl);border:1px solid var(--border-subtle)}
+.logo-variant.on-light{background:#FFFFFF}
+.logo-variant.on-dark{background:#111113}
+.logo-variant.on-accent{background:var(--accent-500)}
+.logo-variant.on-muted{background:var(--bg-muted)}
+.lv-mark{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lv-name{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-0.3px}
+.lv-label{font-family:var(--font-mono);font-size:10px}
+.logo-clear{position:relative;display:flex;align-items:center;justify-content:center;padding:var(--sp-8);background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-xl)}
+.logo-clear-mark{display:flex;align-items:center;gap:var(--sp-3)}
+/* clearspace guides */
+.logo-clear::before{content:'';position:absolute;inset:28px;border:1px dashed var(--accent-500);border-radius:var(--radius-sm);opacity:.35;pointer-events:none}
+.logo-props-list{display:flex;flex-direction:column;gap:var(--sp-3)}
+.logo-prop{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.logo-prop:last-child{border-bottom:none}
+.lp-key{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)}
+.lp-val{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-accent)}
+
+/* favicon grid */
+.favicon-row{display:flex;align-items:flex-end;gap:var(--sp-6);padding:var(--sp-6);background:var(--bg-subtle);border-radius:var(--radius-xl);border:1px solid var(--border-subtle);flex-wrap:wrap}
+.fav-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2)}
+.fav-mark{background:var(--accent-500);border-radius:20%;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
+.fav-mark::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:var(--grain-btn);pointer-events:none}
+.fav-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);text-align:center}
+.fav-sz{font-family:var(--font-mono);font-size:10px;color:var(--text-accent);text-align:center}
+
+/* illustration principles */
+.illus-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.illus-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.illus-preview{height:130px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.illus-meta{padding:var(--sp-4)}
+.illus-name{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
+.illus-desc{font-size:11px;color:var(--text-tertiary);line-height:1.5}
+
+/* FOOTER */
+.pfoot{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.fmeta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.fbdg{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.fbdgd{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+@media(max-width:960px){.system-specs{grid-template-columns:1fr 1fr}.color-rule-grid{grid-template-columns:1fr 1fr}.logo-specs{grid-template-columns:1fr}.illus-grid{grid-template-columns:1fr 1fr}.rg{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}.topbar{padding:0 var(--sp-4)}.pt{font-size:24px}.ascii-compare{grid-template-columns:1fr}.color-rule-grid,.illus-grid{grid-template-columns:1fr}.size-row{gap:var(--sp-4)}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="tl">
+    <a class="logo" href="#"><div class="lm"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div><span class="ln">ulamu</span></a>
+    <div class="tdv"></div>
+    <div class="mbc"><span class="tag">CG-10</span>Iconographie &amp; Assets</div>
+  </div>
+  <div class="ttog" onclick="toggleTheme()">
+    <div class="topt" id="ol"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair</div>
+    <div class="topt active" id="od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="ph">
+    <div class="mid">Design System · Module CG-10</div>
+    <h1 class="pt">Iconographie &amp; Assets</h1>
+    <p class="pd">Système d'icônes exclusivement SVG (Lucide Icons), 5 tailles standards avec contextes d'usage, catalogue de 60+ icônes organisées par domaine, règles de couleur par contexte, interdiction totale des icônes ASCII, spécifications du logo mark Ulamu, favicons et principes d'illustration.</p>
+  </div>
+
+  <!-- ══ 01 SYSTÈME ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">01 — Système d'icônes</h2><span class="ssub">Lucide Icons · SVG exclusivement · grille 16×16px · style outline</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="system-specs">
+        <div class="spec-card">
+          <div class="spec-card-label">Famille</div>
+          <div class="spec-card-val" style="font-size:18px">Lucide</div>
+          <div class="spec-card-sub">Icons · Open Source · MIT</div>
+        </div>
+        <div class="spec-card">
+          <div class="spec-card-label">Viewbox</div>
+          <div class="spec-card-val">16×16</div>
+          <div class="spec-card-sub">px · grille de référence</div>
+        </div>
+        <div class="spec-card">
+          <div class="spec-card-label">Style</div>
+          <div class="spec-card-val" style="font-size:18px">Outline</div>
+          <div class="spec-card-sub">fill:none par défaut</div>
+        </div>
+        <div class="spec-card">
+          <div class="spec-card-label">Format</div>
+          <div class="spec-card-val" style="font-size:18px">SVG</div>
+          <div class="spec-card-sub">inline · jamais img/icon-font</div>
+        </div>
+      </div>
+
+      <!-- Grid anatomy -->
+      <div class="dsl">Anatomie de la grille d'icône</div>
+      <div class="grid-anatomy">
+        <!-- Anatomy diagram -->
+        <div style="display:flex;flex-direction:column;gap:var(--sp-6)">
+          <!-- stroke-width 1.4 -->
+          <div class="anatomy-box" style="width:80px;height:80px">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Guide grid -->
+              <rect x="1" y="1" width="14" height="14" rx="0" stroke="var(--accent-500)" stroke-opacity=".15" stroke-width=".5" stroke-dasharray="2 2"/>
+              <rect x="2" y="2" width="12" height="12" rx="0" stroke="var(--accent-500)" stroke-opacity=".10" stroke-width=".5"/>
+              <!-- Icon: calendar -->
+              <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="var(--text-secondary)" stroke-width="1.4"/>
+              <path d="M5 3V1M11 3V1M2 7h12" stroke="var(--text-secondary)" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <div class="anatomy-label">stroke 1.4<br><span style="color:var(--text-accent)">Nav / Sidebar</span></div>
+          </div>
+          <!-- stroke-width 1.5 -->
+          <div class="anatomy-box" style="width:80px;height:80px">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="14" height="14" rx="0" stroke="var(--accent-500)" stroke-opacity=".15" stroke-width=".5" stroke-dasharray="2 2"/>
+              <rect x="2" y="2" width="12" height="12" rx="0" stroke="var(--accent-500)" stroke-opacity=".10" stroke-width=".5"/>
+              <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="var(--text-secondary)" stroke-width="1.5"/>
+              <path d="M5 3V1M11 3V1M2 7h12" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div class="anatomy-label">stroke 1.5<br><span style="color:var(--text-accent)">Boutons / inline</span></div>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="anatomy-legend">
+          <div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-3)">Propriétés invariantes</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--accent-500);opacity:.3"></div>viewBox 0 0 16 16 — grille universelle</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-secondary)"></div>stroke-linecap: round</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-secondary)"></div>stroke-linejoin: round</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-secondary)"></div>fill: none (outline style)</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--accent-500)"></div>stroke: currentColor (hérite du parent)</div>
+          <div style="margin-top:var(--sp-4);font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-3)">stroke-width par contexte</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-tertiary)"></div>1.4px — sidebar nav, menus, topbar</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-secondary)"></div>1.5px — boutons, inline text, labels</div>
+          <div class="anatomy-legend-item"><div class="aleg-dot" style="background:var(--text-primary)"></div>2.0px — emphase, alertes, états critiques</div>
+        </div>
+        <!-- Live spec card -->
+        <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-5);min-width:200px">
+          <div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-4)">Template SVG obligatoire</div>
+          <div style="background:var(--bg-muted);border-radius:var(--radius-md);padding:var(--sp-4);font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);line-height:1.8;border:1px solid var(--border-subtle)">
+            <span style="color:var(--text-tertiary)">&lt;</span><span style="color:var(--accent-500)">svg</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">width=</span><span style="color:var(--text-secondary)">"16"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">height=</span><span style="color:var(--text-secondary)">"16"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">viewBox=</span><span style="color:var(--text-secondary)">"0 0 16 16"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">fill=</span><span style="color:var(--text-secondary)">"none"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">stroke=</span><span style="color:var(--text-secondary)">"currentColor"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">stroke-width=</span><span style="color:var(--text-secondary)">"1.5"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">stroke-linecap=</span><span style="color:var(--text-secondary)">"round"</span><br>
+            &nbsp;<span style="color:var(--text-tertiary)">stroke-linejoin=</span><span style="color:var(--text-secondary)">"round"</span><br>
+            <span style="color:var(--text-tertiary)">&gt;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 TAILLES ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">02 — Tailles standards</h2><span class="ssub">5 paliers nommés · XS=12px à XL=24px · contextes précis</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Rendu live à l'échelle exacte — icône : Stethoscope médical</div>
+      <div class="size-row">
+        <div class="size-item">
+          <div class="size-icon-wrap" style="width:28px;height:28px">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="size-px">12px</div>
+          <div class="size-label">XS<br>Badge·Tag</div>
+        </div>
+        <div class="size-item">
+          <div class="size-icon-wrap" style="width:32px;height:32px">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="size-px">14px</div>
+          <div class="size-label">SM<br>Bouton·Label</div>
+        </div>
+        <div class="size-item">
+          <div class="size-icon-wrap" style="width:36px;height:36px;border-color:rgba(39,86,166,0.3);background:rgba(39,86,166,0.06)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent-500)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="var(--accent-500)"/></svg>
+          </div>
+          <div class="size-px" style="font-size:12px">16px ★</div>
+          <div class="size-label" style="color:var(--text-accent)">MD · défaut<br>Nav·Interface</div>
+        </div>
+        <div class="size-item">
+          <div class="size-icon-wrap" style="width:44px;height:44px">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="size-px">20px</div>
+          <div class="size-label">LG<br>Section·KPI</div>
+        </div>
+        <div class="size-item">
+          <div class="size-icon-wrap" style="width:52px;height:52px">
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="size-px">24px</div>
+          <div class="size-label">XL<br>Empty·Illus.</div>
+        </div>
+        <div style="flex:1;margin-left:var(--sp-4)">
+          <table class="tt" style="margin-top:0">
+            <thead><tr><th>Taille</th><th>Valeur</th><th>stroke-width</th><th>Contexte principal</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tk">icon-xs</span></td><td class="tv">12px</td><td class="tv">1.5px</td><td class="tu">Badges, tags, méta compacte, pills</td></tr>
+              <tr><td><span class="tk">icon-sm</span></td><td class="tv">14px</td><td class="tv">1.5px</td><td class="tu">Boutons, labels de formulaire, tooltips</td></tr>
+              <tr><td><span class="tk">icon-md ★</span></td><td class="tv">16px</td><td class="tv">1.5px</td><td class="tu">Navigation sidebar, menus contextuels, topbar</td></tr>
+              <tr><td><span class="tk">icon-lg</span></td><td class="tv">20px</td><td class="tv">1.5px</td><td class="tu">Titres de section, cards KPI, headers</td></tr>
+              <tr><td><span class="tk">icon-xl</span></td><td class="tv">24px</td><td class="tv">1.4px</td><td class="tu">Empty states, illustrations fonctionnelles</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 03 CATALOGUE ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">03 — Catalogue contextuel</h2><span class="ssub">60+ icônes · 6 catégories · survolez pour le nom · icônes actives en accent</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <!-- Navigation -->
+      <div class="cat-section">
+        <div class="cat-title">Navigation &amp; Structure</div>
+        <div class="icon-grid">
+          <div class="icon-item active-icon" title="home"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".4"/></svg><span class="icon-name">home</span></div>
+          <div class="icon-item" title="layout-dashboard"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg><span class="icon-name">dashboard</span></div>
+          <div class="icon-item" title="sidebar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M6 1v14"/></svg><span class="icon-name">sidebar</span></div>
+          <div class="icon-item" title="menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/></svg><span class="icon-name">menu</span></div>
+          <div class="icon-item" title="chevron-right"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg><span class="icon-name">chevron-right</span></div>
+          <div class="icon-item" title="chevron-down"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg><span class="icon-name">chevron-down</span></div>
+          <div class="icon-item" title="arrow-left"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 4L6 8l4 4M6 8h8"/></svg><span class="icon-name">arrow-left</span></div>
+          <div class="icon-item" title="external-link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2h5v5M14 2L8 8M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/></svg><span class="icon-name">external-link</span></div>
+          <div class="icon-item" title="search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg><span class="icon-name">search</span></div>
+          <div class="icon-item" title="settings"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg><span class="icon-name">settings</span></div>
+          <div class="icon-item" title="log-out"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/></svg><span class="icon-name">log-out</span></div>
+          <div class="icon-item" title="more-vertical"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3.5" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="8" cy="12.5" r="1.2"/></svg><span class="icon-name">more-vertical</span></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="cat-section">
+        <div class="cat-title">Actions &amp; CRUD</div>
+        <div class="icon-grid">
+          <div class="icon-item" title="plus"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg><span class="icon-name">plus</span></div>
+          <div class="icon-item" title="edit"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg><span class="icon-name">edit</span></div>
+          <div class="icon-item" title="trash"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M6 2h4M5 4l1 9h4l1-9"/></svg><span class="icon-name">trash</span></div>
+          <div class="icon-item" title="copy"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2"/></svg><span class="icon-name">copy</span></div>
+          <div class="icon-item" title="download"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M2 13h12"/></svg><span class="icon-name">download</span></div>
+          <div class="icon-item" title="upload"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 10V2M5 5l3-3 3 3M2 13h12"/></svg><span class="icon-name">upload</span></div>
+          <div class="icon-item" title="share"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12.5" cy="3.5" r="1.5"/><circle cx="12.5" cy="12.5" r="1.5"/><circle cx="3.5" cy="8" r="1.5"/><path d="M5 8h5M5.2 6.6l5.3-2.6M5.2 9.4l5.3 2.6"/></svg><span class="icon-name">share</span></div>
+          <div class="icon-item" title="filter"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 4h14M4 8h8M7 12h2"/></svg><span class="icon-name">filter</span></div>
+          <div class="icon-item" title="sort"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4h12M4 8h8M6 12h4"/></svg><span class="icon-name">sort</span></div>
+          <div class="icon-item" title="refresh"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 8a6 6 0 1 0 1.5-3.9"/><path d="M2 3v4h4"/></svg><span class="icon-name">refresh</span></div>
+          <div class="icon-item" title="x-close"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg><span class="icon-name">x-close</span></div>
+          <div class="icon-item" title="check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9l4 4 8-8"/></svg><span class="icon-name">check</span></div>
+        </div>
+      </div>
+
+      <!-- Statuts -->
+      <div class="cat-section">
+        <div class="cat-title">Statuts &amp; Feedback</div>
+        <div class="icon-grid">
+          <div class="icon-item" title="check-circle" style="border-color:var(--success-border)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/></svg><span class="icon-name" style="color:var(--success-text)">check-circle</span></div>
+          <div class="icon-item" title="alert-triangle" style="border-color:var(--warning-border)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--warning-dot)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/></svg><span class="icon-name" style="color:var(--warning-text)">alert-triangle</span></div>
+          <div class="icon-item" title="alert-circle" style="border-color:var(--error-border)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--error-dot)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M8 5v3.5M8 11v.5"/></svg><span class="icon-name" style="color:var(--error-text)">alert-circle</span></div>
+          <div class="icon-item" title="info" style="border-color:var(--info-border)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent-500)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M8 7v4.5M8 5v.5"/></svg><span class="icon-name" style="color:var(--info-text)">info</span></div>
+          <div class="icon-item" title="clock"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/></svg><span class="icon-name">clock</span></div>
+          <div class="icon-item" title="bell"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg><span class="icon-name">bell</span></div>
+          <div class="icon-item" title="wifi-off"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l12 12"/><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"/><path d="M2.6 5.6A8 8 0 0 1 7 3.6"/><path d="M5 8.5a4 4 0 0 1 4.9-.5"/><path d="M2.9 7.1A7 7 0 0 1 4.8 6"/><circle cx="8" cy="13" r="1"/></svg><span class="icon-name">wifi-off</span></div>
+          <div class="icon-item" title="lock"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="11.5" r="1" fill="currentColor"/></svg><span class="icon-name">lock</span></div>
+        </div>
+      </div>
+
+      <!-- Médical -->
+      <div class="cat-section">
+        <div class="cat-title">Domaine Médical — Ulamu spécifique</div>
+        <div class="icon-grid">
+          <div class="icon-item active-icon" title="stethoscope"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/></svg><span class="icon-name">stethoscope</span></div>
+          <div class="icon-item active-icon" title="user-patient"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/></svg><span class="icon-name">patient</span></div>
+          <div class="icon-item active-icon" title="file-medical"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><path d="M9 1v4h4"/><path d="M6 9h4M8 7v4"/></svg><span class="icon-name">file-medical</span></div>
+          <div class="icon-item active-icon" title="prescription"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/><path d="M12 10l-1.5 2h2.5L11.5 14"/></svg><span class="icon-name">ordonnance</span></div>
+          <div class="icon-item active-icon" title="calendar-appointment"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/><rect x="5" y="9" width="2" height="2" rx=".5" fill="currentColor"/><rect x="9" y="9" width="2" height="2" rx=".5" fill="currentColor" opacity=".4"/></svg><span class="icon-name">rendez-vous</span></div>
+          <div class="icon-item active-icon" title="heart-pulse"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5C2 5 4 3 6.5 3S10 4.5 11 6c1-1.5 2.5-3 4.5-3a.5.5 0 0 1 0 1"/><path d="M1 9h2l1.5-2.5L6 11l2-4 1.5 2.5H14"/></svg><span class="icon-name">heart-pulse</span></div>
+          <div class="icon-item active-icon" title="pill"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4.5 11.5L11.5 4.5"/><rect x="2.5" y="5.5" width="5" height="9" rx="2.5" transform="rotate(-45 2.5 5.5)"/></svg><span class="icon-name">médicament</span></div>
+          <div class="icon-item active-icon" title="activity"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h2l2-5 3 10 2-5h3"/></svg><span class="icon-name">constantes</span></div>
+          <div class="icon-item active-icon" title="hospital"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="12" rx="1"/><path d="M8 7v4M6 9h4"/><path d="M5 3V2M11 3V2"/></svg><span class="icon-name">établissement</span></div>
+          <div class="icon-item active-icon" title="syringe"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-1 1-3-3 1-1zM9.5 4.5l2 2-5 5-1 1H3v-2.5l1-1 5-5z"/><path d="M7 7l2 2"/><path d="M2 14l1.5-1.5"/></svg><span class="icon-name">injection</span></div>
+          <div class="icon-item active-icon" title="clipboard-list"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="10" height="12" rx="1.5"/><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"/></svg><span class="icon-name">consultation</span></div>
+          <div class="icon-item active-icon" title="shield-check"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"/><path d="M5.5 8l2 2 3-3"/></svg><span class="icon-name">sécurité RGPD</span></div>
+        </div>
+      </div>
+
+      <!-- Communication -->
+      <div class="cat-section">
+        <div class="cat-title">Communication &amp; Données</div>
+        <div class="icon-grid">
+          <div class="icon-item" title="message"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"/></svg><span class="icon-name">message</span></div>
+          <div class="icon-item" title="mail"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M1 4l7 5.5L15 4"/></svg><span class="icon-name">mail</span></div>
+          <div class="icon-item" title="phone"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h3l1.5 3.5-2 1.5a8 8 0 0 0 3.5 3.5l1.5-2L14 10v3a1 1 0 0 1-1 1A11 11 0 0 1 2 3a1 1 0 0 1 1-1z"/></svg><span class="icon-name">téléphone</span></div>
+          <div class="icon-item" title="video"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="10" height="9" rx="1.5"/><path d="M11 7.5l4-2v6l-4-2v-2z"/></svg><span class="icon-name">téléconsult.</span></div>
+          <div class="icon-item" title="bar-chart"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 14h12M5 14V9M8 14V5M11 14V7"/></svg><span class="icon-name">bar-chart</span></div>
+          <div class="icon-item" title="trending-up"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/></svg><span class="icon-name">trending-up</span></div>
+          <div class="icon-item" title="database"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><ellipse cx="8" cy="4" rx="6" ry="2"/><path d="M2 4v4c0 1.1 2.7 2 6 2s6-.9 6-2V4"/><path d="M2 8v4c0 1.1 2.7 2 6 2s6-.9 6-2V8"/></svg><span class="icon-name">données</span></div>
+          <div class="icon-item" title="map-pin"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 1.5a5 5 0 0 0-5 5c0 3.5 5 8.5 5 8.5s5-5 5-8.5a5 5 0 0 0-5-5z"/><circle cx="8" cy="6.5" r="1.5"/></svg><span class="icon-name">localisation</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 04 COULEUR DES ICÔNES ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">04 — Règles couleur par contexte</h2><span class="ssub">currentColor héritée · jamais de couleur codée en dur hors tokens</span></div>
+    <div class="sdiv"></div>
+    <div class="color-rule-grid">
+
+      <!-- Bouton primaire -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-3);align-items:center">
+            <div class="ic-bg-primary">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z" fill="white"/></svg>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-2);padding:7px 14px;background:var(--accent-500);border-radius:var(--radius-md);position:relative;overflow:hidden">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" style="z-index:1;flex-shrink:0"><path d="M8 2v12M2 8h12"/></svg>
+              <span style="font-size:13px;font-weight:500;color:#fff;z-index:1">Nouveau</span>
+              <div style="position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:var(--grain-btn)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">Bouton primaire · Icon seule</div>
+          <div class="crm-tok">stroke: white / #FFFFFF</div>
+          <div class="crm-desc">Icône sur fond accent-500. Blanc pur — jamais de variante colorée. S'applique à tout fond coloré sombre.</div>
+        </div>
+      </div>
+
+      <!-- Sidebar nav -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo" style="padding:var(--sp-2)">
+          <div class="ic-bg-sidebar">
+            <div class="ic-nav-slot act" style="z-index:1">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent-500)" stroke-width="1.4" stroke-linecap="round"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/></svg>
+            </div>
+            <div class="ic-nav-slot" style="z-index:1">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-tertiary)" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg>
+            </div>
+            <div class="ic-nav-slot" style="z-index:1">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-tertiary)" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg>
+            </div>
+            <div class="ic-nav-slot" style="z-index:1">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-tertiary)" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">Sidebar nav · Active vs idle</div>
+          <div class="crm-tok">Active: --accent-500 (light) / --accent-300 (dark)<br>Idle: --text-tertiary</div>
+          <div class="crm-desc">Différenciation claire active/idle via la couleur seule. Jamais de fill sur les icônes de nav idle.</div>
+        </div>
+      </div>
+
+      <!-- Sémantique -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+            <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--radius-md)">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/></svg>
+              <span style="font-size:12px;font-weight:500;color:var(--success-text)">Confirmé</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--error-bg);border:1px solid var(--error-border);border-radius:var(--radius-md)">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--error-dot)" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M8 5v3.5M8 11v.5"/></svg>
+              <span style="font-size:12px;font-weight:500;color:var(--error-text)">Erreur</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--radius-md)">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--warning-dot)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/></svg>
+              <span style="font-size:12px;font-weight:500;color:var(--warning-text)">Avertissement</span>
+            </div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">Icônes sémantiques</div>
+          <div class="crm-tok">stroke: --success-dot / --error-dot / --warning-dot</div>
+          <div class="crm-desc">Couleur du dot sémantique correspondant. stroke-width 2px pour emphase des états critiques.</div>
+        </div>
+      </div>
+
+      <!-- Inline text -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+            <div style="display:flex;align-items:center;gap:var(--sp-2)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg>
+              <span style="font-size:13px;color:var(--text-secondary)">12 mars 2026</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-2)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg>
+              <span style="font-size:13px;color:var(--text-tertiary)">Dr. Konaté</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-2)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text-disabled)" stroke-width="1.5" stroke-linecap="round"><path d="M8 1.5a5 5 0 0 0-5 5c0 3.5 5 8.5 5 8.5s5-5 5-8.5a5 5 0 0 0-5-5z"/><circle cx="8" cy="6.5" r="1.5"/></svg>
+              <span style="font-size:12px;color:var(--text-disabled)">Dakar, Sénégal</span>
+            </div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">Icône inline avec texte</div>
+          <div class="crm-tok">stroke: currentColor (hérite du texte parent)</div>
+          <div class="crm-desc">L'icône reçoit la même couleur que le texte qui l'accompagne via currentColor. Cohérence garantie automatiquement.</div>
+        </div>
+      </div>
+
+      <!-- Désactivé -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-3);opacity:.4">
+            <div style="display:flex;align-items:center;gap:var(--sp-2);padding:8px 16px;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-md);cursor:not-allowed">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 9l4 4 8-8"/></svg>
+              <span style="font-size:13px;font-weight:500;color:var(--text-primary)">Valider</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--sp-2);padding:8px 16px;background:var(--accent-500);border-radius:var(--radius-md);cursor:not-allowed;position:relative;overflow:hidden">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" style="z-index:1"><path d="M8 2v12M2 8h12"/></svg>
+              <span style="font-size:13px;font-weight:500;color:#fff;z-index:1">Nouveau</span>
+              <div style="position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:var(--grain-btn)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">État désactivé (disabled)</div>
+          <div class="crm-tok">opacity: 0.4 sur le composant entier</div>
+          <div class="crm-desc">Jamais de changement de couleur d'icône isolé. L'opacité 0.4 s'applique au conteneur entier — icône et texte ensemble.</div>
+        </div>
+      </div>
+
+      <!-- Focus -->
+      <div class="color-rule-card">
+        <div class="color-rule-demo">
+          <div style="display:flex;flex-direction:column;gap:var(--sp-3);align-items:center">
+            <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--radius-md);background:var(--bg-muted);border:1px solid var(--border-default);outline:3px solid rgba(39,86,166,0.30);outline-offset:2px">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text-primary)" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);text-align:center">outline: 3px solid<br>rgba(39,86,166,0.30)</div>
+          </div>
+        </div>
+        <div class="color-rule-meta">
+          <div class="crm-ctx">Bouton icône au focus clavier</div>
+          <div class="crm-tok">focus-ring: rgba(39,86,166, 0.30)</div>
+          <div class="crm-desc">L'icône elle-même ne change pas de couleur au focus. Seul le focus ring (outline) s'applique au conteneur. WCAG AA obligatoire.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 05 ASCII INTERDIT ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">05 — Interdiction totale des icônes ASCII</h2><span class="ssub">Aucun emoji, aucun caractère Unicode, aucune exception — SVG Lucide exclusivement</span></div>
+    <div class="sdiv"></div>
+    <div class="ascii-compare">
+      <div class="ascii-col bad">
+        <div class="ascii-col-header">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>
+          Strictement interdit
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text)">→</div>
+          <div class="ascii-info"><div class="ascii-name">Flèche droite ASCII</div><div class="ascii-reason">Rendu variable selon OS/font · illisible au screen reader</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text)">✓</div>
+          <div class="ascii-info"><div class="ascii-name">Check Unicode</div><div class="ascii-reason">Taille et poids non contrôlables · incohérence visuelle garantie</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text)">⚠</div>
+          <div class="ascii-info"><div class="ascii-name">Warning emoji</div><div class="ascii-reason">Rendu couleur forcé selon plateforme · impossible à désaturer</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text)">ℹ</div>
+          <div class="ascii-info"><div class="ascii-name">Info circled (Unicode)</div><div class="ascii-reason">Style incohérent avec Lucide · alignement vertical imprévisible</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text)">✕</div>
+          <div class="ascii-info"><div class="ascii-name">Croix multiplication</div><div class="ascii-reason">Poids stroke non contrôlé · ne correspond pas aux icônes Lucide</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="font-size:18px">🔔</div>
+          <div class="ascii-info"><div class="ascii-name">Emoji cloche</div><div class="ascii-reason">Couleur et style imposés · inaccessible · rendu différent iOS/Android/Web</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-char" style="color:var(--error-text);font-size:16px">+</div>
+          <div class="ascii-info"><div class="ascii-name">Plus typographique</div><div class="ascii-reason">Épaisseur liée à la police courante · taille non indépendante du texte</div></div>
+        </div>
+      </div>
+      <div class="ascii-col good">
+        <div class="ascii-col-header">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          SVG Lucide obligatoire
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4M6 8h8"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">arrow-right (Lucide)</div><div class="ascii-reason">Épaisseur, couleur et taille 100% contrôlables via CSS</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="2" stroke-linecap="round"><path d="M2 9l4 4 8-8"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">check (Lucide)</div><div class="ascii-reason">stroke-width modulable · currentColor · responsive</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">alert-triangle (Lucide)</div><div class="ascii-reason">Monochrome, hérite de la couleur sémantique via CSS</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M8 7v4.5M8 5v.5"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">info (Lucide)</div><div class="ascii-reason">Cohérent avec tous les autres SVG du système</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">x (Lucide)</div><div class="ascii-reason">Stroke identique aux autres icônes · alignement parfait</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="1.5" stroke-linecap="round"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">bell (Lucide)</div><div class="ascii-reason">Rendu identique sur tous les navigateurs et OS</div></div>
+        </div>
+        <div class="ascii-row">
+          <div class="ascii-svg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--success-dot)" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></div>
+          <div class="ascii-info"><div class="ascii-name">plus (Lucide)</div><div class="ascii-reason">Poids visuel indépendant de la font-size du texte parent</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 LOGO MARK & ASSETS ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">06 — Logo Mark &amp; Assets</h2><span class="ssub">Variantes · zone de protection · favicons · spécifications complètes</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <div class="logo-specs">
+        <!-- Variantes -->
+        <div class="logo-demo-area">
+          <div class="dsl">Variantes du logo selon le fond</div>
+          <div class="logo-variant on-light">
+            <div class="lv-mark" style="background:var(--accent-500)"><svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div>
+            <div><div class="lv-name" style="color:#111112">ulamu</div></div>
+            <div class="lv-label" style="color:#71717A;margin-left:auto">Sur fond clair</div>
+          </div>
+          <div class="logo-variant on-dark">
+            <div class="lv-mark" style="background:var(--accent-500)"><svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div>
+            <div><div class="lv-name" style="color:#F4F4F5">ulamu</div></div>
+            <div class="lv-label" style="color:#71717A;margin-left:auto">Sur fond sombre</div>
+          </div>
+          <div class="logo-variant on-accent">
+            <div class="lv-mark" style="background:rgba(255,255,255,0.2)"><svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".95"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".8"/></svg></div>
+            <div><div class="lv-name" style="color:#ffffff">ulamu</div></div>
+            <div class="lv-label" style="color:rgba(255,255,255,0.6);margin-left:auto">Sur fond accent</div>
+          </div>
+          <div class="logo-variant on-muted">
+            <div class="lv-mark" style="background:var(--accent-500)"><svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div>
+            <div><div class="lv-name" style="color:var(--text-primary)">ulamu</div></div>
+            <div class="lv-label" style="color:var(--text-tertiary);margin-left:auto">Sur fond muted</div>
+          </div>
+        </div>
+
+        <!-- Specs -->
+        <div>
+          <div class="dsl">Zone de protection &amp; spécifications</div>
+          <div class="logo-clear" style="margin-bottom:var(--sp-5)">
+            <div class="logo-clear-mark">
+              <div style="width:40px;height:40px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div>
+              <span style="font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-0.3px;color:var(--text-primary)">ulamu</span>
+            </div>
+            <div style="position:absolute;bottom:8px;right:12px;font-family:var(--font-mono);font-size:9px;color:var(--accent-500);opacity:.6">zone de protection</div>
+          </div>
+          <div style="background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-4)">
+            <div class="logo-props-list">
+              <div class="logo-prop"><span class="lp-key">Logo mark size (standard)</span><span class="lp-val">28×28px (topbar)</span></div>
+              <div class="logo-prop"><span class="lp-key">Logo mark border-radius</span><span class="lp-val">--radius-md (6px)</span></div>
+              <div class="logo-prop"><span class="lp-key">Logo mark background</span><span class="lp-val">--accent-500</span></div>
+              <div class="logo-prop"><span class="lp-key">Logotype font</span><span class="lp-val">Plus Jakarta Sans 700</span></div>
+              <div class="logo-prop"><span class="lp-key">Logotype size (topbar)</span><span class="lp-val">16px · tracking -0.3px</span></div>
+              <div class="logo-prop"><span class="lp-key">Zone de protection</span><span class="lp-val">1× hauteur du mark</span></div>
+              <div class="logo-prop"><span class="lp-key">Taille minimale mark</span><span class="lp-val">20×20px</span></div>
+              <div class="logo-prop"><span class="lp-key">Fond interdit</span><span class="lp-val">Jamais transparent ni dégradé</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favicons -->
+      <div style="margin-top:var(--sp-8)">
+        <div class="dsl">Favicons — déclinaisons par taille</div>
+        <div class="favicon-row">
+          <div class="fav-item">
+            <div class="fav-mark" style="width:16px;height:16px;border-radius:15%">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="fav-sz">16px</div>
+            <div class="fav-lbl">favicon.ico<br>browser tab</div>
+          </div>
+          <div class="fav-item">
+            <div class="fav-mark" style="width:32px;height:32px;border-radius:18%">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+            </div>
+            <div class="fav-sz">32px</div>
+            <div class="fav-lbl">favicon-32.png<br>HD tab</div>
+          </div>
+          <div class="fav-item">
+            <div class="fav-mark" style="width:48px;height:48px;border-radius:20%">
+              <svg width="28" height="28" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+            </div>
+            <div class="fav-sz">48px</div>
+            <div class="fav-lbl">android<br>shortcut</div>
+          </div>
+          <div class="fav-item">
+            <div class="fav-mark" style="width:72px;height:72px;border-radius:20%">
+              <svg width="42" height="42" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+            </div>
+            <div class="fav-sz">72px</div>
+            <div class="fav-lbl">iOS home<br>screen</div>
+          </div>
+          <div class="fav-item">
+            <div class="fav-mark" style="width:96px;height:96px;border-radius:22%">
+              <svg width="56" height="56" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+            </div>
+            <div class="fav-sz">96px</div>
+            <div class="fav-lbl">Android<br>launcher</div>
+          </div>
+          <div class="fav-item">
+            <div class="fav-mark" style="width:128px;height:128px;border-radius:22%">
+              <svg width="76" height="76" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+            </div>
+            <div class="fav-sz">128px</div>
+            <div class="fav-lbl">iOS 2x<br>retina</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Illustrations -->
+      <div style="margin-top:var(--sp-8)">
+        <div class="dsl">Principes d'illustration fonctionnelle</div>
+        <div class="illus-grid">
+
+          <div class="illus-card">
+            <div class="illus-preview">
+              <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="45" cy="45" r="36" stroke="var(--border-default)" stroke-width="1.5" stroke-dasharray="4 4"/>
+                <rect x="25" y="28" width="40" height="34" rx="4" stroke="var(--text-tertiary)" stroke-width="1.5"/>
+                <path d="M33 36h24M33 42h18M33 48h14" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="62" cy="62" r="12" fill="var(--accent-500)" opacity=".15" stroke="var(--accent-500)" stroke-width="1.5"/>
+                <path d="M58 62h8M62 58v8" stroke="var(--accent-500)" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="illus-meta">
+              <div class="illus-name">Empty state — Dossiers</div>
+              <div class="illus-desc">Outline monochrome (--text-tertiary) + élément accent pour l'action principale. Jamais de fill coloré en dehors du point focal.</div>
+            </div>
+          </div>
+
+          <div class="illus-card">
+            <div class="illus-preview">
+              <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 70 C25 45 35 38 45 40 C55 42 60 35 70 30" stroke="var(--accent-500)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <defs><linearGradient id="ig1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2756A6" stop-opacity=".18"/><stop offset="100%" stop-color="#2756A6" stop-opacity="0"/></linearGradient></defs>
+                <path d="M20 70 C25 45 35 38 45 40 C55 42 60 35 70 30 L70 75 L20 75Z" fill="url(#ig1)"/>
+                <circle cx="45" cy="40" r="5" fill="var(--accent-500)" opacity=".2" stroke="var(--accent-500)" stroke-width="1.5"/>
+                <circle cx="45" cy="40" r="2.5" fill="var(--accent-500)"/>
+                <line x1="20" y1="75" x2="70" y2="75" stroke="var(--border-default)" stroke-width="1"/>
+                <line x1="20" y1="55" x2="70" y2="55" stroke="var(--border-subtle)" stroke-width=".75" stroke-dasharray="3 3"/>
+                <line x1="20" y1="35" x2="70" y2="35" stroke="var(--border-subtle)" stroke-width=".75" stroke-dasharray="3 3"/>
+              </svg>
+            </div>
+            <div class="illus-meta">
+              <div class="illus-name">Graphique — Area chart</div>
+              <div class="illus-desc">Seul cas où le dégradé est autorisé. Couleur de courbe = accent-500. Fill opacity 0.18 → 0. Grilles en border-subtle.</div>
+            </div>
+          </div>
+
+          <div class="illus-card">
+            <div class="illus-preview">
+              <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shield illustration -->
+                <path d="M45 15 L68 24 L68 48 C68 61 57 72 45 76 C33 72 22 61 22 48 L22 24 Z" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M45 15 L68 24 L68 48 C68 61 57 72 45 76 C33 72 22 61 22 48 L22 24 Z" fill="var(--accent-500)" fill-opacity=".07"/>
+                <circle cx="45" cy="46" r="12" stroke="var(--accent-500)" stroke-width="1.5"/>
+                <path d="M39 46.5L43 50.5L51 42.5" stroke="var(--accent-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="illus-meta">
+              <div class="illus-name">Illustration sécurité RGPD</div>
+              <div class="illus-desc">Structure en outline neutre (--text-tertiary) + fill accent très désaturé (opacity 0.07) + élément focal en accent-500 plein.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 07 RÈGLES ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">07 — Règles d'usage</h2></div>
+    <div class="sdiv"></div>
+    <div class="rg">
+      <div class="rc f">
+        <div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>Interdictions absolues</div>
+        <ul class="rl">
+          <li>Utiliser un emoji, un caractère Unicode ou ASCII comme icône d'interface — jamais</li>
+          <li>Utiliser une bibliothèque d'icônes autre que Lucide Icons sans validation</li>
+          <li>Importer des icônes via font-icon (icon font) — SVG inline exclusivement</li>
+          <li>Hardcoder une couleur d'icône hors des tokens (ex: stroke="#2756A6" en dur)</li>
+          <li>Utiliser des icônes avec fill coloré hors contextes documentés (sémantiques uniquement)</li>
+          <li>Dépasser 24px pour une icône dans un composant UI courant</li>
+          <li>Utiliser stroke-width différent des 3 valeurs autorisées (1.4 / 1.5 / 2.0)</li>
+          <li>Inclure le logo mark sur fond transparent ou dégradé</li>
+          <li>Modifier les proportions du logo mark (pas de déformation)</li>
+          <li>Utiliser une icône fill (solide) pour un état idle — outline uniquement</li>
+        </ul>
+      </div>
+      <div class="rc a">
+        <div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Bonnes pratiques obligatoires</div>
+        <ul class="rl">
+          <li>Toujours utiliser stroke="currentColor" — la couleur hérite du parent CSS</li>
+          <li>viewBox="0 0 16 16" sur toutes les icônes sans exception</li>
+          <li>stroke-linecap="round" + stroke-linejoin="round" sur toutes les icônes</li>
+          <li>Taille 16px (icon-md) par défaut — adapter uniquement avec justification</li>
+          <li>stroke-width 1.4 dans la sidebar/nav · 1.5 dans les boutons · 2.0 pour l'emphase</li>
+          <li>Icône active sidebar : couleur accent via CSS, jamais en attribut SVG</li>
+          <li>État disabled : opacity 0.4 sur le conteneur, jamais sur l'icône seule</li>
+          <li>Illustrations fonctionnelles : outline monochrome + seul élément focal en accent</li>
+          <li>Logo mark : fond accent-500 obligatoire, border-radius proportionnel à la taille</li>
+          <li>Tester chaque icône dans les deux thèmes — currentColor garantit la cohérence</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot">
+    <div class="fmeta">ulamu · Design System · CG-10 · v1.0</div>
+    <div class="fbdg"><div class="fbdgd"></div>Document validé — Phase 2 en cours</div>
+  </footer>
+
+</main>
+<script>
+function toggleTheme(){
+  const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme',d?'light':'dark');
+  document.getElementById('ol').classList.toggle('active',d);
+  document.getElementById('od').classList.toggle('active',!d);
+}
+(function(){
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.getElementById('od').classList.toggle('active',d);
+  document.getElementById('ol').classList.toggle('active',!d);
+})();
+</script>
+</body>
+</html>

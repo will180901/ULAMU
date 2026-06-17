@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-05 Composants Fondamentaux</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--font-display:'Plus Jakarta Sans',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace;--accent-300:#6F92DA;--accent-500:#2756A6;--accent-600:#1F479A;--radius-sm:4px;--radius-md:6px;--radius-lg:10px;--radius-xl:14px;--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;--grain-svg:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+[data-theme="light"]{--bg-base:#FAFAFA;--bg-subtle:#F4F4F5;--bg-muted:#EBEBEC;--bg-elevated:#FFFFFF;--glass-bg:rgba(255,255,255,0.72);--glass-blur:12px;--glass-border:rgba(0,0,0,0.07);--text-primary:#111112;--text-secondary:#3F3F46;--text-tertiary:#71717A;--text-disabled:#A1A1AA;--text-accent:var(--accent-600);--border-subtle:rgba(0,0,0,0.07);--border-default:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);--grain-opacity:0.035;--grain-btn:0.06;--success-bg:#F0FAF3;--success-text:#2B6B40;--success-border:#A8D5B5;--success-dot:#3D9A5C;--warning-bg:#FEF9EC;--warning-text:#7A5515;--warning-border:#EDD68A;--warning-dot:#C49128;--error-bg:#FDF2F2;--error-text:#7A2323;--error-border:#E8AAAA;--error-dot:#C44040;--info-bg:#F0F5FD;--info-text:#1D3F7A;--info-border:#A8C0E8}
+[data-theme="dark"]{--bg-base:#111113;--bg-subtle:#18181B;--bg-muted:#222226;--bg-elevated:#2A2A2F;--glass-bg:rgba(28,28,33,0.72);--glass-blur:14px;--glass-border:rgba(255,255,255,0.07);--text-primary:#F4F4F5;--text-secondary:#A1A1AA;--text-tertiary:#71717A;--text-disabled:#52525B;--text-accent:var(--accent-300);--border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);--shadow-sm:0 1px 3px rgba(0,0,0,0.35);--shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);--grain-opacity:0.055;--grain-btn:0.09;--success-bg:#0F2318;--success-text:#6DBF8A;--success-border:#1F4A30;--success-dot:#4CAF6E;--warning-bg:#241B09;--warning-text:#D4A430;--warning-border:#4A3512;--warning-dot:#C49128;--error-bg:#200F0F;--error-text:#E07070;--error-border:#3D1A1A;--error-dot:#C44040;--info-bg:#0C1528;--info-text:#7AAAE0;--info-border:#1A2E55}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;transition:background .25s linear,color .25s linear;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain-opacity);background-image:var(--grain-svg);background-size:180px 180px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.logo-mark{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.logo-name{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.tdiv{width:1px;height:20px;background:var(--border-default)}
+.mbc{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.mbc .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .mbc .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.ttog{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer}
+.topt{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px}
+.topt.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.ph{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.mid{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .mid{color:var(--accent-300)}
+.mid::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.pt{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.pd{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.sec{margin-bottom:var(--sp-12)}
+.shd{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.stit{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.ssub{font-size:13px;color:var(--text-tertiary)}
+.sdiv{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+.dw{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-8);box-shadow:var(--shadow-sm)}
+.dsl{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.dsl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.tt{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:12px;margin-top:var(--sp-6)}
+.tt thead{background:var(--bg-muted)}
+.tt th{padding:9px 13px;text-align:left;font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.tt td{padding:9px 13px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+.tt tr:hover td{background:var(--bg-subtle)}
+.tk{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle);display:inline-block}
+.tv{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.tu{font-size:11px;color:var(--text-secondary);line-height:1.5}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rc{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rc.f{border-color:#E8AAAA;background:#FDF2F2}
+.rc.a{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rc.f{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rc.a{border-color:#1F4A30;background:#0F2318}
+.rt{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rc.f .rt{color:#7A2323}.rc.a .rt{color:#2B6B40}
+[data-theme="dark"] .rc.f .rt{color:#E07070}[data-theme="dark"] .rc.a .rt{color:#6DBF8A}
+.rl{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rl li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rl li::before{position:absolute;left:0;top:1px}
+.rc.f .rl li::before{content:'✕';color:#C44040;font-size:11px}
+.rc.a .rl li::before{content:'✓';color:#3D9A5C;font-size:11px}
+.stlbl{font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase}
+/* BUTTONS */
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);font-family:var(--font-body);font-weight:500;border:none;cursor:pointer;transition:all .25s linear;text-decoration:none}
+.btn::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:var(--grain-btn)}
+.bxs{padding:4px 10px;font-size:12px;border-radius:var(--radius-sm)}
+.bsm{padding:6px 13px;font-size:13px;border-radius:var(--radius-sm)}
+.bmd{padding:9px 18px;font-size:14px;border-radius:var(--radius-md)}
+.blg{padding:12px 24px;font-size:15px;border-radius:var(--radius-md)}
+.bxl{padding:15px 30px;font-size:16px;border-radius:var(--radius-lg)}
+.bprimary{background:var(--accent-500);color:#fff}.bprimary:hover{background:var(--accent-600)}
+.bsecondary{background:var(--bg-muted);color:var(--text-primary);border:1px solid var(--border-default)}.bsecondary:hover{background:var(--bg-subtle)}
+.bghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-subtle)}.bghost:hover{background:var(--bg-subtle);color:var(--text-primary)}
+.bdanger{background:#C44040;color:#fff}.bdanger:hover{background:#A83535}
+.baccent-out{background:transparent;color:var(--accent-500);border:1px solid var(--accent-500)}.baccent-out:hover{background:rgba(39,86,166,0.08)}
+[data-theme="dark"] .baccent-out{color:var(--accent-300);border-color:var(--accent-300)}
+.bicon{padding:8px;border-radius:var(--radius-md)}
+.bdis{opacity:.4;cursor:not-allowed;pointer-events:none}
+.bload{pointer-events:none}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brow{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-5)}
+/* FORMS */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)}
+.fgroup{display:flex;flex-direction:column;gap:var(--sp-2)}
+.flabel{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-primary)}
+.freq{color:#C44040;font-size:12px}
+.finput{height:36px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:0 12px;font-family:var(--font-body);font-size:14px;color:var(--text-primary);width:100%;transition:border-color .25s linear,box-shadow .25s linear;outline:none}
+.finput::placeholder{color:var(--text-disabled)}
+.finput:hover{border-color:var(--border-strong)}
+.finput:focus{border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(39,86,166,0.12)}
+.ferr{border-color:#C44040!important;box-shadow:0 0 0 3px rgba(196,64,64,0.10)!important}
+.fsuc{border-color:#3D9A5C!important;box-shadow:0 0 0 3px rgba(61,154,92,0.10)!important}
+.fdis{opacity:.5;cursor:not-allowed;background:var(--bg-muted)}
+.fhint{font-size:11px;color:var(--text-tertiary);line-height:1.45}
+.ferrmsg{font-size:11px;color:#C44040;line-height:1.45;display:flex;align-items:center;gap:4px}
+[data-theme="dark"] .ferrmsg{color:#E07070}
+.fsucmsg{font-size:11px;color:#3D9A5C}
+[data-theme="dark"] .fsucmsg{color:#6DBF8A}
+.iwrap{position:relative;display:flex;align-items:center}
+.iil{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);pointer-events:none}
+.iir{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);pointer-events:none}
+.hleft{padding-left:34px!important}
+.hright{padding-right:34px!important}
+.fsel{height:36px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:0 32px 0 12px;font-family:var(--font-body);font-size:14px;color:var(--text-primary);width:100%;appearance:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2371717A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;cursor:pointer;outline:none;transition:border-color .25s linear}
+.fsel:focus{border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(39,86,166,0.12)}
+.ftxt{border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:10px 12px;font-family:var(--font-body);font-size:14px;color:var(--text-primary);width:100%;resize:vertical;min-height:80px;outline:none;transition:border-color .25s linear,box-shadow .25s linear}
+.ftxt:focus{border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(39,86,166,0.12)}
+.ftxt::placeholder{color:var(--text-disabled)}
+.crow{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0}
+.cbox{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--border-strong);background:var(--bg-base);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cbox.ck{background:var(--accent-500);border-color:var(--accent-500)}
+.cbox.ci{background:var(--accent-500);border-color:var(--accent-500)}
+.rbox{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border-strong);background:var(--bg-base);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.rbox.ck{border-color:var(--accent-500)}
+.rinn{width:6px;height:6px;border-radius:50%;background:var(--accent-500)}
+.clbl{font-size:13px;color:var(--text-primary)}
+.togwrap{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)}
+.togtrk{width:36px;height:20px;border-radius:10px;background:var(--bg-muted);border:1px solid var(--border-default);position:relative;cursor:pointer;transition:background .2s linear}
+.togtrk.on{background:var(--accent-500);border-color:var(--accent-500)}
+.togtmb{width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);position:absolute;top:2px;left:2px;transition:left .2s linear}
+.togtrk.on .togtmb{left:18px}
+/* BADGES */
+.badgerow{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-4)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-body);font-weight:500;border-radius:var(--radius-sm);border:1px solid transparent;white-space:nowrap}
+.bxss{font-size:10px;padding:1px 5px}.bsms{font-size:11px;padding:2px 7px}.bmds{font-size:12px;padding:3px 8px}
+.bacc{background:rgba(39,86,166,0.10);color:var(--accent-500);border-color:rgba(39,86,166,0.20)}
+[data-theme="dark"] .bacc{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.bsuc{background:var(--success-bg);color:var(--success-text);border-color:var(--success-border)}
+.bwrn{background:var(--warning-bg);color:var(--warning-text);border-color:var(--warning-border)}
+.berr{background:var(--error-bg);color:var(--error-text);border-color:var(--error-border)}
+.bneu{background:var(--bg-muted);color:var(--text-secondary);border-color:var(--border-default)}
+.binf{background:var(--info-bg);color:var(--info-text);border-color:var(--info-border)}
+.bdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dsuc{background:var(--success-dot)}.dwrn{background:var(--warning-dot)}.derr{background:var(--error-dot)}.dacc{background:var(--accent-500)}
+[data-theme="dark"] .dacc{background:var(--accent-300)}
+.pill{min-width:18px;height:18px;border-radius:9px;font-size:10px;font-weight:700;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-mono)}
+.pillacc{background:var(--accent-500);color:#fff}.pillerr{background:#C44040;color:#fff}.pillneu{background:var(--bg-muted);color:var(--text-secondary);border:1px solid var(--border-default)}
+.tagitem{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-body);font-size:12px;font-weight:500;padding:3px 8px 3px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-default);background:var(--bg-muted);color:var(--text-primary)}
+.tagrem{width:14px;height:14px;border-radius:50%;background:var(--bg-elevated);display:inline-flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;flex-shrink:0}
+.tagrem:hover{background:var(--error-bg);color:var(--error-dot)}
+/* AVATARS */
+.avrow{display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-4)}
+.av{border-radius:50%;border:2px solid var(--bg-base);box-shadow:var(--shadow-sm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#fff;background:var(--accent-500);overflow:hidden}
+.avxs{width:24px;height:24px;font-size:9px;border-width:1px}
+.avsm{width:32px;height:32px;font-size:11px}
+.avmd{width:40px;height:40px;font-size:14px}
+.avlg{width:48px;height:48px;font-size:17px}
+.avxl{width:64px;height:64px;font-size:22px;border-width:3px}
+.avgrp{display:flex;align-items:center}
+.avgrp .av{margin-left:-10px}
+.avgrp .av:first-child{margin-left:0}
+.avws{position:relative;display:inline-flex}
+.avst{position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg-base)}
+.ston{background:#3D9A5C}.staw{background:#C49128}.stof{background:var(--text-disabled)}.stbu{background:#C44040}
+.avteal{background:#2D6A4F}.avorange{background:#C1440E}.avpurple{background:#5C2D7E}.avrose{background:#8B1E3F}.avcyan{background:#1A5F7A}
+.avmut{background:var(--bg-muted);color:var(--text-tertiary);border:1px solid var(--border-default)}
+/* SEPARATORS */
+.sep{height:1px;background:var(--border-subtle);width:100%}
+.sepdef{background:var(--border-default)}.sepstr{background:var(--border-strong)}
+.sepdsh{background:transparent;border-top:1px dashed var(--border-default)}
+.seplbl{display:flex;align-items:center;gap:var(--sp-3)}
+.seplbl::before,.seplbl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.seplblt{font-family:var(--font-body);font-size:12px;color:var(--text-tertiary);white-space:nowrap;font-weight:500;padding:0 var(--sp-2)}
+.sepv{width:1px;height:20px;background:var(--border-default);display:inline-block}
+/* TOOLTIPS */
+.ttip{position:relative;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:6px 10px;font-size:12px;color:var(--text-secondary);box-shadow:var(--shadow-md);white-space:nowrap;font-family:var(--font-body)}
+.ttipar{position:absolute;width:8px;height:8px;background:var(--bg-elevated);border:1px solid var(--border-default);transform:rotate(45deg)}
+.ttarrt{bottom:-5px;left:50%;margin-left:-4px;border-top:none;border-left:none}
+.ttarrb{top:-5px;left:50%;margin-left:-4px;border-bottom:none;border-right:none}
+.pfoot{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.fmeta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.fbdg{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.fbdgd{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+@media(max-width:900px){.fg{grid-template-columns:1fr}.rg{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}.topbar{padding:0 var(--sp-4)}.pt{font-size:24px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#"><div class="logo-mark"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div><span class="logo-name">ulamu</span></a>
+    <div class="tdiv"></div>
+    <div class="mbc"><span class="tag">CG-05</span>Composants Fondamentaux</div>
+  </div>
+  <div class="ttog" onclick="toggleTheme()">
+    <div class="topt" id="ol"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair</div>
+    <div class="topt active" id="od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre</div>
+  </div>
+</header>
+<main class="page">
+  <div class="ph">
+    <div class="mid">Design System · Module CG-05</div>
+    <h1 class="pt">Composants Fondamentaux</h1>
+    <p class="pd">Bibliothèque des composants atomiques d'Ulamu : boutons (toutes variantes et tailles), champs de formulaire (tous états), badges, tags, séparateurs, avatars et tooltips. Chaque composant est rendu en live avec ses tokens, états et règles d'usage.</p>
+  </div>
+
+  <!-- 01 BOUTONS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">01 — Boutons</h2><span class="ssub">5 variantes · 5 tailles · 4 états · grain sérigraphié</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Variantes</div>
+      <div class="brow">
+        <button class="btn bmd bprimary"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Primaire</button>
+        <button class="btn bmd bsecondary">Secondaire</button>
+        <button class="btn bmd bghost">Ghost</button>
+        <button class="btn bmd baccent-out">Outline accent</button>
+        <button class="btn bmd bdanger"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2h4v1h3v2H3V3h3V2zm1 4v6H6V6h1zm3 0v6h-1V6h1zM4 5l1 9h6l1-9H4z"/></svg>Destructif</button>
+      </div>
+      <div class="dsl">Tailles</div>
+      <div class="brow" style="align-items:flex-end">
+        <div style="text-align:center"><button class="btn bxs bprimary">XS</button><div class="stlbl" style="margin-top:6px">12px·4/10</div></div>
+        <div style="text-align:center"><button class="btn bsm bprimary">Small</button><div class="stlbl" style="margin-top:6px">13px·6/13</div></div>
+        <div style="text-align:center"><button class="btn bmd bprimary">Medium ★</button><div class="stlbl" style="margin-top:6px">14px·9/18</div></div>
+        <div style="text-align:center"><button class="btn blg bprimary">Large</button><div class="stlbl" style="margin-top:6px">15px·12/24</div></div>
+        <div style="text-align:center"><button class="btn bxl bprimary">X-Large</button><div class="stlbl" style="margin-top:6px">16px·15/30</div></div>
+      </div>
+      <div class="dsl">États</div>
+      <div class="brow">
+        <div style="text-align:center"><button class="btn bmd bprimary">Défaut</button><div class="stlbl" style="margin-top:6px">Default</div></div>
+        <div style="text-align:center"><button class="btn bmd bprimary" style="background:var(--accent-600)">Hover</button><div class="stlbl" style="margin-top:6px">Hover</div></div>
+        <div style="text-align:center"><button class="btn bmd bprimary" style="outline:3px solid rgba(39,86,166,0.3);outline-offset:2px">Focus</button><div class="stlbl" style="margin-top:6px">Focus ring</div></div>
+        <div style="text-align:center"><button class="btn bmd bprimary bload"><div class="spin"></div>Chargement</button><div class="stlbl" style="margin-top:6px">Loading</div></div>
+        <div style="text-align:center"><button class="btn bmd bprimary bdis">Désactivé</button><div class="stlbl" style="margin-top:6px">Disabled·0.4</div></div>
+      </div>
+      <div class="dsl">Boutons icône seul</div>
+      <div class="brow">
+        <button class="btn bicon bprimary"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
+        <button class="btn bicon bsecondary"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M11 3H3v10h8M6 8h7M10 5l3 3-3 3"/></svg></button>
+        <button class="btn bicon bghost"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></button>
+        <button class="btn bicon bdanger"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2h4v1h3v2H3V3h3V2zm1 4v6H6V6h1zm3 0v6h-1V6h1zM4 5l1 9h6l1-9H4z"/></svg></button>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-left:var(--sp-2)">padding:8px · radius:--radius-md</span>
+      </div>
+    </div>
+    <table class="tt"><thead><tr><th>Propriété</th><th>Valeur</th><th>Note</th></tr></thead><tbody>
+      <tr><td><span class="tk">border-radius</span></td><td class="tv">sm (xs/sm) · md (md/lg) · lg (xl)</td><td class="tu">Min 4px — jamais pill généralisé</td></tr>
+      <tr><td><span class="tk">grain ::after</span></td><td class="tv">var(--grain-btn) · 0.06 light / 0.09 dark</td><td class="tu">Effet sérigraphié — obligatoire sur tous les boutons</td></tr>
+      <tr><td><span class="tk">focus ring</span></td><td class="tv">outline 3px rgba(39,86,166,0.30) · offset 2px</td><td class="tu">WCAG AA — jamais supprimé</td></tr>
+      <tr><td><span class="tk">transition</span></td><td class="tv">all .25s linear</td><td class="tu">Background, shadow, transform</td></tr>
+      <tr><td><span class="tk">disabled</span></td><td class="tv">opacity:0.4 · cursor:not-allowed · pointer-events:none</td><td class="tu">Ne jamais changer la couleur pour désactiver</td></tr>
+      <tr><td><span class="tk">dégradé</span></td><td class="tv">❌ INTERDIT</td><td class="tu">Couleur unie uniquement — voir CG-04</td></tr>
+    </tbody></table>
+  </section>
+
+  <!-- 02 FORMULAIRES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">02 — Champs de formulaire</h2><span class="ssub">Input · Select · Textarea · Checkbox · Radio · Toggle</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Inputs — tous les états</div>
+      <div class="fg">
+        <div class="fgroup"><label class="flabel">Par défaut</label><input class="finput" placeholder="ex: Dr. Amara Konaté" type="text"/><span class="fhint">Texte d'aide visible sous le champ</span></div>
+        <div class="fgroup"><label class="flabel">Avec valeur</label><input class="finput" value="Kofi Mensah" type="text"/><span class="fhint">Inter 14px · --text-primary</span></div>
+        <div class="fgroup"><label class="flabel">Focus</label><input class="finput" value="Dr. Amara Konaté" type="text" style="border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(39,86,166,0.12)"/><span class="fhint">border:accent-500 · ring rgba(39,86,166,0.12)</span></div>
+        <div class="fgroup"><label class="flabel">Erreur <span class="freq">*</span></label><input class="finput ferr" value="kofi@" type="email"/><span class="ferrmsg"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>Format email invalide</span></div>
+        <div class="fgroup"><label class="flabel">Succès</label><input class="finput fsuc" value="kofi@ulamu.app" type="email"/><span class="fsucmsg">✓ Email valide et disponible</span></div>
+        <div class="fgroup"><label class="flabel">Désactivé</label><input class="finput fdis" value="Non modifiable" type="text" disabled/><span class="fhint">opacity:0.5 · cursor:not-allowed</span></div>
+      </div>
+      <div class="dsl" style="margin-top:var(--sp-6)">Champs avec icônes</div>
+      <div class="fg">
+        <div class="fgroup"><label class="flabel">Icône gauche (recherche)</label><div class="iwrap"><span class="iil"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg></span><input class="finput hleft" placeholder="Rechercher un patient…" type="text"/></div></div>
+        <div class="fgroup"><label class="flabel">Icône droite (mot de passe)</label><div class="iwrap"><input class="finput hright" value="monmotdepasse" type="password"/><span class="iir"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></span></div></div>
+      </div>
+      <div class="dsl" style="margin-top:var(--sp-6)">Select & Textarea</div>
+      <div class="fg">
+        <div class="fgroup"><label class="flabel">Spécialité médicale</label><select class="fsel"><option>Cardiologie</option><option>Pédiatrie</option><option>Neurologie</option></select></div>
+        <div class="fgroup"><label class="flabel">Pays <span class="freq">*</span></label><select class="fsel"><option value="">Sélectionner…</option><option>Congo</option><option>Sénégal</option><option>Côte d'Ivoire</option></select></div>
+      </div>
+      <div class="fgroup" style="margin-top:var(--sp-4);max-width:500px"><label class="flabel">Observations cliniques</label><textarea class="ftxt">Patient se plaint de douleurs thoraciques récurrentes. Antécédents: hypertension 2019.</textarea><span class="fhint">resize:vertical · min-height:80px</span></div>
+      <div class="dsl" style="margin-top:var(--sp-6)">Checkbox · Radio · Toggle</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-8)">
+        <div>
+          <p class="stlbl" style="margin-bottom:var(--sp-3)">Checkbox</p>
+          <div class="crow"><div class="cbox ck"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5L3.5 7.5L8.5 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="clbl">Consulté en ligne</span></div>
+          <div class="crow"><div class="cbox ci"><svg width="8" height="2" viewBox="0 0 8 2" fill="white"><rect width="8" height="2" rx="1"/></svg></div><span class="clbl">Indéterminé</span></div>
+          <div class="crow"><div class="cbox"></div><span class="clbl">Non coché</span></div>
+          <div class="crow" style="opacity:.4"><div class="cbox ck"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5L3.5 7.5L8.5 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="clbl">Désactivé</span></div>
+        </div>
+        <div>
+          <p class="stlbl" style="margin-bottom:var(--sp-3)">Radio</p>
+          <div class="crow"><div class="rbox ck"><div class="rinn"></div></div><span class="clbl">Généraliste</span></div>
+          <div class="crow"><div class="rbox"></div><span class="clbl">Spécialiste</span></div>
+          <div class="crow"><div class="rbox"></div><span class="clbl">Infirmier</span></div>
+          <div class="crow" style="opacity:.4"><div class="rbox"></div><span class="clbl">Désactivé</span></div>
+        </div>
+        <div>
+          <p class="stlbl" style="margin-bottom:var(--sp-3)">Toggle</p>
+          <div class="togwrap"><div class="togtrk on"><div class="togtmb"></div></div><span style="font-size:13px;color:var(--text-primary)">Notifications on</span></div>
+          <div class="togwrap"><div class="togtrk"><div class="togtmb"></div></div><span style="font-size:13px;color:var(--text-primary)">Mode offline</span></div>
+          <div class="togwrap" style="opacity:.4"><div class="togtrk on"><div class="togtmb"></div></div><span style="font-size:13px;color:var(--text-primary)">Désactivé</span></div>
+        </div>
+      </div>
+    </div>
+    <table class="tt"><thead><tr><th>Composant</th><th>Hauteur</th><th>Focus</th><th>Tokens clés</th></tr></thead><tbody>
+      <tr><td><span class="tk">Input</span></td><td class="tv">36px</td><td class="tv">border accent-500 + ring rgba</td><td class="tu">bg-base · border-default → accent</td></tr>
+      <tr><td><span class="tk">Select</span></td><td class="tv">36px</td><td class="tv">Idem input</td><td class="tu">appearance:none · SVG chevron bg-image</td></tr>
+      <tr><td><span class="tk">Textarea</span></td><td class="tv">min 80px</td><td class="tv">Idem input</td><td class="tu">resize:vertical · lh 1.6</td></tr>
+      <tr><td><span class="tk">Checkbox</span></td><td class="tv">16×16px</td><td class="tv">focus ring</td><td class="tu">radius:3px · checked:accent-500</td></tr>
+      <tr><td><span class="tk">Toggle</span></td><td class="tv">20px track</td><td class="tv">focus ring</td><td class="tu">track 36×20 · thumb 14×14 · transition .2s</td></tr>
+    </tbody></table>
+  </section>
+
+  <!-- 03 BADGES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">03 — Badges &amp; Tags</h2><span class="ssub">6 variantes · 3 tailles · dots · pills · tags removable</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Variantes sémantiques — MD</div>
+      <div class="badgerow">
+        <span class="badge bmds bacc"><span class="bdot dacc"></span>Actif</span>
+        <span class="badge bmds bsuc"><span class="bdot dsuc"></span>Confirmé</span>
+        <span class="badge bmds bwrn"><span class="bdot dwrn"></span>En attente</span>
+        <span class="badge bmds berr"><span class="bdot derr"></span>Refusé</span>
+        <span class="badge bmds bneu">Archivé</span>
+        <span class="badge bmds binf">Synchronisation</span>
+      </div>
+      <div class="dsl">Tailles</div>
+      <div class="badgerow" style="align-items:center">
+        <span class="badge bxss bacc">XS · 10px</span>
+        <span class="badge bsms bacc">SM · 11px</span>
+        <span class="badge bmds bacc">MD · 12px ★</span>
+      </div>
+      <div class="dsl">Pills numériques</div>
+      <div class="badgerow" style="gap:var(--sp-5)">
+        <div style="display:flex;align-items:center;gap:var(--sp-2)"><span style="font-size:13px;color:var(--text-secondary)">Messages</span><span class="pill pillacc">3</span></div>
+        <div style="display:flex;align-items:center;gap:var(--sp-2)"><span style="font-size:13px;color:var(--text-secondary)">Alertes</span><span class="pill pillerr">12</span></div>
+        <div style="display:flex;align-items:center;gap:var(--sp-2)"><span style="font-size:13px;color:var(--text-secondary)">Tâches</span><span class="pill pillneu">48</span></div>
+      </div>
+      <div class="dsl">Tags removables</div>
+      <div class="badgerow">
+        <span class="tagitem">Cardiologie<span class="tagrem"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>
+        <span class="tagitem">Dr. Konaté<span class="tagrem"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>
+        <span class="tagitem">2026<span class="tagrem"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>
+        <span class="tagitem">Dakar<span class="tagrem"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 AVATARS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">04 — Avatars</h2><span class="ssub">5 tailles · palette · statut en ligne · groupes</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Tailles</div>
+      <div class="avrow">
+        <div style="text-align:center"><div class="av avxs">K</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);margin-top:4px">XS·24</div></div>
+        <div style="text-align:center"><div class="av avsm">AK</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);margin-top:4px">SM·32</div></div>
+        <div style="text-align:center"><div class="av avmd">KM</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);margin-top:4px">MD·40</div></div>
+        <div style="text-align:center"><div class="av avlg">DK</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);margin-top:4px">LG·48</div></div>
+        <div style="text-align:center"><div class="av avxl">MB</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);margin-top:4px">XL·64</div></div>
+      </div>
+      <div class="dsl">Palette & Statut</div>
+      <div class="avrow">
+        <div class="avws"><div class="av avmd">KM</div><div class="avst ston"></div></div>
+        <div class="avws"><div class="av avmd avteal">AD</div><div class="avst staw"></div></div>
+        <div class="avws"><div class="av avmd avorange">FD</div><div class="avst stbu"></div></div>
+        <div class="avws"><div class="av avmd avpurple">MB</div><div class="avst stof"></div></div>
+        <div class="av avmd avrose">SA</div>
+        <div class="av avmd avcyan">JN</div>
+        <div class="av avmd avmut"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" opacity=".5"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6a5 5 0 0 1 10 0H3z"/></svg></div>
+      </div>
+      <div class="dsl">Groupe d'avatars</div>
+      <div style="display:flex;align-items:center;gap:var(--sp-6)">
+        <div class="avgrp">
+          <div class="av avsm">KM</div>
+          <div class="av avsm avteal">AD</div>
+          <div class="av avsm avorange">FD</div>
+          <div class="av avsm avpurple">MB</div>
+          <div class="av avsm avmut" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary)">+8</div>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">overlap: -10px · border: 2px --bg-base</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 SÉPARATEURS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">05 — Séparateurs</h2><span class="ssub">Subtil · Default · Fort · Dashed · Labelisé · Vertical</span></div>
+    <div class="sdiv"></div>
+    <div class="dw" style="display:flex;flex-direction:column;gap:var(--sp-5)">
+      <div><div class="stlbl">Subtle — --border-subtle</div><div class="sep" style="margin-top:var(--sp-2)"></div></div>
+      <div><div class="stlbl">Default — --border-default</div><div class="sep sepdef" style="margin-top:var(--sp-2)"></div></div>
+      <div><div class="stlbl">Strong — --border-strong</div><div class="sep sepstr" style="margin-top:var(--sp-2)"></div></div>
+      <div><div class="stlbl">Dashed</div><div class="sep sepdsh" style="margin-top:var(--sp-2)"></div></div>
+      <div><div class="stlbl">Labelisé</div><div class="seplbl" style="margin-top:var(--sp-2)"><span class="seplblt">Ou continuer avec</span></div></div>
+      <div><div class="stlbl">Vertical inline</div><div style="display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-2)"><span style="font-size:13px;color:var(--text-secondary)">Modifier</span><div class="sepv"></div><span style="font-size:13px;color:var(--text-secondary)">Dupliquer</span><div class="sepv"></div><span style="font-size:13px;color:#C44040">Supprimer</span></div></div>
+    </div>
+  </section>
+
+  <!-- 06 TOOLTIPS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">06 — Tooltips</h2><span class="ssub">4 positions · arrow · bg-elevated · shadow-md</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-6)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-4)">
+          <div class="ttip">Dossier patient<div class="ttipar ttarrt"></div></div>
+          <div style="padding:8px 14px;border-radius:var(--radius-md);background:var(--bg-muted);border:1px solid var(--border-default);font-size:12px;color:var(--text-secondary)">Survol</div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">Top</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-4)">
+          <div style="padding:8px 14px;border-radius:var(--radius-md);background:var(--bg-muted);border:1px solid var(--border-default);font-size:12px;color:var(--text-secondary)">Survol</div>
+          <div class="ttip">Confirmer l'acte<div class="ttipar ttarrb"></div></div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">Bottom</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-4)">
+          <div class="ttip" style="max-width:160px;white-space:normal;text-align:left">Prescription valable 30 jours signée Dr. Konaté<div class="ttipar ttarrt"></div></div>
+          <div style="padding:8px 14px;border-radius:var(--radius-md);background:var(--bg-muted);border:1px solid var(--border-default);font-size:12px;color:var(--text-secondary)">Long tooltip</div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">max-width:200px</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.06em;text-transform:uppercase">Spécifications</p>
+          <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">bg</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--bg-elevated</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">border</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">1px --border-default</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">shadow</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--shadow-md</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">font</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">12px Inter</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">padding</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">6px 10px</span></div>
+            <div style="display:flex;justify-content:space-between"><span class="tk" style="font-size:9px">z-index</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">07 — Règles d'usage</h2></div>
+    <div class="sdiv"></div>
+    <div class="rg">
+      <div class="rc f"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>Interdictions absolues</div>
+        <ul class="rl"><li>Dégradé sur bouton — couleur unie obligatoire</li><li>Supprimer le focus ring — jamais outline:none sans alternative accessible</li><li>Utiliser la couleur seule pour indiquer une erreur ou un succès</li><li>Placeholder comme substitut de label de champ</li><li>border-radius > 14px sur boutons (pas de pill généralisé)</li><li>Badges avec dégradé — fond rgba() uni uniquement</li><li>Avatar sans fallback initiales si l'image est absente</li><li>Tooltip avec z-index supérieur aux modales</li></ul>
+      </div>
+      <div class="rc a"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Bonnes pratiques obligatoires</div>
+        <ul class="rl"><li>Grain ::after visible sur tous les boutons — identité visuelle Ulamu</li><li>Label toujours au-dessus du champ — jamais inline flottant</li><li>Message d'erreur avec icône + texte — jamais couleur seule</li><li>Focus ring 3px rgba(39,86,166,0.30) sur tous les éléments interactifs</li><li>Badges : fond semi-transparent + bordure harmonique</li><li>Avatars : initiales 1-2 lettres maj, police display, fond coloré</li><li>Toggle : transition .2s linear sur bg et position thumb</li><li>Séparateur tableau : border-subtle 1px — jamais fond coloré alterné</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot"><div class="fmeta">ulamu · Design System · CG-05 · v1.0</div><div class="fbdg"><div class="fbdgd"></div>Document validé — Phase 2 en cours</div></footer>
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('ol').classList.toggle('active',d);document.getElementById('od').classList.toggle('active',!d)}
+(function(){const d=document.documentElement.getAttribute('data-theme')==='dark';document.getElementById('od').classList.toggle('active',d);document.getElementById('ol').classList.toggle('active',!d)})();
+</script>
+</body>
+</html>

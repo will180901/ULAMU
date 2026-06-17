@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-02 Typographie</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   ULAMU DESIGN SYSTEM — CG-02 TYPOGRAPHIE
+   Tokens, Échelle, Specimens, Règles d'usage
+══════════════════════════════════════════════════════ */
+
+:root {
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --accent-50:  #EBF0FA;
+  --accent-100: #C6D4F2;
+  --accent-200: #9DB5E8;
+  --accent-300: #6F92DA;
+  --accent-400: #4B75CD;
+  --accent-500: #2756A6;
+  --accent-600: #1F479A;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --space-1:  4px;  --space-2:  8px;  --space-3: 12px;
+  --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+  --space-8: 32px;  --space-10:40px;  --space-12:48px;
+  --space-16:64px;
+}
+
+[data-theme="light"] {
+  --bg-base:      #FAFAFA;
+  --bg-subtle:    #F4F4F5;
+  --bg-muted:     #EBEBEC;
+  --bg-elevated:  #FFFFFF;
+  --glass-bg:     rgba(255,255,255,0.72);
+  --glass-blur:   12px;
+  --glass-border: rgba(0,0,0,0.07);
+  --text-primary:   #111112;
+  --text-secondary: #3F3F46;
+  --text-tertiary:  #71717A;
+  --text-disabled:  #A1A1AA;
+  --text-accent:    var(--accent-600);
+  --border-subtle:  rgba(0,0,0,0.07);
+  --border-default: rgba(0,0,0,0.12);
+  --border-strong:  rgba(0,0,0,0.22);
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --grain-opacity: 0.035;
+  --nav-bg:    rgba(255,255,255,0.78);
+  --nav-border: rgba(0,0,0,0.08);
+  --success-bg:    #F0FAF3; --success-text: #2B6B40; --success-border: #A8D5B5;
+  --error-bg:      #FDF2F2; --error-text:   #7A2323; --error-border:   #E8AAAA;
+  --info-bg:       #F0F5FD; --info-text:    #1D3F7A; --info-border:    #A8C0E8;
+}
+
+[data-theme="dark"] {
+  --bg-base:      #111113;
+  --bg-subtle:    #18181B;
+  --bg-muted:     #222226;
+  --bg-elevated:  #2A2A2F;
+  --glass-bg:     rgba(28,28,33,0.72);
+  --glass-blur:   14px;
+  --glass-border: rgba(255,255,255,0.07);
+  --text-primary:   #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-tertiary:  #71717A;
+  --text-disabled:  #52525B;
+  --text-accent:    var(--accent-300);
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.10);
+  --border-strong:  rgba(255,255,255,0.18);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md:  0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);
+  --grain-opacity: 0.055;
+  --nav-bg:    rgba(17,17,19,0.82);
+  --nav-border: rgba(255,255,255,0.07);
+  --success-bg:    #0F2318; --success-text: #6DBF8A; --success-border: #1F4A30;
+  --error-bg:      #200F0F; --error-text:   #E07070; --error-border:   #3D1A1A;
+  --info-bg:       #0C1528; --info-text:    #7AAAE0; --info-border:    #1A2E55;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.25s linear, color 0.25s linear;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:var(--grain-opacity);
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position:sticky;top:0;z-index:100;
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+  border-bottom:1px solid var(--glass-border);
+  padding:0 var(--space-8);
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow-sm);
+}
+.topbar-left{display:flex;align-items:center;gap:var(--space-4)}
+.logo{display:flex;align-items:center;gap:var(--space-3);text-decoration:none}
+.logo-mark{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.logo-name{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.topbar-divider{width:1px;height:20px;background:var(--border-default)}
+.module-breadcrumb{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.module-breadcrumb .tag{
+  background:rgba(39,86,166,0.1);color:var(--accent-500);
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  padding:2px 7px;border-radius:var(--radius-sm);
+  border:1px solid rgba(39,86,166,0.2);
+}
+[data-theme="dark"] .module-breadcrumb .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.theme-toggle{display:flex;align-items:center;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer;transition:border-color 0.25s linear}
+.theme-toggle:hover{border-color:var(--border-strong)}
+.toggle-option{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--text-tertiary);transition:all 0.25s linear;user-select:none;display:flex;align-items:center;gap:5px}
+.toggle-option.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+
+/* ── LAYOUT ── */
+.page{max-width:1140px;margin:0 auto;padding:var(--space-12) var(--space-8) var(--space-16)}
+.page-header{margin-bottom:var(--space-12);padding-bottom:var(--space-8);border-bottom:1px solid var(--border-subtle)}
+.module-id{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2)}
+[data-theme="dark"] .module-id{color:var(--accent-300)}
+.module-id::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--space-4)}
+.page-desc{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+
+.section{margin-bottom:var(--space-12)}
+.section-header{display:flex;align-items:baseline;gap:var(--space-3);margin-bottom:var(--space-6)}
+.section-title{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.section-subtitle{font-size:13px;color:var(--text-tertiary)}
+.section-divider{height:1px;background:var(--border-subtle);margin-bottom:var(--space-6)}
+
+/* ── FAMILY CARDS ── */
+.family-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4)}
+.family-card{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--space-6);
+  box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;gap:var(--space-4);
+}
+.family-card.primary{border-color:rgba(39,86,166,0.35);background:var(--bg-elevated)}
+.family-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.family-badge.display{background:rgba(39,86,166,0.1);color:var(--accent-500);border:1px solid rgba(39,86,166,0.2)}
+[data-theme="dark"] .family-badge.display{background:rgba(39,86,166,0.2);color:var(--accent-300);border-color:rgba(111,146,218,0.3)}
+.family-badge.body{background:var(--bg-muted);color:var(--text-secondary);border:1px solid var(--border-default)}
+.family-badge.mono{background:var(--bg-muted);color:var(--text-tertiary);border:1px solid var(--border-default)}
+.family-name{font-size:28px;font-weight:800;letter-spacing:-0.5px;line-height:1.1;color:var(--text-primary)}
+.family-name.display{font-family:var(--font-display)}
+.family-name.body{font-family:var(--font-body);font-size:26px}
+.family-name.mono{font-family:var(--font-mono);font-size:22px;letter-spacing:0}
+.family-meta{font-size:12px;color:var(--text-tertiary);line-height:1.6}
+.family-meta strong{color:var(--text-secondary);font-weight:500}
+.family-weights{display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-1)}
+.weight-row{display:flex;align-items:baseline;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-subtle)}
+.weight-row:last-child{border-bottom:none}
+.weight-sample{font-size:14px;color:var(--text-primary)}
+.weight-label{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)}
+
+/* ── SCALE TABLE ── */
+.scale-table{width:100%;border-collapse:collapse}
+.scale-row{
+  display:grid;
+  grid-template-columns: 130px 60px 80px 80px 1fr;
+  align-items:center;
+  padding:var(--space-4) 0;
+  border-bottom:1px solid var(--border-subtle);
+  gap:var(--space-4);
+}
+.scale-row:last-child{border-bottom:none}
+.scale-row:hover{background:var(--bg-subtle);margin:0 calc(-1*var(--space-4));padding:var(--space-4);border-radius:var(--radius-md)}
+.scale-token{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);white-space:nowrap;display:inline-block}
+.scale-size{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.scale-weight{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.scale-leading{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.scale-preview-col{overflow:hidden}
+/* scale sizes */
+.ts-display-2xl { font-family:var(--font-display);font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;color:var(--text-primary) }
+.ts-display-xl  { font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;line-height:1.15;color:var(--text-primary) }
+.ts-display-lg  { font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;color:var(--text-primary) }
+.ts-display-md  { font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-0.3px;line-height:1.25;color:var(--text-primary) }
+.ts-display-sm  { font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-0.2px;line-height:1.3;color:var(--text-primary) }
+.ts-text-xl     { font-family:var(--font-body);font-size:18px;font-weight:400;line-height:1.65;color:var(--text-primary) }
+.ts-text-lg     { font-family:var(--font-body);font-size:16px;font-weight:400;line-height:1.6;color:var(--text-primary) }
+.ts-text-md     { font-family:var(--font-body);font-size:15px;font-weight:400;line-height:1.6;color:var(--text-secondary) }
+.ts-text-sm     { font-family:var(--font-body);font-size:13px;font-weight:400;line-height:1.55;color:var(--text-secondary) }
+.ts-text-xs     { font-family:var(--font-body);font-size:12px;font-weight:400;line-height:1.5;color:var(--text-tertiary) }
+.ts-label-lg    { font-family:var(--font-body);font-size:14px;font-weight:500;line-height:1.4;letter-spacing:0.01em;color:var(--text-primary) }
+.ts-label-md    { font-family:var(--font-body);font-size:13px;font-weight:500;line-height:1.4;color:var(--text-primary) }
+.ts-label-sm    { font-family:var(--font-body);font-size:12px;font-weight:500;line-height:1.4;color:var(--text-secondary) }
+.ts-caption     { font-family:var(--font-body);font-size:11px;font-weight:400;line-height:1.45;color:var(--text-tertiary) }
+.ts-code        { font-family:var(--font-mono);font-size:13px;font-weight:400;line-height:1.6;color:var(--text-secondary) }
+.ts-code-sm     { font-family:var(--font-mono);font-size:11px;font-weight:500;line-height:1.5;color:var(--text-tertiary);letter-spacing:0.04em }
+
+/* ── SPECIMEN ── */
+.specimen-block{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--space-8);
+  box-shadow:var(--shadow-md);
+  margin-bottom:var(--space-4);
+}
+.specimen-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4);display:flex;align-items:center;gap:6px}
+.specimen-label::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+
+/* ── UI CONTEXT PREVIEW ── */
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.context-card{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.context-card-header{
+  padding:var(--space-4) var(--space-5);
+  background:var(--bg-muted);
+  border-bottom:1px solid var(--border-subtle);
+  font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);
+  letter-spacing:.07em;text-transform:uppercase;
+}
+.context-card-body{padding:var(--space-5)}
+
+/* medical card specimen */
+.med-card{display:flex;flex-direction:column;gap:var(--space-3)}
+.med-card-title{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:-0.2px;color:var(--text-primary)}
+.med-card-subtitle{font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em}
+.med-card-desc{font-family:var(--font-body);font-size:13px;color:var(--text-secondary);line-height:1.55}
+.med-card-meta{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-1)}
+.med-meta-item{font-family:var(--font-mono);font-size:11px;color:var(--text-disabled);display:flex;align-items:center;gap:4px}
+.med-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:11px;font-weight:500}
+.med-badge.accent{background:rgba(39,86,166,0.1);color:var(--accent-500);border:1px solid rgba(39,86,166,0.2)}
+[data-theme="dark"] .med-badge.accent{background:rgba(39,86,166,0.2);color:var(--accent-300);border-color:rgba(111,146,218,0.3)}
+
+/* table specimen */
+.mini-table{width:100%;border-collapse:collapse;font-size:13px}
+.mini-table th{font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--border-default);text-align:left}
+.mini-table td{font-family:var(--font-body);font-size:13px;color:var(--text-secondary);padding:9px 10px;border-bottom:1px solid var(--border-subtle)}
+.mini-table tr:last-child td{border-bottom:none}
+.mini-table td.name{font-weight:500;color:var(--text-primary)}
+.mini-table td.mono{font-family:var(--font-mono);font-size:12px}
+
+/* form specimen */
+.form-group{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4)}
+.form-label{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-primary)}
+.form-hint{font-size:12px;color:var(--text-tertiary);margin-top:3px}
+.form-input-mock{height:36px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:0 12px;font-family:var(--font-body);font-size:14px;color:var(--text-primary);display:flex;align-items:center}
+.form-input-mock.placeholder{color:var(--text-disabled)}
+
+/* dashboard stat */
+.stat-block{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4);background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle)}
+.stat-label{font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em}
+.stat-value{font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:-0.5px;color:var(--text-primary);line-height:1}
+.stat-delta{font-family:var(--font-body);font-size:12px;font-weight:500;color:#3D9A5C}
+[data-theme="dark"] .stat-delta{color:#6DBF8A}
+
+/* ── TOKEN TABLE ── */
+.token-table{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:13px}
+.token-table thead{background:var(--bg-muted)}
+.token-table th{padding:10px 14px;text-align:left;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.token-table td{padding:10px 14px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.token-table tr:last-child td{border-bottom:none}
+.token-table tr:hover td{background:var(--bg-subtle)}
+.tt-token{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 7px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:inline-block}
+.tt-value{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+.tt-usage{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+/* ── RULES ── */
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.rule-card{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--space-5);background:var(--bg-subtle)}
+.rule-card.forbidden{border-color:#E8AAAA;background:#FDF2F2}
+.rule-card.allowed{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rule-card.forbidden{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rule-card.allowed{border-color:#1F4A30;background:#0F2318}
+.rule-card-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2)}
+.rule-card.forbidden .rule-card-title{color:#7A2323}
+.rule-card.allowed .rule-card-title{color:#2B6B40}
+[data-theme="dark"] .rule-card.forbidden .rule-card-title{color:#E07070}
+[data-theme="dark"] .rule-card.allowed .rule-card-title{color:#6DBF8A}
+.rule-list{list-style:none;display:flex;flex-direction:column;gap:var(--space-2)}
+.rule-list li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--space-4);position:relative}
+.rule-list li::before{position:absolute;left:0;top:1px}
+.rule-card.forbidden .rule-list li::before{content:'✕';color:#C44040;font-size:11px}
+.rule-card.allowed .rule-list li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ── PAIR DEMO ── */
+.pair-demo{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--space-8);box-shadow:var(--shadow-md);display:grid;grid-template-columns:1fr 1fr;gap:var(--space-8)}
+.pair-col-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4);padding-bottom:var(--space-3);border-bottom:1px solid var(--border-subtle)}
+
+/* ── FOOTER ── */
+.page-footer{margin-top:var(--space-16);padding-top:var(--space-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.footer-meta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.footer-badge{display:flex;align-items:center;gap:var(--space-2);font-size:12px;color:var(--text-tertiary)}
+.footer-badge-dot{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+@media(max-width:900px){
+  .family-grid{grid-template-columns:1fr}
+  .context-grid{grid-template-columns:1fr}
+  .pair-demo{grid-template-columns:1fr}
+  .rules-grid{grid-template-columns:1fr}
+  .scale-row{grid-template-columns:120px 55px 1fr}
+}
+@media(max-width:600px){
+  .page{padding:var(--space-8) var(--space-4) var(--space-12)}
+  .topbar{padding:0 var(--space-4)}
+  .page-title{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+      </div>
+      <span class="logo-name">ulamu</span>
+    </a>
+    <div class="topbar-divider"></div>
+    <div class="module-breadcrumb">
+      <span class="tag">CG-02</span>
+      Typographie
+    </div>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Basculer le thème">
+    <div class="toggle-option" id="opt-light">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Clair
+    </div>
+    <div class="toggle-option" id="opt-dark">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>
+      Sombre
+    </div>
+  </div>
+</header>
+
+<!-- ── PAGE ── -->
+<main class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="module-id">Design System · Module CG-02</div>
+    <h1 class="page-title">Typographie</h1>
+    <p class="page-desc">Système typographique complet d'Ulamu. Deux familles humanistes complémentaires, une échelle de 16 paliers, des tokens nommés et des règles d'usage précises par contexte — titres, corps, labels, captions, code. Aucune police utilisée dans l'interface ne doit être hors de ce référentiel.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       01 — FAMILLES DE POLICES
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">01 — Familles de polices</h2>
+      <span class="section-subtitle">Duo humaniste · Plus Jakarta Sans + Inter + JetBrains Mono</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="family-grid">
+
+      <!-- DISPLAY -->
+      <div class="family-card primary">
+        <div>
+          <span class="family-badge display">Display · Titres</span>
+        </div>
+        <div class="family-name display">Plus Jakarta Sans</div>
+        <div class="family-meta">
+          <strong>Rôle :</strong> Tous les titres, headings, KPI metrics, logo, labels d'interface importants.<br/><br/>
+          <strong>Pourquoi :</strong> Géométrie légère portée par des terminaisons humanistes — elle est expressive sans être froide. Ses poids 700/800 ont une présence mémorable aux petites tailles, parfaite pour les dashboards denses.<br/><br/>
+          <strong>Source :</strong> Google Fonts · Open Font License
+        </div>
+        <div class="family-weights">
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:300">Dossier médical du patient</span>
+            <span class="weight-label">Light 300</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:400">Dossier médical du patient</span>
+            <span class="weight-label">Regular 400</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:500">Dossier médical du patient</span>
+            <span class="weight-label">Medium 500</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:600">Dossier médical du patient</span>
+            <span class="weight-label">SemiBold 600</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:700">Dossier médical du patient</span>
+            <span class="weight-label">Bold 700</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-display);font-weight:800">Dossier médical du patient</span>
+            <span class="weight-label">ExtraBold 800 ★</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="family-card">
+        <div>
+          <span class="family-badge body">Corps · Labels · UI</span>
+        </div>
+        <div class="family-name body">Inter</div>
+        <div class="family-meta">
+          <strong>Rôle :</strong> Corps de texte, descriptions, labels de formulaire, contenu de tableaux, métadonnées, hints.<br/><br/>
+          <strong>Pourquoi :</strong> Optimisée pour les interfaces numériques, Inter offre une lisibilité irréprochable à toutes les tailles. Ses proportions neutres ne concurrencent pas Plus Jakarta Sans mais la complètent.<br/><br/>
+          <strong>Source :</strong> Google Fonts · Open Font License
+        </div>
+        <div class="family-weights">
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-body);font-weight:300">Consultation du 12 mars 2026</span>
+            <span class="weight-label">Light 300</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-body);font-weight:400">Consultation du 12 mars 2026</span>
+            <span class="weight-label">Regular 400 ★</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-body);font-weight:500">Consultation du 12 mars 2026</span>
+            <span class="weight-label">Medium 500 ★</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-body);font-weight:600">Consultation du 12 mars 2026</span>
+            <span class="weight-label">SemiBold 600</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONO -->
+      <div class="family-card">
+        <div>
+          <span class="family-badge mono">Mono · Code · Tokens</span>
+        </div>
+        <div class="family-name mono">JetBrains Mono</div>
+        <div class="family-meta">
+          <strong>Rôle :</strong> Valeurs de tokens dans les outils dev, codes d'ordonnances, identifiants patients, références système, valeurs numériques techniques.<br/><br/>
+          <strong>Pourquoi :</strong> Ligatures de programmation intelligentes, lecture aisée des chiffres ambigus (0/O, 1/l). Discrétion parfaite dans l'interface tout en restant clairement distincte des deux autres familles.<br/><br/>
+          <strong>Source :</strong> Google Fonts · Open Font License
+        </div>
+        <div class="family-weights">
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-mono);font-weight:400;font-size:13px">ORD-2026-00412-DKR</span>
+            <span class="weight-label">Regular 400 ★</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-mono);font-weight:500;font-size:13px">ORD-2026-00412-DKR</span>
+            <span class="weight-label">Medium 500 ★</span>
+          </div>
+          <div class="weight-row">
+            <span class="weight-sample" style="font-family:var(--font-mono);font-weight:600;font-size:13px">ORD-2026-00412-DKR</span>
+            <span class="weight-label">SemiBold 600</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       02 — ÉCHELLE TYPOGRAPHIQUE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">02 — Échelle typographique</h2>
+      <span class="section-subtitle">16 paliers nommés · taille · poids · interlignage · rendu live</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <!-- DISPLAY scale -->
+    <div style="margin-bottom:var(--space-6)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4)">DISPLAY — Plus Jakarta Sans</p>
+
+      <div class="scale-row">
+        <span class="scale-token">display-2xl</span>
+        <span class="scale-size">40px</span>
+        <span class="scale-weight">ExtraBold 800</span>
+        <span class="scale-leading">lh 1.1</span>
+        <div class="scale-preview-col"><span class="ts-display-2xl">Ulamu</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">display-xl</span>
+        <span class="scale-size">32px</span>
+        <span class="scale-weight">ExtraBold 800</span>
+        <span class="scale-leading">lh 1.15</span>
+        <div class="scale-preview-col"><span class="ts-display-xl">Tableau de bord</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">display-lg</span>
+        <span class="scale-size">24px</span>
+        <span class="scale-weight">Bold 700</span>
+        <span class="scale-leading">lh 1.2</span>
+        <div class="scale-preview-col"><span class="ts-display-lg">Dossier médical</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">display-md</span>
+        <span class="scale-size">20px</span>
+        <span class="scale-weight">Bold 700</span>
+        <span class="scale-leading">lh 1.25</span>
+        <div class="scale-preview-col"><span class="ts-display-md">Dr. Amara Konaté</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">display-sm</span>
+        <span class="scale-size">18px</span>
+        <span class="scale-weight">SemiBold 600</span>
+        <span class="scale-leading">lh 1.3</span>
+        <div class="scale-preview-col"><span class="ts-display-sm">Rendez-vous du soir</span></div>
+      </div>
+    </div>
+
+    <!-- TEXT scale -->
+    <div style="margin-bottom:var(--space-6)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4)">TEXT — Inter</p>
+
+      <div class="scale-row">
+        <span class="scale-token">text-xl</span>
+        <span class="scale-size">18px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.65</span>
+        <div class="scale-preview-col"><span class="ts-text-xl">Accès aux soins facilité pour tous</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">text-lg</span>
+        <span class="scale-size">16px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.6</span>
+        <div class="scale-preview-col"><span class="ts-text-lg">Le patient est suivi depuis le 03 janvier 2026</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">text-md</span>
+        <span class="scale-size">15px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.6</span>
+        <div class="scale-preview-col"><span class="ts-text-md">Ordonnance numérique signée par le Dr. Konaté</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">text-sm</span>
+        <span class="scale-size">13px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.55</span>
+        <div class="scale-preview-col"><span class="ts-text-sm">Consultez votre médecin avant toute automédication</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">text-xs</span>
+        <span class="scale-size">12px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.5</span>
+        <div class="scale-preview-col"><span class="ts-text-xs">Dernière mise à jour il y a 3 minutes · Synchronisé</span></div>
+      </div>
+    </div>
+
+    <!-- LABEL scale -->
+    <div style="margin-bottom:var(--space-6)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4)">LABEL — Inter Medium</p>
+
+      <div class="scale-row">
+        <span class="scale-token">label-lg</span>
+        <span class="scale-size">14px</span>
+        <span class="scale-weight">Medium 500</span>
+        <span class="scale-leading">lh 1.4</span>
+        <div class="scale-preview-col"><span class="ts-label-lg">Nom du patient</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">label-md</span>
+        <span class="scale-size">13px</span>
+        <span class="scale-weight">Medium 500</span>
+        <span class="scale-leading">lh 1.4</span>
+        <div class="scale-preview-col"><span class="ts-label-md">Spécialité · Cardiologie</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">label-sm</span>
+        <span class="scale-size">12px</span>
+        <span class="scale-weight">Medium 500</span>
+        <span class="scale-leading">lh 1.4</span>
+        <div class="scale-preview-col"><span class="ts-label-sm">Statut actif · En ligne</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">caption</span>
+        <span class="scale-size">11px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.45</span>
+        <div class="scale-preview-col"><span class="ts-caption">Les champs marqués * sont obligatoires</span></div>
+      </div>
+    </div>
+
+    <!-- MONO scale -->
+    <div>
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-4)">CODE / MONO — JetBrains Mono</p>
+
+      <div class="scale-row">
+        <span class="scale-token">code</span>
+        <span class="scale-size">13px</span>
+        <span class="scale-weight">Regular 400</span>
+        <span class="scale-leading">lh 1.6</span>
+        <div class="scale-preview-col"><span class="ts-code">ORD-2026-00412-DKR · PAT-8821-KGL</span></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-token">code-sm</span>
+        <span class="scale-size">11px</span>
+        <span class="scale-weight">Medium 500</span>
+        <span class="scale-leading">lh 1.5</span>
+        <div class="scale-preview-col"><span class="ts-code-sm">--accent-500 · #2756A6 · rgba(39,86,166,0.1)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       03 — SPECIMEN VIVANT
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">03 — Specimen — Hiérarchie en contexte</h2>
+      <span class="section-subtitle">Rendu live des deux familles combinées</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="pair-demo">
+      <!-- Display specimen -->
+      <div>
+        <div class="pair-col-label">Plus Jakarta Sans · Display</div>
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <div>
+            <div style="font-family:var(--font-display);font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;color:var(--text-primary)">Ulamu</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">display-2xl · 40px · 800 · lh 1.1</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;line-height:1.15;color:var(--text-primary)">Tableau de bord</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">display-xl · 32px · 800 · lh 1.15</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;color:var(--text-primary)">Dossier médical</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">display-lg · 24px · 700 · lh 1.2</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)">Dr. Amara Konaté</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">display-md · 20px · 700</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-0.2px;color:var(--text-primary)">Rendez-vous confirmé</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">display-sm · 18px · 600</div>
+          </div>
+          <div style="padding-top:var(--space-4);border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--font-display);font-size:16px;font-weight:400;font-style:italic;color:var(--text-tertiary);line-height:1.5">
+              « Notre application vise à établir un lien direct entre les patients et leurs médecins. »
+            </div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">Plus Jakarta Sans · Italic · Regular</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body specimen -->
+      <div>
+        <div class="pair-col-label">Inter · Corps & Labels</div>
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <div>
+            <div style="font-family:var(--font-body);font-size:16px;font-weight:400;line-height:1.6;color:var(--text-primary)">Le patient Kofi Mensah, 42 ans, consulte pour des douleurs thoraciques récurrentes depuis 3 semaines. Antécédents : hypertension traitée depuis 2019.</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">text-lg · 16px · 400 · lh 1.6</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-body);font-size:13px;font-weight:400;line-height:1.55;color:var(--text-secondary)">Ordonnance numérique signée le 12 mars 2026 par Dr. Konaté. Médicaments : Amlodipine 5mg/j, Ramipril 10mg/j. Renouvellement dans 30 jours.</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">text-sm · 13px · 400 · lh 1.55</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+            <div style="font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-primary)">Nom du patient</div>
+            <div style="font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-secondary)">Spécialité · Cardiologie</div>
+            <div style="font-family:var(--font-body);font-size:11px;font-weight:400;color:var(--text-tertiary)">Dernière connexion il y a 5 min</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:2px">label-md · label-sm · caption</div>
+          </div>
+          <div style="padding-top:var(--space-4);border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--font-mono);font-size:13px;font-weight:400;line-height:1.6;color:var(--text-secondary)">ORD-2026-00412-DKR</div>
+            <div style="font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-disabled);margin-top:4px">--accent-500 · rgba(39,86,166,0.1)</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-top:4px">code · code-sm</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       04 — COMPOSANTS UI EN CONTEXTE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">04 — Typographie dans les composants</h2>
+      <span class="section-subtitle">Carte patient · Tableau · Formulaire · KPI</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="context-grid">
+
+      <!-- CARTE PATIENT -->
+      <div class="context-card">
+        <div class="context-card-header">Carte Patient</div>
+        <div class="context-card-body">
+          <div class="med-card">
+            <div>
+              <div class="med-card-subtitle">Patient · ID PAT-8821-KGL</div>
+              <div class="med-card-title">Kofi Mensah</div>
+            </div>
+            <div class="med-card-desc">Suivi cardiologique. Hypertension artérielle traitée depuis 2019. Dernière consultation le 08 mars 2026.</div>
+            <div class="med-card-meta">
+              <div class="med-meta-item">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>
+                42 ans
+              </div>
+              <div class="med-meta-item">· Dakar, SN</div>
+              <div style="flex:1"></div>
+              <span class="med-badge accent">Actif</span>
+            </div>
+            <div style="padding-top:var(--space-3);border-top:1px solid var(--border-subtle)">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">
+                Title → display-md · Subtitle → label-sm + code-sm · Body → text-sm · Meta → caption + code-sm
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLEAU -->
+      <div class="context-card">
+        <div class="context-card-header">Tableau de données</div>
+        <div class="context-card-body">
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Médecin</th>
+                <th>Spécialité</th>
+                <th>Consultations</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="name">Dr. Konaté</td>
+                <td>Cardiologie</td>
+                <td class="mono">142</td>
+              </tr>
+              <tr>
+                <td class="name">Dr. Diallo</td>
+                <td>Pédiatrie</td>
+                <td class="mono">98</td>
+              </tr>
+              <tr>
+                <td class="name">Dr. Mbeki</td>
+                <td>Neurologie</td>
+                <td class="mono">67</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:var(--space-4);font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">
+            Header → label-sm (uppercase 0.05em) · Cell name → label-md · Cell text → text-sm · Cell number → code
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULAIRE -->
+      <div class="context-card">
+        <div class="context-card-header">Formulaire</div>
+        <div class="context-card-body">
+          <div class="form-group">
+            <div class="form-label">Nom complet <span style="color:#C44040">*</span></div>
+            <div class="form-input-mock">Kofi Mensah</div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Date de naissance</div>
+            <div class="form-input-mock placeholder">JJ/MM/AAAA</div>
+            <div class="form-hint">Format attendu : jour / mois / année à 4 chiffres</div>
+          </div>
+          <div style="margin-top:var(--space-2);font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">
+            Label → label-lg · Input → text-md · Placeholder → text-md (disabled) · Hint → caption
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI DASHBOARD -->
+      <div class="context-card">
+        <div class="context-card-header">KPI · Dashboard</div>
+        <div class="context-card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="stat-block">
+              <div class="stat-label">Patients actifs</div>
+              <div class="stat-value">2 841</div>
+              <div class="stat-delta">+12% ce mois</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-label">Consultations</div>
+              <div class="stat-value">418</div>
+              <div class="stat-delta">+8% ce mois</div>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-4);font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">
+            Label → label-sm (uppercase) · Value → display-lg (800) · Delta → label-sm (success)
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       05 — TOKENS RÉFÉRENCE COMPLÈTE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">05 — Tokens de référence</h2>
+      <span class="section-subtitle">Valeurs CSS variables complètes</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <table class="token-table">
+      <thead>
+        <tr><th>Token</th><th>Famille</th><th>Taille · Poids · Interlignage</th><th>Usage principal</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="tt-token">display-2xl</span></td><td class="tt-value">Plus Jakarta Sans</td><td class="tt-value">40px · 800 · 1.1</td><td class="tt-usage">Page title principal, logo, splash screens</td></tr>
+        <tr><td><span class="tt-token">display-xl</span></td><td class="tt-value">Plus Jakarta Sans</td><td class="tt-value">32px · 800 · 1.15</td><td class="tt-usage">Titre de page, heading section principale</td></tr>
+        <tr><td><span class="tt-token">display-lg</span></td><td class="tt-value">Plus Jakarta Sans</td><td class="tt-value">24px · 700 · 1.2</td><td class="tt-usage">Titre de module, nom de dossier patient, H2</td></tr>
+        <tr><td><span class="tt-token">display-md</span></td><td class="tt-value">Plus Jakarta Sans</td><td class="tt-value">20px · 700 · 1.25</td><td class="tt-usage">Nom de médecin/patient dans une card, H3</td></tr>
+        <tr><td><span class="tt-token">display-sm</span></td><td class="tt-value">Plus Jakarta Sans</td><td class="tt-value">18px · 600 · 1.3</td><td class="tt-usage">Sous-titres de section, titres de modal</td></tr>
+        <tr><td><span class="tt-token">text-xl</span></td><td class="tt-value">Inter</td><td class="tt-value">18px · 400 · 1.65</td><td class="tt-usage">Corps intro, paragraphe de bienvenue</td></tr>
+        <tr><td><span class="tt-token">text-lg</span></td><td class="tt-value">Inter</td><td class="tt-value">16px · 400 · 1.6</td><td class="tt-usage">Corps de texte standard (descriptions, ordonnances)</td></tr>
+        <tr><td><span class="tt-token">text-md</span></td><td class="tt-value">Inter</td><td class="tt-value">15px · 400 · 1.6</td><td class="tt-usage">Corps secondaire, valeurs dans cards</td></tr>
+        <tr><td><span class="tt-token">text-sm</span></td><td class="tt-value">Inter</td><td class="tt-value">13px · 400 · 1.55</td><td class="tt-usage">Contenu de tableaux, listes, descriptions courtes</td></tr>
+        <tr><td><span class="tt-token">text-xs</span></td><td class="tt-value">Inter</td><td class="tt-value">12px · 400 · 1.5</td><td class="tt-usage">Métadonnées, timestamps, info secondaire</td></tr>
+        <tr><td><span class="tt-token">label-lg</span></td><td class="tt-value">Inter</td><td class="tt-value">14px · 500 · 1.4</td><td class="tt-usage">Labels de formulaires, titres de sidebar section</td></tr>
+        <tr><td><span class="tt-token">label-md</span></td><td class="tt-value">Inter</td><td class="tt-value">13px · 500 · 1.4</td><td class="tt-usage">Labels UI, noms dans listes, titres de navigation</td></tr>
+        <tr><td><span class="tt-token">label-sm</span></td><td class="tt-value">Inter</td><td class="tt-value">12px · 500 · 1.4</td><td class="tt-usage">Badges, tags, statuts, en-têtes de colonnes</td></tr>
+        <tr><td><span class="tt-token">caption</span></td><td class="tt-value">Inter</td><td class="tt-value">11px · 400 · 1.45</td><td class="tt-usage">Notes de bas de page, hints de formulaire, légales</td></tr>
+        <tr><td><span class="tt-token">code</span></td><td class="tt-value">JetBrains Mono</td><td class="tt-value">13px · 400 · 1.6</td><td class="tt-usage">IDs patients/ordonnances, tokens, valeurs système</td></tr>
+        <tr><td><span class="tt-token">code-sm</span></td><td class="tt-value">JetBrains Mono</td><td class="tt-value">11px · 500 · 1.5</td><td class="tt-usage">Tags de token CSS, labels de composants, doc design</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       06 — RÈGLES D'USAGE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">06 — Règles d'usage</h2>
+      <span class="section-subtitle">Obligations et interdictions absolues</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="rules-grid">
+      <div class="rule-card forbidden">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>
+          Interdictions absolues
+        </div>
+        <ul class="rule-list">
+          <li>Utiliser Arial, Roboto, Helvetica ou toute police hors du système</li>
+          <li>Dépasser 40px pour les titres — jamais de taille "héroïque" surdimensionnée</li>
+          <li>Utiliser Plus Jakarta Sans pour le corps de texte long (lisibilité dégradée)</li>
+          <li>Utiliser Inter pour les grandes métriques KPI (impact insuffisant)</li>
+          <li>Mélanger plus de 2 familles visibles dans un même écran</li>
+          <li>Utiliser le poids 300 (Light) pour des éléments interactifs</li>
+          <li>Mettre du texte en ALL CAPS avec la famille Display sur plus de 3 mots</li>
+          <li>Appliquer letter-spacing négatif à Inter en dessous de 16px</li>
+          <li>Utiliser JetBrains Mono pour du texte courant ou des titres</li>
+        </ul>
+      </div>
+      <div class="rule-card allowed">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          Bonnes pratiques obligatoires
+        </div>
+        <ul class="rule-list">
+          <li>Toujours utiliser les tokens nommés — jamais de taille px codée en dur</li>
+          <li>Plus Jakarta Sans pour tous les headings H1→H3, KPI metrics, noms propres mis en avant</li>
+          <li>Inter pour tout le texte de lecture longue et tous les labels UI</li>
+          <li>JetBrains Mono exclusivement pour IDs, codes, tokens et valeurs numériques techniques</li>
+          <li>Respecter la hiérarchie : jamais un text-sm plus grand qu'un display-sm dans le même contexte</li>
+          <li>Interlignage 1.5+ obligatoire dès que le texte dépasse une ligne</li>
+          <li>Poids 800 réservé aux niveaux display-2xl et display-xl uniquement</li>
+          <li>Toujours tester la lisibilité des deux thèmes avant de valider un choix typographique</li>
+          <li>letter-spacing -0.8px à -0.2px sur les grandes tailles display uniquement</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="page-footer">
+    <div class="footer-meta">ulamu · Design System · CG-02 · v1.0</div>
+    <div class="footer-badge">
+      <div class="footer-badge-dot"></div>
+      Document validé — Phase 2 en cours
+    </div>
+  </footer>
+
+</main>
+
+<script>
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('opt-light').classList.toggle('active',isDark);
+  document.getElementById('opt-dark').classList.toggle('active',!isDark);
+}
+(function(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.getElementById('opt-dark').classList.toggle('active',isDark);
+  document.getElementById('opt-light').classList.toggle('active',!isDark);
+})();
+</script>
+</body>
+</html>

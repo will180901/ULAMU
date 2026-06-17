@@ -1,0 +1,44 @@
+/* ─────────────────────────────────────────────
+   ULAMU — Espacements, rayons & grilles (CG-03)
+   Base 4px. Échelle de paliers nommés. Layout app desktop.
+───────────────────────────────────────────── */
+
+:root {
+  /* Échelle d'espacement (base 4px) */
+  --sp-0:  0px;
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+
+  /* Rayons */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-full: 9999px;
+
+  /* Layout */
+  --layout-sidebar-width:     240px;
+  --layout-sidebar-collapsed: 56px;
+  --layout-topbar-height:     56px;
+  --layout-content-max:       1140px;
+  --layout-section-gap:       48px;
+  --layout-card-gap:          16px;
+
+  /* Z-index */
+  --z-sidebar: 9; /* @kind other */
+  --z-topbar:  100; /* @kind other */
+  --z-modal:   200; /* @kind other */
+  --z-toast:   300; /* @kind other */
+  --z-grain:   9999; /* @kind other */
+}

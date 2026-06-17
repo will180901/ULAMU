@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-06 Navigation & Structure</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--font-display:'Plus Jakarta Sans',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace;--accent-300:#6F92DA;--accent-500:#2756A6;--accent-600:#1F479A;--radius-sm:4px;--radius-md:6px;--radius-lg:10px;--radius-xl:14px;--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;--grain-svg:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+[data-theme="light"]{--bg-base:#FAFAFA;--bg-subtle:#F4F4F5;--bg-muted:#EBEBEC;--bg-elevated:#FFFFFF;--glass-bg:rgba(255,255,255,0.72);--glass-blur:12px;--glass-border:rgba(0,0,0,0.07);--text-primary:#111112;--text-secondary:#3F3F46;--text-tertiary:#71717A;--text-disabled:#A1A1AA;--text-accent:var(--accent-600);--border-subtle:rgba(0,0,0,0.07);--border-default:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);--shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);--grain-opacity:0.035;--grain-btn:0.06}
+[data-theme="dark"]{--bg-base:#111113;--bg-subtle:#18181B;--bg-muted:#222226;--bg-elevated:#2A2A2F;--glass-bg:rgba(28,28,33,0.72);--glass-blur:14px;--glass-border:rgba(255,255,255,0.07);--text-primary:#F4F4F5;--text-secondary:#A1A1AA;--text-tertiary:#71717A;--text-disabled:#52525B;--text-accent:var(--accent-300);--border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);--shadow-sm:0 1px 3px rgba(0,0,0,0.35);--shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);--shadow-lg:0 6px 24px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.35);--grain-opacity:0.055;--grain-btn:0.09}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;transition:background .25s linear,color .25s linear;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain-opacity);background-image:var(--grain-svg);background-size:180px 180px}
+/* TOPBAR DEMO */
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.logo-mark{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.logo-name{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.tdiv{width:1px;height:20px;background:var(--border-default)}
+.mbc{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.mbc .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .mbc .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.ttog{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer}
+.topt{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px;font-family:var(--font-body)}
+.topt.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+/* PAGE */
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.ph{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.mid{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .mid{color:var(--accent-300)}
+.mid::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.pt{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.pd{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.sec{margin-bottom:var(--sp-12)}
+.shd{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.stit{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.ssub{font-size:13px;color:var(--text-tertiary)}
+.sdiv{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+.dw{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-8);box-shadow:var(--shadow-sm)}
+.dsl{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.dsl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.tt{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:12px;margin-top:var(--sp-6)}
+.tt thead{background:var(--bg-muted)}
+.tt th{padding:9px 13px;text-align:left;font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.tt td{padding:9px 13px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+.tt tr:hover td{background:var(--bg-subtle)}
+.tk{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle);display:inline-block}
+.tv{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.tu{font-size:11px;color:var(--text-secondary);line-height:1.5}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rc{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rc.f{border-color:#E8AAAA;background:#FDF2F2}
+.rc.a{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rc.f{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rc.a{border-color:#1F4A30;background:#0F2318}
+.rt{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rc.f .rt{color:#7A2323}.rc.a .rt{color:#2B6B40}
+[data-theme="dark"] .rc.f .rt{color:#E07070}[data-theme="dark"] .rc.a .rt{color:#6DBF8A}
+.rl{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rl li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rl li::before{position:absolute;left:0;top:1px}
+.rc.f .rl li::before{content:'✕';color:#C44040;font-size:11px}
+.rc.a .rl li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ═══════════════════════════
+   SIDEBAR COMPONENT
+═══════════════════════════ */
+.sidebar-demo{
+  display:grid;grid-template-columns:240px 1fr;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  border:1px solid var(--border-subtle);
+  box-shadow:var(--shadow-lg);
+  height:440px;
+}
+.sidebar{
+  background:var(--glass-bg);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-right:1px solid var(--border-subtle);
+  display:flex;flex-direction:column;
+  padding:var(--sp-4) var(--sp-3);
+  position:relative;overflow:hidden;
+}
+.sidebar::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:calc(var(--grain-opacity)*0.9)}
+.sb-brand{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);margin-bottom:var(--sp-4);z-index:1}
+.sb-logo{width:26px;height:26px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-name{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-0.3px;color:var(--text-primary)}
+.sb-section-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;padding:var(--sp-2) var(--sp-3);margin-bottom:var(--sp-1);z-index:1}
+.nav-item{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:0 var(--sp-3);height:32px;
+  border-radius:var(--radius-md);
+  cursor:pointer;transition:background .2s linear;
+  position:relative;z-index:1;
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  color:var(--text-tertiary);
+  text-decoration:none;
+}
+.nav-item:hover{background:var(--bg-muted)}
+.nav-item.active{background:rgba(39,86,166,0.12);color:var(--text-primary);border:1px solid rgba(39,86,166,0.18)}
+.nav-item.active .nav-icon{color:var(--accent-500)}
+[data-theme="dark"] .nav-item.active .nav-icon{color:var(--accent-300)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;color:var(--text-tertiary)}
+.nav-label{flex:1}
+.nav-badge{min-width:18px;height:18px;border-radius:9px;background:var(--accent-500);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.nav-sep{height:1px;background:var(--border-subtle);margin:var(--sp-2) var(--sp-3)}
+.sb-footer{margin-top:auto;z-index:1}
+.user-row{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--radius-md);cursor:pointer;transition:background .2s linear}
+.user-row:hover{background:var(--bg-muted)}
+.user-av{width:28px;height:28px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.user-info{flex:1}
+.user-name{font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-primary)}
+.user-role{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)}
+/* Sidebar collapsed demo */
+.sidebar-collapsed{
+  width:56px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(14px);
+  border-right:1px solid var(--border-subtle);
+  display:flex;flex-direction:column;align-items:center;
+  padding:var(--sp-4) var(--sp-2);
+  gap:var(--sp-1);
+  position:relative;overflow:hidden;
+}
+.sidebar-collapsed::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:calc(var(--grain-opacity)*0.9)}
+.col-icon{width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s linear;position:relative;z-index:1}
+.col-icon:hover{background:var(--bg-muted)}
+.col-icon.active{background:rgba(39,86,166,0.15)}
+.col-sep{width:24px;height:1px;background:var(--border-subtle);margin:var(--sp-1) 0}
+/* Side content placeholder */
+.side-content{background:var(--bg-base);padding:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4);overflow:hidden}
+.sc-title{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.sc-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4);}
+.sc-bar{height:8px;border-radius:2px;background:var(--bg-muted);margin-bottom:var(--sp-2)}
+
+/* ═══════════════════════════
+   TOPBAR COMPONENT
+═══════════════════════════ */
+.topbar-demo{
+  background:var(--glass-bg);
+  backdrop-filter:blur(12px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-xl);
+  height:56px;
+  display:flex;align-items:center;
+  padding:0 var(--sp-6);
+  gap:var(--sp-4);
+  box-shadow:var(--shadow-sm);
+  position:relative;overflow:hidden;
+}
+.topbar-demo::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:calc(var(--grain-opacity)*0.7)}
+.tb-logo{width:24px;height:24px;background:var(--accent-500);border-radius:var(--radius-sm);flex-shrink:0;z-index:1}
+.tb-name{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-0.3px;color:var(--text-primary);z-index:1}
+.tb-sep{width:1px;height:18px;background:var(--border-default);z-index:1}
+.tb-search{
+  flex:1;max-width:280px;height:30px;
+  background:var(--bg-muted);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);padding:0 10px;
+  display:flex;align-items:center;gap:var(--sp-2);
+  cursor:text;z-index:1;
+}
+.tb-search-text{font-size:12px;color:var(--text-disabled)}
+.tb-spacer{flex:1;z-index:1}
+.tb-action{width:30px;height:30px;border-radius:var(--radius-md);background:var(--bg-muted);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1}
+.tb-notif{position:relative}
+.tb-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#C44040;border:1.5px solid var(--glass-bg)}
+.tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:11px;color:#fff;cursor:pointer;z-index:1}
+
+/* ═══════════════════════════
+   BREADCRUMB
+═══════════════════════════ */
+.breadcrumb{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.bc-item{font-family:var(--font-body);font-size:13px;color:var(--text-tertiary);text-decoration:none;cursor:pointer;transition:color .2s linear}
+.bc-item:hover{color:var(--text-primary)}
+.bc-item.active{color:var(--text-primary);font-weight:500;cursor:default}
+.bc-sep{color:var(--text-disabled);font-size:12px;flex-shrink:0}
+
+/* ═══════════════════════════
+   TABS
+═══════════════════════════ */
+/* Style 1 — underline */
+.tabs-underline{border-bottom:1px solid var(--border-subtle);display:flex;gap:0}
+.tab-ul{padding:10px var(--sp-4);font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-tertiary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s linear;display:flex;align-items:center;gap:var(--sp-2)}
+.tab-ul:hover{color:var(--text-primary)}
+.tab-ul.active{color:var(--accent-500);border-bottom-color:var(--accent-500)}
+[data-theme="dark"] .tab-ul.active{color:var(--accent-300);border-bottom-color:var(--accent-300)}
+/* Style 2 — pills */
+.tabs-pills{display:flex;gap:var(--sp-2);background:var(--bg-muted);border-radius:var(--radius-lg);padding:4px;width:fit-content}
+.tab-pill{padding:6px 14px;font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-tertiary);border-radius:var(--radius-md);cursor:pointer;transition:all .2s linear}
+.tab-pill:hover{color:var(--text-primary)}
+.tab-pill.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+/* Style 3 — vertical */
+.tabs-vertical{display:flex;flex-direction:column;gap:var(--sp-1);width:180px}
+.tab-vert{padding:8px var(--sp-4);font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-tertiary);border-radius:var(--radius-md);cursor:pointer;transition:all .2s linear;display:flex;align-items:center;gap:var(--sp-3)}
+.tab-vert:hover{background:var(--bg-muted);color:var(--text-primary)}
+.tab-vert.active{background:rgba(39,86,166,0.10);color:var(--accent-500)}
+[data-theme="dark"] .tab-vert.active{background:rgba(39,86,166,0.18);color:var(--accent-300)}
+/* Tab content area */
+.tab-content{padding:var(--sp-5);background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);margin-top:var(--sp-4);font-size:13px;color:var(--text-secondary)}
+
+/* ═══════════════════════════
+   PAGINATION
+═══════════════════════════ */
+.pagination{display:flex;align-items:center;gap:var(--sp-1)}
+.pg-btn{
+  min-width:32px;height:32px;border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  color:var(--text-secondary);border:1px solid transparent;
+  cursor:pointer;transition:all .2s linear;
+  background:transparent;padding:0 6px;
+}
+.pg-btn:hover{background:var(--bg-muted);border-color:var(--border-subtle)}
+.pg-btn.active{background:var(--accent-500);color:#fff;border-color:var(--accent-500)}
+.pg-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.pg-ellipsis{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--text-tertiary);font-size:13px}
+.pg-info{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);margin-left:var(--sp-4)}
+
+/* ═══════════════════════════
+   CONTEXT MENU
+═══════════════════════════ */
+.ctx-menu{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);
+  padding:var(--sp-2) 0;
+  min-width:200px;
+  overflow:hidden;
+}
+.ctx-item{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:8px var(--sp-4);
+  font-family:var(--font-body);font-size:13px;
+  color:var(--text-secondary);cursor:pointer;
+  transition:background .15s linear;
+}
+.ctx-item:hover{background:var(--bg-subtle)}
+.ctx-item.danger{color:#C44040}
+[data-theme="dark"] .ctx-item.danger{color:#E07070}
+.ctx-item.danger:hover{background:rgba(196,64,64,0.06)}
+.ctx-item-icon{width:14px;height:14px;flex-shrink:0;color:var(--text-tertiary)}
+.ctx-item.danger .ctx-item-icon{color:#C44040}
+[data-theme="dark"] .ctx-item.danger .ctx-item-icon{color:#E07070}
+.ctx-item-label{flex:1}
+.ctx-item-shortcut{font-family:var(--font-mono);font-size:11px;color:var(--text-disabled)}
+.ctx-sep{height:1px;background:var(--border-subtle);margin:var(--sp-2) 0}
+.ctx-header{padding:6px var(--sp-4);font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase}
+
+/* ═══════════════════════════
+   FOOTER
+═══════════════════════════ */
+.pfoot{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.fmeta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.fbdg{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.fbdgd{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+@media(max-width:900px){.sidebar-demo{grid-template-columns:1fr}.rg{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}.topbar{padding:0 var(--sp-4)}.pt{font-size:24px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#"><div class="logo-mark"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div><span class="logo-name">ulamu</span></a>
+    <div class="tdiv"></div>
+    <div class="mbc"><span class="tag">CG-06</span>Navigation &amp; Structure</div>
+  </div>
+  <div class="ttog" onclick="toggleTheme()">
+    <div class="topt" id="ol"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair</div>
+    <div class="topt active" id="od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre</div>
+  </div>
+</header>
+<main class="page">
+  <div class="ph">
+    <div class="mid">Design System · Module CG-06</div>
+    <h1 class="pt">Navigation &amp; Structure</h1>
+    <p class="pd">Composants de navigation et de structure d'Ulamu : sidebar hybride (étendue + réduite), topbar contextuelle, breadcrumb, onglets (3 styles), pagination et menus contextuels. Tous les composants sont rendus en live dans les deux thèmes.</p>
+  </div>
+
+  <!-- 01 SIDEBAR -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">01 — Sidebar</h2><span class="ssub">Fixe gauche · glass + grain · étendue 240px · réduite 56px</span></div>
+    <div class="sdiv"></div>
+
+    <!-- Étendue -->
+    <div class="dsl" style="margin-bottom:var(--sp-4)">État étendu — 240px</div>
+    <div class="sidebar-demo" style="margin-bottom:var(--sp-6)">
+      <div class="sidebar">
+        <!-- Brand -->
+        <div class="sb-brand">
+          <div class="sb-logo"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/></svg></div>
+          <span class="sb-name">ulamu</span>
+        </div>
+        <!-- Section principale -->
+        <span class="sb-section-label">Principal</span>
+        <a class="nav-item active" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".5"/></svg>
+          <span class="nav-label">Tableau de bord</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg>
+          <span class="nav-label">Patients</span>
+          <span class="nav-badge">24</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h3M5 11h4"/></svg>
+          <span class="nav-label">Dossiers médicaux</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg>
+          <span class="nav-label">Rendez-vous</span>
+          <span class="nav-badge" style="background:#C49128">3</span>
+        </a>
+        <div class="nav-sep"></div>
+        <span class="sb-section-label">Médical</span>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></svg>
+          <span class="nav-label">Ordonnances</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+          <span class="nav-label">Consultations</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 12l4-4 3 3 5-6"/></svg>
+          <span class="nav-label">Analytics</span>
+        </a>
+        <div class="nav-sep"></div>
+        <a class="nav-item" href="#">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+          <span class="nav-label">Paramètres</span>
+        </a>
+        <!-- Footer -->
+        <div class="sb-footer">
+          <div class="nav-sep" style="margin:0 0 var(--sp-2) 0"></div>
+          <div class="user-row">
+            <div class="user-av">AK</div>
+            <div class="user-info">
+              <div class="user-name">Dr. Amara Konaté</div>
+              <div class="user-role">Cardiologue</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M10 5l4 3-4 3M2 8h12"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- Content -->
+      <div class="side-content">
+        <div class="sc-title">Tableau de bord</div>
+        <div class="sc-card"><div class="sc-bar" style="width:60%"></div><div class="sc-bar" style="width:80%"></div><div class="sc-bar" style="width:45%"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+          <div class="sc-card"><div class="sc-bar" style="width:50%;height:12px;margin-bottom:0"></div></div>
+          <div class="sc-card"><div class="sc-bar" style="width:70%;height:12px;margin-bottom:0"></div></div>
+        </div>
+        <div class="sc-card" style="flex:1"><div class="sc-bar" style="width:40%"></div><div style="height:80px;background:var(--bg-subtle);border-radius:var(--radius-md)"></div></div>
+      </div>
+    </div>
+
+    <!-- Réduite -->
+    <div class="dsl" style="margin-bottom:var(--sp-4)">État réduit — 56px (icônes seules)</div>
+    <div style="display:flex;gap:var(--sp-6);align-items:flex-start">
+      <div class="sidebar-collapsed" style="height:300px;border-radius:var(--radius-xl);border:1px solid var(--border-subtle);box-shadow:var(--shadow-lg)">
+        <div style="width:26px;height:26px;background:var(--accent-500);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:var(--sp-3);z-index:1"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/></svg></div>
+        <div class="col-icon active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent-500)" stroke-width="1.4"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/></svg></div>
+        <div class="col-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg></div>
+        <div class="col-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h3"/></svg></div>
+        <div class="col-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg></div>
+        <div class="col-sep"></div>
+        <div class="col-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></svg></div>
+        <div class="col-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg></div>
+        <div style="flex:1"></div>
+        <div class="col-sep"></div>
+        <div class="col-icon"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:10px;color:#fff">AK</div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:var(--sp-4)">
+        <table class="tt" style="margin-top:0">
+          <thead><tr><th>État</th><th>Largeur</th><th>Comportement</th><th>Déclencheur</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tk">Étendu</span></td><td class="tv">240px</td><td class="tu">Affiche icône + label + badges</td><td class="tu">Par défaut ≥ 1024px</td></tr>
+            <tr><td><span class="tk">Réduit</span></td><td class="tv">56px</td><td class="tu">Icônes seules + tooltip au survol</td><td class="tu">Toggle bouton · ≤ 768px auto</td></tr>
+            <tr><td><span class="tk">Caché</span></td><td class="tv">0px</td><td class="tu">Off-screen, overlay sur mobile</td><td class="tu">< 768px · bouton hamburger</td></tr>
+          </tbody>
+        </table>
+        <div style="background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-4)">
+          <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase;margin-bottom:var(--sp-3)">Tokens sidebar</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2)">
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">background</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--glass-bg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">blur</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">14px</span></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">nav-item height</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">32px</span></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">active bg</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">rgba(39,86,166,0.12)</span></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">gap items</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--sp-1 (4px)</span></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--sp-2) 0"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">padding H</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--sp-3 (12px)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 TOPBAR -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">02 — Topbar</h2><span class="ssub">Sticky · glass + grain · height 56px · z-index 100</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Topbar Ulamu — rendu live</div>
+      <div class="topbar-demo" style="margin-bottom:var(--sp-6)">
+        <div class="tb-logo"></div>
+        <span class="tb-name">ulamu</span>
+        <div class="tb-sep"></div>
+        <div class="tb-search">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="color:var(--text-disabled)"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+          <span class="tb-search-text">Rechercher un patient, médecin…</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);margin-left:auto">⌘K</span>
+        </div>
+        <div class="tb-spacer"></div>
+        <div class="tb-action tb-notif">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <div class="tb-notif-dot"></div>
+        </div>
+        <div class="tb-action">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+        </div>
+        <div class="tb-avatar">AK</div>
+      </div>
+      <table class="tt" style="margin-top:0">
+        <thead><tr><th>Zone</th><th>Composant</th><th>Spécification</th></tr></thead>
+        <tbody>
+          <tr><td class="tv">Gauche</td><td><span class="tk">Logo + Nom</span></td><td class="tu">Logo-mark 24px + Plus Jakarta Sans 15px 700 · séparateur 1px</td></tr>
+          <tr><td class="tv">Centre</td><td><span class="tk">Search bar</span></td><td class="tu">max-width 280px · bg-muted · border-subtle · placeholder + raccourci ⌘K</td></tr>
+          <tr><td class="tv">Droite</td><td><span class="tk">Actions + Avatar</span></td><td class="tu">Notif (dot rouge si non lus) · Settings · Avatar 30px avec initiales</td></tr>
+          <tr><td class="tv">Background</td><td><span class="tk">Glass</span></td><td class="tu">--glass-bg · blur 12px · border-bottom 1px --glass-border · grain ×0.7</td></tr>
+          <tr><td class="tv">Position</td><td><span class="tk">Sticky</span></td><td class="tu">top:0 · z-index:100 · height:56px · shadow-sm</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 03 BREADCRUMB -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">03 — Breadcrumb</h2><span class="ssub">Navigation contextuelle · séparateur chevron · 13px Inter</span></div>
+    <div class="sdiv"></div>
+    <div class="dw" style="display:flex;flex-direction:column;gap:var(--sp-6)">
+      <div>
+        <div class="dsl">Simple — 3 niveaux</div>
+        <nav class="breadcrumb">
+          <a class="bc-item">Tableau de bord</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <a class="bc-item">Patients</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <span class="bc-item active">Kofi Mensah</span>
+        </nav>
+      </div>
+      <div>
+        <div class="dsl">Long — 5 niveaux avec troncature</div>
+        <nav class="breadcrumb">
+          <a class="bc-item">Accueil</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <span class="bc-sep" style="color:var(--text-tertiary);cursor:default;font-size:14px">…</span>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <a class="bc-item">Dossiers médicaux</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <span class="bc-item active">Ordonnance ORD-2026-00412</span>
+        </nav>
+      </div>
+      <div>
+        <div class="dsl">Avec icône home</div>
+        <nav class="breadcrumb">
+          <a class="bc-item" style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/></svg>Accueil</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <a class="bc-item">Médecins</a>
+          <span class="bc-sep"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></span>
+          <span class="bc-item active">Dr. Amara Konaté</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 TABS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">04 — Onglets (Tabs)</h2><span class="ssub">Underline · Pills · Vertical — 3 styles contextuels</span></div>
+    <div class="sdiv"></div>
+    <div class="dw" style="display:flex;flex-direction:column;gap:var(--sp-8)">
+
+      <div>
+        <div class="dsl">Style 1 — Underline (défaut, pages principales)</div>
+        <div class="tabs-underline">
+          <div class="tab-ul active">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h3"/></svg>
+            Informations
+          </div>
+          <div class="tab-ul">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 12l4-4 3 3 5-6"/></svg>
+            Historique
+          </div>
+          <div class="tab-ul">Ordonnances <span style="min-width:18px;height:18px;border-radius:9px;background:var(--accent-500);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px">3</span></div>
+          <div class="tab-ul">Paiements</div>
+          <div class="tab-ul" style="opacity:.4;cursor:not-allowed">Analytics</div>
+        </div>
+        <div class="tab-content">
+          <strong style="color:var(--text-primary);display:block;margin-bottom:4px">Informations du patient</strong>
+          Contenu de l'onglet actif affiché ici. Le contenu des autres onglets est caché et chargé à la demande.
+        </div>
+      </div>
+
+      <div>
+        <div class="dsl">Style 2 — Pills (filtres, vues alternatives)</div>
+        <div class="tabs-pills">
+          <div class="tab-pill active">Semaine</div>
+          <div class="tab-pill">Mois</div>
+          <div class="tab-pill">Trimestre</div>
+          <div class="tab-pill">Année</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="dsl">Style 3 — Vertical (paramètres, profil)</div>
+        <div style="display:flex;gap:var(--sp-6)">
+          <div class="tabs-vertical">
+            <div class="tab-vert active">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg>
+              Profil
+            </div>
+            <div class="tab-vert">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5z"/></svg>
+              Notifications
+            </div>
+            <div class="tab-vert">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+              Sécurité
+            </div>
+            <div class="tab-vert">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41"/></svg>
+              Apparence
+            </div>
+            <div class="tab-vert" style="opacity:.4;pointer-events:none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke-linecap="round"/></svg>
+              Facturation
+            </div>
+          </div>
+          <div class="tab-content" style="flex:1;margin-top:0">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px">Profil utilisateur</strong>
+            Paramètres de profil du Dr. Amara Konaté. Modifier vos informations personnelles, photo, spécialité et coordonnées professionnelles.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 PAGINATION -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">05 — Pagination</h2><span class="ssub">Numérotée · ellipsis · prev/next · taille de page</span></div>
+    <div class="sdiv"></div>
+    <div class="dw" style="display:flex;flex-direction:column;gap:var(--sp-6)">
+      <div>
+        <div class="dsl">Standard — page 4 sur 12</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-4)">
+          <div class="pagination">
+            <div class="pg-btn disabled">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 4L6 8l4 4"/></svg>
+            </div>
+            <div class="pg-btn">1</div>
+            <div class="pg-btn">2</div>
+            <div class="pg-btn">3</div>
+            <div class="pg-btn active">4</div>
+            <div class="pg-btn">5</div>
+            <div class="pg-ellipsis">…</div>
+            <div class="pg-btn">12</div>
+            <div class="pg-btn">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>
+            </div>
+          </div>
+          <span class="pg-info">Affichage 31–40 sur 120 résultats</span>
+        </div>
+      </div>
+      <div>
+        <div class="dsl">Compacte — peu de pages</div>
+        <div class="pagination">
+          <div class="pg-btn">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 4L6 8l4 4"/></svg>
+            Précédent
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-2)">
+            <div class="pg-btn">1</div>
+            <div class="pg-btn active">2</div>
+            <div class="pg-btn">3</div>
+          </div>
+          <div class="pg-btn">
+            Suivant
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 CONTEXT MENU -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">06 — Menus contextuels</h2><span class="ssub">Dropdown · Context menu · bg-elevated · shadow-lg · raccourcis</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-8);align-items:start">
+
+        <div>
+          <div class="dsl">Menu contextuel patient</div>
+          <div class="ctx-menu">
+            <div class="ctx-header">Actions patient</div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M11 3H3v10h8M6 8h7M10 5l3 3-3 3"/></svg>
+              <span class="ctx-item-label">Ouvrir le dossier</span>
+              <span class="ctx-item-shortcut">⌘O</span>
+            </div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg>
+              <span class="ctx-item-label">Prendre rendez-vous</span>
+              <span class="ctx-item-shortcut">⌘R</span>
+            </div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></svg>
+              <span class="ctx-item-label">Créer une ordonnance</span>
+            </div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="4" y="1" width="8" height="14" rx="1.5"/><path d="M7 5h2M6 8h4M6 11h3"/></svg>
+              <span class="ctx-item-label">Exporter le dossier</span>
+            </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+              <span class="ctx-item-label">Consulter le profil</span>
+            </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item danger">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2h4v1h3v2H3V3h3V2zm1 4v6H6V6h1zm3 0v6h-1V6h1zM4 5l1 9h6l1-9H4z"/></svg>
+              <span class="ctx-item-label">Archiver le patient</span>
+              <span class="ctx-item-shortcut">⌫</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="dsl">Menu dropdown — sélection</div>
+          <div class="ctx-menu">
+            <div class="ctx-item" style="background:rgba(39,86,166,0.08)">
+              <svg class="ctx-item-icon" style="color:var(--accent-500)" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+              <span class="ctx-item-label" style="color:var(--text-primary)">Cardiologie</span>
+            </div>
+            <div class="ctx-item">
+              <div style="width:14px;flex-shrink:0"></div>
+              <span class="ctx-item-label">Pédiatrie</span>
+            </div>
+            <div class="ctx-item">
+              <div style="width:14px;flex-shrink:0"></div>
+              <span class="ctx-item-label">Neurologie</span>
+            </div>
+            <div class="ctx-item">
+              <div style="width:14px;flex-shrink:0"></div>
+              <span class="ctx-item-label">Gynécologie</span>
+            </div>
+            <div class="ctx-item">
+              <div style="width:14px;flex-shrink:0"></div>
+              <span class="ctx-item-label">Médecine générale</span>
+            </div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item">
+              <svg class="ctx-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+              <span class="ctx-item-label">Ajouter une spécialité</span>
+            </div>
+          </div>
+          <div style="margin-top:var(--sp-4);padding:var(--sp-4);background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle)">
+            <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase;margin-bottom:var(--sp-3)">Tokens menu contextuel</p>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">background</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--bg-elevated</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">border</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">1px --border-default</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">border-radius</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--radius-lg (10px)</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">shadow</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--shadow-lg</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">item height</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">36px</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">item hover</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">--bg-subtle</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">z-index</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-accent)">20</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">07 — Règles d'usage</h2></div>
+    <div class="sdiv"></div>
+    <div class="rg">
+      <div class="rc f"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>Interdictions absolues</div>
+        <ul class="rl">
+          <li>Sidebar sans glassmorphism — toujours glass + grain</li>
+          <li>Nav item actif sans indicateur visuel clair (fond + couleur)</li>
+          <li>Breadcrumb sans lien cliquable sur les segments non-finaux</li>
+          <li>Plus de 3 styles de tabs différents dans la même interface</li>
+          <li>Pagination avec moins de 3 pages numérotées visibles</li>
+          <li>Menu contextuel sans ombre --shadow-lg — jamais plat</li>
+          <li>Topbar sans grain overlay — partie de l'identité visuelle</li>
+          <li>Topbar hors position sticky — toujours visible en scrollant</li>
+        </ul>
+      </div>
+      <div class="rc a"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Bonnes pratiques obligatoires</div>
+        <ul class="rl">
+          <li>Sidebar : section labels en monospace uppercase pour les groupes</li>
+          <li>Nav badge : pills accent pour les nouveaux éléments, warning si urgence</li>
+          <li>Breadcrumb : tronquer au milieu pour les chemins > 4 niveaux</li>
+          <li>Tabs underline : par défaut sur les pages principales (dossier, tableau de bord)</li>
+          <li>Tabs pills : pour les filtres temporels et les vues alternatives</li>
+          <li>Pagination : toujours afficher le total de résultats en info-texte</li>
+          <li>Menus contextuels : grouper les actions par thème avec separateur</li>
+          <li>Actions destructives : toujours en bas du menu, couleur danger, séparateur avant</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot"><div class="fmeta">ulamu · Design System · CG-06 · v1.0</div><div class="fbdg"><div class="fbdgd"></div>Document validé — Phase 2 en cours</div></footer>
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('ol').classList.toggle('active',d);document.getElementById('od').classList.toggle('active',!d)}
+(function(){const d=document.documentElement.getAttribute('data-theme')==='dark';document.getElementById('od').classList.toggle('active',d);document.getElementById('ol').classList.toggle('active',!d)})();
+</script>
+</body>
+</html>
