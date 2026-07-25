@@ -20,6 +20,7 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
+    label: 'Clinique',
     items: [
       { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, href: '/dashboard', capabilities: ['professional', 'facility', 'admin'] },
     ],

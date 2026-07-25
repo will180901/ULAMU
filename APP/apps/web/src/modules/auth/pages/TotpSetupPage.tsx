@@ -13,6 +13,7 @@ import { Card } from '@/components/ulamu/Card'
 import { Button } from '@/components/ulamu/Button'
 import { Field } from '@/components/ulamu/Field'
 import { api, ApiError } from '@/lib/api'
+import { Logo } from '@/components/ulamu/Logo'
 import { useSessionStore } from '@/state/session.store'
 
 type Step = 'loading' | 'scan' | 'backup-codes' | 'error'
@@ -73,8 +74,8 @@ export function TotpSetupPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--fond-page)', padding: 'var(--espace-5)' }}>
       <div style={{ width: 460, maxWidth: '100%' }}>
-        <div style={{ textAlign: 'center', marginBottom: 'var(--espace-6)' }}>
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 28, fontWeight: 700, color: 'var(--texte-primaire)' }}>ULAMU</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--espace-6)' }}>
+          <Logo size={30} />
         </div>
         <Card>
           <Card.Header

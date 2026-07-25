@@ -1,6 +1,8 @@
 /**
  * Inscription web — réservée aux PROFESSIONAL/FACILITY_MEMBER (mêmes routes que la Phase 0 backend).
- * 3 étapes : choix du type de compte → formulaire spécifique → vérification du téléphone par OTP.
+ * Étapes : type de compte → identité → profil professionnel (PROFESSIONAL uniquement) → sécurité →
+ * vérification OTP. Découpé en étapes courtes pour que la carte AuthLayout garde une hauteur correcte
+ * (l'ancienne étape unique "Informations" avec 8 champs débordait).
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -16,9 +18,18 @@ import { useSessionStore } from '@/state/session.store'
 import { useLoadMeMutation } from '../hooks/useLogin'
 
 type AccountType = 'PROFESSIONAL' | 'FACILITY_MEMBER'
-type Step = 'type' | 'form' | 'otp'
-const STEP_LABELS = ['Type de compte', 'Informations', 'Vérification']
-const STEP_INDEX: Record<Step, number> = { type: 0, form: 1, otp: 2 }
+type Step = 'type' | 'identity' | 'profile' | 'security' | 'otp'
+
+const STEPS: Record<AccountType | 'default', Step[]> = {
+  PROFESSIONAL: ['type', 'identity', 'profile', 'security', 'otp'],
+  FACILITY_MEMBER: ['type', 'identity', 'security', 'otp'],
+  default: ['type', 'identity', 'security', 'otp'],
+}
+const LABELS: Record<AccountType | 'default', string[]> = {
+  PROFESSIONAL: ['Type de compte', 'Identité', 'Profil professionnel', 'Sécurité', 'Vérification'],
+  FACILITY_MEMBER: ['Type de compte', 'Identité', 'Sécurité', 'Vérification'],
+  default: ['Type de compte', 'Identité', 'Sécurité', 'Vérification'],
+}
 
 const CATEGORIES: Array<{ value: ProfessionalCategory; label: string }> = [
   { value: 'GENERAL_PRACTITIONER', label: 'Médecin généraliste' },
@@ -47,6 +58,10 @@ export function RegisterPage() {
   const [otpInfo, setOtpInfo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const steps = STEPS[accountType ?? 'default']
+  const labels = LABELS[accountType ?? 'default']
+  const currentIndex = steps.indexOf(step)
+
   const requestOtp = useMutation({ mutationFn: () => api.requestOtp({ phone, purpose: 'REGISTRATION' }) })
   const register = useMutation({
     mutationFn: () =>
@@ -68,6 +83,11 @@ export function RegisterPage() {
   const loadMe = useLoadMeMutation()
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
+
+  const goToSecurity = (e: React.FormEvent) => {
+    e.preventDefault()
+    setStep('security')
+  }
 
   const goToOtp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,7 +121,7 @@ export function RegisterPage() {
 
   return (
     <AuthLayout subtitle="Créez votre compte ULAMU — professionnels de santé et structures/pharmacies.">
-      <Stepper steps={STEP_LABELS} currentIndex={STEP_INDEX[step]} />
+      <Stepper steps={labels} currentIndex={currentIndex} />
 
       <div key={step} className="ulamu-step-fade">
         {step === 'type' ? (
@@ -112,7 +132,7 @@ export function RegisterPage() {
               description="Médecin, spécialiste, dentiste, sage-femme, infirmier(ère)…"
               onClick={() => {
                 setAccountType('PROFESSIONAL')
-                setStep('form')
+                setStep('identity')
               }}
             />
             <TypeCard
@@ -121,16 +141,22 @@ export function RegisterPage() {
               description="Titulaire ou membre d'une officine."
               onClick={() => {
                 setAccountType('FACILITY_MEMBER')
-                setStep('form')
+                setStep('identity')
               }}
             />
             <p style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)', textAlign: 'center', marginTop: 'var(--espace-2)' }}>
               Déjà un compte ? <Link to="/login" style={{ color: 'var(--ap-400)', fontWeight: 600 }}>Se connecter</Link>
             </p>
           </div>
-        ) : step === 'form' ? (
-          <form onSubmit={goToOtp} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
-            <Field label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+242…" required />
+        ) : step === 'identity' ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'security')
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}
+          >
+            <Field label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+242…" autoFocus required />
             <Field label="Nom d'utilisateur" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <div style={{ display: 'flex', gap: 'var(--espace-3)' }}>
               <div style={{ flex: 1 }}>
@@ -140,48 +166,53 @@ export function RegisterPage() {
                 <Field label="Nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
             </div>
-            {accountType === 'PROFESSIONAL' ? (
-              <>
-                <Select
-                  label="Catégorie"
-                  value={category}
-                  onChange={(v) => setCategory(v as ProfessionalCategory)}
-                  options={CATEGORIES}
-                  required
-                />
-                <Field label="Spécialité (optionnel)" value={specialty} onChange={(e) => setSpecialty(e.target.value)} />
-              </>
-            ) : null}
-            <div style={{ display: 'flex', gap: 'var(--espace-3)' }}>
-              <div style={{ flex: 1 }}>
-                <Field
-                  label="Mot de passe"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  hint="8 caractères minimum, lettres et chiffres"
-                  minLength={8}
-                  required
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <Field
-                  label="Confirmez le mot de passe"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  error={confirmPassword && password !== confirmPassword ? 'Ne correspond pas' : undefined}
-                  required
-                />
-              </div>
-            </div>
+
+            <Button type="submit" size="lg">
+              Continuer
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setStep('type')}>
+              Retour
+            </Button>
+          </form>
+        ) : step === 'profile' ? (
+          <form onSubmit={goToSecurity} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+            <Select label="Catégorie" value={category} onChange={(v) => setCategory(v as ProfessionalCategory)} options={CATEGORIES} required />
+            <Field label="Spécialité (optionnel)" value={specialty} onChange={(e) => setSpecialty(e.target.value)} autoFocus />
+
+            <Button type="submit" size="lg">
+              Continuer
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setStep('identity')}>
+              Retour
+            </Button>
+          </form>
+        ) : step === 'security' ? (
+          <form onSubmit={goToOtp} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+            <Field
+              label="Mot de passe"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              hint="8 caractères minimum, lettres et chiffres"
+              minLength={8}
+              autoFocus
+              required
+            />
+            <Field
+              label="Confirmez le mot de passe"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={confirmPassword && password !== confirmPassword ? 'Ne correspond pas' : undefined}
+              required
+            />
 
             {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
 
             <Button type="submit" size="lg" loading={busy} disabled={busy}>
               Continuer
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setStep('type')}>
+            <Button type="button" variant="ghost" onClick={() => setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'identity')}>
               Retour
             </Button>
           </form>
@@ -198,7 +229,7 @@ export function RegisterPage() {
             <Button type="submit" size="lg" loading={busy} disabled={busy}>
               Créer mon compte
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setStep('form')}>
+            <Button type="button" variant="ghost" onClick={() => setStep('security')}>
               Retour
             </Button>
           </form>

@@ -4,6 +4,8 @@
  * en boucle (formes pleines floutées, zéro dégradé CSS) + voile verre dépoli + grain, pour un effet
  * de profondeur. Zone droite : mot "ULAMU" seul (sans icône) + sous-texte + le formulaire de la page.
  */
+import { Logo } from '@/components/ulamu/Logo'
+
 type Blob = { size: number; top: string; left: string; color: string; opacity: number; blur: number; anim: string; duration: string; delay: string }
 
 // 3 couches de profondeur bien différenciées : LOINTAIN = grand + très flou + pâle + un peu plus lent ;
@@ -94,9 +96,7 @@ export function AuthLayout({ subtitle, children }: { subtitle: string; children:
             overflowY: 'auto',
           }}
         >
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--texte-primaire)' }}>
-            ULAMU
-          </div>
+          <Logo size={34} />
           <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)', margin: '6px 0 var(--espace-6)' }}>{subtitle}</p>
           {children}
         </div>

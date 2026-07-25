@@ -6,7 +6,7 @@
  */
 import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Sidebar, SIDEBAR_RAIL_WIDTH } from './Sidebar'
+import { Sidebar, SIDEBAR_WIDTH } from './Sidebar'
 import { TopHeader } from './TopHeader'
 
 function RouteLoader() {
@@ -21,8 +21,8 @@ export function AppShell() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
-      <main className="saris-grain-strong" style={{ marginLeft: SIDEBAR_RAIL_WIDTH, flex: 1, minWidth: 0 }}>
-        <TopHeader title="ULAMU Pro" />
+      <main className="saris-grain-strong" style={{ marginLeft: SIDEBAR_WIDTH, flex: 1, minWidth: 0 }}>
+        <TopHeader title="ULAMU" />
         <div style={{ padding: 'var(--espace-5)', maxWidth: 'var(--layout-max-width)' }}>
           <Suspense fallback={<RouteLoader />}>
             <Outlet />
