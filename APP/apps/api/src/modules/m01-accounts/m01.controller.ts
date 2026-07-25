@@ -15,6 +15,7 @@ import {
   RegisterProfessionalDto,
   RequestOtpDto,
   ResetPasswordDto,
+  ResetPasswordTotpDto,
   StartPhoneChangeDto,
   UpdateAvatarDto,
   UpdateProfileDto,
@@ -71,6 +72,15 @@ export class M01Controller {
   @HttpCode(200)
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.service.resetPassword(dto);
+  }
+
+  /** Réinitialisation web par TOTP — jamais de SMS pour la récupération côté web (règle à respecter). */
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post("auth/password-reset/totp")
+  @HttpCode(200)
+  resetPasswordByTotp(@Body() dto: ResetPasswordTotpDto) {
+    return this.service.resetPasswordByTotp(dto);
   }
 
   // ── Authentifié ─────────────────────────────────────────────────────────────

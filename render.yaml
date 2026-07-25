@@ -37,3 +37,17 @@ services:
         value: "3000"          # le soignant virtuel accepte la consultation après 3 s
       - key: MOMO_AUTOCONFIRM_MS
         value: "4000"          # le paiement Mobile Money se valide tout seul après 4 s (aucun argent réel)
+      - key: CORS_ORIGINS     # origines autorisées à appeler l'API depuis un navigateur (app web pro/structure/admin)
+        value: "https://ulamu-web.onrender.com,http://localhost:5173"
+
+  # App web pro/structure/admin — même principe que CMS-SARIS (site statique, déploiement auto à chaque push).
+  - type: web
+    name: ulamu-web
+    runtime: static
+    rootDir: APP/apps/web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        value: https://ulamu-api.onrender.com

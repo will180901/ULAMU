@@ -67,6 +67,13 @@ export class ResetPasswordDto {
   @IsString() @Length(8, 128) newPassword!: string;
 }
 
+/** Réinitialisation par TOTP (web uniquement — RG-WEB-01 : jamais de SMS pour la récupération web). */
+export class ResetPasswordTotpDto {
+  @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
+  @IsString() @Length(6, 10) code!: string;
+  @IsString() @Length(8, 128) newPassword!: string;
+}
+
 export class StartPhoneChangeDto {
   @IsString() @IsNotEmpty() newPhone!: string;
 }

@@ -516,6 +516,23 @@ export class M01Service {
     });
   }
 
+  /** Réinitialisation web par TOTP (jamais de SMS pour la récupération côté web — règle à respecter). */
+  async resetPasswordByTotp(dto: { username: string; code: string; newPassword: string }): Promise<void> {
+    this.ensurePasswordOk(dto.newPassword);
+    const username = normalizeUsername(dto.username);
+    const account = await this.prisma.account.findUnique({ where: { username }, include: { totpSecret: true } });
+    if (!account || !account.totpSecret?.enabled) throw new UnauthorizedException("Compte introuvable ou TOTP non activé");
+    if (!(await this.checkTotpOrBackup(account.id, account.totpSecret.encryptedSecret, dto.code))) {
+      throw new UnauthorizedException("Code invalide");
+    }
+    const passwordHash = await hashPassword(dto.newPassword);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.account.update({ where: { id: account.id }, data: { passwordHash } });
+      await tx.loginSession.updateMany({ where: { accountId: account.id, revokedAt: null }, data: { revokedAt: new Date() } });
+      await this.audit.emit(tx, { actorId: account.id, action: "m01.password.reset.totp", resource: `account:${account.id}` });
+    });
+  }
+
   // ── Changement de numéro (EF-01-07 ; CU-01-05) ─────────────────────────────
 
   async startPhoneChange(accountId: string, rawNewPhone: string): Promise<void> {

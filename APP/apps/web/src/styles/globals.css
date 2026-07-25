@@ -1,0 +1,305 @@
+/**
+ * Système de design ULAMU (app web professionnel/structure/admin) — port fidèle du système
+ * CMS-SARIS (packages/ui/src/styles/globals.css), même structure/mécaniques, SEULE différence :
+ * accent cobalt ULAMU (#2756A6, déjà la couleur de marque sur mobile) à la place du teal SARIS.
+ * Règles reprises telles quelles (charte SARIS) :
+ *  - variables CSS uniquement, jamais de hex en dur dans un composant ;
+ *  - composants applicatifs en style inline consommant ces variables (Tailwind = utilitaires structurels
+ *    seulement, jamais le style de marque) ;
+ *  - zéro dégradé (sauf remplissages de graphiques) ; rayons plafonnés à 10px ;
+ *  - grain + verre dépoli partout (sidebar/en-tête/toasts/cartes) ; ombres désactivées en sombre ;
+ *  - encre douce, jamais de noir pur.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/sora";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ── Accent ULAMU (cobalt) — seuls 400/500 portent la couleur de marque ── */
+  --ap-50: #E9EDF1;
+  --ap-100: #DBE1E8;
+  --ap-200: #C3CBD5;
+  --ap-300: #A3ACB8;
+  --ap-400: #2756A6; /* accent — couleur de marque ULAMU (mobile: accent500) */
+  --ap-400-rgb: 39, 86, 166; /* triplet RGB du même token, pour un rgba() (halo de focus) qui ne se
+    désynchronise jamais si l'accent change un jour — piège identifié dans CMS-SARIS, à ne pas reproduire. */
+  --ap-500: #1F479A; /* accent hover — (mobile: accent600) */
+  --ap-600: #586472;
+  --ap-700: #3F4A58;
+  --ap-800: #2F3845;
+  --ap-900: #1F2731;
+
+  /* ── Secondaire "Or Congo" (identique SARIS — décoratif, pas la marque) ── */
+  --as-50: #F6EBD2;
+  --as-100: #EEDCB1;
+  --as-200: #E2C583;
+  --as-300: #D3AC57;
+  --as-400: #C99A2E;
+  --as-500: #B08322;
+  --as-600: #8C6A1C;
+  --as-700: #6C5115;
+  --as-800: #4D3A08;
+  --as-900: #332705;
+
+  /* ── Gris froids (GitHub-like) ── */
+  --g-0: #FFFFFF;
+  --g-1: #F4F6F8;
+  --g-2: #EAECF0;
+  --g-3: #D0D5DD;
+  --g-4: #B5BCC8;
+  --g-5: #8892A4;
+  --g-6: #64748B;
+  --g-7: #475569;
+  --g-8: #334155;
+  --g-9: #1E293B;
+  --g-10: #0F172A;
+
+  /* ── Surfaces ── */
+  --fond-page: #F4F6F8;
+  --fond-surface: #FFFFFF;
+  --fond-surface-2: #F0F2F5;
+  --fond-input: #EAECF0;
+  --bordure-input: #8892A4;
+
+  /* ── Texte (jamais pur noir) ── */
+  --texte-primaire: #242B34;
+  --texte-secondaire: #54606E;
+  --texte-tertiaire: #98A2B2;
+
+  /* ── Bordures ── */
+  --bordure-legere: rgba(15, 23, 42, 0.10);
+  --bordure-normale: rgba(15, 23, 42, 0.18);
+  --bordure-forte: rgba(15, 23, 42, 0.34);
+
+  /* ── Sémantique — strictement séparée de l'accent/des tons décoratifs (jamais un choix esthétique) ── */
+  --succes-fond: #EAF3EC; --succes-texte: #2D6A3F; --succes-accent: #3D7A5E; --succes-bordure: rgba(45, 106, 63, 0.2);
+  --erreur-fond: #F5EAEA; --erreur-texte: #7A2E2E; --erreur-accent: #9B4444; --erreur-bordure: rgba(122, 46, 46, 0.2);
+  --alerte-fond: #F5EEDF; --alerte-texte: #6B4D1A; --alerte-accent: #8A6A2A; --alerte-bordure: rgba(107, 77, 26, 0.2);
+  --info-fond: #E6EFF5; --info-texte: #2A4F6B; --info-accent: #3A6080; --info-bordure: rgba(42, 79, 107, 0.2);
+
+  /* ── Tons décoratifs (icônes/avatars — pas sémantiques) ── */
+  --ton-rose-fond: #FBEAF1; --ton-rose-bordure: #F3C6D9; --ton-rose-icone: #C24E82;
+  --ton-violet-fond: #F1EAFB; --ton-violet-bordure: #D9C6F3; --ton-violet-icone: #7C4EC2;
+  --ton-bleu-fond: #E9EDF9; --ton-bleu-bordure: #C6D0F0; --ton-bleu-icone: #3D5FA8;
+  --ton-emeraude-fond: #E7F5EE; --ton-emeraude-bordure: #BEE6D3; --ton-emeraude-icone: #2E8A5C;
+  --ton-cyan-fond: #E5F5F7; --ton-cyan-bordure: #B9E5EA; --ton-cyan-icone: #2A8E9C;
+  --ton-ambre-fond: #FCF3E1; --ton-ambre-bordure: #F0DBA8; --ton-ambre-icone: #B3801E;
+
+  /* ── Ombres (light) — 5 niveaux, chacun = 1 ombre large diffuse + 1 liseré fin de 1px (rendu plus doux) ── */
+  --ombre-0: none;
+  --ombre-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.03);
+  --ombre-2: 0 3px 8px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  --ombre-3: 0 8px 20px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  --ombre-4: 0 16px 36px rgba(15, 23, 42, 0.13), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  --ombre-5: 0 24px 56px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.07);
+
+  /* ── Verre dépoli ── */
+  --verre-fond: color-mix(in srgb, var(--fond-surface) 82%, transparent);
+  --verre-blur: 14px;
+  --glass-sidebar-bg: rgba(255, 255, 255, 0.72); --glass-sidebar-blur: 16px;
+  --glass-header-bg: rgba(255, 255, 255, 0.68); --glass-header-blur: 14px;
+  --glass-card-bg: rgba(255, 255, 255, 0.80); --glass-card-blur: 12px;
+  --glass-toast-bg: rgba(255, 255, 255, 0.88); --glass-toast-blur: 20px;
+  --glass-bordure: rgba(15, 23, 42, 0.10);
+  /* Rideau AuthLayout — bien plus transparent que --glass-card-bg (qui écraserait la fumée dessous). */
+  --glass-auth-bg: rgba(255, 255, 255, 0.22); --glass-auth-blur: 8px;
+
+  /* ── Grain (bruit SVG) ── */
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-size-fine: 110px; --grain-size: 200px; --grain-size-strong: 260px; --grain-blend: normal;
+
+  /* ── Rayons (plafond 10px) ── */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-xl: 10px;
+  --radius-2xl: 10px; --radius-3xl: 10px; --radius-4xl: 10px;
+
+  /* ── Typographie ── */
+  --font-sans: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Sora Variable', 'Plus Jakarta Sans Variable', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'Courier New', monospace;
+  --font-size-display: 28px; --font-size-h1: 22px; --font-size-h2: 18px; --font-size-h3: 16px; --font-size-h4: 14px;
+  --font-size-body-lg: 15px; --font-size-body: 14px; --font-size-body-sm: 13px;
+  --font-size-label: 12px; --font-size-caption: 11px; --font-size-overline: 10px;
+
+  /* ── Espacement (base 4px) ── */
+  --espace-px: 2px; --espace-1: 4px; --espace-2: 8px; --espace-3: 12px; --espace-4: 16px; --espace-5: 20px;
+  --espace-6: 24px; --espace-7: 28px; --espace-8: 32px; --espace-10: 40px; --espace-12: 48px; --espace-14: 56px; --espace-16: 64px;
+
+  /* ── Layout ── */
+  --layout-sidebar-width: 240px; --layout-topbar-height: 54px; --layout-max-width: 1100px; --layout-subnav-height: 40px;
+
+  /* ── Pont shadcn ── */
+  --background: var(--fond-page); --foreground: var(--texte-primaire);
+  --card: var(--fond-surface); --popover: var(--fond-surface);
+  --primary: var(--ap-400); --primary-foreground: #FFFFFF;
+  --secondary: var(--fond-surface-2); --secondary-foreground: var(--texte-primaire);
+  --muted: var(--fond-surface-2); --muted-foreground: var(--texte-secondaire);
+  --accent: var(--ap-50); --accent-foreground: var(--ap-700);
+  --destructive: var(--erreur-accent);
+  --border: var(--bordure-normale); --input: var(--bordure-input); --ring: var(--ap-400);
+}
+
+.dark {
+  --ap-50: #262E38; --ap-100: #313A45; --ap-200: #3D4753; --ap-300: #5A6573;
+  --ap-400: #2756A6; --ap-400-rgb: 39, 86, 166; --ap-500: #1F479A;
+  --ap-600: #98A6B5; --ap-700: #B7C0CB; --ap-800: #CFD6DE; --ap-900: #E0E5EB;
+
+  --as-50: #332705; --as-100: #4D3A08; --as-200: #6C5115; --as-300: #8C6A1C; --as-400: #B08322;
+  --as-500: #C99A2E; --as-600: #D3AC57; --as-700: #E2C583; --as-800: #EEDCB1; --as-900: #F6EBD2;
+
+  --fond-page: #0D1117; --fond-surface: #161B22; --fond-surface-2: #1C2333; --fond-input: #21262D; --bordure-input: #21262D;
+
+  --texte-primaire: #E6EDF3; --texte-secondaire: #8B949E; --texte-tertiaire: #484F58;
+
+  --bordure-legere: rgba(230, 237, 243, 0.08); --bordure-normale: rgba(230, 237, 243, 0.14); --bordure-forte: rgba(230, 237, 243, 0.28);
+
+  /* Recalculées pour le sombre (pas juste éclaircies) : fond quasi-noir teinté + texte/accent lumineux. */
+  --succes-fond: #1A2E20; --succes-texte: #7EE2A0; --succes-accent: #56C47A; --succes-bordure: rgba(126, 226, 160, 0.25);
+  --erreur-fond: #2E1A1A; --erreur-texte: #E29999; --erreur-accent: #C45656; --erreur-bordure: rgba(226, 153, 153, 0.25);
+  --alerte-fond: #2E2717; --alerte-texte: #E2C978; --alerte-accent: #C4A156; --alerte-bordure: rgba(226, 201, 120, 0.25);
+  --info-fond: #1A222E; --info-texte: #99BFE2; --info-accent: #5691C4; --info-bordure: rgba(153, 191, 226, 0.25);
+
+  /* Ombres désactivées en sombre — une ombre portée ne se voit presque pas sur fond déjà sombre ;
+     la hiérarchie visuelle passe par la bordure à la place (--bordure-normale/-forte). */
+  --ombre-0: none; --ombre-1: none; --ombre-2: none; --ombre-3: none; --ombre-4: none; --ombre-5: none;
+
+  --verre-fond: color-mix(in srgb, var(--fond-surface) 68%, transparent);
+  --glass-sidebar-bg: rgba(13, 17, 23, 0.72); --glass-header-bg: rgba(13, 17, 23, 0.68);
+  --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
+  --glass-bordure: rgba(230, 237, 243, 0.10);
+  --glass-auth-bg: rgba(13, 17, 23, 0.28); --glass-auth-blur: 8px;
+
+  --background: var(--fond-page); --foreground: var(--texte-primaire);
+  --card: var(--fond-surface); --popover: var(--fond-surface);
+  --primary: var(--ap-400); --primary-foreground: #FFFFFF;
+  --secondary: var(--fond-surface-2); --secondary-foreground: var(--texte-primaire);
+  --muted: var(--fond-surface-2); --muted-foreground: var(--texte-secondaire);
+  --accent: var(--ap-50); --accent-foreground: var(--ap-700);
+  --destructive: var(--erreur-accent);
+  --border: var(--bordure-normale); --input: var(--bordure-input); --ring: var(--ap-400);
+}
+
+[data-densite="compact"] {
+  --espace-3: 9px; --espace-4: 12px; --espace-5: 15px; --espace-6: 18px; --espace-8: 24px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-popover: var(--popover);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html, body, #root { height: 100%; }
+  body {
+    background: var(--fond-page);
+    color: var(--texte-primaire);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-image: var(--grain-url);
+    background-size: var(--grain-size) var(--grain-size);
+    background-blend-mode: var(--grain-blend);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+  button { cursor: pointer; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--bordure-forte); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+.saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
+.saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
+.saris-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); background-blend-mode: var(--grain-blend); }
+.saris-glass { background: var(--verre-fond); backdrop-filter: blur(var(--verre-blur)); -webkit-backdrop-filter: blur(var(--verre-blur)); }
+/* Anneau de focus UNIQUE dans toute l'app, toujours accent-400 même sur un composant "danger" — jamais
+   teinté par la couleur locale, pour que le focus clavier reste instantanément reconnaissable. Décalé
+   vers l'INTÉRIEUR (-2px) pour ne jamais être coupé par un parent overflow:hidden. */
+.saris-focus-ring:focus-visible { outline: 2px solid var(--ap-400); outline-offset: -2px; }
+.saris-col-resize { cursor: col-resize; }
+/* Item survolé/focus clavier dans <Select> (Radix pilote data-highlighted, pas accessible en style inline). */
+.ulamu-select-item[data-highlighted] { background: var(--ap-50); color: var(--ap-700); }
+/* Motif "overline" — méta-libellé discret (catégorie/section), revient systématiquement dans toute l'app. */
+.saris-overline {
+  font-size: var(--font-size-overline);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texte-tertiaire);
+}
+
+@media (prefers-contrast: more) {
+  body, .saris-grain-fine, .saris-grain, .saris-grain-strong { background-image: none !important; }
+}
+
+/* Fumée animée (AuthLayout) — formes pleines floutées, jamais de dégradé CSS. 4 trajectoires à 4-5
+   arrêts chacune (pas juste aller-retour) pour un déplacement qui va vraiment "dans tous les sens",
+   amplitude large (jusqu'à ~30% du bloc) pour que le mouvement reste perceptible à travers le rideau. */
+@keyframes ulamu-smoke-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25% { transform: translate(22%, -18%) scale(1.12) rotate(10deg); }
+  50% { transform: translate(-14%, -30%) scale(0.92) rotate(-4deg); }
+  75% { transform: translate(-26%, 12%) scale(1.08) rotate(-14deg); }
+}
+@keyframes ulamu-smoke-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25% { transform: translate(-20%, 20%) scale(1.15) rotate(-12deg); }
+  50% { transform: translate(18%, 28%) scale(0.9) rotate(8deg); }
+  75% { transform: translate(24%, -10%) scale(1.05) rotate(16deg); }
+}
+@keyframes ulamu-smoke-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  30% { transform: translate(16%, 24%) scale(1.1) rotate(14deg); }
+  60% { transform: translate(-24%, 8%) scale(0.88) rotate(-10deg); }
+  85% { transform: translate(-10%, -22%) scale(1.14) rotate(6deg); }
+}
+@keyframes ulamu-smoke-drift-d {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  35% { transform: translate(-18%, -20%) scale(1.08) rotate(-8deg); }
+  65% { transform: translate(20%, -14%) scale(0.93) rotate(12deg); }
+  90% { transform: translate(14%, 22%) scale(1.1) rotate(-6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ulamu-smoke-blob { animation: none !important; }
+}
+
+/* Transition entre étapes d'un formulaire multi-étapes (inscription). */
+@keyframes ulamu-step-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ulamu-step-fade { animation: ulamu-step-fade 0.28s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .ulamu-step-fade { animation: none !important; }
+}
