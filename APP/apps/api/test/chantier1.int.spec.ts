@@ -50,6 +50,7 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
     await m01.requestOtp(phone, "REGISTRATION");
     return m01.registerFacilityMember({
       phone,
+      username: "u" + phone.replace(/\D/g, "").slice(-9),
       otpCode: lastOtpFor(phone),
       password: "motdepasse1",
       firstName,

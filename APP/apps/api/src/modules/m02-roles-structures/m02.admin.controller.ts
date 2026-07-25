@@ -3,10 +3,11 @@
  * Le premier SUPER_ADMIN est créé par le seed (bootstrap) — il active son TOTP puis opère ici.
  */
 import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
-import { IsIn, IsNotEmpty, IsOptional, IsString, Length, MaxLength } from "class-validator";
+import { IsIn, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
+import { USERNAME_MSG, USERNAME_REGEX } from "../m01-accounts/m01.dto";
 import { M02Service } from "./m02.service";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN_FINANCE", "ADMIN_VERIFICATION", "ADMIN_MAP"] as const;
@@ -14,6 +15,7 @@ type AdminRoleName = (typeof ADMIN_ROLES)[number];
 
 export class CreateAdminDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(8, 128) password!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) lastName!: string;

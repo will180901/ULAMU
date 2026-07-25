@@ -207,7 +207,7 @@ describe("Chantier 4 — ordonnance → recherche → dévoilement → délivran
     // ── Médecin (vérifié) + patients ───────────────────────────────────────────
     await m01.requestOtp(DOCTOR, "REGISTRATION");
     doctorId = (await m01.registerProfessional({
-      phone: DOCTOR, otpCode: lastOtp(DOCTOR), password: "motdepasse1",
+      phone: DOCTOR, username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastOtp(DOCTOR), password: "motdepasse1",
       firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "desktop",
     })).accountId;
     await m01.requestOtp(PATIENT, "REGISTRATION");

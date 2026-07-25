@@ -75,6 +75,33 @@ export class OffersService {
     };
   }
 
+  // ── EF-05-01 : profil public (bio/spécialité/arrondissement) ────────────────
+
+  /** Modifie mon profil public — M01 (updateMyProfile/setAvatar) est réservé aux comptes patients. */
+  async updateMyProfile(
+    actor: AuthenticatedActor,
+    dto: { specialty?: string; biography?: string; district?: string },
+  ): Promise<{ specialty: string | null; biography: string | null; district: string | null }> {
+    if (actor.accountType !== "PROFESSIONAL") {
+      throw new ForbiddenException("Action réservée aux professionnels de santé (EF-05-01)");
+    }
+    const updated = await this.prisma.professionalProfile.update({
+      where: { accountId: actor.accountId },
+      data: {
+        ...(dto.specialty !== undefined ? { specialty: dto.specialty } : {}),
+        ...(dto.biography !== undefined ? { biography: dto.biography } : {}),
+        ...(dto.district !== undefined ? { district: dto.district } : {}),
+      },
+    });
+    await this.audit.emit(this.prisma, {
+      actorId: actor.accountId,
+      actorType: "professional",
+      action: "m05.profile.updated",
+      resource: `account:${actor.accountId}`,
+    });
+    return { specialty: updated.specialty, biography: updated.biography, district: updated.district };
+  }
+
   // ── EF-05-02 : créer une offre (CU-05-03) ───────────────────────────────────
 
   async createOffer(actor: AuthenticatedActor, dto: CreateOfferDto): Promise<OfferView> {

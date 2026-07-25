@@ -153,7 +153,7 @@ describe("Chantier 3 — parcours 🅰 complet (M01→M03→M05→M06→M07→M1
     // Inscriptions.
     await m01.requestOtp(DOCTOR, "REGISTRATION");
     doctorId = (await m01.registerProfessional({
-      phone: DOCTOR, otpCode: lastOtp(DOCTOR), password: "motdepasse1",
+      phone: DOCTOR, username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastOtp(DOCTOR), password: "motdepasse1",
       firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "desktop",
     })).accountId;
     await m01.requestOtp(PATIENT, "REGISTRATION");

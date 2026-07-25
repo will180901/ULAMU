@@ -175,6 +175,7 @@ export class M01Service {
 
   async registerProfessional(dto: {
     phone: string;
+    username: string;
     otpCode: string;
     password: string;
     firstName: string;
@@ -186,46 +187,59 @@ export class M01Service {
   }): Promise<{ accountId: string; sessionToken: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
+    const username = normalizeUsername(dto.username);
+    if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
+    await this.ensureUsernameFree(username);
     this.ensurePasswordOk(dto.password);
     const passwordHash = await hashPassword(dto.password);
 
-    return this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
-      const account = await tx.account.create({
-        data: {
-          phone,
-          passwordHash,
-          type: "PROFESSIONAL",
-          professionalProfile: {
-            create: {
-              firstName: dto.firstName,
-              lastName: dto.lastName,
-              category: dto.category,
-              specialty: dto.specialty ?? null,
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
+        const account = await tx.account.create({
+          data: {
+            phone,
+            username,
+            passwordHash,
+            type: "PROFESSIONAL",
+            professionalProfile: {
+              create: {
+                firstName: dto.firstName,
+                lastName: dto.lastName,
+                category: dto.category,
+                specialty: dto.specialty ?? null,
+              },
+            },
+            consents: {
+              createMany: {
+                data: [
+                  { documentType: "CGU", documentVersion: "1.0" },
+                  { documentType: "PRIVACY", documentVersion: "1.0" },
+                ],
+              },
             },
           },
-          consents: {
-            createMany: {
-              data: [
-                { documentType: "CGU", documentVersion: "1.0" },
-                { documentType: "PRIVACY", documentVersion: "1.0" },
-              ],
-            },
-          },
-        },
+        });
+        const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
+        // → M03 ouvre le dossier de vérification (CU-01-02) ; invisible dans l'annuaire d'ici là (C6).
+        await this.outbox.emit(tx, { type: "m01.account.professional_created", payload: { accountId: account.id } });
+        await this.audit.emit(tx, {
+          actorId: account.id,
+          actorType: "professional",
+          action: "m01.account.created",
+          resource: `account:${account.id}`,
+          context: { type: "PROFESSIONAL", category: dto.category },
+        });
+        return { accountId: account.id, sessionToken: token };
       });
-      const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
-      // → M03 ouvre le dossier de vérification (CU-01-02) ; invisible dans l'annuaire d'ici là (C6).
-      await this.outbox.emit(tx, { type: "m01.account.professional_created", payload: { accountId: account.id } });
-      await this.audit.emit(tx, {
-        actorId: account.id,
-        actorType: "professional",
-        action: "m01.account.created",
-        resource: `account:${account.id}`,
-        context: { type: "PROFESSIONAL", category: dto.category },
-      });
-      return { accountId: account.id, sessionToken: token };
-    });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
+        if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
+        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+      }
+      throw e;
+    }
   }
 
   /**
@@ -234,6 +248,7 @@ export class M01Service {
    */
   async registerFacilityMember(dto: {
     phone: string;
+    username: string;
     otpCode: string;
     password: string;
     firstName: string;
@@ -243,14 +258,19 @@ export class M01Service {
   }): Promise<{ accountId: string; sessionToken: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
+    const username = normalizeUsername(dto.username);
+    if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
+    await this.ensureUsernameFree(username);
     this.ensurePasswordOk(dto.password);
     const passwordHash = await hashPassword(dto.password);
 
-    return this.prisma.$transaction(async (tx) => {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
       await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
       const account = await tx.account.create({
         data: {
           phone,
+          username,
           passwordHash,
           type: "FACILITY_MEMBER",
           facilityMemberProfile: { create: { firstName: dto.firstName, lastName: dto.lastName } },
@@ -264,17 +284,25 @@ export class M01Service {
           },
         },
       });
-      const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
-      await this.outbox.emit(tx, { type: "m01.account.facility_member_created", payload: { accountId: account.id } });
-      await this.audit.emit(tx, {
-        actorId: account.id,
-        actorType: "facility_member",
-        action: "m01.account.created",
-        resource: `account:${account.id}`,
-        context: { type: "FACILITY_MEMBER" },
+        const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
+        await this.outbox.emit(tx, { type: "m01.account.facility_member_created", payload: { accountId: account.id } });
+        await this.audit.emit(tx, {
+          actorId: account.id,
+          actorType: "facility_member",
+          action: "m01.account.created",
+          resource: `account:${account.id}`,
+          context: { type: "FACILITY_MEMBER" },
+        });
+        return { accountId: account.id, sessionToken: token };
       });
-      return { accountId: account.id, sessionToken: token };
-    });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
+        if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
+        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+      }
+      throw e;
+    }
   }
 
   // ── Connexion (EF-01-03/06/10 ; CU-01-03/08) ───────────────────────────────
@@ -375,23 +403,31 @@ export class M01Service {
   async getMe(accountId: string) {
     const account = await this.prisma.account.findUnique({
       where: { id: accountId },
-      include: { patientProfile: true, totpSecret: true },
+      include: { patientProfile: true, professionalProfile: true, facilityMemberProfile: true, adminRole: true, totpSecret: true },
     });
     if (!account || account.status !== "ACTIVE") {
       throw new UnauthorizedException("Compte introuvable ou inactif");
     }
-    const p = account.patientProfile;
+    // Une seule forme plate (pas d'union) : plus simple à consommer côté client, champs spécifiques
+    // à un type de compte (patient/professionnel/structure) simplement à null quand non applicables.
+    const patient = account.patientProfile;
+    const pro = account.professionalProfile;
+    const facility = account.facilityMemberProfile;
     return {
       accountId: account.id,
       accountType: account.type,
       username: account.username,
       phone: account.phone,
-      firstName: p?.firstName ?? null,
-      lastName: p?.lastName ?? null,
-      birthDate: p ? p.birthDate.toISOString().slice(0, 10) : null,
-      sex: p?.sex ?? null,
-      district: p?.district ?? null,
-      avatarKey: p?.avatarKey ?? null,
+      firstName: patient?.firstName ?? pro?.firstName ?? facility?.firstName ?? null,
+      lastName: patient?.lastName ?? pro?.lastName ?? facility?.lastName ?? null,
+      birthDate: patient ? patient.birthDate.toISOString().slice(0, 10) : null,
+      sex: patient?.sex ?? null,
+      district: patient?.district ?? pro?.district ?? null,
+      avatarKey: patient?.avatarKey ?? null,
+      category: pro?.category ?? null,
+      specialty: pro?.specialty ?? null,
+      biography: pro?.biography ?? null,
+      adminRole: account.adminRole?.role ?? null,
       totpEnabled: account.totpSecret?.enabled ?? false,
     };
   }

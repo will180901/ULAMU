@@ -1,8 +1,8 @@
 import { IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
 
 /** Nom d'utilisateur (D-049) : 3 à 30 caractères, lettres/chiffres/._-, début et fin alphanumériques. */
-const USERNAME_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{1,28})[A-Za-z0-9]$/;
-const USERNAME_MSG = "Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)";
+export const USERNAME_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{1,28})[A-Za-z0-9]$/;
+export const USERNAME_MSG = "Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)";
 
 export class RequestOtpDto {
   @IsString() @IsNotEmpty() phone!: string;
@@ -29,6 +29,7 @@ export class RegisterPatientDto {
 
 export class RegisterProfessionalDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) password!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;
@@ -43,6 +44,7 @@ export class RegisterProfessionalDto {
 /** Compte membre de structure (D-003/D-045) — futur titulaire ou invité (CU-02-02). */
 export class RegisterFacilityMemberDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) password!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;

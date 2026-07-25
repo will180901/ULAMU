@@ -117,6 +117,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
     await m01.requestOtp(phone, "REGISTRATION");
     return m01.registerProfessional({
       phone,
+      username: "u" + phone.replace(/\D/g, "").slice(-9),
       otpCode: lastOtpFor(phone),
       password: "motdepasse1",
       firstName: "Armel",

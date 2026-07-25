@@ -18,6 +18,7 @@ import {
 import { FacilityMember, InvitationStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { OutboxService } from "../../common/outbox.service";
+import { isAcceptableUsername, normalizeUsername } from "../m01-accounts/m01.policies";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { SMS_GATEWAY, SmsGateway } from "../../common/sms/sms.service";
@@ -248,6 +249,39 @@ export class M02Service {
 
   // ── Gestion des membres (EF-02-05/07 ; CU-02-03/04) ────────────────────────
 
+  /** Détail d'une structure + ses membres — tout membre ACTIF (pas seulement le titulaire) peut lire. */
+  async getFacilityDetail(actorId: string, facilityId: string) {
+    const membership = await this.permissions.getMembership(actorId, facilityId);
+    if (!membership || !membership.active) {
+      throw new NotFoundException("Structure introuvable"); // pas de fuite inter-structures (RM-02-03)
+    }
+    const facility = await this.prisma.facility.findUnique({ where: { id: facilityId } });
+    if (!facility) throw new NotFoundException("Structure introuvable");
+    const members = await this.prisma.facilityMember.findMany({
+      where: { facilityId },
+      include: { account: { include: { facilityMemberProfile: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    return {
+      id: facility.id,
+      type: facility.type,
+      name: facility.name,
+      district: facility.district,
+      quarter: facility.quarter,
+      hours: facility.hours,
+      status: facility.status,
+      members: members.map((m) => ({
+        id: m.id,
+        accountId: m.accountId,
+        firstName: m.account.facilityMemberProfile?.firstName ?? null,
+        lastName: m.account.facilityMemberProfile?.lastName ?? null,
+        role: m.role,
+        rights: m.rights,
+        active: m.active,
+      })),
+    };
+  }
+
   async updateMemberRights(
     actorId: string,
     facilityId: string,
@@ -412,17 +446,22 @@ export class M02Service {
 
   async createAdmin(
     actorId: string,
-    dto: { phone: string; password: string; firstName: string; lastName: string; role: "SUPER_ADMIN" | "ADMIN_FINANCE" | "ADMIN_VERIFICATION" | "ADMIN_MAP" },
+    dto: { phone: string; username: string; password: string; firstName: string; lastName: string; role: "SUPER_ADMIN" | "ADMIN_FINANCE" | "ADMIN_VERIFICATION" | "ADMIN_MAP" },
   ): Promise<{ accountId: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     const existing = await this.prisma.account.findUnique({ where: { phone } });
     if (existing) throw new ConflictException("Ce numéro est déjà enregistré (RM-01-01)");
+    const username = normalizeUsername(dto.username);
+    if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
+    const usernameTaken = await this.prisma.account.findUnique({ where: { username }, select: { id: true } });
+    if (usernameTaken) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
     const { hashPassword } = await import("../../common/crypto/password");
     const passwordHash = await hashPassword(dto.password);
     return this.prisma.$transaction(async (tx) => {
       const account = await tx.account.create({
         data: {
           phone,
+          username,
           passwordHash,
           type: "ADMIN",
           facilityMemberProfile: { create: { firstName: dto.firstName, lastName: dto.lastName } },

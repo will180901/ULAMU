@@ -10,7 +10,7 @@
 import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
-import { CreateOfferDto, DirectoryQueryDto, SetPresenceStateDto, UpdateOfferDto } from "./m05.dto";
+import { CreateOfferDto, DirectoryQueryDto, SetPresenceStateDto, UpdateMyProfileDto, UpdateOfferDto } from "./m05.dto";
 import { DirectoryService } from "./m05.directory.service";
 import { OffersService } from "./m05.offers.service";
 import { PresenceService } from "./m05.presence.service";
@@ -22,6 +22,15 @@ export class M05Controller {
     private readonly presence: PresenceService,
     private readonly directory: DirectoryService,
   ) {}
+
+  // ── Profil public (EF-05-01) — professionnel authentifié ────────────────────
+
+  /** Modifie mon profil public (bio/spécialité/arrondissement) — M01 est réservé aux patients. */
+  @Patch("me/professional-profile")
+  updateMyProfile(@Actor() actor: AuthenticatedActor, @Body() dto: UpdateMyProfileDto) {
+    this.assertProfessional(actor);
+    return this.offers.updateMyProfile(actor, dto);
+  }
 
   // ── Offres (EF-05-02 ; CU-05-03) — professionnel authentifié ────────────────
 

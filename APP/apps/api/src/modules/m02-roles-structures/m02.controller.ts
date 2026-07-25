@@ -2,7 +2,7 @@
  * M02 — routes des espaces structures. Toutes authentifiées (AuthGuard global, RM-02-03) ;
  * les contrôles fins (titulaire, droits internes) vivent dans le service (EF-02-02).
  */
-import { Body, Controller, Delete, HttpCode, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import {
@@ -24,6 +24,12 @@ export class M02Controller {
   @Post("facilities")
   createFacility(@Actor() actor: AuthenticatedActor, @Body() dto: CreateFacilityDto) {
     return this.service.createFacility(actor.accountId, dto);
+  }
+
+  /** Détail + liste des membres — tout membre actif de la structure (pas seulement le titulaire). */
+  @Get("facilities/:id")
+  getFacility(@Actor() actor: AuthenticatedActor, @Param("id") facilityId: string) {
+    return this.service.getFacilityDetail(actor.accountId, facilityId);
   }
 
   // ── Invitations (EF-02-04 ; CU-02-02) ──────────────────────────────────────

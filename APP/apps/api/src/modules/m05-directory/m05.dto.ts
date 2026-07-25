@@ -80,6 +80,24 @@ export class UpdateOfferDto {
   active?: boolean;
 }
 
+/** Profil public du professionnel (EF-05-01) — champs non couverts par M01 (réservé aux patients). */
+export class UpdateMyProfileDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(120, { message: "Spécialité : 120 caractères maximum" })
+  specialty?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: "Biographie : 2000 caractères maximum" })
+  biography?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80, { message: "Arrondissement : 80 caractères maximum" })
+  district?: string;
+}
+
 // ── Présence (EF-05-05 ; CU-05-04) ───────────────────────────────────────────
 
 export class SetPresenceStateDto {

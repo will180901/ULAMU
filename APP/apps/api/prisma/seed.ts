@@ -83,6 +83,16 @@ const DEMO_PATIENT = {
   district: "Talangaï",
 };
 
+/** Titulaire de démo (FACILITY_MEMBER, OWNER) — rattaché à la première pharmacie de DEMO_PHARMACIES. */
+const DEMO_PHARMACIST = {
+  phone: "+242060000301",
+  username: "pharma.demo",
+  password: "demo1234",
+  firstName: "Bruno",
+  lastName: "Ossona",
+  pharmacyName: "Pharmacie du Marché",
+};
+
 const DEMO_PROS: DemoPro[] = [
   {
     phone: "+242069000101", username: "dr.armel", firstName: "Armel", lastName: "Konaté",
@@ -278,6 +288,28 @@ async function seedDemo(): Promise<void> {
     }
     const facilityId = facility.id;
 
+    // Titulaire de démo (identifiants connus) — seulement sur la pharmacie désignée.
+    if (ph.name === DEMO_PHARMACIST.pharmacyName) {
+      let pharmacist = await prisma.account.findUnique({ where: { phone: DEMO_PHARMACIST.phone } });
+      if (!pharmacist) {
+        pharmacist = await prisma.account.create({
+          data: {
+            phone: DEMO_PHARMACIST.phone,
+            username: DEMO_PHARMACIST.username,
+            passwordHash: await hashPassword(DEMO_PHARMACIST.password),
+            type: "FACILITY_MEMBER",
+            facilityMemberProfile: { create: { firstName: DEMO_PHARMACIST.firstName, lastName: DEMO_PHARMACIST.lastName } },
+            consents,
+          },
+        });
+      }
+      await prisma.facilityMember.upsert({
+        where: { facilityId_accountId: { facilityId, accountId: pharmacist.id } },
+        update: {},
+        create: { facilityId, accountId: pharmacist.id, role: "OWNER", rights: ["stock", "dispense", "stats"] },
+      });
+    }
+
     // VerificationCase VERIFIED + contrat signé (RM-05-01 / D-029 — sinon non publiable).
     const existingCase = await prisma.verificationCase.findUnique({ where: { facilityId } });
     if (!existingCase) {
@@ -313,7 +345,7 @@ async function seedDemo(): Promise<void> {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + ${DEMO_PROS.length} soignants + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
+  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + ${DEMO_PROS.length} soignants + titulaire « ${DEMO_PHARMACIST.username} » (mdp ${DEMO_PHARMACIST.password}) + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
 }
 
 async function main(): Promise<void> {
@@ -332,15 +364,22 @@ async function main(): Promise<void> {
   const adminCount = await prisma.account.count({ where: { type: "ADMIN" } });
   if (adminCount === 0) {
     const phone = process.env.SEED_ADMIN_PHONE ?? "+242060000001";
+    const username = process.env.SEED_ADMIN_USERNAME ?? "super.admin";
     const password = process.env.SEED_ADMIN_PASSWORD ?? "admin12345"; // DEV uniquement — à changer immédiatement
+    // TOTP déjà activé pour que le compte soit testable sans repasser par le flux QR (AdminGuard l'exige).
+    // Secret fixe par défaut (dev) — reproductible entre reseeds, à charger dans une app d'authentification.
+    const totpSecretB32 = process.env.SEED_ADMIN_TOTP_SECRET ?? "JBSWY3DPEHPK3PXP";
     const { hashPassword } = await import("../src/common/crypto/password");
+    const { sealSecret } = await import("../src/common/crypto/secretbox");
     await prisma.account.create({
       data: {
         phone,
+        username,
         passwordHash: await hashPassword(password),
         type: "ADMIN",
         facilityMemberProfile: { create: { firstName: "Super", lastName: "Admin" } },
         adminRole: { create: { role: "SUPER_ADMIN", assignedBy: "seed" } },
+        totpSecret: { create: { encryptedSecret: sealSecret(totpSecretB32), enabled: true, enabledAt: new Date() } },
         consents: {
           createMany: {
             data: [
@@ -352,7 +391,7 @@ async function main(): Promise<void> {
       },
     });
     // eslint-disable-next-line no-console
-    console.log(`Bootstrap SUPER_ADMIN créé (${phone}) — activez le TOTP à la première connexion (RM-01-06).`);
+    console.log(`Bootstrap SUPER_ADMIN créé (${username} / ${phone}, mdp ${password}) — secret TOTP (base32) : ${totpSecretB32}.`);
   }
 
   // Données de démo (dev) — désactivables avec SEED_DEMO=false.
