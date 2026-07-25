@@ -48,6 +48,12 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true
+    routes:
+      # SPA : react-router gère le routage côté client (BrowserRouter) — sans cette règle, une URL
+      # comme /inscription tapée/rechargée directement renvoie 404 (le serveur cherche un fichier réel).
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://ulamu-api.onrender.com
