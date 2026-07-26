@@ -9,8 +9,8 @@
 
 export type AccountType = "PATIENT" | "PROFESSIONAL" | "FACILITY_MEMBER" | "ADMIN";
 export type Sex = "M" | "F";
-/** Le client appelant — mobile = patients, desktop = pros/structures/admin (D-012). */
-export type ClientKind = "mobile" | "desktop";
+/** Le client appelant — mobile = patients, web = pros/structures/admin (D-012). */
+export type ClientKind = "mobile" | "web";
 /** Catégories de professionnels (M01/M05). */
 export type ProfessionalCategory =
   | "GENERAL_PRACTITIONER"

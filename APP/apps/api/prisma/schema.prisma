@@ -147,7 +147,7 @@ model LoginSession {
   accountId    String
   account      Account   @relation(fields: [accountId], references: [id])
   tokenHash    String    @unique
-  client       String // "mobile" | "desktop"
+  client       String // "mobile" | "web"
   deviceLabel  String?
   createdAt    DateTime  @default(now())
   lastActiveAt DateTime  @default(now())
@@ -510,7 +510,7 @@ enum PresenceState {
   OFFLINE
 }
 
-/// Présence desktop (EF-05-05/06) — battement de cœur, bascule auto PM-26.
+/// Présence web (EF-05-05/06) — battement de cœur, bascule auto PM-26.
 model PresenceStatus {
   accountId       String        @id
   state           PresenceState @default(OFFLINE)

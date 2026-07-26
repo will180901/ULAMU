@@ -57,7 +57,7 @@ La commission ULAMU est prélevée **côté professionnel**, incluse dans le pri
 
 ### D-012 — Clients applicatifs
 - **App mobile** = les patients.
-- **Application desktop** (web embarquée : Next.js + Electron, client-serveur) = professionnels, structures, administration. *(Détails de stack en Référence Technique, plus tard.)*
+- **Application web** (React + Vite, client-serveur) = professionnels, structures, administration. *(Détails de stack en Référence Technique, plus tard.)*
 
 ### D-013 — Interface mobile patient : 3 onglets + bouton urgence
 Barre du bas : **① Accueil** (portail public : catégories de soignants, recherche médicaments, filtres) · **② Consultations** (sessions actives + décompteur, historique, ordonnances) · **③ Mon Espace** (profil, dossier médical, reçus, paramètres). **Bouton Urgence flottant** accessible partout.
@@ -147,7 +147,7 @@ Carnet à vie, entrées immuables à provenance visible, le patient voit tout, e
 Poignée de main intégrale, décompteur démarrant à la pré-consultation, gains crédités au dépôt du compte-rendu, remboursements automatiques. **PM-27 : 3 sessions simultanées max. PM-28 : démarrage auto 10 min après paiement. PM-29 : prolongation cumulée +30 min max. PM-30 : compte-rendu sous 24 h (gains gelés au-delà).** Détail : [[../02_modules/M06_poignee_session|M06]].
 
 ### D-031 — Module M05 validé
-Annuaire vitrine consultable sans compte ; bouton « initier » actif uniquement si le professionnel est en ligne ; classement jamais vendu ; indicateurs de réactivité publics. **PM-25 acté : 5 offres actives max. PM-26 acté : absent après 15 min d'inactivité desktop.** Détail : [[../02_modules/M05_annuaire_professionnels|M05]].
+Annuaire vitrine consultable sans compte ; bouton « initier » actif uniquement si le professionnel est en ligne ; classement jamais vendu ; indicateurs de réactivité publics. **PM-25 acté : 5 offres actives max. PM-26 acté : absent après 15 min d'inactivité web.** Détail : [[../02_modules/M05_annuaire_professionnels|M05]].
 
 ### D-030 — Module M04 validé
 Journal d'audit en écriture seule chaîné par empreintes ; le contenu médical n'entre jamais dans l'audit ; signaleur anonyme. **PM-23 acté : signalement traité sous 48 h. PM-24 acté : rétention du journal 5 ans** (à confirmer avec l'avocat). Détail : [[../02_modules/M04_audit_signalements|M04]].

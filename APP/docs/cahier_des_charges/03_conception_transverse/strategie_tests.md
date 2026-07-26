@@ -17,7 +17,7 @@
 |---|---|---|---|
 | **Unitaires** | Règles métier (RM-xx) et calculs : répartitions 10 %, garde-fou allergies, expirations PM-xx, états des cycles de vie | Tests du backend par module | À chaque commit |
 | **Intégration par module** | Les contrats C1-C7 : chaque module testé avec ses voisins simulés (ex. M06 avec un faux M13) | Suites par contrat | À chaque commit |
-| **Bout en bout (E2E)** | **Les 3 parcours de référence** ([[../00_cadrage/personas_parcours|personas]] §4) joués entièrement : 🅰 consultation complète, 🅱 trouver son médicament, 🅲 suivi | Scénarios automatisés mobile + desktop + agrégateur en bac à sable | Chaque release |
+| **Bout en bout (E2E)** | **Les 3 parcours de référence** ([[../00_cadrage/personas_parcours|personas]] §4) joués entièrement : 🅰 consultation complète, 🅱 trouver son médicament, 🅲 suivi | Scénarios automatisés mobile + web + agrégateur en bac à sable | Chaque release |
 | **Réseau dégradé** | Les scénarios offline ([[strategie_offline_sync]] §6) + 3G simulée (latence 300 ms, pertes 5 %) sur les écrans critiques (ENF-03) | Conditions réseau simulées | Chaque release |
 | **Charge** | ENF-06 : 50 sessions simultanées, 500 sessions/jour ; pics de notifications | Tests de montée en charge | Avant lancement, puis trimestriel |
 | **Sécurité** | Modèle de menaces T-01 → T-14 ; **pentest externe** | Revue interne + prestataire | Avant lancement public |

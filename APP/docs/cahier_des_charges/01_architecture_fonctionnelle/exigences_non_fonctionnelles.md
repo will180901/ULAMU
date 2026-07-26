@@ -53,7 +53,7 @@
 - Chiffrement en transit (TLS 1.2+) **partout**, sans exception.
 - Données au repos chiffrées ; cache mobile chiffré ; clés gérées proprement (détail : modèle de menaces, Phase 3).
 - Verrouillage optionnel de l'app par PIN/biométrie (P3 — confidentialité visible).
-- Desktop : déconnexion automatique après **30 min** d'inactivité.
+- Web : déconnexion automatique après **30 min** d'inactivité.
 - **Aucun contenu médical dans les notifications push** (« Vous avez un nouveau message » — jamais le texte).
 - Conformité loi n° 29-2019 : consentement explicite à l'inscription, droits d'accès/rectification, registre des traitements ([[cadre_reglementaire]]).
 
@@ -62,8 +62,8 @@
 - Support utilisateur : première réponse < **24 h** au lancement.
 - Chaque paiement traçable de bout en bout en < **1 min** de recherche (Admin Finance).
 
-## ENF-09 — Desktop professionnels
-- Windows 10+ (Electron) ; fonctionne sur un PC bureautique modeste (4 Go RAM).
+## ENF-09 — Application web professionnels
+- Navigateur récent (Chrome/Edge/Firefox) ; fonctionne sur un PC bureautique modeste (4 Go RAM).
 - Notification de poignée de main visible et sonore en < **5 s** après l'initiation patient (R-04 : la réactivité des professionnels est un risque majeur).
 
 ---

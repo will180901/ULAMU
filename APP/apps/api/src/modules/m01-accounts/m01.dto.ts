@@ -23,7 +23,7 @@ export class RegisterPatientDto {
   @IsISO8601() birthDate!: string;
   @IsIn(["M", "F"]) sex!: "M" | "F";
   @IsString() @IsNotEmpty() @MaxLength(80) district!: string;
-  @IsIn(["mobile", "desktop"]) client!: string;
+  @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
 
@@ -37,7 +37,7 @@ export class RegisterProfessionalDto {
   @IsIn(["GENERAL_PRACTITIONER", "SPECIALIST", "DENTIST", "MIDWIFE", "NURSE", "COMMUNITY_HEALTH_WORKER"])
   category!: "GENERAL_PRACTITIONER" | "SPECIALIST" | "DENTIST" | "MIDWIFE" | "NURSE" | "COMMUNITY_HEALTH_WORKER";
   @IsOptional() @IsString() @MaxLength(120) specialty?: string;
-  @IsIn(["mobile", "desktop"]) client!: string;
+  @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
 
@@ -49,14 +49,14 @@ export class RegisterFacilityMemberDto {
   @IsString() @Length(8, 128) password!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) lastName!: string;
-  @IsIn(["mobile", "desktop"]) client!: string;
+  @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
 
 export class LoginDto {
   @IsString() @MinLength(3) @MaxLength(30) username!: string;
   @IsString() @IsNotEmpty() password!: string;
-  @IsIn(["mobile", "desktop"]) client!: string;
+  @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
   @IsOptional() @IsString() @Length(6, 10) totpCode?: string;
 }

@@ -25,7 +25,7 @@ Savoir qui est qui : créer les comptes, authentifier les utilisateurs, protége
 | Acteur | Usage |
 |---|---|
 | Patient | S'inscrit et se connecte sur **mobile** |
-| Professionnel | S'inscrit et se connecte sur **desktop** |
+| Professionnel | S'inscrit et se connecte sur **web** |
 | Équipe ULAMU | Suspend/réactive des comptes (via M16) |
 | Le Système | Expire les OTP et les sessions de connexion, bloque les tentatives abusives |
 
@@ -35,7 +35,7 @@ Savoir qui est qui : créer les comptes, authentifier les utilisateurs, protége
 |---|---|
 | EF-01-01 | Inscription **patient** : téléphone + vérification OTP SMS + mot de passe + profil minimal (nom, prénom, naissance, sexe, arrondissement). Âge ≥ 18 ans (PM-16). |
 | EF-01-02 | Inscription **professionnel** : téléphone + OTP + identité + catégorie professionnelle. Le compte naît **non vérifié** et enchaîne immédiatement vers le dossier de vérification (M03). |
-| EF-01-03 | Connexion par téléphone + mot de passe, sur mobile et desktop. |
+| EF-01-03 | Connexion par téléphone + mot de passe, sur mobile et web. |
 | EF-01-04 | Récupération de mot de passe par OTP SMS. |
 | EF-01-05 | Gestion des sessions de connexion : liste de ses appareils connectés, déconnexion à distance d'un appareil. |
 | EF-01-06 | Blocage temporaire après échecs répétés de connexion (PM-18). |
@@ -55,11 +55,11 @@ Savoir qui est qui : créer les comptes, authentifier les utilisateurs, protége
 - **Hors ligne :** l'inscription exige une connexion (D-025) ; message clair si réseau absent.
 
 ### CU-01-02 — Inscription d'un professionnel
-**Nominal :** identique à CU-01-01 (sur desktop) + choix de la catégorie (généraliste, spécialiste, dentiste, sage-femme, infirmier, agent communautaire) → à la création, redirection obligatoire vers le dépôt du dossier de vérification (M03).
+**Nominal :** identique à CU-01-01 (sur web) + choix de la catégorie (généraliste, spécialiste, dentiste, sage-femme, infirmier, agent communautaire) → à la création, redirection obligatoire vers le dépôt du dossier de vérification (M03).
 - *Étant donné* un compte professionnel créé, *alors* il est **invisible dans l'annuaire** (M05) tant que M03 n'a pas au minimum enregistré son dossier (contrat C6).
 
 ### CU-01-03 — Connexion
-- *Étant donné* des identifiants corrects, *alors* session de connexion ouverte (mobile : longue durée PM-20 ; desktop : expiration après 30 min d'inactivité, ENF-07).
+- *Étant donné* des identifiants corrects, *alors* session de connexion ouverte (mobile : longue durée PM-20 ; web : expiration après 30 min d'inactivité, ENF-07).
 - *Étant donné* 5 échecs en 15 min (PM-18), *alors* blocage temporaire de 15 min + notification au titulaire du compte.
 
 ### CU-01-04 — Récupération de mot de passe

@@ -55,7 +55,7 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
       password: "motdepasse1",
       firstName,
       lastName: "Test",
-      client: "desktop",
+      client: "web",
     });
   };
 

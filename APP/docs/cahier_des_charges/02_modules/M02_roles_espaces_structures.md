@@ -45,7 +45,7 @@ Répondre à la question « **qui a le droit de faire quoi ?** » : rôles globa
 ## 4. Cas d'utilisation
 
 ### CU-02-01 — Créer un espace pharmacie
-**Acteur :** futur titulaire (desktop) · **Déclencheur :** après inscription M01.
+**Acteur :** futur titulaire (web) · **Déclencheur :** après inscription M01.
 - *Étant donné* un compte authentifié, *quand* le formulaire structure est complété (dont position GPS posée sur carte), *alors* l'espace est créé en statut « non vérifié », invisible des patients, et le dossier M03 s'ouvre.
 - *Étant donné* un espace non vérifié, *alors* aucun stock n'est publiable dans la recherche (C6).
 

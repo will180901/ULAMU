@@ -106,7 +106,7 @@ async function request<T>(method: string, path: string, body?: unknown, auth = f
 export interface LoginRequest {
   username: string
   password: string
-  client: 'desktop'
+  client: 'web'
   deviceLabel?: string
   totpCode?: string
 }
@@ -152,7 +152,7 @@ export interface RegisterProfessionalRequest {
   lastName: string
   category: ProfessionalCategory
   specialty?: string
-  client: 'desktop'
+  client: 'web'
   deviceLabel?: string
 }
 export interface RegisterFacilityMemberRequest {
@@ -162,7 +162,7 @@ export interface RegisterFacilityMemberRequest {
   password: string
   firstName: string
   lastName: string
-  client: 'desktop'
+  client: 'web'
   deviceLabel?: string
 }
 export interface RegisterResponse {

@@ -123,7 +123,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
       firstName: "Armel",
       lastName: "Konaté",
       category: "GENERAL_PRACTITIONER",
-      client: "desktop",
+      client: "web",
     });
   }
   async function registerPatient(phone: string) {
@@ -198,7 +198,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
   });
 
   it("CU-13-04 — retrait : OTP + payout, puis échec de virement → re-crédit intégral", async () => {
-    const actor = { accountId: doctorId, accountType: "PROFESSIONAL", sessionId: "s", client: "desktop" };
+    const actor = { accountId: doctorId, accountType: "PROFESSIONAL", sessionId: "s", client: "web" };
 
     // Retrait réussi de 3000.
     const start = await earnings.startWithdrawal(actor, { holderType: "PROFESSIONAL", holderId: doctorId, amountXaf: 3000, operator: "MTN_MOMO" });
@@ -216,7 +216,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
   });
 
   it("CU-13-04 — OTP de retrait erroné : refusé, solde intact", async () => {
-    const actor = { accountId: doctorId, accountType: "PROFESSIONAL", sessionId: "s", client: "desktop" };
+    const actor = { accountId: doctorId, accountType: "PROFESSIONAL", sessionId: "s", client: "web" };
     // PM-19 limite les OTP par numéro/heure (toutes finalités) : les retraits précédents l'ont
     // consommée — on purge pour ce cas (équivaut au passage d'une heure). PM-19 est testé ailleurs.
     await prisma.otpCode.deleteMany({ where: { phone: DOCTOR_PHONE } });

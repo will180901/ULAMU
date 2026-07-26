@@ -7,18 +7,15 @@
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {
-  AuthScreen,
   Badge,
   Banner,
-  CobaltHeader,
+  CardHeading,
   ErrorBanner,
   Field,
   FieldLabel,
-  FloatCard,
   FootLink,
-  HeaderSubtitle,
-  HeaderTitle,
   Hint,
   OtpInput,
   PasswordField,
@@ -160,18 +157,16 @@ export function RegisterScreen({navigation}: Props) {
   }
 
   return (
-    <AuthScreen>
-      <CobaltHeader onBack={onBack} paddingBottom={30}>
-        <HeaderTitle size={23}>Créer mon compte</HeaderTitle>
-        <HeaderSubtitle>
-          {step === 'identity' && 'Étape 1 sur 3 — votre identité'}
-          {step === 'account' && 'Étape 2 sur 3 — votre accès'}
-          {step === 'otp' && `Étape 3 sur 3 — code envoyé au ${normalizePhone(phone) ?? phone}`}
-        </HeaderSubtitle>
-      </CobaltHeader>
-
-      <FloatCard>
-        <ErrorBanner message={error} />
+    <AuthCarouselDrawer startOpen onBack={onBack}>
+      <CardHeading
+        title="Créer mon compte"
+        subtitle={
+          (step === 'identity' && 'Étape 1 sur 3 — votre identité') ||
+          (step === 'account' && 'Étape 2 sur 3 — votre accès') ||
+          `Étape 3 sur 3 — code envoyé au ${normalizePhone(phone) ?? phone}`
+        }
+      />
+      <ErrorBanner message={error} />
 
         {step === 'identity' && (
           <View style={{gap: 14}}>
@@ -257,10 +252,9 @@ export function RegisterScreen({navigation}: Props) {
           </View>
         )}
 
-        <View style={{flex: 1, minHeight: 20}} />
-        {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.navigate('Login')} />}
-      </FloatCard>
-    </AuthScreen>
+      <View style={{minHeight: 20}} />
+      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.navigate('Login')} />}
+    </AuthCarouselDrawer>
   );
 }
 

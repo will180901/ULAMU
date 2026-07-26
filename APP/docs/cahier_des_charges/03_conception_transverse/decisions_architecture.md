@@ -17,8 +17,8 @@
 **Conséquences :** déploiement simple, frontières prêtes pour une extraction future en services si la charge l'exige (ENF-06 : extensible sans réécriture).
 
 ## ADR-02 — TypeScript de bout en bout
-**Contexte :** desktop déjà fixé en Next.js + Electron (D-012) ; un seul développeur principal.
-**Décision :** TypeScript partout — backend, desktop, mobile. Un seul langage, des types partagés (contrats C1-C7 et entités du dictionnaire générés depuis une source commune).
+**Contexte :** mobile et web déjà fixés (D-012) ; un seul développeur principal.
+**Décision :** TypeScript partout — backend, web, mobile. Un seul langage, des types partagés (contrats C1-C7 et entités du dictionnaire générés depuis une source commune).
 **Conséquences :** vélocité maximale, moins d'erreurs d'interface ; recrutement futur sur un seul profil.
 
 ## ADR-03 — Backend Node.js (NestJS) + PostgreSQL
@@ -31,9 +31,9 @@
 **Alternative écartée :** Flutter (excellent, mais second langage — Dart — pour une équipe d'une personne déjà sur TS).
 **Conséquences :** budget poids à surveiller dès le premier build (seuil d'alerte : 22 Mo) ; iOS en V2 quasi gratuit.
 
-## ADR-05 — Desktop professionnels : Next.js + Electron (acte D-012)
-**Décision :** l'app desktop embarque le client Next.js dans Electron ; **les mêmes écrans servent une version navigateur** (le web app) — Electron apporte : notifications système sonores fiables (ENF-09), démarrage avec la machine, badge de présence robuste (PM-26).
-**Conséquences :** un seul code pour desktop installé et navigateur ; auto-update Electron à prévoir.
+## ADR-05 — Interface professionnels/structures/admin : Web React + Vite (acte D-012)
+**Décision :** l'interface professionnels/structures/admin est une application web (React + Vite), sans wrapper Electron — notifications sonores via l'API Web Notifications du navigateur (ENF-09), badge de présence géré côté serveur (PM-26).
+**Conséquences :** un seul déploiement web, pas d'auto-update client à gérer (mise à jour immédiate au déploiement serveur).
 
 ## ADR-06 — Temps réel : WebSocket
 **Décision :** canal WebSocket (Socket.io) pour : initiations/confirmations de poignée de main, messages de session, décompteur, présence. Repli automatique en polling long si le réseau bloque les WebSockets.

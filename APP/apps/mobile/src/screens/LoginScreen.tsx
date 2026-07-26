@@ -1,23 +1,12 @@
 /**
  * Connexion patient — username + mot de passe (UX rapide). Si TOTP activé → étape de vérification.
- * Visuel : en-tête cobalt + carrousel + carte flottante.
+ * Visuel : carrousel monochrome plein écran en fond + tiroir glissant contenant le formulaire.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import {
-  AuthScreen,
-  CardHeading,
-  CobaltHeader,
-  ErrorBanner,
-  Field,
-  FieldLabel,
-  FloatCard,
-  FootLink,
-  PasswordField,
-  PrimaryButton,
-  StepCarousel,
-} from '../components/ui';
+import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
+import {CardHeading, ErrorBanner, Field, FieldLabel, FootLink, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {isValidUsername, normalizeUsername} from '../lib/validation';
 import {AuthStackParamList} from '../navigation/types';
@@ -53,30 +42,24 @@ export function LoginScreen({navigation}: Props) {
   }
 
   return (
-    <AuthScreen>
-      <CobaltHeader paddingBottom={28}>
-        <StepCarousel />
-      </CobaltHeader>
-
-      <FloatCard>
-        <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur et votre mot de passe suffisent." />
-        <ErrorBanner message={error} />
-        <View style={{gap: 14}}>
-          <View>
-            <FieldLabel>Nom d'utilisateur</FieldLabel>
-            <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n" autoCapitalize="none" />
-          </View>
-          <View>
-            <FieldLabel>Mot de passe</FieldLabel>
-            <PasswordField value={password} onChangeText={setPassword} onSubmitEditing={() => ready && onSubmit()} returnKeyType="go" />
-          </View>
-          <PrimaryButton title="Se connecter" iconRight="arrow-right" onPress={onSubmit} disabled={!ready} loading={busy} />
-          <FootLink prefix="Mot de passe oublié ?" action="Réinitialiser" onPress={() => navigation.navigate('Forgot')} />
+    <AuthCarouselDrawer>
+      <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur et votre mot de passe suffisent." />
+      <ErrorBanner message={error} />
+      <View style={{gap: 14}}>
+        <View>
+          <FieldLabel>Nom d'utilisateur</FieldLabel>
+          <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n" autoCapitalize="none" />
         </View>
+        <View>
+          <FieldLabel>Mot de passe</FieldLabel>
+          <PasswordField value={password} onChangeText={setPassword} onSubmitEditing={() => ready && onSubmit()} returnKeyType="go" />
+        </View>
+        <PrimaryButton title="Se connecter" iconRight="arrow-right" onPress={onSubmit} disabled={!ready} loading={busy} />
+        <FootLink prefix="Mot de passe oublié ?" action="Réinitialiser" onPress={() => navigation.navigate('Forgot')} />
+      </View>
 
-        <View style={{flex: 1, minHeight: 24}} />
-        <FootLink prefix="Nouveau sur ULAMU ?" action="Créer un compte" onPress={() => navigation.navigate('Register')} />
-      </FloatCard>
-    </AuthScreen>
+      <View style={{minHeight: 24}} />
+      <FootLink prefix="Nouveau sur ULAMU ?" action="Créer un compte" onPress={() => navigation.navigate('Register')} />
+    </AuthCarouselDrawer>
   );
 }

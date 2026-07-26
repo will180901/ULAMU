@@ -63,13 +63,10 @@ ULAMU/APP/                          ← racine du dépôt git (= coffre Obsidian
 │   │   │   └── theme/              # tokens issus de la Charte Graphique CG-01/02/03
 │   │   └── android/
 │   │
-│   └── desktop/                    # Next.js + Electron — PROS / STRUCTURES / ADMIN (ADR-05)
-│       ├── src/app/
-│       │   ├── (professionnel)/    # offres, poignées de main, sessions, gains
-│       │   ├── (structure)/        # stock, délivrances, réservations, membres
-│       │   └── (admin)/            # vérification, modération, finance, paramètres
-│       ├── src/realtime/           # socket : initiations sonores < 5 s (ENF-09)
-│       └── electron/               # main process, auto-update, badge présence (PM-26)
+│   └── web/                        # React + Vite — PROS / STRUCTURES / ADMIN
+│       ├── src/modules/            # auth, dashboard, (offres/structures/admin à venir)
+│       ├── src/components/         # design system SARIS porté (ulamu/*, layout/*)
+│       └── src/lib/                # client API REST vers apps/api
 │
 ├── packages/
 │   ├── contracts/                  # LA source unique : entités du dictionnaire + contrats C1-C7 + DTOs (ADR-02)
@@ -90,7 +87,7 @@ ULAMU/APP/                          ← racine du dépôt git (= coffre Obsidian
 **Règles de structure (héritées des principes du projet) :**
 - Chaque module backend = son dossier, ses tests, **aucun import direct des entités d'un autre module** — uniquement via `packages/contracts` (frontières C1-C7, ADR-01).
 - Toute la documentation reste regroupée sous `docs/` — jamais de doc éparpillée.
-- Les écrans mobile/desktop sont organisés par parcours (🅰🅱🅲), pas par type de composant.
+- Les écrans mobile/web sont organisés par parcours (🅰🅱🅲), pas par type de composant.
 
 ## 2. Outillage
 
@@ -100,7 +97,7 @@ ULAMU/APP/                          ← racine du dépôt git (= coffre Obsidian
 | Gestionnaire | pnpm + workspaces | Monorepo léger |
 | ORM | Prisma (PostgreSQL) | Migrations versionnées ; tables immuables (Carnet, audit, mouvements) = **insertion seule**, vérifiée par revue de migration |
 | Files/temps réel | Redis + Socket.io | ADR-06/11 ; motif outbox obligatoire pour C3/C4/C5/C7 |
-| Tests | Vitest/Jest (unitaires + intégration), Maestro ou Detox (E2E mobile), Playwright (desktop) | La pyramide de [[../03_conception_transverse/strategie_tests|strategie_tests]] |
+| Tests | Vitest/Jest (unitaires + intégration), Maestro ou Detox (E2E mobile), Playwright (E2E web) | La pyramide de [[../03_conception_transverse/strategie_tests|strategie_tests]] |
 | Qualité | ESLint + Prettier, hooks de pre-commit | Aucun commit sans lint + tests verts |
 | Secrets | `.env` jamais commis ; gestionnaire de secrets en production | Menaces §4.1 |
 | CI | Lint + tests à chaque commit ; build + E2E sur branche principale ; déploiement recette automatique | |

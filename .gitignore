@@ -19,7 +19,6 @@ build/
 out/
 *.tsbuildinfo
 apps/mobile/android/app/build/
-apps/desktop/release/
 
 # Fichiers téléversés par les utilisateurs (avatars, médias de session) — jamais dans le dépôt
 APP/apps/api/uploads/

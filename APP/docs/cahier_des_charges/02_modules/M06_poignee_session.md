@@ -29,7 +29,7 @@ Orchestrer **l'acte médical complet** : initiation → confirmation → paiemen
 
 | ID | Exigence |
 |---|---|
-| EF-06-01 | **Initiation** depuis une offre (M05) : le professionnel est notifié sur desktop en < 5 s (ENF-09), avec fiche anonymisée du patient (prénom, âge — pas plus avant paiement). |
+| EF-06-01 | **Initiation** depuis une offre (M05) : le professionnel est notifié sur web en < 5 s (ENF-09), avec fiche anonymisée du patient (prénom, âge — pas plus avant paiement). |
 | EF-06-02 | **Confirmation** : « Je suis prêt à recevoir » — valable PM-07 (5 min). Refus possible avec motif court (occupé, hors domaine). Sans confirmation, **le bouton payer n'existe pas** (D-007). |
 | EF-06-03 | **Paiement** : actif uniquement après confirmation ; ordre C1 vers M13 ; réussi → la poignée passe « payée » ; échec → nouvel essai dans la fenêtre PM-07 ; expiration → rien n'est débité. |
 | EF-06-04 | **Pré-consultation** (D-019) : remplie après paiement (symptômes, durée, photos), transmise au professionnel. Le décompteur **ne démarre qu'à la transmission** — plafond : démarrage automatique PM-28 (10 min) après paiement. |

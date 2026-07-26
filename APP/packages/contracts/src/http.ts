@@ -1,5 +1,5 @@
 /**
- * Socle HTTP partagé entre l'API (NestJS) et les apps (mobile/desktop).
+ * Socle HTTP partagé entre l'API (NestJS) et les apps (mobile/web).
  * Forme d'erreur = celle des exceptions NestJS par défaut ; les apps la normalisent
  * en `ApiError` (voir @ulamu/shared). Aucune logique ici — uniquement des types.
  */

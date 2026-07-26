@@ -14,7 +14,6 @@ build/
 out/
 *.tsbuildinfo
 apps/mobile/android/app/build/
-apps/desktop/release/
 
 # Bases et caches locaux
 *.sqlite

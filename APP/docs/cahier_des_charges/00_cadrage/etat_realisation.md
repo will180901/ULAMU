@@ -21,7 +21,7 @@
 - **505 tests verts** (21 suites : 15 unitaires sans base + 6 d'intégration contre PostgreSQL réel).
 - **Stack** ([[decisions_architecture]]) : NestJS 10 (monolithe modulaire, 1 dossier/module), Prisma 5 + PostgreSQL,
   TypeScript strict. Crypto maison (scrypt, TOTP RFC 6238, AES-GCM, chaîne sha256 d'audit), zéro dépendance native.
-- **Frontend** : pas encore démarré (`apps/mobile` React Native patients, `apps/desktop` Next.js + Electron pros/structures/admin) — maquettes par le porteur (D-039/D-044).
+- **Frontend** : `apps/mobile` (React Native, patients), `apps/web` (React + Vite, pros/structures/admin) — maquettes par le porteur (D-039/D-044).
 
 ## 2. Les 5 chantiers (ordre du [[plan_releases]] §2)
 
@@ -80,7 +80,7 @@ Chaque chantier : schéma posé → workflow multi-agents (implémentation) → 
 5. ≥ 15 professionnels et ≥ 10 pharmacies pré-engagés.
 
 ### 4.4 Frontend (non démarré)
-- `apps/mobile` (React Native, patients) ; `apps/desktop` (Next.js + Electron, pros/structures/admin).
+- `apps/mobile` (React Native, patients) ; `apps/web` (React + Vite, pros/structures/admin).
 - Charte graphique existante (`docs/Charte Graphique/`, CG-01→CG-11) + maquettes `Maquettes_ULAMU/` (référence visuelle, **jamais transformées en app** — la stack décidée fait foi).
 
 ## 5. Comment reprendre efficacement

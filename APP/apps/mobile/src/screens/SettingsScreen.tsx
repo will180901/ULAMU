@@ -102,9 +102,9 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
             ) : (
               sessions.map((s, i) => (
                 <View key={s.id} style={[styles.deviceRow, i > 0 && styles.rowBorder]}>
-                  <Icon name={s.client === 'desktop' ? 'key' : 'smartphone'} size={16} variant="tile" style={styles.deviceIcon} />
+                  <Icon name={s.client === 'web' ? 'key' : 'smartphone'} size={16} variant="tile" style={styles.deviceIcon} />
                   <View style={styles.flex}>
-                    <Text style={styles.deviceName}>{s.deviceLabel ?? (s.client === 'desktop' ? 'Ordinateur' : 'Téléphone')}{s.current ? ' · cet appareil' : ''}</Text>
+                    <Text style={styles.deviceName}>{s.deviceLabel ?? (s.client === 'web' ? 'Ordinateur' : 'Téléphone')}{s.current ? ' · cet appareil' : ''}</Text>
                     <Text style={styles.deviceSub}>{s.client} · {relTime(s.lastActiveAt)}</Text>
                   </View>
                   {!s.current && (

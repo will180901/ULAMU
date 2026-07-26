@@ -32,9 +32,9 @@ Au Congo-Brazzaville, se soigner est un parcours du combattant. Le patient fait 
 ## 3. Les acteurs
 
 - **Patients** — app mobile, acteur central.
-- **Professionnels de santé** : prescripteurs (généralistes, spécialistes, dentistes, sages-femmes) et non-prescripteurs (infirmiers, agents de santé communautaire) — application desktop.
-- **Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application desktop.
-- **Équipe ULAMU** : administration en sous-rôles — application desktop.
+- **Professionnels de santé** : prescripteurs (généralistes, spécialistes, dentistes, sages-femmes) et non-prescripteurs (infirmiers, agents de santé communautaire) — application web.
+- **Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application web.
+- **Équipe ULAMU** : administration en sous-rôles — application web.
 - **Le Système** : rappels, expirations, remboursements automatiques, alertes.
 
 Détail : [[registre_decisions#D-002 — Acteurs : toutes les catégories de soignants dès le début|D-002]], [[registre_decisions#D-003 — Les pharmacies sont des structures, pas des personnes|D-003]], [[registre_decisions#D-004 — Les laboratoires sont des structures (même modèle que les pharmacies)|D-004]].
@@ -60,7 +60,7 @@ Détail : [[registre_decisions#D-002 — Acteurs : toutes les catégories de soi
 - ❌ Pas de localisation publique des pharmacies/labos (cœur du modèle de dévoilement).
 - ❌ Pas de paiement des examens de laboratoire via la plateforme (au labo, hors plateforme).
 - ❌ Pas de multilinguisme au lancement : **français uniquement** (D-005).
-- ❌ Pas d'app mobile pour les professionnels : mobile = patients, desktop = tous les autres (D-012).
+- ❌ Pas d'app mobile pour les professionnels : mobile = patients, web = tous les autres (D-012).
 - ❌ Pas de consultation vidéo/audio en direct au démarrage : la messagerie est le seul portail de consultation.
 
 ## 7. L'ambition à terme

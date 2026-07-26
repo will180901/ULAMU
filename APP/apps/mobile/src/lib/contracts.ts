@@ -26,7 +26,7 @@ export const bearer = (token: string): string => `Bearer ${token}`;
 // ── M01 — Authentification (username + mot de passe + TOTP) ──────────────────
 export type AccountType = 'PATIENT' | 'PROFESSIONAL' | 'FACILITY_MEMBER' | 'ADMIN';
 export type Sex = 'M' | 'F';
-export type ClientKind = 'mobile' | 'desktop';
+export type ClientKind = 'mobile' | 'web';
 /** OTP SMS : uniquement vérif du téléphone (inscription) + récupération. PAS la connexion. */
 export type PublicOtpPurpose = 'REGISTRATION' | 'PASSWORD_RESET';
 

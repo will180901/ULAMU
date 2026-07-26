@@ -33,7 +33,7 @@
 - **Avec ULAMU** : la consultation par messagerie lui donne la **discrétion** qu'un cabinet ne lui offre pas ; elle compare les prix des médecins avec les filtres.
 - **Ce qui la ferait fuir** : le moindre doute sur la confidentialité de ses échanges.
 
-## 2. Personas professionnels (application desktop)
+## 2. Personas professionnels (application web)
 
 ### 👨‍⚕️ P4 — Dr Armel, 34 ans, médecin généraliste à Brazzaville
 - **Situation** : consulte en clinique le jour ; cherche un revenu complémentaire le soir, depuis chez lui.
@@ -50,7 +50,7 @@
 - **Avec ULAMU** : elle reçoit des missions de triage terrain (constantes à domicile), payées via la plateforme, et accompagne les patients peu à l'aise avec l'app. Nouveau revenu digne.
 - **Ce qui la ferait fuir** : des missions trop éloignées ; un paiement non garanti après déplacement.
 
-## 3. Personas structures (application desktop)
+## 3. Personas structures (application web)
 
 ### 💊 P7 — Pharmacie du Marché, Poto-Poto (M. Destin, titulaire + 3 employés)
 - **Situation** : bonne pharmacie de quartier, concurrence rude, clients qui repartent quand le produit manque.

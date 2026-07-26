@@ -24,7 +24,7 @@ Notifier **la bonne personne, au bon moment, sans jamais déranger pour rien**. 
 | ID | Exigence |
 |---|---|
 | EF-14-01 | Réception des demandes **C4** : destinataire, modèle, données, priorité (critique / normale / faible). |
-| EF-14-02 | **Canaux MVP** : push mobile, centre in-app, notification desktop (avec **son** pour les critiques — la poignée de main en < 5 s, ENF-09). SMS de notification en V1. |
+| EF-14-02 | **Canaux MVP** : push mobile, centre in-app, notification web (avec **son** pour les critiques — la poignée de main en < 5 s, ENF-09). SMS de notification en V1. |
 | EF-14-03 | **Catalogue de modèles** versionnés — les modules n'envoient jamais de texte libre. |
 | EF-14-04 | **Préférences par catégorie** (soin, finance, rappels, système) ; les **critiques ne sont pas désactivables** : poignée de main, remboursement, sécurité du compte. |
 | EF-14-05 | **Rappels de médicaments** (gratuits, [[../00_cadrage/vision|vision]] §2) : proposés automatiquement à la délivrance (M09) à partir de la posologie ; le patient active, ajuste les heures, arrête quand il veut ; fin automatique à la fin du traitement. |
@@ -35,7 +35,7 @@ Notifier **la bonne personne, au bon moment, sans jamais déranger pour rien**. 
 ## 3. Cas d'utilisation (clés)
 
 ### CU-14-01 — Notification critique (poignée de main)
-- *Étant donné* une initiation (M06), *alors* notification desktop sonore au professionnel en < 5 s ; *non livrée en 30 s* → second essai + bannière in-app persistante.
+- *Étant donné* une initiation (M06), *alors* notification web sonore au professionnel en < 5 s ; *non livrée en 30 s* → second essai + bannière in-app persistante.
 
 ### CU-14-02 — Rappel de médicament
 - *Étant donné* une délivrance « 3×/jour pendant 7 jours », *alors* proposition de rappels (8 h, 14 h, 20 h — ajustables) ; *à chaque prise*, notification discrète ; *au 7ᵉ jour*, dernier rappel + arrêt automatique.
@@ -51,7 +51,7 @@ Notifier **la bonne personne, au bon moment, sans jamais déranger pour rien**. 
 | ID | Règle |
 |---|---|
 | RM-14-01 | Service aveugle : M14 ne connaît aucune logique métier — il livre des modèles remplis. |
-| RM-14-02 | Les notifications critiques ne sont jamais désactivables ni silencieuses côté desktop professionnel. |
+| RM-14-02 | Les notifications critiques ne sont jamais désactivables ni silencieuses côté web professionnel. |
 | RM-14-03 | Jamais de contenu médical en clair (EF-14-06). |
 | RM-14-04 | **Aucune notification commerciale ou promotionnelle au MVP** — on ne dérange que pour servir ([[../00_cadrage/vision|vision]] §4). |
 | RM-14-05 | Les rappels de médicaments fonctionnent hors ligne (programmation locale). |

@@ -36,7 +36,7 @@ La **vitrine de l'offre de soin** : profils publics des professionnels vérifié
 | EF-05-02 | **Gestion des offres** par le professionnel : libellé, durée (PM-09), prix (PM-06, commission incluse D-010), type (standard / suivi) ; activation/désactivation ; maximum d'offres actives (PM-25 ❓). |
 | EF-05-03 | **Recherche et filtres** : catégorie, spécialité, prix maximum, note minimum, « disponible maintenant », arrondissement. Tri : pertinence (défaut), prix, note, réactivité. |
 | EF-05-04 | **Vitrine consultable sans compte** : l'annuaire se parcourt avant inscription ; toute action (initier, suivre) exige la connexion. *(Acquisition : on montre la valeur avant de demander un compte.)* |
-| EF-05-05 | **Statut de présence** : « en ligne » (connecté au desktop, disponible) / « absent » (déconnecté ou en mode Ne pas déranger). Le professionnel bascule en un clic. |
+| EF-05-05 | **Statut de présence** : « en ligne » (connecté au web, disponible) / « absent » (déconnecté ou en mode Ne pas déranger). Le professionnel bascule en un clic. |
 | EF-05-06 | **Bouton « initier » actif uniquement si le professionnel est en ligne** (la vision : on ne paie jamais un absent). Sinon : bouton « M'avertir quand il est disponible » → notification (C4). |
 | EF-05-07 | **Affichage honnête des notations** : moyenne, répartition, derniers commentaires. Un commentaire peut être signalé (M04). |
 | EF-05-08 | L'Accueil présente les professionnels par **onglets de catégories** (généralistes, spécialistes, dentistes, sages-femmes, infirmiers, agents) — D-013. |
@@ -57,7 +57,7 @@ La **vitrine de l'offre de soin** : profils publics des professionnels vérifié
 
 ### CU-05-04 — Basculer sa présence
 - *Étant donné* un professionnel en ligne, *quand* il passe « Ne pas déranger », *alors* ses boutons « initier » se grisent chez tous les patients en < 1 min ; les poignées de main déjà confirmées ne sont pas affectées.
-- *Étant donné* une fermeture de l'application desktop ou 15 min d'inactivité, *alors* passage automatique en « absent » (PM-26 ❓).
+- *Étant donné* une fermeture de l'application web ou 15 min d'inactivité, *alors* passage automatique en « absent » (PM-26 ❓).
 
 ### CU-05-05 — Être averti de la disponibilité
 - *Étant donné* une cloche posée sur un professionnel absent, *quand* il repasse en ligne, *alors* notification au patient (une seule par cloche, valable 7 jours).
@@ -69,7 +69,7 @@ La **vitrine de l'offre de soin** : profils publics des professionnels vérifié
 **Propres au module :**
 | Entité | Attributs clés | Règles |
 |---|---|---|
-| StatutPresence | professionnel, état (en ligne / absent / ne pas déranger), depuis | Mis à jour par le desktop (battement de cœur) |
+| StatutPresence | professionnel, état (en ligne / absent / ne pas déranger), depuis | Mis à jour par le web (battement de cœur) |
 | IndicateursReactivite | professionnel, taux de confirmation, délai moyen, période | Calculés depuis les événements M06, recalcul quotidien |
 | AlerteDisponibilite | patient, professionnel, posée le, expirée le | Une notification max par alerte |
 
@@ -88,7 +88,7 @@ La **vitrine de l'offre de soin** : profils publics des professionnels vérifié
 | Sens | Contrat |
 |---|---|
 | Expose | Fiche professionnel + offre sélectionnée → M06 (départ de la poignée de main) |
-| Consomme | Statut C6 (M03) ; événements de session pour les indicateurs (M06) ; notations (M06) ; présence (battement de cœur desktop, M01) |
+| Consomme | Statut C6 (M03) ; événements de session pour les indicateurs (M06) ; notations (M06) ; présence (battement de cœur web, M01) |
 | Émet | Demandes de notification cloche (C4) ; audit des actions sensibles (C5) |
 
 ## 8. Exigences non fonctionnelles spécifiques
@@ -101,8 +101,8 @@ La **vitrine de l'offre de soin** : profils publics des professionnels vérifié
 | Point | Détail |
 |---|---|
 | ❓ PM-25 | Nombre maximum d'offres actives par professionnel : proposition **5** |
-| ❓ PM-26 | Bascule automatique en « absent » après inactivité desktop : proposition **15 min** |
-| ⚠️ Présence fiable | Le « battement de cœur » desktop doit être robuste — un « en ligne » faux ruine la promesse de la poignée de main (R-04) ; détail en Phase 3 |
+| ❓ PM-26 | Bascule automatique en « absent » après inactivité web : proposition **15 min** |
+| ⚠️ Présence fiable | Le « battement de cœur » web doit être robuste — un « en ligne » faux ruine la promesse de la poignée de main (R-04) ; détail en Phase 3 |
 | ⚠️ Premiers arrivés | Sans notes ni historique, les nouveaux vérifiés doivent rester visibles (boost de découverte temporaire dans l'algorithme, documenté RM-05-02) |
 
 ---

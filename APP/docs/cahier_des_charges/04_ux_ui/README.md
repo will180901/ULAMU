@@ -16,7 +16,7 @@
 1. Ces maquettes doivent être **respectées au mieux — voire améliorées** dans l'exécution (qualité supérieure bienvenue, trahison interdite).
 2. Si un écran ou un état **manque** dans les maquettes (erreur, vide, hors ligne, chargement…), on le **complète** pendant la réalisation, dans le même langage visuel, et on le note ici.
 3. Les contraintes du cahier des charges (liste ci-dessous) prévalent en cas de conflit — tout écart est signalé au porteur avant d'être tranché.
-4. **Les maquettes sont une référence visuelle, jamais du code de production.** Leur code (artefacts Claude Design) ne sera **pas** transformé en application : l'interface est ré-implémentée de zéro dans la stack actée ([[../03_conception_transverse/decisions_architecture|ADR]]) — React Native pour le mobile, Next.js + Electron pour le desktop, sur l'API NestJS. On reproduit le **rendu** (couleurs, dispositions, composants, parcours), pas le fichier.
+4. **Les maquettes sont une référence visuelle, jamais du code de production.** Leur code (artefacts Claude Design) ne sera **pas** transformé en application : l'interface est ré-implémentée de zéro dans la stack actée ([[../03_conception_transverse/decisions_architecture|ADR]]) — React Native pour le mobile, React (Vite) pour le web, sur l'API NestJS. On reproduit le **rendu** (couleurs, dispositions, composants, parcours), pas le fichier.
 
 📁 `docs/Charte Graphique/` (11 documents HTML) :
 CG-01 Couleurs & tokens · CG-02 Typographie · CG-03 Espacements & grilles · CG-04 Effets & atmosphère · CG-05 Composants fondamentaux · CG-06 Navigation & structure · CG-07 Données & contenu · CG-08 Feedback & communication · CG-09 Animations & transitions · CG-10 Iconographie & assets · CG-11 États & accessibilité

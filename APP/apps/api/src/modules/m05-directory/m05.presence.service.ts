@@ -47,11 +47,11 @@ export class PresenceService {
   async isAvailableForInitiation(professionalId: string): Promise<boolean> {
     const pm26S = await this.params.getInt("PM-26");
     const row = await this.prisma.presenceStatus.findUnique({ where: { accountId: professionalId } });
-    if (!row) return false; // jamais connecté au desktop = absent
+    if (!row) return false; // jamais connecté au web = absent
     return presenceIsAvailable(row.state, row.lastHeartbeatAt.getTime(), Date.now(), pm26S);
   }
 
-  // ── EF-05-05 : battement de cœur desktop (CU-05-04) ─────────────────────────
+  // ── EF-05-05 : battement de cœur web (CU-05-04) ─────────────────────────
 
   /**
    * Upsert ONLINE + lastHeartbeatAt=now — SAUF en « Ne pas déranger » (choix explicite
@@ -99,7 +99,7 @@ export class PresenceService {
   // ── EF-05-05 : bascule en un clic (CU-05-04) ────────────────────────────────
 
   /**
-   * Bascule explicite ONLINE / DO_NOT_DISTURB / OFFLINE. L'action vaut activité desktop :
+   * Bascule explicite ONLINE / DO_NOT_DISTURB / OFFLINE. L'action vaut activité web :
    * lastHeartbeatAt est rafraîchi. Passage vers ONLINE depuis un état indisponible →
    * déclenchement des cloches (CU-05-05). Audité C5 (action explicite, dans la transaction).
    */

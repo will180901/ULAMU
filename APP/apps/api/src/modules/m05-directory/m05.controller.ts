@@ -61,7 +61,7 @@ export class M05Controller {
 
   // ── Présence (EF-05-05/06 ; CU-05-04) — professionnel authentifié ───────────
 
-  /** Battement de cœur desktop — upsert ONLINE sauf Ne pas déranger (PM-26 à la lecture). */
+  /** Battement de cœur web — upsert ONLINE sauf Ne pas déranger (PM-26 à la lecture). */
   @Post("presence/heartbeat")
   @HttpCode(200)
   heartbeat(@Actor() actor: AuthenticatedActor) {

@@ -1,6 +1,6 @@
 /**
  * Client API ULAMU — framework-agnostique (fetch global : présent en React Native 0.7x et Node 18+).
- * Réutilisé par mobile (RN) et desktop (Next/Electron). Aucune dépendance native.
+ * Réutilisé par mobile (RN) et web (React). Aucune dépendance native.
  *
  * Responsabilités : URL de base, injection du jeton Bearer (fourni paresseusement), sérialisation
  * JSON, et NORMALISATION des erreurs en `ApiError` typée (jamais une 500 brute remontée à l'UI).

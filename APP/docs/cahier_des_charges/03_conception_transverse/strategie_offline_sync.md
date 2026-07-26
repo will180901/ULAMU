@@ -22,7 +22,7 @@
 | Messages d'une session active | **Écriture en file** | Envoyés à la reconnexion, dans l'ordre (EF-06-13) |
 | Rappels de médicaments | Local autonome | Programmés sur l'appareil (RM-14-05), zéro réseau requis |
 
-**Exige la connexion** (D-025) : recherche, dévoilement, paiement, poignée de main, téléversements, inscription. Le desktop professionnel, lui, **travaille connecté** — pas de mode offline desktop au MVP (délivrance RM-09-03, présence M05).
+**Exige la connexion** (D-025) : recherche, dévoilement, paiement, poignée de main, téléversements, inscription. Le professionnel sur web, lui, **travaille connecté** — pas de mode offline web au MVP (délivrance RM-09-03, présence M05).
 
 ## 2. Stockage local
 

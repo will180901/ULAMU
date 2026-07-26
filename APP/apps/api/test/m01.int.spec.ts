@@ -194,7 +194,7 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
   it("CU-01-06 — révocation d'une session à distance", async () => {
     const phone = "+242061000008";
     const { accountId } = await registerPatient(phone);
-    await service.login({ username: usernameFor(phone), password: "motdepasse1", client: "desktop", deviceLabel: "PC cabinet" });
+    await service.login({ username: usernameFor(phone), password: "motdepasse1", client: "web", deviceLabel: "PC cabinet" });
     const sessions = await service.listSessions(accountId);
     expect(sessions).toHaveLength(2);
     await service.revokeSession(accountId, (sessions[0] as { id: string }).id);

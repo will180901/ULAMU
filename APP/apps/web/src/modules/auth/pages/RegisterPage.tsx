@@ -75,10 +75,10 @@ export function RegisterPage() {
             lastName,
             category,
             specialty: specialty.trim() || undefined,
-            client: 'desktop',
+            client: 'web',
             deviceLabel: 'ULAMU Web',
           })
-        : api.registerFacilityMember({ phone, username, otpCode, password, firstName, lastName, client: 'desktop', deviceLabel: 'ULAMU Web' }),
+        : api.registerFacilityMember({ phone, username, otpCode, password, firstName, lastName, client: 'web', deviceLabel: 'ULAMU Web' }),
   })
   const loadMe = useLoadMeMutation()
 

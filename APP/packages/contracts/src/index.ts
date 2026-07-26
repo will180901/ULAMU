@@ -10,7 +10,7 @@
  *  C4 — Demandes de notification (M14)
  *
  * Règle : les modules de apps/api ne s'importent JAMAIS entre eux — ils ne connaissent
- * que ces contrats ; les apps (mobile/desktop) consomment les DTO/réponses d'API d'ici.
+ * que ces contrats ; les apps (mobile/web) consomment les DTO/réponses d'API d'ici.
  */
 
 export const CONTRACTS_VERSION = "0.1.0";

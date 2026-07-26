@@ -35,7 +35,7 @@ export const PLATFORM_PARAMETERS: Param[] = [
   { key: "PM-23", value: "48", description: "Délai cible de traitement d'un signalement (h) (D-030)" },
   { key: "PM-24", value: "5", description: "Rétention du journal d'audit (ans) — à confirmer avocat (D-030)" },
   { key: "PM-25", value: "5", description: "Offres de consultation actives max par professionnel (D-031)" },
-  { key: "PM-26", value: "900", description: "Bascule automatique en absent — inactivité desktop (s) — 15 min (D-031)" },
+  { key: "PM-26", value: "900", description: "Bascule automatique en absent — inactivité web (s) — 15 min (D-031)" },
   { key: "PM-27", value: "3", description: "Sessions actives simultanées max par professionnel (D-032)" },
   { key: "PM-28", value: "600", description: "Démarrage automatique de session après paiement (s) — 10 min (D-032)" },
   { key: "PM-29", value: "1800", description: "Prolongation gratuite cumulée max (s) — +30 min (D-032)" },

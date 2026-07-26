@@ -19,7 +19,7 @@
 ```
 apps/api      → Backend NestJS + Prisma/PostgreSQL (un dossier par module M01-M16)
 apps/mobile   → React Native — application PATIENTS (Android d'abord)
-apps/desktop  → Next.js + Electron — PROFESSIONNELS / STRUCTURES / ADMIN
+apps/web      → React + Vite — PROFESSIONNELS / STRUCTURES / ADMIN
 packages/contracts → Types partagés : entités + contrats C1-C7 (source unique)
 packages/shared    → Utilitaires communs (validation, XAF, dates UTC)
 infra         → docker-compose dev, CI

@@ -39,7 +39,7 @@
 | PM-23 | Délai cible de traitement d'un signalement | **48 h** | D-030 ✅ (M04) |
 | PM-24 | Rétention du journal d'audit | **5 ans** (à confirmer avocat) | D-030 ✅ (M04) |
 | PM-25 | Offres de consultation actives max par professionnel | **5** | D-031 ✅ (M05) |
-| PM-26 | Bascule automatique en « absent » (inactivité desktop) | **15 min** | D-031 ✅ (M05) |
+| PM-26 | Bascule automatique en « absent » (inactivité web) | **15 min** | D-031 ✅ (M05) |
 | PM-27 | Sessions actives simultanées max par professionnel | **3** | D-032 ✅ (M06) |
 | PM-28 | Démarrage automatique de session après paiement | **10 min** | D-032 ✅ (M06) |
 | PM-29 | Prolongation gratuite cumulée max | **+30 min** | D-032 ✅ (M06) |

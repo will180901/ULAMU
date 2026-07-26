@@ -32,7 +32,7 @@ export function LoginPage() {
       const res = await login.mutateAsync({
         username,
         password,
-        client: 'desktop',
+        client: 'web',
         deviceLabel: 'ULAMU Web',
         totpCode: totpRequired ? totpCode : undefined,
       })

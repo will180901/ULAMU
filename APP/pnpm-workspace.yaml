@@ -1,7 +1,7 @@
 packages:
   - "apps/api"
-  - "apps/desktop"
   - "packages/*"
-  # apps/mobile est volontairement HORS du workspace pnpm : c'est une app React Native
-  # autonome installée avec npm (flux RN standard, sans friction Metro/symlinks). Le socle
-  # partagé y est vendoré dans src/lib/ (source de vérité : packages/contracts + packages/shared).
+  # apps/mobile et apps/web sont volontairement HORS du workspace pnpm : mobile est une app
+  # React Native autonome installée avec npm (flux RN standard, sans friction Metro/symlinks) ;
+  # web est un projet Vite autonome installé avec npm lui aussi. Le socle partagé y est vendoré
+  # dans src/lib/ (source de vérité : packages/contracts + packages/shared).

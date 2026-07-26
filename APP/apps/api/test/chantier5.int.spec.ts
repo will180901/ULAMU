@@ -80,7 +80,7 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     }
   };
   const actor = (accountId: string, accountType: string): Actor => ({
-    accountId, accountType, sessionId: "s", client: accountType === "PATIENT" ? "mobile" : "desktop",
+    accountId, accountType, sessionId: "s", client: accountType === "PATIENT" ? "mobile" : "web",
   });
 
   beforeAll(async () => {
@@ -179,7 +179,7 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     await m01.requestOtp(DOCTOR, "REGISTRATION");
     doctorId = (await m01.registerProfessional({
       phone: DOCTOR, username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastOtp(DOCTOR), password: "motdepasse1",
-      firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "desktop",
+      firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "web",
     })).accountId;
     await m01.requestOtp(PATIENT, "REGISTRATION");
     patientId = (await m01.registerPatient({
