@@ -89,16 +89,17 @@ const MESH_BLOBS: MeshBlob[] = [
   {size: 340, top: '-10%', left: '16%', color: MESH_COLORS[5], stops: DRIFT_3, duration: 18000, shape: 2},
 ];
 
-function MeshBlobView({blob, index}: {blob: MeshBlob; index: number}) {
+function MeshBlobView({blob, index, active}: {blob: MeshBlob; index: number; active: boolean}) {
   const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (!active) return; // figé (pas remis à 0) le temps que le fond ne soit plus le point focal — cf. MeshGradientBackground.
     const loop = Animated.loop(Animated.timing(progress, {toValue: 1, duration: blob.duration, easing: Easing.linear, useNativeDriver: true}));
     const t = setTimeout(() => loop.start(), index * 400);
     return () => {
       clearTimeout(t);
       loop.stop();
     };
-  }, [blob, progress, index]);
+  }, [blob, progress, index, active]);
 
   const inputRange = blob.stops.map(s => s[0]);
   const translateX = progress.interpolate({inputRange, outputRange: blob.stops.map(s => (s[1] / 100) * blob.size)});
@@ -154,12 +155,18 @@ function MeshGrain({opacity}: {opacity: number}) {
   );
 }
 
-function MeshGradientBackground() {
+/** `active=false` fige les formes (thread principal libéré) sans les démonter — utilisé quand ce fond
+ * n'est plus le point focal (tiroir ouvert / écran `startOpen`) : voir AuthCarouselDrawer. Figées ne
+ * suffit pas à lui seul : 6 dégradés radiaux semi-transparents superposés restent coûteux à recomposer
+ * à chaque frame tant qu'un voisin (curseur clignotant, ScrollView...) invalide la zone — même immobiles.
+ * `renderToHardwareTextureAndroid`/`shouldRasterizeIOS` fige alors le rendu en un bitmap unique mis en
+ * cache par le GPU, qui n'a plus besoin d'être recomposé tant que rien à l'intérieur ne change. */
+function MeshGradientBackground({active}: {active: boolean}) {
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" renderToHardwareTextureAndroid={!active} shouldRasterizeIOS={!active}>
       <View style={[StyleSheet.absoluteFill, {backgroundColor: MESH_COLORS[0]}]} />
       {MESH_BLOBS.map((b, i) => (
-        <MeshBlobView key={i} blob={b} index={i} />
+        <MeshBlobView key={i} blob={b} index={i} active={active} />
       ))}
       {/* Verre dépoli léger — le flou « naturel » vient des formes floutées elles-mêmes ci-dessus ; ce
           voile ne fait qu'unifier/adoucir légèrement, sans éteindre l'animation visible en dessous. */}
@@ -285,7 +292,11 @@ export function AuthCarouselDrawer({
 
   return (
     <View style={{flex: 1}}>
-      <MeshGradientBackground />
+      {/* Animation figée dès que le tiroir prend le dessus (ouvert, ou écran startOpen où il l'est en
+          permanence) : le fond n'est alors plus visible que dans la fine bande au-dessus du tiroir, mais
+          les 6 formes continuaient à tourner à plein régime — le thread principal saturait (frames
+          perdues visibles au profilage), et les taps/navigations semblaient « caler ». */}
+      <MeshGradientBackground active={!startOpen && !open} />
       {/* Le carrousel (5 grosses illustrations SVG) ne sert jamais sur un écran `startOpen` (Inscription,
           Mot de passe oublié…) — il ne serait de toute façon jamais visible. Ne pas le monter du tout
           là où on sait qu'il ne sert pas évite le coût de montage de 5 gros SVG à la navigation (c'était
