@@ -31,9 +31,10 @@ import { OtaModule } from "./modules/ota/ota.module";
     ConfigModule.forRoot({ isGlobal: true }),
     // Fichiers statiques publics (ex. logo ULAMU pour l'email OTP — cf. common/email/email.service.ts,
     // les webmails comme Gmail retirent les <svg> inline et bloquent les data URI, il faut une vraie
-    // URL http(s) accessible). __dirname = dist/ en prod, src/ en dev : public/ est dans les deux cas
-    // un frère direct du dossier d'exécution (apps/api/public), donc "../public" fonctionne pour les deux.
-    ServeStaticModule.forRoot({ rootPath: join(__dirname, "..", "public"), serveRoot: "/assets" }),
+    // URL http(s) accessible). process.cwd() plutôt que __dirname : "npm run dev"/"npm run start:prod"
+    // ont tous deux pour cwd apps/api, alors que __dirname diffère entre dev (src/, ts-node-dev exécute
+    // les .ts directement) et prod (dist/src/, tsc préserve le sous-dossier src/ dans l'outDir).
+    ServeStaticModule.forRoot({ rootPath: join(process.cwd(), "public"), serveRoot: "/assets" }),
     CommonModule,
     // ScheduleModule.forRoot() (un seul par application) active les @Cron du SchedulerService M16 :
     // la cadence opérationnelle (D-008/PM-07/PM-08/PM-10/PM-30, réconciliation EF-13-09, purge PM-37).
