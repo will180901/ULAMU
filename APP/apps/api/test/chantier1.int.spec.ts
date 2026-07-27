@@ -8,6 +8,7 @@ import { CommonModule } from "../src/common/common.module";
 import { OutboxService } from "../src/common/outbox.service";
 import { PrismaService } from "../src/common/prisma.service";
 import { DevSmsGateway } from "../src/common/sms/sms.service";
+import { DevEmailGateway, EMAIL_GATEWAY } from "../src/common/email/email.service";
 import { M01AccountsModule } from "../src/modules/m01-accounts/m01.module";
 import { M01Service } from "../src/modules/m01-accounts/m01.service";
 import { M02RolesStructuresModule } from "../src/modules/m02-roles-structures/m02.module";
@@ -21,6 +22,7 @@ import { AuditChainService } from "../src/modules/m04-audit-reports/m04.audit-ch
 describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", () => {
   let prisma: PrismaService;
   let sms: DevSmsGateway;
+  let mail: DevEmailGateway;
   let outbox: OutboxService;
   let m01: M01Service;
   let m02: M02Service;
@@ -45,13 +47,24 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
     if (!msg) throw new Error(`Aucun OTP capturé pour ${phone}`);
     return (msg.message.match(/\b(\d{6})\b/) as RegExpMatchArray)[1] as string;
   };
+  /** Email deterministe derive du telephone - Account.email est unique, chaque compte a donc le sien. */
+  const emailFor = (phone: string): string => `u${phone.replace(/\D/g, "").slice(-9)}@exemple.test`;
+  /** OTP d'inscription/reinitialisation, desormais envoye par email. `>(\d{6})<` cible le code seul :
+   * le chercher n'importe ou dans le HTML attraperait la couleur #111112 du gabarit. */
+  const lastEmailOtpFor = (phone: string): string => {
+    const to = emailFor(phone);
+    const msg = [...mail.sent].reverse().find((m) => m.to === to && />\d{6}</.test(m.html));
+    if (!msg) throw new Error(`Aucun OTP email capture pour ${to}`);
+    return (msg.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
+  };
 
   const registerFacilityMember = async (phone: string, firstName: string) => {
-    await m01.requestOtp(phone, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(phone) }, "REGISTRATION");
     return m01.registerFacilityMember({
       phone,
+      email: emailFor(phone),
       username: "u" + phone.replace(/\D/g, "").slice(-9),
-      otpCode: lastOtpFor(phone),
+      otpCode: lastEmailOtpFor(phone),
       password: "motdepasse1",
       firstName,
       lastName: "Test",
@@ -79,6 +92,7 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
     await moduleRef.init();
     prisma = moduleRef.get(PrismaService);
     sms = moduleRef.get(DevSmsGateway);
+    mail = moduleRef.get(EMAIL_GATEWAY);
     outbox = moduleRef.get(OutboxService);
     m01 = moduleRef.get(M01Service);
     m02 = moduleRef.get(M02Service);
@@ -137,11 +151,11 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
   });
 
   it("RM-02-06 — un PATIENT ne crée pas de structure", async () => {
-    await m01.requestOtp(PATIENT_PHONE, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(PATIENT_PHONE) }, "REGISTRATION");
     const patient = await m01.registerPatient({
-      phone: PATIENT_PHONE,
+      phone: PATIENT_PHONE, email: emailFor(PATIENT_PHONE),
       username: "u" + PATIENT_PHONE.replace(/\D/g, "").slice(-9),
-      otpCode: lastOtpFor(PATIENT_PHONE),
+      otpCode: lastEmailOtpFor(PATIENT_PHONE),
       password: "motdepasse1",
       firstName: "Mireille",
       lastName: "Nkounkou",

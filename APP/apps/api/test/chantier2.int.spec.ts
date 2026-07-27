@@ -11,6 +11,7 @@ import { DevAggregatorGateway } from "../src/common/momo/aggregator.gateway";
 import { OutboxService } from "../src/common/outbox.service";
 import { PrismaService } from "../src/common/prisma.service";
 import { DevSmsGateway } from "../src/common/sms/sms.service";
+import { DevEmailGateway, EMAIL_GATEWAY } from "../src/common/email/email.service";
 import { M01AccountsModule } from "../src/modules/m01-accounts/m01.module";
 import { M01Service } from "../src/modules/m01-accounts/m01.service";
 import { M13PaymentsModule } from "../src/modules/m13-payments/m13.module";
@@ -22,6 +23,7 @@ import { NotificationsService } from "../src/modules/m14-notifications/m14.servi
 describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
   let prisma: PrismaService;
   let sms: DevSmsGateway;
+  let mail: DevEmailGateway;
   let momo: DevAggregatorGateway;
   let outbox: OutboxService;
   let m01: M01Service;
@@ -39,6 +41,16 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
     const msg = [...sms.sent].reverse().find((m) => m.phone === phone && /\b\d{6}\b/.test(m.message));
     if (!msg) throw new Error(`Aucun OTP pour ${phone}`);
     return (msg.message.match(/\b(\d{6})\b/) as RegExpMatchArray)[1] as string;
+  };
+  /** Email deterministe derive du telephone - Account.email est unique, chaque compte a donc le sien. */
+  const emailFor = (phone: string): string => `u${phone.replace(/\D/g, "").slice(-9)}@exemple.test`;
+  /** OTP d'inscription/reinitialisation, desormais envoye par email. `>(\d{6})<` cible le code seul :
+   * le chercher n'importe ou dans le HTML attraperait la couleur #111112 du gabarit. */
+  const lastEmailOtpFor = (phone: string): string => {
+    const to = emailFor(phone);
+    const msg = [...mail.sent].reverse().find((m) => m.to === to && />\d{6}</.test(m.html));
+    if (!msg) throw new Error(`Aucun OTP email capture pour ${to}`);
+    return (msg.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
   };
 
   const drainAll = async (): Promise<void> => {
@@ -59,6 +71,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
     await moduleRef.init();
     prisma = moduleRef.get(PrismaService);
     sms = moduleRef.get(DevSmsGateway);
+    mail = moduleRef.get(EMAIL_GATEWAY);
     momo = moduleRef.get(DevAggregatorGateway);
     outbox = moduleRef.get(OutboxService);
     m01 = moduleRef.get(M01Service);
@@ -114,11 +127,12 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
   });
 
   async function registerProfessional(phone: string) {
-    await m01.requestOtp(phone, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(phone) }, "REGISTRATION");
     return m01.registerProfessional({
       phone,
+      email: emailFor(phone),
       username: "u" + phone.replace(/\D/g, "").slice(-9),
-      otpCode: lastOtpFor(phone),
+      otpCode: lastEmailOtpFor(phone),
       password: "motdepasse1",
       firstName: "Armel",
       lastName: "Konaté",
@@ -127,11 +141,12 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
     });
   }
   async function registerPatient(phone: string) {
-    await m01.requestOtp(phone, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(phone) }, "REGISTRATION");
     return m01.registerPatient({
       phone,
+      email: emailFor(phone),
       username: "u" + phone.replace(/\D/g, "").slice(-9),
-      otpCode: lastOtpFor(phone),
+      otpCode: lastEmailOtpFor(phone),
       password: "motdepasse1",
       firstName: "Mireille",
       lastName: "Nkounkou",

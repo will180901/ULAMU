@@ -14,6 +14,7 @@ import { OutboxService } from "../src/common/outbox.service";
 import { ParamsService } from "../src/common/params.service";
 import { PrismaService } from "../src/common/prisma.service";
 import { DevSmsGateway } from "../src/common/sms/sms.service";
+import { DevEmailGateway, EMAIL_GATEWAY } from "../src/common/email/email.service";
 import { M01AccountsModule } from "../src/modules/m01-accounts/m01.module";
 import { M01Service } from "../src/modules/m01-accounts/m01.service";
 import { M03VerificationContractsModule } from "../src/modules/m03-verification-contracts/m03.module";
@@ -41,6 +42,7 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
   let moduleRef: Awaited<ReturnType<ReturnType<typeof Test.createTestingModule>["compile"]>>;
   let prisma: PrismaService;
   let sms: DevSmsGateway;
+  let mail: DevEmailGateway;
   let momo: DevAggregatorGateway;
   let outbox: OutboxService;
   let params: ParamsService;
@@ -70,6 +72,16 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     if (!m) throw new Error(`Aucun OTP pour ${phone}`);
     return (m.message.match(/\b(\d{6})\b/) as RegExpMatchArray)[1] as string;
   };
+  /** Email deterministe derive du telephone - Account.email est unique, chaque compte a donc le sien. */
+  const emailFor = (phone: string): string => `u${phone.replace(/\D/g, "").slice(-9)}@exemple.test`;
+  /** OTP d'inscription/reinitialisation, desormais envoye par email. `>(\d{6})<` cible le code seul :
+   * le chercher n'importe ou dans le HTML attraperait la couleur #111112 du gabarit. */
+  const lastEmailOtp = (phone: string): string => {
+    const to = emailFor(phone);
+    const msg = [...mail.sent].reverse().find((m) => m.to === to && />\d{6}</.test(m.html));
+    if (!msg) throw new Error(`Aucun OTP email capture pour ${to}`);
+    return (msg.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
+  };
   const drain = async (): Promise<void> => {
     const deadline = Date.now() + 15_000;
     for (;;) {
@@ -94,6 +106,7 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     await moduleRef.init();
     prisma = moduleRef.get(PrismaService);
     sms = moduleRef.get(DevSmsGateway);
+    mail = moduleRef.get(EMAIL_GATEWAY);
     momo = moduleRef.get(DevAggregatorGateway);
     outbox = moduleRef.get(OutboxService);
     params = moduleRef.get(ParamsService);
@@ -176,19 +189,19 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     await prisma.account.deleteMany();
 
     // Médecin vérifié + signé (pour l'avenant) + offre + présence.
-    await m01.requestOtp(DOCTOR, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(DOCTOR) }, "REGISTRATION");
     doctorId = (await m01.registerProfessional({
-      phone: DOCTOR, username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastOtp(DOCTOR), password: "motdepasse1",
+      phone: DOCTOR, email: emailFor(DOCTOR), username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(DOCTOR), password: "motdepasse1",
       firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "web",
     })).accountId;
-    await m01.requestOtp(PATIENT, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(PATIENT) }, "REGISTRATION");
     patientId = (await m01.registerPatient({
-      phone: PATIENT, username: "u" + PATIENT.replace(/\D/g, "").slice(-9), otpCode: lastOtp(PATIENT), password: "motdepasse1",
+      phone: PATIENT, email: emailFor(PATIENT), username: "u" + PATIENT.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(PATIENT), password: "motdepasse1",
       firstName: "Mireille", lastName: "Nkounkou", birthDate: "1994-03-15", sex: "F", district: "Talangaï", client: "mobile",
     })).accountId;
-    await m01.requestOtp(PATIENT2, "REGISTRATION");
+    await m01.requestOtp({ email: emailFor(PATIENT2) }, "REGISTRATION");
     patient2Id = (await m01.registerPatient({
-      phone: PATIENT2, username: "u" + PATIENT2.replace(/\D/g, "").slice(-9), otpCode: lastOtp(PATIENT2), password: "motdepasse1",
+      phone: PATIENT2, email: emailFor(PATIENT2), username: "u" + PATIENT2.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(PATIENT2), password: "motdepasse1",
       firstName: "Gaston", lastName: "Mabiala", birthDate: "1968-01-10", sex: "M", district: "Bacongo", client: "mobile",
     })).accountId;
     await drain();

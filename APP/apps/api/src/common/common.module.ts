@@ -11,10 +11,14 @@ import { AGGREGATOR_GATEWAY, DevAggregatorGateway } from "./momo/aggregator.gate
 import { StorageService } from "./storage.service";
 
 // Resend seulement si une clé est configurée (prod/Render) — sinon la passerelle de dev journalise
-// (même principe que SMS_GATEWAY/DevSmsGateway).
-const emailGatewayProvider = process.env.RESEND_API_KEY
-  ? { provide: EMAIL_GATEWAY, useClass: ResendEmailGateway }
-  : { provide: EMAIL_GATEWAY, useClass: DevEmailGateway };
+// (même principe que SMS_GATEWAY/DevSmsGateway). JAMAIS sous test : les suites d'intégration créent
+// des dizaines de comptes, elles enverraient autant de vrais emails (et épuiseraient le quota Resend).
+// Aujourd'hui jest ne charge pas .env, donc la clé est absente de toute façon — cette garde évite que
+// ça devienne vrai silencieusement si un setupFile dotenv est ajouté un jour.
+const emailGatewayProvider =
+  process.env.RESEND_API_KEY && process.env.NODE_ENV !== "test"
+    ? { provide: EMAIL_GATEWAY, useClass: ResendEmailGateway }
+    : { provide: EMAIL_GATEWAY, useClass: DevEmailGateway };
 
 /** Socle transverse — global : chaque module l'utilise sans réimporter. */
 @Global()

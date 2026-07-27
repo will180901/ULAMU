@@ -1,6 +1,7 @@
 /**
- * Connexion — même identifiant (username) et flux TOTP en 2 étapes que le reste d'ULAMU (M01),
- * réservée aux comptes PROFESSIONAL/FACILITY_MEMBER/ADMIN (les patients restent sur mobile).
+ * Connexion — nom d'utilisateur OU email (2026-07, comme sur mobile : l'API route sur l'un ou l'autre
+ * selon la présence d'un « @ ») + flux TOTP en 2 étapes (M01). Réservée aux comptes PROFESSIONAL/
+ * FACILITY_MEMBER/ADMIN (les patients restent sur mobile).
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -55,7 +56,14 @@ export function LoginPage() {
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
         {!totpRequired ? (
           <>
-            <Field label="Nom d'utilisateur" value={username} onChange={(e) => setUsername(e.target.value)} autoFocus required />
+            <Field
+              label="Nom d'utilisateur ou email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="dr_kouma ou vous@exemple.com"
+              autoFocus
+              required
+            />
             <Field label="Mot de passe" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <Link
               to="/mot-de-passe-oublie"

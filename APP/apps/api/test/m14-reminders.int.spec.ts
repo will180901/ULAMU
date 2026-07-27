@@ -9,6 +9,7 @@ import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { CommonModule } from "../src/common/common.module";
 import { DevSmsGateway } from "../src/common/sms/sms.service";
+import { DevEmailGateway, EMAIL_GATEWAY } from "../src/common/email/email.service";
 import { PrismaService } from "../src/common/prisma.service";
 import { AuthenticatedActor } from "../src/common/auth/auth.guard";
 import { M01AccountsModule } from "../src/modules/m01-accounts/m01.module";
@@ -20,6 +21,7 @@ describe("M14 — rappels de médicaments + profil (CRUD isolé par patient)", (
   let accounts: M01Service;
   let prisma: PrismaService;
   let sms: DevSmsGateway;
+  let mail: DevEmailGateway;
 
   const lastOtpFor = (phone: string): string => {
     const msg = [...sms.sent].reverse().find((m) => m.phone === phone && /\b\d{6}\b/.test(m.message));
@@ -27,13 +29,23 @@ describe("M14 — rappels de médicaments + profil (CRUD isolé par patient)", (
     return (msg.message.match(/\b(\d{6})\b/) as RegExpMatchArray)[1] as string;
   };
   const usernameFor = (phone: string): string => "u" + phone.replace(/\D/g, "").slice(-9);
+  const emailFor = (phone: string): string => `u${phone.replace(/\D/g, "").slice(-9)}@exemple.test`;
+  /** OTP d'inscription, desormais envoye par email. `>(\d{6})<` cible le code seul : le chercher
+   * n'importe ou dans le HTML attraperait la couleur #111112 du gabarit. */
+  const lastEmailOtpFor = (phone: string): string => {
+    const to = emailFor(phone);
+    const msg = [...mail.sent].reverse().find((m) => m.to === to && />\d{6}</.test(m.html));
+    if (!msg) throw new Error(`Aucun OTP email capture pour ${to}`);
+    return (msg.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
+  };
 
   const registerPatient = async (phone: string, district = "Bacongo") => {
-    await accounts.requestOtp(phone, "REGISTRATION");
+    await accounts.requestOtp({ email: emailFor(phone) }, "REGISTRATION");
     const res = await accounts.registerPatient({
       phone,
+      email: emailFor(phone),
       username: usernameFor(phone),
-      otpCode: lastOtpFor(phone),
+      otpCode: lastEmailOtpFor(phone),
       password: "motdepasse1",
       firstName: "Grace",
       lastName: "Mabiala",
@@ -61,6 +73,7 @@ describe("M14 — rappels de médicaments + profil (CRUD isolé par patient)", (
     accounts = moduleRef.get(M01Service);
     prisma = moduleRef.get(PrismaService);
     sms = moduleRef.get(DevSmsGateway);
+    mail = moduleRef.get(EMAIL_GATEWAY);
 
     // Slate propre (ordre FK) — la base est partagée entre suites d'intégration (cf. m01.int.spec).
     await prisma.medicationReminder.deleteMany();

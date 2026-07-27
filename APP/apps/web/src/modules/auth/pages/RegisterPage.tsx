@@ -1,8 +1,14 @@
 /**
  * Inscription web — réservée aux PROFESSIONAL/FACILITY_MEMBER (mêmes routes que la Phase 0 backend).
  * Étapes : type de compte → identité → profil professionnel (PROFESSIONAL uniquement) → sécurité →
- * vérification OTP. Découpé en étapes courtes pour que la carte AuthLayout garde une hauteur correcte
- * (l'ancienne étape unique "Informations" avec 8 champs débordait).
+ * vérification par EMAIL. Découpé en étapes courtes pour que la carte AuthLayout garde une hauteur
+ * correcte (l'ancienne étape unique "Informations" avec 8 champs débordait).
+ *
+ * Pourquoi un code par email ici, alors que le web est censé n'utiliser que le TOTP : à l'inscription,
+ * aucun secret TOTP n'existe encore pour ce compte — il n'y a donc rien à vérifier. L'email sert
+ * UNIQUEMENT à prouver l'identité une fois, à la création. Ensuite le TOTP prend le relais et lui seul,
+ * pour la connexion (2e facteur) et la réinitialisation de mot de passe : cf. ForgotPasswordPage, qui
+ * n'accepte qu'un code d'authentificateur ou un code de secours.
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -46,6 +52,7 @@ export function RegisterPage() {
   const [accountType, setAccountType] = useState<AccountType | null>(null)
 
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -62,12 +69,13 @@ export function RegisterPage() {
   const labels = LABELS[accountType ?? 'default']
   const currentIndex = steps.indexOf(step)
 
-  const requestOtp = useMutation({ mutationFn: () => api.requestOtp({ phone, purpose: 'REGISTRATION' }) })
+  const requestOtp = useMutation({ mutationFn: () => api.requestOtp({ email, purpose: 'REGISTRATION' }) })
   const register = useMutation({
     mutationFn: () =>
       accountType === 'PROFESSIONAL'
         ? api.registerProfessional({
             phone,
+            email,
             username,
             otpCode,
             password,
@@ -78,7 +86,7 @@ export function RegisterPage() {
             client: 'web',
             deviceLabel: 'ULAMU Web',
           })
-        : api.registerFacilityMember({ phone, username, otpCode, password, firstName, lastName, client: 'web', deviceLabel: 'ULAMU Web' }),
+        : api.registerFacilityMember({ phone, email, username, otpCode, password, firstName, lastName, client: 'web', deviceLabel: 'ULAMU Web' }),
   })
   const loadMe = useLoadMeMutation()
 
@@ -98,7 +106,7 @@ export function RegisterPage() {
     }
     try {
       const res = await requestOtp.mutateAsync()
-      setOtpInfo(res.debugCode ? `Mode démo — code : ${res.debugCode}` : 'Code envoyé par SMS.')
+      setOtpInfo(res.debugCode ? `Mode démo — code : ${res.debugCode}` : `Code envoyé à ${email}.`)
       if (res.debugCode) setOtpCode(res.debugCode)
       setStep('otp')
     } catch (err) {
@@ -157,6 +165,15 @@ export function RegisterPage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}
           >
             <Field label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+242…" autoFocus required />
+            <Field
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@exemple.com"
+              hint="Votre code de vérification y sera envoyé."
+              required
+            />
             <Field label="Nom d'utilisateur" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <div style={{ display: 'flex', gap: 'var(--espace-3)' }}>
               <div style={{ flex: 1 }}>
@@ -219,10 +236,10 @@ export function RegisterPage() {
         ) : (
           <form onSubmit={submitRegister} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>
-              <ShieldCheck size={16} /> Vérification du téléphone
+              <ShieldCheck size={16} /> Vérification de l'adresse email
             </div>
             {otpInfo ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--info-texte)' }}>{otpInfo}</div> : null}
-            <Field label="Code reçu par SMS" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} maxLength={6} autoFocus required />
+            <Field label="Code reçu par email" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} maxLength={6} autoFocus required />
 
             {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
 

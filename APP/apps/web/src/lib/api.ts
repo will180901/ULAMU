@@ -104,6 +104,7 @@ async function request<T>(method: string, path: string, body?: unknown, auth = f
 // ── Contrats minimaux (Phase 0 : auth) ─────────────────────────────────────
 
 export interface LoginRequest {
+  /** Nom d'utilisateur OU adresse email (2026-07 — l'API accepte les deux, cf. m01.service). */
   username: string
   password: string
   client: 'web'
@@ -133,18 +134,25 @@ export interface MeResponse {
 
 // ── Inscription (Étape 2) ───────────────────────────────────────────────────
 
+/**
+ * Vérification à l'inscription : par EMAIL (2026-07 — remplace le SMS, cf. common/email/email.service).
+ * Le TOTP ne peut pas servir ici : à l'inscription, aucun secret n'est encore associé au compte. Il prend
+ * le relais ensuite, et lui seul, pour la connexion (2e facteur) et la réinitialisation de mot de passe —
+ * règle « jamais de SMS ni de code par email pour récupérer un compte web ».
+ */
 export interface RequestOtpRequest {
-  phone: string
+  email: string
   purpose: 'REGISTRATION' | 'PASSWORD_RESET'
 }
 export interface RequestOtpResponse {
   expiresInSeconds: number
-  /** Présent uniquement en mode démo (OTP_ECHO=true côté API, pas encore de vrai SMS Twilio). */
+  /** Présent uniquement en mode démo (OTP_ECHO=true côté API). */
   debugCode?: string
 }
 export type ProfessionalCategory = 'GENERAL_PRACTITIONER' | 'SPECIALIST' | 'DENTIST' | 'MIDWIFE' | 'NURSE' | 'COMMUNITY_HEALTH_WORKER'
 export interface RegisterProfessionalRequest {
   phone: string
+  email: string
   username: string
   otpCode: string
   password: string
@@ -157,6 +165,7 @@ export interface RegisterProfessionalRequest {
 }
 export interface RegisterFacilityMemberRequest {
   phone: string
+  email: string
   username: string
   otpCode: string
   password: string

@@ -375,6 +375,14 @@ export class M01Service {
     }
     if (account.status === "SUSPENDED") throw new ForbiddenException("Compte suspendu (RM-01-05)");
     if (account.status === "CLOSED") throw new ForbiddenException("Compte clôturé — contactez le support (PM-21)");
+    // D-012 : le web est l'app pro/structure/admin, le mobile est l'app patient. Sans ce refus, un patient
+    // obtenait une session web valide puis restait coincé (aucune capacité → garde de route qui rejette,
+    // puis redirection en boucle vers ce même tableau de bord), sans comprendre pourquoi. Vérifié APRÈS le
+    // mot de passe : refuser avant révélerait l'existence du compte et son type (anti-énumération).
+    if (dto.client === "web" && account.type === "PATIENT") {
+      await this.prisma.loginAttempt.create({ data: { phone: account.phone, success: false, client: dto.client } });
+      throw new ForbiddenException("Compte patient — connectez-vous depuis l'application mobile ULAMU");
+    }
 
     // TOTP (EF-01-10) : second facteur si activé. On signale via { totpRequired } (réponse 200), pas une exception.
     if (account.totpSecret?.enabled) {
