@@ -28,7 +28,12 @@ interface AuthContextValue {
   /** 2026-07 : le code OTP part par EMAIL (plus par SMS) — inscription/réinitialisation. */
   requestOtp: (email: string, purpose?: PublicOtpPurpose) => Promise<RequestOtpResponse>;
   /** Connexion. Renvoie {totpRequired} : si true, redemander avec le code TOTP. */
-  loginPassword: (username: string, password: string, totpCode?: string) => Promise<{totpRequired: boolean}>;
+  loginPassword: (
+    username: string,
+    password: string,
+    totpCode?: string,
+    otpCode?: string,
+  ) => Promise<{totpRequired: boolean; otpRequired: boolean}>;
   /** Vérifie l'OTP et crée le compte patient (réel). Session mise « en attente ». */
   verifyRegister: (profile: RegisterProfile, district: string, phone: string, otpCode: string) => Promise<void>;
   /** Active la session en attente (→ entre dans l'app). */
@@ -95,13 +100,23 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       return api.requestOtp({email, purpose});
     }
 
-    async function loginPassword(username: string, password: string, totpCode?: string): Promise<{totpRequired: boolean}> {
-      const res = await api.login({username, password, client: CLIENT_KIND, deviceLabel: deviceLabel(), totpCode});
+    async function loginPassword(
+      username: string,
+      password: string,
+      totpCode?: string,
+      otpCode?: string,
+    ): Promise<{totpRequired: boolean; otpRequired: boolean}> {
+      const res = await api.login({username, password, client: CLIENT_KIND, deviceLabel: deviceLabel(), totpCode, otpCode});
+      // 2FA par email : le serveur vient d'envoyer un code, aucune session n'est ouverte tant qu'il
+      // n'est pas fourni. `totpRequired` est le pendant web, conservé pour rester aligné sur l'API.
+      if (res.otpRequired) {
+        return {totpRequired: false, otpRequired: true};
+      }
       if (res.totpRequired) {
-        return {totpRequired: true};
+        return {totpRequired: true, otpRequired: false};
       }
       pending.current = {accountId: res.accountId!, accountType: res.accountType ?? 'PATIENT', sessionToken: res.sessionToken!};
-      return {totpRequired: false};
+      return {totpRequired: false, otpRequired: false};
     }
 
     async function verifyRegister(profile: RegisterProfile, district: string, phone: string, otpCode: string): Promise<void> {

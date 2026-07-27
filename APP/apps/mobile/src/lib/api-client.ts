@@ -19,7 +19,9 @@ import {
   CreateReminderRequest,
   CreateSubProfileRequest,
   DeclareEntryRequest,
+  DisableEmailTwoFactorRequest,
   DisableTotpRequest,
+  EnableEmailTwoFactorRequest,
   Reminder,
   ReminderListResponse,
   REMINDER_ROUTES,
@@ -283,6 +285,18 @@ export class ApiClient {
   }
   disableTotp(dto: DisableTotpRequest): Promise<unknown> {
     return this.request('POST', ACCOUNT_ROUTES.totpDisable, dto, true);
+  }
+
+  // ── 2FA par email (mobile) ────────────────────────────────────────────────
+  /** Envoie un code à l'adresse du compte pour confirmer l'activation. */
+  requestEmailTwoFactorOtp(): Promise<RequestOtpResponse> {
+    return this.request('POST', ACCOUNT_ROUTES.twoFactorEmailRequest, undefined, true);
+  }
+  enableEmailTwoFactor(dto: EnableEmailTwoFactorRequest): Promise<{enabled: true}> {
+    return this.request('POST', ACCOUNT_ROUTES.twoFactorEmailEnable, dto, true);
+  }
+  disableEmailTwoFactor(dto: DisableEmailTwoFactorRequest): Promise<{enabled: false}> {
+    return this.request('POST', ACCOUNT_ROUTES.twoFactorEmailDisable, dto, true);
   }
 
   // ── M05 — annuaire (vitrine publique + cloche authentifiée) ───────────────

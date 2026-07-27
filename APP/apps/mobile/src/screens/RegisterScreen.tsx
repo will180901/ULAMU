@@ -60,7 +60,8 @@ export function RegisterScreen({navigation}: Props) {
 
   // OTP
   const [otp, setOtp] = useState('');
-  const [testCode, setTestCode] = useState<string | null>(null); // mode test : code renvoyé par le serveur (pas de SMS)
+  const [testCode, setTestCode] = useState<string | null>(null); // mode test : code renvoyé par le serveur (pas d'email réel)
+  const [validForMin, setValidForMin] = useState<number | null>(null); // durée réelle renvoyée par l'API (PM-17)
   const otpTried = useRef(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +112,7 @@ export function RegisterScreen({navigation}: Props) {
     setSending(true);
     try {
       const res = await requestOtp(email, 'REGISTRATION');
+      setValidForMin(Math.max(1, Math.round(res.expiresInSeconds / 60)));
       setStep('otp');
       // Mode test (pas de SMS) : le serveur renvoie le code → on le montre et on le pré-remplit.
       if (res.debugCode) {
@@ -268,7 +270,14 @@ export function RegisterScreen({navigation}: Props) {
                 </Badge>
               )}
             </View>
-            {busy ? <Hint center>Création de votre compte…</Hint> : <Hint center>Le code à 6 chiffres est envoyé par email.</Hint>}
+            {busy ? (
+              <Hint center>Création de votre compte…</Hint>
+            ) : (
+              <Hint center>
+                Code à 6 chiffres envoyé par email
+                {validForMin !== null ? `, valable ${validForMin} minute${validForMin > 1 ? 's' : ''}` : ''}.
+              </Hint>
+            )}
           </View>
         )}
 

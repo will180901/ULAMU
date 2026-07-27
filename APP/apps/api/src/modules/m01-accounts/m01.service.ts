@@ -65,12 +65,17 @@ export class M01Service {
     const target: OtpTarget = rawTarget.email
       ? { email: this.normalizeEmailOrThrow(rawTarget.email) }
       : { phone: this.normalizeOrThrow(rawTarget.phone ?? "") };
+    // Quota PM-19 compté PAR USAGE et non plus globalement par cible : sinon trois inscriptions ratées
+    // empêchaient de réinitialiser son mot de passe dans l'heure, et surtout la 2FA à la connexion
+    // (LOGIN_2FA) aurait plafonné l'utilisateur à 3 connexions/heure. LOGIN_2FA a de plus un quota plus
+    // large : c'est un geste quotidien normal, pas une opération exceptionnelle comme une inscription.
     const maxPerHour = await this.params.getInt("PM-19");
+    const quota = purpose === "LOGIN_2FA" ? maxPerHour * 4 : maxPerHour;
     const recent = await this.prisma.otpCode.findMany({
-      where: { ...target, createdAt: { gte: new Date(Date.now() - 3600_000) } },
+      where: { ...target, purpose, createdAt: { gte: new Date(Date.now() - 3600_000) } },
       select: { createdAt: true },
     });
-    if (!canSendOtp(recent.map((r) => r.createdAt.getTime()), maxPerHour, Date.now())) {
+    if (!canSendOtp(recent.map((r) => r.createdAt.getTime()), quota, Date.now())) {
       throw new ForbiddenException("Trop de demandes de code — réessayez plus tard (PM-19)");
     }
     const ttl = await this.params.getInt("PM-17");
@@ -343,7 +348,15 @@ export class M01Service {
     client: string;
     deviceLabel?: string;
     totpCode?: string;
-  }): Promise<{ totpRequired: boolean; sessionToken?: string; accountId?: string; accountType?: string }> {
+    /** Code reçu par email quand la 2FA email est active (mobile) — cf. emailTwoFactorEnabled. */
+    otpCode?: string;
+  }): Promise<{
+    totpRequired: boolean;
+    otpRequired?: boolean;
+    sessionToken?: string;
+    accountId?: string;
+    accountType?: string;
+  }> {
     // Identifiant de connexion = username OU email (2026-07). Le téléphone reste la racine (PM-18, OTP, audit).
     const account = dto.username.includes("@")
       ? await this.prisma.account.findUnique({ where: { email: normalizeEmail(dto.username) }, include: { totpSecret: true } })
@@ -396,11 +409,60 @@ export class M01Service {
       }
     }
 
+    // 2FA par email — la double authentification du MOBILE (le TOTP y est absent, il reste au web).
+    // Même principe de signalement que le TOTP : { otpRequired } en 200, pas une exception. Le code
+    // n'est envoyé qu'ICI, une fois le mot de passe validé : l'envoyer avant permettrait à n'importe
+    // qui de faire spammer la boîte mail d'un tiers en connaissant juste son identifiant.
+    if (account.emailTwoFactorEnabled && account.email) {
+      if (!dto.otpCode) {
+        await this.requestOtp({ email: account.email }, "LOGIN_2FA");
+        return { totpRequired: false, otpRequired: true };
+      }
+      await this.prisma.$transaction(async (tx) => {
+        await this.consumeOtpOrThrow(tx, { email: account.email as string }, "LOGIN_2FA", dto.otpCode as string);
+      });
+    }
+
     return this.prisma.$transaction(async (tx) => {
       await tx.loginAttempt.create({ data: { phone: account.phone, success: true, client: dto.client } });
       const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
-      return { totpRequired: false, sessionToken: token, accountId: account.id, accountType: account.type };
+      return { totpRequired: false, otpRequired: false, sessionToken: token, accountId: account.id, accountType: account.type };
     });
+  }
+
+  // ── 2FA par email (mobile) ─────────────────────────────────────────────────
+
+  /** Envoie un code pour ACTIVER la 2FA email — prouve que l'utilisateur relève bien l'adresse du compte. */
+  async requestEmailTwoFactorOtp(accountId: string): Promise<{ expiresInSeconds: number; debugCode?: string }> {
+    const account = await this.prisma.account.findUnique({ where: { id: accountId }, select: { email: true } });
+    if (!account?.email) {
+      throw new BadRequestException("Aucune adresse email sur ce compte — ajoutez-en une d'abord");
+    }
+    return this.requestOtp({ email: account.email }, "LOGIN_2FA");
+  }
+
+  /** Active la 2FA email après vérification du code reçu. */
+  async enableEmailTwoFactor(accountId: string, otpCode: string): Promise<{ enabled: true }> {
+    const account = await this.prisma.account.findUnique({ where: { id: accountId }, select: { email: true } });
+    if (!account?.email) throw new BadRequestException("Aucune adresse email sur ce compte");
+    await this.prisma.$transaction(async (tx) => {
+      await this.consumeOtpOrThrow(tx, { email: account.email as string }, "LOGIN_2FA", otpCode);
+      await tx.account.update({ where: { id: accountId }, data: { emailTwoFactorEnabled: true } });
+    });
+    await this.auditSystem("m01.2fa_email.enabled", `account:${accountId}`, {});
+    return { enabled: true };
+  }
+
+  /** Désactive la 2FA email — mot de passe exigé (on retire une protection, RM-01-03). */
+  async disableEmailTwoFactor(accountId: string, password: string): Promise<{ enabled: false }> {
+    const account = await this.prisma.account.findUnique({ where: { id: accountId } });
+    if (!account) throw new UnauthorizedException("Compte introuvable");
+    if (!(await verifyPassword(password, account.passwordHash))) {
+      throw new UnauthorizedException("Mot de passe incorrect");
+    }
+    await this.prisma.account.update({ where: { id: accountId }, data: { emailTwoFactorEnabled: false } });
+    await this.auditSystem("m01.2fa_email.disabled", `account:${accountId}`, {});
+    return { enabled: false };
   }
 
   /** Disponibilité d'un nom d'utilisateur (D-049) — format invalide = indisponible. */
@@ -468,6 +530,9 @@ export class M01Service {
       biography: pro?.biography ?? null,
       adminRole: account.adminRole?.role ?? null,
       totpEnabled: account.totpSecret?.enabled ?? false,
+      /** 2FA par email — celle du mobile (le TOTP ci-dessus est réservé au web). */
+      emailTwoFactorEnabled: account.emailTwoFactorEnabled,
+      email: account.email,
     };
   }
 

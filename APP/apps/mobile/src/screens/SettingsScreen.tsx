@@ -1,7 +1,9 @@
 /**
  * Réglages — Compte & Sécurité (M01). Branché RÉEL :
  *  • Appareils connectés : `GET /v1/accounts/me/sessions` + `DELETE …/:id` (CU-01-06, révocation à distance) ;
- *  • 2FA : activer → TotpIntro ; désactiver → `POST …/totp/disable` (mot de passe + code, RM-01-06) ;
+ *  • 2FA par EMAIL (celle du mobile — le TOTP est réservé au web) : activer → `POST …/2fa/email/request`
+ *    puis `…/enable` (code reçu à l'adresse du compte) ; désactiver → `…/disable` (mot de passe seul :
+ *    exiger un code priverait d'accès quelqu'un qui ne reçoit justement plus ses emails) ;
  *  • Changer de numéro → écran dédié (OTP ancien + nouveau, EF-01-07) ;
  *  • Clôturer mon compte → écran dédié (mot de passe + OTP, CU-01-07).
  */
@@ -40,6 +42,7 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [disableOpen, setDisableOpen] = useState(false);
+  const [enableOpen, setEnableOpen] = useState(false);
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -85,12 +88,27 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
           {/* Sécurité */}
           <Text style={styles.section}>SÉCURITÉ</Text>
           <View style={styles.card}>
+            {/* 2FA du mobile = code par EMAIL (le TOTP par application d'authentification est réservé
+                au web). Sans adresse sur le compte, l'option n'est pas activable — on le dit ici
+                plutôt que de laisser l'utilisateur buter sur une erreur serveur. */}
             <Row
               icon="shield-check"
               title="Double authentification (2FA)"
-              sub={me.totpEnabled ? 'Activée — un code est demandé à la connexion' : 'Renforcez la sécurité de votre compte'}
-              right={me.totpEnabled ? <Tag label="Active" tone="success" /> : <Tag label="Inactive" tone="muted" />}
-              onPress={() => (me.totpEnabled ? setDisableOpen(true) : navigation.navigate('TotpIntro'))}
+              sub={
+                me.emailTwoFactorEnabled
+                  ? 'Activée — un code vous est envoyé par email à chaque connexion'
+                  : me.email
+                    ? 'Recevez un code par email à chaque connexion'
+                    : 'Ajoutez une adresse email à votre compte pour l’activer'
+              }
+              right={me.emailTwoFactorEnabled ? <Tag label="Active" tone="success" /> : <Tag label="Inactive" tone="muted" />}
+              onPress={() => {
+                if (me.emailTwoFactorEnabled) {
+                  setDisableOpen(true);
+                } else if (me.email) {
+                  setEnableOpen(true);
+                }
+              }}
             />
           </View>
 
@@ -129,7 +147,16 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
         </ScrollView>
       )}
 
-      <DisableTotpModal visible={disableOpen} onClose={() => setDisableOpen(false)} onDone={() => {
+      <EnableEmailTwoFactorModal
+        visible={enableOpen}
+        email={me?.email ?? null}
+        onClose={() => setEnableOpen(false)}
+        onDone={() => {
+          setEnableOpen(false);
+          load();
+        }}
+      />
+      <DisableEmailTwoFactorModal visible={disableOpen} onClose={() => setDisableOpen(false)} onDone={() => {
         setDisableOpen(false);
         load();
       }} />
@@ -170,22 +197,86 @@ function Tag({label, tone}: {label: string; tone: 'success' | 'muted'}) {
   );
 }
 
-function DisableTotpModal({visible, onClose, onDone}: {visible: boolean; onClose: () => void; onDone: () => void}) {
+/** Activation de la 2FA par email : on envoie un code à l'adresse du compte, l'utilisateur le confirme. */
+function EnableEmailTwoFactorModal({visible, email, onClose, onDone}: {visible: boolean; email: string | null; onClose: () => void; onDone: () => void}) {
   const styles = useThemedStyles(makeStyles);
   const {alert} = useDialog();
-  const [password, setPassword] = useState('');
+  const [sent, setSent] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const sendCode = async () => {
+    setBusy(true);
+    try {
+      await api.requestEmailTwoFactorOtp();
+      setSent(true);
+    } catch (e) {
+      await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Envoi impossible — réessayez.'});
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = async () => {
-    if (!password || code.length < 6) {
+    if (code.length < 6) {
       return;
     }
     setBusy(true);
     try {
-      await api.disableTotp({password, code});
-      setPassword('');
+      await api.enableEmailTwoFactor({otpCode: code});
       setCode('');
+      setSent(false);
+      onDone();
+    } catch (e) {
+      await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Code refusé — réessayez.'});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable style={styles.sheet} onPress={() => {}}>
+          <Text style={styles.sheetTitle}>Activer la 2FA</Text>
+          <Text style={styles.sheetSub}>
+            {sent
+              ? `Saisissez le code à 6 chiffres envoyé à ${email ?? 'votre adresse email'}.`
+              : `Un code de vérification sera envoyé à ${email ?? 'votre adresse email'}. Il vous sera ensuite demandé à chaque connexion.`}
+          </Text>
+          {sent ? (
+            <>
+              <Field icon="key" value={code} onChangeText={t => setCode(t.replace(/\D/g, '').slice(0, 6))} placeholder="Code à 6 chiffres" keyboardType="number-pad" autoCapitalize="none" />
+              <PrimaryButton title="Activer la 2FA" loading={busy} disabled={code.length < 6} onPress={submit} />
+            </>
+          ) : (
+            <PrimaryButton title="Recevoir le code" iconLeft="send" loading={busy} onPress={sendCode} />
+          )}
+          <Pressable onPress={onClose} style={styles.sheetCancel}>
+            <Text style={styles.sheetCancelText}>Annuler</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/** Désactivation : mot de passe seul (on retire une protection — pas de code, l'utilisateur pourrait
+ * justement ne plus recevoir ses emails, ce qui l'enfermerait dehors). */
+function DisableEmailTwoFactorModal({visible, onClose, onDone}: {visible: boolean; onClose: () => void; onDone: () => void}) {
+  const styles = useThemedStyles(makeStyles);
+  const {alert} = useDialog();
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!password) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.disableEmailTwoFactor({password});
+      setPassword('');
       onDone();
     } catch (e) {
       await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Désactivation impossible — réessayez.'});
@@ -199,10 +290,9 @@ function DisableTotpModal({visible, onClose, onDone}: {visible: boolean; onClose
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Désactiver la 2FA</Text>
-          <Text style={styles.sheetSub}>Confirmez avec votre mot de passe et un code de votre application d'authentification.</Text>
+          <Text style={styles.sheetSub}>Confirmez avec votre mot de passe. Vous n'aurez plus de code à saisir à la connexion.</Text>
           <PasswordField value={password} onChangeText={setPassword} placeholder="Votre mot de passe" />
-          <Field icon="key" value={code} onChangeText={t => setCode(t.replace(/\D/g, '').slice(0, 10))} placeholder="Code à 6 chiffres" keyboardType="number-pad" autoCapitalize="none" />
-          <PrimaryButton title="Désactiver la 2FA" loading={busy} disabled={!password || code.length < 6} onPress={submit} />
+          <PrimaryButton title="Désactiver la 2FA" loading={busy} disabled={!password} onPress={submit} />
           <Pressable onPress={onClose} style={styles.sheetCancel}>
             <Text style={styles.sheetCancelText}>Annuler</Text>
           </Pressable>

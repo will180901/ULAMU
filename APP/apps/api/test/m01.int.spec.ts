@@ -227,4 +227,36 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
     await service.requestOtp(target, "REGISTRATION");
     await expect(service.requestOtp(target, "REGISTRATION")).rejects.toThrow(/PM-19/);
   });
+
+  it("2FA email (mobile) — activation, code exigé à la connexion, désactivation", async () => {
+    const phone = "+242061000010";
+    const { accountId } = await registerPatient(phone);
+    const username = usernameFor(phone);
+
+    // Activation : code envoyé à l'adresse du compte, puis confirmation.
+    await service.requestEmailTwoFactorOtp(accountId);
+    await service.enableEmailTwoFactor(accountId, lastEmailOtpFor(phone));
+
+    // 1re tentative : mot de passe bon, mais la session n'est PAS ouverte — un code part par email.
+    const first = await service.login({ username, password: "motdepasse1", client: "mobile" });
+    expect(first.otpRequired).toBe(true);
+    expect(first.sessionToken).toBeUndefined();
+
+    // Un code faux ne passe pas.
+    await expect(
+      service.login({ username, password: "motdepasse1", client: "mobile", otpCode: "000000" }),
+    ).rejects.toThrow();
+
+    // Avec le code reçu : session ouverte.
+    await service.login({ username, password: "motdepasse1", client: "mobile" });
+    const second = await service.login({ username, password: "motdepasse1", client: "mobile", otpCode: lastEmailOtpFor(phone) });
+    expect(second.otpRequired).toBe(false);
+    expect(second.sessionToken).toBeTruthy();
+
+    // Désactivation : le mot de passe est exigé, puis la connexion redevient directe.
+    await expect(service.disableEmailTwoFactor(accountId, "mauvaispass")).rejects.toThrow(/incorrect/);
+    await service.disableEmailTwoFactor(accountId, "motdepasse1");
+    const after = await service.login({ username, password: "motdepasse1", client: "mobile" });
+    expect(after.sessionToken).toBeTruthy();
+  });
 });

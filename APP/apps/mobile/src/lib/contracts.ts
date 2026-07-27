@@ -73,13 +73,28 @@ export interface LoginRequest {
   client: ClientKind;
   deviceLabel?: string;
   totpCode?: string;
+  /** 2FA par email (la 2FA du mobile) — code reçu après une 1re tentative renvoyant `otpRequired`. */
+  otpCode?: string;
 }
-/** Réponse de connexion : si `totpRequired`, fournir le code TOTP (aucun token émis). */
+/**
+ * Réponse de connexion. `otpRequired` : la 2FA par email est active, un code vient d'être envoyé à
+ * l'adresse du compte — relancer la connexion avec `otpCode`. Aucun jeton n'est émis d'ici là.
+ * (`totpRequired` est le pendant web ; le mobile n'utilise pas le TOTP.)
+ */
 export interface LoginResponse {
   totpRequired: boolean;
+  otpRequired?: boolean;
   sessionToken?: string;
   accountId?: string;
   accountType?: AccountType;
+}
+
+// 2FA par email (mobile) — endpoints authentifiés
+export interface EnableEmailTwoFactorRequest {
+  otpCode: string;
+}
+export interface DisableEmailTwoFactorRequest {
+  password: string;
 }
 
 /** 2026-07 : réinitialisation par EMAIL (plus par téléphone). */
@@ -125,7 +140,11 @@ export interface MeResponse {
   district: string | null;
   /** Clé de la photo de profil (StorageService) — null = initiales. Voir avatarUrl(). */
   avatarKey: string | null;
+  /** TOTP — réservé au web ; toujours false côté mobile (conservé pour rester aligné sur l'API). */
   totpEnabled: boolean;
+  /** 2FA par email : LA double authentification du mobile. */
+  emailTwoFactorEnabled: boolean;
+  email: string | null;
 }
 
 export interface UpdateAvatarRequest {
@@ -474,6 +493,10 @@ export const ACCOUNT_ROUTES = {
   closeRequestOtp: '/v1/accounts/me/close/request-otp',
   close: '/v1/accounts/me/close',
   totpDisable: '/v1/accounts/me/totp/disable',
+  // 2FA par email (mobile) — remplace le TOTP, réservé au web.
+  twoFactorEmailRequest: '/v1/accounts/me/2fa/email/request',
+  twoFactorEmailEnable: '/v1/accounts/me/2fa/email/enable',
+  twoFactorEmailDisable: '/v1/accounts/me/2fa/email/disable',
 } as const;
 
 export const DIRECTORY_ROUTES = {

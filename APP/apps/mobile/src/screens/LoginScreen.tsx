@@ -31,7 +31,12 @@ export function LoginScreen({navigation, route}: Props) {
     setBusy(true);
     try {
       const res = await loginPassword(u, password);
-      if (res.totpRequired) {
+      if (res.otpRequired) {
+        // 2FA par email (celle du mobile) : le serveur a déjà envoyé le code.
+        navigation.navigate('LoginOtp', {username: u, password});
+      } else if (res.totpRequired) {
+        // Pendant web du 2e facteur — inatteignable sur mobile, gardé par sécurité si un compte
+        // avait activé le TOTP depuis le web et se connectait ici.
         navigation.navigate('TotpChallenge', {username: u, password});
       } else {
         navigation.navigate('Success', {context: 'login'});

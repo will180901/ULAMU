@@ -65,6 +65,18 @@ export class LoginDto {
   @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
   @IsOptional() @IsString() @Length(6, 10) totpCode?: string;
+  /** 2FA par email (mobile) — code reçu après la 1re tentative, cf. { otpRequired } dans la réponse. */
+  @IsOptional() @IsString() @Length(6, 6) otpCode?: string;
+}
+
+/** Activation de la 2FA par email (mobile) — confirme le code reçu à l'adresse du compte. */
+export class EnableEmailTwoFactorDto {
+  @IsString() @Length(6, 6) otpCode!: string;
+}
+
+/** Désactivation de la 2FA par email — mot de passe exigé (on retire une protection). */
+export class DisableEmailTwoFactorDto {
+  @IsString() @IsNotEmpty() password!: string;
 }
 
 export class ResetPasswordDto {

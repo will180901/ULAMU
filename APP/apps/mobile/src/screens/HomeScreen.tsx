@@ -329,13 +329,15 @@ export function HomeScreen({navigation}: Props) {
           ))}
         </View>
 
-        {/* Sécurité — activer la 2FA (masqué si déjà active) */}
-        {me && !me.totpEnabled && (
-          <Pressable onPress={() => navigation.navigate('TotpIntro')} style={styles.secCard}>
+        {/* Sécurité — activer la 2FA par email (masqué si déjà active, ou si le compte n'a pas
+            d'adresse : elle serait alors inactivable). L'activation se fait dans les Réglages, où
+            vivent la demande de code et sa confirmation. */}
+        {me && !me.emailTwoFactorEnabled && me.email && (
+          <Pressable onPress={() => navigation.navigate('Settings')} style={styles.secCard}>
             <Icon name="shield-check" size={18} variant="tile" />
             <View style={styles.flex}>
               <Text style={styles.secTitle}>Sécurisez votre compte</Text>
-              <Text style={styles.secSub}>Activez la double authentification (2FA)</Text>
+              <Text style={styles.secSub}>Activez la double authentification (code par email)</Text>
             </View>
             <Icon name="chevron-right" size={18} color={colors.textTertiary} />
           </Pressable>

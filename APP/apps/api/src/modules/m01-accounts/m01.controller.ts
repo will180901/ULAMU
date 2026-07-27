@@ -8,7 +8,9 @@ import {
   CloseAccountDto,
   ConfirmPhoneChangeDto,
   ConfirmTotpDto,
+  DisableEmailTwoFactorDto,
   DisableTotpDto,
+  EnableEmailTwoFactorDto,
   LoginDto,
   RegisterFacilityMemberDto,
   RegisterPatientDto,
@@ -163,5 +165,25 @@ export class M01Controller {
   @HttpCode(200)
   disableTotp(@Actor() actor: AuthenticatedActor, @Body() dto: DisableTotpDto) {
     return this.service.disableTotp(actor.accountId, dto.password, dto.code);
+  }
+
+  // 2FA par email — la double authentification du mobile (le TOTP ci-dessus reste réservé au web).
+
+  @Post("accounts/me/2fa/email/request")
+  @HttpCode(200)
+  requestEmailTwoFactorOtp(@Actor() actor: AuthenticatedActor) {
+    return this.service.requestEmailTwoFactorOtp(actor.accountId);
+  }
+
+  @Post("accounts/me/2fa/email/enable")
+  @HttpCode(200)
+  enableEmailTwoFactor(@Actor() actor: AuthenticatedActor, @Body() dto: EnableEmailTwoFactorDto) {
+    return this.service.enableEmailTwoFactor(actor.accountId, dto.otpCode);
+  }
+
+  @Post("accounts/me/2fa/email/disable")
+  @HttpCode(200)
+  disableEmailTwoFactor(@Actor() actor: AuthenticatedActor, @Body() dto: DisableEmailTwoFactorDto) {
+    return this.service.disableEmailTwoFactor(actor.accountId, dto.password);
   }
 }

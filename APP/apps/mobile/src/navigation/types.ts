@@ -6,7 +6,8 @@ export type AuthStackParamList = {
   Login: {startOpen?: boolean} | undefined; // username + mot de passe ; startOpen : arrivée depuis Register/Forgot, tiroir déjà ouvert
   Register: undefined; // inscription multi-étapes (identité+username → tél+mdp → OTP)
   Forgot: undefined; // mot de passe oublié (email → OTP → nouveau mot de passe)
-  TotpChallenge: {username: string; password: string}; // 2e facteur à la connexion
+  LoginOtp: {username: string; password: string}; // 2e facteur à la connexion : code par email (2FA du mobile)
+  TotpChallenge: {username: string; password: string}; // 2e facteur TOTP — web uniquement, jamais atteint sur mobile
   Success: {context: 'register' | 'login'};
 };
 
@@ -34,9 +35,4 @@ export type AppStackParamList = {
   Settings: undefined; // réglages compte & sécurité (M01)
   PhoneChange: undefined; // changement de numéro (OTP ancien + nouveau)
   CloseAccount: undefined; // clôture de compte
-  TotpIntro: undefined;
-  TotpSetup: {secret: string; provisioningUri: string};
-  TotpConfirm: undefined;
-  TotpBackupCodes: {codes: string[]};
-  TotpDone: undefined;
 };

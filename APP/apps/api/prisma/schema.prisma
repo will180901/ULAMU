@@ -91,6 +91,10 @@ model Account {
   status       AccountStatus @default(ACTIVE)
   /// Connexion possible par username OU email (2026-07) ; canal d'envoi de l'OTP inscription/reset.
   email        String?       @unique
+  /// Double authentification par code email (2026-07) — c'est LA 2FA du mobile, où le TOTP n'existe
+  /// pas (il reste réservé au web). Quand elle est active, la connexion exige un code envoyé par email
+  /// en plus du mot de passe. Exclusive du TOTP en pratique : un compte n'utilise que l'un des deux.
+  emailTwoFactorEnabled Boolean @default(false)
   closedAt     DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -163,6 +167,9 @@ enum OtpPurpose {
   PHONE_CHANGE_OLD
   PHONE_CHANGE_NEW
   SENSITIVE_ACTION
+  /// 2e facteur à la connexion, par email (mobile). Aussi utilisé pour confirmer l'ACTIVATION de cette
+  /// option : dans les deux cas il s'agit de prouver qu'on relève bien l'adresse du compte.
+  LOGIN_2FA
 }
 
 /// Code OTP — usage unique, jamais stocké en clair (RM-01 / menaces T-11). Canal = phone (SMS) OU

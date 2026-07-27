@@ -11,6 +11,7 @@ import {FamilyScreen} from '../screens/FamilyScreen';
 import {RemindersScreen} from '../screens/RemindersScreen';
 import {ForgotScreen} from '../screens/ForgotScreen';
 import {HandshakeScreen} from '../screens/HandshakeScreen';
+import {LoginOtpScreen} from '../screens/LoginOtpScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {MedsScreen} from '../screens/MedsScreen';
 import {NotificationsScreen} from '../screens/NotificationsScreen';
@@ -23,13 +24,6 @@ import {SettingsScreen} from '../screens/SettingsScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
 import {SuccessScreen} from '../screens/SuccessScreen';
 import {TotpChallengeScreen} from '../screens/TotpChallengeScreen';
-import {
-  TotpBackupCodesScreen,
-  TotpConfirmScreen,
-  TotpDoneScreen,
-  TotpIntroScreen,
-  TotpSetupScreen,
-} from '../screens/TotpScreens';
 import {WelcomeScreen} from '../screens/WelcomeScreen';
 import {hasOnboarded} from '../services/onboarding';
 import {useAuth} from '../state/AuthContext';
@@ -78,11 +72,6 @@ export function RootNavigator() {
           <AppStack.Screen name="Settings" component={SettingsScreen} />
           <AppStack.Screen name="PhoneChange" component={PhoneChangeScreen} />
           <AppStack.Screen name="CloseAccount" component={CloseAccountScreen} />
-          <AppStack.Screen name="TotpIntro" component={TotpIntroScreen} />
-          <AppStack.Screen name="TotpSetup" component={TotpSetupScreen} />
-          <AppStack.Screen name="TotpConfirm" component={TotpConfirmScreen} />
-          <AppStack.Screen name="TotpBackupCodes" component={TotpBackupCodesScreen} />
-          <AppStack.Screen name="TotpDone" component={TotpDoneScreen} />
         </AppStack.Navigator>
       ) : (
         // Le fond animé est posé UNE fois derrière toute la pile d'authentification : Connexion,
@@ -96,6 +85,7 @@ export function RootNavigator() {
             <AuthStack.Screen name="Login" component={LoginScreen} options={transparentScreen} />
             <AuthStack.Screen name="Register" component={RegisterScreen} options={transparentScreen} />
             <AuthStack.Screen name="Forgot" component={ForgotScreen} options={transparentScreen} />
+            <AuthStack.Screen name="LoginOtp" component={LoginOtpScreen} options={transparentScreen} />
             <AuthStack.Screen name="TotpChallenge" component={TotpChallengeScreen} />
             <AuthStack.Screen name="Success" component={SuccessScreen} />
           </AuthStack.Navigator>

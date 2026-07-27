@@ -11,7 +11,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useState} from 'react';
 import {BackHandler, View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
-import {Banner, CardHeading, ErrorBanner, Field, FieldLabel, FootLink, PasswordField, PrimaryButton} from '../components/ui';
+import {Banner, CardHeading, ErrorBanner, Field, FieldLabel, FootLink, Hint, OtpInput, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {isValidEmail, normalizeEmail} from '../lib/validation';
 import {api} from '../services/api';
@@ -25,6 +25,7 @@ export function ForgotScreen({navigation}: Props) {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [testCode, setTestCode] = useState<string | null>(null); // mode test : code renvoyé par le serveur (pas d'email réel)
+  const [validForMin, setValidForMin] = useState<number | null>(null); // durée réelle renvoyée par l'API (PM-17), pas une valeur codée en dur
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function ForgotScreen({navigation}: Props) {
     setBusy(true);
     try {
       const res = await api.requestOtp({email: normalizeEmail(email), purpose: 'PASSWORD_RESET'});
+      setValidForMin(Math.max(1, Math.round(res.expiresInSeconds / 60)));
       setStep('otp');
       if (res.debugCode) {
         setTestCode(res.debugCode);
@@ -116,8 +118,13 @@ export function ForgotScreen({navigation}: Props) {
           <View style={{gap: 14}}>
             <View>
               <FieldLabel>Code reçu par email</FieldLabel>
-              <Field icon="lock" value={code} onChangeText={t => setCode(t.replace(/\D/g, '').slice(0, 6))} placeholder="6 chiffres" keyboardType="number-pad" autoCapitalize="none" />
+              <OtpInput value={code} onChange={setCode} />
             </View>
+            {validForMin !== null && (
+              <Hint center>
+                Code valable {validForMin} minute{validForMin > 1 ? 's' : ''}. Passé ce délai, demandez-en un nouveau.
+              </Hint>
+            )}
             <PrimaryButton title="Continuer" iconRight="arrow-right" disabled={code.length < 6} onPress={() => setStep('reset')} />
           </View>
         </>
