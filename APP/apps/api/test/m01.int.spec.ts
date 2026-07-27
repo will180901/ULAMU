@@ -259,4 +259,23 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
     const after = await service.login({ username, password: "motdepasse1", client: "mobile" });
     expect(after.sessionToken).toBeTruthy();
   });
+
+  it("échec d'envoi — le code n'est pas conservé (le quota PM-19 ne doit pas être consommé pour rien)", async () => {
+    const phone = "+242061000011";
+    const to = emailFor(phone);
+    const original = mail.send.bind(mail);
+    // Simule un refus du fournisseur (adresse rejetée, panne réseau…).
+    (mail as unknown as { send: unknown }).send = () => Promise.reject(new Error("fournisseur indisponible"));
+    try {
+      await expect(service.requestOtp({ email: to }, "REGISTRATION")).rejects.toThrow(/Impossible d'envoyer/);
+    } finally {
+      (mail as unknown as { send: unknown }).send = original;
+    }
+    // Rien en base : l'utilisateur n'a rien reçu, son quota reste intact.
+    expect(await prisma.otpCode.count({ where: { email: to } })).toBe(0);
+
+    // Et l'envoi suivant, lui, fonctionne normalement.
+    await service.requestOtp({ email: to }, "REGISTRATION");
+    expect(await prisma.otpCode.count({ where: { email: to } })).toBe(1);
+  });
 });

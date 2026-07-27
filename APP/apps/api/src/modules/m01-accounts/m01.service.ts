@@ -10,6 +10,8 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { OtpPurpose, Prisma } from "@prisma/client";
@@ -49,6 +51,8 @@ type OtpTarget = { phone: string } | { email: string };
 
 @Injectable()
 export class M01Service {
+  private readonly logger = new Logger("M01");
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly params: ParamsService,
@@ -80,15 +84,25 @@ export class M01Service {
     }
     const ttl = await this.params.getInt("PM-17");
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-    await this.prisma.otpCode.create({
+    const created = await this.prisma.otpCode.create({
       data: { ...target, purpose, codeHash: hashOtp(code), expiresAt: new Date(Date.now() + ttl * 1000) },
     });
     const minutes = Math.round(ttl / 60);
-    if ("email" in target) {
-      // Jamais de lien cliquable dans l'email ULAMU (même règle que le SMS — menace T-13).
-      await this.email.send(target.email, "Votre code de vérification ULAMU", otpEmailTemplate(code, minutes));
-    } else {
-      await this.sms.send(target.phone, `ULAMU : votre code est ${code}. Valable ${minutes} min. Ne le partagez jamais.`);
+    try {
+      if ("email" in target) {
+        // Jamais de lien cliquable dans l'email ULAMU (même règle que le SMS — menace T-13).
+        await this.email.send(target.email, "Votre code de vérification ULAMU", otpEmailTemplate(code, minutes));
+      } else {
+        await this.sms.send(target.phone, `ULAMU : votre code est ${code}. Valable ${minutes} min. Ne le partagez jamais.`);
+      }
+    } catch (err) {
+      // L'envoi a échoué (adresse refusée par le fournisseur, panne réseau…). Le code venait d'être
+      // enregistré : le laisser consommerait le quota PM-19 alors que l'utilisateur n'a RIEN reçu —
+      // trois essais et il serait bloqué une heure pour rien. On le retire, puis on renvoie une erreur
+      // explicite plutôt que le 500 brut qui remontait jusqu'ici.
+      await this.prisma.otpCode.delete({ where: { id: created.id } }).catch(() => undefined);
+      this.logger.error(`Envoi du code impossible (${"email" in target ? target.email : target.phone}) : ${String(err)}`);
+      throw new ServiceUnavailableException("Impossible d'envoyer le code de vérification à cette adresse — vérifiez-la ou réessayez plus tard");
     }
     // MODE TEST (OTP_ECHO=true) : pas de vrai envoi en pilote → on renvoie le code à l'app pour qu'elle l'affiche.
     // NE JAMAIS activer en production réelle (le code deviendrait lisible par l'appelant). Garde-fou explicite.
