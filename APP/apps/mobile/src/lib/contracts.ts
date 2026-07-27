@@ -30,8 +30,9 @@ export type ClientKind = 'mobile' | 'web';
 /** OTP SMS : uniquement vérif du téléphone (inscription) + récupération. PAS la connexion. */
 export type PublicOtpPurpose = 'REGISTRATION' | 'PASSWORD_RESET';
 
+/** 2026-07 : le code OTP inscription/réinitialisation part par EMAIL (plus par SMS). */
 export interface RequestOtpRequest {
-  phone: string;
+  email: string;
   purpose: PublicOtpPurpose;
 }
 export interface RequestOtpResponse {
@@ -44,9 +45,10 @@ export interface CheckUsernameResponse {
   available: boolean;
 }
 
-/** Inscription patient : profil complet + nom d'utilisateur, téléphone vérifié par OTP SMS. */
+/** Inscription patient : profil complet + nom d'utilisateur, email vérifié par OTP (2026-07). */
 export interface RegisterPatientRequest {
   phone: string;
+  email: string;
   username: string;
   otpCode: string;
   password: string;
@@ -64,7 +66,7 @@ export interface RegisterResponse {
   sessionToken: string;
 }
 
-/** Connexion : username + mot de passe (+ TOTP si activé). */
+/** Connexion : nom d'utilisateur OU email + mot de passe (+ TOTP si activé) — 2026-07. */
 export interface LoginRequest {
   username: string;
   password: string;
@@ -80,8 +82,9 @@ export interface LoginResponse {
   accountType?: AccountType;
 }
 
+/** 2026-07 : réinitialisation par EMAIL (plus par téléphone). */
 export interface ResetPasswordRequest {
-  phone: string;
+  email: string;
   otpCode: string;
   newPassword: string;
 }

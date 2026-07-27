@@ -1,11 +1,13 @@
-import { IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { IsEmail, IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
 
 /** Nom d'utilisateur (D-049) : 3 à 30 caractères, lettres/chiffres/._-, début et fin alphanumériques. */
 export const USERNAME_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{1,28})[A-Za-z0-9]$/;
 export const USERNAME_MSG = "Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)";
 
+/** 2026-07 : OTP inscription/réinitialisation part désormais par EMAIL (plus par SMS — cf. décision :
+ * Twilio trial limité à 5 numéros vérifiés, inutilisable en conditions réelles pour la soutenance). */
 export class RequestOtpDto {
-  @IsString() @IsNotEmpty() phone!: string;
+  @IsEmail() email!: string;
   @IsIn(["REGISTRATION", "PASSWORD_RESET"]) purpose!: "REGISTRATION" | "PASSWORD_RESET";
 }
 
@@ -15,6 +17,7 @@ export class CheckUsernameDto {
 
 export class RegisterPatientDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsEmail() email!: string;
   @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) password!: string;
@@ -29,6 +32,7 @@ export class RegisterPatientDto {
 
 export class RegisterProfessionalDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsEmail() email!: string;
   @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) password!: string;
@@ -44,6 +48,7 @@ export class RegisterProfessionalDto {
 /** Compte membre de structure (D-003/D-045) — futur titulaire ou invité (CU-02-02). */
 export class RegisterFacilityMemberDto {
   @IsString() @IsNotEmpty() phone!: string;
+  @IsEmail() email!: string;
   @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) password!: string;
@@ -53,8 +58,9 @@ export class RegisterFacilityMemberDto {
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
 
+/** `username` accepte un nom d'utilisateur OU une adresse email (2026-07) — le service détecte lequel. */
 export class LoginDto {
-  @IsString() @MinLength(3) @MaxLength(30) username!: string;
+  @IsString() @MinLength(3) @MaxLength(254) username!: string;
   @IsString() @IsNotEmpty() password!: string;
   @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
@@ -62,7 +68,7 @@ export class LoginDto {
 }
 
 export class ResetPasswordDto {
-  @IsString() @IsNotEmpty() phone!: string;
+  @IsEmail() email!: string;
   @IsString() @Length(6, 6) otpCode!: string;
   @IsString() @Length(8, 128) newPassword!: string;
 }

@@ -89,7 +89,8 @@ model Account {
   passwordHash String
   type         AccountType
   status       AccountStatus @default(ACTIVE)
-  email        String?
+  /// Connexion possible par username OU email (2026-07) ; canal d'envoi de l'OTP inscription/reset.
+  email        String?       @unique
   closedAt     DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -164,10 +165,13 @@ enum OtpPurpose {
   SENSITIVE_ACTION
 }
 
-/// Code OTP SMS — usage unique, jamais stocké en clair (RM-01 / menaces T-11).
+/// Code OTP — usage unique, jamais stocké en clair (RM-01 / menaces T-11). Canal = phone (SMS) OU
+/// email, jamais les deux à la fois : REGISTRATION et PASSWORD_RESET partent désormais par email ;
+/// PHONE_CHANGE (ancien et nouveau numéro) et SENSITIVE_ACTION restent par SMS (inchangé).
 model OtpCode {
   id         String     @id @default(uuid())
-  phone      String
+  phone      String?
+  email      String?
   purpose    OtpPurpose
   codeHash   String
   expiresAt  DateTime // PM-17
@@ -176,6 +180,7 @@ model OtpCode {
   createdAt  DateTime   @default(now())
 
   @@index([phone, purpose, createdAt])
+  @@index([email, purpose, createdAt])
 }
 
 /// Journal des tentatives de connexion — alimente le blocage PM-18 et l'audit C5.

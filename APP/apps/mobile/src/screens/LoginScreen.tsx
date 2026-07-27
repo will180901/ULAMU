@@ -1,6 +1,6 @@
 /**
- * Connexion patient — username + mot de passe (UX rapide). Si TOTP activé → étape de vérification.
- * Visuel : carrousel monochrome plein écran en fond + tiroir glissant contenant le formulaire.
+ * Connexion patient — username OU email + mot de passe (2026-07, UX rapide). Si TOTP activé → étape
+ * de vérification. Visuel : carrousel monochrome plein écran en fond + tiroir glissant.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
@@ -8,7 +8,7 @@ import {View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {CardHeading, ErrorBanner, Field, FieldLabel, FootLink, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
-import {isValidUsername, normalizeUsername} from '../lib/validation';
+import {isValidEmail, isValidUsername, normalizeEmail, normalizeUsername} from '../lib/validation';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
 
@@ -21,11 +21,12 @@ export function LoginScreen({navigation}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const ready = isValidUsername(username) && password.length >= 1;
+  // 2026-07 : le champ accepte un nom d'utilisateur OU une adresse email.
+  const ready = (isValidUsername(username) || isValidEmail(username)) && password.length >= 1;
 
   async function onSubmit() {
     setError(null);
-    const u = normalizeUsername(username);
+    const u = username.includes('@') ? normalizeEmail(username) : normalizeUsername(username);
     setBusy(true);
     try {
       const res = await loginPassword(u, password);
@@ -43,12 +44,12 @@ export function LoginScreen({navigation}: Props) {
 
   return (
     <AuthCarouselDrawer>
-      <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur et votre mot de passe suffisent." />
+      <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur (ou email) et votre mot de passe suffisent." />
       <ErrorBanner message={error} />
       <View style={{gap: 14}}>
         <View>
-          <FieldLabel>Nom d'utilisateur</FieldLabel>
-          <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n" autoCapitalize="none" />
+          <FieldLabel>Nom d'utilisateur ou email</FieldLabel>
+          <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n ou mireille@exemple.com" autoCapitalize="none" />
         </View>
         <View>
           <FieldLabel>Mot de passe</FieldLabel>

@@ -17,6 +17,7 @@ export interface RegisterProfile {
   firstName: string;
   lastName: string;
   username: string;
+  email: string; // canal de l'OTP inscription (2026-07)
   birthDate: string; // ISO AAAA-MM-JJ
   sex: Sex;
   password: string;
@@ -24,7 +25,8 @@ export interface RegisterProfile {
 
 interface AuthContextValue {
   state: AuthState;
-  requestOtp: (phone: string, purpose?: PublicOtpPurpose) => Promise<RequestOtpResponse>;
+  /** 2026-07 : le code OTP part par EMAIL (plus par SMS) — inscription/réinitialisation. */
+  requestOtp: (email: string, purpose?: PublicOtpPurpose) => Promise<RequestOtpResponse>;
   /** Connexion. Renvoie {totpRequired} : si true, redemander avec le code TOTP. */
   loginPassword: (username: string, password: string, totpCode?: string) => Promise<{totpRequired: boolean}>;
   /** Vérifie l'OTP et crée le compte patient (réel). Session mise « en attente ». */
@@ -89,8 +91,8 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
-    async function requestOtp(phone: string, purpose: PublicOtpPurpose = 'REGISTRATION'): Promise<RequestOtpResponse> {
-      return api.requestOtp({phone, purpose});
+    async function requestOtp(email: string, purpose: PublicOtpPurpose = 'REGISTRATION'): Promise<RequestOtpResponse> {
+      return api.requestOtp({email, purpose});
     }
 
     async function loginPassword(username: string, password: string, totpCode?: string): Promise<{totpRequired: boolean}> {
@@ -105,6 +107,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     async function verifyRegister(profile: RegisterProfile, district: string, phone: string, otpCode: string): Promise<void> {
       const res = await api.registerPatient({
         phone,
+        email: profile.email,
         username: profile.username,
         otpCode,
         password: profile.password,

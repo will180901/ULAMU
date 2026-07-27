@@ -1,7 +1,9 @@
+import { join } from "path";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ServeStaticModule } from "@nestjs/serve-static";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { CommonModule } from "./common/common.module";
 import { AuthGuard } from "./common/auth/auth.guard";
@@ -27,6 +29,11 @@ import { OtaModule } from "./modules/ota/ota.module";
   imports: [
     // Charge apps/api/.env dans process.env AVANT l'instanciation de Prisma (DATABASE_URL, API_PORT).
     ConfigModule.forRoot({ isGlobal: true }),
+    // Fichiers statiques publics (ex. logo ULAMU pour l'email OTP — cf. common/email/email.service.ts,
+    // les webmails comme Gmail retirent les <svg> inline et bloquent les data URI, il faut une vraie
+    // URL http(s) accessible). __dirname = dist/ en prod, src/ en dev : public/ est dans les deux cas
+    // un frère direct du dossier d'exécution (apps/api/public), donc "../public" fonctionne pour les deux.
+    ServeStaticModule.forRoot({ rootPath: join(__dirname, "..", "public"), serveRoot: "/assets" }),
     CommonModule,
     // ScheduleModule.forRoot() (un seul par application) active les @Cron du SchedulerService M16 :
     // la cadence opérationnelle (D-008/PM-07/PM-08/PM-10/PM-30, réconciliation EF-13-09, purge PM-37).

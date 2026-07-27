@@ -212,7 +212,7 @@ type FieldProps = {
   onChangeText: (t: string) => void;
   placeholder?: string;
   icon?: IconName;
-  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
+  keyboardType?: 'default' | 'phone-pad' | 'number-pad' | 'email-address';
   autoCapitalize?: 'none' | 'words' | 'sentences';
   maxLength?: number;
   onSubmitEditing?: () => void;

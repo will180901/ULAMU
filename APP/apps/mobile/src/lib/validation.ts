@@ -16,6 +16,16 @@ export function isValidPhone(input: string): boolean {
   return normalizePhone(input) !== null;
 }
 
+/** Email (2026-07) — miroir EXACT du backend m01.policies.ts. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export function normalizeEmail(raw: string): string {
+  return (raw ?? '').trim().toLowerCase();
+}
+export function isValidEmail(raw: string): boolean {
+  const e = normalizeEmail(raw);
+  return e.length > 0 && e.length <= 254 && EMAIL_RE.test(e);
+}
+
 /** ≥ 8 caractères, au moins une lettre et un chiffre (RM-01-02). */
 export function isAcceptablePassword(pw: string): boolean {
   return typeof pw === 'string' && pw.length >= 8 && /\d/.test(pw) && /[a-zA-Z]/.test(pw);

@@ -42,6 +42,19 @@ export function normalizePhone(input: string): string | null {
   return `+242${m[1] as string}`;
 }
 
+/**
+ * Email (2026-07 — canal OTP inscription/reset, remplace le SMS pour ces 2 usages). Normalisé en
+ * minuscules AVANT stockage ET avant lookup, même principe que le username (D-049).
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export function normalizeEmail(raw: string): string {
+  return (raw ?? "").trim().toLowerCase();
+}
+export function isValidEmail(raw: string): boolean {
+  const e = normalizeEmail(raw);
+  return e.length > 0 && e.length <= 254 && EMAIL_RE.test(e);
+}
+
 /** Âge minimum (PM-16) — calcul en UTC (PM-14). */
 export function isAdult(birthDate: Date, minYears: number, now: Date): boolean {
   const cutoff = new Date(Date.UTC(now.getUTCFullYear() - minYears, now.getUTCMonth(), now.getUTCDate()));

@@ -33,7 +33,7 @@ export class M01Controller {
   @Post("accounts/otp/request")
   @HttpCode(200)
   requestOtp(@Body() dto: RequestOtpDto) {
-    return this.service.requestOtp(dto.phone, dto.purpose as OtpPurpose);
+    return this.service.requestOtp({ email: dto.email }, dto.purpose as OtpPurpose);
   }
 
   @Public()

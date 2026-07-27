@@ -28,6 +28,10 @@ services:
                                # (dev uniquement) — le chiffrement ne protège alors plus rien en production.
       - key: MOMO_WEBHOOK_SECRET
         generateValue: true    # Render génère un secret aléatoire (le vrai paiement viendra plus tard)
+      - key: RESEND_API_KEY
+        sync: false            # ← à coller dans le tableau de bord Render (secret, resend.com — envoi email OTP)
+                               # Mode sandbox tant qu'aucun domaine n'est vérifié chez Resend : livrable
+                               # uniquement à l'adresse email du compte Resend, pas à un destinataire quelconque.
       - key: OTP_ECHO
         value: "true"          # PILOTE : pas de vrai SMS → le code de vérif est renvoyé à l'app pour affichage.
                                # ⚠️ À retirer (ou mettre "false") avant l'ouverture au public réel.

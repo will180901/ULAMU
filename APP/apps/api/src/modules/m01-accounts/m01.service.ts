@@ -19,6 +19,7 @@ import { hashSessionToken } from "../../common/auth/auth.guard";
 import { hashPassword, verifyPassword } from "../../common/crypto/password";
 import { openSecret, sealSecret } from "../../common/crypto/secretbox";
 import { generateTotpSecret, provisioningUri, verifyTotp } from "../../common/crypto/totp";
+import { EMAIL_GATEWAY, EmailGateway, otpEmailTemplate } from "../../common/email/email.service";
 import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
@@ -29,7 +30,9 @@ import {
   isAcceptablePassword,
   isAcceptableUsername,
   isAdult,
+  isValidEmail,
   lockoutUntil,
+  normalizeEmail,
   normalizePhone,
   normalizeUsername,
 } from "./m01.policies";
@@ -40,6 +43,10 @@ function hashOtp(code: string): string {
 
 const OTP_MAX_VERIFY_ATTEMPTS = 3;
 
+/** Cible d'un OTP : SOIT un téléphone (SMS — changement de numéro, action sensible), SOIT un email
+ * (inscription, réinitialisation mot de passe — 2026-07). Jamais les deux à la fois. */
+type OtpTarget = { phone: string } | { email: string };
+
 @Injectable()
 export class M01Service {
   constructor(
@@ -48,16 +55,19 @@ export class M01Service {
     private readonly outbox: OutboxService,
     private readonly audit: AuditEmitter,
     @Inject(SMS_GATEWAY) private readonly sms: SmsGateway,
+    @Inject(EMAIL_GATEWAY) private readonly email: EmailGateway,
     private readonly storage: StorageService,
   ) {}
 
   // ── OTP (EF-01-01/04/07 ; PM-17/19) ────────────────────────────────────────
 
-  async requestOtp(rawPhone: string, purpose: OtpPurpose): Promise<{ expiresInSeconds: number; debugCode?: string }> {
-    const phone = this.normalizeOrThrow(rawPhone);
+  async requestOtp(rawTarget: { phone?: string; email?: string }, purpose: OtpPurpose): Promise<{ expiresInSeconds: number; debugCode?: string }> {
+    const target: OtpTarget = rawTarget.email
+      ? { email: this.normalizeEmailOrThrow(rawTarget.email) }
+      : { phone: this.normalizeOrThrow(rawTarget.phone ?? "") };
     const maxPerHour = await this.params.getInt("PM-19");
     const recent = await this.prisma.otpCode.findMany({
-      where: { phone, createdAt: { gte: new Date(Date.now() - 3600_000) } },
+      where: { ...target, createdAt: { gte: new Date(Date.now() - 3600_000) } },
       select: { createdAt: true },
     });
     if (!canSendOtp(recent.map((r) => r.createdAt.getTime()), maxPerHour, Date.now())) {
@@ -66,19 +76,24 @@ export class M01Service {
     const ttl = await this.params.getInt("PM-17");
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
     await this.prisma.otpCode.create({
-      data: { phone, purpose, codeHash: hashOtp(code), expiresAt: new Date(Date.now() + ttl * 1000) },
+      data: { ...target, purpose, codeHash: hashOtp(code), expiresAt: new Date(Date.now() + ttl * 1000) },
     });
-    // Jamais de lien dans un SMS ULAMU (menace T-13).
-    await this.sms.send(phone, `ULAMU : votre code est ${code}. Valable ${Math.round(ttl / 60)} min. Ne le partagez jamais.`);
-    // MODE TEST (OTP_ECHO=true) : pas de vrai SMS en pilote → on renvoie le code à l'app pour qu'elle l'affiche.
+    const minutes = Math.round(ttl / 60);
+    if ("email" in target) {
+      // Jamais de lien cliquable dans l'email ULAMU (même règle que le SMS — menace T-13).
+      await this.email.send(target.email, "Votre code de vérification ULAMU", otpEmailTemplate(code, minutes));
+    } else {
+      await this.sms.send(target.phone, `ULAMU : votre code est ${code}. Valable ${minutes} min. Ne le partagez jamais.`);
+    }
+    // MODE TEST (OTP_ECHO=true) : pas de vrai envoi en pilote → on renvoie le code à l'app pour qu'elle l'affiche.
     // NE JAMAIS activer en production réelle (le code deviendrait lisible par l'appelant). Garde-fou explicite.
     const echo = process.env.OTP_ECHO === "true";
     return { expiresInSeconds: ttl, ...(echo ? { debugCode: code } : {}) };
   }
 
-  private async consumeOtpOrThrow(tx: Prisma.TransactionClient, phone: string, purpose: OtpPurpose, code: string): Promise<void> {
+  private async consumeOtpOrThrow(tx: Prisma.TransactionClient, target: OtpTarget, purpose: OtpPurpose, code: string): Promise<void> {
     const otp = await tx.otpCode.findFirst({
-      where: { phone, purpose, consumedAt: null },
+      where: { ...target, purpose, consumedAt: null },
       orderBy: { createdAt: "desc" },
     });
     if (!otp) throw new UnauthorizedException("Aucun code en attente — redemandez un code");
@@ -99,6 +114,7 @@ export class M01Service {
 
   async registerPatient(dto: {
     phone: string;
+    email: string;
     username: string;
     otpCode: string;
     password: string;
@@ -112,6 +128,8 @@ export class M01Service {
   }): Promise<{ accountId: string; sessionToken: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
+    const email = this.normalizeEmailOrThrow(dto.email);
+    await this.ensureEmailFree(email);
     const username = normalizeUsername(dto.username);
     if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
     await this.ensureUsernameFree(username);
@@ -125,10 +143,11 @@ export class M01Service {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
+        await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.REGISTRATION, dto.otpCode);
         const account = await tx.account.create({
           data: {
             phone,
+            email,
             username,
             passwordHash,
             type: "PATIENT",
@@ -163,10 +182,11 @@ export class M01Service {
         return { accountId: account.id, sessionToken: token };
       });
     } catch (e) {
-      // Course concurrente sur une contrainte UNIQUE (username ou phone) — P2002.
+      // Course concurrente sur une contrainte UNIQUE (username, email ou phone) — P2002.
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
         if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
+        if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
         throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
       }
       throw e;
@@ -175,6 +195,7 @@ export class M01Service {
 
   async registerProfessional(dto: {
     phone: string;
+    email: string;
     username: string;
     otpCode: string;
     password: string;
@@ -187,6 +208,8 @@ export class M01Service {
   }): Promise<{ accountId: string; sessionToken: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
+    const email = this.normalizeEmailOrThrow(dto.email);
+    await this.ensureEmailFree(email);
     const username = normalizeUsername(dto.username);
     if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
     await this.ensureUsernameFree(username);
@@ -195,10 +218,11 @@ export class M01Service {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
+        await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.REGISTRATION, dto.otpCode);
         const account = await tx.account.create({
           data: {
             phone,
+            email,
             username,
             passwordHash,
             type: "PROFESSIONAL",
@@ -236,6 +260,7 @@ export class M01Service {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
         if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
+        if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
         throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
       }
       throw e;
@@ -248,6 +273,7 @@ export class M01Service {
    */
   async registerFacilityMember(dto: {
     phone: string;
+    email: string;
     username: string;
     otpCode: string;
     password: string;
@@ -258,6 +284,8 @@ export class M01Service {
   }): Promise<{ accountId: string; sessionToken: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
+    const email = this.normalizeEmailOrThrow(dto.email);
+    await this.ensureEmailFree(email);
     const username = normalizeUsername(dto.username);
     if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
     await this.ensureUsernameFree(username);
@@ -266,10 +294,11 @@ export class M01Service {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, phone, OtpPurpose.REGISTRATION, dto.otpCode);
+      await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.REGISTRATION, dto.otpCode);
       const account = await tx.account.create({
         data: {
           phone,
+          email,
           username,
           passwordHash,
           type: "FACILITY_MEMBER",
@@ -299,6 +328,7 @@ export class M01Service {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
         if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
+        if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
         throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
       }
       throw e;
@@ -314,9 +344,10 @@ export class M01Service {
     deviceLabel?: string;
     totpCode?: string;
   }): Promise<{ totpRequired: boolean; sessionToken?: string; accountId?: string; accountType?: string }> {
-    // Identifiant de connexion = username (D-049). Le téléphone reste la racine (PM-18, OTP, audit).
-    const username = normalizeUsername(dto.username);
-    const account = await this.prisma.account.findUnique({ where: { username }, include: { totpSecret: true } });
+    // Identifiant de connexion = username OU email (2026-07). Le téléphone reste la racine (PM-18, OTP, audit).
+    const account = dto.username.includes("@")
+      ? await this.prisma.account.findUnique({ where: { email: normalizeEmail(dto.username) }, include: { totpSecret: true } })
+      : await this.prisma.account.findUnique({ where: { username: normalizeUsername(dto.username) }, include: { totpSecret: true } });
 
     // Blocage PM-18 — indexé par le téléphone du compte (clé racine).
     if (account) {
@@ -339,7 +370,7 @@ export class M01Service {
     // Vérification du mot de passe — coût scrypt constant même si le compte n'existe pas (anti-timing/énumération).
     const passwordOk = account ? await verifyPassword(dto.password, account.passwordHash) : await this.timingSafeMiss(dto.password);
     if (!account || !passwordOk) {
-      await this.prisma.loginAttempt.create({ data: { phone: account?.phone ?? `unknown:${username}`, success: false, client: dto.client } });
+      await this.prisma.loginAttempt.create({ data: { phone: account?.phone ?? `unknown:${dto.username}`, success: false, client: dto.client } });
       throw new UnauthorizedException("Identifiants incorrects"); // message identique (anti-énumération)
     }
     if (account.status === "SUSPENDED") throw new ForbiddenException("Compte suspendu (RM-01-05)");
@@ -501,14 +532,14 @@ export class M01Service {
 
   // ── Récupération de mot de passe (EF-01-04 ; CU-01-04) ─────────────────────
 
-  async resetPassword(dto: { phone: string; otpCode: string; newPassword: string }): Promise<void> {
-    const phone = this.normalizeOrThrow(dto.phone);
+  async resetPassword(dto: { email: string; otpCode: string; newPassword: string }): Promise<void> {
+    const email = this.normalizeEmailOrThrow(dto.email);
     this.ensurePasswordOk(dto.newPassword);
-    const account = await this.prisma.account.findUnique({ where: { phone } });
+    const account = await this.prisma.account.findUnique({ where: { email } });
     if (!account) throw new UnauthorizedException("Aucun code en attente — redemandez un code"); // anti-énumération
     const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, phone, OtpPurpose.PASSWORD_RESET, dto.otpCode);
+      await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.PASSWORD_RESET, dto.otpCode);
       await tx.account.update({ where: { id: account.id }, data: { passwordHash } });
       // Toutes les sessions existantes sont révoquées (CU-01-04).
       await tx.loginSession.updateMany({ where: { accountId: account.id, revokedAt: null }, data: { revokedAt: new Date() } });
@@ -539,8 +570,8 @@ export class M01Service {
     const account = await this.requireAccount(accountId);
     const newPhone = this.normalizeOrThrow(rawNewPhone);
     await this.ensurePhoneFree(newPhone);
-    await this.requestOtp(account.phone, OtpPurpose.PHONE_CHANGE_OLD);
-    await this.requestOtp(newPhone, OtpPurpose.PHONE_CHANGE_NEW);
+    await this.requestOtp({ phone: account.phone }, OtpPurpose.PHONE_CHANGE_OLD);
+    await this.requestOtp({ phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW);
   }
 
   async confirmPhoneChange(accountId: string, rawNewPhone: string, oldPhoneCode: string, newPhoneCode: string): Promise<void> {
@@ -550,8 +581,8 @@ export class M01Service {
     const oldPhone = account.phone;
     await this.prisma.$transaction(async (tx) => {
       // OTP sur l'ANCIEN ET le NOUVEAU numéro (EF-01-07 — parade T-01).
-      await this.consumeOtpOrThrow(tx, oldPhone, OtpPurpose.PHONE_CHANGE_OLD, oldPhoneCode);
-      await this.consumeOtpOrThrow(tx, newPhone, OtpPurpose.PHONE_CHANGE_NEW, newPhoneCode);
+      await this.consumeOtpOrThrow(tx, { phone: oldPhone }, OtpPurpose.PHONE_CHANGE_OLD, oldPhoneCode);
+      await this.consumeOtpOrThrow(tx, { phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW, newPhoneCode);
       await tx.account.update({ where: { id: accountId }, data: { phone: newPhone } });
       await this.audit.emit(tx, {
         actorId: accountId,
@@ -568,14 +599,14 @@ export class M01Service {
 
   async requestCloseOtp(accountId: string): Promise<void> {
     const account = await this.requireAccount(accountId);
-    await this.requestOtp(account.phone, OtpPurpose.SENSITIVE_ACTION);
+    await this.requestOtp({ phone: account.phone }, OtpPurpose.SENSITIVE_ACTION);
   }
 
   async closeAccount(accountId: string, password: string, otpCode: string): Promise<void> {
     const account = await this.requireAccount(accountId);
     if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
     await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, account.phone, OtpPurpose.SENSITIVE_ACTION, otpCode);
+      await this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, otpCode);
       await tx.account.update({ where: { id: accountId }, data: { status: "CLOSED", closedAt: new Date() } });
       await tx.loginSession.updateMany({ where: { accountId, revokedAt: null }, data: { revokedAt: new Date() } });
       // Le Carnet est conservé selon M07/PM-31 — rien n'est supprimé ici.
@@ -642,13 +673,13 @@ export class M01Service {
   /** Envoie un OTP « action sensible » sur le téléphone du compte (signature de contrat, transfert…). */
   async requestSensitiveActionOtp(accountId: string): Promise<{ expiresInSeconds: number }> {
     const account = await this.requireAccount(accountId);
-    return this.requestOtp(account.phone, OtpPurpose.SENSITIVE_ACTION);
+    return this.requestOtp({ phone: account.phone }, OtpPurpose.SENSITIVE_ACTION);
   }
 
   /** Consomme un OTP « action sensible » dans la transaction appelante. Jette si invalide. */
   async verifySensitiveActionOtp(tx: Prisma.TransactionClient, accountId: string, code: string): Promise<void> {
     const account = await this.requireAccount(accountId);
-    await this.consumeOtpOrThrow(tx, account.phone, OtpPurpose.SENSITIVE_ACTION, code);
+    await this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, code);
   }
 
   /** Vérifie le mot de passe d'un compte (signature de contrat CU-03-03). */
@@ -665,6 +696,11 @@ export class M01Service {
     return phone;
   }
 
+  private normalizeEmailOrThrow(raw: string): string {
+    if (!isValidEmail(raw)) throw new BadRequestException("Adresse email invalide");
+    return normalizeEmail(raw);
+  }
+
   private ensurePasswordOk(pw: string): void {
     if (!isAcceptablePassword(pw)) {
       throw new BadRequestException("Mot de passe trop faible : 8 caractères minimum, lettres et chiffres");
@@ -674,6 +710,11 @@ export class M01Service {
   private async ensurePhoneFree(phone: string): Promise<void> {
     const existing = await this.prisma.account.findUnique({ where: { phone } });
     if (existing) throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+  }
+
+  private async ensureEmailFree(email: string): Promise<void> {
+    const existing = await this.prisma.account.findUnique({ where: { email }, select: { id: true } });
+    if (existing) throw new ConflictException("Cette adresse email est déjà enregistrée");
   }
 
   private async ensureUsernameFree(username: string): Promise<void> {

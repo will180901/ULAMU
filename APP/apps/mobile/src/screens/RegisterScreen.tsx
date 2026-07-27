@@ -1,8 +1,8 @@
 /**
  * Inscription patient — RÉELLE. 3 étapes :
  *  1) Identité : prénom, nom, nom d'utilisateur (dispo en direct), naissance, sexe, arrondissement.
- *  2) Compte   : téléphone, mot de passe (+ confirmation), consentement → OTP SMS.
- *  3) OTP      : code SMS → création du compte (M01).
+ *  2) Compte   : téléphone, email, mot de passe (+ confirmation), consentement → OTP par email (2026-07).
+ *  3) OTP      : code email → création du compte (M01).
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
@@ -24,7 +24,7 @@ import {
   Switch,
 } from '../components/ui';
 import {ApiError} from '../lib/api-client';
-import {isAcceptablePassword, isAdultIso, isValidOtp, isValidPhone, isValidUsername, normalizePhone, normalizeUsername} from '../lib/validation';
+import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidPhone, isValidUsername, normalizePhone, normalizeUsername} from '../lib/validation';
 import {AuthStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {RegisterProfile, useAuth} from '../state/AuthContext';
@@ -53,6 +53,7 @@ export function RegisterScreen({navigation}: Props) {
 
   // Compte
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [agree, setAgree] = useState(false);
@@ -94,7 +95,7 @@ export function RegisterScreen({navigation}: Props) {
     isAdultIso(isoDob, MIN_AGE, new Date()) &&
     !!sex &&
     district.trim().length > 1;
-  const accountReady = isValidPhone(phone) && isAcceptablePassword(password) && password === confirm && agree;
+  const accountReady = isValidPhone(phone) && isValidEmail(email) && isAcceptablePassword(password) && password === confirm && agree;
 
   async function onSendOtp() {
     setError(null);
@@ -103,9 +104,13 @@ export function RegisterScreen({navigation}: Props) {
       setError('Numéro invalide. Format attendu : 06 612 45 90.');
       return;
     }
+    if (!isValidEmail(email)) {
+      setError('Adresse email invalide.');
+      return;
+    }
     setSending(true);
     try {
-      const res = await requestOtp(normalized, 'REGISTRATION');
+      const res = await requestOtp(email, 'REGISTRATION');
       setStep('otp');
       // Mode test (pas de SMS) : le serveur renvoie le code → on le montre et on le pré-remplit.
       if (res.debugCode) {
@@ -128,7 +133,7 @@ export function RegisterScreen({navigation}: Props) {
     if (!normalized || !isoDob || !sex) {
       return;
     }
-    const profile: RegisterProfile = {firstName: firstName.trim(), lastName: lastName.trim(), username: normalizeUsername(username), birthDate: isoDob, sex, password};
+    const profile: RegisterProfile = {firstName: firstName.trim(), lastName: lastName.trim(), username: normalizeUsername(username), email, birthDate: isoDob, sex, password};
     const t = setTimeout(async () => {
       setError(null);
       try {
@@ -141,7 +146,7 @@ export function RegisterScreen({navigation}: Props) {
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [step, otp, phone, isoDob, sex, firstName, lastName, username, password, district, verifyRegister, navigation]);
+  }, [step, otp, phone, email, isoDob, sex, firstName, lastName, username, password, district, verifyRegister, navigation]);
 
   function onBack() {
     setError(null);
@@ -163,7 +168,7 @@ export function RegisterScreen({navigation}: Props) {
         subtitle={
           (step === 'identity' && 'Étape 1 sur 3 — votre identité') ||
           (step === 'account' && 'Étape 2 sur 3 — votre accès') ||
-          `Étape 3 sur 3 — code envoyé au ${normalizePhone(phone) ?? phone}`
+          `Étape 3 sur 3 — code envoyé à ${email}`
         }
       />
       <ErrorBanner message={error} />
@@ -212,6 +217,11 @@ export function RegisterScreen({navigation}: Props) {
               <PhoneField value={phone} onChangeText={setPhone} />
             </View>
             <View>
+              <FieldLabel>Email</FieldLabel>
+              <Field icon="mail" value={email} onChangeText={setEmail} placeholder="mireille@exemple.com" keyboardType="email-address" autoCapitalize="none" />
+              <Hint>Votre code de vérification arrivera par email.</Hint>
+            </View>
+            <View>
               <FieldLabel>Mot de passe</FieldLabel>
               <PasswordField value={password} onChangeText={setPassword} placeholder="8 caractères min., lettres et chiffres" />
             </View>
@@ -232,7 +242,7 @@ export function RegisterScreen({navigation}: Props) {
         {step === 'otp' && (
           <View style={{gap: 16}}>
             {testCode && (
-              <Banner tone="warning" title="Mode test (pas de SMS)">
+              <Banner tone="warning" title="Mode test (pas d'email réel)">
                 Votre code de vérification : {testCode} — déjà pré-rempli ci-dessous.
               </Banner>
             )}
@@ -248,7 +258,7 @@ export function RegisterScreen({navigation}: Props) {
                 </Badge>
               )}
             </View>
-            {busy ? <Hint center>Création de votre compte…</Hint> : <Hint center>Le code à 6 chiffres est envoyé par SMS.</Hint>}
+            {busy ? <Hint center>Création de votre compte…</Hint> : <Hint center>Le code à 6 chiffres est envoyé par email.</Hint>}
           </View>
         )}
 
