@@ -2,6 +2,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import React, {useEffect, useState} from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import {AuthMeshBackground} from '../components/AuthCarouselDrawer';
 import {CarnetScreen} from '../screens/CarnetScreen';
 import {CloseAccountScreen} from '../screens/CloseAccountScreen';
 import {DoctorScreen} from '../screens/DoctorScreen';
@@ -84,19 +85,30 @@ export function RootNavigator() {
           <AppStack.Screen name="TotpDone" component={TotpDoneScreen} />
         </AppStack.Navigator>
       ) : (
-        <AuthStack.Navigator initialRouteName={onboarded ? 'Login' : 'Welcome'} screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.accent600}}}>
-          <AuthStack.Screen name="Welcome" component={WelcomeScreen} options={{contentStyle: {backgroundColor: colors.bg}}} />
-          <AuthStack.Screen name="Login" component={LoginScreen} />
-          <AuthStack.Screen name="Register" component={RegisterScreen} />
-          <AuthStack.Screen name="Forgot" component={ForgotScreen} />
-          <AuthStack.Screen name="TotpChallenge" component={TotpChallengeScreen} />
-          <AuthStack.Screen name="Success" component={SuccessScreen} />
-        </AuthStack.Navigator>
+        // Le fond animé est posé UNE fois derrière toute la pile d'authentification : Connexion,
+        // Inscription et Mot de passe oublié le laissent transparaître (écrans transparents) au lieu
+        // d'en recréer un chacun — sinon chaque navigation démonte/remonte 6 textures animées, ce qui
+        // se ressentait comme un blocage au clic. Les autres écrans gardent leur fond opaque.
+        <View style={styles.authRoot}>
+          <AuthMeshBackground />
+          <AuthStack.Navigator initialRouteName={onboarded ? 'Login' : 'Welcome'} screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.accent600}}}>
+            <AuthStack.Screen name="Welcome" component={WelcomeScreen} options={{contentStyle: {backgroundColor: colors.bg}}} />
+            <AuthStack.Screen name="Login" component={LoginScreen} options={transparentScreen} />
+            <AuthStack.Screen name="Register" component={RegisterScreen} options={transparentScreen} />
+            <AuthStack.Screen name="Forgot" component={ForgotScreen} options={transparentScreen} />
+            <AuthStack.Screen name="TotpChallenge" component={TotpChallengeScreen} />
+            <AuthStack.Screen name="Success" component={SuccessScreen} />
+          </AuthStack.Navigator>
+        </View>
       )}
     </NavigationContainer>
   );
 }
 
+/** Écrans laissant voir le fond animé partagé posé derrière la pile (cf. AuthMeshBackground). */
+const transparentScreen = {contentStyle: {backgroundColor: 'transparent'}} as const;
+
 const styles = StyleSheet.create({
   splash: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  authRoot: {flex: 1},
 });

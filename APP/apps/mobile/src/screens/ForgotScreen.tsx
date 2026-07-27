@@ -8,8 +8,8 @@
  *     la réinitialisation révoque toutes les sessions. En dev, le code s'affiche dans la console de l'API.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useState} from 'react';
-import {View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {BackHandler, View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {Banner, CardHeading, ErrorBanner, Field, FieldLabel, FootLink, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
@@ -59,7 +59,7 @@ export function ForgotScreen({navigation}: Props) {
     setBusy(true);
     try {
       await api.resetPassword({email: normalizeEmail(email), otpCode: code, newPassword: password});
-      navigation.navigate('Login');
+      navigation.navigate('Login', {startOpen: true});
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Réinitialisation impossible. Vérifiez le code.');
     } finally {
@@ -78,8 +78,18 @@ export function ForgotScreen({navigation}: Props) {
     }
   }
 
+  // Pas de flèche retour visible dans le tiroir : le geste/bouton retour Android recule d'une étape
+  // (email←otp←reset) au lieu de quitter directement l'écran — même logique que la flèche retirée.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onBack();
+      return true;
+    });
+    return () => sub.remove();
+  });
+
   return (
-    <AuthCarouselDrawer startOpen onBack={onBack}>
+    <AuthCarouselDrawer startOpen hasCarousel={false}>
       {step === 'email' && (
         <>
           <CardHeading title="Mot de passe oublié" subtitle="Entrez votre email : un code de réinitialisation vous sera envoyé." />
@@ -138,7 +148,7 @@ export function ForgotScreen({navigation}: Props) {
       )}
 
       <View style={{minHeight: 24}} />
-      <FootLink prefix="Vous vous souvenez ?" action="Se connecter" onPress={() => navigation.navigate('Login')} />
+      <FootLink prefix="Vous vous souvenez ?" action="Se connecter" onPress={() => navigation.navigate('Login', {startOpen: true})} />
     </AuthCarouselDrawer>
   );
 }

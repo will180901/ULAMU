@@ -14,8 +14,9 @@ import {useAuth} from '../state/AuthContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-export function LoginScreen({navigation}: Props) {
+export function LoginScreen({navigation, route}: Props) {
   const {loginPassword} = useAuth();
+  const startOpen = route.params?.startOpen ?? false;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export function LoginScreen({navigation}: Props) {
   }
 
   return (
-    <AuthCarouselDrawer>
+    <AuthCarouselDrawer startOpen={startOpen}>
       <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur (ou email) et votre mot de passe suffisent." />
       <ErrorBanner message={error} />
       <View style={{gap: 14}}>

@@ -6,7 +6,7 @@
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {BackHandler, Pressable, StyleSheet, Text, View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {
   Badge,
@@ -161,8 +161,18 @@ export function RegisterScreen({navigation}: Props) {
     }
   }
 
+  // Pas de flèche retour visible dans le tiroir : le geste/bouton retour Android recule d'une étape
+  // (identity←account←otp) au lieu de quitter directement l'écran — même logique que la flèche retirée.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onBack();
+      return true;
+    });
+    return () => sub.remove();
+  });
+
   return (
-    <AuthCarouselDrawer startOpen onBack={onBack}>
+    <AuthCarouselDrawer startOpen hasCarousel={false}>
       <CardHeading
         title="Créer mon compte"
         subtitle={
@@ -263,7 +273,7 @@ export function RegisterScreen({navigation}: Props) {
         )}
 
       <View style={{minHeight: 20}} />
-      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.navigate('Login')} />}
+      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.navigate('Login', {startOpen: true})} />}
     </AuthCarouselDrawer>
   );
 }
