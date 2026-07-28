@@ -33,7 +33,7 @@ export function LoginScreen({navigation, route}: Props) {
       const res = await loginPassword(u, password);
       if (res.otpRequired) {
         // 2FA par email (celle du mobile) : le serveur a déjà envoyé le code.
-        navigation.navigate('LoginOtp', {username: u, password});
+        navigation.navigate('LoginOtp', {username: u, password, debugCode: res.debugCode});
       } else if (res.totpRequired) {
         // Pendant web du 2e facteur — inatteignable sur mobile, gardé par sécurité si un compte
         // avait activé le TOTP depuis le web et se connectait ici.

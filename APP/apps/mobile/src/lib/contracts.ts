@@ -84,6 +84,8 @@ export interface LoginRequest {
 export interface LoginResponse {
   totpRequired: boolean;
   otpRequired?: boolean;
+  /** Mode test (OTP_ECHO côté API) : code renvoyé pour affichage, jamais en production réelle. */
+  debugCode?: string;
   sessionToken?: string;
   accountId?: string;
   accountType?: AccountType;

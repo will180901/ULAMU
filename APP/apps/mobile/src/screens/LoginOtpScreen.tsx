@@ -10,7 +10,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useState} from 'react';
 import {BackHandler, View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
-import {CardHeading, ErrorBanner, FieldLabel, FootLink, Hint, OtpInput, PrimaryButton} from '../components/ui';
+import {Banner, CardHeading, ErrorBanner, FieldLabel, FootLink, Hint, OtpInput, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
@@ -18,9 +18,10 @@ import {useAuth} from '../state/AuthContext';
 type Props = NativeStackScreenProps<AuthStackParamList, 'LoginOtp'>;
 
 export function LoginOtpScreen({navigation, route}: Props) {
-  const {username, password} = route.params;
+  const {username, password, debugCode} = route.params;
   const {loginPassword, activatePending} = useAuth();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(debugCode ?? '');
+  const [testCode, setTestCode] = useState<string | null>(debugCode ?? null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
@@ -74,6 +75,11 @@ export function LoginOtpScreen({navigation, route}: Props) {
     <AuthCarouselDrawer startOpen hasCarousel={false}>
       <CardHeading title="Vérification en deux étapes" subtitle="Un code à 6 chiffres vient d'être envoyé à l'adresse email de votre compte." />
       <ErrorBanner message={error} />
+      {testCode && (
+        <Banner tone="warning" title="Mode test (pas d'email réel)">
+          Votre code : {testCode} — déjà pré-rempli ci-dessous.
+        </Banner>
+      )}
       <View style={{gap: 14}}>
         <View>
           <FieldLabel>Code reçu par email</FieldLabel>

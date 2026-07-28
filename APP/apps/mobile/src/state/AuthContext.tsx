@@ -33,7 +33,7 @@ interface AuthContextValue {
     password: string,
     totpCode?: string,
     otpCode?: string,
-  ) => Promise<{totpRequired: boolean; otpRequired: boolean}>;
+  ) => Promise<{totpRequired: boolean; otpRequired: boolean; debugCode?: string}>;
   /** Vérifie l'OTP et crée le compte patient (réel). Session mise « en attente ». */
   verifyRegister: (profile: RegisterProfile, district: string, phone: string, otpCode: string) => Promise<void>;
   /** Active la session en attente (→ entre dans l'app). */
@@ -105,12 +105,12 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       password: string,
       totpCode?: string,
       otpCode?: string,
-    ): Promise<{totpRequired: boolean; otpRequired: boolean}> {
+    ): Promise<{totpRequired: boolean; otpRequired: boolean; debugCode?: string}> {
       const res = await api.login({username, password, client: CLIENT_KIND, deviceLabel: deviceLabel(), totpCode, otpCode});
       // 2FA par email : le serveur vient d'envoyer un code, aucune session n'est ouverte tant qu'il
       // n'est pas fourni. `totpRequired` est le pendant web, conservé pour rester aligné sur l'API.
       if (res.otpRequired) {
-        return {totpRequired: false, otpRequired: true};
+        return {totpRequired: false, otpRequired: true, debugCode: res.debugCode};
       }
       if (res.totpRequired) {
         return {totpRequired: true, otpRequired: false};

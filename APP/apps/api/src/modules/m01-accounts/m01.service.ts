@@ -367,6 +367,8 @@ export class M01Service {
   }): Promise<{
     totpRequired: boolean;
     otpRequired?: boolean;
+    /** Mode test (OTP_ECHO) uniquement — jamais renseigné en production réelle. */
+    debugCode?: string;
     sessionToken?: string;
     accountId?: string;
     accountType?: string;
@@ -429,8 +431,12 @@ export class M01Service {
     // qui de faire spammer la boîte mail d'un tiers en connaissant juste son identifiant.
     if (account.emailTwoFactorEnabled && account.email) {
       if (!dto.otpCode) {
-        await this.requestOtp({ email: account.email }, "LOGIN_2FA");
-        return { totpRequired: false, otpRequired: true };
+        const sent = await this.requestOtp({ email: account.email }, "LOGIN_2FA");
+        // Même mode test que l'inscription et la réinitialisation (OTP_ECHO) : sans cette reprise, la
+        // 2FA était le seul parcours où le code n'était pas affiché en démo, donc le seul intestable
+        // sans accès à la boîte mail. Le garde-fou reste celui de requestOtp : rien n'est renvoyé hors
+        // mode test.
+        return { totpRequired: false, otpRequired: true, ...(sent.debugCode ? { debugCode: sent.debugCode } : {}) };
       }
       await this.prisma.$transaction(async (tx) => {
         await this.consumeOtpOrThrow(tx, { email: account.email as string }, "LOGIN_2FA", dto.otpCode as string);

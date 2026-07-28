@@ -6,7 +6,7 @@ export type AuthStackParamList = {
   Login: {startOpen?: boolean} | undefined; // username + mot de passe ; startOpen : arrivée depuis Register/Forgot, tiroir déjà ouvert
   Register: undefined; // inscription multi-étapes (identité+username → tél+mdp → OTP)
   Forgot: undefined; // mot de passe oublié (email → OTP → nouveau mot de passe)
-  LoginOtp: {username: string; password: string}; // 2e facteur à la connexion : code par email (2FA du mobile)
+  LoginOtp: {username: string; password: string; debugCode?: string}; // 2e facteur à la connexion : code par email (2FA du mobile)
   TotpChallenge: {username: string; password: string}; // 2e facteur TOTP — web uniquement, jamais atteint sur mobile
   Success: {context: 'register' | 'login'};
 };
