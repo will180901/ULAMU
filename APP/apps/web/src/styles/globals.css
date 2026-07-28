@@ -104,8 +104,6 @@
   --glass-card-bg: rgba(255, 255, 255, 0.80); --glass-card-blur: 12px;
   --glass-toast-bg: rgba(255, 255, 255, 0.88); --glass-toast-blur: 20px;
   --glass-bordure: rgba(15, 23, 42, 0.10);
-  /* Rideau AuthLayout — bien plus transparent que --glass-card-bg (qui écraserait la fumée dessous). */
-  --glass-auth-bg: rgba(255, 255, 255, 0.22); --glass-auth-blur: 8px;
 
   /* ── Grain (bruit SVG) ── */
   --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -171,7 +169,6 @@
   --glass-sidebar-bg: rgba(13, 17, 23, 0.72); --glass-header-bg: rgba(13, 17, 23, 0.68);
   --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
   --glass-bordure: rgba(230, 237, 243, 0.10);
-  --glass-auth-bg: rgba(13, 17, 23, 0.28); --glass-auth-blur: 8px;
 
   --background: var(--fond-page); --foreground: var(--texte-primaire);
   --card: var(--fond-surface); --popover: var(--fond-surface);
@@ -263,35 +260,31 @@
   body, .saris-grain-fine, .saris-grain, .saris-grain-strong { background-image: none !important; }
 }
 
-/* Fumée animée (AuthLayout) — formes pleines floutées, jamais de dégradé CSS. 4 trajectoires à 4-5
-   arrêts chacune (pas juste aller-retour) pour un déplacement qui va vraiment "dans tous les sens",
-   amplitude large (jusqu'à ~30% du bloc) pour que le mouvement reste perceptible à travers le rideau. */
-@keyframes ulamu-smoke-drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  25% { transform: translate(22%, -18%) scale(1.12) rotate(10deg); }
-  50% { transform: translate(-14%, -30%) scale(0.92) rotate(-4deg); }
-  75% { transform: translate(-26%, 12%) scale(1.08) rotate(-14deg); }
+/* Mesh gradient du carrousel d'authentification — MÊMES trajectoires que l'app mobile (DRIFT_1/2/3 de
+   AuthCarouselDrawer.tsx) pour que les deux plateformes bougent pareil. Chaque motif visite 3 des 8
+   points cardinaux avant de revenir à l'origine ; les 3 pris ensemble couvrent les 8 directions.
+   Les formes sont des images (dégradé radial déjà cuit dedans), pas des dégradés CSS : c'est ce qui
+   permet un rendu identique au mobile sans réinventer la palette. */
+@keyframes ulamu-mesh-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(50%, -46%) scale(1.18); }
+  50% { transform: translate(-40%, 48%) scale(0.86); }
+  75% { transform: translate(-48%, -32%) scale(1.12); }
 }
-@keyframes ulamu-smoke-drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  25% { transform: translate(-20%, 20%) scale(1.15) rotate(-12deg); }
-  50% { transform: translate(18%, 28%) scale(0.9) rotate(8deg); }
-  75% { transform: translate(24%, -10%) scale(1.05) rotate(16deg); }
+@keyframes ulamu-mesh-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(46%, 46%) scale(1.16); }
+  60% { transform: translate(-48%, -38%) scale(0.85); }
+  85% { transform: translate(32%, -46%) scale(1.14); }
 }
-@keyframes ulamu-smoke-drift-c {
-  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  30% { transform: translate(16%, 24%) scale(1.1) rotate(14deg); }
-  60% { transform: translate(-24%, 8%) scale(0.88) rotate(-10deg); }
-  85% { transform: translate(-10%, -22%) scale(1.14) rotate(6deg); }
-}
-@keyframes ulamu-smoke-drift-d {
-  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  35% { transform: translate(-18%, -20%) scale(1.08) rotate(-8deg); }
-  65% { transform: translate(20%, -14%) scale(0.93) rotate(12deg); }
-  90% { transform: translate(14%, 22%) scale(1.1) rotate(-6deg); }
+@keyframes ulamu-mesh-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  35% { transform: translate(-46%, 40%) scale(1.14); }
+  65% { transform: translate(44%, -42%) scale(0.84); }
+  90% { transform: translate(22%, 44%) scale(1.1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ulamu-smoke-blob { animation: none !important; }
+  .ulamu-mesh-blob { animation: none !important; }
 }
 
 /* Transition entre étapes d'un formulaire multi-étapes (inscription). */
