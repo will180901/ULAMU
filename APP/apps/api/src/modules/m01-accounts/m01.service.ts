@@ -496,6 +496,34 @@ export class M01Service {
     return { available: !taken };
   }
 
+  /**
+   * Disponibilité de l'EMAIL et du TÉLÉPHONE, interrogée pendant la saisie de l'inscription.
+   *
+   * Compromis assumé : ces deux routes forment un oracle d'existence de compte, et sur une plateforme
+   * de SANTÉ apprendre qu'une adresse ou un numéro a un compte ULAMU est en soi une information
+   * sensible — c'est en tension avec le soin pris ailleurs contre l'énumération (messages d'erreur
+   * identiques, temps de réponse égalisé). Retenu quand même parce que l'inscription révèle DÉJÀ la
+   * même chose (`ensurePhoneFree`/`ensureEmailFree` s'exécutent avant que le code OTP ne soit
+   * consommé, donc sans rien prouver), et parce que sans elles l'utilisateur remplit trois écrans et
+   * reçoit un email pour se heurter à un mur au dernier moment. Le débit est limité côté contrôleur.
+   *
+   * Une adresse/un numéro mal formé renvoie `available: false` : le champ n'est pas encore utilisable,
+   * ce qui est exactement ce que l'écran doit refléter (et évite une erreur à chaque lettre tapée).
+   */
+  async isEmailAvailable(raw: string): Promise<{ available: boolean }> {
+    const email = normalizeEmail(raw ?? "");
+    if (!isValidEmail(email)) return { available: false };
+    const taken = await this.prisma.account.findUnique({ where: { email }, select: { id: true } });
+    return { available: !taken };
+  }
+
+  async isPhoneAvailable(raw: string): Promise<{ available: boolean }> {
+    const phone = normalizePhone(raw ?? "");
+    if (!phone) return { available: false };
+    const taken = await this.prisma.account.findUnique({ where: { phone }, select: { id: true } });
+    return { available: !taken };
+  }
+
   // ── Sessions (EF-01-05 ; CU-01-06) ─────────────────────────────────────────
 
   private async openSession(tx: Prisma.TransactionClient, accountId: string, client: string, deviceLabel?: string): Promise<string> {

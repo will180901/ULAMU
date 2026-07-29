@@ -4,6 +4,8 @@ import { OtpPurpose } from "@prisma/client";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
 import {
+  CheckEmailDto,
+  CheckPhoneDto,
   CheckUsernameDto,
   CloseAccountDto,
   ConfirmPhoneChangeDto,
@@ -42,6 +44,29 @@ export class M01Controller {
   @Get("accounts/username-available")
   checkUsername(@Query() dto: CheckUsernameDto) {
     return this.service.isUsernameAvailable(dto.username);
+  }
+
+  /**
+   * Disponibilité de l'email / du téléphone pendant la saisie de l'inscription — évite à l'utilisateur
+   * de remplir trois écrans et de recevoir un code pour se heurter à un refus au dernier moment.
+   *
+   * Débit volontairement plus serré que le reste : ces routes répondent « ce compte existe-t-il ? », ce
+   * qui sur une plateforme de santé est une information sensible (cf. commentaire détaillé du service).
+   * 30/min laisse passer une frappe normale — la saisie est temporisée côté client — tout en rendant le
+   * balayage d'un plan de numérotation ou d'une liste d'adresses inexploitable.
+   */
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Get("accounts/email-available")
+  checkEmail(@Query() dto: CheckEmailDto) {
+    return this.service.isEmailAvailable(dto.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Get("accounts/phone-available")
+  checkPhone(@Query() dto: CheckPhoneDto) {
+    return this.service.isPhoneAvailable(dto.phone);
   }
 
   @Public()

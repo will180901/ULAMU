@@ -41,6 +41,8 @@ export interface RequestOtpResponse {
   debugCode?: string;
 }
 
+/** Réponse commune aux trois vérifications de disponibilité (nom d'utilisateur, email, téléphone).
+ * Un identifiant mal formé répond `false` : le champ n'est pas encore utilisable tel quel. */
 export interface CheckUsernameResponse {
   available: boolean;
 }
@@ -121,6 +123,8 @@ export interface TotpConfirmResponse {
 export const AUTH_ROUTES = {
   requestOtp: '/v1/accounts/otp/request',
   usernameAvailable: '/v1/accounts/username-available',
+  emailAvailable: '/v1/accounts/email-available',
+  phoneAvailable: '/v1/accounts/phone-available',
   registerPatient: '/v1/accounts/register/patient',
   login: '/v1/auth/login',
   resetPassword: '/v1/auth/password-reset',

@@ -15,6 +15,17 @@ export class CheckUsernameDto {
   @IsString() @IsNotEmpty() username!: string;
 }
 
+/** Disponibilité de l'email / du téléphone, vérifiée pendant la saisie de l'inscription.
+ * `@IsString` et non `@IsEmail` : le champ est interrogé au fil de la frappe, une adresse encore
+ * incomplète doit répondre « indisponible » plutôt que déclencher une erreur 400 à chaque lettre. */
+export class CheckEmailDto {
+  @IsString() @IsNotEmpty() email!: string;
+}
+
+export class CheckPhoneDto {
+  @IsString() @IsNotEmpty() phone!: string;
+}
+
 export class RegisterPatientDto {
   @IsString() @IsNotEmpty() phone!: string;
   @IsEmail() email!: string;

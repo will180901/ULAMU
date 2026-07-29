@@ -195,6 +195,12 @@ export class ApiClient {
   checkUsername(username: string): Promise<CheckUsernameResponse> {
     return this.request('GET', `${AUTH_ROUTES.usernameAvailable}?username=${encodeURIComponent(username)}`);
   }
+  checkEmail(email: string): Promise<CheckUsernameResponse> {
+    return this.request('GET', `${AUTH_ROUTES.emailAvailable}?email=${encodeURIComponent(email)}`);
+  }
+  checkPhone(phone: string): Promise<CheckUsernameResponse> {
+    return this.request('GET', `${AUTH_ROUTES.phoneAvailable}?phone=${encodeURIComponent(phone)}`);
+  }
   registerPatient(dto: RegisterPatientRequest): Promise<RegisterResponse> {
     return this.request('POST', AUTH_ROUTES.registerPatient, dto);
   }

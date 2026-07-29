@@ -24,7 +24,8 @@ import {
   Switch,
 } from '../components/ui';
 import {ApiError} from '../lib/api-client';
-import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidPhone, isValidUsername, normalizePhone, normalizeUsername} from '../lib/validation';
+import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidUsername, normalizeEmail, normalizePhone, normalizeUsername} from '../lib/validation';
+import {AvailabilityStatus, useAvailability} from '../state/useAvailability';
 import {AuthStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {RegisterProfile, useAuth} from '../state/AuthContext';
@@ -33,7 +34,6 @@ import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 type Step = 'identity' | 'account' | 'otp';
-type UStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
 const MIN_AGE = 18; // PM-16
 
@@ -46,7 +46,6 @@ export function RegisterScreen({navigation}: Props) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
-  const [uStatus, setUStatus] = useState<UStatus>('idle');
   const [dob, setDob] = useState('');
   const [sex, setSex] = useState<'M' | 'F' | null>(null);
   const [district, setDistrict] = useState('');
@@ -68,35 +67,99 @@ export function RegisterScreen({navigation}: Props) {
   const [sending, setSending] = useState(false);
   const busy = state.status === 'authenticating';
 
-  // Disponibilité du username (debounce)
-  useEffect(() => {
-    const u = normalizeUsername(username);
-    if (!isValidUsername(u)) {
-      setUStatus(u.length === 0 ? 'idle' : 'invalid');
-      return;
-    }
-    setUStatus('checking');
-    const t = setTimeout(async () => {
-      try {
-        const res = await api.checkUsername(u);
-        setUStatus(res.available ? 'available' : 'taken');
-      } catch {
-        setUStatus('idle');
-      }
-    }, 450);
-    return () => clearTimeout(t);
-  }, [username]);
+  // Les TROIS identifiants uniques du compte sont vérifiés pendant la frappe, par le même hook. Le
+  // téléphone et l'email ne l'étaient jusqu'ici qu'à la toute fin : on remplissait trois écrans et on
+  // recevait un code pour se heurter seulement là à « déjà enregistré », code gaspillé et décompté.
+  const uStatus = useAvailability(username, {
+    normalize: raw => (isValidUsername(raw) ? normalizeUsername(raw) : null),
+    check: u => api.checkUsername(u),
+  });
+  const emailStatus = useAvailability(email, {
+    normalize: raw => (isValidEmail(raw) ? normalizeEmail(raw) : null),
+    check: e => api.checkEmail(e),
+  });
+  const phoneStatus = useAvailability(phone, {
+    normalize: raw => normalizePhone(raw),
+    check: p => api.checkPhone(p),
+  });
 
   const isoDob = dobToIso(dob);
-  const identityReady =
-    firstName.trim().length > 1 &&
-    lastName.trim().length > 1 &&
-    uStatus === 'available' &&
-    !!isoDob &&
-    isAdultIso(isoDob, MIN_AGE, new Date()) &&
-    !!sex &&
-    district.trim().length > 1;
-  const accountReady = isValidPhone(phone) && isValidEmail(email) && isAcceptablePassword(password) && password === confirm && agree;
+
+  // Ce qui manque encore à l'étape 1, énuméré explicitement. `identityReady` en DÉCOULE au lieu d'être
+  // une condition parallèle : les deux ne peuvent donc jamais diverger. Sans cette liste, le bouton
+  // restait grisé sans que rien à l'écran n'en dise la raison — or deux des causes sont invisibles
+  // (sexe non sélectionné, nom d'utilisateur pas encore confirmé disponible), au point qu'on pouvait
+  // croire le formulaire complet et rester bloqué là.
+  const identityMissing: string[] = [];
+  if (firstName.trim().length <= 1) {
+    identityMissing.push('votre prénom (2 caractères minimum)');
+  }
+  if (lastName.trim().length <= 1) {
+    identityMissing.push('votre nom (2 caractères minimum)');
+  }
+  if (uStatus !== 'available') {
+    identityMissing.push(
+      {
+        idle: "un nom d'utilisateur",
+        checking: "la vérification du nom d'utilisateur (en cours…)",
+        taken: "un nom d'utilisateur libre — celui-ci est déjà pris",
+        invalid: "un nom d'utilisateur valide (3 à 30 caractères)",
+        error: "la vérification du nom d'utilisateur — connexion impossible",
+        available: '',
+      }[uStatus],
+    );
+  }
+  if (!isoDob) {
+    identityMissing.push('votre date de naissance complète (JJ/MM/AAAA)');
+  } else if (!isAdultIso(isoDob, MIN_AGE, new Date())) {
+    identityMissing.push(`avoir ${MIN_AGE} ans révolus`);
+  }
+  if (!sex) {
+    identityMissing.push('votre sexe');
+  }
+  if (district.trim().length <= 1) {
+    identityMissing.push('votre arrondissement ou quartier');
+  }
+  const identityReady = identityMissing.length === 0;
+  // N'affiche le récapitulatif qu'une fois le formulaire entamé : inutile d'énumérer tout ce qui manque
+  // à quelqu'un qui vient d'arriver sur un écran vierge.
+  const identityTouched = !!sex || [firstName, lastName, username, dob, district].some(v => v.trim().length > 0);
+  // Même principe qu'à l'étape 1 : la liste est la source unique, `accountReady` en découle.
+  const accountMissing: string[] = [];
+  if (phoneStatus !== 'available') {
+    accountMissing.push(
+      {
+        idle: 'votre numéro de téléphone',
+        checking: 'la vérification du numéro (en cours…)',
+        taken: 'un numéro libre — celui-ci a déjà un compte, connectez-vous plutôt',
+        invalid: 'un numéro congolais valide (ex. 06 612 45 90)',
+        error: 'la vérification du numéro — connexion impossible',
+        available: '',
+      }[phoneStatus],
+    );
+  }
+  if (emailStatus !== 'available') {
+    accountMissing.push(
+      {
+        idle: 'votre adresse email',
+        checking: "la vérification de l'email (en cours…)",
+        taken: 'une adresse libre — celle-ci a déjà un compte, connectez-vous plutôt',
+        invalid: 'une adresse email valide',
+        error: "la vérification de l'email — connexion impossible",
+        available: '',
+      }[emailStatus],
+    );
+  }
+  if (!isAcceptablePassword(password)) {
+    accountMissing.push('un mot de passe de 8 caractères minimum, avec lettres et chiffres');
+  } else if (password !== confirm) {
+    accountMissing.push('la confirmation identique du mot de passe');
+  }
+  if (!agree) {
+    accountMissing.push('votre accord sur la confidentialité de vos données');
+  }
+  const accountReady = accountMissing.length === 0;
+  const accountTouched = agree || [phone, email, password, confirm].some(v => v.trim().length > 0);
 
   async function onSendOtp() {
     setError(null);
@@ -198,7 +261,14 @@ export function RegisterScreen({navigation}: Props) {
             <View>
               <FieldLabel>Nom d'utilisateur</FieldLabel>
               <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n" autoCapitalize="none" />
-              <UsernameHint status={uStatus} />
+              <AvailabilityHint
+                status={uStatus}
+                labels={{
+                  available: '✓ Disponible',
+                  taken: 'Déjà pris',
+                  invalid: '3–30 caractères : lettres, chiffres, . _ -',
+                }}
+              />
             </View>
             <View>
               <FieldLabel>Date de naissance</FieldLabel>
@@ -219,6 +289,9 @@ export function RegisterScreen({navigation}: Props) {
               <Field icon="map-pin" value={district} onChangeText={setDistrict} placeholder="Ex. Talangaï" autoCapitalize="words" />
             </View>
             <PrimaryButton title="Continuer" iconRight="arrow-right" onPress={() => setStep('account')} disabled={!identityReady} />
+            {!identityReady && identityTouched && (
+              <Hint>Pour continuer, il manque {identityMissing.length > 1 ? 'encore' : ''} : {identityMissing.join(' · ')}.</Hint>
+            )}
           </View>
         )}
 
@@ -227,10 +300,26 @@ export function RegisterScreen({navigation}: Props) {
             <View>
               <FieldLabel>Numéro de téléphone</FieldLabel>
               <PhoneField value={phone} onChangeText={setPhone} />
+              <AvailabilityHint
+                status={phoneStatus}
+                labels={{
+                  available: '✓ Numéro disponible',
+                  taken: 'Ce numéro a déjà un compte',
+                  invalid: 'Format attendu : 06 612 45 90',
+                }}
+              />
             </View>
             <View>
               <FieldLabel>Email</FieldLabel>
               <Field icon="mail" value={email} onChangeText={setEmail} placeholder="mireille@exemple.com" keyboardType="email-address" autoCapitalize="none" />
+              <AvailabilityHint
+                status={emailStatus}
+                labels={{
+                  available: '✓ Adresse disponible',
+                  taken: 'Cette adresse a déjà un compte',
+                  invalid: 'Adresse email invalide',
+                }}
+              />
               <Hint>Votre code de vérification arrivera par email.</Hint>
             </View>
             <View>
@@ -248,6 +337,9 @@ export function RegisterScreen({navigation}: Props) {
               </Text>
             </Pressable>
             <PrimaryButton title="Recevoir le code" iconLeft="send" onPress={onSendOtp} disabled={!accountReady} loading={sending} />
+            {!accountReady && accountTouched && (
+              <Hint>Pour recevoir le code, il manque {accountMissing.length > 1 ? 'encore' : ''} : {accountMissing.join(' · ')}.</Hint>
+            )}
           </View>
         )}
 
@@ -287,7 +379,19 @@ export function RegisterScreen({navigation}: Props) {
   );
 }
 
-function UsernameHint({status}: {status: UStatus}) {
+/**
+ * Retour de disponibilité sous un champ — un seul composant pour le nom d'utilisateur, l'email et le
+ * téléphone, afin que les trois parlent le même langage visuel. Seuls les libellés propres au champ
+ * sont fournis par l'appelant ; « en cours » et « échec réseau » restent formulés ici, identiques
+ * partout. `idle` n'affiche rien : un champ vide n'a pas à être commenté.
+ */
+function AvailabilityHint({
+  status,
+  labels,
+}: {
+  status: AvailabilityStatus;
+  labels: {available: string; taken: string; invalid: string};
+}) {
   const styles = useThemedStyles(makeStyles);
   const {colors} = useTheme();
   if (status === 'idle') {
@@ -295,9 +399,10 @@ function UsernameHint({status}: {status: UStatus}) {
   }
   const map = {
     checking: {c: colors.textTertiary, t: 'Vérification…'},
-    available: {c: colors.success, t: '✓ Disponible'},
-    taken: {c: colors.error, t: 'Déjà pris'},
-    invalid: {c: colors.textTertiary, t: '3–30 caractères : lettres, chiffres, . _ -'},
+    available: {c: colors.success, t: labels.available},
+    taken: {c: colors.error, t: labels.taken},
+    invalid: {c: colors.textTertiary, t: labels.invalid},
+    error: {c: colors.error, t: 'Vérification impossible — vérifiez votre connexion'},
   }[status];
   return <Text style={[styles.uHint, {color: map.c}]}>{map.t}</Text>;
 }
