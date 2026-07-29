@@ -41,6 +41,44 @@ export class ResendEmailGateway implements EmailGateway {
   }
 }
 
+/**
+ * Brevo (ex-Sendinblue) — passerelle retenue pour la production. Raison : Brevo délivre à N'IMPORTE
+ * QUEL destinataire dès qu'un simple EXPÉDITEUR est vérifié, sans posséder de domaine. Resend, lui,
+ * exige un domaine vérifié : sans domaine il ne livre qu'à l'adresse du compte Resend, ce qui rendait
+ * inscription, réinitialisation et 2FA impossibles pour tout autre utilisateur (503 systématique).
+ *
+ * Appel HTTP direct avec le `fetch` global de Node 20, plutôt qu'un SDK : aucune dépendance npm
+ * ajoutée, donc rien de plus à installer ni à reconstruire au déploiement.
+ */
+@Injectable()
+export class BrevoEmailGateway implements EmailGateway {
+  private readonly logger = new Logger("Email");
+  private readonly apiKey = process.env.BREVO_API_KEY ?? "";
+  /** Doit être une adresse VÉRIFIÉE dans le compte Brevo, sinon l'API refuse l'envoi. */
+  private readonly fromEmail = process.env.BREVO_FROM_EMAIL ?? "";
+  private readonly fromName = process.env.BREVO_FROM_NAME ?? "ULAMU";
+
+  async send(to: string, subject: string, html: string): Promise<void> {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": this.apiKey, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: this.fromName, email: this.fromEmail },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!res.ok) {
+      // Le corps de la réponse porte le motif exact (expéditeur non vérifié, quota du jour atteint…) :
+      // on le journalise pour pouvoir diagnostiquer. Jamais le contenu du message, qui porte le code OTP.
+      const detail = await res.text().catch(() => "");
+      this.logger.error(`Échec d'envoi email → ${to} (HTTP ${res.status}) : ${detail}`);
+      throw new Error(`Envoi email impossible (HTTP ${res.status})`);
+    }
+  }
+}
+
 export const EMAIL_GATEWAY = "EMAIL_GATEWAY";
 
 // Logo ULAMU pour l'en-tête de l'email OTP : servi en fichier statique réel (apps/api/public/logo-email.png,

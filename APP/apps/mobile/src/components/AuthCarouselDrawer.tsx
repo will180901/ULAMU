@@ -5,14 +5,15 @@
  *    différentes qui se fondent, dérive lente en boucle) + voile « verre dépoli » par-dessus (rend les
  *    illustrations claires et le texte lisibles sur un fond autrement trop chargé) + grain.
  * 2. Carrousel (illustration à 80% de la hauteur d'écran + texte + points) posé sur ce fond, défilement
- *    lent et doux (transitions longues, easing in/out) ; bouton « Se connecter » qui déclenche l'ouverture.
+ *    lent et doux (transitions longues, easing in/out), navigable au doigt (balayage horizontal, ou appui
+ *    sur un point pour y sauter) ; bouton « Rejoindre » qui déclenche l'ouverture.
  * 3. Bandeau de marque fixe (logo ULAMU empilé au-dessus du mot « ulamu ») + TIROIR (le formulaire, en
  *    `children`) : au tap sur le bouton, le tiroir glisse (par animation, plus au doigt) du bas jusqu'au
  *    plafond fixe ; le bandeau de marque, juste au-dessus, se révèle en fondu pendant la même montée —
  *    on a l'impression que le tiroir vient se glisser SOUS ce bandeau, par-dessus le carrousel.
  */
-import React, {useEffect, useRef, useState} from 'react';
-import {Animated, Easing, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Animated, Easing, Image, KeyboardAvoidingView, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {shadow} from '../theme';
 import {LogoMark, PrimaryButton} from './ui';
@@ -49,6 +50,12 @@ const TEXT_START_DELAY_MS = 400; // laisse l'image prendre un peu d'avance avant
 const TEXT_FADE_MS = 600;
 const HOLD_MS = 3000; // temps plein affiché une fois le texte apparu, avant de basculer
 const FADE_OUT_MS = 500;
+
+// Navigation au doigt. Deux seuils distincts : ACTIVATE = déplacement à partir duquel on considère que
+// le doigt balaie (en dessous, c'est un appui — le bouton et le tiroir gardent leurs propres touches) ;
+// COMMIT = déplacement atteint au relâcher pour changer réellement de diapositive (sinon on revient).
+const SWIPE_ACTIVATE_DX = 14;
+const SWIPE_COMMIT_DX = 45;
 
 // Trajectoires multi-arrêts, grande amplitude (~40-55% de la taille de la forme) — chaque motif visite
 // 3 des 8 points cardinaux (nord/sud/est/ouest/nord-est/nord-ouest/sud-est/sud-ouest) avant de revenir à
@@ -155,10 +162,51 @@ function CarouselContent({onLogin, label}: {onLogin: () => void; label: string})
   const opacities = useRef(SLIDES.map((_, k) => new Animated.Value(k === 0 ? 1 : 0))).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
 
+  /** Va à une diapositive donnée (index cyclique : après la dernière on revient à la première). */
+  const goTo = useCallback((next: number) => {
+    setIndex(((next % SLIDES.length) + SLIDES.length) % SLIDES.length);
+  }, []);
+
+  // Le PanResponder n'est construit QU'UNE fois (le recréer à chaque rendu ferait perdre le geste en
+  // cours) : il lit donc l'index et `goTo` par référence, sinon la fermeture resterait figée sur la
+  // première diapositive et tous les balayages ramèneraient toujours à la deuxième.
+  const indexRef = useRef(0);
+  indexRef.current = index;
+  const goToRef = useRef(goTo);
+  goToRef.current = goTo;
+
+  const pan = useRef(
+    PanResponder.create({
+      // Ne prend la main que sur un geste franchement HORIZONTAL. Conséquence voulue : un simple appui
+      // (aucun déplacement) n'active jamais le responder — le bouton dessous reste cliquable — et un
+      // glissement vertical n'est pas capté non plus.
+      onMoveShouldSetPanResponder: (_e, g) =>
+        Math.abs(g.dx) > SWIPE_ACTIVATE_DX && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx <= -SWIPE_COMMIT_DX) {
+          goToRef.current(indexRef.current + 1); // balayage vers la gauche → suivante
+        } else if (g.dx >= SWIPE_COMMIT_DX) {
+          goToRef.current(indexRef.current - 1); // balayage vers la droite → précédente
+        }
+      },
+    }),
+  ).current;
+
+  // `index` étant une dépendance, changer de diapositive au doigt relance CETTE séquence : le nettoyage
+  // annule les minuteries en cours, et la diapositive choisie repart donc sur un temps d'affichage
+  // complet au lieu d'hériter du reliquat de la précédente.
   useEffect(() => {
     let cancelled = false;
     let textInTimeout: ReturnType<typeof setTimeout>;
     let holdTimeout: ReturnType<typeof setTimeout>;
+
+    // Éteint toute AUTRE diapositive encore visible : lors d'un changement au doigt, la précédente n'est
+    // pas passée par le fondu de sortie de la séquence automatique et resterait superposée à la nouvelle.
+    SLIDES.forEach((_, k) => {
+      if (k !== index) {
+        Animated.timing(opacities[k], {toValue: 0, duration: FADE_OUT_MS, easing: Easing.inOut(Easing.ease), useNativeDriver: true}).start();
+      }
+    });
 
     Animated.timing(opacities[index], {
       toValue: 1,
@@ -194,7 +242,7 @@ function CarouselContent({onLogin, label}: {onLogin: () => void; label: string})
   const artHeight = screenH * 0.8;
 
   return (
-    <View style={styles.carouselContent}>
+    <View style={styles.carouselContent} {...pan.panHandlers}>
       <View style={{width: '100%', height: artHeight}}>
         {SLIDES.map((s, k) => (
           <Animated.View
@@ -205,9 +253,18 @@ function CarouselContent({onLogin, label}: {onLogin: () => void; label: string})
         ))}
       </View>
       <Animated.Text style={[styles.carouselText, {opacity: textOpacity}]}>{SLIDES[index].t}</Animated.Text>
+      {/* Les points ne sont pas qu'un indicateur : on peut sauter directement à une diapositive.
+          `hitSlop` élargit la cible tactile (6 px de haut à l'écran, intouchable autrement). */}
       <View style={styles.dotsRow}>
         {SLIDES.map((_, k) => (
-          <View key={k} style={[styles.dot, k === index ? styles.dotOn : styles.dotOff]} />
+          <Pressable
+            key={k}
+            onPress={() => goTo(k)}
+            hitSlop={{top: 12, bottom: 12, left: 6, right: 6}}
+            accessibilityRole="button"
+            accessibilityLabel={`Aller à l'écran ${k + 1} sur ${SLIDES.length}`}>
+            <View style={[styles.dot, k === index ? styles.dotOn : styles.dotOff]} />
+          </Pressable>
         ))}
       </View>
       <PrimaryButton title={label} onPress={onLogin} style={[styles.loginBtn, {marginBottom: Math.max(insets.bottom, 12) + 8}]} />
@@ -217,7 +274,7 @@ function CarouselContent({onLogin, label}: {onLogin: () => void; label: string})
 
 export function AuthCarouselDrawer({
   children,
-  triggerLabel = 'Se connecter',
+  triggerLabel = 'Rejoindre',
   startOpen = false,
   hasCarousel = true,
 }: {

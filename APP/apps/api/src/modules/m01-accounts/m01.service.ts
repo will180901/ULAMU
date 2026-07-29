@@ -105,8 +105,11 @@ export class M01Service {
       throw new ServiceUnavailableException("Impossible d'envoyer le code de vérification à cette adresse — vérifiez-la ou réessayez plus tard");
     }
     // MODE TEST (OTP_ECHO=true) : pas de vrai envoi en pilote → on renvoie le code à l'app pour qu'elle l'affiche.
-    // NE JAMAIS activer en production réelle (le code deviendrait lisible par l'appelant). Garde-fou explicite.
-    const echo = process.env.OTP_ECHO === "true";
+    // Le `NODE_ENV !== "production"` n'est PAS redondant avec la variable : c'est un garde-fou dur. La
+    // demande de code est une route publique et la réinitialisation ne réclame que ce code — une seule
+    // variable restée à "true" en production suffisait donc à livrer le mot de passe de n'importe quel
+    // compte à qui connaît son adresse email. La configuration ne peut plus rouvrir ce trou à elle seule.
+    const echo = process.env.OTP_ECHO === "true" && process.env.NODE_ENV !== "production";
     return { expiresInSeconds: ttl, ...(echo ? { debugCode: code } : {}) };
   }
 

@@ -28,13 +28,24 @@ services:
                                # (dev uniquement) — le chiffrement ne protège alors plus rien en production.
       - key: MOMO_WEBHOOK_SECRET
         generateValue: true    # Render génère un secret aléatoire (le vrai paiement viendra plus tard)
+      # ── Envoi des emails (codes OTP : inscription, mot de passe oublié, 2FA) ──
+      # Brevo est la passerelle ACTIVE : elle livre à n'importe quel destinataire dès qu'un expéditeur
+      # est vérifié, sans posséder de domaine. C'est ce qui débloque l'inscription réelle.
+      - key: BREVO_API_KEY
+        sync: false            # ← à coller dans le tableau de bord Render (secret, brevo.com → SMTP & API → clés API)
+      - key: BREVO_FROM_EMAIL
+        sync: false            # ← l'adresse VÉRIFIÉE dans Brevo (Senders & IP). Sans vérification, Brevo refuse l'envoi.
+      - key: BREVO_FROM_NAME
+        value: ULAMU
       - key: RESEND_API_KEY
-        sync: false            # ← à coller dans le tableau de bord Render (secret, resend.com — envoi email OTP)
-                               # Mode sandbox tant qu'aucun domaine n'est vérifié chez Resend : livrable
-                               # uniquement à l'adresse email du compte Resend, pas à un destinataire quelconque.
+        sync: false            # ← optionnel, conservé : Resend reprendra la main (il suffit de retirer BREVO_API_KEY)
+                               # le jour où un domaine ULAMU sera vérifié. Sans domaine, Resend ne livre
+                               # qu'à l'adresse du compte Resend — inutilisable pour de vrais utilisateurs.
       - key: OTP_ECHO
-        value: "true"          # PILOTE : pas de vrai SMS → le code de vérif est renvoyé à l'app pour affichage.
-                               # ⚠️ À retirer (ou mettre "false") avant l'ouverture au public réel.
+        value: "false"         # Le code de vérification n'est PLUS renvoyé dans la réponse de l'API.
+                               # Le laisser à "true" en production exposait le mot de passe de n'importe
+                               # quel compte (demande de code publique + réinitialisation par ce seul code).
+                               # Le code refuse de toute façon l'écho quand NODE_ENV=production (garde-fou dur).
       # MODE VITRINE (démo sans vrais soignants ni vrai paiement) : le soignant « accepte » et le paiement
       # « se confirme » automatiquement, pour que les testeurs déroulent tout le parcours. ⚠️ À RETIRER au lancement réel.
       - key: HANDSHAKE_AUTOCONFIRM_MS

@@ -62,7 +62,12 @@ export function LoginOtpScreen({navigation, route}: Props) {
     setError(null);
     setBusy(true);
     try {
-      await loginPassword(username, password);
+      const res = await loginPassword(username, password);
+      // Le serveur ne valide que le PLUS RÉCENT des codes non consommés : celui affiché/saisi jusqu'ici
+      // vient d'être périmé par ce renvoi. Sans ces deux lignes, l'écran continuait d'afficher l'ancien
+      // code en mode test — donc systématiquement refusé après un « Renvoyer ».
+      setCode(res.debugCode ?? '');
+      setTestCode(res.debugCode ?? null);
       setResent(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Envoi impossible. Réessayez.');
