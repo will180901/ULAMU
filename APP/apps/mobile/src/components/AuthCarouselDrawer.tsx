@@ -12,11 +12,12 @@
  *    plafond fixe ; le bandeau de marque, juste au-dessus, se révèle en fondu pendant la même montée —
  *    on a l'impression que le tiroir vient se glisser SOUS ce bandeau, par-dessus le carrousel.
  */
+import {useFocusEffect} from '@react-navigation/native';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Animated, Easing, Image, KeyboardAvoidingView, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {Animated, BackHandler, Easing, Image, KeyboardAvoidingView, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {shadow} from '../theme';
-import {LogoMark, PrimaryButton} from './ui';
+import {IconButton, LogoMark, PrimaryButton} from './ui';
 
 const isAndroid = Platform.OS === 'android';
 
@@ -56,6 +57,9 @@ const FADE_OUT_MS = 500;
 // COMMIT = déplacement atteint au relâcher pour changer réellement de diapositive (sinon on revient).
 const SWIPE_ACTIVATE_DX = 14;
 const SWIPE_COMMIT_DX = 45;
+
+/** Distance de glissement vers le bas au-delà de laquelle le tiroir se ferme au relâcher. */
+const DRAG_CLOSE_DY = 90;
 
 // Trajectoires multi-arrêts, grande amplitude (~40-55% de la taille de la forme) — chaque motif visite
 // 3 des 8 points cardinaux (nord/sud/est/ouest/nord-est/nord-ouest/sud-est/sud-ouest) avant de revenir à
@@ -277,9 +281,25 @@ export function AuthCarouselDrawer({
   triggerLabel = 'Rejoindre',
   startOpen = false,
   hasCarousel = true,
+  onBack,
+  onRequestClose,
+  steps,
 }: {
   children: React.ReactNode;
   triggerLabel?: string;
+  /** Affiche une flèche de retour EN HAUT DU TIROIR. Jusqu'ici le recul n'existait que par le bouton
+   * matériel Android : rien à l'écran ne disait qu'on pouvait revenir en arrière, et le geste est
+   * invisible sur les téléphones en navigation gestuelle. Passer ici le MÊME gestionnaire que celui
+   * du bouton matériel garantit que les deux reculent identiquement. */
+  onBack?: () => void;
+  /** Appelé quand le bouton retour MATÉRIEL est pressé sur un écran sans carrousel à révéler
+   * (Inscription, Mot de passe oublié, code de connexion) : il n'y a rien à rouvrir sur place, on
+   * quitte donc vers l'écran qui, lui, porte le carrousel. */
+  onRequestClose?: () => void;
+  /** Progression d'un parcours en plusieurs étapes (inscription, mot de passe oublié) : `current` est
+   * l'index à partir de 1. Le sous-titre annonçait « Étape 2 sur 3 » en texte seul, sans rien de
+   * visuel pour situer l'effort restant. */
+  steps?: {current: number; total: number};
   /** Le tiroir est déjà ouvert au montage, pas de bouton à retaper — soit parce que l'écran n'a jamais
    * de carrousel (Inscription, Mot de passe oublié), soit parce qu'on y arrive par le raccourci « Se
    * connecter » depuis l'un de ces écrans (Connexion, avec `hasCarousel` resté à `true`). */
@@ -310,6 +330,145 @@ export function AuthCarouselDrawer({
     Animated.timing(progress, {toValue: 0, duration: 420, easing: Easing.in(Easing.cubic), useNativeDriver: true}).start(() => setOpen(false));
   }
 
+  /**
+   * FERMETURE DEMANDÉE — point de passage unique des trois gestes : bouton retour matériel, appui hors
+   * du tiroir, glissement vers le bas. Les faire converger ici est ce qui garantit qu'ils se comportent
+   * tous pareil ; sinon une confirmation d'abandon posée par l'écran ne protégerait qu'un geste sur trois.
+   *
+   * Quand il y a un carrousel derrière, on le redécouvre sur place. Sinon il n'y a rien à révéler :
+   * c'est à l'écran de décider où aller (et de demander confirmation s'il a une saisie à protéger).
+   */
+  function requestClose() {
+    if (hasCarousel) {
+      closeDrawer();
+      return;
+    }
+    onRequestClose?.();
+  }
+  // Les gestionnaires de gestes sont construits une seule fois : ils lisent la fermeture par référence,
+  // sinon ils resteraient figés sur la version du premier rendu.
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
+
+  // Glissement vers le bas : le tiroir suit le doigt, puis part ou revient au relâcher. La position
+  // est portée par `progress` seul (cf. dragHandlers) — aucune seconde valeur à resynchroniser.
+  // Le PanResponder n'est construit qu'une fois : il lit par référence tout ce qui peut changer
+  // (hauteur d'écran après rotation, position du défilement, fermeture à appeler).
+  const closedOffsetRef = useRef(CLOSED_OFFSET);
+  closedOffsetRef.current = CLOSED_OFFSET;
+  const hasCarouselRef = useRef(hasCarousel);
+  hasCarouselRef.current = hasCarousel;
+  /** Le formulaire est-il en haut de sa liste ? Sert à n'autoriser le glissement de fermeture que là :
+   * plus bas, le geste doit faire défiler le formulaire, pas emporter le tiroir. */
+  const atTopRef = useRef(true);
+
+  /**
+   * Suivi du doigt + décision au relâcher — partagés par les deux zones de capture ci-dessous, pour
+   * que glisser depuis la poignée ou depuis le corps du formulaire donne EXACTEMENT le même geste.
+   *
+   * UNE SEULE valeur porte la position (`progress`, 0 = fermé … 1 = ouvert), y compris pendant le
+   * glissement. Une tentative précédente utilisait une seconde valeur pour le doigt, qu'il fallait
+   * échanger avec `progress` en fin de course : l'échange ne se propageait pas jusqu'au moteur
+   * d'animation natif, et le tiroir restait en bas AVEC le carrousel masqué — plus rien de cliquable
+   * à l'écran. Avec une valeur unique, il n'y a plus ni échange ni animations concurrentes possibles.
+   */
+  const dragHandlers = useRef({
+      onPanResponderMove: (_e: unknown, g: {dy: number}) => {
+        if (g.dy > 0) {
+          // On ne tire jamais le tiroir au-dessus de son plafond : `progress` est plafonné à 1.
+          const p = 1 - g.dy / closedOffsetRef.current;
+          progress.setValue(Math.max(0, Math.min(1, p)));
+        }
+      },
+      onPanResponderRelease: (_e: unknown, g: {dy: number; vy: number}) => {
+        // Un geste court mais VIF ferme aussi : exiger la distance seule rendrait le petit coup sec
+        // (le geste naturel pour chasser une feuille) sans effet.
+        const shouldClose = g.dy > DRAG_CLOSE_DY || g.vy > 0.8;
+
+        // Vitesse du doigt (px/ms) convertie dans l'échelle de `progress` (0→1), et orientée : glisser
+        // vers le bas fait DÉCROÎTRE progress, d'où le signe négatif.
+        const velocity = -g.vy / closedOffsetRef.current;
+
+        if (!shouldClose) {
+          // Retour à sa place en reprenant l'élan du doigt, au lieu de repartir de zéro.
+          Animated.spring(progress, {toValue: 1, velocity, tension: 90, friction: 12, useNativeDriver: true}).start();
+          return;
+        }
+
+        // Sur un écran SANS carrousel (Inscription, Mot de passe oublié), il n'y a rien derrière à
+        // révéler : le tiroir EST l'écran. On le remet en place et c'est l'écran qui décide de la suite
+        // (il a peut-être une saisie à protéger par une confirmation). Le faire descendre pour de bon
+        // avant de connaître sa réponse laisserait un écran vide si l'utilisateur annule.
+        if (!hasCarouselRef.current) {
+          Animated.spring(progress, {toValue: 1, velocity, tension: 90, friction: 12, useNativeDriver: true}).start();
+          requestCloseRef.current();
+          return;
+        }
+
+        // Le mouvement se POURSUIT jusqu'en bas depuis là où le doigt l'a laissé — c'est la même valeur
+        // qui continue sa course, donc aucun sursaut possible au relâcher.
+        Animated.spring(progress, {toValue: 0, velocity, tension: 90, friction: 14, useNativeDriver: true}).start(
+          ({finished}) => {
+            if (finished) setOpen(false);
+          },
+        );
+      },
+  }).current;
+
+  /** Poignée du haut : seuil bas (6 px), c'est le repère explicite du geste. */
+  const dragPan = useRef(
+    PanResponder.create({
+      // Seulement vers le BAS et franchement vertical : un glissement horizontal ou vers le haut ne
+      // doit pas être capté ici.
+      onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && g.dy > Math.abs(g.dx) * 1.5,
+      ...dragHandlers,
+    }),
+  ).current;
+
+  /** Corps du formulaire : même geste, mais UNIQUEMENT quand la liste est déjà en haut — sinon on
+   * volerait le défilement. Seuil plus élevé (14 px) pour ne pas confondre avec l'amorce d'un scroll.
+   * C'est ce qui manquait pour que le tiroir se manipule comme une feuille d'app pro : jusqu'ici le
+   * geste n'existait que sur une poignée de quelques pixels de haut. */
+  const bodyPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => atTopRef.current && g.dy > 14 && g.dy > Math.abs(g.dx) * 1.5,
+      ...dragHandlers,
+    }),
+  ).current;
+
+  // Le tiroir reprend l'état voulu par la route CHAQUE FOIS que l'écran revient au premier plan, et pas
+  // seulement au montage. Sans ça, revenir sur Connexion depuis Inscription retrouvait le formulaire
+  // resté ouvert — l'état initial l'emportait pour toujours — au lieu du carrousel attendu.
+  useFocusEffect(
+    useCallback(() => {
+      if (startOpen) {
+        openDrawer();
+      } else {
+        closeDrawer();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [startOpen]),
+  );
+
+  // Bouton retour MATÉRIEL = sortir du formulaire (refermer le tiroir et retrouver le carrousel).
+  // Le recul d'ÉTAPE, lui, appartient à la flèche visible du bandeau : deux gestes distincts pour deux
+  // intentions distinctes, au lieu d'un seul bouton matériel qui faisait les deux.
+  // Enregistré ici plutôt que dans chaque écran : un seul gestionnaire, donc aucun risque que deux
+  // abonnés se disputent la priorité (le dernier inscrit gagne).
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if ((hasCarousel && open) || (!hasCarousel && onRequestClose)) {
+          requestCloseRef.current();
+          return true;
+        }
+        return false; // rien à fermer ici : comportement système (quitter l'app)
+      });
+      return () => sub.remove();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasCarousel, open, onRequestClose]),
+  );
+
   const translateY = progress.interpolate({inputRange: [0, 1], outputRange: [CLOSED_OFFSET, 0]});
   // Le contenu de premier plan du carrousel (illustration/texte/points/bouton) disparaît à l'ouverture —
   // seul le fond (mesh gradient + grain) doit rester visible dans la bande au-dessus du tiroir.
@@ -334,7 +493,9 @@ export function AuthCarouselDrawer({
           tiroir a démarré ouvert (raccourci « Se connecter » depuis Inscription/Mot de passe oublié) ;
           inerte s'il n'y a pas de carrousel à révéler (Inscription, Mot de passe oublié eux-mêmes). */}
       <View pointerEvents="box-none" style={[styles.brandBand, {height: CEILING_TOP}]}>
-        {open && hasCarousel && <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} />}
+        {/* Appui hors du tiroir = fermeture, sur TOUTES les pages. Auparavant réservé aux écrans
+            portant un carrousel : ailleurs, taper à côté ne faisait rien, sans que rien ne l'explique. */}
+        {open && <Pressable style={StyleSheet.absoluteFill} onPress={() => requestCloseRef.current()} accessibilityLabel="Fermer" />}
         <View pointerEvents="none" style={[styles.brandBandContent, {paddingTop: insets.top + 10}]}>
           <LogoMark size={30} light />
           <Text style={styles.brandText}>ulamu</Text>
@@ -344,12 +505,47 @@ export function AuthCarouselDrawer({
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
         style={[styles.drawer, shadow.cardUp, {top: CEILING_TOP, bottom: 0, transform: [{translateY}]}]}>
-        <KeyboardAvoidingView style={{flex: 1}} behavior={isAndroid ? undefined : 'padding'}>
+        {/* Poignée de glissement. Le geste est capté ICI et non sur tout le tiroir : plus bas, il
+            entrerait en conflit avec le défilement vertical du formulaire — descendre dans la liste
+            aurait fermé le tiroir. C'est aussi le repère visuel qui annonce qu'on peut le faire. */}
+        <View style={styles.grabArea} {...dragPan.panHandlers}>
+          <View style={styles.grabBar} />
+        </View>
+        <KeyboardAvoidingView style={{flex: 1}} behavior={isAndroid ? undefined : 'padding'} {...bodyPan.panHandlers}>
           <ScrollView
             style={{flex: 1}}
             contentContainerStyle={styles.drawerBody}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            // Position du défilement : le glissement de fermeture depuis le corps n'est autorisé qu'en
+            // haut de liste (cf. bodyPan). `scrollEventThrottle` limite la cadence des remontées iOS ;
+            // sur Android elles arrivent à chaque image quoi qu'il arrive.
+            scrollEventThrottle={16}
+            onScroll={e => {
+              atTopRef.current = e.nativeEvent.contentOffset.y <= 0;
+            }}>
+            {(onBack || steps) && (
+              <View style={styles.drawerTopBar}>
+                {onBack ? (
+                  <IconButton icon="arrow-left" onPress={onBack} variant="tile" size={18} accessibilityLabel="Revenir à l'étape précédente" />
+                ) : (
+                  <View style={styles.topBarSpacer} />
+                )}
+                {steps && (
+                  // Segments pleins pour les étapes franchies, creux pour celles à venir : on voit d'un
+                  // coup d'œil où l'on en est et combien il reste, ce qu'un texte seul ne donne pas.
+                  <View
+                    style={styles.stepsRow}
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={`Étape ${steps.current} sur ${steps.total}`}>
+                    {Array.from({length: steps.total}, (_, k) => (
+                      <View key={k} style={[styles.stepSeg, k < steps.current ? styles.stepSegOn : styles.stepSegOff]} />
+                    ))}
+                  </View>
+                )}
+                <View style={styles.topBarSpacer} />
+              </View>
+            )}
             {children}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -381,5 +577,19 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     overflow: 'hidden',
   },
-  drawerBody: {flexGrow: 1, paddingHorizontal: 22, paddingTop: 20, paddingBottom: 24},
+  drawerBody: {flexGrow: 1, paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24},
+
+  // Zone de préhension généreuse (la barre visible ne fait que 4 px de haut : impossible à attraper
+  // sans marge autour), barre discrète pour ne pas concurrencer le contenu.
+  grabArea: {alignItems: 'center', paddingTop: 10, paddingBottom: 8},
+  grabBar: {width: 42, height: 4, borderRadius: 2, backgroundColor: 'rgba(17,17,18,0.16)'},
+
+  // Bandeau du tiroir : retour à gauche, progression centrée. Les deux cales latérales de largeur
+  // égale gardent les segments réellement centrés, que la flèche soit présente ou non.
+  drawerTopBar: {flexDirection: 'row', alignItems: 'center', marginBottom: 14},
+  topBarSpacer: {width: 34},
+  stepsRow: {flex: 1, flexDirection: 'row', gap: 5, justifyContent: 'center', alignItems: 'center'},
+  stepSeg: {height: 4, width: 26, borderRadius: 2},
+  stepSegOn: {backgroundColor: '#2756A6'},
+  stepSegOff: {backgroundColor: 'rgba(39,86,166,0.18)'},
 });

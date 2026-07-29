@@ -8,8 +8,8 @@
  *     la réinitialisation révoque toutes les sessions. En dev, le code s'affiche dans la console de l'API.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useEffect, useState} from 'react';
-import {BackHandler, View} from 'react-native';
+import React, {useState} from 'react';
+import {View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {Banner, CardHeading, ErrorBanner, Field, FieldLabel, FootLink, Hint, OtpInput, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
@@ -80,18 +80,13 @@ export function ForgotScreen({navigation}: Props) {
     }
   }
 
-  // Pas de flèche retour visible dans le tiroir : le geste/bouton retour Android recule d'une étape
-  // (email←otp←reset) au lieu de quitter directement l'écran — même logique que la flèche retirée.
-  useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onBack();
-      return true;
-    });
-    return () => sub.remove();
-  });
-
   return (
-    <AuthCarouselDrawer startOpen hasCarousel={false}>
+    <AuthCarouselDrawer
+      startOpen
+      hasCarousel={false}
+      onBack={onBack}
+      onRequestClose={() => navigation.navigate('Login', {startOpen: false})}
+      steps={{current: step === 'email' ? 1 : step === 'otp' ? 2 : 3, total: 3}}>
       {step === 'email' && (
         <>
           <CardHeading title="Mot de passe oublié" subtitle="Entrez votre email : un code de réinitialisation vous sera envoyé." />

@@ -7,8 +7,8 @@
  * moment-là — inutile d'en redemander un en arrivant.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useEffect, useState} from 'react';
-import {BackHandler, View} from 'react-native';
+import React, {useState} from 'react';
+import {View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {Banner, CardHeading, ErrorBanner, FieldLabel, FootLink, Hint, OtpInput, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
@@ -25,14 +25,6 @@ export function LoginOtpScreen({navigation, route}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
-
-  useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigation.goBack();
-      return true;
-    });
-    return () => sub.remove();
-  }, [navigation]);
 
   async function submit() {
     if (code.length < 6) {
@@ -77,7 +69,11 @@ export function LoginOtpScreen({navigation, route}: Props) {
   }
 
   return (
-    <AuthCarouselDrawer startOpen hasCarousel={false}>
+    <AuthCarouselDrawer
+      startOpen
+      hasCarousel={false}
+      onBack={() => navigation.goBack()}
+      onRequestClose={() => navigation.navigate('Login', {startOpen: false})}>
       <CardHeading title="Vérification en deux étapes" subtitle="Un code à 6 chiffres vient d'être envoyé à l'adresse email de votre compte." />
       <ErrorBanner message={error} />
       {testCode && (

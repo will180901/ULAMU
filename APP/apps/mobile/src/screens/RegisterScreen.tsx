@@ -6,7 +6,7 @@
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
-import {BackHandler, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
 import {
   Badge,
@@ -26,6 +26,7 @@ import {
 import {ApiError} from '../lib/api-client';
 import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidUsername, normalizeEmail, normalizePhone, normalizeUsername} from '../lib/validation';
 import {AvailabilityStatus, useAvailability} from '../state/useAvailability';
+import {useDialog} from '../components/Dialog';
 import {AuthStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {RegisterProfile, useAuth} from '../state/AuthContext';
@@ -40,6 +41,8 @@ const MIN_AGE = 18; // PM-16
 export function RegisterScreen({navigation}: Props) {
   const styles = useThemedStyles(makeStyles);
   const {requestOtp, verifyRegister, state} = useAuth();
+  // Renommé : `confirm` est déjà pris par le champ de confirmation du mot de passe, juste en dessous.
+  const {confirm: askConfirm} = useDialog();
   const [step, setStep] = useState<Step>('identity');
 
   // Identité
@@ -213,6 +216,29 @@ export function RegisterScreen({navigation}: Props) {
     return () => clearTimeout(t);
   }, [step, otp, phone, email, isoDob, sex, firstName, lastName, username, password, district, verifyRegister, navigation]);
 
+  /**
+   * Quitter l'inscription (retour matériel, appui hors du tiroir, glissement vers le bas). Demande
+   * confirmation dès que quelque chose a été saisi : ces trois gestes sont faciles à déclencher sans
+   * le vouloir, et à l'étape 3 on perdrait un formulaire complet ET un code déjà envoyé. Sur un
+   * formulaire vierge, en revanche, aucune raison de retenir qui que ce soit.
+   */
+  async function leaveRegistration() {
+    const entered = identityTouched || accountTouched || otp.length > 0;
+    if (entered) {
+      const ok = await askConfirm({
+        title: "Abandonner l'inscription ?",
+        message: 'Les informations déjà saisies seront perdues.',
+        confirmLabel: 'Abandonner',
+        cancelLabel: 'Continuer',
+        danger: true,
+      });
+      if (!ok) {
+        return;
+      }
+    }
+    navigation.navigate('Login', {startOpen: false});
+  }
+
   function onBack() {
     setError(null);
     if (step === 'otp') {
@@ -226,18 +252,13 @@ export function RegisterScreen({navigation}: Props) {
     }
   }
 
-  // Pas de flèche retour visible dans le tiroir : le geste/bouton retour Android recule d'une étape
-  // (identity←account←otp) au lieu de quitter directement l'écran — même logique que la flèche retirée.
-  useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onBack();
-      return true;
-    });
-    return () => sub.remove();
-  });
-
   return (
-    <AuthCarouselDrawer startOpen hasCarousel={false}>
+    <AuthCarouselDrawer
+      startOpen
+      hasCarousel={false}
+      onBack={onBack}
+      onRequestClose={leaveRegistration}
+      steps={{current: step === 'identity' ? 1 : step === 'account' ? 2 : 3, total: 3}}>
       <CardHeading
         title="Créer mon compte"
         subtitle={
