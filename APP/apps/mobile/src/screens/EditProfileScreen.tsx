@@ -3,7 +3,7 @@
  * pré-remplit, envoie `PATCH /v1/accounts/me`. Champs : prénom, nom, date de naissance, sexe, arrondissement.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Avatar, Field, FieldLabel, IconButton, PrimaryButton} from '../components/ui';
 import {AvatarViewer} from '../components/AvatarViewer';
@@ -17,6 +17,8 @@ import {Sex, UpdateProfileRequest} from '../lib/contracts';
 import {avatarUrl} from '../services/media';
 import {useMe} from '../state/MeContext';
 import {useAvatarPicker} from '../state/useAvatarPicker';
+import {useAbandonGuard} from '../state/useAbandonGuard';
+import {useHardwareBack} from '../state/useHardwareBack';
 import {useDialog} from '../components/Dialog';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -53,15 +55,27 @@ export function EditProfileScreen({navigation}: NativeStackScreenProps<AppStackP
   const [viewerOpen, setViewerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Valeurs TELLES QUE CHARGÉES : l'étalon auquel on compare pour savoir s'il y a quelque chose à
+  // perdre. Une `ref` suffit — elle ne pilote aucun rendu, ce sont les champs eux-mêmes qui le font.
+  const loaded = useRef<{firstName: string; lastName: string; dob: string; sex: Sex; district: string} | null>(null);
+
   const load = useCallback(async () => {
     setStatus('loading');
     try {
       const profile = await api.getMe();
-      setFirstName(profile.firstName ?? '');
-      setLastName(profile.lastName ?? '');
-      setDob(isoToDisplay(profile.birthDate));
-      setSex(profile.sex ?? 'F');
-      setDistrict(profile.district ?? '');
+      const snapshot = {
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? '',
+        dob: isoToDisplay(profile.birthDate),
+        sex: profile.sex ?? ('F' as Sex),
+        district: profile.district ?? '',
+      };
+      setFirstName(snapshot.firstName);
+      setLastName(snapshot.lastName);
+      setDob(snapshot.dob);
+      setSex(snapshot.sex);
+      setDistrict(snapshot.district);
+      loaded.current = snapshot;
       setStatus('ready');
     } catch {
       setStatus('error');
@@ -89,6 +103,8 @@ export function EditProfileScreen({navigation}: NativeStackScreenProps<AppStackP
     try {
       const updated = await api.updateProfile(dto);
       setMe(updated); // → nom à jour partout instantanément
+      // Nouvel étalon : ce qui est enregistré n'est plus « à perdre ».
+      loaded.current = {firstName: firstName.trim(), lastName: lastName.trim(), dob, sex, district: district.trim()};
       await alert({title: 'Profil mis à jour', message: 'Vos informations ont été enregistrées.'});
       navigation.goBack();
     } catch (e) {
@@ -100,12 +116,33 @@ export function EditProfileScreen({navigation}: NativeStackScreenProps<AppStackP
 
   const ready = firstName.trim().length > 0 && lastName.trim().length > 0 && district.trim().length > 0;
 
+  /**
+   * Sortie de l'écran — la flèche et le bouton retour du téléphone font strictement la même chose.
+   *
+   * L'écran repartait en silence sur un simple `goBack()` : un appui de trop et le prénom, la date de
+   * naissance et l'arrondissement qu'on venait de corriger étaient perdus sans un mot.
+   */
+  const base = loaded.current;
+  const leaveEdit = useAbandonGuard({
+    dirty:
+      !!base &&
+      (firstName !== base.firstName ||
+        lastName !== base.lastName ||
+        dob !== base.dob ||
+        sex !== base.sex ||
+        district !== base.district),
+    title: 'Abandonner les modifications ?',
+    message: "Les changements que vous venez de saisir ne seront pas enregistrés.",
+    onLeave: () => navigation.goBack(),
+  });
+  useHardwareBack(leaveEdit);
+
   return (
     <SafeAreaView style={styles.root}>
       <Grain />
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.surface} translucent={false} />
       <View style={styles.header}>
-        <IconButton icon="arrow-left" onPress={() => navigation.goBack()} variant="tile" size={19} accessibilityLabel="Retour" />
+        <IconButton icon="arrow-left" onPress={leaveEdit} variant="tile" size={19} accessibilityLabel="Retour" />
         <Text style={styles.headerTitle}>Modifier mon profil</Text>
       </View>
 

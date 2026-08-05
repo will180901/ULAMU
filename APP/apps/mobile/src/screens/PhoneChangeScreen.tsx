@@ -5,15 +5,16 @@
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
-import {Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Banner, Field, IconButton, PhoneField, PrimaryButton} from '../components/ui';
 import {useDialog} from '../components/Dialog';
 import {Grain} from '../components/Grain';
-import {Icon} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
-import {fonts, Palette, radius} from '../theme';
+import {useAbandonGuard} from '../state/useAbandonGuard';
+import {useHardwareBack} from '../state/useHardwareBack';
+import {fonts, Palette} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
 export function PhoneChangeScreen({navigation}: NativeStackScreenProps<AppStackParamList, 'PhoneChange'>) {
@@ -59,12 +60,41 @@ export function PhoneChangeScreen({navigation}: NativeStackScreenProps<AppStackP
     }
   };
 
+  /**
+   * Sortie de l'écran. À l'étape des codes, DEUX OTP ont déjà été envoyés — un sur l'ancien numéro, un
+   * sur le nouveau : repartir les périme tous les deux et oblige à tout recommencer. C'est la même
+   * perte que sur les écrans à code du parcours d'authentification, et elle mérite le même avertissement.
+   */
+  const leaveChange = useAbandonGuard({
+    dirty: local.length > 0 || oldCode.length > 0 || newCode.length > 0,
+    title: 'Abandonner le changement ?',
+    message:
+      step === 'phone'
+        ? 'Le numéro que vous venez de saisir sera perdu.'
+        : "Les deux codes envoyés ne seront plus utilisables : il faudra en redemander.",
+    onLeave: () => navigation.goBack(),
+  });
+
+  /**
+   * Retour = reculer d'une étape ; seule la première sort de l'écran, avec confirmation. Même règle que
+   * l'inscription et « mot de passe oublié » — ici la flèche quittait tout, même depuis l'étape des
+   * codes, alors qu'on voulait souvent juste corriger le numéro saisi.
+   */
+  function onBack() {
+    if (step === 'codes') {
+      setStep('phone');
+    } else {
+      leaveChange();
+    }
+  }
+  useHardwareBack(onBack);
+
   return (
     <SafeAreaView style={styles.root}>
       <Grain />
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.surface} translucent={false} />
       <View style={styles.header}>
-        <IconButton icon="arrow-left" onPress={() => navigation.goBack()} variant="tile" size={19} accessibilityLabel="Retour" />
+        <IconButton icon="arrow-left" onPress={onBack} variant="tile" size={19} accessibilityLabel="Retour" />
         <Text style={styles.headerTitle}>Changer de numéro</Text>
       </View>
 
