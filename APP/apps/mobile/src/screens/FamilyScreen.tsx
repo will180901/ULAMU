@@ -15,6 +15,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {Sex, SubProfile} from '../lib/contracts';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
@@ -115,6 +116,24 @@ function CreateSubProfileModal({visible, onClose, onDone}: {visible: boolean; on
   const [sex, setSex] = useState<Sex>('F');
   const [busy, setBusy] = useState(false);
 
+  /**
+   * Fermeture de la feuille : « Annuler », appui sur le fond et bouton retour du téléphone passent tous
+   * les trois par ici. Même correction que la feuille des rappels — un brouillon rempli disparaissait
+   * sans un mot, et la saisie abandonnée réapparaissait à la réouverture faute d'être effacée.
+   */
+  const dismiss = useAbandonGuard({
+    dirty: firstName.trim().length > 0 || lastName.trim().length > 0 || dob.trim().length > 0,
+    title: 'Abandonner cet ajout ?',
+    message: 'Les informations saisies pour cette personne seront perdues.',
+    onLeave: () => {
+      setFirstName('');
+      setLastName('');
+      setDob('');
+      setSex('F');
+      onClose();
+    },
+  });
+
   const submit = async () => {
     const iso = displayToIso(dob);
     if (firstName.trim().length < 1 || lastName.trim().length < 1 || !iso) {
@@ -136,8 +155,8 @@ function CreateSubProfileModal({visible, onClose, onDone}: {visible: boolean; on
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Ajouter une personne à charge</Text>
           <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholder="Prénom" placeholderTextColor={colors.textDisabled} autoCapitalize="words" autoFocus />
@@ -154,7 +173,7 @@ function CreateSubProfileModal({visible, onClose, onDone}: {visible: boolean; on
             })}
           </View>
           <PrimaryButton title="Créer le Carnet" iconRight="check" loading={busy} onPress={submit} />
-          <Pressable onPress={onClose} style={styles.cancel}>
+          <Pressable onPress={dismiss} style={styles.cancel}>
             <Text style={styles.cancelText}>Annuler</Text>
           </Pressable>
         </Pressable>

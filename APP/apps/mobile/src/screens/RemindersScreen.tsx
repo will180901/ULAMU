@@ -16,6 +16,7 @@ import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {requestNotificationPermission, syncReminderNotifications} from '../services/notifications';
 import {Reminder} from '../lib/contracts';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
@@ -162,6 +163,27 @@ function CreateReminderModal({visible, onClose, onDone}: {visible: boolean; onCl
 
   const toggleTime = (t: string) => setTimes(prev => (prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]));
 
+  /**
+   * Fermeture de la feuille : « Annuler », appui sur le fond et bouton retour du téléphone passent tous
+   * les trois par ici.
+   *
+   * Deux choses étaient fausses. Un brouillon rempli disparaissait au moindre appui à côté, sans un mot.
+   * Et comme ce composant reste monté, la saisie ABANDONNÉE réapparaissait telle quelle à la
+   * réouverture — alors qu'une création RÉUSSIE, elle, repartait d'un formulaire vide. On tranche dans
+   * le sens qu'annonce le bouton : abandonner efface.
+   */
+  const dismiss = useAbandonGuard({
+    dirty: name.trim().length > 0 || dosage.trim().length > 0 || times.length > 0,
+    title: 'Abandonner ce rappel ?',
+    message: 'Le médicament et les horaires saisis seront perdus.',
+    onLeave: () => {
+      setName('');
+      setDosage('');
+      setTimes([]);
+      onClose();
+    },
+  });
+
   const submit = async () => {
     if (name.trim().length < 1 || times.length === 0) {
       return;
@@ -181,8 +203,8 @@ function CreateReminderModal({visible, onClose, onDone}: {visible: boolean; onCl
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Nouveau rappel</Text>
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Médicament (ex : Amlodipine 5 mg)" placeholderTextColor={colors.textDisabled} autoFocus />
@@ -199,7 +221,7 @@ function CreateReminderModal({visible, onClose, onDone}: {visible: boolean; onCl
             })}
           </View>
           <PrimaryButton title="Créer le rappel" iconRight="check" loading={busy} disabled={name.trim().length < 1 || times.length === 0} onPress={submit} />
-          <Pressable onPress={onClose} style={styles.cancel}>
+          <Pressable onPress={dismiss} style={styles.cancel}>
             <Text style={styles.cancelText}>Annuler</Text>
           </Pressable>
         </Pressable>
