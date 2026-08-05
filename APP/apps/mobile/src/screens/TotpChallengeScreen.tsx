@@ -19,7 +19,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'TotpChallenge'>;
 
 export function TotpChallengeScreen({route, navigation}: Props) {
   const {username, password} = route.params;
-  const {loginPassword} = useAuth();
+  const {loginPassword, activatePending} = useAuth();
   const [mode, setMode] = useState<'totp' | 'backup'>('totp');
   const [code, setCode] = useState('');
   const [backup, setBackup] = useState('');
@@ -35,7 +35,8 @@ export function TotpChallengeScreen({route, navigation}: Props) {
       setError(null);
       try {
         await loginPassword(username, password, value);
-        navigation.navigate('Success', {context: 'login'});
+        // Comme les deux autres voies de connexion : entrée directe, sans écran intermédiaire.
+        await activatePending();
       } catch (err) {
         setError(err instanceof ApiError ? err.message : 'Code invalide. Réessayez.');
         setCode('');
@@ -44,7 +45,7 @@ export function TotpChallengeScreen({route, navigation}: Props) {
         setBusy(false);
       }
     },
-    [username, password, loginPassword, navigation],
+    [username, password, loginPassword, activatePending],
   );
 
   // Code TOTP à 6 chiffres : validation automatique dès la saisie complète.

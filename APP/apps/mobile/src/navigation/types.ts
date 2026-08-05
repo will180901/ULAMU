@@ -8,7 +8,7 @@ export type AuthStackParamList = {
   Forgot: undefined; // mot de passe oublié (email → OTP → nouveau mot de passe)
   LoginOtp: {username: string; password: string; debugCode?: string}; // 2e facteur à la connexion : code par email (2FA du mobile)
   TotpChallenge: {username: string; password: string}; // 2e facteur TOTP — web uniquement, jamais atteint sur mobile
-  Success: {context: 'register' | 'login'};
+  Success: undefined; // fin d'INSCRIPTION uniquement — la connexion entre directement dans l'app
 };
 
 /** Onglets patient (coque de navigation — maquette tabs.jsx). */

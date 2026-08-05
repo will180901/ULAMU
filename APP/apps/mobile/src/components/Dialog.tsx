@@ -57,13 +57,25 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     r?.(value);
   }, []);
 
+  /**
+   * Il n'y a qu'une place de dialogue. Un second appel qui arrive alors qu'une boîte est déjà ouverte
+   * RÈGLE d'abord la première (valeur d'annulation) avant de prendre la place : sans ça son `resolve`
+   * était simplement écrasé, et la Promise correspondante ne se réglait JAMAIS. Tout code qui l'attendait
+   * — le garde-fou d'abandon, notamment — restait bloqué définitivement.
+   */
+  const takeSlot = useCallback((res: (v: any) => void, cancelValue: any, next: Req) => {
+    resolver.current?.(cancelValue);
+    resolver.current = res;
+    setReq(next);
+  }, []);
+
   const api = useMemo<DialogApi>(
     () => ({
-      alert: (opts) => new Promise<void>((res) => { resolver.current = () => res(); setReq({kind: 'alert', opts}); }),
-      confirm: (opts) => new Promise<boolean>((res) => { resolver.current = res; setReq({kind: 'confirm', opts}); }),
-      actionSheet: (opts) => new Promise<string | null>((res) => { resolver.current = res; setReq({kind: 'sheet', opts}); }),
+      alert: (opts) => new Promise<void>((res) => takeSlot(() => res(), undefined, {kind: 'alert', opts})),
+      confirm: (opts) => new Promise<boolean>((res) => takeSlot(res, false, {kind: 'confirm', opts})),
+      actionSheet: (opts) => new Promise<string | null>((res) => takeSlot(res, null, {kind: 'sheet', opts})),
     }),
-    [],
+    [takeSlot],
   );
 
   // Expose l'API au pont impératif tant que le provider est monté.

@@ -19,7 +19,7 @@ import {useSlowRequest} from '../state/useSlowRequest';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export function LoginScreen({navigation}: Props) {
-  const {loginPassword} = useAuth();
+  const {loginPassword, activatePending} = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,10 @@ export function LoginScreen({navigation}: Props) {
       } else if (res.totpRequired) {
         navigation.navigate('TotpChallenge', {username: id, password});
       } else {
-        navigation.navigate('Success', {context: 'login'});
+        // Pas d'écran intermédiaire à la CONNEXION : on entre directement dans l'app. Un « Connexion
+        // réussie » suivi d'un bouton n'apprend rien de plus que l'app elle-même, et coûtait un appui
+        // à chaque ouverture. L'écran de succès reste réservé à l'INSCRIPTION, qui est un vrai jalon.
+        await activatePending();
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Connexion impossible. Vérifiez votre réseau et réessayez.');

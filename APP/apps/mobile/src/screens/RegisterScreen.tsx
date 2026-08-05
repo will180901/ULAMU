@@ -225,7 +225,7 @@ export function RegisterScreen({navigation}: Props) {
       setError(null);
       try {
         await verifyRegister(profile, district.trim(), normalized, otp);
-        navigation.navigate('Success', {context: 'register'});
+        navigation.navigate('Success');
       } catch (err) {
         setError(err instanceof ApiError ? err.message : 'Création du compte impossible.');
         setOtp('');
@@ -251,6 +251,26 @@ export function RegisterScreen({navigation}: Props) {
     setStep(target);
   }
 
+  /**
+   * Retour (flèche et bouton matériel) = RECULER D'UNE ÉTAPE ; seule la première étape sort de
+   * l'inscription, avec confirmation.
+   *
+   * « Mot de passe oublié » est lui aussi en trois étapes et répond exactement comme ça. Les deux
+   * écrans faisaient jusqu'ici l'inverse l'un de l'autre : ici le retour abandonnait tout, même à la
+   * dernière étape — on proposait « Abandonner l'inscription ? » à quelqu'un qui voulait juste
+   * corriger son numéro. Le saut direct vers une étape déjà franchie reste possible en tapant sa
+   * ligne de résumé.
+   */
+  function onBack() {
+    if (step === 'otp') {
+      goToStep('account');
+    } else if (step === 'account') {
+      goToStep('identity');
+    } else {
+      leaveRegistration();
+    }
+  }
+
   return (
     <AuthPage
       // Le titre porte l'OBJECTIF, constant ; le nom de chaque étape est porté par la pile en dessous.
@@ -262,9 +282,8 @@ export function RegisterScreen({navigation}: Props) {
             ? 'De quoi vous connecter et récupérer votre compte.'
             : `Code à 6 chiffres envoyé à ${email}.`
       }
-      // Quitter l'inscription — avec confirmation si quelque chose a été saisi. Le recul d'ÉTAPE, lui,
-      // se fait en tapant la ligne de résumé de l'étape voulue : deux gestes, deux intentions distinctes.
-      onBack={leaveRegistration}>
+      // Recule d'une étape, et ne quitte l'inscription qu'à la première — cf. `onBack` ci-dessus.
+      onBack={onBack}>
       <ErrorBanner message={error} />
 
       <StepStack
@@ -403,7 +422,9 @@ export function RegisterScreen({navigation}: Props) {
 
       </StepStack>
 
-      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.goBack()} />}
+      {/* Même sortie que le bouton retour : ce lien quitte bel et bien l'inscription, il doit donc
+          demander confirmation quand quelque chose a déjà été saisi. */}
+      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={leaveRegistration} />}
     </AuthPage>
   );
 }

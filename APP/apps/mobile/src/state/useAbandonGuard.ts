@@ -11,7 +11,7 @@
  * geste et la même perte. Trois copies auraient fini par diverger — un écran oublié, une formulation
  * différente, une définition de « déjà entamé » qui ne veut plus dire la même chose.
  */
-import {useCallback} from 'react';
+import {useCallback, useRef} from 'react';
 import {useDialog} from '../components/Dialog';
 
 export function useAbandonGuard({
@@ -27,11 +27,31 @@ export function useAbandonGuard({
   onLeave: () => void;
 }): () => Promise<void> {
   const {confirm} = useDialog();
+
+  /**
+   * Une seule confirmation à la fois.
+   *
+   * Le bouton retour matériel reste écouté pendant que la boîte est affichée : `AuthPage` intercepte
+   * TOUS les appuis. Sans ce verrou, chaque nouvel appui rouvrait une confirmation par-dessus la
+   * précédente — l'utilisateur voyait la boîte se refermer puis revenir, indéfiniment, sans jamais
+   * pouvoir quitter l'écran. C'était la « boucle des retours ».
+   */
+  const asking = useRef(false);
+
   return useCallback(async () => {
+    if (asking.current) {
+      return;
+    }
     if (dirty) {
       // « Continuer » plutôt que « Annuler » : le mot « Annuler » est ambigu ici — on ne sait plus s'il
       // annule l'abandon ou l'inscription elle-même.
-      const ok = await confirm({title, message, confirmLabel: 'Abandonner', cancelLabel: 'Continuer', danger: true});
+      asking.current = true;
+      let ok: boolean;
+      try {
+        ok = await confirm({title, message, confirmLabel: 'Abandonner', cancelLabel: 'Continuer', danger: true});
+      } finally {
+        asking.current = false;
+      }
       if (!ok) {
         return;
       }

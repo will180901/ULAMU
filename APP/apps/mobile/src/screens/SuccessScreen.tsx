@@ -1,22 +1,22 @@
 /**
- * Succès — confirmation d'inscription ou de connexion → entrée dans l'app.
+ * Succès — confirmation de fin d'INSCRIPTION → entrée dans l'app.
+ *
+ * La connexion ne passe plus par ici : elle entre directement dans l'app, quelle que soit la voie
+ * (mot de passe seul, code par email, TOTP). Un interstitiel n'y apprenait rien que l'app elle-même
+ * ne montre déjà, et coûtait un appui à chaque ouverture. La création de compte, elle, est un jalon
+ * qui mérite d'être annoncé.
  */
 import {useFocusEffect} from '@react-navigation/native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useRef} from 'react';
 import {Animated, BackHandler, Easing, StyleSheet, Text, View} from 'react-native';
 import {AuthScreen, Badge, Card, CobaltHeader, FloatCard, PrimaryButton, VerifiedBadge} from '../components/ui';
 import {Icon} from '../components/Icon';
-import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
 import {fonts, Palette} from '../theme';
 import {useThemedStyles} from '../state/ThemeContext';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Success'>;
-
-export function SuccessScreen({route}: Props) {
+export function SuccessScreen() {
   const styles = useThemedStyles(makeStyles);
-  const isRegister = route.params?.context === 'register';
   const {activatePending} = useAuth();
   const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -24,7 +24,7 @@ export function SuccessScreen({route}: Props) {
   }, [pop]);
 
   /**
-   * Écran TERMINAL : le compte est créé (ou la session ouverte), il n'y a plus rien derrière. Le bouton
+   * Écran TERMINAL : le compte est créé, il n'y a plus rien derrière. Le bouton
    * retour est donc neutralisé — sans ça, Android redéposait l'utilisateur dans un formulaire qu'il
    * venait de valider, avec des champs à moitié vidés et un code déjà consommé.
    *
@@ -46,7 +46,7 @@ export function SuccessScreen({route}: Props) {
           <Animated.View style={[styles.circle, {transform: [{scale}], opacity: pop}]}>
             <Icon name="check-circle" size={34} color="#fff" strokeWidth={2} />
           </Animated.View>
-          <Text style={styles.title}>{isRegister ? 'Compte créé' : 'Connexion réussie'}</Text>
+          <Text style={styles.title}>Compte créé</Text>
           <Text style={styles.subtitle}>Bienvenue sur ULAMU.</Text>
         </View>
       </CobaltHeader>

@@ -11,6 +11,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
 import {AuthPage} from '../components/AuthPage';
+import {useDialog} from '../components/Dialog';
 import {Banner, ErrorBanner, Field, FieldLabel, FieldStatus, FootLink, OtpInput, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {isValidEmail, normalizeEmail} from '../lib/validation';
@@ -22,6 +23,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Forgot'>;
 type Step = 'email' | 'otp' | 'reset';
 
 export function ForgotScreen({navigation}: Props) {
+  // `alert` seulement : `confirm` entrerait en collision avec l'état du champ de confirmation.
+  const {alert} = useDialog();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -62,6 +65,11 @@ export function ForgotScreen({navigation}: Props) {
     setBusy(true);
     try {
       await api.resetPassword({email: normalizeEmail(email), otpCode: code, newPassword: password});
+      // Confirmation explicite avant de rendre la main. Sans elle, la réinitialisation ramenait
+      // l'utilisateur sur la connexion sans un mot : rien ne distinguait un mot de passe changé d'un
+      // écran quitté par erreur — et la réinitialisation révoque toutes les sessions, ce n'est pas un
+      // détail qu'on annonce en silence.
+      await alert({title: 'Mot de passe modifié', message: 'Connectez-vous avec votre nouveau mot de passe.'});
       navigation.goBack();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Réinitialisation impossible. Vérifiez le code.');
@@ -159,7 +167,9 @@ export function ForgotScreen({navigation}: Props) {
         </>
       )}
 
-      <FootLink prefix="Vous vous souvenez ?" action="Se connecter" onPress={() => navigation.goBack()} />
+      {/* Même sortie que le bouton retour de la première étape : passe par le garde-fou, sinon un code
+          déjà envoyé était perdu en silence (quota PM-19). */}
+      <FootLink prefix="Vous vous souvenez ?" action="Se connecter" onPress={leaveReset} />
     </AuthPage>
   );
 }
