@@ -157,7 +157,7 @@ export function AuthMeshBackground() {
 
 /** Illustration + texte + points + bouton — PAS le fond (voir MeshGradientBackground, toujours affiché
  * séparément derrière, y compris une fois le tiroir ouvert : seul ce contenu de premier plan disparaît). */
-function CarouselContent({onLogin, label}: {onLogin: () => void; label: string}) {
+export function CarouselContent({onLogin, label}: {onLogin: () => void; label: string}) {
   const {height: screenH} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
@@ -326,8 +326,26 @@ export function AuthCarouselDrawer({
     Animated.timing(progress, {toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true}).start();
   }
 
-  function closeDrawer() {
+  /**
+   * `velocity` est fourni quand la fermeture vient d'un GESTE : le tiroir poursuit alors la course du
+   * doigt au lieu de repartir d'un mouvement neuf, ce qui est toute la différence entre « ça suit ma
+   * main » et « ça rejoue une animation ». Absent (bouton, appui hors du tiroir), on garde la durée fixe.
+   */
+  function closeDrawer(velocity?: number) {
+    if (velocity !== undefined) {
+      Animated.spring(progress, {toValue: 0, velocity, tension: 90, friction: 14, useNativeDriver: true}).start(({finished}) => {
+        if (finished) {
+          setOpen(false);
+        }
+      });
+      return;
+    }
     Animated.timing(progress, {toValue: 0, duration: 420, easing: Easing.in(Easing.cubic), useNativeDriver: true}).start(() => setOpen(false));
+  }
+
+  /** Remet le tiroir à sa place ouverte, en reprenant l'élan du doigt s'il y en a un. */
+  function settleOpen(velocity = 0) {
+    Animated.spring(progress, {toValue: 1, velocity, tension: 90, friction: 12, useNativeDriver: true}).start();
   }
 
   /**
@@ -338,9 +356,9 @@ export function AuthCarouselDrawer({
    * Quand il y a un carrousel derrière, on le redécouvre sur place. Sinon il n'y a rien à révéler :
    * c'est à l'écran de décider où aller (et de demander confirmation s'il a une saisie à protéger).
    */
-  function requestClose() {
+  function requestClose(velocity?: number) {
     if (hasCarousel) {
-      closeDrawer();
+      closeDrawer(velocity);
       return;
     }
     onRequestClose?.();
@@ -349,6 +367,8 @@ export function AuthCarouselDrawer({
   // sinon ils resteraient figés sur la version du premier rendu.
   const requestCloseRef = useRef(requestClose);
   requestCloseRef.current = requestClose;
+  const settleOpenRef = useRef(settleOpen);
+  settleOpenRef.current = settleOpen;
 
   // Glissement vers le bas : le tiroir suit le doigt, puis part ou revient au relâcher. La position
   // est portée par `progress` seul (cf. dragHandlers) — aucune seconde valeur à resynchroniser.
@@ -390,8 +410,7 @@ export function AuthCarouselDrawer({
         const velocity = -g.vy / closedOffsetRef.current;
 
         if (!shouldClose) {
-          // Retour à sa place en reprenant l'élan du doigt, au lieu de repartir de zéro.
-          Animated.spring(progress, {toValue: 1, velocity, tension: 90, friction: 12, useNativeDriver: true}).start();
+          settleOpenRef.current(velocity); // pas assez loin : retour à sa place, élan compris
           return;
         }
 
@@ -400,19 +419,24 @@ export function AuthCarouselDrawer({
         // (il a peut-être une saisie à protéger par une confirmation). Le faire descendre pour de bon
         // avant de connaître sa réponse laisserait un écran vide si l'utilisateur annule.
         if (!hasCarouselRef.current) {
-          Animated.spring(progress, {toValue: 1, velocity, tension: 90, friction: 12, useNativeDriver: true}).start();
-          requestCloseRef.current();
-          return;
+          settleOpenRef.current(velocity);
         }
 
-        // Le mouvement se POURSUIT jusqu'en bas depuis là où le doigt l'a laissé — c'est la même valeur
-        // qui continue sa course, donc aucun sursaut possible au relâcher.
-        Animated.spring(progress, {toValue: 0, velocity, tension: 90, friction: 14, useNativeDriver: true}).start(
-          ({finished}) => {
-            if (finished) setOpen(false);
-          },
-        );
+        // TOUTE fermeture passe par ici, y compris celle-ci : c'est ce qui garantit qu'une protection
+        // posée par l'écran (confirmation d'abandon) vaut pour le glissement comme pour les deux autres
+        // gestes. La vitesse est transmise pour que la descente prolonge le mouvement du doigt.
+        requestCloseRef.current(velocity);
       },
+      /**
+       * Geste INTERROMPU sans relâcher : appel entrant, notification, passage en arrière-plan, ou un
+       * autre composant qui réclame la main (le défilement du formulaire, notamment).
+       *
+       * Sans ce retour explicite, `onPanResponderRelease` n'est jamais appelé et le tiroir reste figé à
+       * mi-course — ni ouvert ni fermé, et plus rien ne le remet en place. C'est la même impasse que
+       * celle décrite plus haut, atteinte par un autre chemin. On ne peut pas deviner l'intention d'un
+       * geste avorté : on rouvre, l'état de départ étant toujours le choix sûr.
+       */
+      onPanResponderTerminate: () => settleOpenRef.current(0),
   }).current;
 
   /** Poignée du haut : seuil bas (6 px), c'est le repère explicite du geste. */
@@ -431,7 +455,16 @@ export function AuthCarouselDrawer({
    * geste n'existait que sur une poignée de quelques pixels de haut. */
   const bodyPan = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => atTopRef.current && g.dy > 14 && g.dy > Math.abs(g.dx) * 1.5,
+      // CAPTURE, et non la phase normale : le `ScrollView` est un enfant, et dès qu'il est défilable il
+      // s'empare du toucher — le parent n'est alors jamais interrogé. C'est ce qui faisait que le
+      // glissement ne marchait que sur l'écran de connexion, seul formulaire assez court pour tenir
+      // sans défilement. En capture, le parent est consulté AVANT l'enfant.
+      //
+      // Le filtre reste strict pour ne pas voler le défilement : uniquement quand la liste est déjà en
+      // haut (rien à faire défiler vers le bas), et pour un mouvement franchement vertical d'au moins
+      // 14 px. Un appui simple n'est pas concerné — seuls les mouvements sont examinés ici, la saisie
+      // dans les champs n'est donc pas affectée.
+      onMoveShouldSetPanResponderCapture: (_e, g) => atTopRef.current && g.dy > 14 && g.dy > Math.abs(g.dx) * 1.5,
       ...dragHandlers,
     }),
   ).current;
@@ -455,18 +488,22 @@ export function AuthCarouselDrawer({
   // intentions distinctes, au lieu d'un seul bouton matériel qui faisait les deux.
   // Enregistré ici plutôt que dans chaque écran : un seul gestionnaire, donc aucun risque que deux
   // abonnés se disputent la priorité (le dernier inscrit gagne).
+  // Lu par référence : sans ça, l'abonnement se défaisait et se refaisait à chaque rendu (les écrans
+  // passent une fonction recréée à chaque fois), pour rien.
+  const canCloseRef = useRef(false);
+  canCloseRef.current = (hasCarousel && open) || (!hasCarousel && !!onRequestClose);
+
   useFocusEffect(
     useCallback(() => {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-        if ((hasCarousel && open) || (!hasCarousel && onRequestClose)) {
-          requestCloseRef.current();
-          return true;
+        if (!canCloseRef.current) {
+          return false; // rien à fermer ici : comportement système (quitter l'app)
         }
-        return false; // rien à fermer ici : comportement système (quitter l'app)
+        requestCloseRef.current();
+        return true;
       });
       return () => sub.remove();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasCarousel, open, onRequestClose]),
+    }, []),
   );
 
   const translateY = progress.interpolate({inputRange: [0, 1], outputRange: [CLOSED_OFFSET, 0]});

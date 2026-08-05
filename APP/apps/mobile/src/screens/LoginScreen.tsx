@@ -1,72 +1,91 @@
 /**
- * Connexion patient — username OU email + mot de passe (2026-07, UX rapide). Si TOTP activé → étape
- * de vérification. Visuel : carrousel monochrome plein écran en fond + tiroir glissant.
+ * Connexion patient — identifiant (nom d'utilisateur OU email) + mot de passe.
+ *
+ * Page plein écran depuis la refonte : le formulaire n'est plus un tiroir glissant. On y arrive par
+ * « Rejoindre » depuis le carrousel, on en repart par la flèche ou le bouton retour du téléphone, qui
+ * font strictement la même chose.
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
-import {CardHeading, ErrorBanner, Field, FieldLabel, FootLink, PasswordField, PrimaryButton} from '../components/ui';
+import {AuthPage} from '../components/AuthPage';
+import {ErrorBanner, Field, FieldLabel, FieldStatus, FootLink, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {isValidEmail, isValidUsername, normalizeEmail, normalizeUsername} from '../lib/validation';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
+import {useSlowRequest} from '../state/useSlowRequest';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-export function LoginScreen({navigation, route}: Props) {
+export function LoginScreen({navigation}: Props) {
   const {loginPassword} = useAuth();
-  const startOpen = route.params?.startOpen ?? false;
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const slow = useSlowRequest(busy);
 
-  // 2026-07 : le champ accepte un nom d'utilisateur OU une adresse email.
-  const ready = (isValidUsername(username) || isValidEmail(username)) && password.length >= 1;
+  // L'identifiant accepte les deux formes : on route sur l'une ou l'autre selon la présence d'un « @ »,
+  // exactement comme le fait le serveur.
+  const looksLikeEmail = identifier.includes('@');
+  const identifierValid = looksLikeEmail ? isValidEmail(identifier) : isValidUsername(identifier);
+  const ready = identifierValid && password.length >= 1;
 
   async function onSubmit() {
     setError(null);
-    const u = username.includes('@') ? normalizeEmail(username) : normalizeUsername(username);
+    const id = looksLikeEmail ? normalizeEmail(identifier) : normalizeUsername(identifier);
     setBusy(true);
     try {
-      const res = await loginPassword(u, password);
+      const res = await loginPassword(id, password);
       if (res.otpRequired) {
-        // 2FA par email (celle du mobile) : le serveur a déjà envoyé le code.
-        navigation.navigate('LoginOtp', {username: u, password, debugCode: res.debugCode});
+        navigation.navigate('LoginOtp', {username: id, password, debugCode: res.debugCode});
       } else if (res.totpRequired) {
-        // Pendant web du 2e facteur — inatteignable sur mobile, gardé par sécurité si un compte
-        // avait activé le TOTP depuis le web et se connectait ici.
-        navigation.navigate('TotpChallenge', {username: u, password});
+        navigation.navigate('TotpChallenge', {username: id, password});
       } else {
         navigation.navigate('Success', {context: 'login'});
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Connexion impossible. Réessayez.');
+      setError(err instanceof ApiError ? err.message : 'Connexion impossible. Vérifiez votre réseau et réessayez.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthCarouselDrawer startOpen={startOpen}>
-      <CardHeading title="Connectez-vous sur ULAMU" subtitle="Votre nom d'utilisateur (ou email) et votre mot de passe suffisent." />
+    <AuthPage
+      title="Bon retour"
+      subtitle="Connectez-vous pour retrouver votre dossier médical et vos consultations."
+      onBack={() => navigation.goBack()}>
       <ErrorBanner message={error} />
-      <View style={{gap: 14}}>
-        <View>
-          <FieldLabel>Nom d'utilisateur ou email</FieldLabel>
-          <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n ou mireille@exemple.com" autoCapitalize="none" />
-        </View>
-        <View>
-          <FieldLabel>Mot de passe</FieldLabel>
-          <PasswordField value={password} onChangeText={setPassword} onSubmitEditing={() => ready && onSubmit()} returnKeyType="go" />
-        </View>
-        <PrimaryButton title="Se connecter" iconRight="arrow-right" onPress={onSubmit} disabled={!ready} loading={busy} />
-        <FootLink prefix="Mot de passe oublié ?" action="Réinitialiser" onPress={() => navigation.navigate('Forgot')} />
+
+      <View>
+        <FieldLabel>Identifiant</FieldLabel>
+        <Field
+          icon="user"
+          value={identifier}
+          onChangeText={setIdentifier}
+          autoCapitalize="none"
+          keyboardType={looksLikeEmail ? 'email-address' : 'default'}
+          returnKeyType="next"
+        />
+        <FieldStatus tone="hint">Votre nom d'utilisateur ou votre adresse email</FieldStatus>
       </View>
 
-      <View style={{minHeight: 24}} />
+      <View>
+        <FieldLabel>Mot de passe</FieldLabel>
+        <PasswordField value={password} onChangeText={setPassword} onSubmitEditing={() => ready && onSubmit()} returnKeyType="go" />
+      </View>
+
+      <View style={{gap: 10}}>
+        <PrimaryButton title="Se connecter" iconRight="arrow-right" onPress={onSubmit} disabled={!ready} loading={busy} />
+        {/* Le serveur d'ULAMU s'endort après un quart d'heure sans trafic et met près d'une minute à
+            repartir. Sans ce message, l'utilisateur ne voit qu'un rond qui tourne et referme l'app. */}
+        {slow ? <FieldStatus tone="hint">Le serveur se réveille — cela peut prendre jusqu'à une minute.</FieldStatus> : null}
+      </View>
+
+      <FootLink prefix="Mot de passe oublié ?" action="Réinitialiser" onPress={() => navigation.navigate('Forgot')} />
       <FootLink prefix="Nouveau sur ULAMU ?" action="Créer un compte" onPress={() => navigation.navigate('Register')} />
-    </AuthCarouselDrawer>
+    </AuthPage>
   );
 }

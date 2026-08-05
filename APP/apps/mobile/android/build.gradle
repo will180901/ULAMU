@@ -4,7 +4,13 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 35
         targetSdkVersion = 34
-        ndkVersion = "26.1.10909125"
+        // Version épinglée par React Native 0.76 : 26.1.10909125. Bascule sur le NDK 30 DÉJÀ INSTALLÉ
+        // sur cette machine parce que le téléchargement du 26 reste bloqué (aucun octet reçu après une
+        // heure, dossier de destination vide) — attendre indéfiniment n'était plus tenable.
+        // À revenir sur 26.1.10909125 dès que le téléchargement redevient possible : c'est la seule
+        // version testée par React Native pour cette release, et un écart de NDK se paie sur la
+        // compilation C++ de la nouvelle architecture.
+        ndkVersion = "30.0.15729638"
         kotlinVersion = "1.9.24"
     }
     repositories {

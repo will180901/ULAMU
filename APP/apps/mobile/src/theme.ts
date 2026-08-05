@@ -225,11 +225,24 @@ export const fontSize = {
  * Sur Android, chaque graisse = un fichier ; on cible la famille exacte (le fontWeight est ignoré).
  * `body` reste sur la police système (Roboto) — proche d'Inter ; Inter pourra être embarqué plus tard.
  */
+/**
+ * Polices embarquées (CG-02). Le duo humaniste de la charte : Plus Jakarta Sans pour les titres,
+ * Inter pour TOUT le texte courant — corps, libellés, aides, contenu des champs, soit l'essentiel
+ * d'un écran de formulaire. Elle manquait jusqu'ici : `body` valait `undefined` et retombait donc sur
+ * la police système d'Android (Roboto), ce qui contredisait la charte sur la majorité du texte affiché.
+ *
+ * Inter est livrée par Google Fonts en TAILLES OPTIQUES (18pt / 24pt / 28pt) : la 18pt est celle
+ * dessinée pour le texte d'interface, les autres pour l'affichage à grande taille. Seules trois
+ * graisses sont embarquées (400/500/600, les seules étoilées par CG-02) — embarquer les 54 fichiers
+ * livrés aurait alourdi l'APK d'une quinzaine de mégaoctets sans rien apporter.
+ */
 export const fonts = {
   display: 'PlusJakartaSans-ExtraBold', // 800 — gros titres
   displayBold: 'PlusJakartaSans-Bold', // 700 — boutons, titres moyens
   displaySemibold: 'PlusJakartaSans-SemiBold', // 600
-  body: undefined as string | undefined, // système
+  body: 'Inter_18pt-Regular', // 400 — corps, hints
+  bodyMedium: 'Inter_18pt-Medium', // 500 — valeurs de champ, accentuation légère
+  bodySemibold: 'Inter_18pt-SemiBold', // 600 — libellés de champ, liens
   mono: 'JetBrainsMono-Regular',
   monoMedium: 'JetBrainsMono-Medium',
 };

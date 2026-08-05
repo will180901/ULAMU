@@ -2,8 +2,8 @@ import type {NavigatorScreenParams} from '@react-navigation/native';
 
 /** Param lists de navigation. Auth = username + mot de passe + TOTP. */
 export type AuthStackParamList = {
-  Welcome: undefined; // écran Bienvenue (1er lancement)
-  Login: {startOpen?: boolean} | undefined; // username + mot de passe ; startOpen : arrivée depuis Register/Forgot, tiroir déjà ouvert
+  Carousel: undefined; // écran d'accueil : illustrations + « Rejoindre » (remplace l'ancien Bienvenue)
+  Login: undefined; // identifiant (username OU email) + mot de passe
   Register: undefined; // inscription multi-étapes (identité+username → tél+mdp → OTP)
   Forgot: undefined; // mot de passe oublié (email → OTP → nouveau mot de passe)
   LoginOtp: {username: string; password: string; debugCode?: string}; // 2e facteur à la connexion : code par email (2FA du mobile)

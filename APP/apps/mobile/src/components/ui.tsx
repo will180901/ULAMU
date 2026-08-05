@@ -207,6 +207,11 @@ export function FieldLabel({children}: {children: React.ReactNode}) {
 }
 
 /* ──────────── Champ texte (48px) ──────────── */
+
+/** État visuel d'un champ (CG-05 §02). `default` couvre repos ET focus — le focus est un état
+ * transitoire géré en interne, il ne s'oppose pas à « erreur » ou « succès ». */
+export type FieldState = 'default' | 'error' | 'success';
+
 type FieldProps = {
   value: string;
   onChangeText: (t: string) => void;
@@ -218,30 +223,75 @@ type FieldProps = {
   onSubmitEditing?: () => void;
   returnKeyType?: 'done' | 'next' | 'go';
   inputRef?: React.RefObject<TextInput>;
+  /** Colore la bordure. Toujours accompagner d'un <FieldStatus> : la charte interdit d'exprimer une
+   * erreur ou un succès par la seule couleur (CG-05 §07, CG-11). */
+  state?: FieldState;
+  /** `false` grise le champ et bloque la saisie (opacité 0.5, CG-05). */
+  editable?: boolean;
 };
 export function Field(props: FieldProps) {
   const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [focus, setFocus] = useState(false);
+  const state = props.state ?? 'default';
+  const editable = props.editable ?? true;
+
+  // Bordure : l'erreur et le succès l'emportent sur le focus — un champ en erreur reste en erreur
+  // pendant qu'on le corrige, sinon le signal disparaît au moment précis où il sert.
+  const borderStyle =
+    state === 'error' ? styles.fieldWrapError : state === 'success' ? styles.fieldWrapSuccess : focus ? styles.fieldWrapFocus : null;
+
   return (
-    <View style={[styles.fieldWrap, focus && styles.fieldWrapFocus]}>
-      {props.icon ? <Icon name={props.icon} size={16} color={colors.textTertiary} /> : null}
-      <TextInput
-        ref={props.inputRef}
-        style={styles.fieldInput}
-        value={props.value}
-        onChangeText={props.onChangeText}
-        placeholder={props.placeholder}
-        placeholderTextColor={colors.textDisabled}
-        keyboardType={props.keyboardType ?? 'default'}
-        autoCapitalize={props.autoCapitalize ?? 'sentences'}
-        autoCorrect={false}
-        maxLength={props.maxLength}
-        onFocus={() => setFocus(true)}
-        onBlur={() => setFocus(false)}
-        onSubmitEditing={props.onSubmitEditing}
-        returnKeyType={props.returnKeyType}
-      />
+    // L'anneau de focus de la charte (3px, rgba cobalt) n'existe pas en CSS ici : il est rendu par un
+    // conteneur qui s'épaissit autour du champ. Le champ lui-même ne bouge pas d'un pixel — c'est ce
+    // qui évite le sursaut de mise en page à chaque prise de focus.
+    <View style={[styles.fieldRing, focus && editable && styles.fieldRingOn]}>
+      <View style={[styles.fieldWrap, borderStyle, !editable && styles.fieldDisabled]}>
+        {props.icon ? <Icon name={props.icon} size={16} color={focus ? colors.accent500 : colors.textTertiary} /> : null}
+        <TextInput
+          ref={props.inputRef}
+          style={styles.fieldInput}
+          value={props.value}
+          onChangeText={props.onChangeText}
+          placeholder={props.placeholder}
+          placeholderTextColor={colors.textDisabled}
+          keyboardType={props.keyboardType ?? 'default'}
+          autoCapitalize={props.autoCapitalize ?? 'sentences'}
+          autoCorrect={false}
+          editable={editable}
+          maxLength={props.maxLength}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
+          onSubmitEditing={props.onSubmitEditing}
+          returnKeyType={props.returnKeyType}
+        />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Ligne d'état sous un champ — icône ET texte, jamais la couleur seule (interdiction CG-05 §07,
+ * reprise en CG-11 : un daltonien ou un écran délavé au soleil ne perçoit pas la couleur).
+ *
+ * `checking` affiche un vrai indicateur d'activité plutôt qu'un texte figé : pendant une vérification
+ * réseau, l'utilisateur doit voir que quelque chose se passe, pas lire « Vérification… » immobile.
+ */
+export function FieldStatus({tone, children}: {tone: 'hint' | 'checking' | 'success' | 'error'; children: React.ReactNode}) {
+  const {colors} = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const map = {
+    hint: {color: colors.textTertiary, icon: null as IconName | null},
+    checking: {color: colors.textTertiary, icon: null as IconName | null},
+    success: {color: colors.success, icon: 'check-circle' as IconName},
+    error: {color: colors.error, icon: 'x' as IconName},
+  }[tone];
+
+  return (
+    <View style={styles.fieldStatusRow}>
+      {tone === 'checking' ? <ActivityIndicator size="small" color={colors.textTertiary} /> : null}
+      {map.icon ? <Icon name={map.icon} size={13} color={map.color} /> : null}
+      <Text style={[styles.fieldStatusText, {color: map.color}]}>{children}</Text>
     </View>
   );
 }
@@ -376,7 +426,7 @@ export function PrimaryButton(props: {
   iconRight?: IconName;
   style?: StyleProp<ViewStyle>;
 }) {
-  const {colors} = useTheme();
+  const {colors, scheme} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const disabled = props.disabled || props.loading;
   return (
@@ -384,6 +434,12 @@ export function PrimaryButton(props: {
       onPress={props.onPress}
       disabled={disabled}
       style={({pressed}) => [styles.btn, disabled && styles.btnDisabled, pressed && !disabled && styles.btnPressed, props.style]}>
+      {/* Grain sérigraphié — exigé par CG-05 comme signature visuelle ULAMU (« obligatoire sur tous les
+          boutons »), aux opacités de la charte elle-même (token --grain-btn : 0.06 clair / 0.09 sombre).
+          À L'ESSAI : une décision antérieure l'écartait des éléments de moins de ~64 px, un grain tuilé
+          y passant pour de la saleté plutôt que pour une texture. Les deux positions se défendent — on
+          tranche sur pièce. Si ça salit, il suffit de retirer cette ligne. */}
+      <Grain opacity={scheme === 'dark' ? 0.09 : 0.06} />
       {props.loading ? (
         <ActivityIndicator color={colors.accentFg} />
       ) : (
@@ -753,7 +809,19 @@ const makeStyles = (colors: Palette) =>
       backgroundColor: colors.surface,
     },
     fieldWrapFocus: {borderColor: colors.accent500, borderWidth: 1.5},
+    fieldWrapError: {borderColor: colors.errorDot, borderWidth: 1.5},
+    fieldWrapSuccess: {borderColor: colors.successDot, borderWidth: 1.5},
+    fieldDisabled: {opacity: 0.5},
     fieldInput: {flex: 1, fontFamily: fonts.body, fontSize: 14.5, color: colors.textPrimary, padding: 0},
+
+    // Anneau de focus (CG-11 : 3px, cobalt à 12%, jamais supprimé). Le conteneur garde TOUJOURS ses
+    // 3px de marge intérieure — seule la couleur de fond apparaît au focus. Réserver la place en
+    // permanence est ce qui empêche le champ de sauter de 3px quand on le sélectionne.
+    fieldRing: {borderRadius: radius.field + 3, padding: 3, backgroundColor: 'transparent'},
+    fieldRingOn: {backgroundColor: 'rgba(39,86,166,0.12)'},
+
+    fieldStatusRow: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, minHeight: 16},
+    fieldStatusText: {fontFamily: fonts.body, fontSize: 12, lineHeight: 16, flexShrink: 1},
 
     // Téléphone
     phoneRow: {flexDirection: 'row', gap: 8},
@@ -795,6 +863,8 @@ const makeStyles = (colors: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 24,
+      // Nécessaire pour que le grain sérigraphié s'arrête aux angles arrondis au lieu de déborder.
+      overflow: 'hidden',
     },
     btnPressed: {backgroundColor: colors.accent600},
     btnDisabled: {backgroundColor: colors.accent200},

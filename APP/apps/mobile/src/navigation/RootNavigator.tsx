@@ -24,8 +24,7 @@ import {SettingsScreen} from '../screens/SettingsScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
 import {SuccessScreen} from '../screens/SuccessScreen';
 import {TotpChallengeScreen} from '../screens/TotpChallengeScreen';
-import {WelcomeScreen} from '../screens/WelcomeScreen';
-import {hasOnboarded} from '../services/onboarding';
+import {CarouselScreen} from '../screens/CarouselScreen';
 import {useAuth} from '../state/AuthContext';
 import {useTheme} from '../state/ThemeContext';
 import {PatientTabs} from './PatientTabs';
@@ -38,13 +37,11 @@ const AppStack = createNativeStackNavigator<AppStackParamList>();
 export function RootNavigator() {
   const {state} = useAuth();
   const {colors} = useTheme();
-  const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    hasOnboarded().then(setOnboarded);
-  }, []);
-
-  if (state.status === 'loading' || onboarded === null) {
+  // Plus de drapeau « déjà vu l'accueil » : le carrousel est l'écran d'entrée pour tout le monde, à
+  // chaque lancement. Il n'y a donc plus rien à lire au démarrage — l'attente se limite désormais à la
+  // restauration de session.
+  if (state.status === 'loading') {
     return (
       <View style={[styles.splash, {backgroundColor: colors.bg}]}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -80,8 +77,11 @@ export function RootNavigator() {
         // se ressentait comme un blocage au clic. Les autres écrans gardent leur fond opaque.
         <View style={styles.authRoot}>
           <AuthMeshBackground />
-          <AuthStack.Navigator initialRouteName={onboarded ? 'Login' : 'Welcome'} screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.accent600}}}>
-            <AuthStack.Screen name="Welcome" component={WelcomeScreen} options={{contentStyle: {backgroundColor: colors.bg}}} />
+          {/* Le carrousel est TOUJOURS l'écran d'entrée, y compris pour un habitué : c'est la vitrine
+              du produit, et l'ancien écran « Bienvenue » qui s'intercalait au premier lancement a été
+              supprimé. Tous les écrans laissent voir le fond animé partagé posé juste au-dessus. */}
+          <AuthStack.Navigator initialRouteName="Carousel" screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.accent600}}}>
+            <AuthStack.Screen name="Carousel" component={CarouselScreen} options={transparentScreen} />
             <AuthStack.Screen name="Login" component={LoginScreen} options={transparentScreen} />
             <AuthStack.Screen name="Register" component={RegisterScreen} options={transparentScreen} />
             <AuthStack.Screen name="Forgot" component={ForgotScreen} options={transparentScreen} />

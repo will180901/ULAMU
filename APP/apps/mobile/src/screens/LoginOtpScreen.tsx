@@ -9,11 +9,12 @@
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
-import {Banner, CardHeading, ErrorBanner, FieldLabel, FootLink, Hint, OtpInput, PrimaryButton} from '../components/ui';
+import {AuthPage} from '../components/AuthPage';
+import {Banner, ErrorBanner, FieldLabel, FieldStatus, FootLink, OtpInput, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'LoginOtp'>;
 
@@ -25,6 +26,16 @@ export function LoginOtpScreen({navigation, route}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
+
+  /** Quitter la vérification. Le code a déjà été envoyé en arrivant ici : repartir oblige à refaire la
+   * connexion pour en recevoir un autre. On ne retient toutefois que si quelque chose a été saisi —
+   * même règle que les autres écrans, pour que le comportement reste prévisible. */
+  const leaveOtp = useAbandonGuard({
+    dirty: code.length > 0,
+    title: 'Abandonner la connexion ?',
+    message: 'Le code saisi sera perdu : il faudra recommencer la connexion pour en recevoir un autre.',
+    onLeave: () => navigation.goBack(),
+  });
 
   async function submit() {
     if (code.length < 6) {
@@ -69,27 +80,25 @@ export function LoginOtpScreen({navigation, route}: Props) {
   }
 
   return (
-    <AuthCarouselDrawer
-      startOpen
-      hasCarousel={false}
-      onBack={() => navigation.goBack()}
-      onRequestClose={() => navigation.navigate('Login', {startOpen: false})}>
-      <CardHeading title="Vérification en deux étapes" subtitle="Un code à 6 chiffres vient d'être envoyé à l'adresse email de votre compte." />
+    <AuthPage
+      title="Vérification en deux étapes"
+      subtitle="Un code à 6 chiffres vient d'être envoyé à l'adresse email de votre compte."
+      onBack={leaveOtp}>
       <ErrorBanner message={error} />
       {testCode && (
         <Banner tone="warning" title="Mode test (pas d'email réel)">
           Votre code : {testCode} — déjà pré-rempli ci-dessous.
         </Banner>
       )}
-      <View style={{gap: 14}}>
-        <View>
-          <FieldLabel>Code reçu par email</FieldLabel>
-          <OtpInput value={code} onChange={setCode} />
-        </View>
-        <Hint center>{resent ? 'Nouveau code envoyé.' : 'Le code est valable quelques minutes seulement.'}</Hint>
-        <PrimaryButton title="Se connecter" iconRight="arrow-right" loading={busy} disabled={code.length < 6} onPress={submit} />
-        <FootLink prefix="Code non reçu ?" action="Renvoyer" onPress={resend} />
+      <View>
+        <FieldLabel>Code reçu par email</FieldLabel>
+        <OtpInput value={code} onChange={setCode} />
+        <FieldStatus tone={resent ? 'success' : 'hint'}>
+          {resent ? 'Nouveau code envoyé.' : 'Le code est valable quelques minutes seulement.'}
+        </FieldStatus>
       </View>
-    </AuthCarouselDrawer>
+      <PrimaryButton title="Se connecter" iconRight="arrow-right" loading={busy} disabled={code.length < 6} onPress={submit} />
+      <FootLink prefix="Code non reçu ?" action="Renvoyer" onPress={resend} />
+    </AuthPage>
   );
 }

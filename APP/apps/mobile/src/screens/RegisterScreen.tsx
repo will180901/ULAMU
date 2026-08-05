@@ -7,14 +7,16 @@
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {AuthCarouselDrawer} from '../components/AuthCarouselDrawer';
+import {AuthPage} from '../components/AuthPage';
+import {StepStack} from '../components/StepStack';
 import {
   Badge,
   Banner,
-  CardHeading,
   ErrorBanner,
   Field,
   FieldLabel,
+  FieldState,
+  FieldStatus,
   FootLink,
   Hint,
   OtpInput,
@@ -26,12 +28,12 @@ import {
 import {ApiError} from '../lib/api-client';
 import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidUsername, normalizeEmail, normalizePhone, normalizeUsername} from '../lib/validation';
 import {AvailabilityStatus, useAvailability} from '../state/useAvailability';
-import {useDialog} from '../components/Dialog';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {AuthStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {RegisterProfile, useAuth} from '../state/AuthContext';
 import {fonts, Palette, radius} from '../theme';
-import {useTheme, useThemedStyles} from '../state/ThemeContext';
+import {useThemedStyles} from '../state/ThemeContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 type Step = 'identity' | 'account' | 'otp';
@@ -41,8 +43,6 @@ const MIN_AGE = 18; // PM-16
 export function RegisterScreen({navigation}: Props) {
   const styles = useThemedStyles(makeStyles);
   const {requestOtp, verifyRegister, state} = useAuth();
-  // Renommé : `confirm` est déjà pris par le champ de confirmation du mot de passe, juste en dessous.
-  const {confirm: askConfirm} = useDialog();
   const [step, setStep] = useState<Step>('identity');
 
   // Identité
@@ -164,6 +164,25 @@ export function RegisterScreen({navigation}: Props) {
   const accountReady = accountMissing.length === 0;
   const accountTouched = agree || [phone, email, password, confirm].some(v => v.trim().length > 0);
 
+  // Résumés affichés dans les lignes repliées. On montre ce que l'utilisateur RECONNAÎT (son nom, son
+  // âge, son quartier), jamais un identifiant technique — et surtout jamais le mot de passe.
+  const age = isoDob ? Math.floor((Date.now() - new Date(isoDob).getTime()) / 31_557_600_000) : null;
+  const identitySummary = [`${firstName.trim()} ${lastName.trim().toUpperCase()}`.trim(), age !== null ? `${age} ans` : null, district.trim()]
+    .filter(Boolean)
+    .join(' · ');
+  const accountSummary = [phone.trim(), email.trim()].filter(Boolean).join(' · ');
+
+  // Quitter l'inscription, quel que soit le geste employé — le tiroir les fait tous converger ici.
+  const leaveRegistration = useAbandonGuard({
+    dirty: identityTouched || accountTouched || otp.length > 0,
+    title: "Abandonner l'inscription ?",
+    message:
+      step === 'otp'
+        ? 'Les informations saisies seront perdues, et le code reçu par email ne sera plus utilisable.'
+        : 'Les informations déjà saisies seront perdues.',
+    onLeave: () => navigation.goBack(),
+  });
+
   async function onSendOtp() {
     setError(null);
     const normalized = normalizePhone(phone);
@@ -217,75 +236,63 @@ export function RegisterScreen({navigation}: Props) {
   }, [step, otp, phone, email, isoDob, sex, firstName, lastName, username, password, district, verifyRegister, navigation]);
 
   /**
-   * Quitter l'inscription (retour matériel, appui hors du tiroir, glissement vers le bas). Demande
-   * confirmation dès que quelque chose a été saisi : ces trois gestes sont faciles à déclencher sans
-   * le vouloir, et à l'étape 3 on perdrait un formulaire complet ET un code déjà envoyé. Sur un
-   * formulaire vierge, en revanche, aucune raison de retenir qui que ce soit.
+   * Retour à une étape déjà franchie, depuis sa ligne de récapitulatif.
+   *
+   * Vide le code saisi si l'on quitte l'étape de vérification : le conserver ferait relancer tout seul
+   * une validation (la saisie complète déclenche l'envoi automatiquement) avec un code qui ne
+   * correspond plus aux informations qu'on revient justement corriger.
    */
-  async function leaveRegistration() {
-    const entered = identityTouched || accountTouched || otp.length > 0;
-    if (entered) {
-      const ok = await askConfirm({
-        title: "Abandonner l'inscription ?",
-        message: 'Les informations déjà saisies seront perdues.',
-        confirmLabel: 'Abandonner',
-        cancelLabel: 'Continuer',
-        danger: true,
-      });
-      if (!ok) {
-        return;
-      }
-    }
-    navigation.navigate('Login', {startOpen: false});
-  }
-
-  function onBack() {
+  function goToStep(target: Step) {
     setError(null);
-    if (step === 'otp') {
-      setStep('account');
+    if (step === 'otp' && target !== 'otp') {
       setOtp('');
       otpTried.current = false;
-    } else if (step === 'account') {
-      setStep('identity');
-    } else {
-      navigation.goBack();
     }
+    setStep(target);
   }
 
   return (
-    <AuthCarouselDrawer
-      startOpen
-      hasCarousel={false}
-      onBack={onBack}
-      onRequestClose={leaveRegistration}
-      steps={{current: step === 'identity' ? 1 : step === 'account' ? 2 : 3, total: 3}}>
-      <CardHeading
-        title="Créer mon compte"
-        subtitle={
-          (step === 'identity' && 'Étape 1 sur 3 — votre identité') ||
-          (step === 'account' && 'Étape 2 sur 3 — votre accès') ||
-          `Étape 3 sur 3 — code envoyé à ${email}`
-        }
-      />
+    <AuthPage
+      // Le titre porte l'OBJECTIF, constant ; le nom de chaque étape est porté par la pile en dessous.
+      title="Créer mon compte"
+      subtitle={
+        step === 'identity'
+          ? 'Ces informations constitueront votre dossier médical à vie.'
+          : step === 'account'
+            ? 'De quoi vous connecter et récupérer votre compte.'
+            : `Code à 6 chiffres envoyé à ${email}.`
+      }
+      // Quitter l'inscription — avec confirmation si quelque chose a été saisi. Le recul d'ÉTAPE, lui,
+      // se fait en tapant la ligne de résumé de l'étape voulue : deux gestes, deux intentions distinctes.
+      onBack={leaveRegistration}>
       <ErrorBanner message={error} />
+
+      <StepStack
+        steps={[
+          {key: 'identity', label: 'Qui êtes-vous ?', summary: identitySummary},
+          {key: 'account', label: 'Vos accès', summary: accountSummary},
+          {key: 'otp', label: 'Vérification'},
+        ]}
+        current={step}
+        onGoTo={goToStep}>
 
         {step === 'identity' && (
           <View style={{gap: 14}}>
             <View>
               <FieldLabel>Prénom</FieldLabel>
-              <Field icon="user" value={firstName} onChangeText={setFirstName} placeholder="Mireille" autoCapitalize="words" />
+              <Field icon="user" value={firstName} onChangeText={setFirstName} autoCapitalize="words" />
             </View>
             <View>
               <FieldLabel>Nom</FieldLabel>
-              <Field icon="user" value={lastName} onChangeText={setLastName} placeholder="Nkounkou" autoCapitalize="words" />
+              <Field icon="user" value={lastName} onChangeText={setLastName} autoCapitalize="words" />
             </View>
             <View>
               <FieldLabel>Nom d'utilisateur</FieldLabel>
-              <Field icon="user" value={username} onChangeText={setUsername} placeholder="mireille_n" autoCapitalize="none" />
+              <Field icon="user" value={username} onChangeText={setUsername} autoCapitalize="none" state={fieldStateOf(uStatus)} />
               <AvailabilityHint
                 status={uStatus}
                 labels={{
-                  available: '✓ Disponible',
+                  available: 'Disponible',
                   taken: 'Déjà pris',
                   invalid: '3–30 caractères : lettres, chiffres, . _ -',
                 }}
@@ -307,7 +314,7 @@ export function RegisterScreen({navigation}: Props) {
             </View>
             <View>
               <FieldLabel>Arrondissement / quartier</FieldLabel>
-              <Field icon="map-pin" value={district} onChangeText={setDistrict} placeholder="Ex. Talangaï" autoCapitalize="words" />
+              <Field icon="map-pin" value={district} onChangeText={setDistrict} autoCapitalize="words" />
             </View>
             <PrimaryButton title="Continuer" iconRight="arrow-right" onPress={() => setStep('account')} disabled={!identityReady} />
             {!identityReady && identityTouched && (
@@ -324,7 +331,7 @@ export function RegisterScreen({navigation}: Props) {
               <AvailabilityHint
                 status={phoneStatus}
                 labels={{
-                  available: '✓ Numéro disponible',
+                  available: 'Numéro disponible',
                   taken: 'Ce numéro a déjà un compte',
                   invalid: 'Format attendu : 06 612 45 90',
                 }}
@@ -332,11 +339,11 @@ export function RegisterScreen({navigation}: Props) {
             </View>
             <View>
               <FieldLabel>Email</FieldLabel>
-              <Field icon="mail" value={email} onChangeText={setEmail} placeholder="mireille@exemple.com" keyboardType="email-address" autoCapitalize="none" />
+              <Field icon="mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" state={fieldStateOf(emailStatus)} />
               <AvailabilityHint
                 status={emailStatus}
                 labels={{
-                  available: '✓ Adresse disponible',
+                  available: 'Adresse disponible',
                   taken: 'Cette adresse a déjà un compte',
                   invalid: 'Adresse email invalide',
                 }}
@@ -394,17 +401,33 @@ export function RegisterScreen({navigation}: Props) {
           </View>
         )}
 
-      <View style={{minHeight: 20}} />
-      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.navigate('Login', {startOpen: true})} />}
-    </AuthCarouselDrawer>
+      </StepStack>
+
+      {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={() => navigation.goBack()} />}
+    </AuthPage>
   );
 }
 
+/** Traduit un statut de disponibilité en état visuel de champ (bordure). `checking` reste neutre :
+ * colorer un champ pendant qu'on interroge le serveur ferait clignoter la bordure à chaque frappe. */
+function fieldStateOf(status: AvailabilityStatus): FieldState {
+  if (status === 'available') {
+    return 'success';
+  }
+  if (status === 'taken' || status === 'invalid' || status === 'error') {
+    return 'error';
+  }
+  return 'default';
+}
+
 /**
- * Retour de disponibilité sous un champ — un seul composant pour le nom d'utilisateur, l'email et le
- * téléphone, afin que les trois parlent le même langage visuel. Seuls les libellés propres au champ
- * sont fournis par l'appelant ; « en cours » et « échec réseau » restent formulés ici, identiques
- * partout. `idle` n'affiche rien : un champ vide n'a pas à être commenté.
+ * Retour de disponibilité sous un champ — nom d'utilisateur, email, téléphone. Ne fait plus que
+ * TRADUIRE un statut en libellé : le rendu est délégué à `FieldStatus`, si bien que ces trois champs
+ * s'affichent exactement comme toutes les autres aides et erreurs de l'app (icône + texte, jamais la
+ * couleur seule). Seuls les libellés propres au champ viennent de l'appelant ; « en cours » et « échec
+ * réseau » restent formulés ici, identiques partout.
+ *
+ * `idle` n'affiche rien : un champ vide n'a pas à être commenté.
  */
 function AvailabilityHint({
   status,
@@ -413,19 +436,17 @@ function AvailabilityHint({
   status: AvailabilityStatus;
   labels: {available: string; taken: string; invalid: string};
 }) {
-  const styles = useThemedStyles(makeStyles);
-  const {colors} = useTheme();
   if (status === 'idle') {
     return null;
   }
   const map = {
-    checking: {c: colors.textTertiary, t: 'Vérification…'},
-    available: {c: colors.success, t: labels.available},
-    taken: {c: colors.error, t: labels.taken},
-    invalid: {c: colors.textTertiary, t: labels.invalid},
-    error: {c: colors.error, t: 'Vérification impossible — vérifiez votre connexion'},
+    checking: {tone: 'checking' as const, text: 'Vérification…'},
+    available: {tone: 'success' as const, text: labels.available},
+    taken: {tone: 'error' as const, text: labels.taken},
+    invalid: {tone: 'hint' as const, text: labels.invalid},
+    error: {tone: 'error' as const, text: 'Vérification impossible — vérifiez votre connexion'},
   }[status];
-  return <Text style={[styles.uHint, {color: map.c}]}>{map.t}</Text>;
+  return <FieldStatus tone={map.tone}>{map.text}</FieldStatus>;
 }
 
 function formatDob(input: string): string {

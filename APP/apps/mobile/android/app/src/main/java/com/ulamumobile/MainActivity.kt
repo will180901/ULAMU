@@ -24,8 +24,15 @@ class MainActivity : ReactActivity() {
 
   // FLAG_SECURE app entière — données médicales visibles sur la quasi-totalité des écrans (chat,
   // carnet, ordonnance...) : bloque les captures d'écran et masque le contenu dans les apps récentes.
+  //
+  // Levé en DEBUG uniquement, pour pouvoir relire et faire relire l'interface en cours de conception
+  // (une capture d'écran revient sinon vide, ce qui rend tout travail visuel impossible à vérifier).
+  // `BuildConfig.DEBUG` est faux dans tout APK de release : la protection reste donc entière pour les
+  // utilisateurs réels, sans dépendre d'une variable ou d'un geste à ne pas oublier.
   override fun onCreate(savedInstanceState: Bundle?) {
-    window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+    if (!BuildConfig.DEBUG) {
+      window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+    }
     super.onCreate(savedInstanceState)
   }
 }

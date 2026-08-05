@@ -1,20 +1,20 @@
 /**
  * Succès — confirmation d'inscription ou de connexion → entrée dans l'app.
  */
+import {useFocusEffect} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useEffect, useRef} from 'react';
-import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useRef} from 'react';
+import {Animated, BackHandler, Easing, StyleSheet, Text, View} from 'react-native';
 import {AuthScreen, Badge, Card, CobaltHeader, FloatCard, PrimaryButton, VerifiedBadge} from '../components/ui';
 import {Icon} from '../components/Icon';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
 import {fonts, Palette} from '../theme';
-import {useTheme, useThemedStyles} from '../state/ThemeContext';
+import {useThemedStyles} from '../state/ThemeContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Success'>;
 
 export function SuccessScreen({route}: Props) {
-  const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const isRegister = route.params?.context === 'register';
   const {activatePending} = useAuth();
@@ -22,6 +22,21 @@ export function SuccessScreen({route}: Props) {
   useEffect(() => {
     Animated.timing(pop, {toValue: 1, duration: 350, easing: Easing.bezier(0.34, 1.56, 0.64, 1), useNativeDriver: true}).start();
   }, [pop]);
+
+  /**
+   * Écran TERMINAL : le compte est créé (ou la session ouverte), il n'y a plus rien derrière. Le bouton
+   * retour est donc neutralisé — sans ça, Android redéposait l'utilisateur dans un formulaire qu'il
+   * venait de valider, avec des champs à moitié vidés et un code déjà consommé.
+   *
+   * La seule sortie est « Accéder à mon espace », volontairement : c'est ce geste qui active réellement
+   * la session.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+      return () => sub.remove();
+    }, []),
+  );
   const scale = pop.interpolate({inputRange: [0, 1], outputRange: [0.6, 1]});
 
   return (
