@@ -43,6 +43,7 @@ import {MediaPreview} from '../components/MediaPreview';
 import {MediaViewer} from '../components/MediaViewer';
 import {VoiceNotePlayer} from '../components/VoiceNotePlayer';
 import {MessageReaction, MessageView, SessionView} from '../lib/contracts';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {uuidv4} from '../lib/uuid';
 import {fonts, Palette, radius, shadow} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -133,6 +134,10 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
     }
   }, [sessionId, fetchMessages]);
 
+  // Le STATUT seul pilote les effets ci-dessous : dépendre de `session` entier les relancerait à chaque
+  // interrogation, soit toutes les 3 secondes.
+  const sessionStatus = session?.status;
+
   // Chargement initial.
   useEffect(() => {
     refresh();
@@ -140,36 +145,56 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
 
   // Polling tant que la session vit (PREPARING/ACTIVE).
   useEffect(() => {
-    if (!session || (session.status !== 'PREPARING' && session.status !== 'ACTIVE')) {
+    if (sessionStatus !== 'PREPARING' && sessionStatus !== 'ACTIVE') {
       return;
     }
     const id = setInterval(refresh, 3000);
     return () => clearInterval(id);
-  }, [session?.status, refresh]);
+  }, [sessionStatus, refresh]);
 
   // Décompteur local entre deux interrogations.
   useEffect(() => {
-    if (session?.status !== 'ACTIVE') {
+    if (sessionStatus !== 'ACTIVE') {
       return;
     }
     const id = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
     return () => clearInterval(id);
-  }, [session?.status]);
+  }, [sessionStatus]);
 
-  // Bouton RETOUR matériel Android pendant le chat (ACTIVE/ENDED, l'en-tête n'a volontairement pas de
-  // bouton retour in-app — demande utilisateur antérieure) : sans ceci, React Navigation retomberait
-  // par défaut sur Handshake/Pay (remplacés par `replace`, donc périmés/déroutants sous la pile) plutôt
-  // que sur l'onglet Consultations, qui est la destination attendue.
+  /**
+   * Quitter une consultation EN COURS demande confirmation.
+   *
+   * L'en-tête n'a volontairement pas de bouton retour (demande utilisateur antérieure) : le bouton
+   * matériel d'Android est donc la SEULE sortie, et elle réinitialise toute la pile. Un appui
+   * involontaire éjectait l'utilisateur d'une consultation PAYÉE dont le chronomètre continue de
+   * tourner, sans un mot et sans retour possible. Une fois la session terminée (ENDED), il n'y a plus
+   * rien à perdre : on sort directement.
+   */
+  const leaveSession = useAbandonGuard({
+    dirty: sessionStatus === 'ACTIVE',
+    title: 'Quitter la consultation ?',
+    message:
+      "La consultation reste ouverte et son temps continue de s'écouler. Vous la retrouverez dans l'onglet Consultations.",
+    onLeave: goToConsultations,
+  });
+
+  // Lu par référence : le garde-fou est recréé à chaque rendu, on se réabonnerait sinon en boucle.
+  const leaveRef = useRef(leaveSession);
+  leaveRef.current = leaveSession;
+
+  // Bouton RETOUR matériel Android pendant le chat (ACTIVE/ENDED) : sans ceci, React Navigation
+  // retomberait par défaut sur Handshake/Pay (retirés de la pile au paiement, donc périmés) plutôt que
+  // sur l'onglet Consultations, qui est la destination attendue.
   useEffect(() => {
-    if (!session || (session.status !== 'ACTIVE' && session.status !== 'ENDED')) {
+    if (sessionStatus !== 'ACTIVE' && sessionStatus !== 'ENDED') {
       return;
     }
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      goToConsultations();
+      leaveRef.current();
       return true; // empêche le pop par défaut vers un écran périmé de la pile
     });
     return () => sub.remove();
-  }, [session?.status, goToConsultations]);
+  }, [sessionStatus]);
 
   if (load === 'loading') {
     return (
