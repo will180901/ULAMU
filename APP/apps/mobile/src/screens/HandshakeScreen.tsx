@@ -4,6 +4,7 @@
  * l'instant) et on affiche le compte à rebours PM-07 calculé SERVEUR (RM-06-02). « Régler » n'apparaît
  * qu'une fois CONFIRMED (RM-06-01 / D-007 : aucun paiement sans confirmation valide). Rien n'est débité ici.
  */
+import {useFocusEffect} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
@@ -57,20 +58,35 @@ export function HandshakeScreen({route, navigation}: NativeStackScreenProps<AppS
     }
   }, [handshakeId, navigation]);
 
-  useEffect(() => {
-    poll();
-    timer.current = setInterval(poll, 2500);
-    return stopPolling;
-  }, [poll]);
+  /**
+   * Interrogation SUSPENDUE dès que l'écran n'est plus au premier plan — `useFocusEffect`, et non
+   * `useEffect`.
+   *
+   * Cet écran reste monté quand « Régler » empile le paiement par-dessus. Avec un effet de montage, il
+   * continuait donc d'interroger la même poignée que `Pay`, et les deux réagissaient au statut `PAID`
+   * par un `replace` vers la session : celui de Handshake s'appliquait à sa propre entrée de pile, sous
+   * l'écran de paiement, puis celui de Pay ajoutait la sienne — l'utilisateur se retrouvait avec DEUX
+   * sessions empilées, et revenir en arrière depuis sa session le ramenait sur une autre session.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      poll();
+      timer.current = setInterval(poll, 2500);
+      return stopPolling;
+    }, [poll]),
+  );
 
-  // Décompte local entre deux interrogations (resynchronisé à chaque poll).
+  // Décompte local entre deux interrogations (resynchronisé à chaque poll). On dépend du seul STATUT,
+  // extrait ici : dépendre de `hs` entier relancerait l'intervalle à chaque interrogation — soit toutes
+  // les 2,5 s — et le décompte sauterait des secondes.
+  const status = hs?.status;
   useEffect(() => {
-    if (!hs || (hs.status !== 'INITIATED' && hs.status !== 'CONFIRMED')) {
+    if (status !== 'INITIATED' && status !== 'CONFIRMED') {
       return;
     }
     const t = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
     return () => clearInterval(t);
-  }, [hs?.status]);
+  }, [status]);
 
   const stepIndex = hs?.status === 'CONFIRMED' ? 1 : 0;
 

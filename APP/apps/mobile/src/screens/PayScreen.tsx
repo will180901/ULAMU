@@ -4,10 +4,12 @@
  * préfixe, M13). POST /v1/handshakes/:id/pay puis attente de la confirmation : l'issue vient du webhook
  * agrégateur (RM-06-01) — on interroge la poignée jusqu'à PAID + sessionId, puis on entre dans la session.
  */
+import {CommonActions, useFocusEffect} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
-import {Banner, PrimaryButton} from '../components/ui';
+import {ActivityIndicator, BackHandler, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {Banner, IconButton, PrimaryButton} from '../components/ui';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {Grain} from '../components/Grain';
 import {Icon, IconName} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
@@ -43,12 +45,63 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
   };
   useEffect(() => stopPolling, []);
 
+  /**
+   * Entrée dans la session, en RETIRANT de la pile la poignée de main ET le paiement.
+   *
+   * Un simple `replace` ne remplaçait que l'écran de paiement : la poignée restait dessous, et revenir
+   * en arrière depuis la session y ramenait — où l'interrogation reprenait, voyait `PAID`, et renvoyait
+   * aussitôt dans la session. On ne pouvait plus jamais remonter au-delà. Une fois le paiement abouti,
+   * ces deux écrans n'ont plus d'objet : le retour doit ramener à la fiche du soignant.
+   */
+  const enterSession = useCallback(
+    (sessionId: string) => {
+      navigation.dispatch(state => {
+        const routes = [
+          ...state.routes.filter(r => r.name !== 'Handshake' && r.name !== 'Pay'),
+          {name: 'Session', params: {sessionId}},
+        ];
+        return CommonActions.reset({...state, routes, index: routes.length - 1});
+      });
+    },
+    [navigation],
+  );
+
+  /**
+   * Sortie du paiement — jamais en silence tant qu'une demande est partie chez l'opérateur.
+   *
+   * L'écran n'avait aucune sortie visible et aucun garde-fou : un appui sur le bouton matériel le
+   * dépilait et arrêtait l'interrogation alors que le paiement était déjà engagé. Ça ne se voyait pas,
+   * parce que la poignée de main continuait d'interroger le serveur en dessous et rattrapait le coup —
+   * ce polling parasite est précisément ce qu'on vient de supprimer.
+   */
+  const leavePayment = useAbandonGuard({
+    dirty: phase === 'waiting',
+    title: 'Quitter le paiement ?',
+    message:
+      "Une demande de confirmation a déjà été envoyée sur votre téléphone. Si vous la validez après avoir quitté cet écran, la session ne s'ouvrira pas d'elle-même : il faudra repasser par la poignée de main.",
+    onLeave: () => navigation.goBack(),
+  });
+
+  // Lu par référence, comme dans AuthPage : le garde-fou est recréé à chaque rendu, on se réabonnerait
+  // sinon en boucle pour rien.
+  const leaveRef = useRef(leavePayment);
+  leaveRef.current = leavePayment;
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        leaveRef.current();
+        return true;
+      });
+      return () => sub.remove();
+    }, []),
+  );
+
   const poll = useCallback(async () => {
     try {
       const hs = await api.getHandshake(handshakeId);
       if (hs.status === 'PAID' && hs.sessionId) {
         stopPolling();
-        navigation.replace('Session', {sessionId: hs.sessionId});
+        enterSession(hs.sessionId);
       } else if (TERMINAL.includes(hs.status)) {
         stopPolling();
         setFailMsg("La fenêtre de paiement a expiré avant la confirmation. Aucun franc n'a été débité.");
@@ -57,7 +110,7 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
     } catch {
       /* on retente au prochain tick */
     }
-  }, [handshakeId, navigation]);
+  }, [handshakeId, enterSession]);
 
   const onPay = async () => {
     setBusy(true);
@@ -85,6 +138,9 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
       <Grain />
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.surface} translucent={false} />
       <View style={styles.header}>
+        {/* Sortie VISIBLE : le bouton matériel d'Android était jusqu'ici la seule façon de quitter cet
+            écran — invisible, et inexistante sur iOS. Même geste que lui, au garde-fou près. */}
+        <IconButton icon="arrow-left" onPress={leavePayment} variant="tile" size={18} accessibilityLabel="Retour" />
         <Text style={styles.headerTitle}>Paiement</Text>
       </View>
 
@@ -159,7 +215,7 @@ const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     flex: {flex: 1},
     root: {flex: 1, backgroundColor: colors.bg},
-    header: {paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle},
+    header: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle},
     headerTitle: {fontFamily: fonts.display, fontSize: 17, letterSpacing: -0.3, color: colors.textPrimary},
     content: {padding: 16, gap: 14},
 
