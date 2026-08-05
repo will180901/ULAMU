@@ -19,6 +19,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {MeResponse, SessionInfo} from '../lib/contracts';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
@@ -217,6 +218,22 @@ function EnableEmailTwoFactorModal({visible, email, onClose, onDone}: {visible: 
     }
   };
 
+  /**
+   * Fermeture de la feuille. On ne retient que si un code a DÉJÀ été envoyé : à partir de là, repartir
+   * le périme et il faudra en redemander un — même perte que sur les écrans à code du parcours
+   * d'authentification. Tant qu'on n'a rien envoyé, il n'y a rien à perdre, on sort sans un mot.
+   */
+  const dismiss = useAbandonGuard({
+    dirty: sent,
+    title: "Abandonner l'activation ?",
+    message: "Le code envoyé à votre adresse ne sera plus utilisable : il faudra en redemander un.",
+    onLeave: () => {
+      setCode('');
+      setSent(false);
+      onClose();
+    },
+  });
+
   const submit = async () => {
     if (code.length < 6) {
       return;
@@ -235,8 +252,8 @@ function EnableEmailTwoFactorModal({visible, email, onClose, onDone}: {visible: 
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Activer la 2FA</Text>
           <Text style={styles.sheetSub}>
@@ -252,7 +269,7 @@ function EnableEmailTwoFactorModal({visible, email, onClose, onDone}: {visible: 
           ) : (
             <PrimaryButton title="Recevoir le code" iconLeft="send" loading={busy} onPress={sendCode} />
           )}
-          <Pressable onPress={onClose} style={styles.sheetCancel}>
+          <Pressable onPress={dismiss} style={styles.sheetCancel}>
             <Text style={styles.sheetCancelText}>Annuler</Text>
           </Pressable>
         </Pressable>
@@ -268,6 +285,16 @@ function DisableEmailTwoFactorModal({visible, onClose, onDone}: {visible: boolea
   const {alert} = useDialog();
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+
+  /**
+   * Fermeture : on efface le mot de passe saisi. PAS de confirmation ici — avertir qu'on « perd » un
+   * mot de passe n'aurait aucun sens, il se retape en trois secondes. Le laisser en mémoire après la
+   * fermeture de la feuille, en revanche, n'en a aucun non plus.
+   */
+  const dismiss = () => {
+    setPassword('');
+    onClose();
+  };
 
   const submit = async () => {
     if (!password) {
@@ -286,14 +313,14 @@ function DisableEmailTwoFactorModal({visible, onClose, onDone}: {visible: boolea
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Désactiver la 2FA</Text>
           <Text style={styles.sheetSub}>Confirmez avec votre mot de passe. Vous n'aurez plus de code à saisir à la connexion.</Text>
           <PasswordField value={password} onChangeText={setPassword} placeholder="Votre mot de passe" />
           <PrimaryButton title="Désactiver la 2FA" loading={busy} disabled={!password} onPress={submit} />
-          <Pressable onPress={onClose} style={styles.sheetCancel}>
+          <Pressable onPress={dismiss} style={styles.sheetCancel}>
             <Text style={styles.sheetCancelText}>Annuler</Text>
           </Pressable>
         </Pressable>

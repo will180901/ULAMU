@@ -16,6 +16,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {DeclarableType, HealthSummary, RecordEntry, RecordEntryType, RecordExport, RecordProvenance} from '../lib/contracts';
+import {useAbandonGuard} from '../state/useAbandonGuard';
 import {useDialog} from '../components/Dialog';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -202,7 +203,6 @@ export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStac
 }
 
 function SummaryTile({icon, value, label}: {icon: IconName; value: string; label: string}) {
-  const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.tile}>
@@ -214,7 +214,6 @@ function SummaryTile({icon, value, label}: {icon: IconName; value: string; label
 }
 
 function TimelineRow({entry, first, last}: {entry: RecordEntry; first: boolean; last: boolean}) {
-  const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const meta = TYPE_META[entry.type] ?? {icon: 'file-medical' as IconName, label: entry.type};
   return (
@@ -244,6 +243,23 @@ function DeclareModal({subProfileId, visible, onClose, onDone}: {subProfileId?: 
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
 
+  /**
+   * Fermeture de la feuille : « Annuler », appui sur le fond et bouton retour du téléphone passent tous
+   * les trois par ici. Même correction que les feuilles des rappels et du carnet familial — une
+   * information de santé saisie disparaissait au moindre appui à côté, et la saisie abandonnée
+   * réapparaissait à la réouverture faute d'être effacée.
+   */
+  const dismiss = useAbandonGuard({
+    dirty: text.trim().length > 0,
+    title: 'Abandonner cette déclaration ?',
+    message: "L'information saisie ne sera pas ajoutée à votre carnet.",
+    onLeave: () => {
+      setText('');
+      setKind(DECLARE_KINDS[0]);
+      onClose();
+    },
+  });
+
   const submit = async () => {
     const value = text.trim();
     if (value.length < 1) {
@@ -262,8 +278,8 @@ function DeclareModal({subProfileId, visible, onClose, onDone}: {subProfileId?: 
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Déclarer une information</Text>
           <Text style={styles.sheetSub}>Elle sera marquée « déclarée par vous » et prise en compte immédiatement (CU-07-02).</Text>
@@ -289,7 +305,7 @@ function DeclareModal({subProfileId, visible, onClose, onDone}: {subProfileId?: 
           />
 
           <PrimaryButton title="Ajouter à mon carnet" iconRight="check" loading={busy} disabled={text.trim().length < 1} onPress={submit} />
-          <Pressable onPress={onClose} style={styles.sheetCancel}>
+          <Pressable onPress={dismiss} style={styles.sheetCancel}>
             <Text style={styles.sheetCancelText}>Annuler</Text>
           </Pressable>
         </Pressable>

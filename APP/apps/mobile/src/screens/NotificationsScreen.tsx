@@ -108,7 +108,24 @@ export function NotificationsScreen({navigation}: NativeStackScreenProps<AppStac
       }
       return next;
     });
-  const removeOne = (n: NotificationItem) => {
+  /**
+   * Suppression d'UNE notification — confirmée, comme l'est déjà la suppression multiple.
+   *
+   * Les deux effacent définitivement, mais seule la seconde le demandait. Or c'est l'unitaire qui part
+   * d'une petite corbeille collée au corps de la carte, elle-même pressable : c'est le geste le plus
+   * facile à déclencher par erreur, et c'était le seul sans filet.
+   */
+  const removeOne = async (n: NotificationItem) => {
+    const ok = await confirm({
+      title: 'Supprimer cette notification ?',
+      message: 'Cette suppression est définitive.',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      danger: true,
+    });
+    if (!ok) {
+      return;
+    }
     setItems(prev => prev.filter(x => x.id !== n.id)); // optimiste ; resync si échec
     api.deleteNotification(n.id).catch(() => load());
   };
