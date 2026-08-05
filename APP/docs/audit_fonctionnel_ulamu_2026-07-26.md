@@ -1,5 +1,13 @@
 # Audit fonctionnel ULAMU — Backend / Web / Mobile
 
+> ⚠️ **Instantané du 2026-07-26 — partiellement dépassé.** Conservé tel quel pour l'histoire.
+> Toujours valable pour : le backend, la cartographie générale, le périmètre des trois couches.
+> **Dépassé sur** la navigation de l'app mobile et l'état de l'app web → voir
+> [`rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md`](rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md).
+> Le plan de construction du web est dans [`plan_frontend_web_2026-08-05.md`](plan_frontend_web_2026-08-05.md).
+>
+> Le risque **SUPER_ADMIN** signalé §4.4 est **toujours ouvert et aggravé** — voir le rapport du 05/08 §6.1.
+
 **Date de l'audit : 2026-07-26.** Ce document est un instantané daté, pas un état permanent — à re-vérifier contre le code avant toute décision si vous le lisez longtemps après cette date.
 
 **Périmètre réel du projet (confirmé par lecture du code, pas supposé)** : ULAMU = un backend/API (`apps/api`, NestJS 10 + Prisma 5 + PostgreSQL) + une app mobile (`apps/mobile`, React Native 0.76, **patients uniquement**) + une app web (`apps/web`, Vite + React 19, **professionnels/structures/admin uniquement**). **Aucune version desktop n'existe ni n'est prévue.**

@@ -2,10 +2,10 @@
 
 | Champ | Valeur |
 |---|---|
-| Version | 1.0 |
-| Date | 2026-06-13 |
+| Version | 1.1 |
+| Date | **2026-08-05** (mise à jour frontend ; backend inchangé depuis 2026-06-13) |
 | Statut | 🟢 Vivant — mis à jour à chaque chantier |
-| Documents liés | [[registre_decisions]] · [[plan_releases]] · [[reference_technique]] |
+| Documents liés | [[registre_decisions]] · [[plan_releases]] · [[reference_technique]] · [`rapport_session_2026-08-05`](../../rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md) · [`plan_frontend_web`](../../plan_frontend_web_2026-08-05.md) |
 
 > **Page de reprise du « deuxième cerveau ».** Pour savoir ce qui est construit, testé, et ce qui
 > reste — sans relire tout le code. Le détail de chaque décision est dans [[registre_decisions]]
@@ -79,11 +79,48 @@ Chaque chantier : schéma posé → workflow multi-agents (implémentation) → 
 4. Enquête terrain (≥ 20 entretiens, R-02).
 5. ≥ 15 professionnels et ≥ 10 pharmacies pré-engagés.
 
-### 4.4 Frontend (non démarré)
-- `apps/mobile` (React Native, patients) ; `apps/web` (React + Vite, pros/structures/admin).
+### 4.4 Frontend — mis à jour le 2026-08-05
+
+**⚠️ La mention « non démarré » de la version 1.0 est périmée.** État réel :
+
+| Couche | État | Détail |
+|---|---|---|
+| `apps/mobile` (patients) | 🟢 **très avancé** | 25 écrans navigables, parcours patient quasi complet. Navigation retour auditée et corrigée le 05/08 (8 familles de défauts). Inscription vérifiée de bout en bout sur appareil. 7 tests |
+| `apps/web` (pros/structures/admin) | 🔴 **quasi inexistant** | 4 pages d'authentification + un `DashboardPage` de 0,8 Ko. **Aucun module métier.** Aucun test |
+
+**Conséquence produit à ne pas perdre de vue** : le backend implémente 13 modules avec 505 tests, et
+un patient peut dérouler tout son parcours depuis le mobile — mais **aucun professionnel réel ne peut
+lui répondre**, faute d'interface côté soignant. Le cœur du produit (M06) est codé, testé, et
+inutilisable.
+
+**Six écarts constatés sur l'authentification web** (3 graves : consentement légal absent, verrouillage
+définitif possible faute de TOTP imposé, inscription professionnelle sans redirection vers M03) —
+détail dans [`rapport_session_2026-08-05`](../../rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md) §7.
+
+**Plan de construction du web** : [`plan_frontend_web_2026-08-05`](../../plan_frontend_web_2026-08-05.md)
+— 5 phases, 7 décisions à trancher avant de coder.
+
 - Charte graphique existante (`docs/Charte Graphique/`, CG-01→CG-11) + maquettes `Maquettes_ULAMU/` (référence visuelle, **jamais transformées en app** — la stack décidée fait foi).
 
+### 4.5 Dérives documentaires à arbitrer (constatées le 2026-08-05)
+
+Trois décisions réelles n'ont jamais été consignées. **Un lecteur qui coderait d'après M01 aujourd'hui
+se tromperait.**
+
+| Le cahier des charges dit | Le code fait | Depuis |
+|---|---|---|
+| OTP par **SMS** (`EF-01-01`, `EF-01-04`, `RM-01-03`) | par **email** (Brevo) | juillet 2026 |
+| Connexion par **téléphone** (`EF-01-03`) | nom d'utilisateur **ou** email | juillet 2026 |
+| TOTP **optionnel** pour les pros (`RM-01-06`) | déclaré **obligatoire** sur le web | non daté |
+
+À trancher : corriger la spécification, ou corriger le code.
+
 ## 5. Comment reprendre efficacement
+0. **Frontend** : lire [`rapport_session_2026-08-05`](../../rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md)
+   (état réel des deux apps, ce qui est vérifié et ce qui ne l'est pas) puis
+   [`plan_frontend_web_2026-08-05`](../../plan_frontend_web_2026-08-05.md) (ordre de construction).
+   ⚠️ **Point le plus grave ouvert** : le compte SUPER_ADMIN de production porte le mot de passe
+   `admin123` depuis le seed du 05/08 — rapport §6.1.
 1. Lire CETTE page + [[registre_decisions]] (D-045→D-050) pour l'état du code.
 2. Le contrat de chaque frontière inter-module : [[plan_modules]] (C1-C7) et l'en-tête des services exportés.
 3. Les chiffres du métier : [[parametres_metier]] (PM-01→PM-40, jamais en dur — `ParamsService`).

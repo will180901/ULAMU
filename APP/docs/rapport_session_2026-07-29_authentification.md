@@ -1,5 +1,10 @@
 # Rapport de session — Authentification (2026-07-29)
 
+> ⚠️ **Dépassé sur la navigation mobile** par
+> [`rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md`](rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md).
+> Reste valable pour : la mise en route de l'environnement (§2) et l'historique des décisions.
+> Le risque **SUPER_ADMIN** (§5.1) est **toujours ouvert et aggravé** — voir rapport du 05/08 §6.1.
+
 **Document de reprise autonome.** Écrit pour qu'on puisse continuer sans cette conversation, y compris
 depuis un autre compte. Chaque affirmation est adossée à une preuve (`fichier:ligne`, sortie de
 commande, ou réponse réelle de l'API). Ce qui n'a **pas** été vérifié est dit explicitement — ne pas
