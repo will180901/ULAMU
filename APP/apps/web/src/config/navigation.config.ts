@@ -12,6 +12,10 @@ export interface NavItem {
   icon: LucideIcon
   href: string
   capabilities: Capability[]
+  /** Pastille de comptage (CG-06 §07 : « pills accent pour les nouveaux éléments »). */
+  badge?: number | string
+  /** `urgent` bascule la pastille en ton d'alerte — réservé à ce qui expire ou bloque un patient. */
+  badgeTone?: 'accent' | 'urgent'
 }
 export interface NavGroup {
   label?: string

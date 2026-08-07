@@ -163,12 +163,27 @@
   --font-size-caption: var(--fs-caption);      /* 11px  = 11px */
   --font-size-overline: var(--fs-label-sm);    /* 10px → 12px — 10px n'existe pas dans CG-02 */
 
+  /* ── Mouvement — CG-09 ──────────────────────────────────────────────────────────────────────────
+     « 4 paliers de durée nommés, base 200ms · aucune valeur ms hors tokens ». Ces tokens manquaient
+     entièrement : chaque composant inventait sa durée. Plafond absolu 400ms (CG-09 §05), et
+     `ease-out` à l'entrée / `ease-in` à la sortie, toujours symétriques.                         */
+  --dur-press: 80ms;   /* :active — retour quasi-haptique, jamais au-delà */
+  --dur-fast: 150ms;   /* micro-feedback : fond d'item, bordure, couleur */
+  --dur-base: 200ms;   /* survol, focus, bascules */
+  --dur-slow: 250ms;   /* entrée/sortie de menus et panneaux */
+  --dur-slower: 350ms; /* transitions de vue — plafond des interactions courantes */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   /* ── Espacement (base 4px) ── */
   --espace-px: 2px; --espace-1: 4px; --espace-2: 8px; --espace-3: 12px; --espace-4: 16px; --espace-5: 20px;
   --espace-6: 24px; --espace-7: 28px; --espace-8: 32px; --espace-10: 40px; --espace-12: 48px; --espace-14: 56px; --espace-16: 64px;
 
   /* ── Layout ── */
-  --layout-sidebar-width: 240px; --layout-topbar-height: 54px; --layout-max-width: 1100px; --layout-subnav-height: 40px;
+  /* CG-06 §01/§02 : barre latérale 240px étendue / 56px réduite, topbar 56px. */
+  --layout-sidebar-width: 240px; --layout-sidebar-collapsed: 56px;
+  --layout-topbar-height: 56px; --layout-max-width: 1100px; --layout-subnav-height: 40px;
 
   /* ── Pont shadcn ── */
   --background: var(--fond-page); --foreground: var(--texte-primaire);
@@ -306,6 +321,483 @@
 
 .t-code    { font-family: var(--font-mono); font-size: var(--fs-code);    line-height: var(--lh-code);    font-weight: 400; }
 .t-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); line-height: var(--lh-code-sm); font-weight: 500; }
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════════
+   NAVIGATION & STRUCTURE — CG-06
+   Tout est en classes, jamais en style inline : une classe se relit, se teste, et interdit
+   d'inventer une 3e hauteur d'item ou une 4e opacité de fond actif.
+   ════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Barre latérale ─────────────────────────────────────────────────────────────────────────────
+   CG-06 §01 : étendue 240px, réduite 56px (icônes seules + infobulle), cachée en overlay sur mobile.
+   Le glassmorphism + grain est une INTERDICTION ABSOLUE de s'en passer (CG-06 §07).             */
+.ul-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--layout-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-sidebar-bg);
+  backdrop-filter: blur(var(--glass-sidebar-blur));
+  -webkit-backdrop-filter: blur(var(--glass-sidebar-blur));
+  border-right: 1px solid var(--glass-bordure);
+  z-index: 30;
+  transition: width var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+.ul-sidebar--collapsed { width: var(--layout-sidebar-collapsed); }
+
+.ul-sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+  height: var(--layout-topbar-height);
+  padding-inline: var(--espace-3);
+  flex-shrink: 0;
+}
+.ul-sidebar__nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline: var(--espace-2);
+  padding-block: var(--espace-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+}
+.ul-sidebar__group + .ul-sidebar__group { margin-top: var(--espace-3); }
+
+/* CG-06 §07, bonne pratique obligatoire : « section labels en monospace uppercase ». */
+.ul-nav-group-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  line-height: var(--lh-code-sm);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texte-tertiaire);
+  padding-inline: var(--espace-3);
+  margin-bottom: var(--espace-1);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* CG-06 §01 : hauteur 32px, gap 4px, padding H 12px, fond actif rgba(39,86,166,0.12).
+   CG-09 : ce fond s'installe en 150ms linear. */
+.ul-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  height: 32px;
+  padding-inline: var(--espace-3);
+  border-radius: var(--radius-md);
+  color: var(--texte-secondaire);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  line-height: var(--lh-label);
+  font-weight: var(--fw-label);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.ul-nav-item:hover { background: var(--fond-surface-2); color: var(--texte-primaire); }
+.ul-nav-item:active { transition-duration: var(--dur-press); }
+/* Item actif : fond ET couleur — se contenter de l'un des deux est interdit (CG-06 §07). */
+.ul-nav-item.is-active {
+  background: rgba(var(--ap-400-rgb), 0.12);
+  color: var(--ap-400);
+  font-weight: 600;
+}
+.ul-nav-item__icon { flex-shrink: 0; }
+.ul-nav-item__label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+/* CG-06 §07 : « pills accent pour les nouveaux éléments, warning si urgence ». */
+.ul-nav-badge {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  font-weight: 500;
+  background: rgba(var(--ap-400-rgb), 0.14);
+  color: var(--ap-400);
+}
+.ul-nav-badge--urgent { background: var(--alerte-fond); color: var(--alerte-texte); }
+
+/* État réduit : l'icône se centre, tout le reste disparaît — sans changer le DOM, pour que le
+   lecteur d'écran continue d'annoncer le libellé. */
+.ul-sidebar--collapsed .ul-nav-item { justify-content: center; padding-inline: 0; gap: 0; }
+.ul-sidebar--collapsed .ul-nav-item__label,
+.ul-sidebar--collapsed .ul-nav-badge,
+.ul-sidebar--collapsed .ul-nav-group-label > span,
+.ul-sidebar--collapsed .ul-user-btn__text { display: none; }
+.ul-sidebar--collapsed .ul-nav-group-label { text-align: center; padding-inline: 0; }
+.ul-sidebar--collapsed .ul-user-btn { justify-content: center; }
+
+/* Infobulle de l'état réduit (CG-06 §01 : « icônes seules + tooltip au survol »). */
+.ul-tip { position: relative; }
+.ul-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + var(--espace-2));
+  top: 50%;
+  transform: translateY(-50%) scale(0.96);
+  transform-origin: left center;
+  background: var(--fond-surface);
+  color: var(--texte-primaire);
+  border: 1px solid var(--bordure-normale);
+  border-radius: var(--radius-md);
+  box-shadow: var(--ombre-2);
+  padding: 4px var(--espace-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-sm);
+  line-height: var(--lh-label);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.ul-sidebar--collapsed .ul-tip:hover::after,
+.ul-sidebar--collapsed .ul-tip:focus-visible::after { opacity: 1; transform: translateY(-50%) scale(1); }
+
+/* ── Pied de barre : bouton utilisateur ─────────────────────────────────────────────────────── */
+.ul-sidebar__foot {
+  flex-shrink: 0;
+  padding: var(--espace-2);
+  border-top: 1px solid var(--glass-bordure);
+}
+.ul-user-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+  padding: var(--espace-2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  text-align: left;
+  transition: background var(--dur-fast) linear;
+}
+.ul-user-btn:hover { background: var(--fond-surface-2); }
+.ul-user-btn[aria-expanded='true'] { background: var(--fond-surface-2); }
+.ul-user-btn__text { flex: 1; min-width: 0; }
+.ul-user-btn__name {
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  line-height: var(--lh-label);
+  font-weight: 600;
+  color: var(--texte-primaire);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ul-user-btn__role {
+  font-family: var(--font-body);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--texte-tertiaire);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Avatar ─────────────────────────────────────────────────────────────────────────────────── */
+.ul-avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 700;
+  background: var(--fond-surface-2);
+  color: var(--texte-secondaire);
+  user-select: none;
+}
+
+/* ── Menus contextuels — CG-06 §06 ──────────────────────────────────────────────────────────────
+   Tokens imposés : fond élevé, bordure 1px, rayon 10px, ombre --shadow-lg (« jamais plat »),
+   item 36px, survol sur fond discret, z-index 20. Entrée en 250ms spring (CG-09).             */
+.ul-menu {
+  position: absolute;
+  min-width: 232px;
+  padding: var(--espace-1);
+  background: var(--fond-surface);
+  border: 1px solid var(--bordure-normale);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre-4);
+  z-index: 40;
+  animation: ul-menu-in var(--dur-slow) var(--ease-spring);
+}
+@keyframes ul-menu-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ul-menu__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texte-tertiaire);
+  padding: var(--espace-2) var(--espace-3) var(--espace-1);
+}
+.ul-menu__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  height: 36px;
+  padding-inline: var(--espace-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  line-height: var(--lh-label);
+  font-weight: var(--fw-label);
+  text-align: left;
+  text-decoration: none;
+  transition: background var(--dur-fast) linear;
+}
+.ul-menu__item:hover { background: var(--fond-surface-2); }
+.ul-menu__item-tail { margin-left: auto; color: var(--texte-tertiaire); font-family: var(--font-mono); font-size: var(--fs-code-sm); }
+.ul-menu__sep { height: 1px; margin: var(--espace-1) var(--espace-2); background: var(--bordure-legere); }
+/* CG-06 §07 : « Actions destructives : toujours en bas du menu, couleur danger, séparateur avant ». */
+.ul-menu__item--danger { color: var(--erreur-accent); }
+.ul-menu__item--danger:hover { background: var(--erreur-fond); color: var(--erreur-texte); }
+
+/* ── Topbar — CG-06 §02 ─────────────────────────────────────────────────────────────────────────
+   Sticky obligatoire, grain obligatoire (les deux sont des interdictions explicites §07).      */
+.ul-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: var(--layout-topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  padding-inline: var(--espace-4);
+  background: var(--glass-header-bg);
+  backdrop-filter: blur(var(--glass-header-blur));
+  -webkit-backdrop-filter: blur(var(--glass-header-blur));
+  border-bottom: 1px solid var(--glass-bordure);
+  box-shadow: var(--ombre-1);
+}
+.ul-topbar__search {
+  flex: 1;
+  max-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+  height: 32px;
+  padding-inline: var(--espace-3);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+  border: 1px solid var(--bordure-legere);
+  color: var(--texte-tertiaire);
+  transition: border-color var(--dur-base) linear, background var(--dur-base) linear;
+}
+.ul-topbar__search:hover { border-color: var(--bordure-normale); }
+.ul-topbar__search-text { flex: 1; font-family: var(--font-body); font-size: var(--fs-label-md); text-align: left; }
+.ul-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  color: var(--texte-tertiaire);
+  background: var(--fond-surface);
+  border: 1px solid var(--bordure-legere);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+.ul-icon-btn {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--texte-secondaire);
+  transition: background var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.ul-icon-btn:hover { background: var(--fond-surface-2); color: var(--texte-primaire); }
+.ul-icon-btn__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--erreur-accent);
+  border: 1.5px solid var(--glass-header-bg);
+}
+
+/* ── Coquille applicative ───────────────────────────────────────────────────────────────────── */
+.ul-shell { display: flex; min-height: 100vh; }
+.ul-shell__main {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--layout-sidebar-width);
+  transition: margin-left var(--dur-slow) var(--ease-out);
+}
+.ul-shell__main--collapsed { margin-left: var(--layout-sidebar-collapsed); }
+.ul-shell__content { padding: var(--espace-5); max-width: var(--layout-max-width); }
+.ul-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.45);
+  border: none;
+  animation: ul-fade-in var(--dur-base) var(--ease-out);
+}
+@keyframes ul-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Palette de commandes ───────────────────────────────────────────────────────────────────────
+   Mêmes tokens que les menus contextuels (CG-06 §06) : fond élevé, bordure, rayon 10px, ombre —
+   c'est la même famille d'objet flottant, elle ne doit pas avoir sa propre apparence.          */
+.ul-palette {
+  width: min(560px, calc(100vw - var(--espace-8)));
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fond-surface);
+  border: 1px solid var(--bordure-normale);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre-4);
+  overflow: hidden;
+  animation: ul-menu-in var(--dur-slow) var(--ease-spring);
+}
+.ul-palette__field {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  padding: var(--espace-3) var(--espace-4);
+  border-bottom: 1px solid var(--bordure-legere);
+  flex-shrink: 0;
+}
+.ul-palette__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-text-md);
+  line-height: var(--lh-text-md);
+}
+.ul-palette__input::placeholder { color: var(--texte-tertiaire); }
+.ul-palette__list { overflow-y: auto; padding: var(--espace-1); }
+.ul-palette__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  height: 36px;
+  padding-inline: var(--espace-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  font-weight: var(--fw-label);
+  transition: background var(--dur-fast) linear;
+}
+/* Sélection pilotée par le clavier ET la souris : `:hover` seul laisserait la ligne choisie au
+   clavier invisible dès que le pointeur traîne ailleurs. */
+.ul-palette__row.is-active { background: rgba(var(--ap-400-rgb), 0.12); color: var(--ap-400); }
+.ul-palette__group {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texte-tertiaire);
+}
+
+/* ── États d'écran — CG-08 §05 ──────────────────────────────────────────────────────────────────
+   Une seule mise en forme pour chargement, erreur, hors-ligne et vide : ce sont quatre réponses à
+   la même question (« pourquoi n'y a-t-il rien ici ? »), les dessiner différemment brouillerait le
+   message. Icône + titre + description + sortie, toujours dans cet ordre.                      */
+.ul-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--espace-3);
+  padding: var(--espace-10) var(--espace-6);
+  color: var(--texte-tertiaire);
+}
+.ul-state--bordered {
+  border: 1px dashed var(--bordure-normale);
+  border-radius: var(--radius-xl);
+  background: var(--fond-surface-2);
+}
+.ul-state--error { color: var(--erreur-accent); }
+.ul-state__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  font-weight: var(--fw-display-sm);
+  color: var(--texte-primaire);
+}
+.ul-state__desc {
+  margin: 0;
+  max-width: 42ch; /* longueur de ligne confortable — au-delà, l'œil perd la ligne suivante */
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  color: var(--texte-secondaire);
+}
+.ul-state__tile {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fond-surface);
+  color: var(--texte-tertiaire);
+}
+.ul-state__spin { animation: ul-spin 900ms linear infinite; }
+@keyframes ul-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ul-state__spin { animation-duration: 2400ms; }
+}
+
+/* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
+   fois, ici, et jamais recopié dans un composant. */
+.ul-only-mobile { display: none; }
+
+/* Mobile : la barre sort du flux et se superpose (CG-06 §01, état « caché »). */
+@media (max-width: 767px) {
+  .ul-sidebar { transform: translateX(-100%); width: var(--layout-sidebar-width); }
+  .ul-sidebar--open { transform: translateX(0); box-shadow: var(--ombre-4); }
+  .ul-shell__main, .ul-shell__main--collapsed { margin-left: 0; }
+  .ul-only-mobile { display: inline-flex; }
+  /* Réduire n'a pas de sens quand la barre est déjà en surimpression. */
+  .ul-sidebar__head .ul-icon-btn:not(.ul-only-mobile) { display: none; }
+}
+
+/* CG-09 §05 : « Implémenter prefers-reduced-motion : désactiver toutes animations non-essentielles ». */
+@media (prefers-reduced-motion: reduce) {
+  .ul-sidebar, .ul-shell__main, .ul-nav-item, .ul-user-btn, .ul-menu__item, .ul-icon-btn,
+  .ul-topbar__search, .ul-tip::after {
+    transition-duration: 1ms !important;
+  }
+  .ul-menu, .ul-scrim { animation: none !important; }
+}
 
 .saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
