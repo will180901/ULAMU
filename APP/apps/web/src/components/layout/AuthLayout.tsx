@@ -1,58 +1,29 @@
 /**
- * Coquille des pages d'authentification (connexion/inscription/mot de passe oublié) — UNE carte
- * centrée horizontale+verticale, largeur moyenne, hauteur raisonnable. Zone gauche : le carrousel de
- * l'app mobile, repris à l'identique (cf. AuthCarousel — mêmes images, mêmes trajectoires, mêmes
- * textes), en remplacement de l'ancienne « fumée » propre au web. Zone droite : mot "ULAMU" seul
- * (sans icône) + sous-texte + le formulaire de la page.
+ * Coquille des pages d'authentification — une carte centrée : carrousel à gauche (repris à
+ * l'identique de l'app mobile, mêmes images et mêmes trajectoires), formulaire à droite.
+ *
+ * Ajout : la colonne d'illustration **disparaît sous 860px**. Elle était jusqu'ici figée à 42 % de
+ * la largeur quelle que soit la fenêtre, ce qui écrasait le formulaire — or l'inscription
+ * professionnelle compte cinq étapes, et un pharmacien qui s'inscrit depuis une tablette n'a que
+ * faire d'une illustration s'il ne peut plus lire ses champs.
  */
+import type { ReactNode } from 'react'
 import { AuthCarousel } from '@/components/layout/AuthCarousel'
 import { Logo } from '@/components/ulamu/Logo'
 
-export function AuthLayout({ subtitle, children }: { subtitle: string; children: React.ReactNode }) {
+export function AuthLayout({ subtitle, children }: { subtitle: string; children: ReactNode }) {
   return (
-    <div
-      className="saris-grain-strong"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--fond-page)',
-        padding: 'var(--espace-5)',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          width: 880,
-          maxWidth: '100%',
-          height: 580,
-          maxHeight: '90vh',
-          borderRadius: 'var(--radius-xl)',
-          overflow: 'hidden',
-          boxShadow: 'var(--ombre-3)',
-          border: '1px solid var(--bordure-legere)',
-        }}
-      >
-        {/* Zone gauche — le carrousel de l'app mobile, à l'identique (mesh gradient + illustrations) */}
-        <div style={{ position: 'relative', width: '42%', flexShrink: 0, overflow: 'hidden' }}>
+    <div className="ul-auth saris-grain-strong">
+      <div className="ul-auth__card">
+        {/* Décoratif : le carrousel ne porte aucune information indispensable, il ne doit donc pas
+            encombrer la lecture d'un lecteur d'écran avant d'arriver au formulaire. */}
+        <div className="ul-auth__aside" aria-hidden="true">
           <AuthCarousel />
         </div>
 
-        {/* Zone droite — ULAMU + formulaire */}
-        <div
-          style={{
-            width: '58%',
-            background: 'var(--fond-surface)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            padding: 'var(--espace-8)',
-            overflowY: 'auto',
-          }}
-        >
+        <div className="ul-auth__panel">
           <Logo size={34} />
-          <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)', margin: '6px 0 var(--espace-6)' }}>{subtitle}</p>
+          <p className="ul-auth__sub">{subtitle}</p>
           {children}
         </div>
       </div>

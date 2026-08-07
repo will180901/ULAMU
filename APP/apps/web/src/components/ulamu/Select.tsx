@@ -1,15 +1,17 @@
 /**
- * Sélecteur — même hauteur/rayon/bordure/halo de focus que Field (§7.4), menu déroulant en verre
- * dépoli + grain (cohérent avec Card). Construit sur le primitif Radix déjà présent dans le projet
- * (accessibilité clavier/ARIA gérée par la lib, pas réinventée).
+ * Sélecteur — construit sur le primitif Radix déjà présent (accessibilité clavier et ARIA gérées par
+ * la bibliothèque, pas réinventées).
+ *
+ * Il partage désormais l'habillage du champ de saisie (`.ul-field*`) au lieu de le recopier : les
+ * deux avaient dérivé, et surtout `Select` reproduisait le défaut corrigé sur `Field` — une erreur
+ * affichée **en texte coloré sans icône**, ce que CG-05 §07 interdit absolument.
+ *
+ * Le libellé est aussi relié au déclencheur par `aria-labelledby` : il n'était rattaché à rien, donc
+ * un lecteur d'écran annonçait « bouton, Médecin généraliste » sans jamais dire *catégorie de quoi*.
  */
-import { useState } from 'react'
+import { useId } from 'react'
 import { Select as RadixSelect } from 'radix-ui'
-import { Check, ChevronDown } from 'lucide-react'
-
-type Size = 'sm' | 'md' | 'lg'
-const HEIGHT: Record<Size, number> = { sm: 30, md: 36, lg: 42 }
-const FONT_SIZE: Record<Size, string> = { sm: 'var(--font-size-body-sm)', md: 'var(--font-size-body)', lg: 'var(--font-size-body-lg)' }
+import { AlertCircle, Check, ChevronDown } from 'lucide-react'
 
 export interface SelectOption {
   value: string
@@ -20,7 +22,6 @@ interface SelectProps {
   label?: string
   error?: string
   hint?: string
-  size?: Size
   required?: boolean
   placeholder?: string
   value: string
@@ -29,82 +30,46 @@ interface SelectProps {
   disabled?: boolean
 }
 
-export function Select({ label, error, hint, size = 'md', required, placeholder, value, onChange, options, disabled }: SelectProps) {
-  const [open, setOpen] = useState(false)
-  const [focused, setFocused] = useState(false)
+export function Select({ label, error, hint, required, placeholder, value, onChange, options, disabled }: SelectProps) {
+  const id = useId()
+  const labelId = `${id}-label`
+  const msgId = `${id}-msg`
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div className={['ul-field', error ? 'ul-field--error' : ''].filter(Boolean).join(' ')}>
       {label ? (
-        <label style={{ fontSize: 'var(--font-size-label)', fontWeight: 600, color: 'var(--texte-secondaire)' }}>
+        <span className="ul-field__label" id={labelId}>
           {label}
-          {required ? <span style={{ color: 'var(--erreur-accent)' }}> *</span> : null}
-        </label>
+          {required ? (
+            <span className="ul-field__required" aria-hidden="true">
+              {' '}
+              *
+            </span>
+          ) : null}
+        </span>
       ) : null}
-      <RadixSelect.Root value={value} onValueChange={onChange} open={open} onOpenChange={setOpen} disabled={disabled}>
+
+      <RadixSelect.Root value={value} onValueChange={onChange} disabled={disabled}>
         <RadixSelect.Trigger
-          className="saris-focus-ring"
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            height: HEIGHT[size],
-            width: '100%',
-            borderRadius: 'var(--radius-md)',
-            border: `1px solid ${error ? 'var(--erreur-accent)' : focused || open ? 'var(--ap-400)' : 'var(--bordure-input)'}`,
-            background: 'var(--fond-surface)',
-            color: value ? 'var(--texte-primaire)' : 'var(--texte-tertiaire)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: FONT_SIZE[size],
-            paddingInline: 12,
-            boxShadow: (focused || open) && !error ? '0 0 0 3px rgba(var(--ap-400-rgb), 0.15)' : 'none',
-            transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.55 : 1,
-          }}
+          className="ul-select__trigger saris-focus-ring"
+          aria-labelledby={label ? labelId : undefined}
+          aria-describedby={error || hint ? msgId : undefined}
+          aria-invalid={error ? true : undefined}
         >
           <RadixSelect.Value placeholder={placeholder} />
           <RadixSelect.Icon>
-            <ChevronDown
-              size={16}
-              style={{ color: 'var(--texte-tertiaire)', transition: 'transform 0.15s ease', transform: open ? 'rotate(180deg)' : 'none' }}
-            />
+            <ChevronDown size={16} className="ul-select__chevron" />
           </RadixSelect.Icon>
         </RadixSelect.Trigger>
+
         <RadixSelect.Portal>
-          <RadixSelect.Content className="saris-grain" position="popper" sideOffset={6} style={{ zIndex: 1000 }}>
-            <div
-              style={{
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--bordure-legere)',
-                background: 'var(--fond-surface)',
-                boxShadow: 'var(--ombre-2)',
-                overflow: 'hidden',
-                width: 'var(--radix-select-trigger-width)',
-              }}
-            >
+          {/* Même famille visuelle que les menus contextuels (CG-06 §06) : bordure, rayon, ombre —
+              un objet flottant ne doit pas avoir son apparence propre selon qui l'ouvre. */}
+          <RadixSelect.Content className="saris-grain" position="popper" sideOffset={6} style={{ zIndex: 60 }}>
+            <div className="ul-select__panel">
               <RadixSelect.Viewport style={{ padding: 4 }}>
                 {options.map((opt) => (
-                  <RadixSelect.Item
-                    key={opt.value}
-                    value={opt.value}
-                    className="ulamu-select-item"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                      padding: '8px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: 'var(--font-size-body)',
-                      color: 'var(--texte-primaire)',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                  >
+                  <RadixSelect.Item key={opt.value} value={opt.value} className="ul-select__item ulamu-select-item">
                     <RadixSelect.ItemText>{opt.label}</RadixSelect.ItemText>
                     <RadixSelect.ItemIndicator>
                       <Check size={14} style={{ color: 'var(--ap-500)' }} />
@@ -116,10 +81,16 @@ export function Select({ label, error, hint, size = 'md', required, placeholder,
           </RadixSelect.Content>
         </RadixSelect.Portal>
       </RadixSelect.Root>
-      {error ? (
-        <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</span>
-      ) : hint ? (
-        <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)' }}>{hint}</span>
+
+      {error || hint ? (
+        <span
+          id={msgId}
+          className={['ul-field__msg', error ? 'ul-field__msg--error' : ''].filter(Boolean).join(' ')}
+          role={error ? 'alert' : undefined}
+        >
+          {error ? <AlertCircle size={12} aria-hidden="true" /> : null}
+          {error ?? hint}
+        </span>
       ) : null}
     </div>
   )

@@ -1,11 +1,14 @@
 /**
- * Connexion — nom d'utilisateur OU email (2026-07, comme sur mobile : l'API route sur l'un ou l'autre
- * selon la présence d'un « @ ») + flux TOTP en 2 étapes (M01). Réservée aux comptes PROFESSIONAL/
- * FACILITY_MEMBER/ADMIN (les patients restent sur mobile).
+ * Connexion — nom d'utilisateur OU email (l'API route sur l'un ou l'autre selon la présence d'un
+ * « @ », comme sur mobile) puis TOTP en 2ᵉ étape. Réservée aux comptes PROFESSIONAL /
+ * FACILITY_MEMBER / ADMIN : les patients restent sur mobile (D-039/D-044).
+ *
+ * L'erreur porte désormais une **icône** en plus de sa couleur — `CG-05 §07` l'exige, et une erreur
+ * de connexion est précisément le moment où l'on est pressé et où l'on lit mal.
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { ShieldCheck } from 'lucide-react'
+import { AlertCircle, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ulamu/Button'
 import { Field } from '@/components/ulamu/Field'
 import { AuthLayout } from '@/components/layout/AuthLayout'
@@ -53,7 +56,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+      <form onSubmit={submit} className="ul-auth__form">
         {!totpRequired ? (
           <>
             <Field
@@ -65,31 +68,44 @@ export function LoginPage() {
               required
             />
             <Field label="Mot de passe" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <Link
-              to="/mot-de-passe-oublie"
-              style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)', alignSelf: 'flex-end', marginTop: -4 }}
-            >
+            <Link to="/mot-de-passe-oublie" className="ul-auth__link" style={{ alignSelf: 'flex-end', fontSize: 'var(--fs-caption)' }}>
               Mot de passe oublié ?
             </Link>
           </>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>
-              <ShieldCheck size={16} /> Code de votre application d'authentification
-            </div>
-            <Field label="Code TOTP (6 chiffres)" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} maxLength={10} autoFocus required />
+            <p className="ul-auth__note">
+              <ShieldCheck size={16} aria-hidden="true" /> Code de votre application d'authentification
+            </p>
+            <Field
+              label="Code TOTP (6 chiffres)"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              maxLength={10}
+              hint="Un code de secours à 10 caractères est aussi accepté."
+              autoFocus
+              required
+            />
           </>
         )}
 
-        {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
+        {error ? (
+          <p className="ul-auth__error" role="alert">
+            <AlertCircle size={13} aria-hidden="true" /> {error}
+          </p>
+        ) : null}
 
-        <Button type="submit" size="lg" loading={busy} disabled={busy}>
+        <Button type="submit" size="lg" loading={busy}>
           {totpRequired ? 'Vérifier' : 'Se connecter'}
         </Button>
       </form>
+
       {!totpRequired ? (
-        <p style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)', textAlign: 'center', marginTop: 'var(--espace-4)' }}>
-          Pas encore de compte ? <Link to="/inscription" style={{ color: 'var(--ap-400)', fontWeight: 600 }}>Créer un compte</Link>
+        <p className="ul-auth__foot">
+          Pas encore de compte ?{' '}
+          <Link to="/inscription" className="ul-auth__link">
+            Créer un compte
+          </Link>
         </p>
       ) : null}
     </AuthLayout>

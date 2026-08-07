@@ -1,63 +1,63 @@
-/** Indicateur d'étape — cercles reliés par un trait, rempli d'accent pour l'étape faite/active. */
+/**
+ * Indicateur d'étapes — cercles reliés, remplis pour ce qui est franchi.
+ *
+ * Ajout par rapport à la version précédente : l'**accessibilité**. Le composant n'annonçait rien —
+ * un lecteur d'écran voyait des chiffres et des traits sans savoir qu'il s'agissait d'une
+ * progression, ni où l'on en était. Une inscription professionnelle en cinq étapes devient alors
+ * impossible à suivre sans voir l'écran. On expose donc une liste ordonnée, l'étape courante via
+ * `aria-current`, et un résumé lisible « Étape 3 sur 5 : Sécurité ».
+ */
 import { Check } from 'lucide-react'
 
-type StepState = 'done' | 'active' | 'upcoming'
-
-function circleStyle(state: StepState): React.CSSProperties {
-  return {
-    width: 26,
-    height: 26,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 12,
-    fontWeight: 700,
-    flexShrink: 0,
-    background: state === 'upcoming' ? 'var(--fond-surface-2)' : 'var(--ap-400)',
-    color: state === 'upcoming' ? 'var(--texte-tertiaire)' : '#FFFFFF',
-    border: state === 'upcoming' ? '1px solid var(--bordure-normale)' : 'none',
-    transition: 'background 0.2s ease, color 0.2s ease',
-  }
-}
-
 export function Stepper({ steps, currentIndex }: { steps: string[]; currentIndex: number }) {
+  const courante = steps[currentIndex]
+
   return (
-    <div style={{ marginBottom: 'var(--espace-5)' }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        {steps.map((_, i) => {
-          const state: StepState = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'upcoming'
+    <div className="ul-steps">
+      {/* Résumé textuel réservé aux lecteurs d'écran : les cercles sont un raccourci VISUEL, ils ne
+          remplacent pas l'information. */}
+      <p className="sr-only" role="status">
+        Étape {currentIndex + 1} sur {steps.length}
+        {courante ? ` : ${courante}` : ''}
+      </p>
+
+      <ol className="ul-steps__row" aria-hidden="true">
+        {steps.map((label, i) => {
+          const atteinte = i <= currentIndex
+          const faite = i < currentIndex
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-              <div style={circleStyle(state)}>{state === 'done' ? <Check size={13} /> : i + 1}</div>
-              <div
-                style={{
-                  flex: 1,
-                  height: 2,
-                  borderRadius: 1,
-                  marginInline: 4,
-                  background: i < steps.length - 1 ? (i < currentIndex ? 'var(--ap-400)' : 'var(--bordure-normale)') : 'transparent',
-                  transition: 'background 0.2s ease',
-                }}
+            <li className="ul-steps__cell" key={label}>
+              <span className={['ul-steps__dot', atteinte ? 'is-reached' : ''].filter(Boolean).join(' ')}>
+                {faite ? <Check size={13} /> : i + 1}
+              </span>
+              <span
+                className={[
+                  'ul-steps__bar',
+                  faite ? 'is-done' : '',
+                  i === steps.length - 1 ? 'is-last' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               />
-            </div>
+            </li>
           )
         })}
-      </div>
-      <div style={{ display: 'flex', marginTop: 6 }}>
+      </ol>
+
+      <div className="ul-steps__labels" aria-hidden="true">
         {steps.map((label, i) => (
-          <div
+          <span
             key={label}
-            style={{
-              flex: 1,
-              textAlign: 'center',
-              fontSize: 'var(--font-size-caption)',
-              fontWeight: i === currentIndex ? 700 : 500,
-              color: i <= currentIndex ? 'var(--texte-primaire)' : 'var(--texte-tertiaire)',
-            }}
+            className={[
+              'ul-steps__label',
+              i <= currentIndex ? 'is-reached' : '',
+              i === currentIndex ? 'is-current' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
           >
             {label}
-          </div>
+          </span>
         ))}
       </div>
     </div>

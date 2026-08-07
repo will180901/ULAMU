@@ -441,6 +441,54 @@
 .ul-field__msg--error { color: var(--erreur-texte); }
 .ul-field__msg--success { color: var(--succes-texte); }
 
+/* Le sélecteur partage EXACTEMENT l'habillage du champ de saisie — même hauteur, même bordure, même
+   halo. Les styler séparément les ferait diverger au premier ajustement, et un formulaire où le
+   `<select>` ne fait pas la même taille que l'`<input>` juste au-dessus se voit immédiatement. */
+.ul-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-2);
+  width: 100%;
+  height: 36px;
+  padding-inline: var(--espace-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bordure-input);
+  background: var(--fond-surface);
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-lg);
+  transition: border-color var(--dur-fast) linear, box-shadow var(--dur-fast) linear;
+}
+.ul-select__trigger[data-placeholder] { color: var(--texte-tertiaire); }
+.ul-select__trigger[data-state='open'],
+.ul-select__trigger:focus-visible { border-color: var(--ap-400); box-shadow: 0 0 0 3px rgba(var(--ap-400-rgb), 0.12); }
+.ul-select__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+.ul-field--error .ul-select__trigger { border-color: var(--erreur-accent); box-shadow: none; }
+.ul-select__chevron { color: var(--texte-tertiaire); transition: transform var(--dur-fast) linear; }
+.ul-select__trigger[data-state='open'] .ul-select__chevron { transform: rotate(180deg); }
+.ul-select__panel {
+  width: var(--radix-select-trigger-width);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bordure-legere);
+  background: var(--fond-surface);
+  box-shadow: var(--ombre-4);
+  overflow: hidden;
+}
+.ul-select__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-2);
+  height: 36px;
+  padding-inline: var(--espace-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  color: var(--texte-primaire);
+  outline: none;
+}
+
 /* ── Badges & pastilles de statut — CG-05 §03 ───────────────────────────────────────────────────
    « Badges : fond semi-transparent + bordure harmonique » (§07, bonne pratique obligatoire). La
    bordure manquait : sur fond sombre, un badge sans contour flotte sans se détacher. La forme en
@@ -458,6 +506,235 @@
 .ul-pill--sm { padding: 3px 10px; font-size: var(--fs-caption); line-height: var(--lh-caption); }
 .ul-pill--md { padding: 4px 12px; font-size: var(--fs-label-sm); line-height: var(--lh-label); }
 .ul-pill__dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; background: currentColor; }
+
+/* ── Cartes ─────────────────────────────────────────────────────────────────────────────────────
+   Verre dépoli par défaut. En-tête et pied portent leur propre fond et « s'échappent » du padding
+   du corps par marge négative — d'où les variables `--card-pad-*` : sans elles, changer le padding
+   du corps désalignait silencieusement l'en-tête, et il fallait s'en souvenir.                 */
+.ul-card {
+  --card-pad: var(--espace-4);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--bordure-legere);
+  background: var(--verre-fond);
+  backdrop-filter: blur(var(--verre-blur));
+  -webkit-backdrop-filter: blur(var(--verre-blur));
+  box-shadow: var(--ombre-1);
+  padding: var(--card-pad);
+  overflow: hidden;
+}
+.ul-card--pad-none { --card-pad: 0px; }
+.ul-card--pad-sm { --card-pad: var(--espace-3); }
+.ul-card--pad-lg { --card-pad: var(--espace-5); }
+.ul-card--flat { box-shadow: var(--ombre-0); }
+.ul-card--floating { box-shadow: var(--ombre-2); }
+.ul-card--muted { background: var(--fond-surface-2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+.ul-card__head,
+.ul-card__foot {
+  display: flex;
+  gap: var(--espace-3);
+  padding: var(--espace-3) var(--card-pad);
+  background: var(--fond-surface-2);
+}
+.ul-card__head {
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: calc(var(--card-pad) * -1) calc(var(--card-pad) * -1) var(--card-pad);
+  border-bottom: 1px solid var(--bordure-legere);
+}
+.ul-card__foot {
+  justify-content: flex-end;
+  margin: var(--card-pad) calc(var(--card-pad) * -1) calc(var(--card-pad) * -1);
+  border-top: 1px solid var(--bordure-legere);
+}
+.ul-card__head-left { display: flex; align-items: center; gap: var(--espace-3); min-width: 0; }
+.ul-card__sub { margin-top: 2px; font-family: var(--font-body); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--texte-tertiaire); }
+
+/* ── Indicateur d'étapes ────────────────────────────────────────────────────────────────────── */
+.ul-steps { margin-bottom: var(--espace-5); }
+.ul-steps__row { display: flex; align-items: center; }
+.ul-steps__cell { display: flex; align-items: center; flex: 1; }
+.ul-steps__dot {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bordure-normale);
+  background: var(--fond-surface-2);
+  color: var(--texte-tertiaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-text-xs);
+  font-weight: 700;
+  transition: background var(--dur-base) linear, color var(--dur-base) linear, border-color var(--dur-base) linear;
+}
+.ul-steps__dot.is-reached { background: var(--ap-400); color: #fff; border-color: transparent; }
+.ul-steps__bar {
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  margin-inline: 4px;
+  background: var(--bordure-normale);
+  transition: background var(--dur-base) linear;
+}
+.ul-steps__bar.is-done { background: var(--ap-400); }
+.ul-steps__bar.is-last { background: transparent; }
+.ul-steps__labels { display: flex; margin-top: 6px; }
+.ul-steps__label {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-weight: 500;
+  color: var(--texte-tertiaire);
+}
+.ul-steps__label.is-reached { color: var(--texte-primaire); }
+.ul-steps__label.is-current { font-weight: 700; }
+
+/* ── Squelette de chargement — CG-08 §06 : « reproduire fidèlement la structure du contenu final ».
+   Pulsation d'OPACITÉ, pas de balayage dégradé : la charte interdit les dégradés (CG-04), et le
+   « shimmer » habituel en est un. Décision déjà prise par l'auteur du composant d'origine, et
+   correcte — on la conserve. La durée reprend le palier le plus lent de CG-09.               */
+.ul-skeleton {
+  display: block;
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+  animation: ul-pulse 1400ms ease-in-out infinite;
+}
+@keyframes ul-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  .ul-skeleton { animation: none; }
+}
+
+/* Texte réservé aux lecteurs d'écran — visuellement absent, mais présent dans l'arbre
+   d'accessibilité. `display:none` le retirerait aussi des lecteurs, ce qui est le contraire du but. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Coquille d'authentification ────────────────────────────────────────────────────────────────
+   Carte unique centrée : carrousel à gauche (repris à l'identique du mobile), formulaire à droite.
+   Sous 860px la colonne d'illustration disparaît — sur un écran étroit, elle volerait au formulaire
+   la place dont il a besoin, et l'inscription professionnelle compte cinq étapes.             */
+.ul-auth { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
+.ul-auth__card {
+  display: flex;
+  width: 880px;
+  max-width: 100%;
+  height: 580px;
+  max-height: 90vh;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--ombre-3);
+  border: 1px solid var(--bordure-legere);
+}
+.ul-auth__aside { position: relative; width: 42%; flex-shrink: 0; overflow: hidden; }
+.ul-auth__panel {
+  width: 58%;
+  background: var(--fond-surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--espace-8);
+  overflow-y: auto;
+}
+.ul-auth__sub {
+  margin: 6px 0 var(--espace-6);
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  color: var(--texte-secondaire);
+}
+.ul-auth__form { display: flex; flex-direction: column; gap: var(--espace-3); }
+.ul-auth__error { display: flex; align-items: center; gap: 5px; font-family: var(--font-body); font-size: var(--fs-caption); color: var(--erreur-texte); }
+.ul-auth__foot { margin-top: var(--espace-4); text-align: center; font-family: var(--font-body); font-size: var(--fs-caption); color: var(--texte-tertiaire); }
+.ul-auth__link { color: var(--ap-400); font-weight: 600; }
+.ul-auth__note { display: flex; align-items: center; gap: 6px; font-family: var(--font-body); font-size: var(--fs-text-sm); color: var(--texte-secondaire); }
+
+/* Carte de choix (type de compte à l'inscription). Le survol et la pression étaient gérés en
+   JavaScript par trois `useState` et cinq gestionnaires de souris — même motif que celui retiré du
+   bouton, avec les mêmes défauts : muet au clavier, et un rendu React à chaque passage de pointeur. */
+.ul-typecard {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--espace-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--bordure-normale);
+  background: var(--fond-surface);
+  transition: background var(--dur-base) linear, border-color var(--dur-base) linear,
+    box-shadow var(--dur-base) linear, transform var(--dur-press) linear;
+}
+.ul-typecard:hover { background: var(--ap-50); border-color: var(--ap-300); box-shadow: var(--ombre-1); }
+.ul-typecard:active { transform: scale(0.99); }
+.ul-typecard__icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ap-50);
+  color: var(--ap-700);
+  transition: background var(--dur-base) linear;
+}
+.ul-typecard:hover .ul-typecard__icon { background: var(--ap-100); }
+.ul-typecard__title { font-family: var(--font-body); font-size: var(--fs-label-lg); font-weight: 600; color: var(--texte-primaire); }
+.ul-typecard__desc { font-family: var(--font-body); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--texte-secondaire); }
+
+.ul-auth__row { display: flex; gap: var(--espace-3); }
+.ul-auth__row > * { flex: 1; min-width: 0; }
+
+/* ── Configuration TOTP (écran bloquant après la première connexion) ────────────────────────── */
+.ul-totp { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
+.ul-totp__inner { width: 460px; max-width: 100%; }
+.ul-totp__logo { display: flex; justify-content: center; margin-bottom: var(--espace-6); }
+.ul-totp__body { display: flex; flex-direction: column; gap: var(--espace-4); }
+.ul-totp__step { margin: 0; font-family: var(--font-body); font-size: var(--fs-text-sm); line-height: var(--lh-text-sm); color: var(--texte-secondaire); }
+.ul-totp__qr { display: flex; justify-content: center; }
+.ul-totp__qr img { border-radius: var(--radius-md); border: 1px solid var(--bordure-normale); }
+.ul-totp__secret-row { display: flex; align-items: center; gap: var(--espace-2); }
+.ul-totp__secret {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+  word-break: break-all;
+}
+/* Deux colonnes : dix codes en une seule colonne obligeraient à faire défiler pour les recopier,
+   au moment précis où il ne faut en oublier aucun. */
+.ul-totp__codes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: var(--espace-3);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+}
+.ul-totp__codes code { font-family: var(--font-mono); font-size: var(--fs-code); color: var(--texte-primaire); }
+
+@media (max-width: 860px) {
+  .ul-auth__aside { display: none; }
+  .ul-auth__panel { width: 100%; padding: var(--espace-6); }
+  .ul-auth__card { height: auto; }
+}
 
 /* ── En-tête de page ────────────────────────────────────────────────────────────────────────── */
 .ul-pagehead {

@@ -1,17 +1,23 @@
 /**
- * Configuration TOTP obligatoire — écran bloquant affiché après connexion tant que totpEnabled
- * est faux (PROFESSIONAL/FACILITY_MEMBER/ADMIN, cf. App.tsx). Jamais de SMS pour la sécurité web
- * (règle à respecter) : le QR code est généré localement (lib `qrcode`), le secret ne quitte jamais
- * le navigateur vers un tiers.
+ * Configuration TOTP — écran **bloquant** affiché après la première connexion tant que
+ * `totpEnabled` est faux, pour tout compte non-patient (`App.tsx`, `needsTotpSetup`).
+ *
+ * C'est cet écran qui rend tenable la règle « jamais de SMS ni de code par email pour récupérer un
+ * compte web » : sans lui, quiconque n'aurait pas configuré d'authentificateur se retrouverait sans
+ * aucune voie de récupération. Les deux se tiennent, on ne peut pas retirer l'un sans l'autre.
+ *
+ * Le QR code est généré **localement** (lib `qrcode`) : le secret ne part jamais vers un service
+ * tiers pour être transformé en image.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import QRCode from 'qrcode'
-import { ShieldCheck, Copy, Check } from 'lucide-react'
+import { AlertCircle, Check, Copy, ShieldCheck } from 'lucide-react'
 import { Card } from '@/components/ulamu/Card'
 import { Button } from '@/components/ulamu/Button'
 import { Field } from '@/components/ulamu/Field'
+import { LoadingState, ErrorState } from '@/components/ulamu/ScreenState'
 import { api, ApiError } from '@/lib/api'
 import { Logo } from '@/components/ulamu/Logo'
 import { useSessionStore } from '@/state/session.store'
@@ -72,9 +78,9 @@ export function TotpSetupPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--fond-page)', padding: 'var(--espace-5)' }}>
-      <div style={{ width: 460, maxWidth: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--espace-6)' }}>
+    <div className="ul-totp">
+      <div className="ul-totp__inner">
+        <div className="ul-totp__logo">
           <Logo size={30} />
         </div>
         <Card>
@@ -85,75 +91,66 @@ export function TotpSetupPage() {
           />
           <Card.Body>
             {step === 'loading' ? (
-              <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>Préparation…</p>
+              /* L'état de chargement partagé, qui avoue sa lenteur au bout de 4 s : c'est le premier
+                 appel après connexion, donc précisément celui qui réveille le serveur endormi. */
+              <LoadingState label="Préparation…" onRetry={() => window.location.reload()} />
             ) : step === 'error' ? (
-              <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--erreur-texte)' }}>
-                Impossible de préparer la configuration TOTP. Rechargez la page.
-              </p>
+              <ErrorState
+                title="Configuration indisponible"
+                description="Impossible de préparer la double authentification pour le moment."
+                onRetry={() => window.location.reload()}
+              />
             ) : step === 'scan' ? (
-              <form onSubmit={submitCode} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-4)' }}>
-                <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>
+              <form onSubmit={submitCode} className="ul-totp__body">
+                <p className="ul-totp__step">
                   1. Scannez ce QR code avec Google Authenticator, Authy ou une application équivalente.
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  {qrDataUrl ? (
-                    <img
-                      src={qrDataUrl}
-                      alt="QR code TOTP"
-                      width={200}
-                      height={200}
-                      style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--bordure-normale)' }}
-                    />
-                  ) : null}
+
+                <div className="ul-totp__qr">
+                  {qrDataUrl ? <img src={qrDataUrl} alt="QR code de configuration TOTP" width={200} height={200} /> : null}
                 </div>
+
                 <div>
-                  <p style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)', marginBottom: 4 }}>Ou saisissez ce code manuellement :</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <code
-                      style={{
-                        flex: 1,
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 'var(--font-size-body-sm)',
-                        padding: '6px 10px',
-                        borderRadius: 'var(--radius-md)',
-                        background: 'var(--fond-surface-2)',
-                        wordBreak: 'break-all',
-                      }}
+                  <p className="t-caption" style={{ color: 'var(--texte-tertiaire)', margin: '0 0 4px' }}>
+                    Ou saisissez ce code manuellement :
+                  </p>
+                  <div className="ul-totp__secret-row">
+                    <code className="ul-totp__secret">{secret}</code>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={copySecret}
+                      iconLeft={copied ? <Check size={13} /> : <Copy size={13} />}
                     >
-                      {secret}
-                    </code>
-                    <Button type="button" variant="secondary" size="sm" onClick={copySecret} iconLeft={copied ? <Check size={13} /> : <Copy size={13} />}>
                       {copied ? 'Copié' : 'Copier'}
                     </Button>
                   </div>
                 </div>
-                <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>2. Entrez le code à 6 chiffres généré par l'application.</p>
+
+                <p className="ul-totp__step">2. Entrez le code à 6 chiffres généré par l'application.</p>
                 <Field label="Code TOTP" value={code} onChange={(e) => setCode(e.target.value)} maxLength={6} autoFocus required />
-                {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
-                <Button type="submit" size="lg" loading={confirm.isPending} disabled={confirm.isPending}>
+
+                {error ? (
+                  <p className="ul-auth__error" role="alert">
+                    <AlertCircle size={13} aria-hidden="true" /> {error}
+                  </p>
+                ) : null}
+
+                <Button type="submit" size="lg" loading={confirm.isPending}>
                   Activer la double authentification
                 </Button>
               </form>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-4)' }}>
-                <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>
-                  Notez ces 10 codes de secours dans un endroit sûr — ils ne seront plus jamais affichés. Chacun permet une seule
-                  récupération de compte si vous perdez votre application d'authentification.
+              <div className="ul-totp__body">
+                <p className="ul-totp__step">
+                  Notez ces {backupCodes.length} codes de secours dans un endroit sûr — ils ne seront{' '}
+                  <strong>plus jamais affichés</strong>. Chacun permet une seule récupération de compte si vous perdez
+                  votre application d'authentification.
                 </p>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 6,
-                    padding: 'var(--espace-3)',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--fond-surface-2)',
-                  }}
-                >
+                <div className="ul-totp__codes">
                   {backupCodes.map((c) => (
-                    <code key={c} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-primaire)' }}>
-                      {c}
-                    </code>
+                    <code key={c}>{c}</code>
                   ))}
                 </div>
                 <Button size="lg" onClick={finish}>

@@ -1,19 +1,24 @@
 /**
- * Inscription web — réservée aux PROFESSIONAL/FACILITY_MEMBER (mêmes routes que la Phase 0 backend).
- * Étapes : type de compte → identité → profil professionnel (PROFESSIONAL uniquement) → sécurité →
- * vérification par EMAIL. Découpé en étapes courtes pour que la carte AuthLayout garde une hauteur
- * correcte (l'ancienne étape unique "Informations" avec 8 champs débordait).
+ * Inscription web — réservée aux comptes PROFESSIONAL / FACILITY_MEMBER.
  *
- * Pourquoi un code par email ici, alors que le web est censé n'utiliser que le TOTP : à l'inscription,
- * aucun secret TOTP n'existe encore pour ce compte — il n'y a donc rien à vérifier. L'email sert
- * UNIQUEMENT à prouver l'identité une fois, à la création. Ensuite le TOTP prend le relais et lui seul,
- * pour la connexion (2e facteur) et la réinitialisation de mot de passe : cf. ForgotPasswordPage, qui
- * n'accepte qu'un code d'authentificateur ou un code de secours.
+ * Étapes : type de compte → identité → profil professionnel (professionnels seulement) → sécurité →
+ * vérification par email. Le découpage en étapes courtes existe pour que la carte d'authentification
+ * garde une hauteur tenable : l'ancienne étape unique à huit champs débordait.
+ *
+ * Pourquoi un code par EMAIL ici, alors que le web n'utilise que le TOTP ailleurs : à l'inscription,
+ * aucun secret TOTP n'existe encore pour ce compte — il n'y a rien à vérifier. L'email sert
+ * uniquement à prouver l'identité UNE fois, à la création. Le TOTP prend le relais ensuite, et lui
+ * seul, pour la connexion et la réinitialisation de mot de passe.
+ *
+ * ⚠️ Manque connu, inscrit au plan (tâche 1.1) : le **consentement aux CGU et à la politique de
+ * confidentialité** exigé par `EF-01-08` au titre de la loi n° 29-2019. L'app mobile le demande, pas
+ * celle-ci. Ce n'est pas un défaut d'ergonomie mais une non-conformité, et elle se corrige en même
+ * temps que la redirection vers le dossier de vérification M03 (tâche 1.3).
  */
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Stethoscope, Building2, ShieldCheck } from 'lucide-react'
+import { AlertCircle, Building2, ShieldCheck, Stethoscope } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ulamu/Button'
 import { Field } from '@/components/ulamu/Field'
@@ -37,6 +42,7 @@ const LABELS: Record<AccountType | 'default', string[]> = {
   default: ['Type de compte', 'Identité', 'Sécurité', 'Vérification'],
 }
 
+/** Les six catégories de `CU-01-02`, ni plus ni moins. */
 const CATEGORIES: Array<{ value: ProfessionalCategory; label: string }> = [
   { value: 'GENERAL_PRACTITIONER', label: 'Médecin généraliste' },
   { value: 'SPECIALIST', label: 'Spécialiste' },
@@ -92,11 +98,6 @@ export function RegisterPage() {
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
-  const goToSecurity = (e: React.FormEvent) => {
-    e.preventDefault()
-    setStep('security')
-  }
-
   const goToOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -126,6 +127,11 @@ export function RegisterPage() {
   }
 
   const busy = requestOtp.isPending || register.isPending || loadMe.isPending
+  const erreur = error ? (
+    <p className="ul-auth__error" role="alert">
+      <AlertCircle size={13} aria-hidden="true" /> {error}
+    </p>
+  ) : null
 
   return (
     <AuthLayout subtitle="Créez votre compte ULAMU — professionnels de santé et structures/pharmacies.">
@@ -133,7 +139,7 @@ export function RegisterPage() {
 
       <div key={step} className="ulamu-step-fade">
         {step === 'type' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+          <div className="ul-auth__form">
             <TypeCard
               icon={<Stethoscope size={20} />}
               title="Professionnel de santé"
@@ -152,17 +158,20 @@ export function RegisterPage() {
                 setStep('identity')
               }}
             />
-            <p style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-tertiaire)', textAlign: 'center', marginTop: 'var(--espace-2)' }}>
-              Déjà un compte ? <Link to="/login" style={{ color: 'var(--ap-400)', fontWeight: 600 }}>Se connecter</Link>
+            <p className="ul-auth__foot">
+              Déjà un compte ?{' '}
+              <Link to="/login" className="ul-auth__link">
+                Se connecter
+              </Link>
             </p>
           </div>
         ) : step === 'identity' ? (
           <form
+            className="ul-auth__form"
             onSubmit={(e) => {
               e.preventDefault()
               setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'security')
             }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}
           >
             <Field label="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+242…" autoFocus required />
             <Field
@@ -175,13 +184,9 @@ export function RegisterPage() {
               required
             />
             <Field label="Nom d'utilisateur" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            <div style={{ display: 'flex', gap: 'var(--espace-3)' }}>
-              <div style={{ flex: 1 }}>
-                <Field label="Prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-              </div>
-              <div style={{ flex: 1 }}>
-                <Field label="Nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-              </div>
+            <div className="ul-auth__row">
+              <Field label="Prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              <Field label="Nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
             </div>
 
             <Button type="submit" size="lg">
@@ -192,7 +197,13 @@ export function RegisterPage() {
             </Button>
           </form>
         ) : step === 'profile' ? (
-          <form onSubmit={goToSecurity} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+          <form
+            className="ul-auth__form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setStep('security')
+            }}
+          >
             <Select label="Catégorie" value={category} onChange={(v) => setCategory(v as ProfessionalCategory)} options={CATEGORIES} required />
             <Field label="Spécialité (optionnel)" value={specialty} onChange={(e) => setSpecialty(e.target.value)} autoFocus />
 
@@ -204,7 +215,7 @@ export function RegisterPage() {
             </Button>
           </form>
         ) : step === 'security' ? (
-          <form onSubmit={goToOtp} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+          <form onSubmit={goToOtp} className="ul-auth__form">
             <Field
               label="Mot de passe"
               type="password"
@@ -224,9 +235,9 @@ export function RegisterPage() {
               required
             />
 
-            {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
+            {erreur}
 
-            <Button type="submit" size="lg" loading={busy} disabled={busy}>
+            <Button type="submit" size="lg" loading={busy}>
               Continuer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'identity')}>
@@ -234,16 +245,20 @@ export function RegisterPage() {
             </Button>
           </form>
         ) : (
-          <form onSubmit={submitRegister} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)' }}>
-              <ShieldCheck size={16} /> Vérification de l'adresse email
-            </div>
-            {otpInfo ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--info-texte)' }}>{otpInfo}</div> : null}
+          <form onSubmit={submitRegister} className="ul-auth__form">
+            <p className="ul-auth__note">
+              <ShieldCheck size={16} aria-hidden="true" /> Vérification de l'adresse email
+            </p>
+            {otpInfo ? (
+              <p className="ul-auth__note" style={{ color: 'var(--info-texte)' }}>
+                {otpInfo}
+              </p>
+            ) : null}
             <Field label="Code reçu par email" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} maxLength={6} autoFocus required />
 
-            {error ? <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--erreur-texte)' }}>{error}</div> : null}
+            {erreur}
 
-            <Button type="submit" size="lg" loading={busy} disabled={busy}>
+            <Button type="submit" size="lg" loading={busy}>
               Créer mon compte
             </Button>
             <Button type="button" variant="ghost" onClick={() => setStep('security')}>
@@ -256,57 +271,20 @@ export function RegisterPage() {
   )
 }
 
-function TypeCard({ icon, title, description, onClick }: { icon: React.ReactNode; title: string; description: string; onClick: () => void }) {
-  const [hover, setHover] = useState(false)
-  const [pressed, setPressed] = useState(false)
-
+function TypeCard({ icon, title, description, onClick }: { icon: ReactNode; title: string; description: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => {
-        setHover(false)
-        setPressed(false)
-      }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      className="saris-focus-ring"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--espace-3)',
-        textAlign: 'left',
-        padding: 'var(--espace-4)',
-        borderRadius: 'var(--radius-lg)',
-        border: `1px solid ${hover ? 'var(--ap-300)' : 'var(--bordure-normale)'}`,
-        background: hover ? 'var(--ap-50)' : 'var(--fond-surface)',
-        boxShadow: hover ? 'var(--ombre-1)' : 'none',
-        cursor: 'pointer',
-        transform: pressed ? 'scale(0.99)' : 'scale(1)',
-        transition: 'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.04s ease',
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 'var(--radius-md)',
-          background: hover ? 'var(--ap-100)' : 'var(--ap-50)',
-          color: 'var(--ap-700)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          transition: 'background 0.15s ease',
-        }}
-      >
+    <button type="button" onClick={onClick} className="ul-typecard saris-focus-ring">
+      <span className="ul-typecard__icon" aria-hidden="true">
         {icon}
-      </div>
-      <div>
-        <div style={{ fontSize: 'var(--font-size-body)', fontWeight: 600, color: 'var(--texte-primaire)' }}>{title}</div>
-        <div style={{ fontSize: 'var(--font-size-caption)', color: 'var(--texte-secondaire)' }}>{description}</div>
-      </div>
+      </span>
+      <span>
+        <span className="ul-typecard__title" style={{ display: 'block' }}>
+          {title}
+        </span>
+        <span className="ul-typecard__desc" style={{ display: 'block' }}>
+          {description}
+        </span>
+      </span>
     </button>
   )
 }
