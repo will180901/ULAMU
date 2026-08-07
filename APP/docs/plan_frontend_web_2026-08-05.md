@@ -67,13 +67,17 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 
 *Rien de visible pour l'utilisateur. Tout le reste en dépend.*
 
-| # | Tâche | Pourquoi |
-|---|---|---|
-| 0.1 | **Décider des polices.** Le web embarque Plus Jakarta Sans, JetBrains Mono et **Sora** ; le mobile impose **Inter** pour le corps de texte. Trancher contre `CG-02` | Deux produits de la même marque ne peuvent pas diverger sur la typographie |
-| 0.2 | **Sortir la mise en page des `style={{}}` inline.** Classes CSS adossées aux variables de la charte | Aujourd'hui rien n'empêche de s'écarter de `CG-01`/`CG-03`. C'est la dette qui coûtera le plus cher × 12 modules |
-| 0.3 | **Coquille applicative par rôle** : `AppShell` + `Sidebar` pilotés par `navigation.config.ts` et `useCapabilities` *(la structure existe déjà, elle est à étendre)* | Chaque rôle voit son espace, et lui seul |
-| 0.4 | **États d'écran normalisés** : chargement, vide, erreur, hors-ligne — conformes `CG-08`/`CG-11` | Le mobile les a (`ScreenState`), le web non |
-| 0.5 | **Mettre en place les tests.** `apps/web` n'a **aucun test ni script de test** | Audit du 26/07, toujours vrai |
+| # | Tâche | État | Pourquoi |
+|---|---|---|---|
+| 0.1 | **Typographie conforme `CG-02`** | ✅ `d332ef2` | Le web portait la typo de **CMS-SARIS**, dont il est un port : titres en Sora (hors référentiel), corps en Plus Jakarta Sans (réservée aux titres), Inter absente. Corrigé : 3 familles conformes, 16 paliers avec taille + poids + interlignage, 16 classes `.t-*` |
+| 0.2 | **Sortir la mise en page des `style={{}}` inline** | 🟡 partiel `5f36d7f` | Coquille, barre latérale, topbar, menus et états d'écran sont en classes. **Restent** : `Button`, `Card`, `Field`, `Select`, `PageHeader`, `StatusPill`, `Stepper`, `Skeleton` et les 4 pages d'authentification |
+| 0.3 | **Coquille applicative par rôle** | ✅ `5f36d7f` | 3 états de barre (240 / 56 / surimpression), menu utilisateur, topbar sticky + grain, palette `Ctrl K` filtrée par capacité, thème clair/sombre/système |
+| 0.4 | **États d'écran normalisés** | ✅ `5f36d7f` | Chargement (qui avoue sa lenteur à 4 s), erreur, hors-ligne, vide à action requise — `CG-08 §05/§06` |
+| 0.5 | **Mettre en place les tests** | ⬜ à faire | `apps/web` n'a **aucun test ni script de test**. Constat de l'audit du 26/07, toujours vrai |
+
+> Le bloc `.dark` de `globals.css` était **du code mort** : couleurs recalculées, ombres désactivées,
+> verre réaccordé — et rien ne posait jamais la classe. Le thème sombre n'a donc pas été « créé », il
+> a été **branché**. Vérifié dans le navigateur : `html.dark`, fond `#0D1117`.
 
 ## Phase 1 — Authentification
 
@@ -82,7 +86,7 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 | # | Gravité | Tâche | Réf. |
 |---|---|---|---|
 | 1.1 | 🔴 | **Consentement CGU + confidentialité** à l'inscription : case non pré-cochée, bloquante, horodatée et versionnée. Ajouter le champ au contrat d'inscription | `EF-01-08`, loi n° 29-2019 |
-| 1.2 | 🔴 | **Imposer le TOTP à l'inscription** — étape obligatoire avant l'accès au tableau de bord. Sans lui, un compte sans TOTP n'a aucune voie de récupération | `EF-01-10`, cohérence avec `ForgotPasswordPage` |
+| ~~1.2~~ | ✅ | ~~Imposer le TOTP à l'inscription.~~ **Déjà fait** — `App.tsx:35` (`needsTotpSetup`) redirige toutes les routes vers la configuration TOTP tant qu'un compte non-patient ne l'a pas activée. Constaté par erreur comme manquant le 05/08, corrigé après vérification dans le navigateur | `EF-01-10` |
 | 1.3 | 🔴 | **Rediriger vers le dossier de vérification M03** après création d'un compte professionnel, au lieu de `/dashboard` | `CU-01-02`, `RM-02-04` |
 | 1.4 | 🟠 | **Expiration de session après 30 min d'inactivité** | `ENF-07`, `CU-01-03` |
 | 1.5 | 🟠 | **Liste des appareils + déconnexion à distance** | `EF-01-05`, `CU-01-06` |
@@ -90,8 +94,13 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 | 1.7 | 🟠 | **Clôture de compte** | `EF-01-09`, `CU-01-07` |
 | 1.8 | 🟡 | **Message explicite de blocage temporaire** après 5 échecs en 15 min | `EF-01-06`, `PM-18` |
 
-> ⚠️ 1.2 et 1.3 se tiennent : ils redéfinissent tous deux ce qui se passe **juste après** la création
-> du compte. À traiter ensemble, dans l'ordre `consentement → TOTP → dossier M03 → tableau de bord`.
+> ⚠️ 1.1 et 1.3 redéfinissent tous deux ce qui se passe **juste après** la création du compte. À
+> traiter ensemble, dans l'ordre `consentement → TOTP (déjà en place) → dossier M03 → tableau de bord`.
+
+> **Leçon de méthode, coûteuse et à retenir** : l'écart 1.2 avait été signalé 🔴 après lecture des
+> 4 pages et du client API — mais **pas du routeur**, où vivait la protection. Auditer une application
+> web sans lire `App.tsx` revient à juger un bâtiment sans regarder ses portes. Toute revue future
+> commence par le routage et les gardes de route.
 
 ## Phase 2 — Espace Professionnel ⭐
 
