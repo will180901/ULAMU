@@ -70,15 +70,13 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 | # | Tâche | État | Pourquoi |
 |---|---|---|---|
 | 0.1 | **Typographie conforme `CG-02`** | ✅ `d332ef2` | Le web portait la typo de **CMS-SARIS**, dont il est un port : titres en Sora (hors référentiel), corps en Plus Jakarta Sans (réservée aux titres), Inter absente. Corrigé : 3 familles conformes, 16 paliers avec taille + poids + interlignage, 16 classes `.t-*` |
-| 0.2 | **Sortir la mise en page des `style={{}}` inline** | 🟢 l'essentiel `5f36d7f` `e1375a4` | Coquille, barre, topbar, menus, états d'écran, `Button`, `Field`, `PageHeader`, `StatusPill` sont en classes. **Restent** : `Card`, `Select`, `Stepper`, `Skeleton`, `AuthLayout`, `AuthCarousel` et les 4 pages d'authentification — voir la note ci-dessous |
+| 0.2 | **Sortir la mise en page des `style={{}}` inline** | ✅ `5f36d7f` `e1375a4` `db9ec70` | Coquille, barre, topbar, menus, états d'écran, `Button`, `Field`, `Card`, `Select`, `Stepper`, `Skeleton`, `PageHeader`, `StatusPill`, `AuthLayout` et les **4 pages d'authentification**. Ne reste en inline que du **dynamique** qui n'a pas sa place en CSS : taille d'avatar, teinte d'un ton, position d'un menu, transformations du carrousel |
 | 0.3 | **Coquille applicative par rôle** | ✅ `5f36d7f` | 3 états de barre (240 / 56 / surimpression), menu utilisateur, topbar sticky + grain, palette `Ctrl K` filtrée par capacité, thème clair/sombre/système |
 | 0.4 | **États d'écran normalisés** | ✅ `5f36d7f` | Chargement (qui avoue sa lenteur à 4 s), erreur, hors-ligne, vide à action requise — `CG-08 §05/§06` |
 | 0.5 | **Mettre en place les tests** | ✅ `e1375a4` | Vitest + jsdom + Testing Library, absents jusqu'ici. **18 tests** : filtrage de la navigation par rôle, structure du menu utilisateur (`CG-06 §07`), accessibilité des champs. Vérifiés par régression provoquée |
 
-> **Sur les styles inline restants — priorité assumée, pas oubli.** Un **composant** est un
-> multiplicateur : un `Button` qui invente ses tailles contamine les 12 modules à venir. Une **page**
-> est un exemplaire unique : son `flex` local ne contamine rien. Les composants sont donc traités
-> d'abord, et l'ont été. Ce qui reste doit être migré **avant** la phase 2, pas avant la phase 1.
+> **✅ Phase 0 terminée.** Les cinq tâches sont faites, vérifiées par build, tests et inspection dans
+> un vrai navigateur. Les phases 1 à 4 peuvent commencer sur des fondations conformes.
 
 ### Écarts `CG-05` corrigés au passage (constatés le 05/08)
 
