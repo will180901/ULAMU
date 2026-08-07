@@ -1,7 +1,12 @@
 /**
- * Système de design ULAMU (app web professionnel/structure/admin) — port fidèle du système
- * CMS-SARIS (packages/ui/src/styles/globals.css), même structure/mécaniques, SEULE différence :
- * accent cobalt ULAMU (#2756A6, déjà la couleur de marque sur mobile) à la place du teal SARIS.
+ * Système de design ULAMU (app web professionnel/structure/admin) — à l'origine un port du système
+ * CMS-SARIS (packages/ui/src/styles/globals.css), dont il reprend la structure et les mécaniques.
+ *
+ * ⚠️ Ce port a longtemps porté la TYPOGRAPHIE de SARIS, pas celle d'ULAMU : police de titre Sora
+ * (absente du référentiel ULAMU), corps en Plus Jakarta Sans (réservée aux titres par CG-02), Inter
+ * nulle part, et une échelle maison de 11 tailles sans poids ni interlignage. Corrigé le 2026-08-05 :
+ * la typographie suit désormais CG-02 à la lettre (§ « Typographie » ci-dessous). Le reste du port
+ * (couleurs, grain, verre, rayons, ombres) est conservé — il est conforme à CG-01/CG-04.
  * Règles reprises telles quelles (charte SARIS) :
  *  - variables CSS uniquement, jamais de hex en dur dans un composant ;
  *  - composants applicatifs en style inline consommant ces variables (Tailwind = utilitaires structurels
@@ -12,7 +17,7 @@
  */
 @import "tailwindcss";
 @import "@fontsource-variable/plus-jakarta-sans";
-@import "@fontsource-variable/sora";
+@import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
@@ -115,13 +120,48 @@
   --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-xl: 10px;
   --radius-2xl: 10px; --radius-3xl: 10px; --radius-4xl: 10px;
 
-  /* ── Typographie ── */
-  --font-sans: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Sora Variable', 'Plus Jakarta Sans Variable', sans-serif;
-  --font-mono: 'JetBrains Mono Variable', 'Courier New', monospace;
-  --font-size-display: 28px; --font-size-h1: 22px; --font-size-h2: 18px; --font-size-h3: 16px; --font-size-h4: 14px;
-  --font-size-body-lg: 15px; --font-size-body: 14px; --font-size-body-sm: 13px;
-  --font-size-label: 12px; --font-size-caption: 11px; --font-size-overline: 10px;
+  /* ── Typographie — CG-02 ────────────────────────────────────────────────────────────────────────
+     Référentiel FERMÉ : « Aucune police utilisée dans l'interface ne doit être hors de ce
+     référentiel » (CG-02 §01). Trois familles, trois rôles qui ne se chevauchent jamais.        */
+  --font-display: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif; /* titres, KPI, logo */
+  --font-body: 'Inter Variable', -apple-system, BlinkMacSystemFont, sans-serif;                 /* corps, labels, tableaux */
+  --font-mono: 'JetBrains Mono Variable', 'Courier New', monospace;                             /* codes d'ordonnance, identifiants */
+
+  /* Les 16 paliers de CG-02 §02/§05. Un palier = taille + poids + interlignage ; les prendre
+     séparément ne veut rien dire, d'où les classes utilitaires `.t-*` plus bas qui posent les trois
+     d'un coup. Les variables de taille restent exposées pour les cas où seule la taille est utile. */
+  --fs-display-2xl: 40px; --lh-display-2xl: 1.1;  --fw-display-2xl: 800;
+  --fs-display-xl:  32px; --lh-display-xl:  1.15; --fw-display-xl:  800;
+  --fs-display-lg:  24px; --lh-display-lg:  1.2;  --fw-display-lg:  700;
+  --fs-display-md:  20px; --lh-display-md:  1.25; --fw-display-md:  700;
+  --fs-display-sm:  18px; --lh-display-sm:  1.3;  --fw-display-sm:  600;
+  --fs-text-xl:     18px; --lh-text-xl:     1.65;
+  --fs-text-lg:     16px; --lh-text-lg:     1.6;
+  --fs-text-md:     15px; --lh-text-md:     1.6;
+  --fs-text-sm:     13px; --lh-text-sm:     1.55;
+  --fs-text-xs:     12px; --lh-text-xs:     1.5;
+  --fs-label-lg:    14px; --fs-label-md:    13px; --fs-label-sm: 12px; --lh-label: 1.4; --fw-label: 500;
+  --fs-caption:     11px; --lh-caption:     1.45;
+  --fs-code:        13px; --lh-code:        1.6;
+  --fs-code-sm:     11px; --lh-code-sm:     1.5;
+
+  /* Noms hérités du port SARIS, REMAPPÉS sur les valeurs CG-02 ci-dessus. Ils restent le temps que les
+     composants passent aux classes `.t-*` — migration prévue en tâche 0.2 du plan, qui supprime de
+     toute façon les styles inline. Les faire disparaître en deux passes coûterait deux fois le même
+     travail. NE PAS en introduire de nouveaux. */
+  --font-sans: var(--font-body);          /* ancien alias : pointait à tort sur la police de titre */
+  --font-heading: var(--font-display);    /* ancien alias : pointait sur Sora, hors référentiel */
+  --font-size-display: var(--fs-display-xl);   /* 28px → 32px */
+  --font-size-h1: var(--fs-display-lg);        /* 22px → 24px */
+  --font-size-h2: var(--fs-display-sm);        /* 18px  = 18px */
+  --font-size-h3: var(--fs-display-sm);        /* 16px → 18px — CG-02 n'a pas de titre sous 18px */
+  --font-size-h4: var(--fs-label-lg);          /* 14px  = 14px */
+  --font-size-body-lg: var(--fs-text-md);      /* 15px  = 15px */
+  --font-size-body: var(--fs-text-md);         /* 14px → 15px — CG-02 n'a pas de palier de corps à 14 */
+  --font-size-body-sm: var(--fs-text-sm);      /* 13px  = 13px */
+  --font-size-label: var(--fs-label-sm);       /* 12px  = 12px */
+  --font-size-caption: var(--fs-caption);      /* 11px  = 11px */
+  --font-size-overline: var(--fs-label-sm);    /* 10px → 12px — 10px n'existe pas dans CG-02 */
 
   /* ── Espacement (base 4px) ── */
   --espace-px: 2px; --espace-1: 4px; --espace-2: 8px; --espace-3: 12px; --espace-4: 16px; --espace-5: 20px;
@@ -205,8 +245,9 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
   --font-mono: var(--font-mono);
 }
 
@@ -216,17 +257,21 @@
   body {
     background: var(--fond-page);
     color: var(--texte-primaire);
-    font-family: var(--font-sans);
-    font-size: var(--font-size-body);
-    line-height: 1.6;
+    /* Corps en Inter (CG-02 §01) — c'est ~80 % du texte d'un écran, donc la police qui décide de la
+       lisibilité réelle du produit. Plus Jakarta Sans est réservée aux titres. */
+    font-family: var(--font-body);
+    font-size: var(--fs-text-md);
+    line-height: var(--lh-text-md);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     background-image: var(--grain-url);
     background-size: var(--grain-size) var(--grain-size);
     background-blend-mode: var(--grain-blend);
   }
+  /* Titres en Plus Jakarta Sans (CG-02 §01). Les tailles viennent des classes `.t-display-*` ou du
+     composant ; ce bloc ne pose que la famille et le resserrement, communs à tous les niveaux. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     font-weight: 700;
     letter-spacing: -0.015em;
   }
@@ -235,6 +280,32 @@
   ::-webkit-scrollbar-thumb { background: var(--bordure-forte); border-radius: 999px; }
   ::-webkit-scrollbar-track { background: transparent; }
 }
+
+/* ── Les 16 paliers de CG-02, en classes ────────────────────────────────────────────────────────
+   Un palier pose taille + poids + interlignage + famille D'UN COUP. C'est tout l'intérêt : appliquer
+   `.t-text-sm` est un choix vérifiable, écrire `fontSize: 13` en style inline n'en est pas un — rien
+   n'y rappelle l'interlignage ni la famille, et rien n'empêche d'inventer un 14e palier.
+   Usage : `<p className="t-text-lg">`, `<span className="t-caption">`, `<code className="t-code">`. */
+.t-display-2xl { font-family: var(--font-display); font-size: var(--fs-display-2xl); line-height: var(--lh-display-2xl); font-weight: var(--fw-display-2xl); letter-spacing: -0.02em; }
+.t-display-xl  { font-family: var(--font-display); font-size: var(--fs-display-xl);  line-height: var(--lh-display-xl);  font-weight: var(--fw-display-xl);  letter-spacing: -0.02em; }
+.t-display-lg  { font-family: var(--font-display); font-size: var(--fs-display-lg);  line-height: var(--lh-display-lg);  font-weight: var(--fw-display-lg);  letter-spacing: -0.015em; }
+.t-display-md  { font-family: var(--font-display); font-size: var(--fs-display-md);  line-height: var(--lh-display-md);  font-weight: var(--fw-display-md);  letter-spacing: -0.015em; }
+.t-display-sm  { font-family: var(--font-display); font-size: var(--fs-display-sm);  line-height: var(--lh-display-sm);  font-weight: var(--fw-display-sm);  letter-spacing: -0.01em; }
+
+.t-text-xl { font-family: var(--font-body); font-size: var(--fs-text-xl); line-height: var(--lh-text-xl); font-weight: 400; }
+.t-text-lg { font-family: var(--font-body); font-size: var(--fs-text-lg); line-height: var(--lh-text-lg); font-weight: 400; }
+.t-text-md { font-family: var(--font-body); font-size: var(--fs-text-md); line-height: var(--lh-text-md); font-weight: 400; }
+.t-text-sm { font-family: var(--font-body); font-size: var(--fs-text-sm); line-height: var(--lh-text-sm); font-weight: 400; }
+.t-text-xs { font-family: var(--font-body); font-size: var(--fs-text-xs); line-height: var(--lh-text-xs); font-weight: 400; }
+
+.t-label-lg { font-family: var(--font-body); font-size: var(--fs-label-lg); line-height: var(--lh-label); font-weight: var(--fw-label); }
+.t-label-md { font-family: var(--font-body); font-size: var(--fs-label-md); line-height: var(--lh-label); font-weight: var(--fw-label); }
+.t-label-sm { font-family: var(--font-body); font-size: var(--fs-label-sm); line-height: var(--lh-label); font-weight: var(--fw-label); }
+
+.t-caption { font-family: var(--font-body); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 400; }
+
+.t-code    { font-family: var(--font-mono); font-size: var(--fs-code);    line-height: var(--lh-code);    font-weight: 400; }
+.t-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); line-height: var(--lh-code-sm); font-weight: 500; }
 
 .saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
