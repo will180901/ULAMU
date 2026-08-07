@@ -34,8 +34,14 @@ export function useCapabilities() {
     return caps
   }, [me])
 
-  return {
-    has: (cap: Capability) => set.has(cap),
-    hasAny: (...caps: Capability[]) => caps.some((c) => set.has(c)),
-  }
+  // L'objet renvoyé est MÉMOÏSÉ sur l'ensemble des capacités. Sans cela il était recréé à chaque
+  // rendu, et le `useMemo` de `useNavigation` — dont la dépendance est `hasAny` — ne retenait donc
+  // jamais rien : la navigation entière était refiltrée à chaque frappe au clavier.
+  return useMemo(
+    () => ({
+      has: (cap: Capability) => set.has(cap),
+      hasAny: (...caps: Capability[]) => caps.some((c) => set.has(c)),
+    }),
+    [set],
+  )
 }

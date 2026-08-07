@@ -1,84 +1,52 @@
 /**
- * Bouton — pattern SARIS : map de variantes → style inline sur variables CSS, hover/press gérés par
- * onMouseEnter/onMouseLeave/onMouseDown/onMouseUp (pas de classes CSS :hover — charte UI-01-02).
- * Tailles/rayon/graisse/grain conformes à la spec §7.1 (hauteur fixe par taille, rayon 6px constant
- * quelle que soit la taille, poids 600 partout, léger retour tactile ~97% à la pression).
+ * Bouton — CG-05 §01 : 5 variantes, 5 tailles, grain sérigraphié obligatoire, dégradé interdit.
+ *
+ * Le survol et la pression sont désormais gérés **en CSS**. La version précédente branchait quatre
+ * gestionnaires de souris par bouton (`onMouseEnter`/`Leave`/`Down`/`Up`) et stockait deux booléens
+ * d'état : un motif hérité du port CMS-SARIS. Il avait trois défauts réels — il ne réagissait ni au
+ * clavier ni au tactile, il provoquait un rendu React à chaque passage de pointeur, et il empêchait
+ * d'appliquer le grain en `::after` que la charte exige.
+ *
+ * `success` a disparu des variantes : CG-05 n'en définit que cinq, et un bouton vert « succès » est
+ * une contradiction — le succès est un RÉSULTAT, pas une action qu'on déclenche.
  */
-import { forwardRef, useState, type ButtonHTMLAttributes } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Loader2 } from 'lucide-react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'success'
-type Size = 'sm' | 'md' | 'lg'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
+type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
-const SIZE_MAP: Record<Size, { height: number; paddingInline: number; fontSize: string; gap: number; iconSize: number }> = {
-  sm: { height: 30, paddingInline: 12, fontSize: 'var(--font-size-body-sm)', gap: 5, iconSize: 13 },
-  md: { height: 36, paddingInline: 16, fontSize: 'var(--font-size-body)', gap: 6, iconSize: 15 },
-  lg: { height: 44, paddingInline: 22, fontSize: 'var(--font-size-body-lg)', gap: 7, iconSize: 17 },
-}
+/** Taille d'icône proportionnée à chaque palier — une icône fixe déséquilibre les extrêmes. */
+const ICON: Record<Size, number> = { xs: 12, sm: 13, md: 15, lg: 17, xl: 19 }
 
-const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border?: string; hoverBg: string; hoverBorder?: string }> = {
-  primary: { bg: 'var(--ap-400)', text: '#FFFFFF', hoverBg: 'var(--ap-500)' },
-  secondary: { bg: 'var(--fond-surface-2)', text: 'var(--texte-primaire)', border: 'var(--bordure-normale)', hoverBg: 'var(--ap-50)' },
-  ghost: { bg: 'transparent', text: 'var(--texte-primaire)', hoverBg: 'var(--fond-surface-2)' },
-  outline: { bg: 'var(--fond-surface)', text: 'var(--ap-700)', border: 'var(--ap-200)', hoverBg: 'var(--ap-50)', hoverBorder: 'var(--ap-300)' },
-  danger: { bg: 'var(--erreur-accent)', text: '#FFFFFF', hoverBg: 'var(--erreur-texte)' },
-  success: { bg: 'var(--succes-accent)', text: '#FFFFFF', hoverBg: 'var(--succes-texte)' },
-}
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
   loading?: boolean
-  iconLeft?: React.ReactNode
-  iconRight?: React.ReactNode
+  iconLeft?: ReactNode
+  iconRight?: ReactNode
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', loading, disabled, iconLeft, iconRight, children, style, ...props },
+  { variant = 'primary', size = 'md', loading, disabled, iconLeft, iconRight, children, className, ...props },
   ref,
 ) {
-  const [hover, setHover] = useState(false)
-  const [pressed, setPressed] = useState(false)
-  const s = SIZE_MAP[size]
-  const v = VARIANT_STYLES[variant]
   const isDisabled = disabled || loading
 
   return (
     <button
       ref={ref}
       disabled={isDisabled}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => {
-        setHover(false)
-        setPressed(false)
-      }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      className={['saris-focus-ring', variant !== 'ghost' ? 'saris-grain-fine' : ''].filter(Boolean).join(' ')}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: s.gap,
-        height: s.height,
-        paddingInline: s.paddingInline,
-        fontFamily: 'var(--font-sans)',
-        fontSize: s.fontSize,
-        fontWeight: 600,
-        borderRadius: 'var(--radius-md)',
-        background: hover && !isDisabled ? v.hoverBg : v.bg,
-        color: v.text,
-        border: v.border ? `1px solid ${hover ? (v.hoverBorder ?? v.border) : v.border}` : 'none',
-        opacity: isDisabled ? 0.55 : 1,
-        cursor: isDisabled ? 'not-allowed' : 'pointer',
-        transform: pressed && !isDisabled ? 'scale(0.97)' : 'scale(1)',
-        transition: 'background 0.12s ease, border-color 0.12s ease, transform 0.04s ease',
-        ...style,
-      }}
+      /* `aria-busy` plutôt qu'un simple visuel : un lecteur d'écran doit savoir que l'action est en
+         cours, pas seulement qu'un bouton est devenu inactif. */
+      aria-busy={loading || undefined}
+      className={['ul-btn', `ul-btn--${variant}`, `ul-btn--${size}`, 'saris-focus-ring', className].filter(Boolean).join(' ')}
       {...props}
     >
-      {loading ? <Loader2 size={s.iconSize} className="animate-spin" /> : iconLeft}
-      {children}
+      {/* Le chargement REMPLACE l'icône de gauche (CG-05 §01) au lieu de s'ajouter : sinon le bouton
+          s'élargit en pleine action et le pointeur rate sa cible. */}
+      {loading ? <Loader2 size={ICON[size]} className="ul-btn__spin" aria-hidden="true" /> : iconLeft}
+      {children ? <span>{children}</span> : null}
       {!loading && iconRight}
     </button>
   )

@@ -115,6 +115,11 @@
   --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --grain-size-fine: 110px; --grain-size: 200px; --grain-size-strong: 260px; --grain-blend: normal;
+  /* Grain des BOUTONS — CG-05 §01 : « effet sérigraphié, obligatoire sur tous les boutons »,
+     opacité 0.06 en clair / 0.09 en sombre. Ce token manquait ; les boutons empruntaient le grain
+     de fond (0.03), plus faible que ce que la charte demande, et le variant `ghost` n'en avait pas
+     du tout. */
+  --grain-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   /* ── Rayons (plafond 10px) ── */
   --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-xl: 10px;
@@ -220,6 +225,10 @@
      la hiérarchie visuelle passe par la bordure à la place (--bordure-normale/-forte). */
   --ombre-0: none; --ombre-1: none; --ombre-2: none; --ombre-3: none; --ombre-4: none; --ombre-5: none;
 
+  /* Grain des boutons plus marqué en sombre (CG-05 §01 : 0.09 contre 0.06 en clair) — sur fond
+     sombre, une texture de même opacité se voit deux fois moins. */
+  --grain-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
   --verre-fond: color-mix(in srgb, var(--fond-surface) 68%, transparent);
   --glass-sidebar-bg: rgba(13, 17, 23, 0.72); --glass-header-bg: rgba(13, 17, 23, 0.68);
   --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
@@ -321,6 +330,162 @@
 
 .t-code    { font-family: var(--font-mono); font-size: var(--fs-code);    line-height: var(--lh-code);    font-weight: 400; }
 .t-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); line-height: var(--lh-code-sm); font-weight: 500; }
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════════
+   COMPOSANTS FONDAMENTAUX — CG-05
+   ════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Boutons — CG-05 §01 ────────────────────────────────────────────────────────────────────────
+   5 variantes, 5 tailles, grain sérigraphié obligatoire, dégradé interdit.
+   Survol et pression en CSS et non en JavaScript : la version héritée de SARIS branchait quatre
+   gestionnaires de souris par bouton, ce qui ne réagissait ni au clavier ni au tactile, et
+   recalculait React à chaque passage de pointeur.                                              */
+.ul-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espace-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden; /* contient le grain ::after */
+  transition: all var(--dur-slow) linear; /* CG-05 : « all .25s linear » */
+}
+/* Grain sérigraphié — « obligatoire sur tous les boutons », variante ghost comprise. */
+.ul-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-btn);
+  background-size: var(--grain-size-fine) var(--grain-size-fine);
+  pointer-events: none;
+}
+.ul-btn > * { position: relative; z-index: 1; }
+.ul-btn:active:not(:disabled) { transform: scale(0.97); transition-duration: var(--dur-press); }
+/* CG-05 : « Ne jamais changer la couleur pour désactiver » — seulement l'opacité et le curseur. */
+.ul-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* Tailles : police · padding vertical/horizontal, valeurs littérales de CG-05 §01.
+   Le rayon suit la taille (sm pour xs/sm, md pour md/lg, lg pour xl) — jamais de pilule. */
+.ul-btn--xs { font-size: var(--fs-text-xs); padding: 4px 10px;  border-radius: var(--radius-sm); }
+.ul-btn--sm { font-size: var(--fs-text-sm); padding: 6px 13px;  border-radius: var(--radius-sm); }
+.ul-btn--md { font-size: var(--fs-label-lg); padding: 9px 18px;  border-radius: var(--radius-md); }
+.ul-btn--lg { font-size: var(--fs-text-md); padding: 12px 24px; border-radius: var(--radius-md); }
+.ul-btn--xl { font-size: var(--fs-text-lg); padding: 15px 30px; border-radius: var(--radius-lg); }
+
+/* Variantes — couleur unie uniquement, aucun dégradé (interdiction absolue CG-05 §07). */
+.ul-btn--primary   { background: var(--ap-400); color: #fff; }
+.ul-btn--primary:hover:not(:disabled)   { background: var(--ap-500); }
+.ul-btn--secondary { background: var(--fond-surface-2); color: var(--texte-primaire); border-color: var(--bordure-normale); }
+.ul-btn--secondary:hover:not(:disabled) { background: var(--ap-50); }
+.ul-btn--ghost     { background: transparent; color: var(--texte-primaire); }
+.ul-btn--ghost:hover:not(:disabled)     { background: var(--fond-surface-2); }
+.ul-btn--outline   { background: var(--fond-surface); color: var(--ap-700); border-color: var(--ap-200); }
+.ul-btn--outline:hover:not(:disabled)   { background: var(--ap-50); border-color: var(--ap-300); }
+.ul-btn--danger    { background: var(--erreur-accent); color: #fff; }
+.ul-btn--danger:hover:not(:disabled)    { filter: brightness(1.08); }
+
+.ul-btn__spin { animation: ul-spin 900ms linear infinite; }
+
+/* ── Champs de formulaire — CG-05 §02 ───────────────────────────────────────────────────────────
+   Libellé TOUJOURS au-dessus (jamais flottant), et un message d'état porte toujours une icône EN
+   PLUS de sa couleur — « utiliser la couleur seule pour indiquer une erreur ou un succès » est une
+   interdiction absolue (§07), et pas seulement pour les daltoniens : sur un écran de pharmacie mal
+   calibré en plein jour, un rouge et un vert pâles se ressemblent.                             */
+.ul-field { display: flex; flex-direction: column; gap: var(--espace-1); }
+.ul-field__label {
+  font-family: var(--font-body);
+  font-size: var(--fs-label-sm);
+  line-height: var(--lh-label);
+  font-weight: 600;
+  color: var(--texte-secondaire);
+}
+.ul-field__required { color: var(--erreur-accent); }
+.ul-field__input {
+  width: 100%;
+  height: 36px;
+  padding-inline: var(--espace-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bordure-input);
+  background: var(--fond-surface);
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-lg);
+  transition: border-color var(--dur-fast) linear, box-shadow var(--dur-fast) linear;
+}
+.ul-field__input::placeholder { color: var(--texte-tertiaire); }
+/* Focus : bordure accent + halo à 12 % (CG-05 §02). */
+.ul-field__input:focus {
+  outline: none;
+  border-color: var(--ap-400);
+  box-shadow: 0 0 0 3px rgba(var(--ap-400-rgb), 0.12);
+}
+.ul-field__input:disabled { opacity: 0.5; cursor: not-allowed; }
+/* En erreur, la bordure rouge REMPLACE le halo bleu — les afficher ensemble donnerait deux signaux
+   contradictoires au moment précis où l'utilisateur corrige. */
+.ul-field--error .ul-field__input,
+.ul-field--error .ul-field__input:focus { border-color: var(--erreur-accent); box-shadow: none; }
+.ul-field--success .ul-field__input { border-color: var(--succes-accent); }
+.ul-field__msg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--texte-tertiaire);
+}
+.ul-field__msg--error { color: var(--erreur-texte); }
+.ul-field__msg--success { color: var(--succes-texte); }
+
+/* ── Badges & pastilles de statut — CG-05 §03 ───────────────────────────────────────────────────
+   « Badges : fond semi-transparent + bordure harmonique » (§07, bonne pratique obligatoire). La
+   bordure manquait : sur fond sombre, un badge sans contour flotte sans se détacher. La forme en
+   pilule reste permise ici — l'interdiction du rayon > 14px ne vise que les BOUTONS.            */
+.ul-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ul-pill--sm { padding: 3px 10px; font-size: var(--fs-caption); line-height: var(--lh-caption); }
+.ul-pill--md { padding: 4px 12px; font-size: var(--fs-label-sm); line-height: var(--lh-label); }
+.ul-pill__dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; background: currentColor; }
+
+/* ── En-tête de page ────────────────────────────────────────────────────────────────────────── */
+.ul-pagehead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-4);
+  margin-bottom: var(--espace-5);
+}
+.ul-pagehead__left { display: flex; align-items: center; gap: var(--espace-3); min-width: 0; }
+.ul-pagehead__tile {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+.ul-pagehead__title { margin: 0; }
+.ul-pagehead__sub {
+  margin: 2px 0 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  color: var(--texte-secondaire);
+}
 
 /* ════════════════════════════════════════════════════════════════════════════════════════════════
    NAVIGATION & STRUCTURE — CG-06
@@ -803,10 +968,17 @@
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
 .saris-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); background-blend-mode: var(--grain-blend); }
 .saris-glass { background: var(--verre-fond); backdrop-filter: blur(var(--verre-blur)); -webkit-backdrop-filter: blur(var(--verre-blur)); }
-/* Anneau de focus UNIQUE dans toute l'app, toujours accent-400 même sur un composant "danger" — jamais
-   teinté par la couleur locale, pour que le focus clavier reste instantanément reconnaissable. Décalé
-   vers l'INTÉRIEUR (-2px) pour ne jamais être coupé par un parent overflow:hidden. */
-.saris-focus-ring:focus-visible { outline: 2px solid var(--ap-400); outline-offset: -2px; }
+/* Anneau de focus UNIQUE dans toute l'app, toujours accent-400 même sur un composant « danger » —
+   jamais teinté par la couleur locale, pour que le focus clavier reste instantanément reconnaissable.
+   CG-05 §01 impose la recette exacte : 3px, rgba(39,86,166,0.30), décalage +2px, « WCAG AA — jamais
+   supprimé ». La version héritée de SARIS était à 2px pleins avec un décalage NÉGATIF (-2px) pour
+   éviter d'être rognée par un parent `overflow:hidden` ; on suit désormais la charte, et les rares
+   conteneurs qui rogneraient l'anneau devront laisser 2px de marge plutôt que l'inverse. */
+.saris-focus-ring:focus-visible,
+.ul-focus-ring:focus-visible {
+  outline: 3px solid rgba(var(--ap-400-rgb), 0.3);
+  outline-offset: 2px;
+}
 .saris-col-resize { cursor: col-resize; }
 /* Item survolé/focus clavier dans <Select> (Radix pilote data-highlighted, pas accessible en style inline). */
 .ulamu-select-item[data-highlighted] { background: var(--ap-50); color: var(--ap-700); }

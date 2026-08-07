@@ -1,15 +1,28 @@
-/** Pastille de statut (pilule) — 7 tons (4 sémantiques + neutre + accent + doré), 2 tailles, §7.6. */
-export type StatusTone = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'accent' | 'gold'
-type Size = 'sm' | 'md'
+/**
+ * Pastille de statut — CG-05 §03.
+ *
+ * Deux corrections par rapport à la version issue du port SARIS :
+ *  • la **bordure harmonique** manquait, alors que §07 la rend obligatoire (« badges : fond
+ *    semi-transparent + bordure harmonique ») — sans elle, un badge flotte sans se détacher du fond
+ *    en thème sombre ;
+ *  • la taille `sm` était figée à `10px`, valeur inventée hors des 16 paliers de CG-02.
+ *
+ * Le point coloré n'est pas un ornement : il double l'information de couleur par une **forme**, ce
+ * que CG-11 exige. Une pastille « Refusé » et une pastille « Payé » ne doivent pas se distinguer par
+ * la seule teinte.
+ */
+import type { ReactNode } from 'react'
 
-const TONE_MAP: Record<StatusTone, { bg: string; text: string; dot: string }> = {
-  success: { bg: 'var(--succes-fond)', text: 'var(--succes-texte)', dot: 'var(--succes-accent)' },
-  warning: { bg: 'var(--alerte-fond)', text: 'var(--alerte-texte)', dot: 'var(--alerte-accent)' },
-  error: { bg: 'var(--erreur-fond)', text: 'var(--erreur-texte)', dot: 'var(--erreur-accent)' },
-  info: { bg: 'var(--info-fond)', text: 'var(--info-texte)', dot: 'var(--info-accent)' },
-  neutral: { bg: 'var(--fond-surface-2)', text: 'var(--texte-secondaire)', dot: 'var(--texte-tertiaire)' },
-  accent: { bg: 'var(--ap-50)', text: 'var(--ap-700)', dot: 'var(--ap-400)' },
-  gold: { bg: 'var(--as-50)', text: 'var(--as-700)', dot: 'var(--as-400)' },
+export type StatusTone = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'accent' | 'gold'
+
+const TONE: Record<StatusTone, { bg: string; text: string; border: string }> = {
+  success: { bg: 'var(--succes-fond)', text: 'var(--succes-texte)', border: 'var(--succes-bordure)' },
+  warning: { bg: 'var(--alerte-fond)', text: 'var(--alerte-texte)', border: 'var(--alerte-bordure)' },
+  error: { bg: 'var(--erreur-fond)', text: 'var(--erreur-texte)', border: 'var(--erreur-bordure)' },
+  info: { bg: 'var(--info-fond)', text: 'var(--info-texte)', border: 'var(--info-bordure)' },
+  neutral: { bg: 'var(--fond-surface-2)', text: 'var(--texte-secondaire)', border: 'var(--bordure-normale)' },
+  accent: { bg: 'var(--ap-50)', text: 'var(--ap-700)', border: 'var(--ap-200)' },
+  gold: { bg: 'var(--as-50)', text: 'var(--as-700)', border: 'var(--as-200)' },
 }
 
 export function StatusPill({
@@ -19,27 +32,18 @@ export function StatusPill({
   children,
 }: {
   tone?: StatusTone
-  size?: Size
-  icon?: React.ReactNode
-  children: React.ReactNode
+  size?: 'sm' | 'md'
+  icon?: ReactNode
+  children: ReactNode
 }) {
-  const t = TONE_MAP[tone]
+  const t = TONE[tone]
   return (
     <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        borderRadius: 9999,
-        padding: size === 'sm' ? '3px 10px' : '4px 12px',
-        fontSize: size === 'sm' ? '10px' : 'var(--font-size-caption)',
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        background: t.bg,
-        color: t.text,
-      }}
+      className={`ul-pill ul-pill--${size}`}
+      style={{ background: t.bg, color: t.text, borderColor: t.border }}
     >
-      {icon ?? <span style={{ width: 6, height: 6, borderRadius: 9999, background: t.dot, flexShrink: 0 }} />}
+      {/* Le point hérite de `currentColor` : il ne peut donc jamais se désynchroniser du texte. */}
+      {icon ?? <span className="ul-pill__dot" aria-hidden="true" />}
       {children}
     </span>
   )

@@ -1,4 +1,14 @@
-/** En-tête de page — icône dans une tuile teintée + titre + sous-titre + action. */
+/**
+ * En-tête de page — tuile teintée + titre + sous-titre + action.
+ *
+ * Le titre utilise le palier `display-lg` de CG-02 (24px / 700), et non plus un `--font-size-h1`
+ * inventé à 22px. Les tons proviennent des variables `--ton-*` de CG-01 : le composant ne connaît
+ * aucune couleur, il ne fait que choisir une famille.
+ */
+import type { ReactNode } from 'react'
+
+export type HeaderTone = 'rose' | 'violet' | 'bleu' | 'emeraude' | 'cyan' | 'ambre'
+
 export function PageHeader({
   icon,
   tone = 'bleu',
@@ -6,35 +16,31 @@ export function PageHeader({
   subtitle,
   action,
 }: {
-  icon?: React.ReactNode
-  tone?: 'rose' | 'violet' | 'bleu' | 'emeraude' | 'cyan' | 'ambre'
-  title: React.ReactNode
-  subtitle?: React.ReactNode
-  action?: React.ReactNode
+  icon?: ReactNode
+  tone?: HeaderTone
+  title: ReactNode
+  subtitle?: ReactNode
+  action?: ReactNode
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--espace-4)', marginBottom: 'var(--espace-5)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--espace-3)' }}>
+    <div className="ul-pagehead">
+      <div className="ul-pagehead__left">
         {icon ? (
           <div
+            className="ul-pagehead__tile"
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               background: `var(--ton-${tone}-fond)`,
-              border: `1px solid var(--ton-${tone}-bordure)`,
+              borderColor: `var(--ton-${tone}-bordure)`,
               color: `var(--ton-${tone}-icone)`,
             }}
+            aria-hidden="true"
           >
             {icon}
           </div>
         ) : null}
-        <div>
-          <h1 style={{ fontSize: 'var(--font-size-h1)', color: 'var(--texte-primaire)', margin: 0 }}>{title}</h1>
-          {subtitle ? <p style={{ fontSize: 'var(--font-size-body-sm)', color: 'var(--texte-secondaire)', margin: '2px 0 0' }}>{subtitle}</p> : null}
+        <div style={{ minWidth: 0 }}>
+          <h1 className="ul-pagehead__title t-display-lg">{title}</h1>
+          {subtitle ? <p className="ul-pagehead__sub">{subtitle}</p> : null}
         </div>
       </div>
       {action}
