@@ -419,6 +419,26 @@ export interface StockItem {
   expired: boolean
 }
 
+/** Résultat d'un scan de QR d'ordonnance (CU-09-02). Lecture seule : ne délivre rien. */
+export interface ScannedPrescription {
+  prescriptionId: string
+  status: string
+  /** Tranché par le SERVEUR d'après SON horloge (RM-09-02) — jamais recalculé côté client. */
+  dispensable: boolean
+  expiresAt: string
+  lines: Array<{
+    id: string
+    medicamentId: string | null
+    freeText: string | null
+    posology: string
+    durationDays: number | null
+    qtyPrescribed: number | null
+    qtyDispensed: number
+    /** Ce qu'il RESTE à servir — une ordonnance peut être délivrée en plusieurs fois. */
+    remaining: number | null
+  }>
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -562,6 +582,22 @@ export const api = {
   /** RM-11-05 : confirmer la fraîcheur remet le compteur à zéro et garde la pharmacie visible. */
   confirmFreshness: (facilityId: string) =>
     request<{ lastFreshAt: string }>('POST', `/v1/stocks/${facilityId}/freshness`, undefined, true),
+
+  // M11 — écritures de stock
+  stockEntry: (
+    facilityId: string,
+    dto: { medicamentId: string; lotCode: string; quantity: number; expiryDate: string; priceXaf: number; supplier?: string },
+  ) => request<StockItem>('POST', `/v1/stocks/${facilityId}/entries`, dto, true),
+  /** EF-11-03 : le motif est OBLIGATOIRE — une sortie sans raison est un trou dans l'inventaire. */
+  stockExit: (facilityId: string, dto: { medicamentId: string; lotCode: string; quantity: number; reason: string }) =>
+    request<StockItem>('POST', `/v1/stocks/${facilityId}/exits`, dto, true),
+
+  // M09 — délivrance en pharmacie (scan du QR de l'ordonnance)
+  /** Vérifie le QR et renvoie l'ordonnance + ce qu'il reste à servir. Ne délivre RIEN. */
+  scanPrescription: (qrToken: string, facilityId: string) =>
+    request<ScannedPrescription>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}?facilityId=${facilityId}`, undefined, true),
+  dispense: (qrToken: string, dto: { facilityId: string; lines: Array<{ prescriptionLineId: string; quantity: number }> }) =>
+    request<{ status: string }>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}/dispense`, dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

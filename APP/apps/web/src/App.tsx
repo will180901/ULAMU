@@ -16,6 +16,8 @@ import { ConsultationsPage } from '@/modules/sessions/pages/ConsultationsPage'
 import { ConsultationPage } from '@/modules/sessions/pages/ConsultationPage'
 import { GainsPage } from '@/modules/earnings/pages/GainsPage'
 import { PharmaciePage } from '@/modules/facility/pages/PharmaciePage'
+import { StockPage } from '@/modules/facility/pages/StockPage'
+import { DelivrancePage } from '@/modules/facility/pages/DelivrancePage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -131,6 +133,24 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Ma pharmacie' }}
+              />
+              <Route
+                path="/stock"
+                element={
+                  <CapabilityGate any={['facility']}>
+                    <StockPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Stock' }}
+              />
+              <Route
+                path="/delivrance"
+                element={
+                  <CapabilityGate any={['facility']}>
+                    <DelivrancePage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Délivrance' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
