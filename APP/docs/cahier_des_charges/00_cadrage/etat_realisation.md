@@ -116,7 +116,10 @@ se tromperait.**
 À trancher : corriger la spécification, ou corriger le code.
 
 ## 5. Comment reprendre efficacement
-0. **Frontend** : lire [`rapport_session_2026-08-05`](../../rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md)
+0. ⭐ **COMMENCER ICI** : [`PASSATION_2026-08-05.md`](../../PASSATION_2026-08-05.md) — passation
+   complète de la session du 05/08 (les 3 parcours fermés, 5 trous backend comblés, 2 constats
+   d'audit faux rectifiés, pièges de l'environnement, ce qui reste).
+0 bis. **Frontend, détail** : lire [`rapport_session_2026-08-05`](../../rapport_session_2026-08-05_navigation_mobile_et_cadrage_web.md)
    (état réel des deux apps, ce qui est vérifié et ce qui ne l'est pas) puis
    [`plan_frontend_web_2026-08-05`](../../plan_frontend_web_2026-08-05.md) (ordre de construction).
    ⚠️ **Point le plus grave ouvert** : le compte SUPER_ADMIN de production porte le mot de passe
