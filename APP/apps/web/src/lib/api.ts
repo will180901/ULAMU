@@ -314,6 +314,47 @@ export interface SessionMessage {
   reactions: Array<{ emoji: string; count: number; mine: boolean }>
 }
 
+// ── M09 — Ordonnance (CU-09-01) ────────────────────────────────────────────
+
+export interface Medicament {
+  id: string
+  dci: string
+  commercialNames: string[]
+  form: string | null
+  dosage: string | null
+}
+
+export interface PrescriptionLineInput {
+  /** Exclusif avec `freeText`. Seule une ligne RÉFÉRENTIELLE déclenche le garde-fou allergies. */
+  medicamentId?: string
+  /** Ligne hors référentiel — acceptée, mais **sans garde-fou automatique** (EF-09-02). */
+  freeText?: string
+  posology: string
+}
+
+/** Un médicament prescrit qui heurte une allergie active du Carnet (EF-09-03). */
+export interface AllergyConflict {
+  medicamentId: string
+  medicamentLabel: string
+  allergies: string[]
+}
+
+/** Charge utile du 409 renvoyé par le garde-fou allergies. */
+export interface AllergyGuardError {
+  code: 'ALLERGY_GUARD'
+  message: string
+  conflicts: AllergyConflict[]
+}
+
+export function estAlerteAllergie(details: unknown): details is AllergyGuardError {
+  return (
+    typeof details === 'object' &&
+    details !== null &&
+    (details as { code?: unknown }).code === 'ALLERGY_GUARD' &&
+    Array.isArray((details as { conflicts?: unknown }).conflicts)
+  )
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -413,6 +454,15 @@ export const api = {
   /** D-021 : compte-rendu obligatoire. Sans lui, la consultation n'est pas close pour le patient. */
   depositReport: (id: string, dto: { diagnosis: string; recommendations: string }) =>
     request<CareSession>('POST', `/v1/care-sessions/${id}/report`, dto, true),
+
+  // M09 — ordonnance (depuis une session ACTIVE uniquement, RM-09-01)
+  /** Référentiel médicaments — 2 caractères minimum côté serveur, en dessous il renvoie une liste vide. */
+  searchMedicaments: (q: string, limit = 12) =>
+    request<{ items: Medicament[] }>('GET', `/v1/medicaments?q=${encodeURIComponent(q)}&limit=${limit}`, undefined, true),
+  createPrescription: (
+    sessionId: string,
+    dto: { lines: PrescriptionLineInput[]; overrides?: Array<{ medicamentId: string; reason: string }> },
+  ) => request<{ id: string }>('POST', `/v1/prescriptions/sessions/${sessionId}`, dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

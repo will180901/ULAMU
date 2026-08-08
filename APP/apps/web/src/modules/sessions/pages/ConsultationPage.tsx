@@ -26,6 +26,7 @@ import { StatusPill } from '@/components/ulamu/StatusPill'
 import { ErrorState, LoadingState } from '@/components/ulamu/ScreenState'
 import { api, ApiError, type CareSession, type SessionMessage } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { BlocOrdonnance } from '../components/BlocOrdonnance'
 
 const CADENCE_MS = 3000
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`
@@ -98,6 +99,10 @@ export function ConsultationPage() {
       {session.status === 'ACTIVE' || session.status === 'ENDED' ? (
         <Fil session={session} messages={messages} moi={moi} onEnvoye={rafraichir} />
       ) : null}
+
+      {/* RM-09-01 : on ne prescrit que depuis une session ACTIVE. Le bloc disparaît donc avec elle,
+          plutôt que d'afficher un formulaire dont l'envoi serait refusé. */}
+      {session.status === 'ACTIVE' ? <BlocOrdonnance sessionId={session.id} onDeposee={rafraichir} /> : null}
 
       {session.status === 'ENDED' ? <BlocCompteRendu session={session} onDepose={rafraichir} /> : null}
     </div>

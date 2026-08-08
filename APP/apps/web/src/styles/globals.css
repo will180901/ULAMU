@@ -1377,6 +1377,18 @@
   color: var(--texte-tertiaire);
 }
 
+/* Une ligne d'ordonnance — encadrée pour qu'on voie d'un coup d'œil où commence et finit chaque
+   médicament : deux posologies qui se touchent, sur une ordonnance, ne pardonnent pas. */
+.ul-ligne-ord {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+  padding: var(--espace-3);
+  border: 1px solid var(--bordure-legere);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+}
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }
