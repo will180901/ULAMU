@@ -18,6 +18,7 @@ import { useLoginMutation, useLoadMeMutation } from '../hooks/useLogin'
 
 export function LoginPage() {
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated)
+  const motif = useSessionStore((s) => s.motif)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
@@ -56,6 +57,21 @@ export function LoginPage() {
 
   return (
     <AuthLayout subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
+      {/* Se retrouver déconnecté sans un mot donne l'impression d'un bogue, alors que l'application
+          vient précisément de protéger le compte. On nomme la raison, et surtout la DURÉE : sans
+          elle, l'utilisateur ne peut pas anticiper la prochaine fois. */}
+      {motif === 'expiration' || motif === 'refus-serveur' ? (
+        <div className="ul-notice ul-notice--warning" role="status">
+          <p className="t-label-md" style={{ margin: 0 }}>
+            Session expirée
+          </p>
+          <p className="t-text-sm" style={{ margin: 0 }}>
+            Par sécurité, une session inactive plus de 30 minutes est fermée — les postes de travail sont
+            souvent partagés. Reconnectez-vous pour reprendre.
+          </p>
+        </div>
+      ) : null}
+
       <form onSubmit={submit} className="ul-auth__form">
         {!totpRequired ? (
           <>

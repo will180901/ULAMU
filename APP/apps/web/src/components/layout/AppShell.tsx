@@ -14,6 +14,7 @@ import { CommandPalette } from './CommandPalette'
 import { LoadingState } from '@/components/ulamu/ScreenState'
 import { useUiStore } from '@/state/ui.store'
 import { watchSystemTheme } from '@/state/theme.store'
+import { useIdleLogout } from '@/state/useIdleLogout'
 
 export function AppShell() {
   const collapsed = useUiStore((s) => s.collapsed)
@@ -23,6 +24,10 @@ export function AppShell() {
 
   // Suit la préférence système tant que l'utilisateur n'a pas choisi lui-même (cf. theme.store).
   useEffect(() => watchSystemTheme(), [])
+
+  // Vide l'écran en même temps que le serveur ferme la session (ENF-07). N'actif que dans la
+  // coquille authentifiée : surveiller l'inactivité sur l'écran de connexion n'aurait aucun sens.
+  useIdleLogout(true)
 
   // Ctrl/⌘ K — le raccourci annoncé dans la topbar doit exister, sinon c'est un mensonge affiché en
   // permanence. On intercepte aussi la combinaison quand un champ a le focus : c'est le comportement
