@@ -168,6 +168,17 @@
   --font-size-caption: var(--fs-caption);      /* 11px  = 11px */
   --font-size-overline: var(--fs-label-sm);    /* 10px → 12px — 10px n'existe pas dans CG-02 */
 
+  /* ── Élévation des surfaces FLOTTANTES ──────────────────────────────────────────────────────────
+     Le port SARIS désactive toutes les ombres en thème sombre, au motif — juste — qu'une ombre
+     portée ne se voit presque pas sur un fond déjà sombre : pour une CARTE posée sur la page, la
+     hiérarchie passe alors par la bordure.
+     Mais une surface FLOTTANTE n'est pas une carte. CG-06 §07 range « menu contextuel sans ombre »
+     parmi les interdictions absolues — « jamais plat » — et un menu sans élévation se confond avec
+     le contenu qu'il recouvre. D'où ce token séparé : une vraie ombre en clair, et en sombre un halo
+     très noir qui, lui, se voit — il assombrit ce qui entoure le panneau au lieu de tenter de
+     l'éclairer. Le contraste est retrouvé sans contredire la règle des cartes.                  */
+  --ombre-flottante: 0 12px 32px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.10);
+
   /* ── Mouvement — CG-09 ──────────────────────────────────────────────────────────────────────────
      « 4 paliers de durée nommés, base 200ms · aucune valeur ms hors tokens ». Ces tokens manquaient
      entièrement : chaque composant inventait sa durée. Plafond absolu 400ms (CG-09 §05), et
@@ -224,6 +235,9 @@
   /* Ombres désactivées en sombre — une ombre portée ne se voit presque pas sur fond déjà sombre ;
      la hiérarchie visuelle passe par la bordure à la place (--bordure-normale/-forte). */
   --ombre-0: none; --ombre-1: none; --ombre-2: none; --ombre-3: none; --ombre-4: none; --ombre-5: none;
+  /* Les surfaces flottantes gardent une élévation, elles (cf. commentaire du token en :root) :
+     un noir profond assombrit ce qui entoure le panneau, et la bordure est renforcée. */
+  --ombre-flottante: 0 14px 36px rgba(0, 0, 0, 0.62), 0 2px 10px rgba(0, 0, 0, 0.48);
 
   /* Grain des boutons plus marqué en sombre (CG-05 §01 : 0.09 contre 0.06 en clair) — sur fond
      sombre, une texture de même opacité se voit deux fois moins. */
@@ -472,7 +486,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--bordure-legere);
   background: var(--fond-surface);
-  box-shadow: var(--ombre-4);
+  box-shadow: var(--ombre-flottante);
   overflow: hidden;
 }
 .ul-select__item {
@@ -974,7 +988,7 @@
   background: var(--fond-surface);
   border: 1px solid var(--bordure-normale);
   border-radius: var(--radius-lg);
-  box-shadow: var(--ombre-4);
+  box-shadow: var(--ombre-flottante);
   z-index: 40;
   animation: ul-menu-in var(--dur-slow) var(--ease-spring);
 }
@@ -1115,7 +1129,7 @@
   background: var(--fond-surface);
   border: 1px solid var(--bordure-normale);
   border-radius: var(--radius-lg);
-  box-shadow: var(--ombre-4);
+  box-shadow: var(--ombre-flottante);
   overflow: hidden;
   animation: ul-menu-in var(--dur-slow) var(--ease-spring);
 }
@@ -1435,7 +1449,7 @@
 /* Mobile : la barre sort du flux et se superpose (CG-06 §01, état « caché »). */
 @media (max-width: 767px) {
   .ul-sidebar { transform: translateX(-100%); width: var(--layout-sidebar-width); }
-  .ul-sidebar--open { transform: translateX(0); box-shadow: var(--ombre-4); }
+  .ul-sidebar--open { transform: translateX(0); box-shadow: var(--ombre-flottante); }
   .ul-shell__main, .ul-shell__main--collapsed { margin-left: 0; }
   .ul-only-mobile { display: inline-flex; }
   /* Réduire n'a pas de sens quand la barre est déjà en surimpression. */
