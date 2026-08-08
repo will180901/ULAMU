@@ -18,6 +18,7 @@ import { GainsPage } from '@/modules/earnings/pages/GainsPage'
 import { PharmaciePage } from '@/modules/facility/pages/PharmaciePage'
 import { StockPage } from '@/modules/facility/pages/StockPage'
 import { DelivrancePage } from '@/modules/facility/pages/DelivrancePage'
+import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -151,6 +152,17 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Délivrance' }}
+              />
+              {/* Administration — le sous-rôle est vérifié SERVEUR à chaque requête (EF-02-02) ; la
+                  garde de capacité n'est qu'un confort qui évite d'afficher un écran vide. */}
+              <Route
+                path="/admin/verification"
+                element={
+                  <CapabilityGate any={['admin:verification', 'admin:super']}>
+                    <FileVerificationPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'File de vérification' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}

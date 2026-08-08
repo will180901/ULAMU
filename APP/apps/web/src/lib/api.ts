@@ -439,6 +439,27 @@ export interface ScannedPrescription {
   }>
 }
 
+// ── Administration — M03 (vérification), M16 (pilotage) ────────────────────
+
+export interface VerificationQueue {
+  /** Objectif de traitement en heures (PM-11) — au-delà, le dossier est « en retard ». */
+  targetHours: number
+  overdueAfterHours: number
+  items: Array<{
+    caseId: string
+    subjectKind: string
+    subject: string
+    subjectName: string
+    status: string
+    waitingSince: string
+    documentCount: number
+    /** Dépasse l'objectif PM-11. */
+    overdueTarget: boolean
+    /** Dépasse le seuil critique. */
+    overdue: boolean
+  }>
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -598,6 +619,14 @@ export const api = {
     request<ScannedPrescription>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}?facilityId=${facilityId}`, undefined, true),
   dispense: (qrToken: string, dto: { facilityId: string; lines: Array<{ prescriptionLineId: string; quantity: number }> }) =>
     request<{ status: string }>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}/dispense`, dto, true),
+
+  // Administration — file de vérification (sous-rôle Vérification)
+  verificationQueue: (status?: string) =>
+    request<VerificationQueue>('GET', `/v1/admin/verification/queue${status ? `?status=${status}` : ''}`, undefined, true),
+  /** S'attribuer le dossier avant de décider : deux vérificateurs ne travaillent pas sur le même. */
+  claimCase: (caseId: string) => request<void>('POST', `/v1/admin/verification/${caseId}/claim`, undefined, true),
+  decideCase: (caseId: string, dto: { decision: 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO'; reasons: string }) =>
+    request<void>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

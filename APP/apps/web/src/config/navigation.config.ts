@@ -5,6 +5,7 @@
 import {
   Boxes,
   Building2,
+  ClipboardCheck,
   Handshake as HandshakeIcon,
   LayoutDashboard,
   MessageSquare,
@@ -48,6 +49,20 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'pharmacie', label: 'Ma pharmacie', icon: Building2, href: '/pharmacie', capabilities: ['facility'] },
       { key: 'stock', label: 'Stock', icon: Boxes, href: '/stock', capabilities: ['facility'] },
       { key: 'delivrance', label: 'Délivrance', icon: QrCode, href: '/delivrance', capabilities: ['facility'] },
+    ],
+  },
+  {
+    label: 'Administration',
+    items: [
+      /* Sous-rôles CG : chaque administrateur ne voit que son domaine (EF-02-08). Le Super Admin
+         voit tout, puisqu'il attribue les sous-rôles. */
+      {
+        key: 'admin-verification',
+        label: 'File de vérification',
+        icon: ClipboardCheck,
+        href: '/admin/verification',
+        capabilities: ['admin:verification', 'admin:super'],
+      },
     ],
   },
   {
