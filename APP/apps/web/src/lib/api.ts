@@ -217,6 +217,32 @@ export interface SessionInfo {
   current: boolean
 }
 
+// ── M05 — Vitrine, offres et présence du professionnel (CU-05-01/03/04) ────
+
+export type OfferKind = 'STANDARD' | 'FOLLOW_UP'
+export type PresenceState = 'ONLINE' | 'DO_NOT_DISTURB' | 'OFFLINE'
+
+export interface Offer {
+  id: string
+  professionalId: string
+  label: string
+  durationMin: number
+  /** Prix FINAL payé par le patient, commission incluse (D-010 / RM-05-03). */
+  priceXaf: number
+  kind: OfferKind
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Presence {
+  state: PresenceState
+  since: string
+  lastHeartbeatAt: string
+  /** Calculé par le serveur à l'instant de la réponse : un « en ligne » rassis vaut hors ligne (PM-26). */
+  availableForInitiation: boolean
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -279,6 +305,21 @@ export const api = {
   requestCloseOtp: () => request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/close/request-otp', undefined, true),
   closeAccount: (dto: { password: string; otpCode: string }) =>
     request<void>('POST', '/v1/accounts/me/close', dto, true),
+
+  // M05 — vitrine, offres, présence
+  updateMyProfessionalProfile: (dto: { specialty?: string; biography?: string; district?: string }) =>
+    request<MeResponse>('PATCH', '/v1/me/professional-profile', dto, true),
+  myOffers: () => request<Offer[]>('GET', '/v1/offers', undefined, true),
+  createOffer: (dto: { label: string; durationMin: number; priceXaf: number; kind?: OfferKind }) =>
+    request<Offer>('POST', '/v1/offers', dto, true),
+  updateOffer: (id: string, dto: { label?: string; durationMin?: number; priceXaf?: number; kind?: OfferKind; active?: boolean }) =>
+    request<Offer>('PATCH', `/v1/offers/${id}`, dto, true),
+  /** ⚠️ Le serveur DÉSACTIVE (deactivateOffer), il ne supprime pas : l'historique des sessions déjà
+   *  vendues sur cette offre doit rester lisible. L'interface doit donc dire « désactiver ». */
+  deactivateOffer: (id: string) => request<void>('DELETE', `/v1/offers/${id}`, undefined, true),
+  myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
+  setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
+  presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

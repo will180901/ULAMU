@@ -10,6 +10,7 @@ import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
+import { VitrinePage } from '@/modules/directory/pages/VitrinePage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -69,6 +70,17 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Ma vérification' }}
+              />
+              {/* Vitrine du professionnel (M05). Réservée à `professional` : un pharmacien n'a pas
+                  d'offres de consultation, et un administrateur n'apparaît pas dans l'annuaire. */}
+              <Route
+                path="/vitrine"
+                element={
+                  <CapabilityGate any={['professional']}>
+                    <VitrinePage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Ma vitrine' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}

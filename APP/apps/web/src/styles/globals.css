@@ -1312,6 +1312,31 @@
   border: 0;
 }
 
+/* ── Groupe de choix exclusif (présence, filtres) ───────────────────────────────────────────────
+   Des boutons `aria-pressed` plutôt qu'un `<select>` : les trois états de présence doivent être
+   visibles SIMULTANÉMENT avec leur conséquence. Cacher « Ne pas déranger » derrière un menu
+   déroulant, c'est garantir que personne ne l'utilise.                                         */
+.ul-choix { display: grid; gap: var(--espace-2); }
+@media (min-width: 640px) { .ul-choix { grid-template-columns: repeat(3, 1fr); } }
+.ul-choix__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espace-3);
+  padding: var(--espace-3);
+  text-align: left;
+  border: 1.5px solid var(--bordure-legere);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface);
+  color: var(--texte-secondaire);
+  transition: border-color var(--dur-fast) linear, background var(--dur-fast) linear;
+}
+.ul-choix__item:hover { border-color: var(--bordure-normale); }
+.ul-choix__item.is-active {
+  border-color: var(--ap-400);
+  background: rgba(var(--ap-400-rgb), 0.08);
+  color: var(--ap-400);
+}
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

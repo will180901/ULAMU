@@ -2,7 +2,7 @@
  * Source de vérité unique de la navigation — chaque item déclare les capacités requises ;
  * useNavigation() (Sidebar) filtre selon la session courante. Étoffé au fil des Phases 1/2/3.
  */
-import { LayoutDashboard, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, ShieldCheck, Store } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Capability } from '@/hooks/useCapabilities'
 
@@ -27,6 +27,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Clinique',
     items: [
       { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, href: '/dashboard', capabilities: ['professional', 'facility', 'admin'] },
+      /* Vitrine, offres et présence (M05) — propres au soignant. Un membre de structure ne vend pas
+         de consultation, un administrateur n'apparaît pas dans l'annuaire. */
+      { key: 'vitrine', label: 'Ma vitrine', icon: Store, href: '/vitrine', capabilities: ['professional'] },
     ],
   },
   {
