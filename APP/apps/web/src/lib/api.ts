@@ -243,6 +243,31 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+// ── M06 — Poignée de main (CU-06-01) ───────────────────────────────────────
+
+export type HandshakeStatus = 'INITIATED' | 'CONFIRMED' | 'PAID' | 'REFUSED' | 'EXPIRED' | 'ABANDONED'
+
+export interface Handshake {
+  id: string
+  status: HandshakeStatus
+  patientAccountId: string
+  professionalId: string
+  offerId: string
+  subProfileId: string | null
+  initiatedAt: string
+  confirmedAt: string | null
+  confirmExpiresAt: string | null
+  refusalReason: string | null
+  windowExpiresAt: string | null
+  /**
+   * Calculé par le SERVEUR (RM-06-02). L'horloge du navigateur n'est qu'indicative : c'est cette
+   * valeur qui fait foi, et elle est resynchronisée à chaque interrogation.
+   */
+  windowRemainingSeconds: number
+  /** Posé quand la poignée est PAID — porte d'entrée de la session de soin. */
+  sessionId: string | null
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -320,6 +345,13 @@ export const api = {
   myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
+
+  // M06 — poignées de main reçues
+  myHandshakes: () => request<Handshake[]>('GET', '/v1/handshakes/mine', undefined, true),
+  confirmHandshake: (id: string) => request<Handshake>('POST', `/v1/handshakes/${id}/confirm`, undefined, true),
+  /** Le motif est OBLIGATOIRE côté serveur : un refus sans explication laisse le patient sans recours. */
+  refuseHandshake: (id: string, reason: string) =>
+    request<Handshake>('POST', `/v1/handshakes/${id}/refuse`, { reason }, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

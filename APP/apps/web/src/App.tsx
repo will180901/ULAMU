@@ -11,6 +11,7 @@ import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { VitrinePage } from '@/modules/directory/pages/VitrinePage'
+import { PoigneesPage } from '@/modules/handshakes/pages/PoigneesPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -81,6 +82,17 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Ma vitrine' }}
+              />
+              {/* ⭐ Le cœur du produit (M06). Contrepartie exacte de l'écran patient : sans elle,
+                  une poignée de main initiée depuis le mobile n'a aucun destinataire. */}
+              <Route
+                path="/demandes"
+                element={
+                  <CapabilityGate any={['professional']}>
+                    <PoigneesPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Demandes de consultation' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
