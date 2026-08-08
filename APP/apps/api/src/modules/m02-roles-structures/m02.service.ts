@@ -250,6 +250,25 @@ export class M02Service {
   // ── Gestion des membres (EF-02-05/07 ; CU-02-03/04) ────────────────────────
 
   /** Détail d'une structure + ses membres — tout membre ACTIF (pas seulement le titulaire) peut lire. */
+  /**
+   * « Quelle est MA structure ? » — le point d'entrée qui manquait.
+   *
+   * `getFacilityDetail` exige de connaître l'identifiant à l'avance, et rien ne le donnait : ni
+   * `GET /accounts/me`, ni l'inscription. Un membre de structure ne pouvait donc atteindre AUCUN
+   * écran de son espace — le rattachement existait en base, mais était invisible depuis un client.
+   *
+   * Renvoie `null` plutôt qu'une erreur quand le compte n'est rattaché à rien : ce n'est pas un
+   * échec, c'est le cas normal d'un titulaire qui n'a pas encore créé sa pharmacie. L'interface doit
+   * pouvoir distinguer « pas encore de structure » d'une panne.
+   */
+  async getMyFacility(actorId: string) {
+    const membership = await this.prisma.facilityMember.findFirst({
+      where: { accountId: actorId, active: true },
+    });
+    if (!membership) return null;
+    return this.getFacilityDetail(actorId, membership.facilityId);
+  }
+
   async getFacilityDetail(actorId: string, facilityId: string) {
     const membership = await this.permissions.getMembership(actorId, facilityId);
     if (!membership || !membership.active) {

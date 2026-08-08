@@ -26,6 +26,17 @@ export class M02Controller {
     return this.service.createFacility(actor.accountId, dto);
   }
 
+  /**
+   * Ma structure — `null` si le compte n'est rattaché à aucune.
+   *
+   * Déclaré AVANT `facilities/:id`, sinon « me » serait capturé comme un identifiant par la route
+   * paramétrée : l'ordre des routes est significatif dans NestJS.
+   */
+  @Get("facilities/me")
+  getMyFacility(@Actor() actor: AuthenticatedActor) {
+    return this.service.getMyFacility(actor.accountId);
+  }
+
   /** Détail + liste des membres — tout membre actif de la structure (pas seulement le titulaire). */
   @Get("facilities/:id")
   getFacility(@Actor() actor: AuthenticatedActor, @Param("id") facilityId: string) {

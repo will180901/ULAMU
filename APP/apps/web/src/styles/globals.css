@@ -1389,6 +1389,27 @@
   background: var(--fond-surface-2);
 }
 
+/* Puce de droit interne — activable d'un clic par le titulaire, en lecture seule pour les autres.
+   `:disabled` et non `pointer-events: none` : un élément désactivé est ANNONCÉ comme tel par les
+   lecteurs d'écran, un élément inerte se contente de ne rien faire. */
+.ul-puce-droit {
+  padding: 3px var(--espace-3);
+  border-radius: 999px;
+  border: 1px solid var(--bordure-legere);
+  background: var(--fond-surface);
+  color: var(--texte-tertiaire);
+  font-family: var(--font-body);
+  font-size: var(--fs-label-sm);
+  font-weight: var(--fw-label);
+  transition: background var(--dur-fast) linear, color var(--dur-fast) linear, border-color var(--dur-fast) linear;
+}
+.ul-puce-droit.is-active {
+  background: rgba(var(--ap-400-rgb), 0.12);
+  border-color: rgba(var(--ap-400-rgb), 0.28);
+  color: var(--ap-400);
+}
+.ul-puce-droit:disabled { cursor: default; opacity: 0.75; }
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

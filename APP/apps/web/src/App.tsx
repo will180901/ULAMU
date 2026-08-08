@@ -15,6 +15,7 @@ import { PoigneesPage } from '@/modules/handshakes/pages/PoigneesPage'
 import { ConsultationsPage } from '@/modules/sessions/pages/ConsultationsPage'
 import { ConsultationPage } from '@/modules/sessions/pages/ConsultationPage'
 import { GainsPage } from '@/modules/earnings/pages/GainsPage'
+import { PharmaciePage } from '@/modules/facility/pages/PharmaciePage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -120,6 +121,16 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Mes gains' }}
+              />
+              {/* Espace structure (M02). Réservé aux membres de pharmacie. */}
+              <Route
+                path="/pharmacie"
+                element={
+                  <CapabilityGate any={['facility']}>
+                    <PharmaciePage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Ma pharmacie' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}

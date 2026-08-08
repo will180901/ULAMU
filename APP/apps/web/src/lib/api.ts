@@ -380,6 +380,45 @@ export interface WithdrawalQuote {
   otpExpiresInSeconds: number
 }
 
+// ── M02 / M11 — Espace structure (CU-02-01/02/03, CU-11-01) ────────────────
+
+export type FacilityRight = 'stock' | 'dispense' | 'stats'
+
+export interface FacilityMember {
+  id: string
+  accountId: string
+  firstName: string | null
+  lastName: string | null
+  role: string
+  rights: FacilityRight[]
+  active: boolean
+}
+
+export interface Facility {
+  id: string
+  type: string
+  name: string
+  district: string
+  quarter: string
+  hours: string | null
+  status: string
+  members: FacilityMember[]
+}
+
+export interface StockItem {
+  id: string
+  medicamentId: string
+  dci: string
+  form: string | null
+  dosage: string | null
+  lotCode: string
+  quantity: number
+  expiryDate: string
+  priceXaf: number
+  /** Tranché par le SERVEUR, pour que toutes les interfaces disent la même chose. */
+  expired: boolean
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -497,6 +536,32 @@ export const api = {
   /** Action sensible : mot de passe **et** code OTP (EF-13-07). */
   confirmWithdrawal: (dto: { withdrawalId: string; password: string; otpCode: string }) =>
     request<{ status: string }>('POST', '/v1/withdrawals/confirm', dto, true),
+
+  // M02 — ma structure
+  /** `null` quand le compte n'est rattaché à aucune structure — ce n'est pas une erreur. */
+  myFacility: () => request<Facility | null>('GET', '/v1/facilities/me', undefined, true),
+  createFacility: (dto: { type: 'PHARMACY'; name: string; district: string; quarter: string; hours?: string }) =>
+    request<Facility>('POST', '/v1/facilities', dto, true),
+  inviteMember: (facilityId: string, dto: { phone: string; proposedRights: FacilityRight[] }) =>
+    request<{ id: string }>('POST', `/v1/facilities/${facilityId}/invitations`, dto, true),
+  updateMemberRights: (facilityId: string, memberId: string, rights: FacilityRight[]) =>
+    request<FacilityMember>('PATCH', `/v1/facilities/${facilityId}/members/${memberId}`, { rights }, true),
+  removeMember: (facilityId: string, memberId: string) =>
+    request<void>('DELETE', `/v1/facilities/${facilityId}/members/${memberId}`, undefined, true),
+
+  // M11 — stock
+  stockItems: (facilityId: string) =>
+    request<{ items: StockItem[] }>('GET', `/v1/stocks/${facilityId}/items`, undefined, true),
+  stockAlerts: (facilityId: string) =>
+    request<{ alerts: Array<{ kind: string; medicamentId: string; label?: string; detail?: string }> }>(
+      'GET',
+      `/v1/stocks/${facilityId}/alerts`,
+      undefined,
+      true,
+    ),
+  /** RM-11-05 : confirmer la fraîcheur remet le compteur à zéro et garde la pharmacie visible. */
+  confirmFreshness: (facilityId: string) =>
+    request<{ lastFreshAt: string }>('POST', `/v1/stocks/${facilityId}/freshness`, undefined, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

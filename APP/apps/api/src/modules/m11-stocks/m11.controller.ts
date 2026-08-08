@@ -54,6 +54,12 @@ export class M11Controller {
   }
 
   /** EF-11-06 : journal des mouvements par lot/pharmacie, paginé. */
+  /** Inventaire courant, lot par lot, trié FEFO (RM-11-02). */
+  @Get("items")
+  items(@Actor() actor: AuthenticatedActor, @Param("facilityId") facilityId: string) {
+    return this.stock.listItems(actor, facilityId);
+  }
+
   @Get("movements")
   movements(@Actor() actor: AuthenticatedActor, @Param("facilityId") facilityId: string, @Query() query: MovementsQueryDto) {
     return this.stock.listMovements(actor, facilityId, query);

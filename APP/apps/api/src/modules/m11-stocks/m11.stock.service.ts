@@ -223,6 +223,50 @@ export class StockService {
   // ── EF-11-06 : journal des mouvements (paginé) ──────────────────────────────
 
   /** Journal par lot/pharmacie, paginé par curseur (le plus récent d'abord). */
+  /**
+   * Stock COURANT, lot par lot — l'inventaire qui manquait.
+   *
+   * Le module n'exposait que les MOUVEMENTS et les ALERTES : un pharmacien pouvait voir ce qui était
+   * entré et sorti, et ce qui manquait, mais jamais **ce qu'il a en rayon à l'instant**. Reconstituer
+   * un état à partir d'un journal de mouvements côté client aurait été à la fois lourd et faux (les
+   * corrections d'inventaire ne se rejouent pas comme des deltas).
+   *
+   * Tri FEFO (`First Expired, First Out`, RM-11-02) : les lots qui périment en premier remontent en
+   * tête. C'est l'ordre dans lequel ils doivent être servis, donc l'ordre dans lequel on les lit.
+   */
+  async listItems(actor: AuthenticatedActor, facilityId: string) {
+    await this.permissions.assertFacilityRight(actor.accountId, facilityId, "stock");
+    const now = new Date();
+    const items = await this.prisma.stockItem.findMany({
+      where: { facilityId },
+      orderBy: [{ expiryDate: "asc" }],
+    });
+    const meds = await this.prisma.medicament.findMany({
+      where: { id: { in: [...new Set(items.map((i) => i.medicamentId))] } },
+    });
+    const byId = new Map(meds.map((m) => [m.id, m]));
+    return {
+      items: items.map((i) => {
+        const med = byId.get(i.medicamentId);
+        return {
+          id: i.id,
+          medicamentId: i.medicamentId,
+          // Le libellé est joint côté serveur : sans lui, l'interface n'afficherait que des UUID,
+          // et devrait faire une requête par ligne pour les résoudre.
+          dci: med?.dci ?? "Médicament inconnu",
+          form: med?.form ?? null,
+          dosage: med?.dosage ?? null,
+          lotCode: i.lotCode,
+          quantity: i.quantity,
+          expiryDate: i.expiryDate.toISOString(),
+          priceXaf: i.priceXaf,
+          /** Périmé : le serveur tranche, pour que toutes les interfaces disent la même chose. */
+          expired: i.expiryDate.getTime() <= now.getTime(),
+        };
+      }),
+    };
+  }
+
   async listMovements(actor: AuthenticatedActor, facilityId: string, query: MovementsQueryDto) {
     await this.permissions.assertFacilityRight(actor.accountId, facilityId, "stock");
 
