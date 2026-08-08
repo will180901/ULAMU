@@ -52,7 +52,7 @@ describe("M14 — rappels de médicaments + profil (CRUD isolé par patient)", (
       birthDate: "1990-05-20",
       sex: "F",
       district,
-      client: "mobile",
+      acceptTerms: true, client: "mobile",
     });
     return res.accountId as string;
   };

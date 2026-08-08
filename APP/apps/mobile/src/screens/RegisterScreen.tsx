@@ -220,7 +220,10 @@ export function RegisterScreen({navigation}: Props) {
     if (!normalized || !isoDob || !sex) {
       return;
     }
-    const profile: RegisterProfile = {firstName: firstName.trim(), lastName: lastName.trim(), username: normalizeUsername(username), email, birthDate: isoDob, sex, password};
+    // `agree` est la case CGU/confidentialité de l'étape 2, non pré-cochée et bloquante. Elle est
+    // désormais TRANSMISE au serveur : jusqu'ici elle ne bloquait que le bouton, pendant que l'API
+    // enregistrait le consentement quoi qu'il arrive — la case ne prouvait donc rien.
+    const profile: RegisterProfile = {firstName: firstName.trim(), lastName: lastName.trim(), username: normalizeUsername(username), email, birthDate: isoDob, sex, password, acceptTerms: agree};
     const t = setTimeout(async () => {
       setError(null);
       try {
@@ -233,7 +236,7 @@ export function RegisterScreen({navigation}: Props) {
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [step, otp, phone, email, isoDob, sex, firstName, lastName, username, password, district, verifyRegister, navigation]);
+  }, [step, otp, phone, email, isoDob, sex, firstName, lastName, username, password, district, agree, verifyRegister, navigation]);
 
   /**
    * Retour à une étape déjà franchie, depuis sa ligne de récapitulatif.

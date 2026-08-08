@@ -54,7 +54,7 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
       birthDate: "1994-03-15",
       sex: "F",
       district: "Talangaï",
-      client: "mobile",
+      acceptTerms: true, client: "mobile",
     });
   };
 

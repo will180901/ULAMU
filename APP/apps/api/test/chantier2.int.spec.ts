@@ -137,7 +137,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
       firstName: "Armel",
       lastName: "Konaté",
       category: "GENERAL_PRACTITIONER",
-      client: "web",
+      acceptTerms: true, client: "web",
     });
   }
   async function registerPatient(phone: string) {
@@ -153,7 +153,7 @@ describe("Chantier 2 — cycle financier + notifications (M13 + M14)", () => {
       birthDate: "1994-03-15",
       sex: "F",
       district: "Talangaï",
-      client: "mobile",
+      acceptTerms: true, client: "mobile",
     });
   }
 

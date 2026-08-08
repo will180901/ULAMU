@@ -67,6 +67,12 @@ export function RegisterPage() {
   const [category, setCategory] = useState<ProfessionalCategory>('GENERAL_PRACTITIONER')
   const [specialty, setSpecialty] = useState('')
 
+  /**
+   * Consentement explicite aux CGU et à la confidentialité (EF-01-08, loi n° 29-2019).
+   * Jamais pré-coché, et bloquant : un consentement par défaut n'en est pas un. Les versions citées
+   * sont celles que le serveur enregistre réellement (CGU 1.0 / PRIVACY 1.0).
+   */
+  const [acceptTerms, setAcceptTerms] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [otpInfo, setOtpInfo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -89,10 +95,11 @@ export function RegisterPage() {
             lastName,
             category,
             specialty: specialty.trim() || undefined,
+            acceptTerms,
             client: 'web',
             deviceLabel: 'ULAMU Web',
           })
-        : api.registerFacilityMember({ phone, email, username, otpCode, password, firstName, lastName, client: 'web', deviceLabel: 'ULAMU Web' }),
+        : api.registerFacilityMember({ phone, email, username, otpCode, password, firstName, lastName, acceptTerms, client: 'web', deviceLabel: 'ULAMU Web' }),
   })
   const loadMe = useLoadMeMutation()
 
@@ -235,9 +242,27 @@ export function RegisterPage() {
               required
             />
 
+            {/* EF-01-08 / loi n° 29-2019 — consentement explicite, jamais pré-coché, bloquant.
+                Les versions citées sont celles que le serveur enregistre réellement, pour que
+                l'utilisateur sache à QUOI il consent et pas seulement QU'IL consent. */}
+            <label className="ul-check">
+              <input
+                type="checkbox"
+                className="ul-check__box saris-focus-ring"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                required
+              />
+              <span className="ul-check__text">
+                J’accepte les <strong>conditions générales d’utilisation</strong> (v1.0) et la{' '}
+                <strong>politique de confidentialité</strong> (v1.0) d’ULAMU, et le traitement de mes données de santé
+                qu’elles décrivent.
+              </span>
+            </label>
+
             {erreur}
 
-            <Button type="submit" size="lg" loading={busy}>
+            <Button type="submit" size="lg" loading={busy} disabled={busy || !acceptTerms}>
               Continuer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'identity')}>

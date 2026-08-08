@@ -21,6 +21,12 @@ export interface RegisterProfile {
   birthDate: string; // ISO AAAA-MM-JJ
   sex: Sex;
   password: string;
+  /**
+   * Acceptation explicite des CGU et de la confidentialité (EF-01-08). Porté par le profil et non
+   * par un 5ᵉ paramètre positionnel : un booléen anonyme en fin de signature finit toujours par être
+   * passé à l'envers. L'API refuse l'inscription si ce n'est pas `true`.
+   */
+  acceptTerms: boolean;
 }
 
 interface AuthContextValue {
@@ -131,6 +137,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
         birthDate: profile.birthDate,
         sex: profile.sex,
         district,
+        acceptTerms: profile.acceptTerms,
         client: CLIENT_KIND,
         deviceLabel: deviceLabel(),
       });

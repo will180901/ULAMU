@@ -60,6 +60,12 @@ export interface RegisterPatientRequest {
   birthDate: string;
   sex: Sex;
   district: string;
+  /**
+   * Acceptation explicite des CGU et de la politique de confidentialité (EF-01-08, loi n° 29-2019).
+   * L'API refuse toute inscription sans ce champ à `true` : le serveur crée un enregistrement de
+   * consentement qualifié de « preuve légale », il ne peut pas le fabriquer sans acceptation réelle.
+   */
+  acceptTerms: boolean;
   client: ClientKind;
   deviceLabel?: string;
 }

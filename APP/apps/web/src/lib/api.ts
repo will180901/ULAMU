@@ -160,6 +160,12 @@ export interface RegisterProfessionalRequest {
   lastName: string
   category: ProfessionalCategory
   specialty?: string
+  /**
+   * Acceptation explicite des CGU et de la politique de confidentialité (EF-01-08, loi n° 29-2019).
+   * L'API refuse l'inscription si ce champ n'est pas `true` : le serveur écrit un enregistrement de
+   * consentement qualifié de « preuve légale, immuable », il ne peut pas le fabriquer tout seul.
+   */
+  acceptTerms: boolean
   client: 'web'
   deviceLabel?: string
 }
@@ -171,6 +177,12 @@ export interface RegisterFacilityMemberRequest {
   password: string
   firstName: string
   lastName: string
+  /**
+   * Acceptation explicite des CGU et de la politique de confidentialité (EF-01-08, loi n° 29-2019).
+   * L'API refuse l'inscription si ce champ n'est pas `true` : le serveur écrit un enregistrement de
+   * consentement qualifié de « preuve légale, immuable », il ne peut pas le fabriquer tout seul.
+   */
+  acceptTerms: boolean
   client: 'web'
   deviceLabel?: string
 }

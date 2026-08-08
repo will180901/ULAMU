@@ -1,4 +1,17 @@
-import { IsEmail, IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { Equals, IsBoolean, IsEmail, IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
+
+/**
+ * Consentement explicite aux CGU et à la politique de confidentialité (EF-01-08, loi n° 29-2019).
+ *
+ * ⚠️ Avant le 2026-08-05, les enregistrements de consentement étaient créés **inconditionnellement**
+ * à chaque inscription, sans qu'aucun champ ne dise que l'utilisateur avait accepté. Le modèle de
+ * données qualifie pourtant cette entité de « preuve légale, immuable ». Une preuve fabriquée
+ * automatiquement, identique que l'utilisateur ait coché ou non — et sur le web il n'était même
+ * jamais interrogé — ne prouve rien du tout. Le champ est donc OBLIGATOIRE et doit valoir `true` :
+ * une inscription sans acceptation est refusée par la validation, avant d'atteindre le service.
+ */
+export const ACCEPT_TERMS_MSG =
+  "Vous devez accepter les conditions générales et la politique de confidentialité pour créer un compte.";
 
 /** Nom d'utilisateur (D-049) : 3 à 30 caractères, lettres/chiffres/._-, début et fin alphanumériques. */
 export const USERNAME_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{1,28})[A-Za-z0-9]$/;
@@ -37,6 +50,7 @@ export class RegisterPatientDto {
   @IsISO8601() birthDate!: string;
   @IsIn(["M", "F"]) sex!: "M" | "F";
   @IsString() @IsNotEmpty() @MaxLength(80) district!: string;
+  @IsBoolean() @Equals(true, { message: ACCEPT_TERMS_MSG }) acceptTerms!: boolean;
   @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
@@ -52,6 +66,7 @@ export class RegisterProfessionalDto {
   @IsIn(["GENERAL_PRACTITIONER", "SPECIALIST", "DENTIST", "MIDWIFE", "NURSE", "COMMUNITY_HEALTH_WORKER"])
   category!: "GENERAL_PRACTITIONER" | "SPECIALIST" | "DENTIST" | "MIDWIFE" | "NURSE" | "COMMUNITY_HEALTH_WORKER";
   @IsOptional() @IsString() @MaxLength(120) specialty?: string;
+  @IsBoolean() @Equals(true, { message: ACCEPT_TERMS_MSG }) acceptTerms!: boolean;
   @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
@@ -65,6 +80,7 @@ export class RegisterFacilityMemberDto {
   @IsString() @Length(8, 128) password!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;
   @IsString() @IsNotEmpty() @MaxLength(80) lastName!: string;
+  @IsBoolean() @Equals(true, { message: ACCEPT_TERMS_MSG }) acceptTerms!: boolean;
   @IsIn(["mobile", "web"]) client!: string;
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }

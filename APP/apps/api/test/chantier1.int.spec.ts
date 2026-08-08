@@ -68,7 +68,7 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
       password: "motdepasse1",
       firstName,
       lastName: "Test",
-      client: "web",
+      acceptTerms: true, client: "web",
     });
   };
 
@@ -162,7 +162,7 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
       birthDate: "1994-03-15",
       sex: "F",
       district: "Talangaï",
-      client: "mobile",
+      acceptTerms: true, client: "mobile",
     });
     patientId = patient.accountId;
     await expect(

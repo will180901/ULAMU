@@ -167,17 +167,17 @@ describe("Chantier 3 — parcours 🅰 complet (M01→M03→M05→M06→M07→M1
     await m01.requestOtp({ email: emailFor(DOCTOR) }, "REGISTRATION");
     doctorId = (await m01.registerProfessional({
       phone: DOCTOR, email: emailFor(DOCTOR), username: "u" + DOCTOR.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(DOCTOR), password: "motdepasse1",
-      firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", client: "web",
+      firstName: "Armel", lastName: "Konaté", category: "GENERAL_PRACTITIONER", acceptTerms: true, client: "web",
     })).accountId;
     await m01.requestOtp({ email: emailFor(PATIENT) }, "REGISTRATION");
     patientId = (await m01.registerPatient({
       phone: PATIENT, email: emailFor(PATIENT), username: "u" + PATIENT.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(PATIENT), password: "motdepasse1",
-      firstName: "Mireille", lastName: "Nkounkou", birthDate: "1994-03-15", sex: "F", district: "Talangaï", client: "mobile",
+      firstName: "Mireille", lastName: "Nkounkou", birthDate: "1994-03-15", sex: "F", district: "Talangaï", acceptTerms: true, client: "mobile",
     })).accountId;
     await m01.requestOtp({ email: emailFor(PATIENT2) }, "REGISTRATION");
     patient2Id = (await m01.registerPatient({
       phone: PATIENT2, email: emailFor(PATIENT2), username: "u" + PATIENT2.replace(/\D/g, "").slice(-9), otpCode: lastEmailOtp(PATIENT2), password: "motdepasse1",
-      firstName: "Gaston", lastName: "Mabiala", birthDate: "1968-01-10", sex: "M", district: "Bacongo", client: "mobile",
+      firstName: "Gaston", lastName: "Mabiala", birthDate: "1968-01-10", sex: "M", district: "Bacongo", acceptTerms: true, client: "mobile",
     })).accountId;
 
     await drain(); // M03 ouvre le dossier du pro ; M07 crée les Carnets patients

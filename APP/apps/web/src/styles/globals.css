@@ -1218,6 +1218,37 @@
   .ul-state__spin { animation-duration: 2400ms; }
 }
 
+/* ── Case à cocher de consentement ──────────────────────────────────────────────────────────────
+   Un `input[type=checkbox]` natif dans un `<label>` : l'association libellé/champ, la navigation au
+   clavier, la barre d'espace et l'annonce par les lecteurs d'écran sont acquises sans une ligne de
+   JavaScript. Réimplémenter une case avec des `<div>` ne fait que reperdre tout ça.            */
+.ul-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espace-3);
+  padding: var(--espace-3);
+  border: 1px solid var(--bordure-legere);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) linear;
+}
+.ul-check:hover { border-color: var(--bordure-normale); }
+.ul-check:focus-within { border-color: var(--ap-400); }
+.ul-check__box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--ap-400); /* la coche suit l'accent de marque sans repeindre le contrôle natif */
+}
+.ul-check__text {
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  color: var(--texte-secondaire);
+}
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

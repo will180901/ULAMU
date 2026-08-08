@@ -134,6 +134,28 @@ export class M01Service {
 
   // ── Inscriptions (EF-01-01/02/08 ; CU-01-01/02) ────────────────────────────
 
+  /**
+   * Refuse une inscription sans acceptation explicite des CGU et de la politique de confidentialité
+   * (EF-01-08, loi n° 29-2019).
+   *
+   * ⚠️ Jusqu'au 2026-08-05, les enregistrements de `Consentement` étaient créés
+   * **inconditionnellement** par les trois inscriptions, sans qu'aucun champ n'indique que
+   * l'utilisateur avait accepté quoi que ce soit — et l'app web ne le lui demandait même jamais. Le
+   * modèle de données qualifie pourtant cette entité de « preuve légale, immuable ». Une preuve
+   * fabriquée automatiquement, identique que la case ait été cochée ou non, ne prouve rien.
+   *
+   * La validation HTTP (`@Equals(true)` sur les DTO) couvre déjà l'entrée par l'API. Ce garde-fou
+   * couvre les appels DIRECTS au service — tests, seed, futurs scripts d'import : le jour où l'un
+   * d'eux oubliera le champ, il échouera bruyamment au lieu de fabriquer un faux consentement.
+   */
+  private ensureTermsAccepted(accepted: boolean): void {
+    if (accepted !== true) {
+      throw new BadRequestException(
+        "Vous devez accepter les conditions générales et la politique de confidentialité pour créer un compte.",
+      );
+    }
+  }
+
   async registerPatient(dto: {
     phone: string;
     email: string;
@@ -145,9 +167,11 @@ export class M01Service {
     birthDate: string;
     sex: "M" | "F";
     district: string;
+    acceptTerms: boolean;
     client: string;
     deviceLabel?: string;
   }): Promise<{ accountId: string; sessionToken: string }> {
+    this.ensureTermsAccepted(dto.acceptTerms);
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
     const email = this.normalizeEmailOrThrow(dto.email);
@@ -225,9 +249,11 @@ export class M01Service {
     lastName: string;
     category: "GENERAL_PRACTITIONER" | "SPECIALIST" | "DENTIST" | "MIDWIFE" | "NURSE" | "COMMUNITY_HEALTH_WORKER";
     specialty?: string;
+    acceptTerms: boolean;
     client: string;
     deviceLabel?: string;
   }): Promise<{ accountId: string; sessionToken: string }> {
+    this.ensureTermsAccepted(dto.acceptTerms);
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
     const email = this.normalizeEmailOrThrow(dto.email);
@@ -301,9 +327,11 @@ export class M01Service {
     password: string;
     firstName: string;
     lastName: string;
+    acceptTerms: boolean;
     client: string;
     deviceLabel?: string;
   }): Promise<{ accountId: string; sessionToken: string }> {
+    this.ensureTermsAccepted(dto.acceptTerms);
     const phone = this.normalizeOrThrow(dto.phone);
     await this.ensurePhoneFree(phone);
     const email = this.normalizeEmailOrThrow(dto.email);
