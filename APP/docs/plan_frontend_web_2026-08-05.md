@@ -176,11 +176,11 @@ produit** — et la vérification de tous les correctifs du 05/08 restés en sus
 | 3.4 | **Stock par lots** — FEFO, fraîcheur PM-33, sorties motivées | M11 | ✅ `4826fd2` |
 | 3.5 | **Délivrance d'ordonnance** — code QR, délivrance partielle | M09 | ✅ `4826fd2` |
 | 3.6 | **Réservations reçues** — dévoilements, fenêtre 24 h | M12 | ⬜ reporté |
-| 3.7 | **Gains et retraits** — *titulaire uniquement* | M13 | ⬜ reporté |
+| 3.7 | **Gains et retraits** — soignant **et** structure | M13 | ✅ |
 
-*Les trois points reportés ne bloquent aucun parcours : le transfert de titularité est une procédure
-rare, les dévoilements arrivent avec la recherche patient (M12 côté mobile), et les gains de structure
-réutiliseront la page déjà écrite pour le soignant en changeant le `holderType`.*
+*Les deux points reportés ne bloquent aucun parcours : le transfert de titularité est une procédure
+rare (et sensible : OTP des deux parties), et les dévoilements appartiennent d'abord au parcours
+patient sur mobile (M12).*
 
 **Sensibilité aux droits :** `EF-02-05` — membres, contrat et retraits sont **réservés au titulaire**.
 Stock et délivrances dépendent des droits accordés. Chaque écran doit refléter cette matrice.
@@ -192,11 +192,16 @@ Stock et délivrances dépendent des droits accordés. Chaque écran doit reflé
 | 4.1 | **File de vérification** — tri par urgence, décision motivée | M03 | Vérification | ✅ `8555ffd` |
 | 4.7 | **KPIs du pilote** — les 7 critères de `plan_releases` §3 | M16 | Super | ✅ |
 | 4.3 | **Intégrité du journal d'audit** — chaîne sha256 | M04 | Super | ✅ |
+| 4.4 | **Signalements** — tri par délai, issues en clair | M04 | Super | ✅ |
+| — | **Comptes** — recherche ciblée, suspension/réactivation motivée | M16 | Super | ✅ |
 | 4.2 | **Contrats et avenants** | M03 | Vérification | ⬜ |
-| 4.4 | **Signalements** | M04 | Super | ⬜ |
 | 4.5 | **Supervision des paiements** | M13 | Finance | ⬜ |
 | 4.6 | **Paramètres métier** — PM-01 → PM-40 | M16 | Super | ⬜ |
 | 4.8 | **Sous-rôles admin** — attribution sous TOTP | M02 | Super | ⬜ |
+
+*Les quatre restants sont des outils d'exploitation, pas des maillons de parcours : le pilote peut
+démarrer sans eux (contrats signés à la main, paiements supervisés en base, paramètres modifiés par
+migration, sous-rôles attribués au seed).*
 
 *L'ordre de réalisation a suivi l'urgence produit, pas la numérotation : `4.1` conditionne la
 visibilité de tout soignant, et `4.7` porte les critères qui décideront « V1 ou pivot ».*

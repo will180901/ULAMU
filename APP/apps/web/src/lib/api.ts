@@ -478,6 +478,30 @@ export interface AuditIntegrity {
   brokenAtSeq?: number | null
 }
 
+/** Signalement d'utilisateur en attente de modération (M04, CU-04-04). */
+export interface UserReport {
+  id: string
+  targetType: string
+  targetId: string
+  reasonCode: string
+  reasonText: string | null
+  status: string
+  createdAt: string
+  /** Au-delà du délai cible PM-23 — c'est ce qui décide de l'ordre de traitement. */
+  isOverdue: boolean
+}
+
+export type ReportDecision = 'DISMISSED' | 'WARNING' | 'ESCALATED_M16' | 'ESCALATED_M03'
+
+/** Compte trouvé par la recherche du back-office (M16). */
+export interface AdminAccount {
+  id: string
+  username: string | null
+  phone: string
+  type: string
+  status: string
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -650,6 +674,26 @@ export const api = {
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
   /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
   auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),
+
+  // Administration — signalements (M04) et comptes (M16)
+  reports: (status?: string) =>
+    request<{ items: UserReport[] }>('GET', `/v1/admin/reports${status ? `?status=${status}` : ''}`, undefined, true),
+  /** CU-04-04 : toute décision est motivée, y compris un rejet. */
+  decideReport: (id: string, dto: { decision: ReportDecision; reasons: string }) =>
+    request<void>('POST', `/v1/admin/reports/${id}/decide`, dto, true),
+  searchAccounts: (query: string) =>
+    request<{ items: AdminAccount[] }>('GET', `/v1/admin/accounts?query=${encodeURIComponent(query)}`, undefined, true),
+  suspendAccount: (id: string, reason: string) =>
+    request<void>('POST', `/v1/admin/accounts/${id}/suspend`, { reason }, true),
+  reactivateAccount: (id: string, reason: string) =>
+    request<void>('POST', `/v1/admin/accounts/${id}/reactivate`, { reason }, true),
+  parameterHistory: (key: string) =>
+    request<{ items: Array<{ value: string; effectiveAt: string; changedBy: string | null }> }>(
+      'GET',
+      `/v1/admin/parameters/${encodeURIComponent(key)}/history`,
+      undefined,
+      true,
+    ),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

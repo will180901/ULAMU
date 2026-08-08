@@ -33,10 +33,27 @@ export function GainsPage() {
   const [gains, setGains] = useState<Earnings | null>(null)
   const [etat, setEtat] = useState<'chargement' | 'pret' | 'erreur'>('chargement')
 
+  /**
+   * Le porteur des gains dépend du rôle, et le serveur vérifie l'accès de toute façon :
+   *  • un **soignant** encaisse pour lui-même ;
+   *  • une **structure** encaisse pour l'officine — et `EF-02-05` réserve les retraits au titulaire,
+   *    ce que le serveur refusera à un simple membre.
+   * Dupliquer la page pour ce seul paramètre aurait créé deux écrans à maintenir en parallèle, donc
+   * deux occasions de divergence sur des règles qui touchent à l'argent.
+   */
   const charger = useCallback(async () => {
     if (!me) return
     try {
-      setGains(await api.earnings('PROFESSIONAL', me.accountId))
+      if (me.accountType === 'FACILITY_MEMBER') {
+        const f = await api.myFacility()
+        if (!f) {
+          setEtat('erreur')
+          return
+        }
+        setGains(await api.earnings('FACILITY', f.id))
+      } else {
+        setGains(await api.earnings('PROFESSIONAL', me.accountId))
+      }
       setEtat('pret')
     } catch {
       setEtat((e) => (e === 'pret' ? 'pret' : 'erreur'))

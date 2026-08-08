@@ -7,6 +7,8 @@ import {
   Boxes,
   Building2,
   ClipboardCheck,
+  Flag,
+  UserCog,
   Handshake as HandshakeIcon,
   LayoutDashboard,
   MessageSquare,
@@ -45,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
       /* ⭐ Le cœur du produit (M06) : c'est ici qu'un soignant répond à un patient. */
       { key: 'demandes', label: 'Demandes', icon: HandshakeIcon, href: '/demandes', capabilities: ['professional'] },
       { key: 'consultations', label: 'Consultations', icon: MessageSquare, href: '/consultations', capabilities: ['professional'] },
-      { key: 'gains', label: 'Mes gains', icon: Wallet, href: '/gains', capabilities: ['professional'] },
+      { key: 'gains', label: 'Mes gains', icon: Wallet, href: '/gains', capabilities: ['professional', 'facility'] },
       /* Espace pharmacie (M02/M11) — réservé aux structures. */
       { key: 'pharmacie', label: 'Ma pharmacie', icon: Building2, href: '/pharmacie', capabilities: ['facility'] },
       { key: 'stock', label: 'Stock', icon: Boxes, href: '/stock', capabilities: ['facility'] },
@@ -64,6 +66,8 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/admin/verification',
         capabilities: ['admin:verification', 'admin:super'],
       },
+      { key: 'admin-signalements', label: 'Signalements', icon: Flag, href: '/admin/signalements', capabilities: ['admin:super'] },
+      { key: 'admin-comptes', label: 'Comptes', icon: UserCog, href: '/admin/comptes', capabilities: ['admin:super'] },
       { key: 'admin-pilotage', label: 'Pilotage', icon: Activity, href: '/admin/pilotage', capabilities: ['admin:super'] },
     ],
   },

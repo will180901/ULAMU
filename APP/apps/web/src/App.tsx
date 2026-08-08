@@ -20,6 +20,8 @@ import { StockPage } from '@/modules/facility/pages/StockPage'
 import { DelivrancePage } from '@/modules/facility/pages/DelivrancePage'
 import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
 import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
+import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
+import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -115,12 +117,12 @@ export function App() {
                 handle={{ title: 'Mes consultations' }}
               />
               <Route path="/consultations/:id" element={<ConsultationPage />} handle={{ title: 'Consultation' }} />
-              {/* Gains (M13). Réservé au soignant : les gains d'une structure appartiennent à son
-                  TITULAIRE et passeront par l'espace pharmacie, avec ses propres droits (EF-02-05). */}
+              {/* Gains (M13) — soignant ET structure. La page choisit le porteur d'après le rôle ;
+                  le serveur, lui, réserve les retraits au titulaire d'une officine (EF-02-05). */}
               <Route
                 path="/gains"
                 element={
-                  <CapabilityGate any={['professional']}>
+                  <CapabilityGate any={['professional', 'facility']}>
                     <GainsPage />
                   </CapabilityGate>
                 }
@@ -173,6 +175,24 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Pilotage' }}
+              />
+              <Route
+                path="/admin/signalements"
+                element={
+                  <CapabilityGate any={['admin:super']}>
+                    <SignalementsPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Signalements' }}
+              />
+              <Route
+                path="/admin/comptes"
+                element={
+                  <CapabilityGate any={['admin:super']}>
+                    <ComptesPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Comptes' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
