@@ -460,6 +460,24 @@ export interface VerificationQueue {
   }>
 }
 
+/** Un des 7 indicateurs du pilote (plan_releases §3, CU-16-03). */
+export interface PilotKpi {
+  key: string
+  label: string
+  value: number
+  target: number
+  unit: 'count' | '%'
+  /** Vert/rouge tranché par le SERVEUR — les seuils sont du métier, pas de la présentation. */
+  status: string
+}
+
+/** Vérification de la chaîne sha256 du journal d'audit (EF-04-03). */
+export interface AuditIntegrity {
+  ok: boolean
+  checked: number
+  brokenAtSeq?: number | null
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -627,6 +645,11 @@ export const api = {
   claimCase: (caseId: string) => request<void>('POST', `/v1/admin/verification/${caseId}/claim`, undefined, true),
   decideCase: (caseId: string, dto: { decision: 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO'; reasons: string }) =>
     request<void>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
+
+  // Administration — pilotage et audit (sous-rôle Super)
+  pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
+  /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
+  auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

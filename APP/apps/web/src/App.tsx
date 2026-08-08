@@ -19,6 +19,7 @@ import { PharmaciePage } from '@/modules/facility/pages/PharmaciePage'
 import { StockPage } from '@/modules/facility/pages/StockPage'
 import { DelivrancePage } from '@/modules/facility/pages/DelivrancePage'
 import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
+import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -163,6 +164,15 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'File de vérification' }}
+              />
+              <Route
+                path="/admin/pilotage"
+                element={
+                  <CapabilityGate any={['admin:super']}>
+                    <PilotagePage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Pilotage' }}
               />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}

@@ -3,6 +3,7 @@
  * useNavigation() (Sidebar) filtre selon la session courante. Étoffé au fil des Phases 1/2/3.
  */
 import {
+  Activity,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -63,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/admin/verification',
         capabilities: ['admin:verification', 'admin:super'],
       },
+      { key: 'admin-pilotage', label: 'Pilotage', icon: Activity, href: '/admin/pilotage', capabilities: ['admin:super'] },
     ],
   },
   {

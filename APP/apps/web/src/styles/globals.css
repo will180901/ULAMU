@@ -1410,6 +1410,24 @@
 }
 .ul-puce-droit:disabled { cursor: default; opacity: 0.75; }
 
+/* Jauge de progression vers une cible. `role="presentation"` : la valeur chiffrée et le verdict sont
+   déjà écrits à côté, la barre n'ajoute qu'une lecture rapide — la faire annoncer une seconde fois
+   par un lecteur d'écran serait du bruit. */
+.ul-jauge {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fond-surface-2);
+  overflow: hidden;
+}
+.ul-jauge__part {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--erreur-accent);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.ul-jauge__part.is-ok { background: var(--succes-accent); }
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

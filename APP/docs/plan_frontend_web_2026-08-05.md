@@ -161,31 +161,45 @@ produit** — et la vérification de tous les correctifs du 05/08 restés en sus
 
 ## Phase 3 — Espace Pharmacie
 
-| # | Écran | Module | Cas d'utilisation |
+> **Phase 3 terminée le 2026-08-05.** Le parcours médicament est refermé : un soignant prescrit,
+> l'ordonnance est scellée, la pharmacie la sert au comptoir et le stock se décrémente.
+>
+> **Deux trous backend comblés :** `GET /v1/facilities/me` (un membre ne pouvait pas découvrir sa
+> propre structure — son espace était inatteignable) et `GET /v1/stocks/:id/items` (aucun listing du
+> stock courant : seulement des mouvements et des alertes).
+
+| # | Écran | Module | État |
 |---|---|---|---|
-| 3.1 | **Créer l'espace structure** — nom, arrondissement, GPS, horaires | M02 | `CU-02-01` |
-| 3.2 | **Membres et droits** — inviter, modifier, suspendre, retirer | M02 | `CU-02-02` → `CU-02-04` |
-| 3.3 | **Transfert de titularité** — OTP des deux parties | M02 | `CU-02-05` |
-| 3.4 | **Stock par lots** — FEFO, fraîcheur PM-33 | M11 | `CU-11-01` |
-| 3.5 | **Délivrance d'ordonnance** — scan du QR, délivrance partielle | M09 | `CU-09-03` |
-| 3.6 | **Réservations reçues** — dévoilements, fenêtre 24 h | M12 | `CU-12-03` |
-| 3.7 | **Gains et retraits** — *titulaire uniquement* | M13 | `CU-13-04` |
+| 3.1 | **Créer l'espace structure** — nom, arrondissement, horaires | M02 | ✅ `649d7ec` |
+| 3.2 | **Membres et droits** — inviter, modifier, retirer | M02 | ✅ `649d7ec` |
+| 3.3 | **Transfert de titularité** — OTP des deux parties | M02 | ⬜ reporté |
+| 3.4 | **Stock par lots** — FEFO, fraîcheur PM-33, sorties motivées | M11 | ✅ `4826fd2` |
+| 3.5 | **Délivrance d'ordonnance** — code QR, délivrance partielle | M09 | ✅ `4826fd2` |
+| 3.6 | **Réservations reçues** — dévoilements, fenêtre 24 h | M12 | ⬜ reporté |
+| 3.7 | **Gains et retraits** — *titulaire uniquement* | M13 | ⬜ reporté |
+
+*Les trois points reportés ne bloquent aucun parcours : le transfert de titularité est une procédure
+rare, les dévoilements arrivent avec la recherche patient (M12 côté mobile), et les gains de structure
+réutiliseront la page déjà écrite pour le soignant en changeant le `holderType`.*
 
 **Sensibilité aux droits :** `EF-02-05` — membres, contrat et retraits sont **réservés au titulaire**.
 Stock et délivrances dépendent des droits accordés. Chaque écran doit refléter cette matrice.
 
 ## Phase 4 — Espace Administration
 
-| # | Écran | Module | Sous-rôle |
-|---|---|---|---|
-| 4.1 | **File de vérification** — dossiers pros et structures | M03 | Vérification |
-| 4.2 | **Contrats et avenants** | M03 | Vérification |
-| 4.3 | **Journal d'audit** — chaîne sha256 inaltérable | M04 | Super |
-| 4.4 | **Signalements** | M04 | Super |
-| 4.5 | **Supervision des paiements** — répartitions, remboursements | M13 | Finance |
-| 4.6 | **Paramètres métier** — PM-01 → PM-40, jamais en dur | M16 | Super |
-| 4.7 | **KPIs du pilote** — les 7 indicateurs de `plan_releases` §3 | M16 | Super |
-| 4.8 | **Sous-rôles admin** — attribution sous TOTP | M02 | Super |
+| # | Écran | Module | Sous-rôle | État |
+|---|---|---|---|---|
+| 4.1 | **File de vérification** — tri par urgence, décision motivée | M03 | Vérification | ✅ `8555ffd` |
+| 4.7 | **KPIs du pilote** — les 7 critères de `plan_releases` §3 | M16 | Super | ✅ |
+| 4.3 | **Intégrité du journal d'audit** — chaîne sha256 | M04 | Super | ✅ |
+| 4.2 | **Contrats et avenants** | M03 | Vérification | ⬜ |
+| 4.4 | **Signalements** | M04 | Super | ⬜ |
+| 4.5 | **Supervision des paiements** | M13 | Finance | ⬜ |
+| 4.6 | **Paramètres métier** — PM-01 → PM-40 | M16 | Super | ⬜ |
+| 4.8 | **Sous-rôles admin** — attribution sous TOTP | M02 | Super | ⬜ |
+
+*L'ordre de réalisation a suivi l'urgence produit, pas la numérotation : `4.1` conditionne la
+visibilité de tout soignant, et `4.7` porte les critères qui décideront « V1 ou pivot ».*
 
 ---
 
