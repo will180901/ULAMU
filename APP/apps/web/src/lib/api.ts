@@ -206,6 +206,17 @@ export interface ResetPasswordTotpRequest {
   newPassword: string
 }
 
+// ── M01 — Sécurité du compte (CU-01-05/06/07) ──────────────────────────────
+
+/** Une session de connexion ouverte. `current` = celle de cet onglet — on ne se révoque pas soi-même. */
+export interface SessionInfo {
+  id: string
+  client: string
+  deviceLabel: string | null
+  lastActiveAt: string
+  current: boolean
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -257,6 +268,17 @@ export const api = {
   setupTotp: () => request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/setup', undefined, true),
   confirmTotp: (code: string) => request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/confirm', { code }, true),
   resetPasswordByTotp: (dto: ResetPasswordTotpRequest) => request<void>('POST', '/v1/auth/password-reset/totp', dto),
+
+  // M01 — sécurité du compte
+  sessions: () => request<SessionInfo[]>('GET', '/v1/accounts/me/sessions', undefined, true),
+  revokeSession: (id: string) => request<void>('DELETE', `/v1/accounts/me/sessions/${id}`, undefined, true),
+  startPhoneChange: (dto: { newPhone: string }) =>
+    request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/phone-change/start', dto, true),
+  confirmPhoneChange: (dto: { newPhone: string; oldPhoneCode: string; newPhoneCode: string }) =>
+    request<MeResponse>('POST', '/v1/accounts/me/phone-change/confirm', dto, true),
+  requestCloseOtp: () => request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/close/request-otp', undefined, true),
+  closeAccount: (dto: { password: string; otpCode: string }) =>
+    request<void>('POST', '/v1/accounts/me/close', dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

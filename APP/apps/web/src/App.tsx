@@ -9,6 +9,7 @@ import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
 import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
+import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -69,6 +70,9 @@ export function App() {
                 }
                 handle={{ title: 'Ma vérification' }}
               />
+              {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
+                  administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
+              <Route path="/parametres" element={<SettingsPage />} handle={{ title: 'Mes paramètres' }} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           )
