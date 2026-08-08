@@ -423,7 +423,20 @@ export class M01Service {
       );
       if (blockedUntil) {
         await this.auditSystem("m01.login.blocked", `phone:${account.phone}`, { untilIso: new Date(blockedUntil).toISOString() });
-        throw new ForbiddenException("Compte temporairement bloqué après échecs répétés (PM-18)");
+        /**
+         * Le message DIT la durée restante, et ne cite plus le code du paramètre.
+         *
+         * « Compte temporairement bloqué après échecs répétés (PM-18) » posait deux problèmes :
+         * « PM-18 » ne veut rien dire pour la personne qui le lit — c'est une référence interne qui
+         * n'aurait jamais dû sortir de la documentation — et surtout, sans durée, on ne sait pas
+         * s'il faut patienter une minute ou revenir demain. Le serveur connaît pourtant
+         * `blockedUntil` : le taire était une rétention d'information gratuite, qui pousse à
+         * réessayer en boucle et donc à prolonger le blocage.
+         */
+        const minutes = Math.max(1, Math.ceil((blockedUntil - Date.now()) / 60000));
+        throw new ForbiddenException(
+          `Compte temporairement bloqué après plusieurs tentatives incorrectes. Réessayez dans ${minutes} minute${minutes > 1 ? "s" : ""}.`,
+        );
       }
     }
 

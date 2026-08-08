@@ -99,16 +99,23 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 
 *Les 4 pages existent. Il s'agit de les corriger, pas de les refaire.*
 
+> **Phase 1 terminée le 2026-08-05.** Deux constats de l'audit se sont révélés FAUX à la vérification
+> (1.2 et 1.4 : les règles étaient déjà appliquées côté serveur, je n'avais pas lu le routeur ni la
+> garde). En revanche, trois défauts plus graves que prévu ont été trouvés en chemin : un **faux
+> consentement** enregistré sans acceptation, un **endpoint de téléversement manquant** qui rendait le
+> dossier de vérification impossible à remplir, et un **écran qui restait allumé** sur des données
+> médicales après la fermeture de session.
+
 | # | Gravité | Tâche | Réf. |
 |---|---|---|---|
-| 1.1 | 🔴 | **Consentement CGU + confidentialité** à l'inscription : case non pré-cochée, bloquante, horodatée et versionnée. Ajouter le champ au contrat d'inscription | `EF-01-08`, loi n° 29-2019 |
+| 1.1 | ✅ `b82b500` | ~~Consentement absent~~ → en réalité **faux consentement enregistré** : le serveur créait les preuves inconditionnellement. Champ `acceptTerms` obligatoire, validé, transmis par les deux clients | `EF-01-08`, loi n° 29-2019 |
 | ~~1.2~~ | ✅ | ~~Imposer le TOTP à l'inscription.~~ **Déjà fait** — `App.tsx:35` (`needsTotpSetup`) redirige toutes les routes vers la configuration TOTP tant qu'un compte non-patient ne l'a pas activée. Constaté par erreur comme manquant le 05/08, corrigé après vérification dans le navigateur | `EF-01-10` |
-| 1.3 | 🔴 | **Rediriger vers le dossier de vérification M03** après création d'un compte professionnel, au lieu de `/dashboard` | `CU-01-02`, `RM-02-04` |
-| 1.4 | 🟠 | **Expiration de session après 30 min d'inactivité** | `ENF-07`, `CU-01-03` |
-| 1.5 | 🟠 | **Liste des appareils + déconnexion à distance** | `EF-01-05`, `CU-01-06` |
-| 1.6 | 🟠 | **Changement de numéro** (OTP ancien **et** nouveau) | `EF-01-07`, `CU-01-05` |
-| 1.7 | 🟠 | **Clôture de compte** | `EF-01-09`, `CU-01-07` |
-| 1.8 | 🟡 | **Message explicite de blocage temporaire** après 5 échecs en 15 min | `EF-01-06`, `PM-18` |
+| 1.3 | ✅ `1bd069c` | Page « Ma vérification » + redirection après inscription. **Trou backend comblé** : aucun endpoint ne produisait la `fileKey` d'une pièce, le dossier était donc impossible à remplir | `CU-01-02`, `RM-02-04` |
+| 1.4 | ✅ `54e9895` | ~~Expiration absente~~ → **déjà appliquée** par `auth.guard.ts`. Le vrai défaut était l'**écran** qui restait affiché sur des données médicales après la fermeture de session | `ENF-07`, `CU-01-03` |
+| 1.5 | ✅ `dd20dcb` | Appareils connectés + déconnexion à distance. La session courante n'a volontairement pas de bouton | `EF-01-05`, `CU-01-06` |
+| 1.6 | ✅ `dd20dcb` | Changement de numéro, deux codes, avec recul d'étape | `EF-01-07`, `CU-01-05` |
+| 1.7 | ✅ `dd20dcb` | Clôture de compte : conséquence annoncée avant tout bouton, puis mot de passe + code | `EF-01-09`, `CU-01-07` |
+| 1.8 | ✅ | Message de blocage : il existait mais **fuitait le code interne `(PM-18)`** et taisait la durée. Il annonce désormais les minutes restantes | `EF-01-06`, `PM-18` |
 
 > ⚠️ 1.1 et 1.3 redéfinissent tous deux ce qui se passe **juste après** la création du compte. À
 > traiter ensemble, dans l'ordre `consentement → TOTP (déjà en place) → dossier M03 → tableau de bord`.
