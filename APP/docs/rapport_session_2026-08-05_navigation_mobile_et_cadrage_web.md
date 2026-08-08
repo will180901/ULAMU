@@ -250,6 +250,63 @@ Le plan de correction et de construction est dans
 
 ---
 
+## 7 bis. Construction de l'app web — phases 0 à 4 (même journée)
+
+Le cadrage ci-dessus a été suivi de la construction. **L'app web est passée de 4 pages
+d'authentification + une coquille vide à un produit utilisable par les trois familles de rôles.**
+
+### Ce que ça change pour le produit
+
+Avant : un patient pouvait dérouler tout son parcours sur mobile, mais **aucun professionnel ne
+pouvait lui répondre** et **aucune pharmacie ne pouvait servir une ordonnance**. Le backend
+(13 modules, 505 tests) était complet et inatteignable.
+
+Après : `patient sollicite (mobile) → soignant confirme (web) → paiement → consultation des deux
+côtés → ordonnance scellée avec garde-fou allergies → délivrance au comptoir → stock décrémenté`.
+
+### Trous BACKEND comblés en chemin
+
+Trois endpoints manquaient purement et simplement — le produit était bloqué sans eux :
+
+| Endpoint ajouté | Sans lui |
+|---|---|
+| `POST /v1/verification/me/documents/upload` | le dossier de vérification était **impossible à remplir** depuis un client |
+| `GET /v1/facilities/me` | un membre de structure ne pouvait **découvrir aucune** de ses pages |
+| `GET /v1/stocks/:id/items` | un pharmacien ne pouvait **pas voir son propre stock** |
+
+Ajouté aussi : `acceptTerms` obligatoire sur les 3 inscriptions (le serveur fabriquait un
+consentement sans acceptation — voir §7), et le message de blocage PM-18 qui annonce enfin sa durée.
+
+### Écrans livrés
+
+**Phase 0** — typographie CG-02, barre latérale 3 états, menu utilisateur, thème clair/sombre
+branché, palette `Ctrl K`, états d'écran.
+**Phase 1** — consentement, dossier de vérification, expiration d'écran, appareils, numéro, clôture.
+**Phase 2** — vitrine + offres + présence, poignées de main, consultation, compte-rendu, ordonnance,
+gains.
+**Phase 3** — structure + membres et droits, stock FEFO, délivrance.
+**Phase 4** — file de vérification, KPIs du pilote, intégrité du journal d'audit.
+
+### Vérifié dans un vrai navigateur, pas seulement compilé
+
+- Un **professionnel** voit vitrine / demandes / consultations / gains — **aucune** entrée pharmacie
+  ou administration.
+- Un **admin Vérification** voit sa file — **pas** le pilotage.
+- Naviguer directement vers `/admin/pilotage` avec ce sous-rôle **redirige** et ne rend jamais le
+  contenu : la garde de route fonctionne, pas seulement le filtrage du menu.
+- Conformité mesurée à l'exécution : corps en `Inter Variable`, barre 240 px / 56 px, item 32 px,
+  libellés de groupe en `JetBrains Mono` majuscule, `blur(16px)`, `html.dark` actif.
+
+### Reste à faire
+
+Transfert de titularité (M02), réservations/dévoilements (M12), gains de structure (M13, la page
+existe — il suffit de changer le `holderType`), et côté administration : contrats, signalements,
+supervision des paiements, paramètres métier, attribution des sous-rôles.
+
+**Aucun de ces points ne bloque un parcours.**
+
+---
+
 ## 8. Ce qui a été vérifié, et comment
 
 | Affirmation | Preuve |
