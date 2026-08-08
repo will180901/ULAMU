@@ -12,6 +12,8 @@ import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { VitrinePage } from '@/modules/directory/pages/VitrinePage'
 import { PoigneesPage } from '@/modules/handshakes/pages/PoigneesPage'
+import { ConsultationsPage } from '@/modules/sessions/pages/ConsultationsPage'
+import { ConsultationPage } from '@/modules/sessions/pages/ConsultationPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -94,6 +96,19 @@ export function App() {
                 }
                 handle={{ title: 'Demandes de consultation' }}
               />
+              {/* Sessions de soin (M06). La consultation elle-même n'est pas gardée par capacité :
+                  le SERVEUR vérifie déjà que le demandeur est l'un des deux participants, et une
+                  garde de rôle ici bloquerait le patient si le web venait à lui être ouvert. */}
+              <Route
+                path="/consultations"
+                element={
+                  <CapabilityGate any={['professional']}>
+                    <ConsultationsPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Mes consultations' }}
+              />
+              <Route path="/consultations/:id" element={<ConsultationPage />} handle={{ title: 'Consultation' }} />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
               <Route path="/parametres" element={<SettingsPage />} handle={{ title: 'Mes paramètres' }} />

@@ -18,6 +18,7 @@
  *    réponses ; chaque interrogation la resynchronise.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Check, Handshake as HandshakeIcon, X } from 'lucide-react'
 import { PageHeader } from '@/components/ulamu/PageHeader'
 import { Button } from '@/components/ulamu/Button'
@@ -38,6 +39,7 @@ const EN_COURS: Handshake['status'][] = ['CONFIRMED']
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`
 
 export function PoigneesPage() {
+  const naviguer = useNavigate()
   const [liste, setListe] = useState<Handshake[] | null>(null)
   const [etat, setEtat] = useState<'chargement' | 'pret' | 'erreur'>('chargement')
 
@@ -109,8 +111,10 @@ export function PoigneesPage() {
             icon={<HandshakeIcon size={22} />}
             title="Aucune demande en attente"
             description="Les demandes apparaissent ici dès qu’un patient vous sollicite, sans avoir à rafraîchir la page. Vous devez être « en ligne » sur votre vitrine pour en recevoir."
+            /* Navigation côté client : `window.location` rechargerait toute l'application et ferait
+               repasser par l'hydratation de session pour un simple changement de page. */
             action={
-              <Button variant="ghost" onClick={() => (window.location.href = '/vitrine')}>
+              <Button variant="ghost" onClick={() => naviguer('/vitrine')}>
                 Voir ma vitrine
               </Button>
             }

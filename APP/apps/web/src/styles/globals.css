@@ -1337,6 +1337,46 @@
   color: var(--ap-400);
 }
 
+/* ── Fil de consultation ────────────────────────────────────────────────────────────────────────
+   Hauteur BORNÉE et défilement interne : un fil qui pousse la page vers le bas éloigne le champ de
+   saisie à chaque message, et le soignant finit par écrire hors de l'écran.                    */
+.ul-fil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+  max-height: 48vh;
+  overflow-y: auto;
+  padding: var(--espace-3);
+  border: 1px solid var(--bordure-legere);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+}
+.ul-bulle {
+  align-self: flex-start;
+  max-width: 76%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--espace-2) var(--espace-3);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface);
+  border: 1px solid var(--bordure-legere);
+  color: var(--texte-primaire);
+}
+/* Les messages du soignant sont alignés à droite et teintés : la provenance doit se lire d'un coup
+   d'œil, sans avoir à chercher un nom au-dessus de chaque bulle. */
+.ul-bulle--moi {
+  align-self: flex-end;
+  background: rgba(var(--ap-400-rgb), 0.10);
+  border-color: rgba(var(--ap-400-rgb), 0.22);
+}
+.ul-bulle__heure {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-sm);
+  color: var(--texte-tertiaire);
+}
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

@@ -2,7 +2,7 @@
  * Source de vérité unique de la navigation — chaque item déclare les capacités requises ;
  * useNavigation() (Sidebar) filtre selon la session courante. Étoffé au fil des Phases 1/2/3.
  */
-import { Handshake as HandshakeIcon, LayoutDashboard, ShieldCheck, Store } from 'lucide-react'
+import { Handshake as HandshakeIcon, LayoutDashboard, MessageSquare, ShieldCheck, Store } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Capability } from '@/hooks/useCapabilities'
 
@@ -32,6 +32,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'vitrine', label: 'Ma vitrine', icon: Store, href: '/vitrine', capabilities: ['professional'] },
       /* ⭐ Le cœur du produit (M06) : c'est ici qu'un soignant répond à un patient. */
       { key: 'demandes', label: 'Demandes', icon: HandshakeIcon, href: '/demandes', capabilities: ['professional'] },
+      { key: 'consultations', label: 'Consultations', icon: MessageSquare, href: '/consultations', capabilities: ['professional'] },
     ],
   },
   {

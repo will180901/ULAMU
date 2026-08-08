@@ -268,6 +268,52 @@ export interface Handshake {
   sessionId: string | null
 }
 
+// ── M06 — Session de soin (CU-06-02 à CU-06-05) ────────────────────────────
+
+export type CareSessionStatus = 'PREPARING' | 'ACTIVE' | 'ENDED' | 'REFUNDED' | 'CANCELLED'
+
+export interface CareSession {
+  id: string
+  handshakeId: string
+  status: CareSessionStatus
+  patientAccountId: string
+  professionalId: string
+  subProfileId: string | null
+  durationMin: number
+  paidAt: string
+  startedAt: string | null
+  endsAt: string | null
+  endedAt: string | null
+  /** Seule vérité du décompteur (RM-06-02) — l'horloge locale n'anime qu'entre deux réponses. */
+  remainingSeconds: number
+  /** PREPARING : démarrage automatique à cette échéance (PM-28), même sans pré-consultation. */
+  autoStartAt: string | null
+  extensionTotalSec: number
+  /** Retard cumulé du soignant au-delà de la tolérance de 30 s entre messages (D-032). */
+  professionalDelaySec: number
+  /** D-021 : le compte-rendu est OBLIGATOIRE. Tant que c'est `null`, la consultation reste inachevée. */
+  reportDepositedAt: string | null
+  preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null
+  rated: boolean
+  otherPartyTyping: boolean
+}
+
+export interface SessionMessage {
+  id: string
+  sessionId: string
+  senderId: string
+  kind: string
+  body: string | null
+  fileKey: string | null
+  mediaKeys: string[]
+  clientMsgId: string
+  createdAt: string
+  editedAt: string | null
+  deletedAt: string | null
+  status: 'sent' | 'delivered' | 'read' | null
+  reactions: Array<{ emoji: string; count: number; mine: boolean }>
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -352,6 +398,21 @@ export const api = {
   /** Le motif est OBLIGATOIRE côté serveur : un refus sans explication laisse le patient sans recours. */
   refuseHandshake: (id: string, reason: string) =>
     request<Handshake>('POST', `/v1/handshakes/${id}/refuse`, { reason }, true),
+
+  // M06 — session de soin
+  mySessions: () => request<CareSession[]>('GET', '/v1/care-sessions/mine', undefined, true),
+  session: (id: string) => request<CareSession>('GET', `/v1/care-sessions/${id}`, undefined, true),
+  sessionMessages: (id: string) =>
+    request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),
+  /** `clientMsgId` est une clé d'idempotence (ADR-12) : un rejeu réseau ne crée pas un doublon. */
+  sendMessage: (id: string, dto: { clientMsgId: string; kind: 'TEXT'; body: string }) =>
+    request<SessionMessage>('POST', `/v1/care-sessions/${id}/messages`, dto, true),
+  typing: (id: string) => request<void>('POST', `/v1/care-sessions/${id}/typing`, undefined, true),
+  extendSession: (id: string, minutes: number) =>
+    request<CareSession>('POST', `/v1/care-sessions/${id}/extend`, { minutes }, true),
+  /** D-021 : compte-rendu obligatoire. Sans lui, la consultation n'est pas close pour le patient. */
+  depositReport: (id: string, dto: { diagnosis: string; recommendations: string }) =>
+    request<CareSession>('POST', `/v1/care-sessions/${id}/report`, dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),
