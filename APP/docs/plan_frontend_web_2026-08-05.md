@@ -129,17 +129,31 @@ la suivante sans avoir montré la précédente qui marche — même règle que l
 
 *La phase qui ferme la boucle avec l'app mobile.*
 
-| # | Écran | Module | Cas d'utilisation |
+> **Phase 2 terminée le 2026-08-05.** La boucle patient ↔ soignant existe désormais de bout en bout :
+> un patient sollicite depuis le mobile, le soignant voit la demande arriver sans rafraîchir, confirme,
+> le patient paie, la consultation s'ouvre des deux côtés, l'ordonnance est scellée avec garde-fou
+> allergies, et le compte-rendu part au Carnet à vie. Ce parcours était codé et testé côté backend
+> depuis des mois — il était **inatteignable** faute d'interface soignant.
+
+| # | Écran | Module | État |
 |---|---|---|---|
-| 2.1 | **Dossier de vérification** — dépôt des pièces, suivi du statut | M03 | `CU-03-01` |
-| 2.2 | **Ma vitrine** — profil public, biographie, photo | M05 | `CU-05-01` |
-| 2.3 | **Mes offres de soin** — création, tarifs, activation | M05 | `CU-05-02` |
-| 2.4 | **Ma présence** — en ligne / hors ligne, battement de cœur | M05 | `CU-05-04` |
-| 2.5 | **Poignées de main entrantes** ⭐ — confirmer ou refuser, fenêtre PM-07 | M06 | `CU-06-01`, `CU-06-02` |
-| 2.6 | **Session de soin** ⭐ — messagerie temps réel côté soignant, minuteur serveur | M06 | `CU-06-03` |
-| 2.7 | **Compte-rendu de fin** — versé au Carnet du patient | M06 → M07 | `CU-06-05` |
-| 2.8 | **Rédaction d'ordonnance** — garde-fou allergies, QR scellé | M09 | `CU-09-01` |
-| 2.9 | **Mes gains** — solde, historique, demande de retrait | M13 | `CU-13-04` |
+| 2.1 | **Dossier de vérification** — dépôt des pièces, suivi du statut | M03 | ✅ `1bd069c` |
+| 2.2 | **Ma vitrine** — profil public, biographie | M05 | ✅ `7d98ff5` |
+| 2.3 | **Mes offres de soin** — création, tarifs, retrait/republication | M05 | ✅ `7d98ff5` |
+| 2.4 | **Ma présence** — 3 états + battement de cœur PM-26 | M05 | ✅ `7d98ff5` |
+| 2.5 | **Poignées de main entrantes** ⭐ — confirmer ou refuser, fenêtre PM-07 | M06 | ✅ `e05d711` |
+| 2.6 | **Session de soin** ⭐ — messagerie, minuteur serveur | M06 | ✅ `73adb05` |
+| 2.7 | **Compte-rendu de fin** — obligatoire, versé au Carnet | M06 → M07 | ✅ `73adb05` |
+| 2.8 | **Rédaction d'ordonnance** — garde-fou allergies bloquant | M09 | ✅ `e23fd12` |
+| 2.9 | **Mes gains** — solde, mouvements, retrait en deux temps | M13 | ✅ |
+
+**Trous backend comblés en chemin :** l'endpoint de téléversement des pièces de vérification
+(`POST /v1/verification/me/documents/upload`) n'existait pas — le dossier était impossible à remplir
+depuis un client.
+
+**Ce que la phase a appris :** les trois pièges de navigation corrigés sur mobile le matin même
+(interrogation liée au montage plutôt qu'au focus, décompte dépendant de l'objet entier, échec réseau
+qui vide l'écran) se seraient reproduits à l'identique côté web. Ils ont été évités d'emblée.
 
 **Jalon de la phase :** un vrai patient sur mobile et un vrai soignant sur web mènent une consultation
 complète, de la poignée de main au compte-rendu. **C'est la première validation réelle du cœur du

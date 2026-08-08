@@ -355,6 +355,31 @@ export function estAlerteAllergie(details: unknown): details is AllergyGuardErro
   )
 }
 
+// ── M13 — Gains et retraits (CU-13-04) ─────────────────────────────────────
+
+export type EarningsHolderType = 'PROFESSIONAL' | 'FACILITY'
+export type MomoOperator = 'MTN_MOMO' | 'AIRTEL_MONEY'
+
+export interface Earnings {
+  holderType: EarningsHolderType
+  holderId: string
+  /** Retirable maintenant. */
+  availableXaf: number
+  /** Confirmé mais pas encore capturé (EF-13-06) — visible, mais pas encore disponible. */
+  pendingXaf: number
+  entries: Array<{ id: string; type: string; amountXaf: number; reference: string; createdAt: string }>
+}
+
+/** Récapitulatif d'un retrait : les frais sont annoncés AVANT confirmation (EF-13-07). */
+export interface WithdrawalQuote {
+  withdrawalId: string
+  amountXaf: number
+  ulamuFeeXaf: number
+  netToReceiveXaf: number
+  operator: string
+  otpExpiresInSeconds: number
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -463,6 +488,15 @@ export const api = {
     sessionId: string,
     dto: { lines: PrescriptionLineInput[]; overrides?: Array<{ medicamentId: string; reason: string }> },
   ) => request<{ id: string }>('POST', `/v1/prescriptions/sessions/${sessionId}`, dto, true),
+
+  // M13 — gains et retraits
+  earnings: (holderType: EarningsHolderType, holderId: string) =>
+    request<Earnings>('GET', `/v1/me?holderType=${holderType}&holderId=${holderId}`, undefined, true),
+  startWithdrawal: (dto: { holderType: EarningsHolderType; holderId: string; amountXaf: number; operator: MomoOperator }) =>
+    request<WithdrawalQuote>('POST', '/v1/withdrawals/start', dto, true),
+  /** Action sensible : mot de passe **et** code OTP (EF-13-07). */
+  confirmWithdrawal: (dto: { withdrawalId: string; password: string; otpCode: string }) =>
+    request<{ status: string }>('POST', '/v1/withdrawals/confirm', dto, true),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

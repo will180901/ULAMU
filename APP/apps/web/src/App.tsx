@@ -14,6 +14,7 @@ import { VitrinePage } from '@/modules/directory/pages/VitrinePage'
 import { PoigneesPage } from '@/modules/handshakes/pages/PoigneesPage'
 import { ConsultationsPage } from '@/modules/sessions/pages/ConsultationsPage'
 import { ConsultationPage } from '@/modules/sessions/pages/ConsultationPage'
+import { GainsPage } from '@/modules/earnings/pages/GainsPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -109,6 +110,17 @@ export function App() {
                 handle={{ title: 'Mes consultations' }}
               />
               <Route path="/consultations/:id" element={<ConsultationPage />} handle={{ title: 'Consultation' }} />
+              {/* Gains (M13). Réservé au soignant : les gains d'une structure appartiennent à son
+                  TITULAIRE et passeront par l'espace pharmacie, avec ses propres droits (EF-02-05). */}
+              <Route
+                path="/gains"
+                element={
+                  <CapabilityGate any={['professional']}>
+                    <GainsPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Mes gains' }}
+              />
               {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
                   administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
               <Route path="/parametres" element={<SettingsPage />} handle={{ title: 'Mes paramètres' }} />
