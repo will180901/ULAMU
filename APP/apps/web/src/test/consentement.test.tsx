@@ -32,6 +32,14 @@ function monter() {
   )
 }
 
+/**
+ * `delay: null` sur `userEvent.setup()` : par défaut, la bibliothèque simule une frappe HUMAINE avec
+ * une pause entre chaque touche. Cinq champs à remplir, multipliés par l'exécution parallèle des
+ * fichiers de test, faisaient frôler puis dépasser le délai d'expiration — un test qui échoue une
+ * fois sur cinq est pire qu'un test absent : on finit par ignorer ses alertes. Ici la vitesse de
+ * frappe ne fait pas partie de ce qu'on vérifie.
+ */
+
 /** Amène jusqu'à l'étape « Sécurité » par le chemin le plus court (membre de structure, 3 étapes). */
 async function allerAEtapeSecurite(u: ReturnType<typeof userEvent.setup>) {
   await u.click(screen.getByText('Structure / Pharmacie'))
@@ -47,7 +55,7 @@ async function allerAEtapeSecurite(u: ReturnType<typeof userEvent.setup>) {
 
 describe('consentement à l’inscription (EF-01-08)', () => {
   it('présente une case NON pré-cochée', async () => {
-    const u = userEvent.setup()
+    const u = userEvent.setup({ delay: null })
     monter()
     await allerAEtapeSecurite(u)
 
@@ -57,7 +65,7 @@ describe('consentement à l’inscription (EF-01-08)', () => {
   })
 
   it('interdit d’avancer tant que la case n’est pas cochée', async () => {
-    const u = userEvent.setup()
+    const u = userEvent.setup({ delay: null })
     monter()
     await allerAEtapeSecurite(u)
 
@@ -72,7 +80,7 @@ describe('consentement à l’inscription (EF-01-08)', () => {
   })
 
   it('nomme les deux documents ET leurs versions', async () => {
-    const u = userEvent.setup()
+    const u = userEvent.setup({ delay: null })
     monter()
     await allerAEtapeSecurite(u)
 

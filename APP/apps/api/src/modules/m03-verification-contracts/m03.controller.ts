@@ -6,7 +6,7 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
-import { AddDocumentDto, SignAgreementDto } from "./m03.dto";
+import { AddDocumentDto, SignAgreementDto, UploadDocumentDto } from "./m03.dto";
 import { M03Service } from "./m03.service";
 
 @Controller("v1/verification")
@@ -27,6 +27,17 @@ export class M03Controller {
   @Post("me/documents")
   addDocument(@Actor() actor: AuthenticatedActor, @Body() dto: AddDocumentDto, @Query("facilityId") facilityId?: string) {
     return this.service.addDocument(actor, dto, facilityId);
+  }
+
+  /**
+   * Téléversement + rattachement d'une pièce, en un appel (EF-03-01/02).
+   *
+   * Complète `POST me/documents`, qui exigeait une `fileKey` qu'aucun endpoint ne savait produire
+   * pour un dossier de vérification : le dossier était donc impossible à remplir depuis un client.
+   */
+  @Post("me/documents/upload")
+  uploadDocument(@Actor() actor: AuthenticatedActor, @Body() dto: UploadDocumentDto, @Query("facilityId") facilityId?: string) {
+    return this.service.uploadDocument(actor, dto, facilityId);
   }
 
   /** Dépôt du dossier — jeu minimal de pièces exigé (CU-03-01). */

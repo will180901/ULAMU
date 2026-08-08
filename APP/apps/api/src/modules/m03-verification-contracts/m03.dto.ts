@@ -12,6 +12,24 @@ export class AddDocumentDto {
   @IsOptional() @IsISO8601() expiresAt?: string;
 }
 
+/**
+ * Téléversement d'une pièce justificative — le fichier ET son rattachement au dossier, en un appel.
+ *
+ * ⚠️ `AddDocumentDto` attend une `fileKey` « déjà téléversée », mais **aucun endpoint ne produisait
+ * cette clé pour les pièces de vérification** : seuls les avatars (M01) et les médias de session
+ * (M06) avaient une voie d'écriture. Le dossier de vérification était donc impossible à remplir
+ * depuis un client — trou constaté le 2026-08-05 en construisant l'écran web.
+ *
+ * Base64 comme partout ailleurs dans ce backend (avatars, médias de session) : le projet a fait le
+ * choix assumé de zéro dépendance native, donc pas de `multipart`. Cohérence avant tout.
+ */
+export class UploadDocumentDto {
+  @IsIn([...DOCUMENT_KINDS]) kind!: DocumentKind;
+  @IsString() @IsNotEmpty() fileBase64!: string;
+  @IsString() @IsNotEmpty() @MaxLength(120) mime!: string;
+  @IsOptional() @IsISO8601() expiresAt?: string;
+}
+
 /** Décision d'examen (CU-03-02) — toujours motivée (RM-03-02). */
 export class DecideDto {
   @IsIn(["VERIFIED", "REJECTED", "NEEDS_INFO"]) decision!: "VERIFIED" | "REJECTED" | "NEEDS_INFO";

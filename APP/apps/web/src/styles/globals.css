@@ -1249,6 +1249,69 @@
   color: var(--texte-secondaire);
 }
 
+/* ── Encart d'information — CG-08 §04 (alertes inline) ──────────────────────────────────────────
+   « Alert inline sans icône — couleur seule insuffisante pour l'accessibilité » est une interdiction
+   absolue. Le ton porte donc un fond ET une bordure gauche marquée, et l'appelant fournit le texte
+   explicatif ; la couleur ne travaille jamais seule.                                            */
+.ul-notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+  padding: var(--espace-3);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--bordure-forte);
+  background: var(--fond-surface-2);
+  color: var(--texte-secondaire);
+}
+.ul-notice--warning { background: var(--alerte-fond); border-left-color: var(--alerte-accent); color: var(--alerte-texte); }
+.ul-notice--error { background: var(--erreur-fond); border-left-color: var(--erreur-accent); color: var(--erreur-texte); }
+
+/* ── Liste des pièces d'un dossier de vérification ──────────────────────────────────────────── */
+.ul-doclist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--espace-2); }
+.ul-docrow {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  padding: var(--espace-2) var(--espace-3);
+  border: 1px solid var(--bordure-legere);
+  border-radius: var(--radius-md);
+  background: var(--fond-surface);
+}
+.ul-docrow__icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--fond-surface-2);
+  color: var(--texte-tertiaire);
+}
+.ul-docrow__icon.is-done { background: var(--succes-fond); color: var(--succes-accent); }
+.ul-docrow__label {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-label-md);
+  font-weight: var(--fw-label);
+  color: var(--texte-primaire);
+}
+
+/* Masqué à l'œil, JAMAIS aux technologies d'assistance ni au clavier — `display:none` les exclurait
+   toutes les deux. Utilisé pour les `input[type=file]` pilotés par un bouton. */
+.ul-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
    fois, ici, et jamais recopié dans un composant. */
 .ul-only-mobile { display: none; }

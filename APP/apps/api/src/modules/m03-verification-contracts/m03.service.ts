@@ -19,12 +19,13 @@ import {
 } from "@nestjs/common";
 import { Prisma, VerificationStatus } from "@prisma/client";
 import { createHash } from "node:crypto";
+import { StorageService } from "../../common/storage.service";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
-import { AddDocumentDto, DecideDto, SignAgreementDto } from "./m03.dto";
+import { AddDocumentDto, DecideDto, SignAgreementDto, UploadDocumentDto } from "./m03.dto";
 import {
   buildAgreementText,
   canAddDocuments,
@@ -87,7 +88,32 @@ export class M03Service {
     private readonly outbox: OutboxService,
     private readonly audit: AuditEmitter,
     private readonly m01: M01Service,
+    private readonly storage: StorageService,
   ) {}
+
+  /**
+   * Téléverse une pièce puis la rattache au dossier, en une seule opération (EF-03-01/02).
+   *
+   * Le stockage a lieu AVANT la validation d'état parce que `addDocument` la refait : si le dossier
+   * n'accepte plus de pièces, l'appel échoue et le fichier orphelin est retiré. L'inverse — valider,
+   * stocker, rattacher — laisserait la même fenêtre sans le rattrapage.
+   *
+   * Préfixe `vd` : les pièces de vérification ne sont JAMAIS publiques (RM-03-03), contrairement aux
+   * avatars — la lecture passe par un contrôle d'accès, jamais par une clé devinable.
+   */
+  async uploadDocument(
+    actor: ActorRef,
+    dto: UploadDocumentDto,
+    facilityId?: string,
+  ): Promise<{ documentId: string; kind: string; expiresAt: Date | null; createdAt: Date }> {
+    const fileKey = await this.storage.save("vd", dto.fileBase64, dto.mime);
+    try {
+      return await this.addDocument(actor, { kind: dto.kind, fileKey, expiresAt: dto.expiresAt }, facilityId);
+    } catch (e) {
+      await this.storage.remove(fileKey); // best-effort : pas de fichier orphelin si le rattachement échoue
+      throw e;
+    }
+  }
 
   // ── Ouverture automatique des dossiers (consommation outbox, spec §7) ──────
   // Handlers IDEMPOTENTS : l'outbox peut rejouer un événement (ADR-11).

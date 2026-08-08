@@ -206,6 +206,45 @@ export interface ResetPasswordTotpRequest {
   newPassword: string
 }
 
+// ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
+
+/** Machine d'états du dossier, côté serveur (m03.policies). */
+export type VerificationStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO' | 'REVOKED'
+export type DocumentKind = 'ID' | 'DIPLOMA' | 'LICENSE' | 'PHOTO' | 'ADDRESS_PROOF'
+
+/** Jeu minimal de pièces exigé avant dépôt (m03.policies REQUIRED_DOCS). Dupliqué ici pour
+ *  guider l'utilisateur AVANT l'appel — le serveur reste seul juge au moment du dépôt. */
+export const REQUIRED_DOCS: Record<'PROFESSIONAL' | 'FACILITY', DocumentKind[]> = {
+  PROFESSIONAL: ['ID', 'DIPLOMA', 'LICENSE', 'PHOTO'],
+  FACILITY: ['LICENSE', 'ID', 'ADDRESS_PROOF'],
+}
+
+export interface VerificationCase {
+  caseId: string
+  subjectKind: 'PROFESSIONAL' | 'FACILITY'
+  status: VerificationStatus
+  canPractice: boolean
+  documents: Array<{ id: string; kind: DocumentKind; fileKey: string; expiresAt: string | null; createdAt: string }>
+  decisions: Array<{ id: string; decision: string; reasons: string; decidedAt: string }>
+  agreement: {
+    version: number
+    commissionPct: number
+    bodyHash: string
+    body: string | null
+    /** `false` = le texte régénéré ne correspond plus au sceau : on ne le présente jamais comme conforme. */
+    integrity: boolean
+    signedAt: string | null
+    effectiveAt: string | null
+  } | null
+}
+
+export interface UploadDocumentRequest {
+  kind: DocumentKind
+  fileBase64: string
+  mime: string
+  expiresAt?: string
+}
+
 export const api = {
   login: (dto: LoginRequest) => request<LoginResponse>('POST', '/v1/auth/login', dto),
   logout: () => request<void>('POST', '/v1/accounts/me/logout', undefined, true),
@@ -218,6 +257,20 @@ export const api = {
   setupTotp: () => request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/setup', undefined, true),
   confirmTotp: (code: string) => request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/confirm', { code }, true),
   resetPasswordByTotp: (dto: ResetPasswordTotpRequest) => request<void>('POST', '/v1/auth/password-reset/totp', dto),
+
+  // M03 — dossier de vérification du déposant
+  verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),
+  verificationUpload: (dto: UploadDocumentRequest) =>
+    request<{ documentId: string; kind: string }>('POST', '/v1/verification/me/documents/upload', dto, true),
+  verificationSubmit: () => request<VerificationCase>('POST', '/v1/verification/me/submit', undefined, true),
+  verificationSignStart: () => request<{ expiresInSeconds: number; debugCode?: string }>(
+    'POST',
+    '/v1/verification/me/agreement/sign/start',
+    undefined,
+    true,
+  ),
+  verificationSign: (dto: { password: string; otpCode: string }) =>
+    request<VerificationCase>('POST', '/v1/verification/me/agreement/sign', dto, true),
 }
 
 export { request }

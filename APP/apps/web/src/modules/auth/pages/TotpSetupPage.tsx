@@ -68,7 +68,16 @@ export function TotpSetupPage() {
   const finish = async () => {
     const me = await api.me()
     setMe(me)
-    navigate('/dashboard', { replace: true })
+    /**
+     * CU-01-02 : « à la création, redirection **obligatoire** vers le dépôt du dossier de
+     * vérification ». Et `RM-02-04` : sans ce dossier, le compte reste invisible de l'annuaire.
+     * Envoyer un professionnel fraîchement inscrit sur un tableau de bord vide, comme on le faisait,
+     * revenait à lui cacher la seule action qui puisse le rendre opérationnel.
+     *
+     * Les comptes d'administration, eux, n'ont pas de dossier à déposer : ils vont au tableau de bord.
+     */
+    const aUnDossier = me.accountType === 'PROFESSIONAL' || me.accountType === 'FACILITY_MEMBER'
+    navigate(aUnDossier ? '/verification' : '/dashboard', { replace: true })
   }
 
   const copySecret = async () => {

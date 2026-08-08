@@ -8,6 +8,7 @@ import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
 import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
+import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -56,6 +57,17 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Tableau de bord' }}
+              />
+              {/* M03 — dépôt et suivi du dossier de vérification (CU-03-01/02/03). Réservé aux
+                  déposants : un administrateur n'a pas de dossier, la garde le dit explicitement. */}
+              <Route
+                path="/verification"
+                element={
+                  <CapabilityGate any={['professional', 'facility']}>
+                    <VerificationPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Ma vérification' }}
               />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
