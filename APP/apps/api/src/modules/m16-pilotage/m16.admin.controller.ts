@@ -100,6 +100,22 @@ export class M16AdminController {
     return this.parameters.updateParameter(actor.accountId, key, dto.value, dto.effectiveAt, dto.reason);
   }
 
+  /**
+   * Tableau des paramètres (EF-16-04).
+   *
+   * ⚠️ Cette route manquait : on pouvait modifier un PM-xx et lire son historique, mais pas savoir
+   * lesquels existent. Sans elle, changer un seuil imposait une migration de base — alors que tout
+   * le mécanisme de modification était déjà là.
+   *
+   * Déclarée AVANT `parameters/:key/history` : Nest apparie dans l'ordre de déclaration, et une
+   * route générique posée trop tôt avalerait la spécifique.
+   */
+  @AdminOnly(AdminRole.SUPER_ADMIN)
+  @Get("parameters")
+  listParameters() {
+    return this.parameters.list();
+  }
+
   /** Historique d'un paramètre plateforme. */
   @AdminOnly(AdminRole.SUPER_ADMIN)
   @Get("parameters/:key/history")

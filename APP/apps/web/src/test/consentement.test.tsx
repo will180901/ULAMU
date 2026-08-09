@@ -13,7 +13,7 @@
  *   3. le libellé nomme les documents ET leurs versions, pour qu'on sache à QUOI on consent.
  */
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -40,16 +40,31 @@ function monter() {
  * frappe ne fait pas partie de ce qu'on vérifie.
  */
 
-/** Amène jusqu'à l'étape « Sécurité » par le chemin le plus court (membre de structure, 3 étapes). */
+/**
+ * Amène jusqu'à l'étape « Sécurité » par le chemin le plus court (membre de structure, 3 étapes).
+ *
+ * Le remplissage utilise `fireEvent.change` et non `userEvent.type` : c'est de la MISE EN PLACE, pas
+ * ce qu'on vérifie. `userEvent.type` rejoue chaque touche, ce qui multiplie le travail par le nombre
+ * de caractères — cinq champs, répétés avant chacun des trois tests, sous exécution parallèle des
+ * fichiers : le délai de 5 s finissait par être dépassé environ une fois sur trois.
+ *
+ * Un test qui échoue par intermittence est pire qu'un test absent : on finit par ignorer ses alertes.
+ * On supprime donc la cause plutôt que de relever la limite — `userEvent` reste utilisé pour les
+ * gestes réellement sous test (cocher la case, cliquer le bouton).
+ */
+function remplir(libelle: RegExp, valeur: string) {
+  fireEvent.change(screen.getByLabelText(libelle), { target: { value: valeur } })
+}
+
 async function allerAEtapeSecurite(u: ReturnType<typeof userEvent.setup>) {
   await u.click(screen.getByText('Structure / Pharmacie'))
-  await u.type(screen.getByLabelText(/Téléphone/i), '+242060000001')
-  await u.type(screen.getByLabelText(/^Email/i), 'titulaire@exemple.com')
-  await u.type(screen.getByLabelText(/Nom d'utilisateur/i), 'titulaire.test')
-  await u.type(screen.getByLabelText(/Prénom/i), 'Bruno')
+  remplir(/Téléphone/i, '+242060000001')
+  remplir(/^Email/i, 'titulaire@exemple.com')
+  remplir(/Nom d'utilisateur/i, 'titulaire.test')
+  remplir(/Prénom/i, 'Bruno')
   // Expression ANCRÉE, et qui tolère l'astérisque : `Field` suffixe les libellés obligatoires d'un
   // « * », donc le texte réel est « Nom * ». Sans l'ancrage, on attraperait « Nom d'utilisateur ».
-  await u.type(screen.getByLabelText(/^Nom\s*\*?\s*$/), 'Ossona')
+  remplir(/^Nom\s*\*?\s*$/, 'Ossona')
   await u.click(screen.getByRole('button', { name: /Continuer/i }))
 }
 

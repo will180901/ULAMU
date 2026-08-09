@@ -243,6 +243,37 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+// ── M16 — Paramètres métier (EF-16-04, CU-16-02) ───────────────────────────
+
+export interface PlatformParameter {
+  /** « PM-17 », « PM-35 »… */
+  key: string
+  /** Sérialisée en texte : un entier, une liste, une durée ISO — selon le paramètre. */
+  value: string
+  description: string
+  effectiveAt: string
+  updatedAt: string
+}
+
+/**
+ * Une modification de paramètre, telle que le serveur la renvoie (`ParameterChange`, insertion seule).
+ *
+ * ⚠️ Le client déclarait auparavant `{ items: Array<{ value, effectiveAt, changedBy }> }` — une forme
+ * inventée qui ne correspondait à rien : la route renvoie les lignes du modèle, sans enveloppe. Toute
+ * lecture de l'historique aurait échoué silencieusement.
+ */
+export interface ParameterChange {
+  id: string
+  key: string
+  oldValue: string
+  newValue: string
+  reason: string
+  effectiveAt: string
+  /** Horodatage de la décision. Le champ s'appelle `createdAt` côté serveur, pas `changedAt`. */
+  createdAt: string
+  changedBy: string
+}
+
 // ── M13 — Finance (EF-13-09/10) ────────────────────────────────────────────
 
 export type RefundStatus = 'PENDING_SECOND_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
@@ -608,6 +639,14 @@ export const api = {
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
 
+  // M16 — paramètres métier (SUPER_ADMIN)
+  parameters: () => request<PlatformParameter[]>('GET', '/v1/admin/parameters', undefined, true),
+  parameterHistory: (key: string) =>
+    request<ParameterChange[]>('GET', `/v1/admin/parameters/${key}/history`, undefined, true),
+  /** Le motif est OBLIGATOIRE (RM-16-03) : un seuil qui change sans explication est ingérable. */
+  updateParameter: (key: string, dto: { value: string; effectiveAt: string; reason: string }) =>
+    request<unknown>('PUT', `/v1/admin/parameters/${key}`, dto, true),
+
   // M13 — administration Finance
   adminRefunds: (status?: RefundStatus) =>
     request<RefundRequest[]>('GET', `/v1/admin/finance/refunds${status ? `?status=${status}` : ''}`, undefined, true),
@@ -722,13 +761,6 @@ export const api = {
     request<void>('POST', `/v1/admin/accounts/${id}/suspend`, { reason }, true),
   reactivateAccount: (id: string, reason: string) =>
     request<void>('POST', `/v1/admin/accounts/${id}/reactivate`, { reason }, true),
-  parameterHistory: (key: string) =>
-    request<{ items: Array<{ value: string; effectiveAt: string; changedBy: string | null }> }>(
-      'GET',
-      `/v1/admin/parameters/${encodeURIComponent(key)}/history`,
-      undefined,
-      true,
-    ),
 
   // M03 — dossier de vérification du déposant
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),

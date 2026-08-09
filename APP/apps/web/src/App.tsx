@@ -23,6 +23,7 @@ import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
 import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
 import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { FinancePage } from '@/modules/admin/pages/FinancePage'
+import { ParametresMetierPage } from '@/modules/admin/pages/ParametresMetierPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -177,6 +178,16 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Supervision financière' }}
+              />
+              {/* Paramètres métier (EF-16-04) : SUPER_ADMIN seul, comme la garde serveur. */}
+              <Route
+                path="/admin/parametres"
+                element={
+                  <CapabilityGate any={['admin:super']}>
+                    <ParametresMetierPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Paramètres métier' }}
               />
               <Route
                 path="/admin/pilotage"

@@ -29,6 +29,29 @@ export class ParametersService {
   ) {}
 
   /**
+   * Tous les paramètres de la plateforme, triés par clé.
+   *
+   * ⚠️ Cette route manquait entièrement. On pouvait MODIFIER un paramètre par sa clé et lire son
+   * historique, mais rien ne permettait de DÉCOUVRIR lesquels existent, leur valeur courante ou ce
+   * qu'ils signifient : un administrateur devait connaître PM-01 à PM-40 de mémoire, ou garder le
+   * cahier des charges ouvert à côté. Le tableau des paramètres était donc, en pratique, inutilisable
+   * — ce qui obligeait à passer par une migration de base pour changer un seuil.
+   *
+   * Le tri est fait en base sur la clé : « PM-01 », « PM-02 »… se trient correctement en texte
+   * puisque les numéros sont sur deux chiffres.
+   */
+  async list(): Promise<Array<{ key: string; value: string; description: string; effectiveAt: string; updatedAt: string }>> {
+    const rows = await this.prisma.platformParameter.findMany({ orderBy: { key: "asc" } });
+    return rows.map((p) => ({
+      key: p.key,
+      value: p.value,
+      description: p.description,
+      effectiveAt: p.effectiveAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    }));
+  }
+
+  /**
    * CU-16-02 : change un PM-xx avec date d'effet + motif. 404 si le paramètre n'existe pas.
    * Transaction : historique (ParameterChange) + mise à jour (PlatformParameter) + audit.
    * APRÈS commit : invalidation du cache ParamsService, puis — si c'est un taux contractuel —
