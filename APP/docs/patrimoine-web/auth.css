@@ -1,0 +1,92 @@
+/* == PATRIMOINE AUTH - extrait litteral de globals.css avant la table rase ==
+   Copie au caractere pres, jamais retape : une virgule deplacee dans un pourcentage
+   et l'animation ne ressemble plus a celle du mobile. */
+
+/* --- 1. Jetons du grain (l.116-117) - a poser AVANT le reste --- */
+:root {
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-size-fine: 110px; --grain-size: 200px; --grain-size-strong: 260px; --grain-blend: normal;
+}
+
+/* --- 2. Coquille d'authentification : gauche carrousel / droite formulaire (l.640-677) --- */
+/* ── Coquille d'authentification ────────────────────────────────────────────────────────────────
+   Carte unique centrée : carrousel à gauche (repris à l'identique du mobile), formulaire à droite.
+   Sous 860px la colonne d'illustration disparaît — sur un écran étroit, elle volerait au formulaire
+   la place dont il a besoin, et l'inscription professionnelle compte cinq étapes.             */
+.ul-auth { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
+.ul-auth__card {
+  display: flex;
+  width: 880px;
+  max-width: 100%;
+  height: 580px;
+  max-height: 90vh;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--ombre-3);
+  border: 1px solid var(--bordure-legere);
+}
+.ul-auth__aside { position: relative; width: 42%; flex-shrink: 0; overflow: hidden; }
+.ul-auth__panel {
+  width: 58%;
+  background: var(--fond-surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--espace-8);
+  overflow-y: auto;
+}
+.ul-auth__sub {
+  margin: 6px 0 var(--espace-6);
+  font-family: var(--font-body);
+  font-size: var(--fs-text-sm);
+  line-height: var(--lh-text-sm);
+  color: var(--texte-secondaire);
+}
+.ul-auth__form { display: flex; flex-direction: column; gap: var(--espace-3); }
+.ul-auth__error { display: flex; align-items: center; gap: 5px; font-family: var(--font-body); font-size: var(--fs-caption); color: var(--erreur-texte); }
+.ul-auth__foot { margin-top: var(--espace-4); text-align: center; font-family: var(--font-body); font-size: var(--fs-caption); color: var(--texte-tertiaire); }
+.ul-auth__link { color: var(--ap-400); font-weight: 600; }
+.ul-auth__note { display: flex; align-items: center; gap: 6px; font-family: var(--font-body); font-size: var(--fs-text-sm); color: var(--texte-secondaire); }
+
+/* --- 3. Repli sous 860px : l'illustration s'efface, le formulaire prend tout (l.747-751) --- */
+@media (max-width: 860px) {
+  .ul-auth__aside { display: none; }
+  .ul-auth__panel { width: 100%; padding: var(--espace-6); }
+  .ul-auth__card { height: auto; }
+}
+
+/* --- 4. Grain fort applique a la page d'auth (l.1470) --- */
+.saris-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); background-blend-mode: var(--grain-blend); }
+
+/* --- 5. Contraste eleve : le grain se coupe (l.1495-1497) - accessibilite, ne pas perdre --- */
+@media (prefers-contrast: more) {
+  body, .saris-grain-fine, .saris-grain, .saris-grain-strong { background-image: none !important; }
+}
+
+/* --- 6. Trajectoires du mesh anime (l.1499-1524) --- */
+/* Mesh gradient du carrousel d'authentification — MÊMES trajectoires que l'app mobile (DRIFT_1/2/3 de
+   AuthCarouselDrawer.tsx) pour que les deux plateformes bougent pareil. Chaque motif visite 3 des 8
+   points cardinaux avant de revenir à l'origine ; les 3 pris ensemble couvrent les 8 directions.
+   Les formes sont des images (dégradé radial déjà cuit dedans), pas des dégradés CSS : c'est ce qui
+   permet un rendu identique au mobile sans réinventer la palette. */
+@keyframes ulamu-mesh-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(50%, -46%) scale(1.18); }
+  50% { transform: translate(-40%, 48%) scale(0.86); }
+  75% { transform: translate(-48%, -32%) scale(1.12); }
+}
+@keyframes ulamu-mesh-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(46%, 46%) scale(1.16); }
+  60% { transform: translate(-48%, -38%) scale(0.85); }
+  85% { transform: translate(32%, -46%) scale(1.14); }
+}
+@keyframes ulamu-mesh-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  35% { transform: translate(-46%, 40%) scale(1.14); }
+  65% { transform: translate(44%, -42%) scale(0.84); }
+  90% { transform: translate(22%, 44%) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ulamu-mesh-blob { animation: none !important; }
+}

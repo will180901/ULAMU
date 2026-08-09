@@ -1,19 +1,23 @@
 /**
- * Conformité à la charte — interdictions absolues de CG-06 §07.
+ * Conformité à la charte — interdictions absolues de CG-06 §07 et CG-09 §05.
  *
- * Ces règles ne se vérifient pas en lisant un composant : elles dépendent de la CASCADE, donc du
- * thème actif. Le défaut qu'elles protègent a réellement failli être livré.
+ * ⚠️ **État transitoire (09/08/2026).** Cinq de ces règles portaient sur la coquille applicative —
+ * barre latérale, topbar, menus, navigation — retirée par la refonte shadcn. Elles ne sont pas
+ * abandonnées : elles sont suspendues en `it.todo`, ce qui les fait apparaître à chaque exécution
+ * comme une dette visible plutôt que de disparaître silencieusement du dépôt. Chacune doit redevenir
+ * une assertion réelle quand la coquille correspondante est reconstruite.
  *
- * **Ce qui s'est passé.** Le système de design du web est un port de CMS-SARIS, qui désactive toutes
- * les ombres en thème sombre — au motif, juste, qu'une ombre portée ne se voit presque pas sur un
- * fond déjà sombre : pour une CARTE posée sur la page, la hiérarchie passe alors par la bordure.
- * Mais un MENU n'est pas une carte : il flotte au-dessus du contenu. En sombre, il devenait donc
- * strictement plat — ce que CG-06 §07 range parmi les interdictions absolues (« jamais plat »).
+ * Ce qui reste vérifié ici ne dépend d'aucun composant : ce sont des propriétés des JETONS, donc
+ * vraies quelle que soit l'implémentation qui les consomme.
  *
- * D'où le token `--ombre-flottante`, défini séparément dans les deux thèmes, et ce test qui vérifie
- * la valeur CALCULÉE plutôt que la déclaration.
+ * **Pourquoi ces règles existent.** Le système de design du web est un port de CMS-SARIS, qui
+ * désactive toutes les ombres en thème sombre — au motif, juste, qu'une ombre portée ne se voit
+ * presque pas sur un fond déjà sombre : pour une CARTE posée sur la page, la hiérarchie passe alors
+ * par la bordure. Mais un MENU n'est pas une carte : il flotte au-dessus du contenu. En sombre, il
+ * devenait donc strictement plat — ce que CG-06 §07 range parmi les interdictions absolues
+ * (« jamais plat »). D'où le token `--ombre-flottante`, défini séparément dans les deux thèmes.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -29,10 +33,6 @@ function token(bloc: ':root' | '.dark', nom: string): string | null {
   return m ? m[1].trim() : null
 }
 
-afterEach(() => {
-  document.documentElement.className = ''
-})
-
 describe('CG-06 §07 — interdictions absolues', () => {
   it('les surfaces flottantes ont une élévation dans les DEUX thèmes (« menu jamais plat »)', () => {
     const clair = token(':root', '--ombre-flottante')
@@ -41,46 +41,17 @@ describe('CG-06 §07 — interdictions absolues', () => {
     expect(clair, '--ombre-flottante manquant en thème clair').toBeTruthy()
     expect(sombre, '--ombre-flottante manquant en thème sombre').toBeTruthy()
     // C'est précisément le piège : en sombre, --ombre-4 vaut `none`. Un menu qui s'y raccrocherait
-    // serait plat.
+    // serait plat. Le token doit donc survivre à la refonte — les composants shadcn s'y brancheront.
     expect(sombre).not.toBe('none')
     expect(clair).not.toBe('none')
   })
 
-  it('les 4 surfaces flottantes utilisent ce token, et jamais une ombre neutralisée en sombre', () => {
-    // Menu contextuel, palette de commandes, infobulle, barre latérale en surimpression.
-    const usages = CSS.match(/box-shadow: var\(--ombre-flottante\)/g) ?? []
-    expect(usages.length).toBeGreaterThanOrEqual(4)
-
-    // Aucune surface flottante ne doit retomber sur --ombre-4 : il vaut `none` en sombre.
-    const menu = CSS.slice(CSS.indexOf('.ul-menu {'), CSS.indexOf('.ul-menu {') + 500)
-    expect(menu).not.toMatch(/box-shadow: var\(--ombre-4\)/)
-  })
-
-  it('la barre latérale porte toujours le verre dépoli (« sidebar sans glassmorphism » interdit)', () => {
-    const bloc = CSS.slice(CSS.indexOf('.ul-sidebar {'), CSS.indexOf('.ul-sidebar {') + 700)
-    expect(bloc).toMatch(/backdrop-filter: blur\(var\(--glass-sidebar-blur\)\)/)
-    expect(bloc).toMatch(/background: var\(--glass-sidebar-bg\)/)
-  })
-
-  it('la topbar reste sticky et porte le grain (deux interdictions explicites)', () => {
-    const bloc = CSS.slice(CSS.indexOf('.ul-topbar {'), CSS.indexOf('.ul-topbar {') + 700)
-    expect(bloc).toMatch(/position: sticky/)
-    // Le grain est appliqué par la classe `saris-grain-fine` sur l'élément lui-même (TopHeader.tsx).
-    const topbar = readFileSync(resolve(__dirname, '../components/layout/TopHeader.tsx'), 'utf8')
-    expect(topbar).toMatch(/ul-topbar saris-grain-fine/)
-  })
-
-  it('les libellés de groupe de navigation sont en monospace majuscule (bonne pratique obligatoire)', () => {
-    const bloc = CSS.slice(CSS.indexOf('.ul-nav-group-label {'), CSS.indexOf('.ul-nav-group-label {') + 500)
-    expect(bloc).toMatch(/font-family: var\(--font-mono\)/)
-    expect(bloc).toMatch(/text-transform: uppercase/)
-  })
-
-  it('l’item de navigation actif a un FOND et une COULEUR, pas seulement l’un des deux', () => {
-    const bloc = CSS.slice(CSS.indexOf('.ul-nav-item.is-active {'), CSS.indexOf('.ul-nav-item.is-active {') + 300)
-    expect(bloc).toMatch(/background: rgba\(var\(--ap-400-rgb\), 0\.12\)/)
-    expect(bloc).toMatch(/color: var\(--ap-400\)/)
-  })
+  // ── Suspendues avec la coquille supprimée — à réactiver sur l'implémentation shadcn ────────────
+  it.todo('les surfaces flottantes (menu, palette, infobulle, barre latérale) utilisent --ombre-flottante et jamais --ombre-4')
+  it.todo('la barre latérale porte le verre dépoli (« sidebar sans glassmorphism » interdit)')
+  it.todo('la topbar reste sticky et porte le grain (deux interdictions explicites)')
+  it.todo('les libellés de groupe de navigation sont en monospace majuscule')
+  it.todo('l’item de navigation actif a un FOND et une COULEUR, pas seulement l’un des deux')
 })
 
 describe('CG-09 §05 — mouvement', () => {

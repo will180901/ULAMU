@@ -19,6 +19,11 @@
 @import "@fontsource-variable/plus-jakarta-sans";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* Le préréglage Nova importait ici « @fontsource-variable/geist ». Retiré : CG-02 §01 pose un
+   référentiel FERMÉ de trois familles, et Geist en aurait été une quatrième. Les trois polices de la
+   charte sont importées trois lignes plus haut. */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -202,14 +207,14 @@
   --layout-topbar-height: 56px; --layout-max-width: 1100px; --layout-subnav-height: 40px;
 
   /* ── Pont shadcn ── */
-  --background: var(--fond-page); --foreground: var(--texte-primaire);
-  --card: var(--fond-surface); --popover: var(--fond-surface);
-  --primary: var(--ap-400); --primary-foreground: #FFFFFF;
-  --secondary: var(--fond-surface-2); --secondary-foreground: var(--texte-primaire);
-  --muted: var(--fond-surface-2); --muted-foreground: var(--texte-secondaire);
-  --accent: var(--ap-50); --accent-foreground: var(--ap-700);
-  --destructive: var(--erreur-accent);
-  --border: var(--bordure-normale); --input: var(--bordure-input); --ring: var(--ap-400);
+  --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0); --popover: oklch(1 0 0);
+  --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0); --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0); --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0); --card-foreground: oklch(0.145 0 0); --popover-foreground: oklch(0.145 0 0); --chart-1: oklch(0.87 0 0); --chart-2: oklch(0.556 0 0); --chart-3: oklch(0.439 0 0); --chart-4: oklch(0.371 0 0); --chart-5: oklch(0.269 0 0); --radius: 0.625rem; --sidebar: oklch(0.985 0 0); --sidebar-foreground: oklch(0.145 0 0); --sidebar-primary: oklch(0.205 0 0); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.97 0 0); --sidebar-accent-foreground: oklch(0.205 0 0); --sidebar-border: oklch(0.922 0 0); --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -248,14 +253,14 @@
   --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
   --glass-bordure: rgba(230, 237, 243, 0.10);
 
-  --background: var(--fond-page); --foreground: var(--texte-primaire);
-  --card: var(--fond-surface); --popover: var(--fond-surface);
-  --primary: var(--ap-400); --primary-foreground: #FFFFFF;
-  --secondary: var(--fond-surface-2); --secondary-foreground: var(--texte-primaire);
-  --muted: var(--fond-surface-2); --muted-foreground: var(--texte-secondaire);
-  --accent: var(--ap-50); --accent-foreground: var(--ap-700);
-  --destructive: var(--erreur-accent);
-  --border: var(--bordure-normale); --input: var(--bordure-input); --ring: var(--ap-400);
+  --background: oklch(0.145 0 0); --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0); --popover: oklch(0.205 0 0);
+  --primary: oklch(0.922 0 0); --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0); --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0); --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0); --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 15%); --ring: oklch(0.556 0 0); --card-foreground: oklch(0.985 0 0); --popover-foreground: oklch(0.985 0 0); --chart-1: oklch(0.87 0 0); --chart-2: oklch(0.556 0 0); --chart-3: oklch(0.439 0 0); --chart-4: oklch(0.371 0 0); --chart-5: oklch(0.269 0 0); --sidebar: oklch(0.205 0 0); --sidebar-foreground: oklch(0.985 0 0); --sidebar-primary: oklch(0.488 0.243 264.376); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.269 0 0); --sidebar-accent-foreground: oklch(0.985 0 0); --sidebar-border: oklch(1 0 0 / 10%); --sidebar-ring: oklch(0.556 0 0);
 }
 
 [data-densite="compact"] {
@@ -283,14 +288,38 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  /* ⚠️ Ce bloc est déclaré APRÈS le `:root` de la charte : à noms égaux, c'est LUI qui gagne. Le
+     préréglage Nova y plaçait Geist et faisait pointer `--font-heading` dessus — toute l'interface
+     serait passée en Geist sans qu'aucun test ne le signale, puisque les jetons de la charte, eux,
+     restaient intacts plus haut. Les quatre lignes ci-dessous rebranchent la typographie de shadcn
+     sur les trois familles de CG-02. */
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
   --font-heading: var(--font-display);
   --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card-foreground: var(--card-foreground);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 @layer base {
-  * { border-color: var(--border); }
+  * { border-color: var(--border);
+    @apply border-border outline-ring/50; }
   html, body, #root { height: 100%; }
   body {
     background: var(--fond-page);
@@ -305,6 +334,7 @@
     background-image: var(--grain-url);
     background-size: var(--grain-size) var(--grain-size);
     background-blend-mode: var(--grain-blend);
+    @apply bg-background text-foreground;
   }
   /* Titres en Plus Jakarta Sans (CG-02 §01). Les tailles viennent des classes `.t-display-*` ou du
      composant ; ce bloc ne pose que la famille et le resserrement, communs à tous les niveaux. */
@@ -317,6 +347,9 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: var(--bordure-forte); border-radius: 999px; }
   ::-webkit-scrollbar-track { background: transparent; }
+  html {
+    @apply font-sans;
+  }
 }
 
 /* ── Les 16 paliers de CG-02, en classes ────────────────────────────────────────────────────────
@@ -503,24 +536,6 @@
   outline: none;
 }
 
-/* ── Badges & pastilles de statut — CG-05 §03 ───────────────────────────────────────────────────
-   « Badges : fond semi-transparent + bordure harmonique » (§07, bonne pratique obligatoire). La
-   bordure manquait : sur fond sombre, un badge sans contour flotte sans se détacher. La forme en
-   pilule reste permise ici — l'interdiction du rayon > 14px ne vise que les BOUTONS.            */
-.ul-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-family: var(--font-body);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.ul-pill--sm { padding: 3px 10px; font-size: var(--fs-caption); line-height: var(--lh-caption); }
-.ul-pill--md { padding: 4px 12px; font-size: var(--fs-label-sm); line-height: var(--lh-label); }
-.ul-pill__dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; background: currentColor; }
-
 /* ── Cartes ─────────────────────────────────────────────────────────────────────────────────────
    Verre dépoli par défaut. En-tête et pied portent leur propre fond et « s'échappent » du padding
    du corps par marge négative — d'où les variables `--card-pad-*` : sans elles, changer le padding
@@ -607,35 +622,6 @@
 }
 .ul-steps__label.is-reached { color: var(--texte-primaire); }
 .ul-steps__label.is-current { font-weight: 700; }
-
-/* ── Squelette de chargement — CG-08 §06 : « reproduire fidèlement la structure du contenu final ».
-   Pulsation d'OPACITÉ, pas de balayage dégradé : la charte interdit les dégradés (CG-04), et le
-   « shimmer » habituel en est un. Décision déjà prise par l'auteur du composant d'origine, et
-   correcte — on la conserve. La durée reprend le palier le plus lent de CG-09.               */
-.ul-skeleton {
-  display: block;
-  border-radius: var(--radius-md);
-  background: var(--fond-surface-2);
-  animation: ul-pulse 1400ms ease-in-out infinite;
-}
-@keyframes ul-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-@media (prefers-reduced-motion: reduce) {
-  .ul-skeleton { animation: none; }
-}
-
-/* Texte réservé aux lecteurs d'écran — visuellement absent, mais présent dans l'arbre
-   d'accessibilité. `display:none` le retirerait aussi des lecteurs, ce qui est le contraire du but. */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
 
 /* ── Coquille d'authentification ────────────────────────────────────────────────────────────────
    Carte unique centrée : carrousel à gauche (repris à l'identique du mobile), formulaire à droite.
@@ -750,437 +736,6 @@
   .ul-auth__card { height: auto; }
 }
 
-/* ── En-tête de page ────────────────────────────────────────────────────────────────────────── */
-.ul-pagehead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espace-4);
-  margin-bottom: var(--espace-5);
-}
-.ul-pagehead__left { display: flex; align-items: center; gap: var(--espace-3); min-width: 0; }
-.ul-pagehead__tile {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-}
-.ul-pagehead__title { margin: 0; }
-.ul-pagehead__sub {
-  margin: 2px 0 0;
-  font-family: var(--font-body);
-  font-size: var(--fs-text-sm);
-  line-height: var(--lh-text-sm);
-  color: var(--texte-secondaire);
-}
-
-/* ════════════════════════════════════════════════════════════════════════════════════════════════
-   NAVIGATION & STRUCTURE — CG-06
-   Tout est en classes, jamais en style inline : une classe se relit, se teste, et interdit
-   d'inventer une 3e hauteur d'item ou une 4e opacité de fond actif.
-   ════════════════════════════════════════════════════════════════════════════════════════════════ */
-
-/* ── Barre latérale ─────────────────────────────────────────────────────────────────────────────
-   CG-06 §01 : étendue 240px, réduite 56px (icônes seules + infobulle), cachée en overlay sur mobile.
-   Le glassmorphism + grain est une INTERDICTION ABSOLUE de s'en passer (CG-06 §07).             */
-.ul-sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  width: var(--layout-sidebar-width);
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-sidebar-bg);
-  backdrop-filter: blur(var(--glass-sidebar-blur));
-  -webkit-backdrop-filter: blur(var(--glass-sidebar-blur));
-  border-right: 1px solid var(--glass-bordure);
-  z-index: 30;
-  transition: width var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
-}
-.ul-sidebar--collapsed { width: var(--layout-sidebar-collapsed); }
-
-.ul-sidebar__head {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-2);
-  height: var(--layout-topbar-height);
-  padding-inline: var(--espace-3);
-  flex-shrink: 0;
-}
-.ul-sidebar__nav {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-inline: var(--espace-2);
-  padding-block: var(--espace-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-1);
-}
-.ul-sidebar__group + .ul-sidebar__group { margin-top: var(--espace-3); }
-
-/* CG-06 §07, bonne pratique obligatoire : « section labels en monospace uppercase ». */
-.ul-nav-group-label {
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  line-height: var(--lh-code-sm);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--texte-tertiaire);
-  padding-inline: var(--espace-3);
-  margin-bottom: var(--espace-1);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* CG-06 §01 : hauteur 32px, gap 4px, padding H 12px, fond actif rgba(39,86,166,0.12).
-   CG-09 : ce fond s'installe en 150ms linear. */
-.ul-nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  height: 32px;
-  padding-inline: var(--espace-3);
-  border-radius: var(--radius-md);
-  color: var(--texte-secondaire);
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: var(--fs-label-md);
-  line-height: var(--lh-label);
-  font-weight: var(--fw-label);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background var(--dur-fast) linear, color var(--dur-fast) linear;
-}
-.ul-nav-item:hover { background: var(--fond-surface-2); color: var(--texte-primaire); }
-.ul-nav-item:active { transition-duration: var(--dur-press); }
-/* Item actif : fond ET couleur — se contenter de l'un des deux est interdit (CG-06 §07). */
-.ul-nav-item.is-active {
-  background: rgba(var(--ap-400-rgb), 0.12);
-  color: var(--ap-400);
-  font-weight: 600;
-}
-.ul-nav-item__icon { flex-shrink: 0; }
-.ul-nav-item__label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-
-/* CG-06 §07 : « pills accent pour les nouveaux éléments, warning si urgence ». */
-.ul-nav-badge {
-  flex-shrink: 0;
-  min-width: 18px;
-  height: 18px;
-  padding-inline: 5px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  font-weight: 500;
-  background: rgba(var(--ap-400-rgb), 0.14);
-  color: var(--ap-400);
-}
-.ul-nav-badge--urgent { background: var(--alerte-fond); color: var(--alerte-texte); }
-
-/* État réduit : l'icône se centre, tout le reste disparaît — sans changer le DOM, pour que le
-   lecteur d'écran continue d'annoncer le libellé. */
-.ul-sidebar--collapsed .ul-nav-item { justify-content: center; padding-inline: 0; gap: 0; }
-.ul-sidebar--collapsed .ul-nav-item__label,
-.ul-sidebar--collapsed .ul-nav-badge,
-.ul-sidebar--collapsed .ul-nav-group-label > span,
-.ul-sidebar--collapsed .ul-user-btn__text { display: none; }
-.ul-sidebar--collapsed .ul-nav-group-label { text-align: center; padding-inline: 0; }
-.ul-sidebar--collapsed .ul-user-btn { justify-content: center; }
-
-/* Infobulle de l'état réduit (CG-06 §01 : « icônes seules + tooltip au survol »). */
-.ul-tip { position: relative; }
-.ul-tip::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: calc(100% + var(--espace-2));
-  top: 50%;
-  transform: translateY(-50%) scale(0.96);
-  transform-origin: left center;
-  background: var(--fond-surface);
-  color: var(--texte-primaire);
-  border: 1px solid var(--bordure-normale);
-  border-radius: var(--radius-md);
-  box-shadow: var(--ombre-2);
-  padding: 4px var(--espace-2);
-  font-family: var(--font-body);
-  font-size: var(--fs-label-sm);
-  line-height: var(--lh-label);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 40;
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
-}
-.ul-sidebar--collapsed .ul-tip:hover::after,
-.ul-sidebar--collapsed .ul-tip:focus-visible::after { opacity: 1; transform: translateY(-50%) scale(1); }
-
-/* ── Pied de barre : bouton utilisateur ─────────────────────────────────────────────────────── */
-.ul-sidebar__foot {
-  flex-shrink: 0;
-  padding: var(--espace-2);
-  border-top: 1px solid var(--glass-bordure);
-}
-.ul-user-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--espace-2);
-  padding: var(--espace-2);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  text-align: left;
-  transition: background var(--dur-fast) linear;
-}
-.ul-user-btn:hover { background: var(--fond-surface-2); }
-.ul-user-btn[aria-expanded='true'] { background: var(--fond-surface-2); }
-.ul-user-btn__text { flex: 1; min-width: 0; }
-.ul-user-btn__name {
-  font-family: var(--font-body);
-  font-size: var(--fs-label-md);
-  line-height: var(--lh-label);
-  font-weight: 600;
-  color: var(--texte-primaire);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ul-user-btn__role {
-  font-family: var(--font-body);
-  font-size: var(--fs-caption);
-  line-height: var(--lh-caption);
-  color: var(--texte-tertiaire);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Avatar ─────────────────────────────────────────────────────────────────────────────────── */
-.ul-avatar {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-family: var(--font-display);
-  font-weight: 700;
-  background: var(--fond-surface-2);
-  color: var(--texte-secondaire);
-  user-select: none;
-}
-
-/* ── Menus contextuels — CG-06 §06 ──────────────────────────────────────────────────────────────
-   Tokens imposés : fond élevé, bordure 1px, rayon 10px, ombre --shadow-lg (« jamais plat »),
-   item 36px, survol sur fond discret, z-index 20. Entrée en 250ms spring (CG-09).             */
-.ul-menu {
-  position: absolute;
-  min-width: 232px;
-  padding: var(--espace-1);
-  background: var(--fond-surface);
-  border: 1px solid var(--bordure-normale);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--ombre-flottante);
-  z-index: 40;
-  animation: ul-menu-in var(--dur-slow) var(--ease-spring);
-}
-@keyframes ul-menu-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.ul-menu__label {
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--texte-tertiaire);
-  padding: var(--espace-2) var(--espace-3) var(--espace-1);
-}
-.ul-menu__item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  height: 36px;
-  padding-inline: var(--espace-3);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--texte-primaire);
-  font-family: var(--font-body);
-  font-size: var(--fs-label-md);
-  line-height: var(--lh-label);
-  font-weight: var(--fw-label);
-  text-align: left;
-  text-decoration: none;
-  transition: background var(--dur-fast) linear;
-}
-.ul-menu__item:hover { background: var(--fond-surface-2); }
-.ul-menu__item-tail { margin-left: auto; color: var(--texte-tertiaire); font-family: var(--font-mono); font-size: var(--fs-code-sm); }
-.ul-menu__sep { height: 1px; margin: var(--espace-1) var(--espace-2); background: var(--bordure-legere); }
-/* CG-06 §07 : « Actions destructives : toujours en bas du menu, couleur danger, séparateur avant ». */
-.ul-menu__item--danger { color: var(--erreur-accent); }
-.ul-menu__item--danger:hover { background: var(--erreur-fond); color: var(--erreur-texte); }
-
-/* ── Topbar — CG-06 §02 ─────────────────────────────────────────────────────────────────────────
-   Sticky obligatoire, grain obligatoire (les deux sont des interdictions explicites §07).      */
-.ul-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  height: var(--layout-topbar-height);
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  padding-inline: var(--espace-4);
-  background: var(--glass-header-bg);
-  backdrop-filter: blur(var(--glass-header-blur));
-  -webkit-backdrop-filter: blur(var(--glass-header-blur));
-  border-bottom: 1px solid var(--glass-bordure);
-  box-shadow: var(--ombre-1);
-}
-.ul-topbar__search {
-  flex: 1;
-  max-width: 280px;
-  display: flex;
-  align-items: center;
-  gap: var(--espace-2);
-  height: 32px;
-  padding-inline: var(--espace-3);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface-2);
-  border: 1px solid var(--bordure-legere);
-  color: var(--texte-tertiaire);
-  transition: border-color var(--dur-base) linear, background var(--dur-base) linear;
-}
-.ul-topbar__search:hover { border-color: var(--bordure-normale); }
-.ul-topbar__search-text { flex: 1; font-family: var(--font-body); font-size: var(--fs-label-md); text-align: left; }
-.ul-kbd {
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  color: var(--texte-tertiaire);
-  background: var(--fond-surface);
-  border: 1px solid var(--bordure-legere);
-  border-radius: var(--radius-sm);
-  padding: 1px 5px;
-}
-.ul-icon-btn {
-  position: relative;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--texte-secondaire);
-  transition: background var(--dur-fast) linear, color var(--dur-fast) linear;
-}
-.ul-icon-btn:hover { background: var(--fond-surface-2); color: var(--texte-primaire); }
-.ul-icon-btn__dot {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--erreur-accent);
-  border: 1.5px solid var(--glass-header-bg);
-}
-
-/* ── Coquille applicative ───────────────────────────────────────────────────────────────────── */
-.ul-shell { display: flex; min-height: 100vh; }
-.ul-shell__main {
-  flex: 1;
-  min-width: 0;
-  margin-left: var(--layout-sidebar-width);
-  transition: margin-left var(--dur-slow) var(--ease-out);
-}
-.ul-shell__main--collapsed { margin-left: var(--layout-sidebar-collapsed); }
-.ul-shell__content { padding: var(--espace-5); max-width: var(--layout-max-width); }
-.ul-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 25;
-  background: rgba(15, 23, 42, 0.45);
-  border: none;
-  animation: ul-fade-in var(--dur-base) var(--ease-out);
-}
-@keyframes ul-fade-in { from { opacity: 0; } to { opacity: 1; } }
-
-/* ── Palette de commandes ───────────────────────────────────────────────────────────────────────
-   Mêmes tokens que les menus contextuels (CG-06 §06) : fond élevé, bordure, rayon 10px, ombre —
-   c'est la même famille d'objet flottant, elle ne doit pas avoir sa propre apparence.          */
-.ul-palette {
-  width: min(560px, calc(100vw - var(--espace-8)));
-  max-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--fond-surface);
-  border: 1px solid var(--bordure-normale);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--ombre-flottante);
-  overflow: hidden;
-  animation: ul-menu-in var(--dur-slow) var(--ease-spring);
-}
-.ul-palette__field {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  padding: var(--espace-3) var(--espace-4);
-  border-bottom: 1px solid var(--bordure-legere);
-  flex-shrink: 0;
-}
-.ul-palette__input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--texte-primaire);
-  font-family: var(--font-body);
-  font-size: var(--fs-text-md);
-  line-height: var(--lh-text-md);
-}
-.ul-palette__input::placeholder { color: var(--texte-tertiaire); }
-.ul-palette__list { overflow-y: auto; padding: var(--espace-1); }
-.ul-palette__row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  height: 36px;
-  padding-inline: var(--espace-3);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--texte-primaire);
-  font-family: var(--font-body);
-  font-size: var(--fs-label-md);
-  font-weight: var(--fw-label);
-  transition: background var(--dur-fast) linear;
-}
-/* Sélection pilotée par le clavier ET la souris : `:hover` seul laisserait la ligne choisie au
-   clavier invisible dès que le pointeur traîne ailleurs. */
-.ul-palette__row.is-active { background: rgba(var(--ap-400-rgb), 0.12); color: var(--ap-400); }
-.ul-palette__group {
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--texte-tertiaire);
-}
-
 /* ── États d'écran — CG-08 §05 ──────────────────────────────────────────────────────────────────
    Une seule mise en forme pour chargement, erreur, hors-ligne et vide : ce sont quatre réponses à
    la même question (« pourquoi n'y a-t-il rien ici ? »), les dessiner différemment brouillerait le
@@ -1279,191 +834,6 @@
 }
 .ul-notice--warning { background: var(--alerte-fond); border-left-color: var(--alerte-accent); color: var(--alerte-texte); }
 .ul-notice--error { background: var(--erreur-fond); border-left-color: var(--erreur-accent); color: var(--erreur-texte); }
-
-/* ── Liste des pièces d'un dossier de vérification ──────────────────────────────────────────── */
-.ul-doclist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--espace-2); }
-.ul-docrow {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  padding: var(--espace-2) var(--espace-3);
-  border: 1px solid var(--bordure-legere);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface);
-}
-.ul-docrow__icon {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--fond-surface-2);
-  color: var(--texte-tertiaire);
-}
-.ul-docrow__icon.is-done { background: var(--succes-fond); color: var(--succes-accent); }
-.ul-docrow__label {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-body);
-  font-size: var(--fs-label-md);
-  font-weight: var(--fw-label);
-  color: var(--texte-primaire);
-}
-
-/* Masqué à l'œil, JAMAIS aux technologies d'assistance ni au clavier — `display:none` les exclurait
-   toutes les deux. Utilisé pour les `input[type=file]` pilotés par un bouton. */
-.ul-visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ── Groupe de choix exclusif (présence, filtres) ───────────────────────────────────────────────
-   Des boutons `aria-pressed` plutôt qu'un `<select>` : les trois états de présence doivent être
-   visibles SIMULTANÉMENT avec leur conséquence. Cacher « Ne pas déranger » derrière un menu
-   déroulant, c'est garantir que personne ne l'utilise.                                         */
-.ul-choix { display: grid; gap: var(--espace-2); }
-@media (min-width: 640px) { .ul-choix { grid-template-columns: repeat(3, 1fr); } }
-.ul-choix__item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--espace-3);
-  padding: var(--espace-3);
-  text-align: left;
-  border: 1.5px solid var(--bordure-legere);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface);
-  color: var(--texte-secondaire);
-  transition: border-color var(--dur-fast) linear, background var(--dur-fast) linear;
-}
-.ul-choix__item:hover { border-color: var(--bordure-normale); }
-.ul-choix__item.is-active {
-  border-color: var(--ap-400);
-  background: rgba(var(--ap-400-rgb), 0.08);
-  color: var(--ap-400);
-}
-
-/* ── Fil de consultation ────────────────────────────────────────────────────────────────────────
-   Hauteur BORNÉE et défilement interne : un fil qui pousse la page vers le bas éloigne le champ de
-   saisie à chaque message, et le soignant finit par écrire hors de l'écran.                    */
-.ul-fil {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-2);
-  max-height: 48vh;
-  overflow-y: auto;
-  padding: var(--espace-3);
-  border: 1px solid var(--bordure-legere);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface-2);
-}
-.ul-bulle {
-  align-self: flex-start;
-  max-width: 76%;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--espace-2) var(--espace-3);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface);
-  border: 1px solid var(--bordure-legere);
-  color: var(--texte-primaire);
-}
-/* Les messages du soignant sont alignés à droite et teintés : la provenance doit se lire d'un coup
-   d'œil, sans avoir à chercher un nom au-dessus de chaque bulle. */
-.ul-bulle--moi {
-  align-self: flex-end;
-  background: rgba(var(--ap-400-rgb), 0.10);
-  border-color: rgba(var(--ap-400-rgb), 0.22);
-}
-.ul-bulle__heure {
-  align-self: flex-end;
-  font-family: var(--font-mono);
-  font-size: var(--fs-code-sm);
-  color: var(--texte-tertiaire);
-}
-
-/* Une ligne d'ordonnance — encadrée pour qu'on voie d'un coup d'œil où commence et finit chaque
-   médicament : deux posologies qui se touchent, sur une ordonnance, ne pardonnent pas. */
-.ul-ligne-ord {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-2);
-  padding: var(--espace-3);
-  border: 1px solid var(--bordure-legere);
-  border-radius: var(--radius-md);
-  background: var(--fond-surface-2);
-}
-
-/* Puce de droit interne — activable d'un clic par le titulaire, en lecture seule pour les autres.
-   `:disabled` et non `pointer-events: none` : un élément désactivé est ANNONCÉ comme tel par les
-   lecteurs d'écran, un élément inerte se contente de ne rien faire. */
-.ul-puce-droit {
-  padding: 3px var(--espace-3);
-  border-radius: 999px;
-  border: 1px solid var(--bordure-legere);
-  background: var(--fond-surface);
-  color: var(--texte-tertiaire);
-  font-family: var(--font-body);
-  font-size: var(--fs-label-sm);
-  font-weight: var(--fw-label);
-  transition: background var(--dur-fast) linear, color var(--dur-fast) linear, border-color var(--dur-fast) linear;
-}
-.ul-puce-droit.is-active {
-  background: rgba(var(--ap-400-rgb), 0.12);
-  border-color: rgba(var(--ap-400-rgb), 0.28);
-  color: var(--ap-400);
-}
-.ul-puce-droit:disabled { cursor: default; opacity: 0.75; }
-
-/* Jauge de progression vers une cible. `role="presentation"` : la valeur chiffrée et le verdict sont
-   déjà écrits à côté, la barre n'ajoute qu'une lecture rapide — la faire annoncer une seconde fois
-   par un lecteur d'écran serait du bruit. */
-.ul-jauge {
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--fond-surface-2);
-  overflow: hidden;
-}
-.ul-jauge__part {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--erreur-accent);
-  transition: width var(--dur-slow) var(--ease-out);
-}
-.ul-jauge__part.is-ok { background: var(--succes-accent); }
-
-/* Affiché uniquement là où la barre latérale se cache — le point de bascule est défini une seule
-   fois, ici, et jamais recopié dans un composant. */
-.ul-only-mobile { display: none; }
-
-/* Mobile : la barre sort du flux et se superpose (CG-06 §01, état « caché »). */
-@media (max-width: 767px) {
-  .ul-sidebar { transform: translateX(-100%); width: var(--layout-sidebar-width); }
-  .ul-sidebar--open { transform: translateX(0); box-shadow: var(--ombre-flottante); }
-  .ul-shell__main, .ul-shell__main--collapsed { margin-left: 0; }
-  .ul-only-mobile { display: inline-flex; }
-  /* Réduire n'a pas de sens quand la barre est déjà en surimpression. */
-  .ul-sidebar__head .ul-icon-btn:not(.ul-only-mobile) { display: none; }
-}
-
-/* CG-09 §05 : « Implémenter prefers-reduced-motion : désactiver toutes animations non-essentielles ». */
-@media (prefers-reduced-motion: reduce) {
-  .ul-sidebar, .ul-shell__main, .ul-nav-item, .ul-user-btn, .ul-menu__item, .ul-icon-btn,
-  .ul-topbar__search, .ul-tip::after {
-    transition-duration: 1ms !important;
-  }
-  .ul-menu, .ul-scrim { animation: none !important; }
-}
 
 .saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }

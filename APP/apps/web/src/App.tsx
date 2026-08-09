@@ -1,37 +1,72 @@
-/** Racine — gate d'hydratation (évite un flash de l'écran de connexion), routes protégées par capacité. */
+/**
+ * Racine — état de transition, refonte shadcn en cours (09/08/2026).
+ *
+ * Les 19 écrans situés derrière la connexion ont été retirés : ils sont reconstruits un par un sur
+ * shadcn, dans l'ordre du plan `docs/plan_refonte_web_shadcn.md`. Les écrans d'authentification, eux,
+ * **restent en place** — leur mise en page (carrousel à gauche, formulaire à droite) est une règle
+ * intangible du projet, pas un choix de style à rejouer.
+ *
+ * Chaque étape de la reconstruction laisse cette application compilable et déployable : c'est la
+ * raison pour laquelle les écrans, leur coquille, leurs tests et ce routeur ont été retirés dans le
+ * même mouvement, plutôt que de laisser des imports pointer dans le vide.
+ */
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AppShell } from '@/components/layout/AppShell'
-import { CapabilityGate } from '@/components/auth/CapabilityGate'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
 import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
-import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
-import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
-import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
-import { VitrinePage } from '@/modules/directory/pages/VitrinePage'
-import { PoigneesPage } from '@/modules/handshakes/pages/PoigneesPage'
-import { ConsultationsPage } from '@/modules/sessions/pages/ConsultationsPage'
-import { ConsultationPage } from '@/modules/sessions/pages/ConsultationPage'
-import { GainsPage } from '@/modules/earnings/pages/GainsPage'
-import { PharmaciePage } from '@/modules/facility/pages/PharmaciePage'
-import { StockPage } from '@/modules/facility/pages/StockPage'
-import { DelivrancePage } from '@/modules/facility/pages/DelivrancePage'
-import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
-import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
-import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
-import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
-import { FinancePage } from '@/modules/admin/pages/FinancePage'
-import { ParametresMetierPage } from '@/modules/admin/pages/ParametresMetierPage'
-import { AdministrateursPage } from '@/modules/admin/pages/AdministrateursPage'
-import { ReservationsPage } from '@/modules/facility/pages/ReservationsPage'
+import { Logo } from '@/components/ulamu/Logo'
+import { Button } from '@/components/ulamu/Button'
 import { useSessionStore } from '@/state/session.store'
+import { useIdleLogout } from '@/state/useIdleLogout'
 
 function LoadingScreen() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--fond-page)' }}>
       <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: 'var(--ap-400)' }} />
+    </div>
+  )
+}
+
+const ROLES: Record<string, string> = {
+  PROFESSIONAL: 'Professionnel de santé',
+  FACILITY_MEMBER: 'Membre de structure',
+  ADMIN: 'Administration',
+  PATIENT: 'Patient',
+}
+
+/**
+ * Écran d'attente des comptes connectés. Il affiche l'identité et le rôle rapportés par `/v1/auth/me`
+ * : ce n'est pas de la décoration, c'est la preuve que la chaîne navigateur → API déployée → base
+ * répond toujours pendant la reconstruction. Un écran qui dirait seulement « en travaux » ne
+ * distinguerait pas une refonte en cours d'une API tombée.
+ */
+function Chantier() {
+  const me = useSessionStore((s) => s.me)
+  const logout = useSessionStore((s) => s.logout)
+
+  // La déconnexion pour inactivité vivait dans la coquille applicative, qui vient d'être retirée.
+  // Sans ce rappel ici, une session ouverte sur un poste partagé le resterait indéfiniment.
+  useIdleLogout(true)
+
+  const nom = [me?.firstName, me?.lastName].filter(Boolean).join(' ') || me?.username || me?.phone
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--fond-page)', padding: 'var(--espace-5)' }}>
+      <div className="ul-card" style={{ maxWidth: 460, textAlign: 'center', alignItems: 'center' }}>
+        <Logo size={34} />
+        <h1 className="t-display-sm" style={{ margin: 0 }}>Interface en reconstruction</h1>
+        <p className="t-text-sm" style={{ color: 'var(--texte-secondaire)', margin: 0 }}>
+          Les écrans de travail sont refaits un par un sur une nouvelle base de composants. Votre
+          compte, vos données et l’application mobile ne sont pas concernés.
+        </p>
+        <p className="t-text-sm" style={{ color: 'var(--texte-tertiaire)', margin: 0 }}>
+          Connecté en tant que <strong style={{ color: 'var(--texte-primaire)' }}>{nom}</strong>
+          {me ? ` · ${ROLES[me.accountType] ?? me.accountType}` : null}
+        </p>
+        <Button variant="ghost" onClick={() => logout()}>Se déconnecter</Button>
+      </div>
     </div>
   )
 }
@@ -65,185 +100,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/configuration-totp" replace />} />
             </>
           ) : (
-            <Route element={<AppShell />}>
-              <Route
-                path="/dashboard"
-                element={
-                  <CapabilityGate any={['professional', 'facility', 'admin']}>
-                    <DashboardPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Tableau de bord' }}
-              />
-              {/* M03 — dépôt et suivi du dossier de vérification (CU-03-01/02/03). Réservé aux
-                  déposants : un administrateur n'a pas de dossier, la garde le dit explicitement. */}
-              <Route
-                path="/verification"
-                element={
-                  <CapabilityGate any={['professional', 'facility']}>
-                    <VerificationPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Ma vérification' }}
-              />
-              {/* Vitrine du professionnel (M05). Réservée à `professional` : un pharmacien n'a pas
-                  d'offres de consultation, et un administrateur n'apparaît pas dans l'annuaire. */}
-              <Route
-                path="/vitrine"
-                element={
-                  <CapabilityGate any={['professional']}>
-                    <VitrinePage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Ma vitrine' }}
-              />
-              {/* ⭐ Le cœur du produit (M06). Contrepartie exacte de l'écran patient : sans elle,
-                  une poignée de main initiée depuis le mobile n'a aucun destinataire. */}
-              <Route
-                path="/demandes"
-                element={
-                  <CapabilityGate any={['professional']}>
-                    <PoigneesPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Demandes de consultation' }}
-              />
-              {/* Sessions de soin (M06). La consultation elle-même n'est pas gardée par capacité :
-                  le SERVEUR vérifie déjà que le demandeur est l'un des deux participants, et une
-                  garde de rôle ici bloquerait le patient si le web venait à lui être ouvert. */}
-              <Route
-                path="/consultations"
-                element={
-                  <CapabilityGate any={['professional']}>
-                    <ConsultationsPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Mes consultations' }}
-              />
-              <Route path="/consultations/:id" element={<ConsultationPage />} handle={{ title: 'Consultation' }} />
-              {/* Gains (M13) — soignant ET structure. La page choisit le porteur d'après le rôle ;
-                  le serveur, lui, réserve les retraits au titulaire d'une officine (EF-02-05). */}
-              <Route
-                path="/gains"
-                element={
-                  <CapabilityGate any={['professional', 'facility']}>
-                    <GainsPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Mes gains' }}
-              />
-              {/* Espace structure (M02). Réservé aux membres de pharmacie. */}
-              <Route
-                path="/pharmacie"
-                element={
-                  <CapabilityGate any={['facility']}>
-                    <PharmaciePage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Ma pharmacie' }}
-              />
-              <Route
-                path="/stock"
-                element={
-                  <CapabilityGate any={['facility']}>
-                    <StockPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Stock' }}
-              />
-              <Route
-                path="/delivrance"
-                element={
-                  <CapabilityGate any={['facility']}>
-                    <DelivrancePage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Délivrance' }}
-              />
-              {/* M12 — la file du comptoir. Sans elle, « marquer servi » était injoignable et les
-                  réservations expiraient au détriment de la fiabilité de l'officine. */}
-              <Route
-                path="/reservations"
-                element={
-                  <CapabilityGate any={['facility']}>
-                    <ReservationsPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Réservations' }}
-              />
-              {/* Administration — le sous-rôle est vérifié SERVEUR à chaque requête (EF-02-02) ; la
-                  garde de capacité n'est qu'un confort qui évite d'afficher un écran vide. */}
-              <Route
-                path="/admin/verification"
-                element={
-                  <CapabilityGate any={['admin:verification', 'admin:super']}>
-                    <FileVerificationPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'File de vérification' }}
-              />
-              {/* Le sous-rôle Finance n'avait AUCUN écran : il se connectait et ne voyait rien. */}
-              <Route
-                path="/admin/finance"
-                element={
-                  <CapabilityGate any={['admin:finance', 'admin:super']}>
-                    <FinancePage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Supervision financière' }}
-              />
-              {/* Paramètres métier (EF-16-04) : SUPER_ADMIN seul, comme la garde serveur. */}
-              <Route
-                path="/admin/parametres"
-                element={
-                  <CapabilityGate any={['admin:super']}>
-                    <ParametresMetierPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Paramètres métier' }}
-              />
-              {/* Attribution des sous-rôles (EF-02-08) : SUPER_ADMIN seul, comme la garde serveur. */}
-              <Route
-                path="/admin/administrateurs"
-                element={
-                  <CapabilityGate any={['admin:super']}>
-                    <AdministrateursPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Administrateurs' }}
-              />
-              <Route
-                path="/admin/pilotage"
-                element={
-                  <CapabilityGate any={['admin:super']}>
-                    <PilotagePage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Pilotage' }}
-              />
-              <Route
-                path="/admin/signalements"
-                element={
-                  <CapabilityGate any={['admin:super']}>
-                    <SignalementsPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Signalements' }}
-              />
-              <Route
-                path="/admin/comptes"
-                element={
-                  <CapabilityGate any={['admin:super']}>
-                    <ComptesPage />
-                  </CapabilityGate>
-                }
-                handle={{ title: 'Comptes' }}
-              />
-              {/* Sécurité du compte (CU-01-05/06/07). Ouverte à TOUS les rôles connectés : un
-                  administrateur a autant besoin de couper une session suspecte qu'un pharmacien. */}
-              <Route path="/parametres" element={<SettingsPage />} handle={{ title: 'Mes paramètres' }} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
+            <Route path="*" element={<Chantier />} />
           )
         ) : (
           <Route path="*" element={<Navigate to="/login" replace />} />
