@@ -24,6 +24,7 @@ import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
 import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { FinancePage } from '@/modules/admin/pages/FinancePage'
 import { ParametresMetierPage } from '@/modules/admin/pages/ParametresMetierPage'
+import { AdministrateursPage } from '@/modules/admin/pages/AdministrateursPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -188,6 +189,16 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Paramètres métier' }}
+              />
+              {/* Attribution des sous-rôles (EF-02-08) : SUPER_ADMIN seul, comme la garde serveur. */}
+              <Route
+                path="/admin/administrateurs"
+                element={
+                  <CapabilityGate any={['admin:super']}>
+                    <AdministrateursPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Administrateurs' }}
               />
               <Route
                 path="/admin/pilotage"

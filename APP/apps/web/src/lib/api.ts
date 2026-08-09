@@ -243,6 +243,29 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+// ── M02 — Sous-rôles d'administration (EF-02-08) ───────────────────────────
+
+export type AdminRole = 'SUPER_ADMIN' | 'ADMIN_FINANCE' | 'ADMIN_VERIFICATION' | 'ADMIN_MAP'
+
+/**
+ * Un membre de l'équipe ULAMU et son sous-rôle.
+ *
+ * ⚠️ Nommé `PlatformAdmin` et NON `AdminAccount` : ce dernier existe déjà plus bas et désigne tout
+ * autre chose — un compte utilisateur *vu depuis* la console d'administration (`ComptesPage`).
+ * Réutiliser le nom aurait silencieusement changé le sens d'un type déjà employé ailleurs.
+ */
+export interface PlatformAdmin {
+  accountId: string
+  username: string | null
+  firstName: string | null
+  lastName: string | null
+  phone: string
+  /** `null` = compte d'administration SANS sous-rôle : il n'accède à rien tant qu'on ne lui en donne pas. */
+  role: AdminRole | null
+  assignedBy: string | null
+  assignedAt: string | null
+}
+
 // ── M16 — Paramètres métier (EF-16-04, CU-16-02) ───────────────────────────
 
 export interface PlatformParameter {
@@ -638,6 +661,15 @@ export const api = {
   myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
+
+  // M02 — sous-rôles d'administration (SUPER_ADMIN)
+  admins: () => request<PlatformAdmin[]>('GET', '/v1/admins', undefined, true),
+  createAdmin: (dto: { phone: string; username: string; password: string; firstName: string; lastName: string; role: AdminRole }) =>
+    request<{ accountId: string }>('POST', '/v1/admins', dto, true),
+  assignAdminRole: (accountId: string, role: AdminRole, reason?: string) =>
+    request<{ accountId: string; role: string }>('POST', `/v1/admins/${accountId}/role`, { role, reason }, true),
+  /** Le serveur refuse l'auto-révocation (continuité d'administration) et coupe les sessions du révoqué. */
+  revokeAdminRole: (accountId: string) => request<void>('DELETE', `/v1/admins/${accountId}/role`, undefined, true),
 
   // M16 — paramètres métier (SUPER_ADMIN)
   parameters: () => request<PlatformParameter[]>('GET', '/v1/admin/parameters', undefined, true),

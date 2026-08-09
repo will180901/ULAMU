@@ -2,7 +2,7 @@
  * M02 — administration des sous-rôles (EF-02-08) : réservé au SUPER_ADMIN, sous TOTP (RM-01-06).
  * Le premier SUPER_ADMIN est créé par le seed (bootstrap) — il active son TOTP puis opère ici.
  */
-import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
 import { IsIn, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
@@ -33,6 +33,20 @@ export class M02AdminController {
   constructor(private readonly service: M02Service) {}
 
   /** Création d'un compte admin par le SUPER_ADMIN (EF-02-08). Mot de passe initial à changer à la première connexion (consigne opérationnelle). */
+  /**
+   * Les comptes d'administration et leur sous-rôle (EF-02-08).
+   *
+   * ⚠️ Cette route manquait : créer un administrateur et lui attribuer un rôle se faisait **par
+   * identifiant de compte**, sans aucun moyen de savoir qui sont les administrateurs, ni de vérifier
+   * qu'une révocation a pris effet. Attribuer un sous-rôle imposait donc, en pratique, de modifier
+   * le seed et de rejouer la base entière.
+   */
+  @AdminOnly("SUPER_ADMIN")
+  @Get("admins")
+  listAdmins() {
+    return this.service.listAdmins();
+  }
+
   @AdminOnly("SUPER_ADMIN")
   @Post("admins")
   createAdmin(@Actor() actor: AuthenticatedActor, @Body() dto: CreateAdminDto) {

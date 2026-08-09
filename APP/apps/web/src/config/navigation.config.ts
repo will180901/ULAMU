@@ -9,6 +9,7 @@ import {
   Building2,
   ClipboardCheck,
   Flag,
+  KeyRound,
   UserCog,
   Handshake as HandshakeIcon,
   LayoutDashboard,
@@ -79,6 +80,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'admin-signalements', label: 'Signalements', icon: Flag, href: '/admin/signalements', capabilities: ['admin:super'] },
       { key: 'admin-comptes', label: 'Comptes', icon: UserCog, href: '/admin/comptes', capabilities: ['admin:super'] },
       { key: 'admin-pilotage', label: 'Pilotage', icon: Activity, href: '/admin/pilotage', capabilities: ['admin:super'] },
+      /* EF-02-08 : sans cet écran, attribuer un sous-rôle imposait de rejouer le seed. */
+      {
+        key: 'admin-administrateurs',
+        label: 'Administrateurs',
+        icon: KeyRound,
+        href: '/admin/administrateurs',
+        capabilities: ['admin:super'],
+      },
       /* EF-16-04 : sans cet écran, changer un seuil imposait une migration de base. */
       {
         key: 'admin-parametres',

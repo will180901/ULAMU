@@ -463,6 +463,57 @@ export class M02Service {
 
   // ── Sous-rôles admin (EF-02-08) — SUPER_ADMIN uniquement (garde au contrôleur) ──
 
+  /**
+   * Tous les comptes d'administration, avec leur sous-rôle courant.
+   *
+   * ⚠️ Cette route manquait. On pouvait CRÉER un administrateur et lui attribuer ou révoquer un
+   * sous-rôle **par identifiant de compte**, mais rien ne permettait de savoir QUI sont les
+   * administrateurs. Un Super Admin ne pouvait donc ni vérifier qu'une révocation avait pris effet,
+   * ni retrouver l'identifiant sur lequel agir — sans ouvrir la base. Attribuer un sous-rôle exigeait
+   * en pratique de modifier le seed et de rejouer la base entière.
+   *
+   * Les comptes ADMIN **sans** attribution sont inclus volontairement : ce sont précisément ceux qui
+   * attendent un rôle, et les masquer les rendrait introuvables.
+   */
+  async listAdmins(): Promise<
+    Array<{
+      accountId: string;
+      username: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      phone: string;
+      role: string | null;
+      assignedBy: string | null;
+      assignedAt: string | null;
+    }>
+  > {
+    const comptes = await this.prisma.account.findMany({
+      where: { type: "ADMIN" },
+      select: { id: true, username: true, phone: true, patientProfile: { select: { firstName: true, lastName: true } } },
+      orderBy: { username: "asc" },
+    });
+    if (comptes.length === 0) return [];
+
+    const attributions = await this.prisma.adminRoleAssignment.findMany({
+      where: { accountId: { in: comptes.map((c) => c.id) } },
+    });
+    const parCompte = new Map(attributions.map((a) => [a.accountId, a]));
+
+    return comptes.map((c) => {
+      const a = parCompte.get(c.id);
+      return {
+        accountId: c.id,
+        username: c.username,
+        firstName: c.patientProfile?.firstName ?? null,
+        lastName: c.patientProfile?.lastName ?? null,
+        phone: c.phone,
+        role: a?.role ?? null,
+        assignedBy: a?.assignedBy ?? null,
+        assignedAt: a?.assignedAt.toISOString() ?? null,
+      };
+    });
+  }
+
   async createAdmin(
     actorId: string,
     dto: { phone: string; username: string; password: string; firstName: string; lastName: string; role: "SUPER_ADMIN" | "ADMIN_FINANCE" | "ADMIN_VERIFICATION" | "ADMIN_MAP" },
