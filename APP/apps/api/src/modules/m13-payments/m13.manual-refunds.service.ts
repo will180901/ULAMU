@@ -20,6 +20,22 @@ export interface ManualRefundState {
   requiresSecondApproval: boolean;
 }
 
+/** Ligne de la file Finance — la demande ET ce qu'il faut pour la trancher sans quitter l'écran. */
+export interface ManualRefundListItem {
+  requestId: string;
+  paymentId: string;
+  reason: string;
+  status: ManualRefundStatus;
+  /** Admin 1. La double validation RM-13-06 exige que l'approbateur soit différent. */
+  requestedBy: string;
+  approvedBy: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  /** `null` seulement si le paiement a disparu — cas anormal, affiché tel quel plutôt que masqué. */
+  amountXaf: number | null;
+  payerId: string | null;
+}
+
 @Injectable()
 export class ManualRefundsService {
   constructor(
@@ -30,6 +46,47 @@ export class ManualRefundsService {
   ) {}
 
   /** POST /v1/admin/finance/refunds — sous PM-35 : exécution directe tracée ; au-delà : mise en attente. */
+  /**
+   * Demandes de remboursement manuel, la plus récente d'abord.
+   *
+   * ⚠️ Cette route manquait entièrement. Le contrôleur d'administration exposait `approve` et
+   * `reject` **par identifiant**, mais aucun moyen de DÉCOUVRIR les demandes en attente : un
+   * administrateur Finance ne pouvait agir que sur un identifiant obtenu ailleurs — en base. La
+   * double validation RM-13-06 était donc inapplicable en pratique, puisque le second administrateur
+   * n'avait aucun moyen de savoir qu'on l'attendait.
+   *
+   * `montantXaf` et `payeur` sont joints ici plutôt que laissés au client : décider d'un
+   * remboursement sans voir le montant serait absurde, et faire faire N appels au navigateur pour
+   * les reconstituer le serait tout autant.
+   */
+  async list(status?: ManualRefundStatus): Promise<ManualRefundListItem[]> {
+    const requests = await this.prisma.manualRefundRequest.findMany({
+      where: status ? { status } : undefined,
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    if (requests.length === 0) return [];
+
+    const payments = await this.prisma.payment.findMany({
+      where: { id: { in: [...new Set(requests.map((r) => r.paymentId))] } },
+      select: { id: true, amountXaf: true, payerId: true },
+    });
+    const parId = new Map(payments.map((p) => [p.id, p]));
+
+    return requests.map((r) => ({
+      requestId: r.id,
+      paymentId: r.paymentId,
+      reason: r.reason,
+      status: r.status,
+      requestedBy: r.requestedBy,
+      approvedBy: r.approvedBy,
+      createdAt: r.createdAt.toISOString(),
+      decidedAt: r.decidedAt?.toISOString() ?? null,
+      amountXaf: parId.get(r.paymentId)?.amountXaf ?? null,
+      payerId: parId.get(r.paymentId)?.payerId ?? null,
+    }));
+  }
+
   async create(adminId: string, dto: CreateManualRefundDto): Promise<ManualRefundState> {
     const payment = await this.prisma.payment.findUnique({ where: { id: dto.paymentId } });
     if (!payment) throw new NotFoundException("Paiement introuvable");

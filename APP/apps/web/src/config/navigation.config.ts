@@ -4,6 +4,7 @@
  */
 import {
   Activity,
+  Banknote,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -65,6 +66,14 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: ClipboardCheck,
         href: '/admin/verification',
         capabilities: ['admin:verification', 'admin:super'],
+      },
+      /* Le sous-rôle Finance n'avait aucune entrée : il se connectait sur un espace vide. */
+      {
+        key: 'admin-finance',
+        label: 'Finance',
+        icon: Banknote,
+        href: '/admin/finance',
+        capabilities: ['admin:finance', 'admin:super'],
       },
       { key: 'admin-signalements', label: 'Signalements', icon: Flag, href: '/admin/signalements', capabilities: ['admin:super'] },
       { key: 'admin-comptes', label: 'Comptes', icon: UserCog, href: '/admin/comptes', capabilities: ['admin:super'] },

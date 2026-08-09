@@ -22,6 +22,7 @@ import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage
 import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
 import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
 import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
+import { FinancePage } from '@/modules/admin/pages/FinancePage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -166,6 +167,16 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'File de vérification' }}
+              />
+              {/* Le sous-rôle Finance n'avait AUCUN écran : il se connectait et ne voyait rien. */}
+              <Route
+                path="/admin/finance"
+                element={
+                  <CapabilityGate any={['admin:finance', 'admin:super']}>
+                    <FinancePage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Supervision financière' }}
               />
               <Route
                 path="/admin/pilotage"

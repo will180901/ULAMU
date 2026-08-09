@@ -243,6 +243,34 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+// ── M13 — Finance (EF-13-09/10) ────────────────────────────────────────────
+
+export type RefundStatus = 'PENDING_SECOND_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
+
+export interface RefundRequest {
+  requestId: string
+  paymentId: string
+  reason: string
+  status: RefundStatus
+  /** Admin 1. RM-13-06 : l'approbateur doit être quelqu'un d'AUTRE. */
+  requestedBy: string
+  approvedBy: string | null
+  createdAt: string
+  decidedAt: string | null
+  amountXaf: number | null
+  payerId: string | null
+}
+
+export interface ReconciliationReport {
+  checkedAtIso: string
+  aggregatorLines: number
+  dbLines: number
+  missingInDb: Array<{ aggregatorRef: string; kind: string; amountXaf: number }>
+  missingAtAggregator: Array<{ aggregatorRef: string; kind: string; amountXaf: number }>
+  amountMismatch: Array<{ aggregatorRef: string; kind: string; dbAmountXaf: number; aggregatorAmountXaf: number }>
+  hasGaps: boolean
+}
+
 // ── M06 — Poignée de main (CU-06-01) ───────────────────────────────────────
 
 export type HandshakeStatus = 'INITIATED' | 'CONFIRMED' | 'PAID' | 'REFUSED' | 'EXPIRED' | 'ABANDONED'
@@ -579,6 +607,13 @@ export const api = {
   myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
+
+  // M13 — administration Finance
+  adminRefunds: (status?: RefundStatus) =>
+    request<RefundRequest[]>('GET', `/v1/admin/finance/refunds${status ? `?status=${status}` : ''}`, undefined, true),
+  approveRefund: (id: string) => request<unknown>('POST', `/v1/admin/finance/refunds/${id}/approve`, undefined, true),
+  rejectRefund: (id: string) => request<unknown>('POST', `/v1/admin/finance/refunds/${id}/reject`, undefined, true),
+  runReconciliation: () => request<ReconciliationReport>('POST', '/v1/admin/finance/reconcile', undefined, true),
 
   // M06 — poignées de main reçues
   myHandshakes: () => request<Handshake[]>('GET', '/v1/handshakes/mine', undefined, true),
