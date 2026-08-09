@@ -243,6 +243,32 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+// ── M12 — Dévoilements reçus par l'officine (CU-12-03) ─────────────────────
+
+export type DisclosureStatus = 'PENDING' | 'ACTIVE' | 'SERVED' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED'
+
+export interface DisclosureItem {
+  dci?: string
+  label?: string
+  quantity?: number
+}
+
+export interface Disclosure {
+  id: string
+  status: DisclosureStatus
+  district: string
+  requestedItems: DisclosureItem[]
+  createdAt: string
+  paidAt: string | null
+  expiresAt: string | null
+  servedAt: string | null
+  /** Compte à rebours calculé par le SERVEUR — 0 hors dévoilement actif. */
+  remainingSeconds: number
+  /** Référence opaque du paiement (contrat C1) — jamais une identité. */
+  orderRef: string
+  amountXaf: number
+}
+
 // ── M02 — Sous-rôles d'administration (EF-02-08) ───────────────────────────
 
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN_FINANCE' | 'ADMIN_VERIFICATION' | 'ADMIN_MAP'
@@ -661,6 +687,13 @@ export const api = {
   myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
+
+  // M12 — dévoilements reçus par l'officine
+  facilityDisclosures: (facilityId: string) =>
+    request<{ items: Disclosure[] }>('GET', `/v1/disclosures/facility/${facilityId}`, undefined, true),
+  /** Clôture propre (RM-12-03). Le serveur refuse si le dévoilement a expiré entre-temps. */
+  markDisclosureServed: (disclosureId: string) =>
+    request<Disclosure>('POST', `/v1/disclosures/${disclosureId}/mark-served`, undefined, true),
 
   // M02 — sous-rôles d'administration (SUPER_ADMIN)
   admins: () => request<PlatformAdmin[]>('GET', '/v1/admins', undefined, true),

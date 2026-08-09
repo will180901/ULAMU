@@ -74,6 +74,18 @@ export class M12Controller {
     return this.disclosures.listMine(actor, clampHistoryPageSize(query.limit));
   }
 
+  /**
+   * La file du comptoir d'une pharmacie (CU-12-03).
+   *
+   * ⚠️ Cette route manquait : « marquer servi » était réservé à la pharmacie, mais rien ne lui
+   * permettait de savoir quelles réservations elle avait reçues. Déclarée AVANT `disclosures/:id`,
+   * sinon « facility » serait pris pour un identifiant.
+   */
+  @Get("disclosures/facility/:facilityId")
+  listForFacility(@Actor() actor: AuthenticatedActor, @Param("facilityId") facilityId: string) {
+    return this.disclosures.listForFacility(actor, facilityId);
+  }
+
   /** Prix courant du dévoilement (PM-03) — à afficher AVANT de payer (route "mine"/"price" avant ":id"). */
   @Get("disclosures/price")
   getDisclosurePrice() {

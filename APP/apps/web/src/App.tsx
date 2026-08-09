@@ -25,6 +25,7 @@ import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { FinancePage } from '@/modules/admin/pages/FinancePage'
 import { ParametresMetierPage } from '@/modules/admin/pages/ParametresMetierPage'
 import { AdministrateursPage } from '@/modules/admin/pages/AdministrateursPage'
+import { ReservationsPage } from '@/modules/facility/pages/ReservationsPage'
 import { useSessionStore } from '@/state/session.store'
 
 function LoadingScreen() {
@@ -158,6 +159,17 @@ export function App() {
                   </CapabilityGate>
                 }
                 handle={{ title: 'Délivrance' }}
+              />
+              {/* M12 — la file du comptoir. Sans elle, « marquer servi » était injoignable et les
+                  réservations expiraient au détriment de la fiabilité de l'officine. */}
+              <Route
+                path="/reservations"
+                element={
+                  <CapabilityGate any={['facility']}>
+                    <ReservationsPage />
+                  </CapabilityGate>
+                }
+                handle={{ title: 'Réservations' }}
               />
               {/* Administration — le sous-rôle est vérifié SERVEUR à chaque requête (EF-02-02) ; la
                   garde de capacité n'est qu'un confort qui évite d'afficher un écran vide. */}

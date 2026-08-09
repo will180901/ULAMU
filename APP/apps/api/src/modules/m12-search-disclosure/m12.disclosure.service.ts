@@ -294,6 +294,41 @@ export class DisclosureService {
    * à un membre ACTIF de la pharmacie révélée (ou déclenché à la délivrance M09). Le scan M09
    * appellera cette même méthode avec un acteur de la pharmacie.
    */
+  /**
+   * Les dévoilements de CETTE pharmacie — la file du comptoir (CU-12-03).
+   *
+   * ⚠️ Cette route manquait entièrement. `markServed` est pourtant réservé à la pharmacie, et
+   * `listMine` ne renvoie que les dévoilements du PATIENT connecté : une officine n'avait donc aucun
+   * moyen de savoir quelles réservations elle avait reçues. Elle ne pouvait clôturer qu'un
+   * identifiant obtenu ailleurs — en pratique, jamais. Les réservations restaient ouvertes jusqu'à
+   * expiration, ce qui pénalise la pharmacie sur sa fiabilité (EF-12-07) pour un service qu'elle a
+   * peut-être rendu.
+   *
+   * Seuls les statuts ACTIVE et SERVED sont renvoyés : un dévoilement expiré ou annulé n'appelle
+   * aucun geste au comptoir, et l'afficher noierait ceux qui en appellent un.
+   *
+   * ⚠️ Aucune identité de patient n'est exposée — le contrat C1 tient dans les deux sens. La
+   * pharmacie voit CE QUI a été réservé et jusqu'à quand, jamais QUI l'a réservé.
+   */
+  async listForFacility(actor: AuthenticatedActor, facilityId: string, limit = 100): Promise<{ items: DisclosureView[] }> {
+    await this.assertActiveFacilityMember(actor, facilityId);
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => this.expireStaleIn(tx, { facilityId }, now));
+
+    const rows = await this.prisma.disclosure.findMany({
+      where: { facilityId, status: { in: [DisclosureStatus.ACTIVE, DisclosureStatus.SERVED] } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    const views: DisclosureView[] = [];
+    for (const d of rows) {
+      const facility = await this.loadRevealedFacility(d);
+      views.push(await this.toView(d, facility, now.getTime()));
+    }
+    return { items: views };
+  }
+
   async markServed(actor: AuthenticatedActor, disclosureId: string): Promise<DisclosureView> {
     const disclosure = await this.prisma.disclosure.findUnique({ where: { id: disclosureId } });
     if (!disclosure) throw new NotFoundException("Dévoilement introuvable");

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   QrCode,
   ShieldCheck,
+  ShoppingBag,
   SlidersHorizontal,
   Store,
   Wallet,
@@ -55,6 +56,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'pharmacie', label: 'Ma pharmacie', icon: Building2, href: '/pharmacie', capabilities: ['facility'] },
       { key: 'stock', label: 'Stock', icon: Boxes, href: '/stock', capabilities: ['facility'] },
       { key: 'delivrance', label: 'Délivrance', icon: QrCode, href: '/delivrance', capabilities: ['facility'] },
+      /* M12 : les réservations payées par les patients. Sans cet écran, elles expiraient toutes. */
+      { key: 'reservations', label: 'Réservations', icon: ShoppingBag, href: '/reservations', capabilities: ['facility'] },
     ],
   },
   {
