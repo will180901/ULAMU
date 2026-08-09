@@ -83,7 +83,187 @@ export function PharmaciePage() {
       </section>
 
       <SectionMembres facility={facility} suisTitulaire={!!suisTitulaire} monAccountId={me?.accountId} onMaj={charger} />
+      {suisTitulaire ? <SectionTransfert facility={facility} monAccountId={me?.accountId} onMaj={charger} /> : null}
     </div>
+  )
+}
+
+/* ── Transfert de titularité — EF-02-06 / CU-02-05 ────────────────────────────────────────────────
+   Sans cet écran, un titulaire qui quitte son officine emportait l'espace avec lui : la structure
+   lui restait attachée et personne ne pouvait reprendre la main sans intervention en base.       */
+
+function SectionTransfert({
+  facility,
+  monAccountId,
+  onMaj,
+}: {
+  facility: Facility
+  monAccountId?: string
+  onMaj: () => void
+}) {
+  const [cible, setCible] = useState<string | null>(null)
+  const [intentId, setIntentId] = useState<string | null>(null)
+  const [codeTitulaire, setCodeTitulaire] = useState('')
+  const [codeCible, setCodeCible] = useState('')
+  const [restant, setRestant] = useState(0)
+  const [occupe, setOccupe] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [fait, setFait] = useState(false)
+
+  // Le titulaire ne peut pas se transférer à lui-même : c'est le seul membre à exclure.
+  const candidats = facility.members.filter((m) => m.accountId !== monAccountId)
+
+  // Décompte de validité de l'intention (durée des OTP, PM-17). Un code périmé ne dit pas pourquoi
+  // il est refusé — montrer le temps restant évite de croire à une erreur de saisie.
+  useEffect(() => {
+    if (restant <= 0) return
+    const id = setInterval(() => setRestant((r) => Math.max(0, r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [restant > 0])
+
+  const demarrer = async () => {
+    if (!cible) return
+    setErreur(null)
+    setOccupe(true)
+    try {
+      const res = await api.startTransfer(facility.id, cible)
+      setIntentId(res.intentId)
+      setRestant(res.expiresInSeconds)
+    } catch (e) {
+      setErreur(e instanceof ApiError ? e.message : 'Demande impossible — réessayez.')
+    } finally {
+      setOccupe(false)
+    }
+  }
+
+  const confirmer = async () => {
+    if (!intentId) return
+    setErreur(null)
+    setOccupe(true)
+    try {
+      await api.confirmTransfer(facility.id, { intentId, ownerOtpCode: codeTitulaire, targetOtpCode: codeCible })
+      setFait(true)
+      setIntentId(null)
+      onMaj()
+    } catch (e) {
+      setErreur(e instanceof ApiError ? e.message : 'Confirmation impossible — vérifiez les deux codes.')
+    } finally {
+      setOccupe(false)
+    }
+  }
+
+  const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+
+  return (
+    <section className="ul-card" aria-labelledby="transfert-titre">
+      <div className="ul-card__head">
+        <h2 id="transfert-titre" className="t-display-sm" style={{ margin: 0 }}>
+          Transférer la titularité
+        </h2>
+      </div>
+
+      {fait ? (
+        <div className="ul-notice" role="status">
+          <p className="t-text-sm" style={{ margin: 0 }}>
+            Titularité transférée. Vous restez membre de la structure, sans les droits du titulaire.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="ul-notice ul-notice--warning" role="note">
+        <p className="t-label-md" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <ShieldCheck size={15} aria-hidden="true" /> Les deux parties doivent confirmer
+        </p>
+        <p className="t-text-sm" style={{ margin: 0 }}>
+          Un code est envoyé à <strong>vous</strong> et à <strong>la personne visée</strong>. Aucune officine
+          ne change de main à l’insu de l’un des deux. Le dossier de vérification sera revalidé après le
+          transfert.
+        </p>
+      </div>
+
+      {candidats.length === 0 ? (
+        <p className="t-text-sm" style={{ color: 'var(--texte-secondaire)', margin: 0 }}>
+          Aucun autre membre. Invitez d’abord la personne à rejoindre la structure : on ne transfère la
+          titularité qu’à quelqu’un qui y travaille déjà.
+        </p>
+      ) : !intentId ? (
+        <>
+          <div className="ul-choix">
+            {candidats.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setCible(m.id)}
+                aria-pressed={cible === m.id}
+                className={['ul-choix__item', 'saris-focus-ring', cible === m.id ? 'is-active' : ''].filter(Boolean).join(' ')}
+              >
+                <span>
+                  <span className="t-label-md" style={{ display: 'block' }}>
+                    {/* `FacilityMember` ne porte PAS le téléphone : le repli est le rôle, pas un
+                        champ inexistant. Afficher « undefined » serait pire que rien. */}
+                    {[m.firstName, m.lastName].filter(Boolean).join(' ') || `Membre (${m.role})`}
+                  </span>
+                  <span className="t-caption" style={{ color: 'var(--texte-tertiaire)' }}>
+                    {m.rights.length > 0 ? m.rights.join(' · ') : 'aucun droit'}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div>
+            <Button onClick={demarrer} loading={occupe} disabled={occupe || !cible}>
+              Envoyer les deux codes
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* L'intention est liée à UNE cible : un code demandé pour A ne confirmera jamais un
+              transfert vers B. Changer d'avis impose donc de tout recommencer, et l'écran le dit. */}
+          <p className="t-text-sm" style={{ color: 'var(--texte-secondaire)', margin: 0 }}>
+            Codes envoyés. Ils ne valent que pour <strong>cette personne</strong> — en changer impose de
+            recommencer. Validité restante : <strong>{mmss(restant)}</strong>.
+          </p>
+          <Field
+            label="Votre code"
+            value={codeTitulaire}
+            onChange={(e) => setCodeTitulaire(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric"
+          />
+          <Field
+            label="Code de la personne visée"
+            value={codeCible}
+            onChange={(e) => setCodeCible(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric"
+            hint="Elle vous le communique de vive voix. C’est ce qui prouve son accord."
+          />
+          <div style={{ display: 'flex', gap: 'var(--espace-2)' }}>
+            <Button
+              variant="danger"
+              onClick={confirmer}
+              loading={occupe}
+              disabled={occupe || codeTitulaire.length < 6 || codeCible.length < 6 || restant === 0}
+            >
+              Transférer définitivement
+            </Button>
+            <Button variant="ghost" onClick={() => setIntentId(null)} disabled={occupe}>
+              Annuler
+            </Button>
+          </div>
+          {restant === 0 ? (
+            <p className="t-text-sm" style={{ color: 'var(--alerte-texte)', margin: 0 }}>
+              Les codes ont expiré. Relancez la demande pour en recevoir de nouveaux.
+            </p>
+          ) : null}
+        </>
+      )}
+
+      {erreur ? (
+        <p className="t-text-sm" role="alert" style={{ color: 'var(--erreur-texte)', margin: 0 }}>
+          {erreur}
+        </p>
+      ) : null}
+    </section>
   )
 }
 

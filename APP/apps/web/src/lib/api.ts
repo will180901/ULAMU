@@ -735,6 +735,18 @@ export const api = {
     request<{ id: string }>('POST', `/v1/facilities/${facilityId}/invitations`, dto, true),
   updateMemberRights: (facilityId: string, memberId: string, rights: FacilityRight[]) =>
     request<FacilityMember>('PATCH', `/v1/facilities/${facilityId}/members/${memberId}`, { rights }, true),
+  /**
+   * Transfert de titularité (EF-02-06 / CU-02-05) — en deux temps.
+   *
+   * `start` crée une intention PERSISTÉE et liée à UNE cible : un code demandé pour transférer à A ne
+   * peut jamais confirmer un transfert vers B. Le serveur envoie ensuite un code au titulaire ET un
+   * à la personne visée — « les deux confirment » n'est pas une formule, c'est la garantie qu'aucune
+   * officine ne change de main à l'insu de l'un des deux.
+   */
+  startTransfer: (facilityId: string, toMemberId: string) =>
+    request<{ intentId: string; expiresInSeconds: number }>('POST', `/v1/facilities/${facilityId}/transfer/start`, { toMemberId }, true),
+  confirmTransfer: (facilityId: string, dto: { intentId: string; ownerOtpCode: string; targetOtpCode: string }) =>
+    request<Facility>('POST', `/v1/facilities/${facilityId}/transfer/confirm`, dto, true),
   removeMember: (facilityId: string, memberId: string) =>
     request<void>('DELETE', `/v1/facilities/${facilityId}/members/${memberId}`, undefined, true),
 
