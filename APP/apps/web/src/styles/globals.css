@@ -838,29 +838,18 @@
 .saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
 .saris-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); background-blend-mode: var(--grain-blend); }
-.saris-glass { background: var(--verre-fond); backdrop-filter: blur(var(--verre-blur)); -webkit-backdrop-filter: blur(var(--verre-blur)); }
 /* Anneau de focus UNIQUE dans toute l'app, toujours accent-400 même sur un composant « danger » —
    jamais teinté par la couleur locale, pour que le focus clavier reste instantanément reconnaissable.
    CG-05 §01 impose la recette exacte : 3px, rgba(39,86,166,0.30), décalage +2px, « WCAG AA — jamais
    supprimé ». La version héritée de SARIS était à 2px pleins avec un décalage NÉGATIF (-2px) pour
    éviter d'être rognée par un parent `overflow:hidden` ; on suit désormais la charte, et les rares
    conteneurs qui rogneraient l'anneau devront laisser 2px de marge plutôt que l'inverse. */
-.saris-focus-ring:focus-visible,
-.ul-focus-ring:focus-visible {
+.saris-focus-ring:focus-visible {
   outline: 3px solid rgba(var(--ap-400-rgb), 0.3);
   outline-offset: 2px;
 }
-.saris-col-resize { cursor: col-resize; }
 /* Item survolé/focus clavier dans <Select> (Radix pilote data-highlighted, pas accessible en style inline). */
 .ulamu-select-item[data-highlighted] { background: var(--ap-50); color: var(--ap-700); }
-/* Motif "overline" — méta-libellé discret (catégorie/section), revient systématiquement dans toute l'app. */
-.saris-overline {
-  font-size: var(--font-size-overline);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--texte-tertiaire);
-}
 
 @media (prefers-contrast: more) {
   body, .saris-grain-fine, .saris-grain, .saris-grain-strong { background-image: none !important; }
