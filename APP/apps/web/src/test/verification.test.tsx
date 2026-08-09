@@ -86,6 +86,28 @@ describe('dossier de vérification (M03)', () => {
     expect(screen.queryByText(/NEEDS_INFO/)).not.toBeInTheDocument()
   })
 
+  it('propose de SIGNER un contrat vérifié — l’écran l’annonçait sans offrir le geste', async () => {
+    vi.spyOn(api, 'verificationMine').mockResolvedValue({
+      ...DOSSIER_VIDE,
+      status: 'VERIFIED',
+      agreement: { version: '1.0', commissionPct: 10, signedAt: null, integrity: true },
+    } as never)
+    render(<VerificationPage />)
+    expect(await screen.findByRole('button', { name: /Recevoir le code de signature/i })).toBeInTheDocument()
+  })
+
+  it('ne propose JAMAIS de signer un contrat au sceau rompu', async () => {
+    vi.spyOn(api, 'verificationMine').mockResolvedValue({
+      ...DOSSIER_VIDE,
+      status: 'VERIFIED',
+      agreement: { version: '1.0', commissionPct: 10, signedAt: null, integrity: false },
+    } as never)
+    render(<VerificationPage />)
+    // Le texte ne correspond plus à son sceau : on ne fait pas signer un document douteux.
+    await screen.findByText(/ne correspond plus à son sceau/i)
+    expect(screen.queryByRole('button', { name: /Recevoir le code de signature/i })).not.toBeInTheDocument()
+  })
+
   it('n’affiche jamais un contrat dont le sceau d’intégrité est rompu', async () => {
     vi.spyOn(api, 'verificationMine').mockResolvedValue({
       ...DOSSIER_VIDE,

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BadgeCheck, FileCheck2, FileUp, ShieldCheck, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/ulamu/PageHeader'
 import { Button } from '@/components/ulamu/Button'
+import { Field } from '@/components/ulamu/Field'
 import { StatusPill, type StatusTone } from '@/components/ulamu/StatusPill'
 import { ErrorState, LoadingState } from '@/components/ulamu/ScreenState'
 import { api, ApiError, REQUIRED_DOCS, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
@@ -211,7 +212,106 @@ export function VerificationPage() {
               </p>
             </div>
           ) : null}
+
+          {/* La signature manquait : l'écran annonçait « il reste à signer votre contrat pour pouvoir
+              exercer » sans offrir le moindre moyen de le faire. Les routes existaient pourtant.
+              Jamais proposée si le sceau est rompu — on ne fait pas signer un texte douteux. */}
+          {!dossier.agreement.signedAt && dossier.agreement.integrity !== false ? (
+            <SignatureContrat onSigne={charger} />
+          ) : null}
         </section>
+      ) : null}
+    </div>
+  )
+}
+
+/* ── Signature du contrat — M03, CU-03-03 ────────────────────────────────────────────────────────
+   Signer engage : c'est ce contrat qui fixe la commission et autorise à exercer sur la plateforme.
+   Le serveur exige donc **mot de passe ET code** — les deux, comme pour une clôture de compte. Ce
+   n'est pas une case à cocher.                                                                   */
+
+function SignatureContrat({ onSigne }: { onSigne: () => void }) {
+  const [etape, setEtape] = useState<'repos' | 'confirmation'>('repos')
+  const [motDePasse, setMotDePasse] = useState('')
+  const [code, setCode] = useState('')
+  const [indice, setIndice] = useState<string | null>(null)
+  const [occupe, setOccupe] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const demanderCode = async () => {
+    setErreur(null)
+    setOccupe(true)
+    try {
+      const res = await api.verificationSignStart()
+      // `debugCode` n'existe qu'en mode démonstration (OTP_ECHO côté API). On l'affiche quand il est
+      // là plutôt que de laisser chercher un email qui n'a pas été envoyé.
+      setIndice(res.debugCode ? `Mode démonstration — code : ${res.debugCode}` : null)
+      setEtape('confirmation')
+    } catch (e) {
+      setErreur(e instanceof ApiError ? e.message : 'Envoi du code impossible — réessayez.')
+    } finally {
+      setOccupe(false)
+    }
+  }
+
+  const signer = async () => {
+    setErreur(null)
+    setOccupe(true)
+    try {
+      await api.verificationSign({ password: motDePasse, otpCode: code })
+      onSigne()
+    } catch (e) {
+      setErreur(e instanceof ApiError ? e.message : 'Signature impossible — vérifiez vos informations.')
+    } finally {
+      setOccupe(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espace-3)' }}>
+      <div className="ul-notice" role="note">
+        <p className="t-text-sm" style={{ margin: 0 }}>
+          Signer ce contrat vous autorise à exercer sur ULAMU et fixe la commission prélevée sur chaque
+          consultation. Un exemplaire horodaté reste consultable ici.
+        </p>
+      </div>
+
+      {etape === 'repos' ? (
+        <div>
+          <Button onClick={demanderCode} loading={occupe} disabled={occupe}>
+            <FileCheck2 size={15} /> Recevoir le code de signature
+          </Button>
+        </div>
+      ) : (
+        <>
+          {indice ? (
+            <p className="t-caption" style={{ color: 'var(--info-texte)', margin: 0 }}>
+              {indice}
+            </p>
+          ) : null}
+          <Field label="Votre mot de passe" type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+          <Field
+            label="Code reçu"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric"
+            hint="Mot de passe ET code : signer engage, ce n’est pas une case à cocher."
+          />
+          <div style={{ display: 'flex', gap: 'var(--espace-2)' }}>
+            <Button onClick={signer} loading={occupe} disabled={occupe || !motDePasse || code.length < 6}>
+              Signer le contrat
+            </Button>
+            <Button variant="ghost" onClick={() => setEtape('repos')} disabled={occupe}>
+              Annuler
+            </Button>
+          </div>
+        </>
+      )}
+
+      {erreur ? (
+        <p className="t-text-sm" role="alert" style={{ color: 'var(--erreur-texte)', margin: 0 }}>
+          {erreur}
+        </p>
       ) : null}
     </div>
   )
