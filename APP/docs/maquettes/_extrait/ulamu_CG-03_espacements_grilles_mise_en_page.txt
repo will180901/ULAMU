@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-03 Espacements, Grilles & Mise en Page 
+
+
+ 
+ 
+
+<!-- ── TOPBAR ── -->
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ ulamu 
+ 
+ 
+
+ 
+
+ CG-03 
+ Espacements · Grilles · Mise en Page
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Clair
+ 
+
+ 
+
+ 
+ Sombre
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- PAGE HEADER -->
+ 
+
+ 
+Design System · Module CG-03
+
+ 
+Espacements, Grilles &amp; Mise en Page
+
+ 
+Système d'espacement à base 4px, échelle de 14 paliers nommés, grilles de colonnes par contexte, zones de layout annotées (sidebar hybride, topbar, contenu, zones de densité) et breakpoints responsives. Aucune valeur de marge ou de padding ne doit être codée en dur hors de ce référentiel.
+
+ 
+
+
+ <!-- ══════════════════════════════════════════
+ 01 — ÉCHELLE D'ESPACEMENT
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+01 — Échelle d'espacement
+
+ Base 4px · 14 paliers nommés · visualisation proportionnelle 
+ 
+
+ 
+
+
+ 
+
+ 
+ --sp-1 4px 
+ 
+
+ 
+ --sp-2 8px 
+
+ 
+ --sp-3 12px 
+
+ 
+ --sp-4 16px 
+
+ 
+ --sp-5 20px 
+
+ 
+ --sp-6 24px 
+
+ 
+ --sp-8 32px 
+
+ 
+ --sp-10 40px 
+
+ 
+ --sp-12 48px 
+
+ 
+ --sp-16 64px 
+
+ 
+ --sp-20 80px 
+
+ 
+ --sp-24 96px 
+
+ 
+ --sp-32 128px 
+
+ 
+
+
+ <!-- Visual boxes -->
+ 
+
+ 
+Représentation visuelle des espaces
+
+ 
+
+ 
+4px
+--sp-1
+
+ 
+8px
+--sp-2
+
+ 
+12px
+--sp-3
+
+ 
+16px
+--sp-4
+
+ 
+20px
+--sp-5
+
+ 
+24px
+--sp-6
+
+ 
+32px
+--sp-8
+
+ 
+40px
+--sp-10
+
+ 
+48px
+--sp-12
+
+ 
+64px
+--sp-16
+
+ 
+80px
+--sp-20
+
+ 
+96px
+--sp-24
+
+ 
+
+ 
+
+
+ <!-- Token usage table -->
+ 
+
+ 
+ | 
+ | Token | | Valeur | | Usages typiques | 
+ | 
+ 
+ 
+ | --sp-1 | | 4px | | Gap entre icône et label, espacement interne micro-badge | 
+
+ 
+ | --sp-2 | | 8px | | Gap entre éléments inline, padding interne badge/tag | 
+
+ 
+ | --sp-3 | | 12px | | Padding horizontal des boutons compacts, gap entre icône et texte nav | 
+
+ 
+ | --sp-4 | | 16px | | Padding interne des cards, gap entre champs de formulaire, padding nav item | 
+
+ 
+ | --sp-5 | | 20px | | Padding horizontal des boutons standards, espacement vertical liste | 
+
+ 
+ | --sp-6 | | 24px | | Padding interne des sections, gap entre KPI cards, margin entre blocs | 
+
+ 
+ | --sp-8 | | 32px | | Padding horizontal du contenu principal, margin entre sections proches | 
+
+ 
+ | --sp-10 | | 40px | | Margin top des titres de page, espacement important entre groupes | 
+
+ 
+ | --sp-12 | | 48px | | Gap entre sections majeures d'une page | 
+
+ 
+ | --sp-16 | | 64px | | Padding vertical des pages, espace entre modules distincts | 
+
+ 
+ | --sp-20 | | 80px | | Zones de respiration importantes (landing, empty states) | 
+
+ 
+ | --sp-24 | | 96px | | Marges verticales des grandes sections promotionnelles | 
+
+ 
+ | --sp-32 | | 128px | | Espacement maximal — reserved aux pages d'onboarding/auth | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 02 — GRILLES DE COLONNES
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+02 — Grilles de colonnes
+
+ 4 contextes · gouttières · marges · breakpoints 
+ 
+
+ 
+
+
+ <!-- 12 columns -->
+ 
+
+ 
+Grille 12 colonnes — Desktop (≥ 1280px) · Gouttière 24px
+
+ 
+
+ 
+ 1 
+
+ 
+ 2 
+
+ 
+ 3 
+
+ 
+ 4 
+
+ 
+ 5 
+
+ 
+ 6 
+
+ 
+ 7 
+
+ 
+ 8 
+
+ 
+ 9 
+
+ 
+ 10 
+
+ 
+ 11 
+
+ 
+ 12 
+
+ 
+
+ 
+
+
+ <!-- 8 columns -->
+ 
+
+ 
+Grille 8 colonnes — Laptop (≥ 1024px) · Gouttière 20px
+
+ 
+
+ 
+ 1 
+
+ 
+ 2 
+
+ 
+ 3 
+
+ 
+ 4 
+
+ 
+ 5 
+
+ 
+ 6 
+
+ 
+ 7 
+
+ 
+ 8 
+
+ 
+
+ 
+
+
+ <!-- 4 columns -->
+ 
+
+ 
+Grille 4 colonnes — Tablette (≥ 768px) · Gouttière 16px
+
+ 
+
+ 
+ 1 
+
+ 
+ 2 
+
+ 
+ 3 
+
+ 
+ 4 
+
+ 
+
+ 
+
+
+ <!-- 2 columns -->
+ 
+
+ 
+Grille 2 colonnes — Mobile (≥ 360px) · Gouttière 12px
+
+ 
+
+ 
+ 1 
+
+ 
+ 2 
+
+ 
+
+ 
+
+
+ <!-- Layout combos -->
+ 
+
+ 
+Combinaisons de colonnes fréquentes dans Ulamu
+
+ 
+ | 
+ | Contexte | | Colonnes | | Répartition | | Usage | 
+ | 
+ 
+ 
+ | Dashboard KPI | | 12 col | | 3+3+3+3 | | 4 KPI cards de poids égal | 
+
+ 
+ | Dashboard mixte | | 12 col | | 8+4 | | Graphique principal + résumé latéral | 
+
+ 
+ | Dossier patient | | 12 col | | 4+8 | | Sidebar infos patient + contenu médical | 
+
+ 
+ | Listes & tableaux | | 12 col | | 12 | | Pleine largeur dans la zone de contenu | 
+
+ 
+ | Formulaires | | 8 col | | centré | | Formulaire centré, max-width 680px | 
+
+ 
+ | Cartes médecins | | 12 col | | 4+4+4 | | Grille de 3 profil cards | 
+
+ 
+ | Pharmacie stocks | | 12 col | | 6+6 | | Tableau stocks + graphique évolution | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 03 — LAYOUT WIREFRAME ANNOTÉ
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+03 — Layout Ulamu — Wireframe annoté
+
+ Navigation hybride · Sidebar fixe + Topbar contextuelle 
+ 
+
+ 
+
+
+ <!-- Dimension annotations above -->
+ 
+
+ 
+
+ 
+ Sidebar : 240px (étendue) · 56px (réduite)
+ 
+
+ 
+
+ 
+ Topbar : 56px hauteur
+ 
+
+ 
+
+ 
+ Contenu max : 1140px · Padding H : 32px
+ 
+
+ 
+
+
+ 
+
+ <!-- browser bar -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ 
+
+ <!-- Topbar -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- annotation -->
+ 
+
+ 
+
+ TOPBAR · h:56px · glass · blur:12px
+ 
+
+ 
+
+
+ 
+
+ <!-- Sidebar -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- annotation sidebar -->
+ 
+
+ 
+
+ SIDEBAR · w:240px · glass · blur:14px
+ 
+
+ 
+
+
+ <!-- Content area -->
+ 
+
+ 
+
+ 
+
+
+ <!-- KPI row -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- 2-col grid -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- padding annotation -->
+ 
+
+ 
+
+ padding: --sp-6 (24px) top/bottom · --sp-8 (32px) left/right 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 04 — ZONES DE LAYOUT
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+04 — Zones de layout
+
+ Propriétés précises de chaque zone de l'interface 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- TOPBAR -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Topbar 
+ 
+
+ 
+
+ 
+ height 56px 
+
+ 
+ position sticky top:0 
+
+ 
+ background --glass-bg 
+
+ 
+ blur 12px 
+
+ 
+ border-bottom 1px --glass-border 
+
+ 
+ padding H --sp-8 (32px) 
+
+ 
+ z-index 100 
+
+ 
+ contenu logo · search · avatar 
+
+ 
+
+ 
+
+
+ <!-- SIDEBAR -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Sidebar 
+ 
+
+ 
+
+ 
+ width (étendue) 240px 
+
+ 
+ width (réduite) 56px 
+
+ 
+ position fixed left:0 
+
+ 
+ background --glass-bg 
+
+ 
+ blur 14px 
+
+ 
+ border-right 1px --border-subtle 
+
+ 
+ padding V --sp-4 (16px) 
+
+ 
+ padding H --sp-3 (12px) 
+
+ 
+ nav-item height 32px 
+
+ 
+ nav-item gap --sp-1 (4px) 
+
+ 
+
+ 
+
+
+ <!-- CONTENT AREA -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Zone contenu 
+ 
+
+ 
+
+ 
+ max-width 1140px 
+
+ 
+ margin 0 auto 
+
+ 
+ padding H --sp-8 (32px) 
+
+ 
+ padding V top --sp-12 (48px) 
+
+ 
+ padding V bottom --sp-16 (64px) 
+
+ 
+ section-gap --sp-12 (48px) 
+
+ 
+ card-gap --sp-4 (16px) 
+
+ 
+ background --bg-base 
+
+ 
+
+ 
+
+
+ <!-- CARDS -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Cards 
+ 
+
+ 
+
+ 
+ background --bg-elevated 
+
+ 
+ border 1px --border-subtle 
+
+ 
+ border-radius --radius-xl (14px) 
+
+ 
+ padding --sp-5 (20px) 
+
+ 
+ gap interne --sp-3 à --sp-4 
+
+ 
+ shadow --shadow-sm 
+
+ 
+ hover shadow --shadow-md 
+
+ 
+
+ 
+
+
+ <!-- MODALES -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Modales 
+ 
+
+ 
+
+ 
+ max-width 540px 
+
+ 
+ background --bg-elevated 
+
+ 
+ border 1px --border-default 
+
+ 
+ border-radius --radius-xl (14px) 
+
+ 
+ padding --sp-6 (24px) 
+
+ 
+ shadow --shadow-lg 
+
+ 
+ overlay rgba(0,0,0,0.5) 
+
+ 
+ z-index 200 
+
+ 
+
+ 
+
+
+ <!-- TOASTS -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ Toasts 
+ 
+
+ 
+
+ 
+ position top center 
+
+ 
+ top offset --sp-4 (16px) 
+
+ 
+ max-width 420px 
+
+ 
+ background --glass-bg 
+
+ 
+ blur 12px 
+
+ 
+ border 1px --glass-border 
+
+ 
+ border-radius --radius-lg (10px) 
+
+ 
+ padding --sp-3 --sp-4 
+
+ 
+ z-index 300 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 05 — DENSITÉ D'INFORMATION
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+05 — Densité d'information
+
+ Ulamu est AÉRÉ — style Linear/Vercel 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- Compact (NOT Ulamu) -->
+ 
+
+ 
+
+ Compact 
+ ❌ Non Ulamu 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+row-height: 36px · padding V: 6px · gap: 4px
+
+ 
+
+ 
+
+
+ <!-- Balanced -->
+ 
+
+ 
+
+ Équilibré 
+ ⚖️ Intermédiaire 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+row-height: 52px · padding V: 10px · gap: 5px
+
+ 
+
+ 
+
+
+ <!-- Aéré — ULAMU -->
+ 
+
+ 
+
+ Aéré 
+ ✓ Style Ulamu 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+row-height: 64px · padding V: --sp-4 (16px) · gap: --sp-3 (12px)
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 06 — BREAKPOINTS RESPONSIFS
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+06 — Breakpoints responsifs
+
+ Desktop prioritaire · adaptation progressive vers le mobile 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+Mobile
+
+ 
+xs
+
+ 
+
+ 
+≥ 360px
+
+ 
+
+ 
+ 1 col · gutter 12px · sidebar cachée 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Smartphone L
+
+ 
+sm
+
+ 
+
+ 
+≥ 480px
+
+ 
+
+ 
+ 2 col · gutter 12px · nav bottom sheet 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Tablette
+
+ 
+md
+
+ 
+
+ 
+≥ 768px
+
+ 
+
+ 
+ 4 col · gutter 16px · sidebar réduite 56px 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Laptop
+
+ 
+lg
+
+ 
+
+ 
+≥ 1024px
+
+ 
+
+ 
+ 8 col · gutter 20px · sidebar étendue 240px 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Desktop ★
+
+ 
+xl — PRIORITAIRE
+
+ 
+
+ 
+≥ 1280px
+
+ 
+
+ 
+ 12 col · gutter 24px · layout hybride complet 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Wide
+
+ 
+2xl
+
+ 
+
+ 
+≥ 1536px
+
+ 
+
+ 
+ 12 col · max-width 1140px centré · marges auto 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 07 — RÈGLES D'USAGE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+07 — Règles d'usage
+
+ Obligations et interdictions absolues 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+ Interdictions absolues
+ 
+
+ 
+ 
+Coder une valeur de margin/padding en px hors de l'échelle --sp-*
+
+ 
+Utiliser des valeurs impaires (5px, 7px, 9px) — tout est multiple de 4
+
+ 
+Placer deux sections sans au minimum --sp-8 (32px) de séparation
+
+ 
+Dépasser 1140px de largeur pour la zone de contenu principal
+
+ 
+Utiliser la sidebar étendue (240px) sans topbar visible simultanément
+
+ 
+Afficher plus de 12 colonnes dans la grille de contenu
+
+ 
+Mettre du contenu dans les gouttières de la grille
+
+ 
+Utiliser des lignes alternées colorées dans les tableaux
+
+ 
+Aligner les toasts à gauche ou à droite — toujours centrés horizontalement
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ Bonnes pratiques obligatoires
+ 
+
+ 
+ 
+Toujours utiliser les tokens --sp-* — jamais de px hardcodés
+
+ 
+Respecter la hiérarchie de densité : aéré partout, sauf exception justifiée
+
+ 
+Sidebar hybride : étendue (240px) par défaut, réduite (56px) sur demande utilisateur
+
+ 
+Tables : séparateurs 1px uniquement — border-subtle, aucune ligne alternée
+
+ 
+Cards : padding --sp-5 (20px) minimum pour garantir la respiration
+
+ 
+Toujours tester le layout à 1280px (desktop prioritaire) avant toute autre taille
+
+ 
+Sur mobile (< 768px), la sidebar se transforme en bottom navigation
+
+ 
+Gap entre KPI cards : toujours --sp-4 (16px), jamais moins
+
+ 
+Contenu de formulaire : max-width 680px, centré dans la zone de contenu
+
+ 
+ 
+
+ 
+
+ 
+
+ <!-- FOOTER -->
+ 
+ 
+ulamu · Design System · CG-03 · v1.0
+
+ 
+
+ 
+
+ Document validé — Phase 2 en cours

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="ulamu.css" />
+<style>
+/* Jetons : ulamu.css fait foi. Ici, uniquement ce qui est propre aux écrans d'authentification. */
+:root{
+--grain-fine:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--grain-strong:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-toast-bg:rgba(255,255,255,.88);
+}
+[data-theme="dark"]{
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-toast-bg:rgba(22,27,34,.88);
+}
+@keyframes ulamu-mesh-drift-1{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(50%,-46%) scale(1.18)}50%{transform:translate(-40%,48%) scale(0.86)}75%{transform:translate(-48%,-32%) scale(1.12)}}
+@keyframes ulamu-mesh-drift-2{0%,100%{transform:translate(0,0) scale(1)}30%{transform:translate(46%,46%) scale(1.16)}60%{transform:translate(-48%,-38%) scale(0.85)}85%{transform:translate(32%,-46%) scale(1.14)}}
+@keyframes ulamu-mesh-drift-3{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-46%,40%) scale(1.14)}65%{transform:translate(44%,-42%) scale(0.84)}90%{transform:translate(22%,44%) scale(1.1)}}
+@keyframes ul-spin{to{transform:rotate(360deg)}}
+@keyframes ul-step{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+@media (prefers-contrast:more){[data-grain]{background-image:none !important}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background-color:var(--fond-page);font-family:var(--font-body);color:var(--texte-primaire);padding:20px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1120px;margin:0 auto 16px;padding:10px 14px;background-color:var(--glass-toast-bg);border:1px solid var(--bordure-legere);border-radius:10px;box-shadow:var(--ombre-1)">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--ap-400);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:3px 7px;border-radius:4px">A1</span>
+      <span style="font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:-.01em">Connexion</span>
+      <span style="font-family:var(--font-body);font-size:12px;color:var(--texte-tertiaire)">Règle 1 — mise en page conservée</span>
+    </div>
+    <div style="flex:1"></div>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <div style="display:flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:8px">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="2">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div data-grain="true" style="display:flex;align-items:center;justify-content:center;min-height:700px;padding:20px;border:1px solid var(--bordure-normale);border-radius:10px;background-color:var(--fond-page);background-image:var(--grain-strong);background-size:260px 260px;max-width:1120px;margin:0 auto;box-sizing:border-box">
+
+    <div style="display:flex;width:880px;max-width:100%;height:580px;border-radius:10px;overflow:hidden;box-shadow:var(--ombre-3);border:1px solid var(--bordure-legere)">
+
+      <div aria-hidden="true" style="position:relative;width:42%;flex-shrink:0;overflow:hidden;background:#091849">
+        <img src="assets/auth/mesh-blob-0.png" alt="" style="position:absolute;width:460px;height:460px;top:-16%;left:-22%;animation:ulamu-mesh-drift-1 15s linear 0s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-1.png" alt="" style="position:absolute;width:420px;height:420px;top:52%;left:50%;animation:ulamu-mesh-drift-2 17s linear -0.4s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-2.png" alt="" style="position:absolute;width:400px;height:400px;top:66%;left:-18%;animation:ulamu-mesh-drift-3 13s linear -0.8s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-3.png" alt="" style="position:absolute;width:380px;height:380px;top:2%;left:44%;animation:ulamu-mesh-drift-2 16s linear -1.2s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-4.png" alt="" style="position:absolute;width:360px;height:360px;top:28%;left:4%;animation:ulamu-mesh-drift-1 14s linear -1.6s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-5.png" alt="" style="position:absolute;width:340px;height:340px;top:-10%;left:16%;animation:ulamu-mesh-drift-3 18s linear -2s infinite;will-change:transform" />
+        <img src="assets/auth/frost-grain.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" />
+
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px">
+          <div style="position:relative;width:100%;flex:1 1 auto;min-height:0">
+            <sc-for list="{{ diapos }}" as="d">
+              <img src="{{ d.src }}" alt="" style="{{ d.style }}" />
+            </sc-for>
+          </div>
+          <p aria-live="polite" style="{{ styleTexteDiapo }}">{{ texteDiapo }}</p>
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ points }}" as="p" hint-placeholder-count="5">
+              <span style="{{ p.style }}"></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:58%;background:var(--fond-surface);display:flex;flex-direction:column;justify-content:center;padding:32px;overflow-y:auto;box-sizing:border-box">
+        <span style="display:inline-flex;align-items:center;gap:10px">
+          <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+          <span style="font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--texte-primaire)">ulamu</span>
+        </span>
+        <p style="margin:6px 0 24px;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">Connectez-vous à votre compte ULAMU — professionnels, structures et administration.</p>
+
+        <sc-if value="{{ sessionExpiree }}">
+          <div role="status" style="display:flex;flex-direction:column;gap:4px;padding:12px;margin-bottom:12px;border:1px solid var(--bordure-legere);border-radius:6px;background:var(--fond-surface-2);color:var(--alerte-texte)">
+            <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:13px;font-weight:500">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 1L1 14h14L8 1z"></path><path d="M8 6v3M8 11v.5"></path></svg>
+              Session expirée
+            </span>
+            <span style="font-family:var(--font-body);font-size:13px;line-height:1.55">Par sécurité, une session inactive plus de 30 minutes est fermée — les postes de travail sont souvent partagés. Reconnectez-vous pour reprendre.</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeIdentifiants }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:ul-step 280ms ease">
+          <div style="display:flex;flex-direction:column;gap:12px">
+
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:var(--font-body);font-size:12px;line-height:1.4;font-weight:600;color:var(--texte-secondaire)">Nom d'utilisateur ou email</span>
+              <input type="text" value="{{ valeurIdentifiant }}" onChange="{{ majIdentifiant }}" disabled="{{ champsBloques }}" placeholder="dr_kouma ou vous@exemple.com" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            </label>
+
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:var(--font-body);font-size:12px;line-height:1.4;font-weight:600;color:var(--texte-secondaire)">Mot de passe</span>
+              <input type="password" value="{{ valeurMotDePasse }}" onChange="{{ majMotDePasse }}" disabled="{{ champsBloques }}" style="{{ styleChampMdp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              <sc-if value="{{ enErreur }}">
+                <span style="display:flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--erreur-texte)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                  Identifiant ou mot de passe incorrect
+                </span>
+              </sc-if>
+            </label>
+
+            <a href="#a1" style="align-self:flex-end;font-family:var(--font-body);font-size:11px;color:var(--ap-400);font-weight:600">Mot de passe oublié ?</a>
+
+            <sc-if value="{{ enErreur }}">
+              <p role="alert" style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--bordure-legere);background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--erreur-texte)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                Connexion impossible — vérifiez vos identifiants. Trois tentatives restantes avant blocage temporaire.
+              </p>
+            </sc-if>
+
+            <button type="button" onClick="{{ soumettre }}" disabled="{{ champsBloques }}" style="{{ styleBouton }}">
+              <sc-if value="{{ enChargement }}">
+                <span style="width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+              </sc-if>
+              {{ libelleBouton }}
+            </button>
+          </div>
+
+          <p style="margin:16px 0 0;text-align:center;font-family:var(--font-body);font-size:11px;color:var(--texte-tertiaire)">
+            Pas encore de compte ? <a href="#a2" style="color:var(--ap-400);font-weight:600">Créer un compte</a>
+          </p>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeTotp }}">
+        <div style="animation:ul-step 280ms ease">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <p style="display:flex;align-items:center;gap:6px;margin:0;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+              Code de votre application d'authentification
+            </p>
+
+            <div>
+              <span style="display:block;margin-bottom:6px;font-family:var(--font-body);font-size:12px;line-height:1.4;font-weight:600;color:var(--texte-secondaire)">Code TOTP (6 chiffres)</span>
+              <div role="group" aria-label="Code à six chiffres" style="display:flex;gap:8px">
+                <sc-for list="{{ casesOtp }}" as="c" hint-placeholder-count="6">
+                  <span style="{{ c.style }}">{{ c.valeur }}</span>
+                </sc-for>
+              </div>
+              <p style="margin:6px 0 0;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">Un code de secours à 10 caractères est aussi accepté.</p>
+            </div>
+
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ pave }}" as="t" hint-placeholder-count="4">
+                <button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ enErreur }}">
+              <p role="alert" style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--bordure-legere);background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--erreur-texte)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                Code invalide ou expiré — un code n'est valable que 30 secondes.
+              </p>
+            </sc-if>
+
+            <button type="button" onClick="{{ soumettre }}" disabled="{{ champsBloques }}" style="{{ styleBouton }}">
+              <sc-if value="{{ enChargement }}">
+                <span style="width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+              </sc-if>
+              {{ libelleBoutonTotp }}
+            </button>
+
+            <button type="button" onClick="{{ retourIdentifiants }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 18px;border:1px solid transparent;border-radius:6px;background-color:transparent;background-image:var(--grain-btn);background-size:110px 110px;color:var(--texte-secondaire);font-family:var(--font-body);font-size:14px;font-weight:600;transition:background-color 250ms linear" style-hover="background-color:var(--fond-surface-2);color:var(--texte-primaire)">Retour</button>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1120px;margin:12px auto 0;font-family:var(--font-mono);font-size:11px;color:var(--texte-tertiaire)">A1 · Carte 880×580 · carrousel 42 % / formulaire 58 % · 5 illustrations et textes du patrimoine · fondu 700 ms, texte à +400 ms sur 600 ms, maintien 3000 ms, sortie 500 ms · mesh #091849 + frost-grain</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1160,&quot;height&quot;:880},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etapeInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;identifiants&quot;,&quot;totp&quot;],&quot;default&quot;:&quot;identifiants&quot;,&quot;tsType&quot;:&quot;'identifiants' | 'totp'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;sessionExpiree&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const DIAPOS = [
+  { src: 'assets/auth/slide-online-doctor.png', texte: 'Trouvez un soignant vérifié' },
+  { src: 'assets/auth/slide-prescription.png', texte: 'Recevez votre ordonnance signée' },
+  { src: 'assets/auth/slide-medicine.png', texte: 'Réservez vos médicaments tout près' },
+  { src: 'assets/auth/slide-pharmacist.png', texte: 'Retirez-les en pharmacie en toute confiance' },
+  { src: 'assets/auth/slide-insurance.png', texte: 'Payez en toute transparence' },
+];
+
+const IMAGE_FADE_MS = 700;
+const TEXT_START_DELAY_MS = 400;
+const TEXT_FADE_MS = 600;
+const HOLD_MS = 3000;
+const FADE_OUT_MS = 500;
+
+const CHAMP_BASE = 'width:100%;height:36px;box-sizing:border-box;padding-inline:12px;border-radius:6px;background:var(--fond-surface);color:var(--texte-primaire);font-family:var(--font-body);font-size:14px;transition:border-color 150ms linear,box-shadow 150ms linear;';
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, etape: null, sessionExpiree: null,
+    index: 0, texteVisible: false, sortie: false,
+    identifiant: null, motDePasse: null, otp: '48',
+  };
+
+  componentDidMount() { this.cycle(); }
+  componentWillUnmount() { this.stopper(); }
+
+  stopper() { (this.timers || []).forEach(clearTimeout); this.timers = []; }
+
+  cycle() {
+    this.stopper();
+    this.setState({ texteVisible: false, sortie: false });
+    this.timers = [
+      setTimeout(() => this.setState({ texteVisible: true }), TEXT_START_DELAY_MS),
+      setTimeout(() => this.setState({ sortie: true }), TEXT_START_DELAY_MS + TEXT_FADE_MS + HOLD_MS),
+      setTimeout(() => {
+        this.setState((s) => ({ index: (s.index + 1) % DIAPOS.length }));
+        this.cycle();
+      }, TEXT_START_DELAY_MS + TEXT_FADE_MS + HOLD_MS + FADE_OUT_MS),
+    ];
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get etape() { return this.state.etape ?? this.props.etapeInitiale ?? 'identifiants'; }
+  get expiree() { return this.state.sessionExpiree ?? this.props.sessionExpiree ?? false; }
+
+  segStyle(actif) {
+    return 'padding:5px 11px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-family:var(--font-body);font-size:var(--font-size-caption);font-weight:' +
+      (actif ? '600' : '500') + ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' +
+      (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') + (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  renderVals() {
+    const theme = this.theme;
+    const etat = this.etat;
+    const etape = this.etape;
+    const set = (patch) => this.setState(patch);
+
+    const vide = etat === 'vide';
+    const chargement = etat === 'chargement';
+    const erreur = etat === 'erreur';
+
+    const identifiant = this.state.identifiant ?? (vide ? '' : 'dr.makaya');
+    const motDePasse = this.state.motDePasse ?? (vide ? '' : 'BrazzaCoeur2026');
+    const otp = vide ? '' : this.state.otp;
+
+    const bordure = erreur ? 'var(--erreur-accent)' : 'var(--bordure-input)';
+
+    const groupes = [
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+      { label: 'Étape', options: [{ k: 'identifiants', label: 'Identifiants' }, { k: 'totp', label: 'Code TOTP' }], courant: etape, appliquer: (k) => set({ etape: k }) },
+      { label: 'Retour forcé', options: [{ k: false, label: 'Non' }, { k: true, label: 'Session expirée' }], courant: this.expiree, appliquer: (k) => set({ sessionExpiree: k }) },
+    ];
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      sessionExpiree: this.expiree,
+      etapeIdentifiants: etape === 'identifiants',
+      etapeTotp: etape === 'totp',
+      enChargement: chargement,
+      enErreur: erreur,
+      champsBloques: chargement,
+
+      barreGroupes: groupes.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({
+          label: o.label,
+          style: this.segStyle(g.courant === o.k),
+          onClick: () => g.appliquer(o.k),
+        })),
+      })),
+
+      diapos: DIAPOS.map((d, k) => {
+        const actif = k === this.state.index && !this.state.sortie;
+        const duree = k === this.state.index && this.state.sortie ? FADE_OUT_MS : IMAGE_FADE_MS;
+        return {
+          src: d.src,
+          style: 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:' +
+            (actif ? '1' : '0') + ';transition:opacity ' + duree + 'ms ease-in-out',
+        };
+      }),
+      texteDiapo: DIAPOS[this.state.index].texte,
+      styleTexteDiapo: 'margin:0;min-height:2.6em;text-align:center;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:700;line-height:1.3;opacity:' +
+        (this.state.texteVisible && !this.state.sortie ? '1' : '0') +
+        ';transition:opacity ' + (this.state.sortie ? FADE_OUT_MS : TEXT_FADE_MS) + 'ms ease-in-out',
+      points: DIAPOS.map((d, k) => ({
+        style: 'width:' + (k === this.state.index ? '18px' : '6px') + ';height:6px;border-radius:3px;background:' +
+          (k === this.state.index ? '#fff' : 'rgba(255,255,255,0.35)') + ';transition:width 300ms ease,background 300ms ease',
+      })),
+
+      valeurIdentifiant: identifiant,
+      valeurMotDePasse: motDePasse,
+      majIdentifiant: (e) => set({ identifiant: e.target.value }),
+      majMotDePasse: (e) => set({ motDePasse: e.target.value }),
+      styleChamp: CHAMP_BASE + 'border:1px solid var(--bordure-input);' + (chargement ? 'opacity:.5;cursor:not-allowed;' : ''),
+      styleChampMdp: CHAMP_BASE + 'border:1px solid ' + bordure + ';' + (chargement ? 'opacity:.5;cursor:not-allowed;' : ''),
+
+      casesOtp: [0, 1, 2, 3, 4, 5].map((i) => {
+        const rempli = i < otp.length;
+        const courant = i === otp.length;
+        return {
+          valeur: rempli ? otp[i] : '',
+          style: 'width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid ' +
+            (erreur ? 'var(--erreur-accent)' : courant ? 'var(--ap-400)' : 'var(--bordure-input)') +
+            ';background:var(--fond-surface);font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--texte-primaire)' +
+            (courant && !erreur ? ';box-shadow:0 0 0 3px rgba(39,86,166,.12)' : ''),
+        };
+      }),
+      pave: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←'].map((t) => ({
+        label: t,
+        style: 'min-width:34px;height:30px;padding:0 8px;border:1px solid var(--bordure-legere);border-radius:6px;background-color:var(--fond-surface-2);background-image:var(--grain-btn);background-size:110px 110px;font-family:var(--font-mono);font-size:13px;color:var(--texte-secondaire);transition:background-color 200ms linear',
+        onClick: () => this.setState((s) => {
+          const cour = s.otp ?? '';
+          if (t === '←') return { otp: cour.slice(0, -1) };
+          return { otp: cour.length >= 6 ? cour : cour + t };
+        }),
+      })),
+
+      libelleBouton: chargement ? 'Connexion…' : 'Se connecter',
+      libelleBoutonTotp: chargement ? 'Vérification…' : 'Vérifier',
+      styleBouton: 'display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 24px;border:1px solid transparent;border-radius:6px;background-color:var(--ap-400);background-image:var(--grain-btn);background-size:110px 110px;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:600;transition:background-color 250ms linear;' +
+        (chargement ? 'opacity:.6;cursor:not-allowed;' : ''),
+
+      soumettre: () => {
+        if (etape === 'identifiants') { set({ etape: 'totp', etat: 'plein' }); return; }
+        /* Code vérifié : on entre dans l'application. */
+        ULAMU_ALLER('Tableau de bord');
+      },
+      retourIdentifiants: () => set({ etape: 'identifiants' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

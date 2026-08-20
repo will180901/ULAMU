@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="ulamu.css" />
+<style>
+/* Jetons : ulamu.css fait foi. Ici, uniquement ce qui est propre aux écrans d'authentification. */
+:root{
+--grain-strong:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-toast-bg:rgba(255,255,255,.88);
+}
+[data-theme="dark"]{
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-toast-bg:rgba(22,27,34,.88);
+}
+@keyframes ulamu-mesh-drift-1{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(50%,-46%) scale(1.18)}50%{transform:translate(-40%,48%) scale(0.86)}75%{transform:translate(-48%,-32%) scale(1.12)}}
+@keyframes ulamu-mesh-drift-2{0%,100%{transform:translate(0,0) scale(1)}30%{transform:translate(46%,46%) scale(1.16)}60%{transform:translate(-48%,-38%) scale(0.85)}85%{transform:translate(32%,-46%) scale(1.14)}}
+@keyframes ulamu-mesh-drift-3{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-46%,40%) scale(1.14)}65%{transform:translate(44%,-42%) scale(0.84)}90%{transform:translate(22%,44%) scale(1.1)}}
+@keyframes ul-spin{to{transform:rotate(360deg)}}
+@keyframes ulamu-step-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important}}
+@media (prefers-contrast:more){[data-grain]{background-image:none !important}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background-color:var(--fond-page);font-family:var(--font-body);color:var(--texte-primaire);padding:20px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1120px;margin:0 auto 16px;padding:10px 14px;background-color:var(--glass-toast-bg);border:1px solid var(--bordure-legere);border-radius:10px;box-shadow:var(--ombre-1)">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--ap-400);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:3px 7px;border-radius:4px">A2</span>
+      <span style="font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:-.01em">Inscription</span>
+      <span style="font-family:var(--font-body);font-size:12px;color:var(--texte-tertiaire)">{{ etapeCourante }}</span>
+    </div>
+    <div style="flex:1"></div>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="4">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <div style="display:flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="2">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div data-grain="true" style="display:flex;align-items:center;justify-content:center;min-height:700px;padding:20px;border:1px solid var(--bordure-normale);border-radius:10px;background-color:var(--fond-page);background-image:var(--grain-strong);background-size:260px 260px;max-width:1120px;margin:0 auto;box-sizing:border-box">
+
+    <div style="display:flex;width:880px;max-width:100%;height:580px;border-radius:10px;overflow:hidden;box-shadow:var(--ombre-3);border:1px solid var(--bordure-legere)">
+
+      <div aria-hidden="true" style="position:relative;width:42%;flex-shrink:0;overflow:hidden;background:#091849">
+        <img src="assets/auth/mesh-blob-0.png" alt="" style="position:absolute;width:460px;height:460px;top:-16%;left:-22%;animation:ulamu-mesh-drift-1 15s linear 0s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-1.png" alt="" style="position:absolute;width:420px;height:420px;top:52%;left:50%;animation:ulamu-mesh-drift-2 17s linear -0.4s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-2.png" alt="" style="position:absolute;width:400px;height:400px;top:66%;left:-18%;animation:ulamu-mesh-drift-3 13s linear -0.8s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-3.png" alt="" style="position:absolute;width:380px;height:380px;top:2%;left:44%;animation:ulamu-mesh-drift-2 16s linear -1.2s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-4.png" alt="" style="position:absolute;width:360px;height:360px;top:28%;left:4%;animation:ulamu-mesh-drift-1 14s linear -1.6s infinite;will-change:transform" />
+        <img src="assets/auth/mesh-blob-5.png" alt="" style="position:absolute;width:340px;height:340px;top:-10%;left:16%;animation:ulamu-mesh-drift-3 18s linear -2s infinite;will-change:transform" />
+        <img src="assets/auth/frost-grain.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" />
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px">
+          <div style="position:relative;width:100%;flex:1 1 auto;min-height:0">
+            <sc-for list="{{ diapos }}" as="d">
+              <img src="{{ d.src }}" alt="" style="{{ d.style }}" />
+            </sc-for>
+          </div>
+          <p aria-live="polite" style="{{ styleTexteDiapo }}">{{ texteDiapo }}</p>
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ points }}" as="p" hint-placeholder-count="5">
+              <span style="{{ p.style }}"></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:58%;background:var(--fond-surface);display:flex;flex-direction:column;justify-content:center;padding:32px;overflow-y:auto;box-sizing:border-box">
+        <span style="display:inline-flex;align-items:center;gap:10px">
+          <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+          <span style="font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--texte-primaire)">ulamu</span>
+        </span>
+        <p style="margin:6px 0 24px;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">Créez votre compte ULAMU — professionnels de santé et structures/pharmacies.</p>
+
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center">
+            <sc-for list="{{ etapes }}" as="e" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;flex:1">
+                <button type="button" onClick="{{ e.onClick }}" style="{{ e.stylePastille }}">{{ e.numero }}</button>
+                <span style="{{ e.styleBarre }}"></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;margin-top:6px">
+            <sc-for list="{{ etapes }}" as="e" hint-placeholder-count="5">
+              <span style="{{ e.styleLibelle }}">{{ e.libelle }}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ etapeType }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:ulamu-step-fade 280ms ease">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button type="button" onClick="{{ choisirProfessionnel }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px;border-radius:8px;border:1px solid var(--bordure-normale);background:var(--fond-surface);transition:background 200ms linear,border-color 200ms linear,box-shadow 200ms linear" style-hover="background:var(--ap-50);border-color:var(--ap-300);box-shadow:var(--ombre-1)">
+              <span aria-hidden="true" style="width:40px;height:40px;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--ap-50);color:var(--ap-700)">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"></path><path d="M12 6v3a4 4 0 0 0 4 4"></path><circle cx="14" cy="13" r="1.5" fill="currentColor"></circle></svg>
+              </span>
+              <span>
+                <span style="display:block;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--texte-primaire)">Professionnel de santé</span>
+                <span style="display:block;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-secondaire)">Médecin, spécialiste, dentiste, sage-femme, infirmier(ère)…</span>
+              </span>
+            </button>
+            <button type="button" onClick="{{ choisirStructure }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px;border-radius:8px;border:1px solid var(--bordure-normale);background:var(--fond-surface);transition:background 200ms linear,border-color 200ms linear,box-shadow 200ms linear" style-hover="background:var(--ap-50);border-color:var(--ap-300);box-shadow:var(--ombre-1)">
+              <span aria-hidden="true" style="width:40px;height:40px;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--ap-50);color:var(--ap-700)">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="12" rx="1"></rect><path d="M8 7v4M6 9h4"></path><path d="M5 3V2M11 3V2"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--texte-primaire)">Structure / Pharmacie</span>
+                <span style="display:block;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-secondaire)">Titulaire ou membre d'une officine.</span>
+              </span>
+            </button>
+            <p style="margin:4px 0 0;text-align:center;font-family:var(--font-body);font-size:11px;color:var(--texte-tertiaire)">
+              Déjà un compte ? <a href="#a1" style="color:var(--ap-400);font-weight:600">Se connecter</a>
+            </p>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeIdentite }}">
+        <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:12px">
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Téléphone</span>
+            <input type="text" value="{{ vTelephone }}" onChange="{{ majTelephone }}" placeholder="+242…" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Email</span>
+            <input type="email" value="{{ vEmail }}" onChange="{{ majEmail }}" placeholder="vous@exemple.com" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            <span style="font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">Votre code de vérification y sera envoyé.</span>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Nom d'utilisateur</span>
+            <input type="text" value="{{ vIdentifiant }}" onChange="{{ majIdentifiant }}" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+          </label>
+          <div style="display:flex;gap:12px">
+            <label style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="{{ styleLabel }}">Prénom</span>
+              <input type="text" value="{{ vPrenom }}" onChange="{{ majPrenom }}" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            </label>
+            <label style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="{{ styleLabel }}">Nom</span>
+              <input type="text" value="{{ vNom }}" onChange="{{ majNom }}" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            </label>
+          </div>
+          <button type="button" onClick="{{ suivant }}" style="{{ stylePrimaire }}">Continuer</button>
+          <button type="button" onClick="{{ precedent }}" style="{{ styleGhost }}">Retour</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeProfil }}">
+        <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:12px">
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Catégorie</span>
+            <span style="position:relative;display:flex">
+              <select value="{{ vCategorie }}" onChange="{{ majCategorie }}" style="{{ styleSelect }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none">
+                <option value="GENERAL_PRACTITIONER">Médecin généraliste</option>
+                <option value="SPECIALIST">Spécialiste</option>
+                <option value="DENTIST">Dentiste</option>
+                <option value="MIDWIFE">Sage-femme</option>
+                <option value="NURSE">Infirmier(ère)</option>
+                <option value="COMMUNITY_HEALTH_WORKER">Agent de santé communautaire</option>
+              </select>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;right:12px;top:11px;pointer-events:none"><path d="M4 6l4 4 4-4"></path></svg>
+            </span>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Spécialité (optionnel)</span>
+            <input type="text" value="{{ vSpecialite }}" onChange="{{ majSpecialite }}" placeholder="Cardiologie" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+          </label>
+          <button type="button" onClick="{{ suivant }}" style="{{ stylePrimaire }}">Continuer</button>
+          <button type="button" onClick="{{ precedent }}" style="{{ styleGhost }}">Retour</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeSecurite }}">
+        <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:12px">
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Mot de passe</span>
+            <input type="password" value="{{ vMotDePasse }}" onChange="{{ majMotDePasse }}" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            <span style="font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">8 caractères minimum, lettres et chiffres</span>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="{{ styleLabel }}">Confirmez le mot de passe</span>
+            <input type="password" value="{{ vConfirmation }}" onChange="{{ majConfirmation }}" style="{{ styleChampConfirmation }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            <sc-if value="{{ confirmationDivergente }}">
+              <span style="display:flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--erreur-texte)">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                Ne correspond pas
+              </span>
+            </sc-if>
+          </label>
+
+          <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--bordure-legere);border-radius:6px;background:var(--fond-surface-2);cursor:pointer;transition:border-color 150ms linear" style-hover="border-color:var(--bordure-normale)">
+            <input type="checkbox" checked="{{ cguAcceptees }}" onChange="{{ basculerCgu }}" style="flex-shrink:0;width:18px;height:18px;margin:1px 0 0;accent-color:var(--ap-400)" />
+            <span style="font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">J’accepte les <strong style="color:var(--texte-primaire)">conditions générales d’utilisation</strong> (v1.0) et la <strong style="color:var(--texte-primaire)">politique de confidentialité</strong> (v1.0) d’ULAMU, et le traitement de mes données de santé qu’elles décrivent.</span>
+          </label>
+
+          <sc-if value="{{ enErreur }}">
+            <p role="alert" style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--bordure-legere);background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--erreur-texte)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              Envoi du code impossible — réessayez dans un instant.
+            </p>
+          </sc-if>
+
+          <button type="button" onClick="{{ suivant }}" disabled="{{ continuerBloque }}" style="{{ stylePrimaireCgu }}">
+            <sc-if value="{{ enChargement }}">
+              <span style="width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+            </sc-if>
+            {{ libelleContinuer }}
+          </button>
+          <button type="button" onClick="{{ precedent }}" style="{{ styleGhost }}">Retour</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ etapeOtp }}">
+        <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:12px">
+          <p style="display:flex;align-items:center;gap:6px;margin:0;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+            Vérification de l'adresse email
+          </p>
+          <p style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border:1px solid var(--bordure-legere);border-radius:6px;background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--info-texte)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+            {{ messageCodeEnvoye }}
+          </p>
+          <div>
+            <span style="display:block;margin-bottom:6px;{{ styleLabel }}">Code reçu par email</span>
+            <div role="group" aria-label="Code à six chiffres" style="display:flex;gap:8px">
+              <sc-for list="{{ casesOtp }}" as="c" hint-placeholder-count="6">
+                <span style="{{ c.style }}">{{ c.valeur }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ pave }}" as="t" hint-placeholder-count="4">
+              <button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ enErreur }}">
+            <p role="alert" style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--bordure-legere);background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--erreur-texte)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              Code incorrect ou expiré — demandez-en un nouveau.
+            </p>
+          </sc-if>
+          <button type="button" onClick="{{ suivant }}" style="{{ stylePrimaire }}">
+            <sc-if value="{{ enChargement }}">
+              <span style="width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+            </sc-if>
+            {{ libelleCreation }}
+          </button>
+          <button type="button" onClick="{{ precedent }}" style="{{ styleGhost }}">Retour</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ estVideType }}">
+          <p style="margin:12px 0 0;font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--texte-tertiaire)">Aucun type de compte sélectionné — le parcours ne peut pas démarrer avant ce choix.</p>
+        </sc-if>
+
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1120px;margin:12px auto 0;font-family:var(--font-mono);font-size:11px;color:var(--texte-tertiaire)">A2 · 5 étapes (4 pour une structure) · consentement CGU v1.0 bloquant, jamais pré-coché (EF-01-08, loi n° 29-2019) · code par email à la création, TOTP ensuite · étapes cliquables jusqu'à celle atteinte</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1160,&quot;height&quot;:880},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etapeInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;type&quot;,&quot;identite&quot;,&quot;profil&quot;,&quot;securite&quot;,&quot;otp&quot;],&quot;default&quot;:&quot;type&quot;,&quot;tsType&quot;:&quot;'type' | 'identite' | 'profil' | 'securite' | 'otp'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;typeCompte&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;PROFESSIONAL&quot;,&quot;FACILITY_MEMBER&quot;],&quot;default&quot;:&quot;PROFESSIONAL&quot;,&quot;tsType&quot;:&quot;'PROFESSIONAL' | 'FACILITY_MEMBER'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const DIAPOS = [
+  { src: 'assets/auth/slide-online-doctor.png', texte: 'Trouvez un soignant vérifié' },
+  { src: 'assets/auth/slide-prescription.png', texte: 'Recevez votre ordonnance signée' },
+  { src: 'assets/auth/slide-medicine.png', texte: 'Réservez vos médicaments tout près' },
+  { src: 'assets/auth/slide-pharmacist.png', texte: 'Retirez-les en pharmacie en toute confiance' },
+  { src: 'assets/auth/slide-insurance.png', texte: 'Payez en toute transparence' },
+];
+const IMAGE_FADE_MS = 700, TEXT_START_DELAY_MS = 400, TEXT_FADE_MS = 600, HOLD_MS = 3000, FADE_OUT_MS = 500;
+
+const PARCOURS = {
+  PROFESSIONAL: ['type', 'identite', 'profil', 'securite', 'otp'],
+  FACILITY_MEMBER: ['type', 'identite', 'securite', 'otp'],
+};
+const LIBELLES = {
+  type: 'Type de compte', identite: 'Identité', profil: 'Profil professionnel',
+  securite: 'Sécurité', otp: 'Vérification',
+};
+
+const CHAMP_BASE = 'width:100%;height:36px;box-sizing:border-box;padding-inline:12px;border-radius:6px;background:var(--fond-surface);color:var(--texte-primaire);font-family:var(--font-body);font-size:14px;transition:border-color 150ms linear,box-shadow 150ms linear;';
+const LABEL = 'font-family:var(--font-body);font-size:12px;line-height:1.4;font-weight:600;color:var(--texte-secondaire)';
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, etape: null, typeCompte: null,
+    index: 0, texteVisible: false, sortie: false,
+    telephone: null, email: null, identifiant: null, prenom: null, nom: null,
+    categorie: 'SPECIALIST', specialite: null,
+    motDePasse: null, confirmation: null, cgu: null, otp: '317',
+  };
+
+  componentDidMount() { this.cycle(); }
+  componentWillUnmount() { this.stopper(); }
+  stopper() { (this.timers || []).forEach(clearTimeout); this.timers = []; }
+  cycle() {
+    this.stopper();
+    this.setState({ texteVisible: false, sortie: false });
+    this.timers = [
+      setTimeout(() => this.setState({ texteVisible: true }), TEXT_START_DELAY_MS),
+      setTimeout(() => this.setState({ sortie: true }), TEXT_START_DELAY_MS + TEXT_FADE_MS + HOLD_MS),
+      setTimeout(() => {
+        this.setState((s) => ({ index: (s.index + 1) % DIAPOS.length }));
+        this.cycle();
+      }, TEXT_START_DELAY_MS + TEXT_FADE_MS + HOLD_MS + FADE_OUT_MS),
+    ];
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get type() { return this.state.typeCompte ?? this.props.typeCompte ?? 'PROFESSIONAL'; }
+  get etape() { return this.state.etape ?? this.props.etapeInitiale ?? 'type'; }
+
+  segStyle(actif) {
+    return 'padding:5px 11px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-family:var(--font-body);font-size:var(--font-size-caption);font-weight:' +
+      (actif ? '600' : '500') + ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' +
+      (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') + (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, type = this.type;
+    const parcours = PARCOURS[type];
+    let etape = this.etape;
+    if (parcours.indexOf(etape) < 0) etape = 'identite';
+    const iCourant = parcours.indexOf(etape);
+    const set = (p) => this.setState(p);
+
+    const vide = etat === 'vide';
+    const chargement = etat === 'chargement';
+    const erreur = etat === 'erreur';
+    const val = (cle, rempli) => this.state[cle] ?? (vide ? '' : rempli);
+
+    const motDePasse = val('motDePasse', 'BrazzaCoeur2026');
+    const confirmation = this.state.confirmation ?? (vide ? '' : erreur ? 'BrazzaCoeur202' : 'BrazzaCoeur2026');
+    // EF-01-08 / loi n° 29-2019 : jamais pré-coché, un consentement par défaut n'en est pas un.
+    const cgu = this.state.cgu ?? false;
+    const otp = vide ? '' : this.state.otp;
+
+    const groupes = [
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+      { label: 'Compte', options: [{ k: 'PROFESSIONAL', label: 'Soignant' }, { k: 'FACILITY_MEMBER', label: 'Structure' }], courant: type, appliquer: (k) => set({ typeCompte: k, etape: 'identite' }) },
+      { label: 'Étape', options: parcours.map((e) => ({ k: e, label: LIBELLES[e].split(' ')[0] })), courant: etape, appliquer: (k) => set({ etape: k }) },
+    ];
+
+    const boutonPrimaire = (bloque) =>
+      'display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 24px;border:1px solid transparent;border-radius:6px;background-color:var(--ap-400);background-image:var(--grain-btn);background-size:110px 110px;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:600;transition:background-color 250ms linear;' +
+      (bloque ? 'opacity:.4;cursor:not-allowed;' : '');
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      etapeCourante: 'Étape ' + (iCourant + 1) + ' sur ' + parcours.length + ' · ' + LIBELLES[etape],
+      etapeType: etape === 'type',
+      etapeIdentite: etape === 'identite',
+      etapeProfil: etape === 'profil',
+      etapeSecurite: etape === 'securite',
+      etapeOtp: etape === 'otp',
+      estVideType: vide && etape === 'type',
+      enChargement: chargement,
+      enErreur: erreur,
+
+      barreGroupes: groupes.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.segStyle(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      etapes: parcours.map((e, k) => {
+        const atteinte = k <= iCourant;
+        return {
+          numero: String(k + 1),
+          libelle: LIBELLES[e],
+          onClick: () => { if (atteinte) set({ etape: e }); },
+          stylePastille: 'width:26px;height:26px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:12px;font-weight:700;transition:background 200ms linear,color 200ms linear,border-color 200ms linear;border:1px solid ' +
+            (atteinte ? 'transparent' : 'var(--bordure-normale)') + ';background:' + (atteinte ? 'var(--ap-400)' : 'var(--fond-surface-2)') +
+            ';color:' + (atteinte ? '#fff' : 'var(--texte-tertiaire)') + (atteinte ? '' : ';cursor:default'),
+          styleBarre: 'flex:1;height:2px;border-radius:1px;margin-inline:4px;transition:background 200ms linear;background:' +
+            (k === parcours.length - 1 ? 'transparent' : k < iCourant ? 'var(--ap-400)' : 'var(--bordure-normale)'),
+          styleLibelle: 'flex:1;text-align:center;font-family:var(--font-body);font-size:11px;line-height:1.45;color:' +
+            (atteinte ? 'var(--texte-primaire)' : 'var(--texte-tertiaire)') + ';font-weight:' + (k === iCourant ? '700' : '500'),
+        };
+      }),
+
+      diapos: DIAPOS.map((d, k) => {
+        const actif = k === this.state.index && !this.state.sortie;
+        const duree = k === this.state.index && this.state.sortie ? FADE_OUT_MS : IMAGE_FADE_MS;
+        return { src: d.src, style: 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:' + (actif ? '1' : '0') + ';transition:opacity ' + duree + 'ms ease-in-out' };
+      }),
+      texteDiapo: DIAPOS[this.state.index].texte,
+      styleTexteDiapo: 'margin:0;min-height:2.6em;text-align:center;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:700;line-height:1.3;opacity:' +
+        (this.state.texteVisible && !this.state.sortie ? '1' : '0') + ';transition:opacity ' + (this.state.sortie ? FADE_OUT_MS : TEXT_FADE_MS) + 'ms ease-in-out',
+      points: DIAPOS.map((d, k) => ({
+        style: 'width:' + (k === this.state.index ? '18px' : '6px') + ';height:6px;border-radius:3px;background:' +
+          (k === this.state.index ? '#fff' : 'rgba(255,255,255,0.35)') + ';transition:width 300ms ease,background 300ms ease',
+      })),
+
+      styleLabel: LABEL,
+      styleChamp: CHAMP_BASE + 'border:1px solid var(--bordure-input);',
+      styleChampConfirmation: CHAMP_BASE + 'border:1px solid ' + (motDePasse && confirmation && motDePasse !== confirmation ? 'var(--erreur-accent)' : 'var(--bordure-input)') + ';',
+      styleSelect: CHAMP_BASE + 'border:1px solid var(--bordure-input);appearance:none;-webkit-appearance:none;padding-right:34px;',
+      stylePrimaire: boutonPrimaire(false),
+      stylePrimaireCgu: boutonPrimaire(!cgu || chargement),
+      styleGhost: 'display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:9px 18px;border:1px solid transparent;border-radius:6px;background-color:transparent;background-image:var(--grain-btn);background-size:110px 110px;color:var(--texte-secondaire);font-family:var(--font-body);font-size:14px;font-weight:600;transition:background-color 250ms linear',
+
+      vTelephone: val('telephone', '+242 06 512 47 03'),
+      vEmail: val('email', 'a.makaya@clinique-bacongo.cg'),
+      messageCodeEnvoye: 'Code envoyé à ' + val('email', 'a.makaya@clinique-bacongo.cg') + '.',
+      vIdentifiant: val('identifiant', 'dr.makaya'),
+      vPrenom: val('prenom', 'Ange'),
+      vNom: val('nom', 'Makaya'),
+      vCategorie: this.state.categorie,
+      vSpecialite: val('specialite', 'Cardiologie'),
+      vMotDePasse: motDePasse,
+      vConfirmation: confirmation,
+      confirmationDivergente: !!motDePasse && !!confirmation && motDePasse !== confirmation,
+      cguAcceptees: cgu,
+      continuerBloque: !cgu || chargement,
+      libelleContinuer: chargement ? 'Envoi du code…' : 'Continuer',
+      libelleCreation: chargement ? 'Création…' : 'Créer mon compte',
+
+      majTelephone: (e) => set({ telephone: e.target.value }),
+      majEmail: (e) => set({ email: e.target.value }),
+      majIdentifiant: (e) => set({ identifiant: e.target.value }),
+      majPrenom: (e) => set({ prenom: e.target.value }),
+      majNom: (e) => set({ nom: e.target.value }),
+      majCategorie: (e) => set({ categorie: e.target.value }),
+      majSpecialite: (e) => set({ specialite: e.target.value }),
+      majMotDePasse: (e) => set({ motDePasse: e.target.value }),
+      majConfirmation: (e) => set({ confirmation: e.target.value }),
+      basculerCgu: () => set({ cgu: !cgu }),
+
+      casesOtp: [0, 1, 2, 3, 4, 5].map((i) => {
+        const rempli = i < otp.length;
+        const courant = i === otp.length;
+        return {
+          valeur: rempli ? otp[i] : '',
+          style: 'width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid ' +
+            (erreur ? 'var(--erreur-accent)' : courant ? 'var(--ap-400)' : 'var(--bordure-input)') +
+            ';background:var(--fond-surface);font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--texte-primaire)' +
+            (courant && !erreur ? ';box-shadow:0 0 0 3px rgba(39,86,166,.12)' : ''),
+        };
+      }),
+      pave: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←'].map((t) => ({
+        label: t,
+        style: 'min-width:34px;height:30px;padding:0 8px;border:1px solid var(--bordure-legere);border-radius:6px;background-color:var(--fond-surface-2);background-image:var(--grain-btn);background-size:110px 110px;font-family:var(--font-mono);font-size:13px;color:var(--texte-secondaire);transition:background-color 200ms linear',
+        onClick: () => this.setState((s) => {
+          const c = s.otp ?? '';
+          if (t === '←') return { otp: c.slice(0, -1) };
+          return { otp: c.length >= 6 ? c : c + t };
+        }),
+      })),
+
+      choisirProfessionnel: () => set({ typeCompte: 'PROFESSIONAL', etape: 'identite' }),
+      choisirStructure: () => set({ typeCompte: 'FACILITY_MEMBER', etape: 'identite' }),
+      suivant: () => set({ etape: parcours[Math.min(iCourant + 1, parcours.length - 1)], etat: 'plein' }),
+      precedent: () => set({ etape: parcours[Math.max(iCourant - 1, 0)] }),
+    };
+  }
+}
+</script>
+</body>
+</html>

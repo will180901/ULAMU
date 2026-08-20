@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">C1</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Ma vérification</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="4">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Espace soignant</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--erreur-accent);color:#fff;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">AM</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr Ange Makaya</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:{{ couleurRoleSidebar }}">{{ roleSidebar }}</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Espace soignant</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Ma vérification</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un patient, une ordonnance…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Ma vérification</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <span style="{{ pilulePage }}" title="{{ aidePilule }}">
+                <span style="{{ pointPilule }}"></span>{{ libellePilule }}
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:900px">
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4);display:flex;gap:var(--espace-4);align-items:center">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <span style="display:flex;align-items:center;gap:8px;flex:1">
+                  <span style="{{ styleOs }}width:24px;height:24px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}flex:1;height:9px;border-radius:3px"></span>
+                </span>
+              </sc-for>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere)">
+                  <span style="{{ styleOs }}width:34px;height:34px;border-radius:var(--radius-lg);flex-shrink:0"></span>
+                  <span style="flex:1">
+                    <span style="{{ styleOs }}display:block;width:180px;height:10px;border-radius:3px"></span>
+                    <span style="{{ styleOs }}display:block;width:260px;height:9px;margin-top:7px;border-radius:3px"></span>
+                  </span>
+                  <span style="{{ styleOs }}width:96px;height:28px;border-radius:var(--radius-md);flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreurGlobale }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:900px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--erreur-texte)">Votre dossier n'a pas pu être chargé</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--erreur-texte)">Aucune pièce n'a été perdue. Réessayez dans un instant — vos dépôts sont conservés côté serveur.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--erreur-fond);border:1px solid var(--erreur-bordure);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher votre vérification</span>
+                <span style="display:block;margin-top:4px;max-width:400px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-tertiaire)">Vérifiez votre connexion, puis réessayez. Si le problème persiste, prévenez l'administration ULAMU.</span>
+              </span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}margin-top:4px;" style-hover="background:var(--ap-600)">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+                Réessayer
+              </button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ styleGrillePage }}">
+
+            <div style="display:flex;flex-direction:column;gap:var(--espace-4);min-width:0">
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h2l2-5 3 10 2-5h3"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Avancement du dossier</span>
+                    <span style="{{ styleCarteSousTitre }}">{{ sousTitreEtapes }}</span>
+                  </span>
+                </div>
+                <div style="padding:var(--espace-4)">
+                  <div style="{{ styleFrise }}">
+                    <sc-for list="{{ etapes }}" as="e" hint-placeholder-count="4">
+                      <span style="{{ e.conteneur }}">
+                        <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                          <span style="{{ e.pastille }}" dangerouslySetInnerHTML="{{ e.icone }}"></span>
+                          <span style="min-width:0">
+                            <span style="{{ e.libelleStyle }}">{{ e.libelle }}</span>
+                            <span style="display:block;margin-top:1px;font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ e.date }}</span>
+                          </span>
+                        </span>
+                        <sc-if value="{{ e.barreVisible }}">
+                          <span style="{{ e.barre }}"></span>
+                        </sc-if>
+                      </span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <sc-if value="{{ bandeauVisible }}">
+              <div role="{{ bandeauRole }}" style="{{ styleBandeau }}">
+                <span style="flex-shrink:0;margin-top:1px;display:flex;color:{{ bandeauCouleur }}" dangerouslySetInnerHTML="{{ bandeauIcone }}"></span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:{{ bandeauTexte }}">{{ bandeauTitre }}</span>
+                  <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:{{ bandeauTexte }}">{{ bandeauCorps }}</span>
+                  <sc-if value="{{ motifVisible }}">
+                    <span style="display:block;margin-top:8px;padding:8px 10px;border-radius:var(--radius-md);background:var(--fond-surface);border:1px solid var(--erreur-bordure)">
+                      <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire)">Motif transmis par l'administration</span>
+                      <span style="display:block;margin-top:3px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-primaire)">{{ motifRefus }}</span>
+                      <span style="display:block;margin-top:4px;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">Décision du 08/08/2026 · dossier DOS-2026-00341</span>
+                    </span>
+                  </sc-if>
+                </span>
+              </div>
+              </sc-if>
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"></path><path d="M9 1v4h4"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Pièces justificatives</span>
+                    <span style="{{ styleCarteSousTitre }}">{{ sousTitrePieces }}</span>
+                  </span>
+                  <span style="flex-shrink:0;font-family:var(--font-mono);font-size:var(--font-size-overline);padding:2px 7px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface-2);color:var(--texte-secondaire)">{{ compteurPieces }}</span>
+                </div>
+
+                <div>
+                  <sc-for list="{{ pieces }}" as="p" hint-placeholder-count="4">
+                    <div style="{{ p.ligne }}">
+                      <div style="display:flex;align-items:flex-start;gap:var(--espace-3)">
+                        <span style="{{ p.tuile }}" dangerouslySetInnerHTML="{{ p.icone }}"></span>
+                        <span style="flex:1;min-width:0">
+                          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                            <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ p.titre }}</span>
+                            <sc-if value="{{ p.obligatoire }}">
+                              <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-tertiaire)">Obligatoire</span>
+                            </sc-if>
+                            <span style="{{ p.pilule }}"><span style="{{ p.point }}"></span>{{ p.libelleEtat }}</span>
+                          </span>
+                          <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-tertiaire)">{{ p.aide }}</span>
+
+                          <sc-if value="{{ p.fichierVisible }}">
+                            <span style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;border-radius:var(--radius-md);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);flex-wrap:wrap">
+                              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"></path><path d="M9 1v4h4"></path></svg>
+                              <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-primaire);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.fichier }}</span>
+                              <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ p.poids }}</span>
+                              <span style="flex:1"></span>
+                              <button type="button" style="{{ styleLienBouton }}" style-hover="color:var(--ap-400)">Voir</button>
+                              <sc-if value="{{ p.remplacable }}">
+                                <button type="button" onClick="{{ p.onDeposer }}" style="{{ styleLienBouton }}" style-hover="color:var(--ap-400)">Remplacer</button>
+                              </sc-if>
+                            </span>
+                          </sc-if>
+
+                          <sc-if value="{{ p.motifVisible }}">
+                            <span style="display:flex;gap:7px;margin-top:8px;padding:7px 10px;border-radius:var(--radius-md);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+                              <span aria-hidden="true" style="flex-shrink:0;margin-top:1px;display:flex;color:var(--erreur-accent)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="7"></circle><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"></path></svg></span>
+                              <span style="font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)">{{ p.motif }}</span>
+                            </span>
+                          </sc-if>
+
+                          <sc-if value="{{ p.depotVisible }}">
+                            <button type="button" onClick="{{ p.onDeposer }}" style="{{ p.zoneDepot }}" style-hover="border-color:var(--ap-400);background:var(--ap-50)">
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M8 11V2M5 5l3-3 3 3"></path><path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"></path></svg>
+                              <span style="font-size:var(--font-size-body-sm);font-weight:600">Déposer un fichier</span>
+                              <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire)">PDF ou image · 5 Mo maximum</span>
+                            </button>
+                          </sc-if>
+
+                          <sc-if value="{{ p.progressionVisible }}">
+                            <span style="display:block;margin-top:8px">
+                              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+                                <span style="font-size:var(--font-size-overline);color:var(--texte-secondaire);font-family:var(--font-mono)">{{ p.fichier }}</span>
+                                <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire);font-family:var(--font-mono)">{{ p.progression }} %</span>
+                              </span>
+                              <span style="display:block;height:4px;border-radius:2px;background:var(--fond-input);overflow:hidden">
+                                <span style="{{ p.barreProgression }}"></span>
+                              </span>
+                            </span>
+                          </sc-if>
+                        </span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                  <span style="font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire);min-width:0">{{ aideSoumission }}</span>
+                  <button type="button" onClick="{{ ouvrirDialogueDepot }}" disabled="{{ depotBloque }}" style="{{ styleBoutonDepot }}" style-hover="background:var(--ap-600)">{{ libelleDepot }}</button>
+                </div>
+              </div>
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="1" width="12" height="14" rx="1.5"></rect><path d="M5 5h6M5 8h6M5 11h3"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Contrat de partenariat</span>
+                    <span style="{{ styleCarteSousTitre }}">{{ sousTitreContrat }}</span>
+                  </span>
+                  <span style="{{ piluleContrat }}"><span style="{{ pointContrat }}"></span>{{ libelleContrat }}</span>
+                </div>
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:var(--espace-3)">
+                  <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+                    <span style="width:30px;height:30px;flex-shrink:0;border-radius:var(--radius-md);background:var(--fond-surface);border:1px solid var(--bordure-legere);color:var(--texte-tertiaire);display:flex;align-items:center;justify-content:center">
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"></path><path d="M9 1v4h4"></path></svg>
+                    </span>
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Contrat soignant ULAMU · version 1.2</span>
+                      <span style="display:block;margin-top:1px;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">Commission de 12 % sur les honoraires · versement le 5 de chaque mois</span>
+                    </span>
+                    <button type="button" onClick="{{ ouvrirDialogueContrat }}" style="{{ styleSecondaireSm }}flex-shrink:0;" style-hover="background:var(--fond-input)">Lire le contrat</button>
+                  </div>
+
+                  <sc-if value="{{ signatureVisible }}">
+                  <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+                      <input type="checkbox" checked="{{ contratLu }}" onChange="{{ basculerContratLu }}" style="width:16px;height:16px;margin-top:1px;flex-shrink:0;accent-color:var(--ap-500)" />
+                      <span style="font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">J'ai lu et j'accepte le contrat de partenariat ULAMU dans sa version 1.2, ainsi que la commission de 12 % prélevée sur chaque consultation honorée.</span>
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:5px;max-width:360px">
+                      <span style="{{ styleLabel }}">Signature — saisissez votre nom complet</span>
+                      <input type="text" value="{{ vSignature }}" onChange="{{ majSignature }}" placeholder="Ange Makaya" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+                      <sc-if value="{{ signatureAide }}">
+                        <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire)">Doit correspondre au nom de votre pièce d'identité : Ange Makaya.</span>
+                      </sc-if>
+                    </label>
+                    <button type="button" onClick="{{ signer }}" disabled="{{ signatureBloquee }}" style="{{ styleBoutonSignature }}" style-hover="background:var(--ap-600)">Signer le contrat</button>
+                  </div>
+                  </sc-if>
+
+                  <sc-if value="{{ contratSigneVisible }}">
+                  <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+                    <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+                    </span>
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Contrat signé le 09/08/2026 à 16:42</span>
+                      <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">Signé électroniquement par Ange Makaya · empreinte a3f9…c210</span>
+                    </span>
+                    <button type="button" style="{{ styleSecondaireSm }}flex-shrink:0;" style-hover="background:var(--fond-input)">Télécharger</button>
+                  </div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+
+            <div style="{{ styleColonneAide }}">
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3l2 2"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Délai de traitement</span>
+                  </span>
+                </div>
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:var(--espace-3)">
+                  <div style="display:flex;align-items:baseline;gap:8px">
+                    <span style="font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;letter-spacing:-.02em;color:var(--texte-primaire)">{{ delaiValeur }}</span>
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ delaiUnite }}</span>
+                  </div>
+                  <p style="margin:0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire)">{{ delaiAide }}</p>
+                  <div style="height:1px;background:var(--bordure-legere)"></div>
+                  <sc-for list="{{ journal }}" as="j" hint-placeholder-count="3">
+                    <span style="display:flex;gap:8px;min-width:0">
+                      <span style="{{ j.point }}"></span>
+                      <span style="min-width:0;flex:1">
+                        <span style="display:block;font-size:var(--font-size-caption);font-weight:600;color:var(--texte-primaire)">{{ j.titre }}</span>
+                        <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ j.date }}</span>
+                      </span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Ce que la vérification autorise</span>
+                  </span>
+                </div>
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:9px">
+                  <sc-for list="{{ droits }}" as="d" hint-placeholder-count="4">
+                    <span style="{{ d.style }}">
+                      <span style="display:flex;flex-shrink:0;margin-top:1px" dangerouslySetInnerHTML="{{ d.icone }}"></span>
+                      <span style="line-height:1.45">{{ d.label }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:var(--espace-2)">
+                  <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Une question sur votre dossier ?</span>
+                  <span style="font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire)">L'administration ULAMU répond sous 24 heures ouvrées, du lundi au vendredi.</span>
+                  <button type="button" style="{{ styleSecondaireSm }}align-self:flex-start;margin-top:2px;" style-hover="background:var(--fond-input)">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"></path></svg>
+                    Écrire à l'administration
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="{{ tuileModale }}" dangerouslySetInnerHTML="{{ iconeModale }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-3);overflow-y:auto">
+          <sc-for list="{{ paragraphesDialogue }}" as="p" hint-placeholder-count="3">
+            <p style="margin:0;font-size:var(--font-size-body-sm);line-height:1.6;color:var(--texte-secondaire)">{{ p }}</p>
+          </sc-for>
+          <sc-if value="{{ recapVisible }}">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+              <sc-for list="{{ recap }}" as="r" hint-placeholder-count="4">
+                <span style="{{ r.style }}">
+                  <span style="display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ r.icone }}"></span>
+                  {{ r.label }}
+                </span>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">{{ libelleAnnuler }}</button>
+          <sc-if value="{{ actionVisible }}">
+            <button type="button" onClick="{{ confirmerDialogue }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">{{ actionDialogue }}</button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:420px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">C1 · 4 statuts de dossier réels (brouillon → en cours → refusé → validé) · dépôt de pièce avec progression animée · soumission bloquée tant qu'une pièce obligatoire manque · motif de refus par pièce et global · contrat lu puis signé au nom exact</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;statutInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;brouillon&quot;,&quot;encours&quot;,&quot;refuse&quot;,&quot;valide&quot;],&quot;default&quot;:&quot;brouillon&quot;,&quot;tsType&quot;:&quot;'brouillon' | 'encours' | 'refuse' | 'valide'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  shield: '<path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"/><path d="M5.5 8l2 2 3-3"/>',
+  stetho: '<path d="M3.3 1.3H2.7a1.3 1.3 0 0 0-1.3 1.3v3.4a4 4 0 0 0 4 4 4 4 0 0 0 4-4V2.6a1.3 1.3 0 0 0-1.3-1.3H7.4"/><path d="M5.4 10v.7a4 4 0 0 0 4 4 4 4 0 0 0 4-4V8"/><circle cx="13.4" cy="6.6" r="1.4" fill="currentColor"/>',
+  message: '<path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"/>',
+  clipboard: '<rect x="3" y="3" width="10" height="12" rx="1.5"/><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  document: '<path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><path d="M9 1v4h4"/>',
+  badge: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><circle cx="6" cy="7.5" r="1.6"/><path d="M3.6 11a2.8 2.8 0 0 1 4.8 0M10 6.5h2.5M10 9h2"/>',
+  diplome: '<path d="M8 1L1 4.5 8 8l7-3.5L8 1z"/><path d="M4 6.2V10c0 1.1 1.8 2 4 2s4-.9 4-2V6.2"/>',
+  ordre: '<path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-.5-5.5-3-5.5-7V3L8 1z"/><path d="M8 5.5v5M5.5 8h5"/>',
+  assurance: '<path d="M2 6.5L8 2l6 4.5V14H2V6.5z"/><path d="M6.5 14V9.5h3V14"/>',
+  check: '<path d="M2 9l4 4 8-8"/>',
+  checkCircle: '<circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  croix: '<circle cx="8" cy="8" r="7"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/>',
+  horloge: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  envoyer: '<path d="M14.5 1.5L7 9M14.5 1.5l-4.8 13-2.7-5.5L1.5 6.3l13-4.8z"/>',
+  contrat: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/>',
+  interdit: '<circle cx="8" cy="8" r="6.5"/><path d="M3.5 3.5l9 9"/>',
+};
+
+const NAV = [
+  { titre: 'Principal', items: [
+    { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+    { cle: 'verif', label: 'Ma vérification', icone: G.shield },
+  ] },
+  { titre: 'Mon activité', items: [
+    { cle: 'vitrine', label: 'Ma vitrine', icone: G.stetho },
+    { cle: 'demandes', label: 'Demandes', icone: G.message, badge: '4' },
+    { cle: 'consultations', label: 'Consultations', icone: G.clipboard },
+    { cle: 'gains', label: 'Mes gains', icone: G.trending },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+/* Les quatre pièces exigées d'un soignant, dans l'ordre du dossier de vérification. */
+const PIECES = [
+  { cle: 'identite', titre: 'Pièce d\u2019identité', icone: G.badge, obligatoire: true,
+    aide: 'Carte nationale ou passeport en cours de validité, recto et verso sur un même fichier.',
+    fichier: 'CNI-makaya-recto-verso.pdf', poids: '1,4 Mo' },
+  { cle: 'diplome', titre: 'Diplôme de médecine', icone: G.diplome, obligatoire: true,
+    aide: 'Diplôme d\u2019État ou équivalence reconnue par le ministère de la Santé.',
+    fichier: 'diplome-doctorat-2014.pdf', poids: '2,1 Mo' },
+  { cle: 'ordre', titre: 'Attestation d\u2019inscription à l\u2019Ordre', icone: G.ordre, obligatoire: true,
+    aide: 'Attestation de moins de 3 mois délivrée par l\u2019Ordre national des médecins du Congo.',
+    fichier: 'attestation-ordre-2026.pdf', poids: '820 Ko' },
+  { cle: 'assurance', titre: 'Assurance responsabilité civile', icone: G.assurance, obligatoire: false,
+    aide: 'Facultative pour la téléconsultation, exigée pour recevoir en cabinet.',
+    fichier: 'rcp-nsia-2026.pdf', poids: '640 Ko' },
+];
+
+/* Un statut de dossier détermine l'état de chaque pièce, la frise, le bandeau et le contrat. */
+const SCENARIOS = {
+  brouillon: {
+    sousTitre: 'Complétez votre dossier pour accéder aux consultations',
+    pilule: ['Dossier incomplet', 'warning'],
+    aidePilule: 'Il manque au moins une pièce obligatoire',
+    etapeCourante: 0,
+    etats: { identite: 'valide', diplome: 'depose', ordre: 'manquant', assurance: 'manquant' },
+    bandeau: null,
+    contrat: 'verrouille',
+    delai: ['—', 'dossier non déposé'],
+    journal: [
+      { titre: 'Pièce d\u2019identité déposée', date: '10/08/2026 09:14', ton: 'accent' },
+      { titre: 'Diplôme déposé', date: '10/08/2026 09:22', ton: 'accent' },
+      { titre: 'Compte créé', date: '09/08/2026 18:03', ton: 'neutre' },
+    ],
+  },
+  encours: {
+    sousTitre: 'Dossier déposé le 10 août 2026 · en cours d\u2019examen',
+    pilule: ['En cours de vérification', 'info'],
+    aidePilule: 'Un administrateur examine votre dossier',
+    etapeCourante: 1,
+    etats: { identite: 'valide', diplome: 'valide', ordre: 'examen', assurance: 'valide' },
+    bandeau: {
+      ton: 'info', icone: G.horloge, titre: 'Votre dossier est entre les mains de l\u2019administration',
+      corps: 'Aucune action n\u2019est attendue de votre part. Vous recevrez une notification dès qu\u2019une décision sera rendue — au plus tard sous 72 heures ouvrées.',
+    },
+    contrat: 'verrouille',
+    delai: ['31 h', 'restantes sur 72 h'],
+    journal: [
+      { titre: 'Dossier pris en charge', date: '10/08/2026 14:30', ton: 'info' },
+      { titre: 'Dossier déposé', date: '10/08/2026 09:47', ton: 'accent' },
+      { titre: 'Compte créé', date: '09/08/2026 18:03', ton: 'neutre' },
+    ],
+  },
+  refuse: {
+    sousTitre: 'Décision rendue le 8 août 2026 · deux pièces à corriger',
+    pilule: ['Dossier refusé', 'error'],
+    aidePilule: 'Corrigez les pièces signalées puis redéposez',
+    etapeCourante: 1,
+    etats: { identite: 'valide', diplome: 'refuse', ordre: 'refuse', assurance: 'manquant' },
+    bandeau: {
+      ton: 'erreur', icone: G.croix, titre: 'Votre dossier a été refusé',
+      corps: 'Deux pièces doivent être corrigées. Remplacez-les puis redéposez le dossier : le délai de 72 heures repart à zéro.',
+      motif: 'Le diplôme fourni est une copie non certifiée et l\u2019attestation d\u2019inscription à l\u2019Ordre date de plus de trois mois. Merci de fournir une copie certifiée conforme et une attestation récente.',
+    },
+    contrat: 'verrouille',
+    delai: ['—', 'en attente de correction'],
+    journal: [
+      { titre: 'Dossier refusé avec motif', date: '08/08/2026 11:05', ton: 'erreur' },
+      { titre: 'Dossier pris en charge', date: '07/08/2026 15:20', ton: 'info' },
+      { titre: 'Dossier déposé', date: '06/08/2026 10:12', ton: 'accent' },
+    ],
+  },
+  valide: {
+    sousTitre: 'Vérification obtenue le 9 août 2026 · contrat signé',
+    pilule: ['Soignant vérifié', 'success'],
+    aidePilule: 'Vous pouvez recevoir des demandes de consultation',
+    etapeCourante: 3,
+    etats: { identite: 'valide', diplome: 'valide', ordre: 'valide', assurance: 'valide' },
+    bandeau: {
+      ton: 'succes', icone: G.checkCircle, titre: 'Votre vitrine est publiée dans l\u2019annuaire',
+      corps: 'Les patients de Brazzaville peuvent vous trouver et vous adresser une demande. Pensez à renouveler votre attestation d\u2019Ordre avant le 30 septembre 2026.',
+    },
+    contrat: 'signe',
+    delai: ['9 mois', 'avant renouvellement'],
+    journal: [
+      { titre: 'Contrat signé', date: '09/08/2026 16:42', ton: 'succes' },
+      { titre: 'Dossier validé', date: '09/08/2026 16:20', ton: 'succes' },
+      { titre: 'Dossier pris en charge', date: '08/08/2026 09:40', ton: 'info' },
+    ],
+  },
+};
+
+const ETATS_PIECE = {
+  manquant: { libelle: 'À déposer', ton: 'neutral', icone: G.document },
+  depose: { libelle: 'Déposée', ton: 'info', icone: G.document },
+  examen: { libelle: 'En examen', ton: 'info', icone: G.horloge },
+  valide: { libelle: 'Validée', ton: 'success', icone: G.checkCircle },
+  refuse: { libelle: 'À corriger', ton: 'error', icone: G.croix },
+  envoi: { libelle: 'Envoi en cours', ton: 'info', icone: G.horloge },
+};
+const MOTIFS_PIECE = {
+  diplome: 'Copie non certifiée conforme — un tampon de l\u2019établissement ou d\u2019une autorité habilitée est requis.',
+  ordre: 'Attestation datée du 12 février 2026, soit plus de trois mois. Fournissez une attestation récente.',
+};
+
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+};
+const BANDEAUX = {
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  succes: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  erreur: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  alerte: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+};
+const TONS_POINT = {
+  accent: 'var(--ap-500)', info: 'var(--info-accent)', succes: 'var(--succes-accent)',
+  erreur: 'var(--erreur-accent)', neutre: 'var(--texte-tertiaire)',
+};
+
+const CHAMP = 'width:100%;height:34px;box-sizing:border-box;padding:0 10px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;';
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+const CONTRAT = [
+  'Le professionnel de santé exerce en toute indépendance. ULAMU n\u2019intervient ni dans le choix thérapeutique, ni dans la rédaction des comptes-rendus, et ne peut se substituer au jugement clinique du signataire.',
+  'ULAMU prélève une commission de 12 % sur chaque consultation effectivement honorée. Une demande refusée avec motif ou expirée sans réponse ne donne lieu à aucun prélèvement.',
+  'Les honoraires sont versés le 5 de chaque mois par Mobile Money ou virement bancaire, sur le compte déclaré dans l\u2019espace « Mes gains ». Un relevé détaillé accompagne chaque versement.',
+  'Le professionnel s\u2019engage à répondre aux demandes reçues dans un délai de douze heures, ou à les refuser en indiquant un motif. Trois expirations consécutives sans réponse suspendent temporairement la vitrine de l\u2019annuaire.',
+  'Le contrat est conclu pour un an, renouvelable par tacite reconduction. Chaque partie peut y mettre fin avec un préavis de trente jours, sans que cela n\u2019affecte les consultations déjà engagées.',
+];
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, statut: null, navActif: 'verif',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    etatsLocaux: {}, progression: null, pieceEnCours: null,
+    contratLu: false, signature: '', signe: false,
+    dialogue: null, toast: null,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.tToast) clearTimeout(this.tToast);
+    if (this.tDepot) clearInterval(this.tDepot);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+  get statut() { return this.state.statut ?? this.props.statutInitial ?? 'brouillon'; }
+
+  seg(actif) {
+    return 'padding:5px 11px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 30, px: 12, fs: 'var(--font-size-body-sm)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+
+  /** Dépôt simulé : progression réelle sur 1,2 s, puis la pièce passe « déposée ». */
+  deposer(cle, titre) {
+    if (this.tDepot) clearInterval(this.tDepot);
+    this.setState({ pieceEnCours: cle, progression: 0 });
+    this.tDepot = setInterval(() => {
+      this.setState((s) => {
+        const p = (s.progression ?? 0) + 8;
+        if (p >= 100) {
+          clearInterval(this.tDepot);
+          this.tDepot = null;
+          if (this.tToast) clearTimeout(this.tToast);
+          this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+          return {
+            progression: null, pieceEnCours: null,
+            etatsLocaux: { ...s.etatsLocaux, [cle]: 'depose' },
+            toast: { titre: 'Pièce déposée', corps: titre + ' · elle sera examinée avec le reste du dossier.' },
+          };
+        }
+        return { progression: p };
+      });
+    }, 90);
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue, statut = this.statut;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const uneColonne = L < 1080;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const sc = SCENARIOS[statut];
+    /* L'état « vide » du plan, pour cet écran, c'est le dossier jamais commencé. */
+    const etatsBase = vide
+      ? { identite: 'manquant', diplome: 'manquant', ordre: 'manquant', assurance: 'manquant' }
+      : sc.etats;
+    const etats = { ...etatsBase, ...this.state.etatsLocaux };
+    const dialogue = this.state.dialogue;
+
+    const groupesBarre = [
+      { label: 'Statut', options: [
+        { k: 'brouillon', label: 'Brouillon' }, { k: 'encours', label: 'En cours' },
+        { k: 'refuse', label: 'Refusé' }, { k: 'valide', label: 'Validé' },
+      ], courant: statut, appliquer: (k) => set({ statut: k, etatsLocaux: {}, signe: false, contratLu: false, signature: '' }) },
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+    ];
+
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    /* Règle métier : le dépôt n'est possible que si les 3 pièces obligatoires sont fournies. */
+    const manquantes = PIECES.filter((p) => p.obligatoire && (etats[p.cle] === 'manquant' || etats[p.cle] === 'refuse'));
+    const depotBloque = manquantes.length > 0 || statut === 'encours' || statut === 'valide';
+    const nbFournies = PIECES.filter((p) => etats[p.cle] !== 'manquant').length;
+
+    const etapes = ['Dossier constitué', 'Vérification', 'Contrat signé', 'Vitrine active'].map((libelle, i, arr) => {
+      const courante = vide ? -1 : sc.etapeCourante;
+      const franchie = i < courante || (statut === 'valide' && i <= courante);
+      const active = i === courante && statut !== 'valide';
+      const echouee = statut === 'refuse' && i === 1;
+      const couleur = echouee ? 'var(--erreur-accent)' : franchie ? 'var(--succes-accent)' : active ? 'var(--ap-500)' : 'var(--bordure-normale)';
+      const dates = vide
+        ? ['—', '—', '—', '—']
+        : statut === 'brouillon' ? ['2 pièces sur 4', 'En attente', 'Verrouillé', 'Verrouillé']
+        : statut === 'encours' ? ['10/08/2026', 'Depuis 14:30', 'Verrouillé', 'Verrouillé']
+        : statut === 'refuse' ? ['06/08/2026', 'Refusé le 08/08', 'Verrouillé', 'Verrouillé']
+        : ['06/08/2026', '09/08/2026', '09/08/2026', 'Depuis le 09/08'];
+      return {
+        libelle, date: dates[i],
+        icone: { __html: SVG(13, '2', echouee ? G.croix : franchie ? G.check : active ? G.horloge : G.document) },
+        pastille: 'width:24px;height:24px;flex-shrink:0;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:' +
+          (franchie || active || echouee ? '#fff' : 'var(--texte-tertiaire)') + ';background:' +
+          (franchie || active || echouee ? couleur : 'var(--fond-surface-2)') + ';border:1px solid ' +
+          (franchie || active || echouee ? 'transparent' : 'var(--bordure-normale)'),
+        libelleStyle: 'display:block;font-size:var(--font-size-caption);font-weight:' + (active || echouee ? '700' : '500') +
+          ';white-space:nowrap;color:' + (franchie || active || echouee ? 'var(--texte-primaire)' : 'var(--texte-tertiaire)'),
+        conteneur: 'display:flex;align-items:center;gap:10px;min-width:0;' + (uneColonne ? '' : 'flex:1;'),
+        barreVisible: i < arr.length - 1 && !uneColonne,
+        barre: 'flex:1;height:2px;min-width:16px;border-radius:1px;background:' + (i < courante ? 'var(--succes-accent)' : 'var(--bordure-normale)'),
+      };
+    });
+
+    const bandeau = vide ? null : sc.bandeau;
+    const bandeauTons = bandeau ? BANDEAUX[bandeau.ton] : ['', '', ''];
+
+    const contratEtat = this.state.signe ? 'signe' : (vide ? 'verrouille' : sc.contrat);
+    const signatureOk = this.state.signature.trim().toLowerCase() === 'ange makaya';
+    const [cbg, cfg, cdot] = contratEtat === 'signe' ? PILULES.success
+      : contratEtat === 'attente' ? PILULES.warning : PILULES.neutral;
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : uneColonne ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement,
+      estErreurGlobale: erreur,
+      contenuVisible: !chargement && !erreur,
+      quatre: [1, 2, 3, 4],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      roleSidebar: statut === 'valide' ? 'Cardiologue vérifié' : 'Vérification en cours',
+      couleurRoleSidebar: statut === 'valide' ? 'var(--ap-600)' : 'var(--texte-tertiaire)',
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrillePage: 'display:grid;gap:var(--espace-4);align-items:start;grid-template-columns:' + (uneColonne ? '1fr' : 'minmax(0,1fr) 300px'),
+      styleColonneAide: 'display:flex;flex-direction:column;gap:var(--espace-3);min-width:0',
+
+      sousTitrePage: vide ? 'Aucune pièce déposée · votre dossier n\u2019a pas encore été commencé' : sc.sousTitre,
+      actionsEntete: L >= 620,
+      libellePilule: vide ? 'Dossier à commencer' : sc.pilule[0],
+      aidePilule: vide ? 'Déposez vos pièces pour lancer la vérification' : sc.aidePilule,
+      pilulePage: (() => {
+        const [bg, fg] = vide ? PILULES.neutral : PILULES[sc.pilule[1]];
+        return 'display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:9999px;font-size:var(--font-size-caption);font-weight:600;white-space:nowrap;background:' + bg + ';color:' + fg;
+      })(),
+      pointPilule: 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + (vide ? PILULES.neutral[2] : PILULES[sc.pilule[1]][2]),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      styleCarteEntete: 'display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)',
+      styleCarteTuile: 'width:28px;height:28px;flex-shrink:0;border-radius:var(--radius-md);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleCarteTitre: 'display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)',
+      styleCarteSousTitre: 'display:block;margin-top:2px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-tertiaire)',
+      styleLabel: 'font-size:var(--font-size-label);font-weight:600;color:var(--texte-secondaire)',
+      styleChamp: CHAMP,
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleSecondaireSm: this.bouton('secondary', 'sm'),
+      styleIconBouton: iconBouton,
+      styleLienBouton: 'border:0;background:transparent;padding:0;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600);white-space:nowrap;transition:color var(--dur-fast) linear',
+
+      sousTitreEtapes: vide ? 'Quatre étapes séparent votre inscription de la publication de votre vitrine'
+        : statut === 'valide' ? 'Toutes les étapes sont franchies' : 'Étape ' + (sc.etapeCourante + 1) + ' sur 4',
+      styleFrise: 'display:flex;gap:' + (uneColonne ? 'var(--espace-3)' : 'var(--espace-2)') +
+        ';align-items:' + (uneColonne ? 'flex-start' : 'center') + ';flex-direction:' + (uneColonne ? 'column' : 'row'),
+      etapes,
+
+      bandeauVisible: !!bandeau,
+      bandeauRole: bandeau && bandeau.ton === 'erreur' ? 'alert' : 'status',
+      bandeauTitre: bandeau ? bandeau.titre : '',
+      bandeauCorps: bandeau ? bandeau.corps : '',
+      bandeauIcone: { __html: bandeau ? SVG(16, '1.5', bandeau.icone) : '' },
+      /* Pas de liseré coloré : l'icône porte seule la sémantique, sur surface neutre. */
+      bandeauCouleur: bandeauTons[2],
+      bandeauTexte: 'var(--texte-secondaire)',
+      styleBandeau: 'display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);border-radius:var(--radius-lg);background:var(--fond-surface);border:1px solid var(--bordure-legere)',
+      motifVisible: !!(bandeau && bandeau.motif),
+      motifRefus: bandeau && bandeau.motif ? bandeau.motif : '',
+
+      sousTitrePieces: vide ? 'Trois pièces obligatoires, une facultative' : 'Formats acceptés : PDF, JPEG ou PNG · 5 Mo par pièce',
+      compteurPieces: nbFournies + ' / 4',
+      pieces: PIECES.map((p, k) => {
+        const enEnvoi = this.state.pieceEnCours === p.cle;
+        const cle = enEnvoi ? 'envoi' : etats[p.cle];
+        const e = ETATS_PIECE[cle];
+        const [bg, fg, dot] = PILULES[e.ton];
+        const dejaDepose = cle === 'depose' || cle === 'valide' || cle === 'examen';
+        return {
+          titre: p.titre, aide: p.aide, obligatoire: p.obligatoire,
+          libelleEtat: e.libelle,
+          fichier: p.fichier, poids: p.poids,
+          icone: { __html: SVG(15, '1.5', p.icone) },
+          tuile: 'width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;background:' +
+            (cle === 'valide' ? 'var(--succes-fond)' : cle === 'refuse' ? 'var(--erreur-fond)' : 'var(--fond-surface-2)') +
+            ';color:' + (cle === 'valide' ? 'var(--succes-accent)' : cle === 'refuse' ? 'var(--erreur-accent)' : 'var(--texte-tertiaire)') +
+            ';border:1px solid ' + (cle === 'valide' ? 'var(--succes-bordure)' : cle === 'refuse' ? 'var(--erreur-bordure)' : 'var(--bordure-legere)'),
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+          ligne: 'padding:var(--espace-4);' + (k < PIECES.length - 1 ? 'border-bottom:1px solid var(--bordure-legere);' : '') +
+            'background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent'),
+          fichierVisible: dejaDepose && !enEnvoi,
+          remplacable: cle !== 'valide' && statut !== 'valide' && statut !== 'encours',
+          motifVisible: cle === 'refuse' && !!MOTIFS_PIECE[p.cle],
+          motif: MOTIFS_PIECE[p.cle] || '',
+          depotVisible: !enEnvoi && (cle === 'manquant' || cle === 'refuse'),
+          progressionVisible: enEnvoi,
+          progression: this.state.progression ?? 0,
+          barreProgression: 'display:block;height:100%;border-radius:2px;background:var(--ap-500);transition:width 90ms linear;width:' + (this.state.progression ?? 0) + '%',
+          zoneDepot: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin-top:8px;padding:10px 12px;border:1px dashed ' +
+            (cle === 'refuse' ? 'var(--erreur-bordure)' : 'var(--bordure-normale)') +
+            ';border-radius:var(--radius-lg);background:var(--fond-surface-2);color:' +
+            (cle === 'refuse' ? 'var(--erreur-texte)' : 'var(--ap-600)') +
+            ';text-align:left;transition:border-color var(--dur-fast) linear,background var(--dur-fast) linear',
+          onDeposer: () => this.deposer(p.cle, p.titre),
+        };
+      }),
+      aideSoumission: depotBloque
+        ? (statut === 'valide' ? 'Votre dossier est validé — aucune action n\u2019est requise.'
+          : statut === 'encours' ? 'Dossier en cours d\u2019examen : il ne peut pas être redéposé pour le moment.'
+          : 'Il manque ' + manquantes.length + ' pièce' + (manquantes.length > 1 ? 's' : '') + ' obligatoire' + (manquantes.length > 1 ? 's' : '') + ' : ' + manquantes.map((m) => m.titre.toLowerCase()).join(', ') + '.')
+        : 'Toutes les pièces obligatoires sont fournies. Le délai de vérification est de 72 heures ouvrées.',
+      depotBloque,
+      libelleDepot: statut === 'refuse' ? 'Redéposer mon dossier' : 'Déposer mon dossier',
+      styleBoutonDepot: this.bouton('primary', 'md') + (depotBloque ? 'opacity:.4;cursor:not-allowed;' : ''),
+
+      sousTitreContrat: contratEtat === 'signe' ? 'Signé et archivé · consultable à tout moment'
+        : 'Disponible à la signature une fois le dossier validé',
+      libelleContrat: contratEtat === 'signe' ? 'Signé' : contratEtat === 'attente' ? 'À signer' : 'Verrouillé',
+      piluleContrat: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;white-space:nowrap;flex-shrink:0;background:' + cbg + ';color:' + cfg,
+      pointContrat: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + cdot,
+      signatureVisible: contratEtat === 'attente',
+      contratSigneVisible: contratEtat === 'signe',
+      contratLu: this.state.contratLu,
+      basculerContratLu: () => set({ contratLu: !this.state.contratLu }),
+      vSignature: this.state.signature,
+      majSignature: (e) => set({ signature: e.target.value }),
+      signatureAide: this.state.signature.length > 0 && !signatureOk,
+      signatureBloquee: !this.state.contratLu || !signatureOk,
+      styleBoutonSignature: this.bouton('primary', 'md') + 'align-self:flex-start;' +
+        (!this.state.contratLu || !signatureOk ? 'opacity:.4;cursor:not-allowed;' : ''),
+      signer: () => {
+        if (!this.state.contratLu || !signatureOk) return;
+        set({ signe: true });
+        this.toaster('Contrat signé', 'Votre vitrine sera publiée dans l\u2019annuaire sous quelques minutes.');
+      },
+
+      delaiValeur: vide ? '—' : sc.delai[0],
+      delaiUnite: vide ? 'dossier non commencé' : sc.delai[1],
+      delaiAide: statut === 'encours'
+        ? 'L\u2019administration dispose de 72 heures ouvrées pour rendre sa décision. Passé ce délai, votre dossier remonte automatiquement en tête de file.'
+        : statut === 'valide'
+        ? 'Votre attestation d\u2019inscription à l\u2019Ordre expire le 30 septembre 2026. Un rappel vous sera envoyé un mois avant.'
+        : 'Le compte à rebours démarre au dépôt du dossier complet.',
+      journal: (vide ? [{ titre: 'Compte créé', date: '09/08/2026 18:03', ton: 'neutre' }] : sc.journal).map((j) => ({
+        titre: j.titre, date: j.date,
+        point: 'width:7px;height:7px;flex-shrink:0;margin-top:4px;border-radius:50%;background:' + TONS_POINT[j.ton],
+      })),
+
+      droits: [
+        { label: 'Recevoir des demandes de consultation de patients vérifiés', ok: statut === 'valide' },
+        { label: 'Apparaître dans l\u2019annuaire public de Brazzaville', ok: statut === 'valide' },
+        { label: 'Émettre des ordonnances transmissibles en officine', ok: statut === 'valide' },
+        { label: 'Percevoir des honoraires par Mobile Money', ok: statut === 'valide' },
+      ].map((d) => ({
+        label: d.label,
+        icone: { __html: SVG(13, '2', d.ok ? G.check : G.interdit) },
+        style: 'display:flex;gap:8px;font-size:var(--font-size-caption);color:' +
+          (d.ok ? 'var(--succes-texte)' : 'var(--texte-tertiaire)'),
+      })),
+
+      dialogueOuvert: !!dialogue,
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(dialogue === 'contrat' ? 640 : 520, Math.max(280, L - 40)) +
+        'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      tuileModale: 'width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      iconeModale: { __html: SVG(16, '1.5', dialogue === 'contrat' ? G.contrat : G.envoyer) },
+      titreDialogue: dialogue === 'contrat' ? 'Contrat de partenariat ULAMU' : 'Déposer votre dossier de vérification ?',
+      sousTitreDialogue: dialogue === 'contrat' ? 'Version 1.2 · en vigueur depuis le 1er juin 2026'
+        : 'Délai de traitement : 72 heures ouvrées',
+      paragraphesDialogue: dialogue === 'contrat' ? CONTRAT : [
+        'Votre dossier sera transmis à l\u2019administration ULAMU pour examen. Vous ne pourrez plus modifier vos pièces tant que la décision n\u2019est pas rendue.',
+      ],
+      recapVisible: dialogue === 'depot',
+      recap: PIECES.map((p) => {
+        const fourni = etats[p.cle] !== 'manquant';
+        return {
+          label: p.titre + (p.obligatoire ? '' : ' (facultative)'),
+          icone: { __html: SVG(13, '2', fourni ? G.check : G.croix) },
+          style: 'display:flex;align-items:center;gap:8px;font-size:var(--font-size-caption);color:' +
+            (fourni ? 'var(--succes-texte)' : 'var(--texte-tertiaire)'),
+        };
+      }),
+      actionVisible: dialogue === 'depot',
+      libelleAnnuler: dialogue === 'contrat' ? 'Fermer' : 'Annuler',
+      actionDialogue: 'Confirmer le dépôt',
+      ouvrirDialogueContrat: () => set({ dialogue: 'contrat' }),
+      ouvrirDialogueDepot: () => { if (!depotBloque) set({ dialogue: 'depot' }); },
+      fermerDialogue: () => set({ dialogue: null }),
+      confirmerDialogue: () => {
+        set({ dialogue: null, statut: 'encours', etatsLocaux: {} });
+        this.toaster('Dossier déposé', 'L\u2019administration ULAMU dispose de 72 heures ouvrées pour rendre sa décision.');
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

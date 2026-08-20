@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">D4</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Réservations</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Espace pharmacie</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="{{ i.badgeStyle }}">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">CO</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Clarisse Obami</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600)">Titulaire</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Pharmacie du Fleuve</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Réservations</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un lot, une réservation…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"></rect><path d="M5 3V1M11 3V1M2 7h12"></path><rect x="5" y="9" width="2" height="2" rx=".5" fill="currentColor"></rect></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Réservations</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <span style="display:flex;align-items:center;gap:var(--espace-2);flex-shrink:0">
+                <sc-if value="{{ selectionActive }}">
+                  <button type="button" onClick="{{ ouvrirLibererLot }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                    Libérer {{ compteSelection }}
+                  </button>
+                </sc-if>
+                <button type="button" onClick="{{ allerDelivrance }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="1" width="12" height="14" rx="1.5"></rect><path d="M5 5h6M5 8h6M5 11h3"></path></svg>
+                  Ouvrir la délivrance
+                </button>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleCompteurs }}">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                  <span style="{{ styleOs }}display:block;width:58%;height:9px;border-radius:3px"></span>
+                  <span style="{{ styleOs }}display:block;width:34%;height:20px;margin-top:8px;border-radius:4px"></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ sept }}" as="n" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;gap:var(--espace-4);padding:0 var(--espace-4);height:44px;border-bottom:1px solid var(--bordure-legere)">
+                  <span style="{{ styleOs }}width:16px;height:16px;border-radius:var(--radius-sm);flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:120px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:190px;height:9px;border-radius:3px"></span>
+                  <span style="flex:1"></span>
+                  <span style="{{ styleOs }}width:84px;height:16px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:56px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:860px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">La file des réservations n'a pas pu être chargée</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">Les unités réservées restent bloquées côté serveur : rien n'a été libéré ni perdu pendant l'incident.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher les réservations</span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">Réessayer</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div style="{{ styleGrilleCompteurs }}">
+              <sc-for list="{{ compteurs }}" as="c" hint-placeholder-count="4">
+                <button type="button" onClick="{{ c.onClick }}" style="{{ c.carte }}" style-hover="border-color:var(--bordure-forte)">
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <span style="{{ c.point }}"></span>
+                    <span style="flex:1;min-width:0;text-align:left;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                  </span>
+                  <span style="display:flex;align-items:baseline;gap:6px;margin-top:6px">
+                    <span style="font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:{{ c.couleurValeur }}">{{ c.valeur }}</span>
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ c.unite }}</span>
+                  </span>
+                  <span style="display:block;margin-top:3px;text-align:left;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ c.aide }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ alerteVisible }}">
+            <div role="alert" style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;color:var(--alerte-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3l2 2"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--alerte-texte)">{{ titreAlerte }}</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--alerte-texte)">{{ corpsAlerte }}</span>
+              </span>
+              <button type="button" onClick="{{ voirUrgentes }}" style="{{ styleSecondaireSm }}flex-shrink:0;" style-hover="background:var(--fond-input)">Voir</button>
+            </div>
+            </sc-if>
+
+            <div class="ul-grain-fine" style="{{ styleCarte }}">
+              <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <span style="position:relative;flex:1 1 220px;min-width:170px;max-width:320px;display:flex">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:10px;top:10px;pointer-events:none"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                  <input type="text" value="{{ vRecherche }}" onChange="{{ majRecherche }}" placeholder="Filtrer par référence ou molécule…" style="{{ styleChampFiltre }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+                </span>
+                <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                  <sc-for list="{{ onglets }}" as="t" hint-placeholder-count="4">
+                    <button type="button" role="tab" aria-selected="{{ t.actif }}" onClick="{{ t.onClick }}" style="{{ t.style }}">
+                      {{ t.label }}
+                      <sc-if value="{{ t.compteVisible }}">
+                        <span style="{{ t.compteStyle }}">{{ t.compte }}</span>
+                      </sc-if>
+                    </button>
+                  </sc-for>
+                </span>
+                <span style="flex:1"></span>
+                <sc-if value="{{ selectionActive }}">
+                  <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap">{{ compteSelection }} sélectionnée{{ pluriel }}</span>
+                    <button type="button" onClick="{{ viderSelection }}" style="{{ styleLienBouton }}" style-hover="color:var(--ap-400)">Annuler</button>
+                  </span>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ tableVisible }}" hint-placeholder-val="{{ true }}">
+              <div style="overflow-x:auto">
+                <table style="width:100%;min-width:820px;border-collapse:collapse">
+                  <thead>
+                    <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                      <th scope="col" style="{{ enTeteCase }}">
+                        <button type="button" role="checkbox" aria-checked="{{ toutSelectionne }}" aria-label="Tout sélectionner" onClick="{{ basculerTout }}" style="{{ styleCaseTout }}">
+                          <sc-if value="{{ toutSelectionne }}">
+                            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l4 4 8-8"></path></svg>
+                          </sc-if>
+                        </button>
+                      </th>
+                      <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="5">
+                        <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                      </sc-for>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ reservations }}" as="r" hint-placeholder-count="7">
+                      <tr style="{{ r.ligne }}" style-hover="background:var(--ap-50)">
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <button type="button" role="checkbox" aria-checked="{{ r.selectionnee }}" aria-label="{{ r.aria }}" onClick="{{ r.onSelection }}" disabled="{{ r.selectionBloquee }}" style="{{ r.styleCase }}">
+                            <sc-if value="{{ r.selectionnee }}">
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l4 4 8-8"></path></svg>
+                            </sc-if>
+                          </button>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);white-space:nowrap">
+                          <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ r.reference }}</span>
+                          <span style="display:block;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ r.creee }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:block;font-size:var(--font-size-body-sm);color:var(--texte-secondaire)">{{ r.contenu }}</span>
+                          <span style="display:block;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ r.lignes }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-primaire);white-space:nowrap">{{ r.unites }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="{{ r.pilule }}"><span style="{{ r.point }}"></span>{{ r.statut }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);white-space:nowrap">
+                          <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-body-sm);font-weight:600;color:{{ r.couleurDelai }}">{{ r.delai }}</span>
+                          <span style="display:block;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ r.echeance }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                          <span style="display:inline-flex;align-items:center;gap:6px">
+                            <sc-if value="{{ r.servable }}">
+                              <button type="button" onClick="{{ r.onServir }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--ap-50);border-color:var(--ap-300);color:var(--ap-700)">Servir</button>
+                            </sc-if>
+                            <sc-if value="{{ r.liberable }}">
+                              <button type="button" onClick="{{ r.onLiberer }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--erreur-fond);border-color:var(--erreur-bordure);color:var(--erreur-texte)">Libérer</button>
+                            </sc-if>
+                            <sc-if value="{{ r.terminee }}">
+                              <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ r.mention }}</span>
+                            </sc-if>
+                          </span>
+                        </td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ videFiltre }}">
+              <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6)">
+                <span style="width:44px;height:44px;border-radius:var(--radius-xl);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"></rect><path d="M5 3V1M11 3V1M2 7h12"></path></svg>
+                </span>
+                <span>
+                  <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">{{ titreVideFiltre }}</span>
+                  <span style="display:block;margin-top:4px;max-width:420px;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-tertiaire)">{{ corpsVideFiltre }}</span>
+                </span>
+                <sc-if value="{{ resetVisible }}">
+                  <button type="button" onClick="{{ reinitialiser }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Voir toutes les réservations</button>
+                </sc-if>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ piedVisible }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-2) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ piedTable }}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-for list="{{ pagination }}" as="p" hint-placeholder-count="4">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                  <span style="min-width:52px;text-align:center;font-size:var(--font-size-caption);font-weight:500;color:var(--texte-secondaire)">1 / 2</span>
+                </span>
+              </div>
+              </sc-if>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;color:var(--ap-600);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)"><strong style="font-weight:600;color:var(--texte-primaire)">Expiration automatique.</strong> Une réservation non servie expire à la fermeture du jour suivant sa création. Les unités bloquées retournent alors d'elles-mêmes au stock disponible — vous n'avez rien à faire.</span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--erreur-fond);color:var(--erreur-accent);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v9M4.5 7.5L8 11l3.5-3.5"></path><path d="M2 14h12"></path></svg>
+          </span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-3);overflow-y:auto">
+          <p style="margin:0;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-secondaire)">{{ corpsDialogue }}</p>
+          <div style="display:flex;flex-direction:column;gap:7px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+            <sc-for list="{{ recapDialogue }}" as="r" hint-placeholder-count="2">
+              <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-secondaire);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.label }}</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);font-weight:600;color:var(--texte-primaire);white-space:nowrap">{{ r.valeur }}</span>
+              </span>
+            </sc-for>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:5px">
+            <span style="{{ styleLabel }}">Motif de la libération</span>
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ motifs }}" as="m" hint-placeholder-count="3">
+                <button type="button" onClick="{{ m.onClick }}" style="{{ m.style }}" style-hover="background:var(--fond-input)">{{ m.label }}</button>
+              </sc-for>
+            </span>
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Annuler</button>
+          <button type="button" onClick="{{ confirmerDialogue }}" disabled="{{ confirmationBloquee }}" style="{{ styleBoutonAction }}">{{ actionDialogue }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:440px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">D4 · Compte à rebours réel par réservation · sélection multiple pour libérer en lot, seules les réservations ouvertes sont cochables · libération avec motif, unités rendues au stock · les 4 compteurs filtrent la table · expiration automatique à la fermeture du jour suivant</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  hospital: '<rect x="2" y="3" width="12" height="12" rx="1"/><path d="M8 7v4M6 9h4"/><path d="M5 3V2M11 3V2"/>',
+  pill: '<path d="m7 13.7 6.7-6.7a3.3 3.3 0 1 0-4.7-4.7l-6.7 6.7a3.3 3.3 0 1 0 4.7 4.7Z"/><path d="m5.7 5.7 4.7 4.7"/>',
+  ordonnance: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/><path d="M12 10l-1.5 2h2.5L11.5 14"/>',
+  calendrier: '<rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/><rect x="5" y="9" width="2" height="2" rx=".5" fill="currentColor"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  premier: '<path d="M11 4L7 8l4 4M5 4v8"/>',
+  precedent: '<path d="M10 4L6 8l4 4"/>',
+  suivant: '<path d="M6 4l4 4-4 4"/>',
+  dernier: '<path d="M5 4l4 4-4 4M11 4v8"/>',
+};
+
+const NAV = [
+  { titre: 'Principal', items: [{ cle: 'dashboard', label: 'Tableau de bord', icone: G.home }] },
+  { titre: 'Officine', items: [
+    { cle: 'pharmacie', label: 'Ma pharmacie', icone: G.hospital },
+    { cle: 'stock', label: 'Stock', icone: G.pill, badge: '3', tonBadge: 'alerte' },
+    { cle: 'delivrance', label: 'Délivrance', icone: G.ordonnance },
+    { cle: 'reservations', label: 'Réservations', icone: G.calendrier, badge: '7' },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+/* Heure de référence des maquettes : lundi 10 août 2026, 10:30. */
+const MAINTENANT = new Date(2026, 7, 10, 10, 30);
+const heuresRestantes = (iso) => (new Date(iso) - MAINTENANT) / 3600000;
+const formatDelai = (h) => {
+  if (h <= 0) return 'expirée';
+  if (h < 1) return Math.round(h * 60) + ' min';
+  const H = Math.floor(h), M = Math.round((h - H) * 60);
+  return H + ' h ' + String(M).padStart(2, '0');
+};
+const echeanceFr = (iso) => {
+  const d = new Date(iso);
+  const j = d.getDate() === 10 ? 'aujourd\u2019hui' : d.getDate() === 11 ? 'demain' : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  return 'expire ' + j + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+};
+
+const RESERVATIONS = [
+  { reference: 'RSV-2026-01184', creee: 'Créée aujourd\u2019hui 08:05', contenu: 'Amlodipine, Ramipril, Metformine', lignes: '3 lignes', unites: 118, statut: 'ouverte', echeance: '2026-08-11T20:00' },
+  { reference: 'RSV-2026-01185', creee: 'Créée aujourd\u2019hui 08:31', contenu: 'Paracétamol 500 mg', lignes: '1 ligne', unites: 20, statut: 'ouverte', echeance: '2026-08-11T20:00' },
+  { reference: 'RSV-2026-01186', creee: 'Créée aujourd\u2019hui 09:02', contenu: 'Metformine, Aspirine', lignes: '2 lignes · 1 servie', unites: 30, statut: 'partielle', echeance: '2026-08-11T20:00' },
+  { reference: 'RSV-2026-01188', creee: 'Créée aujourd\u2019hui 09:47', contenu: 'Insuline glargine (2–8 °C)', lignes: '1 ligne', unites: 2, statut: 'ouverte', echeance: '2026-08-11T20:00' },
+  { reference: 'RSV-2026-01181', creee: 'Créée hier 16:12', contenu: 'Artéméther-luméfantrine', lignes: '1 ligne', unites: 24, statut: 'ouverte', echeance: '2026-08-10T20:00' },
+  { reference: 'RSV-2026-01180', creee: 'Créée hier 15:40', contenu: 'Sérum physiologique, Amoxicilline', lignes: '2 lignes', unites: 40, statut: 'ouverte', echeance: '2026-08-10T13:00' },
+  { reference: 'RSV-2026-01179', creee: 'Créée hier 09:20', contenu: 'Ordonnance complète · 4 lignes', lignes: '4 lignes', unites: 96, statut: 'servie', echeance: '2026-08-10T20:00', mention: 'Servie 11:05' },
+  { reference: 'RSV-2026-01176', creee: 'Créée avant-hier 14:05', contenu: 'Insuline glargine (2–8 °C)', lignes: '1 ligne', unites: 2, statut: 'expiree', echeance: '2026-08-09T20:00', mention: 'Expirée hier' },
+  { reference: 'RSV-2026-01174', creee: 'Créée avant-hier 10:32', contenu: 'Metformine 850 mg', lignes: '1 ligne', unites: 60, statut: 'liberee', echeance: '2026-08-09T20:00', mention: 'Libérée · rupture' },
+];
+
+const STATUTS = {
+  ouverte: ['À servir', 'warning'],
+  partielle: ['Partielle', 'info'],
+  servie: ['Servie', 'success'],
+  expiree: ['Expirée', 'error'],
+  liberee: ['Libérée', 'neutral'],
+};
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+};
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'reservations',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    recherche: '', onglet: 'ouvertes', selection: [], statutsLocaux: {},
+    dialogue: null, cibles: [], motif: null, toast: null,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.tToast) clearTimeout(this.tToast);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  statutDe(r) { return this.state.statutsLocaux[r.reference] || r.statut; }
+
+  seg(actif) {
+    return 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid ' +
+      (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 28, px: 11, fs: 'var(--font-size-caption)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : variante === 'danger' ? ['var(--erreur-accent)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear,color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+
+  caseStyle(cochee, bloquee) {
+    return 'width:18px;height:18px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);border:1px solid ' +
+      (cochee ? 'transparent' : 'var(--bordure-forte)') + ';background:' + (cochee ? 'var(--ap-500)' : 'var(--fond-surface)') +
+      ';color:#fff;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;' +
+      (bloquee ? 'opacity:.3;cursor:not-allowed;' : '');
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const dialogue = this.state.dialogue;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k, dialogue: null, selection: [] }) },
+    ];
+
+    const enTete = (align) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + align +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;position:sticky;top:0;z-index:5;background:var(--fond-surface-2)';
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    const toutes = vide ? [] : RESERVATIONS;
+    const compte = { ouvertes: 0, urgentes: 0, servies: 0, expirees: 0 };
+    let unitesBloquees = 0;
+    toutes.forEach((r) => {
+      const s = this.statutDe(r);
+      if (s === 'ouverte' || s === 'partielle') {
+        compte.ouvertes += 1;
+        unitesBloquees += r.unites;
+        if (heuresRestantes(r.echeance) < 12) compte.urgentes += 1;
+      } else if (s === 'servie') compte.servies += 1;
+      else if (s === 'expiree') compte.expirees += 1;
+    });
+
+    const q = this.state.recherche.trim().toLowerCase();
+    const visibles = toutes.filter((r) => {
+      const s = this.statutDe(r);
+      const ouverte = s === 'ouverte' || s === 'partielle';
+      const okOnglet = this.state.onglet === 'toutes' ? true
+        : this.state.onglet === 'ouvertes' ? ouverte
+        : this.state.onglet === 'urgentes' ? (ouverte && heuresRestantes(r.echeance) < 12)
+        : this.state.onglet === 'servies' ? s === 'servie'
+        : this.state.onglet === 'expirees' ? (s === 'expiree' || s === 'liberee')
+        : this.state.onglet === 'historique' ? !ouverte : true;
+      const okQ = !q || r.reference.toLowerCase().includes(q) || r.contenu.toLowerCase().includes(q);
+      return okOnglet && okQ;
+    });
+
+    const selectionnables = visibles.filter((r) => {
+      const s = this.statutDe(r);
+      return s === 'ouverte' || s === 'partielle';
+    });
+    const selection = this.state.selection;
+    const toutSelectionne = selectionnables.length > 0 && selectionnables.every((r) => selection.includes(r.reference));
+
+    const cibles = this.state.cibles;
+    const totalUnitesCibles = cibles.reduce((n, ref) => {
+      const r = RESERVATIONS.find((x) => x.reference === ref);
+      return n + (r ? r.unites : 0);
+    }, 0);
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : L < 1024 ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement, estErreur: erreur,
+      contenuVisible: !chargement && !erreur,
+      quatre: [1, 2, 3, 4], sept: [1, 2, 3, 4, 5, 6, 7],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          const [bgb, fgb] = i.tonBadge ? PILULES.warning : ['var(--erreur-accent)', '#fff'];
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            badgeStyle: 'flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:' + bgb +
+              ';color:' + fgb + ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center',
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrilleCompteurs: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' + (L < 620 ? 2 : L < 1000 ? 2 : 4) + ',minmax(0,1fr))',
+
+      sousTitrePage: vide ? 'Aucune réservation enregistrée'
+        : compte.ouvertes + ' en attente · ' + unitesBloquees + ' unités bloquées au stock',
+      actionsEntete: L >= 720,
+
+      compteurs: [
+        { k: 'ouvertes', label: 'À servir', valeur: compte.ouvertes, unite: 'réservations', aide: 'Unités déjà retirées du disponible', ton: 'warning' },
+        { k: 'urgentes', label: 'Expirent sous 12 h', valeur: compte.urgentes, unite: 'à traiter', aide: 'Prioritaires au comptoir', ton: 'error' },
+        { k: 'servies', label: 'Servies', valeur: compte.servies, unite: 'cette semaine', aide: 'Sorties de stock confirmées', ton: 'success' },
+        { k: 'expirees', label: 'Expirées', valeur: compte.expirees, unite: 'ce mois', aide: 'Unités rendues au stock', ton: 'neutral' },
+      ].map((c) => {
+        const [bg, fg, dot] = PILULES[c.ton];
+        const actif = this.state.onglet === c.k;
+        return {
+          label: c.label, valeur: String(c.valeur), unite: c.unite, aide: c.aide,
+          couleurValeur: c.valeur === 0 ? 'var(--texte-tertiaire)' : fg,
+          point: 'width:8px;height:8px;flex-shrink:0;border-radius:50%;background:' + dot,
+          carte: 'display:block;width:100%;padding:var(--espace-4);border-radius:var(--radius-xl);text-align:left;background:' +
+            (actif ? bg : 'var(--fond-surface)') + ';border:1px solid ' + (actif ? dot : 'var(--bordure-legere)') +
+            ';transition:border-color var(--dur-fast) linear,background var(--dur-fast) linear',
+          onClick: () => set({ onglet: c.k, selection: [] }),
+        };
+      }),
+
+      alerteVisible: compte.urgentes > 0,
+      titreAlerte: compte.urgentes + ' réservation' + (compte.urgentes > 1 ? 's expirent' : ' expire') + ' dans moins de 12 heures',
+      corpsAlerte: 'Passé l\u2019échéance, les unités réservées reviennent automatiquement au stock disponible et le patient doit refaire sa demande.',
+      voirUrgentes: () => set({ onglet: 'urgentes', selection: [] }),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      vRecherche: this.state.recherche,
+      majRecherche: (e) => set({ recherche: e.target.value, selection: [] }),
+      styleChampFiltre: 'width:100%;height:34px;box-sizing:border-box;padding:0 10px 0 32px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      onglets: [
+        { k: 'ouvertes', label: 'À servir', compte: compte.ouvertes },
+        { k: 'urgentes', label: 'Urgentes', compte: compte.urgentes },
+        { k: 'historique', label: 'Historique', compte: compte.servies + compte.expirees },
+        { k: 'toutes', label: 'Toutes', compte: toutes.length },
+      ].map((o) => {
+        const actif = this.state.onglet === o.k;
+        return {
+          label: o.label, actif,
+          compte: String(o.compte),
+          compteVisible: L >= 1000,
+          compteStyle: 'font-family:var(--font-mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:9999px;background:' +
+            (actif ? 'var(--ap-50)' : 'var(--fond-input)') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-tertiaire)'),
+          style: this.seg(actif),
+          onClick: () => set({ onglet: o.k, selection: [] }),
+        };
+      }),
+
+      tableVisible: visibles.length > 0,
+      videFiltre: visibles.length === 0,
+      titreVideFiltre: vide ? 'Aucune réservation enregistrée'
+        : q ? 'Aucun résultat pour « ' + this.state.recherche.trim() + ' »'
+        : this.state.onglet === 'urgentes' ? 'Aucune réservation urgente'
+        : this.state.onglet === 'ouvertes' ? 'Le comptoir est à jour'
+        : 'Rien dans l\u2019historique',
+      corpsVideFiltre: vide
+        ? 'Les réservations arrivent ici dès qu\u2019un patient réserve une ordonnance dans votre officine.'
+        : this.state.onglet === 'ouvertes'
+        ? 'Toutes les réservations ont été servies ou libérées. Les nouvelles arrivent en tête de liste.'
+        : 'Ajustez le filtre ou la recherche pour retrouver une réservation.',
+      resetVisible: !vide && (q !== '' || this.state.onglet !== 'toutes'),
+      reinitialiser: () => set({ onglet: 'toutes', recherche: '' }),
+
+      enTeteCase: enTete('left') + 'width:44px;',
+      colonnes: ['Référence', 'Contenu', 'Unités', 'Statut', 'Échéance', ''].map((c, i) => ({
+        label: c, style: enTete(i === 2 || i === 5 ? 'right' : 'left'),
+      })),
+      toutSelectionne,
+      styleCaseTout: this.caseStyle(toutSelectionne, selectionnables.length === 0),
+      basculerTout: () => {
+        if (selectionnables.length === 0) return;
+        set({ selection: toutSelectionne ? [] : selectionnables.map((r) => r.reference) });
+      },
+      reservations: visibles.map((r, k) => {
+        const s = this.statutDe(r);
+        const [libelle, ton] = STATUTS[s];
+        const [bg, fg, dot] = PILULES[ton];
+        const ouverte = s === 'ouverte' || s === 'partielle';
+        const h = heuresRestantes(r.echeance);
+        const urgente = ouverte && h < 12;
+        const cochee = selection.includes(r.reference);
+        return {
+          reference: r.reference, creee: r.creee, contenu: r.contenu, lignes: r.lignes,
+          unites: String(r.unites),
+          statut: libelle,
+          mention: r.mention || '',
+          terminee: !ouverte,
+          servable: ouverte,
+          liberable: ouverte,
+          selectionnee: cochee,
+          selectionBloquee: !ouverte,
+          aria: 'Sélectionner ' + r.reference,
+          styleCase: this.caseStyle(cochee, !ouverte),
+          delai: ouverte ? formatDelai(h) : '—',
+          echeance: ouverte ? echeanceFr(r.echeance) : (r.mention || ''),
+          couleurDelai: !ouverte ? 'var(--texte-tertiaire)' : urgente ? 'var(--erreur-texte)' : h < 24 ? 'var(--alerte-texte)' : 'var(--texte-secondaire)',
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+          ligne: 'background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+            ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+          onSelection: () => {
+            if (!ouverte) return;
+            set({ selection: cochee ? selection.filter((x) => x !== r.reference) : selection.concat(r.reference) });
+          },
+          onServir: () => this.toaster('Délivrance ouverte', r.reference + ' · l\u2019ordonnance est prête à être servie au comptoir.'),
+          onLiberer: () => set({ dialogue: 'liberer', cibles: [r.reference], motif: null }),
+        };
+      }),
+      piedVisible: visibles.length > 0,
+      piedTable: visibles.length + ' réservation' + (visibles.length > 1 ? 's' : '') + ' sur ' + toutes.length +
+        ' · ' + unitesBloquees + ' unités actuellement bloquées',
+      pagination: [
+        { aria: 'Première page', icone: G.premier }, { aria: 'Page précédente', icone: G.precedent },
+        { aria: 'Page suivante', icone: G.suivant }, { aria: 'Dernière page', icone: G.dernier },
+      ].map((p, i) => ({
+        aria: p.aria,
+        icone: { __html: SVG(13, '1.5', p.icone) },
+        style: iconBouton + 'width:26px;height:26px;' + (i < 2 ? 'opacity:.45;cursor:not-allowed;' : ''),
+      })),
+
+      selectionActive: selection.length > 0,
+      compteSelection: String(selection.length),
+      pluriel: selection.length > 1 ? 's' : '',
+      viderSelection: () => set({ selection: [] }),
+      ouvrirLibererLot: () => { if (selection.length) set({ dialogue: 'liberer', cibles: selection, motif: null }); },
+      allerDelivrance: () => this.toaster('Délivrance', 'Ouverture du comptoir · scannez l\u2019ordonnance présentée par le patient.'),
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleSecondaireSm: this.bouton('secondary', 'sm'),
+      styleIconBouton: iconBouton,
+      styleLienBouton: 'border:0;background:transparent;padding:0;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600);white-space:nowrap;transition:color var(--dur-fast) linear',
+      styleLabel: 'font-size:var(--font-size-label);font-weight:600;color:var(--texte-secondaire)',
+
+      dialogueOuvert: !!dialogue,
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(480, Math.max(280, L - 40)) +
+        'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      titreDialogue: cibles.length > 1 ? 'Libérer ' + cibles.length + ' réservations ?' : 'Libérer cette réservation ?',
+      sousTitreDialogue: totalUnitesCibles + ' unités retourneront au stock disponible',
+      corpsDialogue: 'Les unités bloquées redeviennent disponibles à la vente immédiatement. Le patient est prévenu et devra refaire sa demande auprès du prescripteur s\u2019il souhaite ces médicaments.',
+      recapDialogue: cibles.map((ref) => {
+        const r = RESERVATIONS.find((x) => x.reference === ref);
+        return { label: ref, valeur: r ? r.unites + ' unités' : '—' };
+      }),
+      motifs: ['Rupture de stock', 'Demande du patient', 'Erreur de saisie', 'Lot écarté'].map((m) => ({
+        label: m,
+        style: this.seg(this.state.motif === m) + (this.state.motif === m ? '' : 'border-color:var(--bordure-legere);background:var(--fond-surface-2);'),
+        onClick: () => set({ motif: m }),
+      })),
+      confirmationBloquee: !this.state.motif,
+      styleBoutonAction: this.bouton('danger', 'md') + (!this.state.motif ? 'opacity:.4;cursor:not-allowed;' : ''),
+      actionDialogue: cibles.length > 1 ? 'Libérer les ' + cibles.length : 'Libérer',
+      fermerDialogue: () => set({ dialogue: null, cibles: [], motif: null }),
+      confirmerDialogue: () => {
+        if (!this.state.motif) return;
+        const t = { ...this.state.statutsLocaux };
+        cibles.forEach((ref) => { t[ref] = 'liberee'; });
+        const n = cibles.length, u = totalUnitesCibles, m = this.state.motif;
+        set({ statutsLocaux: t, dialogue: null, cibles: [], motif: null, selection: [] });
+        this.toaster(n > 1 ? n + ' réservations libérées' : 'Réservation libérée',
+          u + ' unités sont retournées au stock disponible · motif : ' + m.toLowerCase() + '.');
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

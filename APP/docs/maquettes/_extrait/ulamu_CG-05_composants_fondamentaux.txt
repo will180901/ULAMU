@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-05 Composants Fondamentaux 
+
+
+ 
+ 
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-05 Composants Fondamentaux
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+ 
+ 
+
+ 
+Design System · Module CG-05
+
+ 
+Composants Fondamentaux
+
+ 
+Bibliothèque des composants atomiques d'Ulamu : boutons (toutes variantes et tailles), champs de formulaire (tous états), badges, tags, séparateurs, avatars et tooltips. Chaque composant est rendu en live avec ses tokens, états et règles d'usage.
+
+ 
+
+
+ <!-- 01 BOUTONS -->
+ 
+ 
+01 — Boutons
+ 5 variantes · 5 tailles · 4 états · grain sérigraphié 
+
+ 
+
+ 
+
+ 
+Variantes
+
+ 
+
+ <button>Primaire</button>
+ <button>Secondaire</button>
+ <button>Ghost</button>
+ <button>Outline accent</button>
+ <button>Destructif</button>
+ 
+
+ 
+Tailles
+
+ 
+
+ 
+<button>XS</button>
+12px·4/10
+
+ 
+<button>Small</button>
+13px·6/13
+
+ 
+<button>Medium ★</button>
+14px·9/18
+
+ 
+<button>Large</button>
+15px·12/24
+
+ 
+<button>X-Large</button>
+16px·15/30
+
+ 
+
+ 
+États
+
+ 
+
+ 
+<button>Défaut</button>
+Default
+
+ 
+<button>Hover</button>
+Hover
+
+ 
+<button>Focus</button>
+Focus ring
+
+ 
+<button>
+Chargement</button>
+Loading
+
+ 
+<button>Désactivé</button>
+Disabled·0.4
+
+ 
+
+ 
+Boutons icône seul
+
+ 
+
+ <button></button>
+ <button></button>
+ <button></button>
+ <button></button>
+ padding:8px · radius:--radius-md 
+ 
+
+ 
+
+ | 
+ | Propriété | | Valeur | | Note | 
+ | 
+ 
+ | border-radius | | sm (xs/sm) · md (md/lg) · lg (xl) | | Min 4px — jamais pill généralisé | 
+
+ 
+ | grain ::after | | var(--grain-btn) · 0.06 light / 0.09 dark | | Effet sérigraphié — obligatoire sur tous les boutons | 
+
+ 
+ | focus ring | | outline 3px rgba(39,86,166,0.30) · offset 2px | | WCAG AA — jamais supprimé | 
+
+ 
+ | transition | | all .25s linear | | Background, shadow, transform | 
+
+ 
+ | disabled | | opacity:0.4 · cursor:not-allowed · pointer-events:none | | Ne jamais changer la couleur pour désactiver | 
+
+ 
+ | dégradé | | ❌ INTERDIT | | Couleur unie uniquement — voir CG-04 | 
+
+ 
+ 
+
+ <!-- 02 FORMULAIRES -->
+ 
+ 
+02 — Champs de formulaire
+ Input · Select · Textarea · Checkbox · Radio · Toggle 
+
+ 
+
+ 
+
+ 
+Inputs — tous les états
+
+ 
+
+ 
+<label>Par défaut</label><input> Texte d'aide visible sous le champ 
+
+ 
+<label>Avec valeur</label><input> Inter 14px · --text-primary 
+
+ 
+<label>Focus</label><input> border:accent-500 · ring rgba(39,86,166,0.12) 
+
+ 
+<label>Erreur * </label><input> Format email invalide 
+
+ 
+<label>Succès</label><input> ✓ Email valide et disponible 
+
+ 
+<label>Désactivé</label><input> opacity:0.5 · cursor:not-allowed 
+
+ 
+
+ 
+Champs avec icônes
+
+ 
+
+ 
+<label>Icône gauche (recherche)</label>
+ <input>
+
+ 
+<label>Icône droite (mot de passe)</label>
+<input> 
+
+ 
+
+ 
+Select & Textarea
+
+ 
+
+ 
+<label>Spécialité médicale</label><select><option>Cardiologie</option><option>Pédiatrie</option><option>Neurologie</option></select>
+
+ 
+<label>Pays * </label><select><option>Sélectionner…</option><option>Congo</option><option>Sénégal</option><option>Côte d'Ivoire</option></select>
+
+ 
+
+ 
+<label>Observations cliniques</label><textarea>Patient se plaint de douleurs thoraciques récurrentes. Antécédents: hypertension 2019.</textarea> resize:vertical · min-height:80px 
+
+ 
+Checkbox · Radio · Toggle
+
+ 
+
+ 
+
+ 
+Checkbox
+
+ 
+ Consulté en ligne 
+
+ 
+ Indéterminé 
+
+ 
+ Non coché 
+
+ 
+ Désactivé 
+
+ 
+
+ 
+
+ 
+Radio
+
+ 
+ Généraliste 
+
+ 
+ Spécialiste 
+
+ 
+ Infirmier 
+
+ 
+ Désactivé 
+
+ 
+
+ 
+
+ 
+Toggle
+
+ 
+ Notifications on 
+
+ 
+ Mode offline 
+
+ 
+ Désactivé 
+
+ 
+
+ 
+
+ 
+
+ | 
+ | Composant | | Hauteur | | Focus | | Tokens clés | 
+ | 
+ 
+ | Input | | 36px | | border accent-500 + ring rgba | | bg-base · border-default → accent | 
+
+ 
+ | Select | | 36px | | Idem input | | appearance:none · SVG chevron bg-image | 
+
+ 
+ | Textarea | | min 80px | | Idem input | | resize:vertical · lh 1.6 | 
+
+ 
+ | Checkbox | | 16×16px | | focus ring | | radius:3px · checked:accent-500 | 
+
+ 
+ | Toggle | | 20px track | | focus ring | | track 36×20 · thumb 14×14 · transition .2s | 
+
+ 
+ 
+
+ <!-- 03 BADGES -->
+ 
+ 
+03 — Badges &amp; Tags
+ 6 variantes · 3 tailles · dots · pills · tags removable 
+
+ 
+
+ 
+
+ 
+Variantes sémantiques — MD
+
+ 
+
+ Actif 
+ Confirmé 
+ En attente 
+ Refusé 
+ Archivé 
+ Synchronisation 
+ 
+
+ 
+Tailles
+
+ 
+
+ XS · 10px 
+ SM · 11px 
+ MD · 12px ★ 
+ 
+
+ 
+Pills numériques
+
+ 
+
+ 
+ Messages 3 
+
+ 
+ Alertes 12 
+
+ 
+ Tâches 48 
+
+ 
+
+ 
+Tags removables
+
+ 
+
+ Cardiologie 
+ Dr. Konaté 
+ 2026 
+ Dakar 
+ 
+
+ 
+
+ 
+
+ <!-- 04 AVATARS -->
+ 
+ 
+04 — Avatars
+ 5 tailles · palette · statut en ligne · groupes 
+
+ 
+
+ 
+
+ 
+Tailles
+
+ 
+
+ 
+K
+XS·24
+
+ 
+AK
+SM·32
+
+ 
+KM
+MD·40
+
+ 
+DK
+LG·48
+
+ 
+MB
+XL·64
+
+ 
+
+ 
+Palette & Statut
+
+ 
+
+ 
+KM
+
+ 
+AD
+
+ 
+FD
+
+ 
+MB
+
+ 
+SA
+
+ 
+JN
+
+ 
+
+ 
+
+ 
+Groupe d'avatars
+
+ 
+
+ 
+
+ 
+KM
+
+ 
+AD
+
+ 
+FD
+
+ 
+MB
+
+ 
++8
+
+ 
+
+ overlap: -10px · border: 2px --bg-base 
+ 
+
+ 
+
+ 
+
+ <!-- 05 SÉPARATEURS -->
+ 
+ 
+05 — Séparateurs
+ Subtil · Default · Fort · Dashed · Labelisé · Vertical 
+
+ 
+
+ 
+
+ 
+Subtle — --border-subtle
+
+ 
+Default — --border-default
+
+ 
+Strong — --border-strong
+
+ 
+Dashed
+
+ 
+Labelisé
+ Ou continuer avec 
+
+ 
+Vertical inline
+ Modifier 
+ Dupliquer 
+ Supprimer 
+
+ 
+
+ 
+
+ <!-- 06 TOOLTIPS -->
+ 
+ 
+06 — Tooltips
+ 4 positions · arrow · bg-elevated · shadow-md 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Dossier patient
+
+ 
+Survol
+
+ Top 
+ 
+
+ 
+
+ 
+Survol
+
+ 
+Confirmer l'acte
+
+ Bottom 
+ 
+
+ 
+
+ 
+Prescription valable 30 jours signée Dr. Konaté
+
+ 
+Long tooltip
+
+ max-width:200px 
+ 
+
+ 
+
+ 
+Spécifications
+
+ 
+
+ 
+ bg --bg-elevated 
+
+ 
+ border 1px --border-default 
+
+ 
+ shadow --shadow-md 
+
+ 
+ font 12px Inter 
+
+ 
+ padding 6px 10px 
+
+ 
+ z-index 50 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- RULES -->
+ 
+ 
+07 — Règles d'usage
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+Dégradé sur bouton — couleur unie obligatoire
+Supprimer le focus ring — jamais outline:none sans alternative accessible
+Utiliser la couleur seule pour indiquer une erreur ou un succès
+Placeholder comme substitut de label de champ
+border-radius > 14px sur boutons (pas de pill généralisé)
+Badges avec dégradé — fond rgba() uni uniquement
+Avatar sans fallback initiales si l'image est absente
+Tooltip avec z-index supérieur aux modales
+ 
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+Grain ::after visible sur tous les boutons — identité visuelle Ulamu
+Label toujours au-dessus du champ — jamais inline flottant
+Message d'erreur avec icône + texte — jamais couleur seule
+Focus ring 3px rgba(39,86,166,0.30) sur tous les éléments interactifs
+Badges : fond semi-transparent + bordure harmonique
+Avatars : initiales 1-2 lettres maj, police display, fond coloré
+Toggle : transition .2s linear sur bg et position thumb
+Séparateur tableau : border-subtle 1px — jamais fond coloré alterné
+ 
+ 
+
+ 
+
+ 
+
+ 
+ulamu · Design System · CG-05 · v1.0
+Document validé — Phase 2 en cours

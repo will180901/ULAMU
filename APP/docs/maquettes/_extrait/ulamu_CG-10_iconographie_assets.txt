@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-10 Iconographie &amp; Assets 
+
+
+ 
+ 
+
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-10 Iconographie &amp; Assets
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Design System · Module CG-10
+
+ 
+Iconographie &amp; Assets
+
+ 
+Système d'icônes exclusivement SVG (Lucide Icons), 5 tailles standards avec contextes d'usage, catalogue de 60+ icônes organisées par domaine, règles de couleur par contexte, interdiction totale des icônes ASCII, spécifications du logo mark Ulamu, favicons et principes d'illustration.
+
+ 
+
+
+ <!-- ══ 01 SYSTÈME ══ -->
+ 
+ 
+01 — Système d'icônes
+ Lucide Icons · SVG exclusivement · grille 16×16px · style outline 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Famille
+
+ 
+Lucide
+
+ 
+Icons · Open Source · MIT
+
+ 
+
+ 
+
+ 
+Viewbox
+
+ 
+16×16
+
+ 
+px · grille de référence
+
+ 
+
+ 
+
+ 
+Style
+
+ 
+Outline
+
+ 
+fill:none par défaut
+
+ 
+
+ 
+
+ 
+Format
+
+ 
+SVG
+
+ 
+inline · jamais img/icon-font
+
+ 
+
+ 
+
+
+ <!-- Grid anatomy -->
+ 
+Anatomie de la grille d'icône
+
+ 
+
+ <!-- Anatomy diagram -->
+ 
+
+ <!-- stroke-width 1.4 -->
+ 
+
+ 
+ 
+stroke 1.4 Nav / Sidebar 
+
+ 
+
+ <!-- stroke-width 1.5 -->
+ 
+
+ 
+ 
+stroke 1.5 Boutons / inline 
+
+ 
+
+ 
+
+ <!-- Legend -->
+ 
+
+ 
+Propriétés invariantes
+
+ 
+viewBox 0 0 16 16 — grille universelle
+
+ 
+stroke-linecap: round
+
+ 
+stroke-linejoin: round
+
+ 
+fill: none (outline style)
+
+ 
+stroke: currentColor (hérite du parent)
+
+ 
+stroke-width par contexte
+
+ 
+1.4px — sidebar nav, menus, topbar
+
+ 
+1.5px — boutons, inline text, labels
+
+ 
+2.0px — emphase, alertes, états critiques
+
+ 
+
+ <!-- Live spec card -->
+ 
+
+ 
+Template SVG obligatoire
+
+ 
+
+ &lt; svg 
+ &nbsp; width= "16" 
+ &nbsp; height= "16" 
+ &nbsp; viewBox= "0 0 16 16" 
+ &nbsp; fill= "none" 
+ &nbsp; stroke= "currentColor" 
+ &nbsp; stroke-width= "1.5" 
+ &nbsp; stroke-linecap= "round" 
+ &nbsp; stroke-linejoin= "round" 
+ &gt; 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 02 TAILLES ══ -->
+ 
+ 
+02 — Tailles standards
+ 5 paliers nommés · XS=12px à XL=24px · contextes précis 
+
+ 
+
+ 
+
+ 
+Rendu live à l'échelle exacte — icône : Stethoscope médical
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+12px
+
+ 
+XS Badge·Tag
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+14px
+
+ 
+SM Bouton·Label
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+16px ★
+
+ 
+MD · défaut Nav·Interface
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+20px
+
+ 
+LG Section·KPI
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+24px
+
+ 
+XL Empty·Illus.
+
+ 
+
+ 
+
+ 
+ | 
+ | Taille | | Valeur | | stroke-width | | Contexte principal | 
+ | 
+ 
+ 
+ | icon-xs | | 12px | | 1.5px | | Badges, tags, méta compacte, pills | 
+
+ 
+ | icon-sm | | 14px | | 1.5px | | Boutons, labels de formulaire, tooltips | 
+
+ 
+ | icon-md ★ | | 16px | | 1.5px | | Navigation sidebar, menus contextuels, topbar | 
+
+ 
+ | icon-lg | | 20px | | 1.5px | | Titres de section, cards KPI, headers | 
+
+ 
+ | icon-xl | | 24px | | 1.4px | | Empty states, illustrations fonctionnelles | 
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 03 CATALOGUE ══ -->
+ 
+ 
+03 — Catalogue contextuel
+ 60+ icônes · 6 catégories · survolez pour le nom · icônes actives en accent 
+
+ 
+
+ 
+
+
+ <!-- Navigation -->
+ 
+
+ 
+Navigation &amp; Structure
+
+ 
+
+ 
+ home 
+
+ 
+ dashboard 
+
+ 
+ sidebar 
+
+ 
+ menu 
+
+ 
+ chevron-right 
+
+ 
+ chevron-down 
+
+ 
+ arrow-left 
+
+ 
+ external-link 
+
+ 
+ search 
+
+ 
+ settings 
+
+ 
+ log-out 
+
+ 
+ more-vertical 
+
+ 
+
+ 
+
+
+ <!-- Actions -->
+ 
+
+ 
+Actions &amp; CRUD
+
+ 
+
+ 
+ plus 
+
+ 
+ edit 
+
+ 
+ trash 
+
+ 
+ copy 
+
+ 
+ download 
+
+ 
+ upload 
+
+ 
+ share 
+
+ 
+ filter 
+
+ 
+ sort 
+
+ 
+ refresh 
+
+ 
+ x-close 
+
+ 
+ check 
+
+ 
+
+ 
+
+
+ <!-- Statuts -->
+ 
+
+ 
+Statuts &amp; Feedback
+
+ 
+
+ 
+ check-circle 
+
+ 
+ alert-triangle 
+
+ 
+ alert-circle 
+
+ 
+ info 
+
+ 
+ clock 
+
+ 
+ bell 
+
+ 
+ wifi-off 
+
+ 
+ lock 
+
+ 
+
+ 
+
+
+ <!-- Médical -->
+ 
+
+ 
+Domaine Médical — Ulamu spécifique
+
+ 
+
+ 
+ stethoscope 
+
+ 
+ patient 
+
+ 
+ file-medical 
+
+ 
+ ordonnance 
+
+ 
+ rendez-vous 
+
+ 
+ heart-pulse 
+
+ 
+ médicament 
+
+ 
+ constantes 
+
+ 
+ établissement 
+
+ 
+ injection 
+
+ 
+ consultation 
+
+ 
+ sécurité RGPD 
+
+ 
+
+ 
+
+
+ <!-- Communication -->
+ 
+
+ 
+Communication &amp; Données
+
+ 
+
+ 
+ message 
+
+ 
+ mail 
+
+ 
+ téléphone 
+
+ 
+ téléconsult. 
+
+ 
+ bar-chart 
+
+ 
+ trending-up 
+
+ 
+ données 
+
+ 
+ localisation 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══ 04 COULEUR DES ICÔNES ══ -->
+ 
+ 
+04 — Règles couleur par contexte
+ currentColor héritée · jamais de couleur codée en dur hors tokens 
+
+ 
+
+ 
+
+
+ <!-- Bouton primaire -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+ Nouveau 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Bouton primaire · Icon seule
+
+ 
+stroke: white / #FFFFFF
+
+ 
+Icône sur fond accent-500. Blanc pur — jamais de variante colorée. S'applique à tout fond coloré sombre.
+
+ 
+
+ 
+
+
+ <!-- Sidebar nav -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Sidebar nav · Active vs idle
+
+ 
+Active: --accent-500 (light) / --accent-300 (dark) Idle: --text-tertiary
+
+ 
+Différenciation claire active/idle via la couleur seule. Jamais de fill sur les icônes de nav idle.
+
+ 
+
+ 
+
+
+ <!-- Sémantique -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Confirmé 
+ 
+
+ 
+
+ 
+ Erreur 
+ 
+
+ 
+
+ 
+ Avertissement 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Icônes sémantiques
+
+ 
+stroke: --success-dot / --error-dot / --warning-dot
+
+ 
+Couleur du dot sémantique correspondant. stroke-width 2px pour emphase des états critiques.
+
+ 
+
+ 
+
+
+ <!-- Inline text -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 12 mars 2026 
+ 
+
+ 
+
+ 
+ Dr. Konaté 
+ 
+
+ 
+
+ 
+ Dakar, Sénégal 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Icône inline avec texte
+
+ 
+stroke: currentColor (hérite du texte parent)
+
+ 
+L'icône reçoit la même couleur que le texte qui l'accompagne via currentColor. Cohérence garantie automatiquement.
+
+ 
+
+ 
+
+
+ <!-- Désactivé -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Valider 
+ 
+
+ 
+
+ 
+ Nouveau 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+État désactivé (disabled)
+
+ 
+opacity: 0.4 sur le composant entier
+
+ 
+Jamais de changement de couleur d'icône isolé. L'opacité 0.4 s'applique au conteneur entier — icône et texte ensemble.
+
+ 
+
+ 
+
+
+ <!-- Focus -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+outline: 3px solid rgba(39,86,166,0.30)
+
+ 
+
+ 
+
+ 
+
+ 
+Bouton icône au focus clavier
+
+ 
+focus-ring: rgba(39,86,166, 0.30)
+
+ 
+L'icône elle-même ne change pas de couleur au focus. Seul le focus ring (outline) s'applique au conteneur. WCAG AA obligatoire.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══ 05 ASCII INTERDIT ══ -->
+ 
+ 
+05 — Interdiction totale des icônes ASCII
+ Aucun emoji, aucun caractère Unicode, aucune exception — SVG Lucide exclusivement 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Strictement interdit
+ 
+
+ 
+
+ 
+→
+
+ 
+Flèche droite ASCII
+Rendu variable selon OS/font · illisible au screen reader
+
+ 
+
+ 
+
+ 
+✓
+
+ 
+Check Unicode
+Taille et poids non contrôlables · incohérence visuelle garantie
+
+ 
+
+ 
+
+ 
+⚠
+
+ 
+Warning emoji
+Rendu couleur forcé selon plateforme · impossible à désaturer
+
+ 
+
+ 
+
+ 
+ℹ
+
+ 
+Info circled (Unicode)
+Style incohérent avec Lucide · alignement vertical imprévisible
+
+ 
+
+ 
+
+ 
+✕
+
+ 
+Croix multiplication
+Poids stroke non contrôlé · ne correspond pas aux icônes Lucide
+
+ 
+
+ 
+
+ 
+🔔
+
+ 
+Emoji cloche
+Couleur et style imposés · inaccessible · rendu différent iOS/Android/Web
+
+ 
+
+ 
+
+ 
++
+
+ 
+Plus typographique
+Épaisseur liée à la police courante · taille non indépendante du texte
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ SVG Lucide obligatoire
+ 
+
+ 
+
+ 
+
+ 
+arrow-right (Lucide)
+Épaisseur, couleur et taille 100% contrôlables via CSS
+
+ 
+
+ 
+
+ 
+
+ 
+check (Lucide)
+stroke-width modulable · currentColor · responsive
+
+ 
+
+ 
+
+ 
+
+ 
+alert-triangle (Lucide)
+Monochrome, hérite de la couleur sémantique via CSS
+
+ 
+
+ 
+
+ 
+
+ 
+info (Lucide)
+Cohérent avec tous les autres SVG du système
+
+ 
+
+ 
+
+ 
+
+ 
+x (Lucide)
+Stroke identique aux autres icônes · alignement parfait
+
+ 
+
+ 
+
+ 
+
+ 
+bell (Lucide)
+Rendu identique sur tous les navigateurs et OS
+
+ 
+
+ 
+
+ 
+
+ 
+plus (Lucide)
+Poids visuel indépendant de la font-size du texte parent
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 06 LOGO MARK & ASSETS ══ -->
+ 
+ 
+06 — Logo Mark &amp; Assets
+ Variantes · zone de protection · favicons · spécifications complètes 
+
+ 
+
+ 
+
+
+ 
+
+ <!-- Variantes -->
+ 
+
+ 
+Variantes du logo selon le fond
+
+ 
+
+ 
+
+ 
+ulamu
+
+ 
+Sur fond clair
+
+ 
+
+ 
+
+ 
+
+ 
+ulamu
+
+ 
+Sur fond sombre
+
+ 
+
+ 
+
+ 
+
+ 
+ulamu
+
+ 
+Sur fond accent
+
+ 
+
+ 
+
+ 
+
+ 
+ulamu
+
+ 
+Sur fond muted
+
+ 
+
+ 
+
+
+ <!-- Specs -->
+ 
+
+ 
+Zone de protection &amp; spécifications
+
+ 
+
+ 
+
+ 
+
+ ulamu 
+ 
+
+ 
+zone de protection
+
+ 
+
+ 
+
+ 
+
+ 
+ Logo mark size (standard) 28×28px (topbar) 
+
+ 
+ Logo mark border-radius --radius-md (6px) 
+
+ 
+ Logo mark background --accent-500 
+
+ 
+ Logotype font Plus Jakarta Sans 700 
+
+ 
+ Logotype size (topbar) 16px · tracking -0.3px 
+
+ 
+ Zone de protection 1× hauteur du mark 
+
+ 
+ Taille minimale mark 20×20px 
+
+ 
+ Fond interdit Jamais transparent ni dégradé 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Favicons -->
+ 
+
+ 
+Favicons — déclinaisons par taille
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+16px
+
+ 
+favicon.ico browser tab
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+32px
+
+ 
+favicon-32.png HD tab
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+48px
+
+ 
+android shortcut
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+72px
+
+ 
+iOS home screen
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+96px
+
+ 
+Android launcher
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+128px
+
+ 
+iOS 2x retina
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Illustrations -->
+ 
+
+ 
+Principes d'illustration fonctionnelle
+
+ 
+
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+Empty state — Dossiers
+
+ 
+Outline monochrome (--text-tertiary) + élément accent pour l'action principale. Jamais de fill coloré en dehors du point focal.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+Graphique — Area chart
+
+ 
+Seul cas où le dégradé est autorisé. Couleur de courbe = accent-500. Fill opacity 0.18 → 0. Grilles en border-subtle.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+Illustration sécurité RGPD
+
+ 
+Structure en outline neutre (--text-tertiary) + fill accent très désaturé (opacity 0.07) + élément focal en accent-500 plein.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 07 RÈGLES ══ -->
+ 
+ 
+07 — Règles d'usage
+
+ 
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+Utiliser un emoji, un caractère Unicode ou ASCII comme icône d'interface — jamais
+
+ 
+Utiliser une bibliothèque d'icônes autre que Lucide Icons sans validation
+
+ 
+Importer des icônes via font-icon (icon font) — SVG inline exclusivement
+
+ 
+Hardcoder une couleur d'icône hors des tokens (ex: stroke="#2756A6" en dur)
+
+ 
+Utiliser des icônes avec fill coloré hors contextes documentés (sémantiques uniquement)
+
+ 
+Dépasser 24px pour une icône dans un composant UI courant
+
+ 
+Utiliser stroke-width différent des 3 valeurs autorisées (1.4 / 1.5 / 2.0)
+
+ 
+Inclure le logo mark sur fond transparent ou dégradé
+
+ 
+Modifier les proportions du logo mark (pas de déformation)
+
+ 
+Utiliser une icône fill (solide) pour un état idle — outline uniquement
+
+ 
+ 
+
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Toujours utiliser stroke="currentColor" — la couleur hérite du parent CSS
+
+ 
+viewBox="0 0 16 16" sur toutes les icônes sans exception
+
+ 
+stroke-linecap="round" + stroke-linejoin="round" sur toutes les icônes
+
+ 
+Taille 16px (icon-md) par défaut — adapter uniquement avec justification
+
+ 
+stroke-width 1.4 dans la sidebar/nav · 1.5 dans les boutons · 2.0 pour l'emphase
+
+ 
+Icône active sidebar : couleur accent via CSS, jamais en attribut SVG
+
+ 
+État disabled : opacity 0.4 sur le conteneur, jamais sur l'icône seule
+
+ 
+Illustrations fonctionnelles : outline monochrome + seul élément focal en accent
+
+ 
+Logo mark : fond accent-500 obligatoire, border-radius proportionnel à la taille
+
+ 
+Tester chaque icône dans les deux thèmes — currentColor garantit la cohérence
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ulamu · Design System · CG-10 · v1.0
+
+ 
+Document validé — Phase 2 en cours

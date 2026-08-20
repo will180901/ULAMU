@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-08 Feedback & Communication 
+
+
+ 
+ 
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-08 Feedback &amp; Communication
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+ 
+ 
+
+ 
+Design System · Module CG-08
+
+ 
+Feedback &amp; Communication
+
+ 
+Toasts, modales, drawers, alertes inline et états de chargement (skeletons, spinners, progress bars). Chaque composant de feedback est rendu en live dans les deux thèmes avec ses spécifications exactes.
+
+ 
+
+
+ <!-- 01 TOASTS -->
+ 
+ 
+01 — Toasts
+ Top centré · glass + grain · shadow-lg · z-index 300 · 4 variantes 
+
+ 
+
+
+ 
+4 variantes sémantiques — rendu live en position de référence
+
+ 
+
+ <!-- Success toast -->
+ 
+
+ 
+
+ 
+
+ 
+Ordonnance créée avec succès
+
+ 
+ORD-2026-00413-DKR · Signée numériquement
+
+ 
+
+ Voir 
+ 
+
+ 
+
+ <!-- Error toast -->
+ 
+
+ 
+
+ 
+
+ 
+Échec de la synchronisation
+
+ 
+Connexion perdue — réessai dans 30s
+
+ 
+
+ Réessayer 
+ 
+
+ 
+
+ <!-- Warning toast -->
+ 
+
+ 
+
+ 
+
+ 
+Stock pharmacie faible
+
+ 
+Paracétamol 500mg — 12 unités restantes
+
+ 
+
+ Commander 
+ 
+
+ 
+
+ <!-- Info toast -->
+ 
+
+ 
+
+ 
+
+ 
+Rendez-vous dans 1 heure
+
+ 
+Dr. Konaté — Kofi Mensah — 15h30
+
+ 
+
+ Préparer 
+ 
+
+ 
+
+ 
+
+
+ 
+ | 
+ | Propriété | | Valeur | | Note | 
+ | 
+ 
+ 
+ | position | | fixed · top:16px · left:50% · transform:translateX(-50%) | | Toujours centré horizontalement, jamais à gauche ni à droite | 
+
+ 
+ | background | | --glass-bg · backdrop-filter:blur(12px) | | Glass obligatoire + grain overlay + shadow-lg | 
+
+ 
+ | max-width | | 420px | | min-width:300px pour éviter les toasts trop étroits | 
+
+ 
+ | border | | 1px --glass-border | | Bordure harmonique avec le fond glass | 
+
+ 
+ | z-index | | 300 | | Au-dessus de tout sauf du grain overlay (9999) | 
+
+ 
+ | durée auto | | 4000ms (info/success) · 6000ms (warning/error) | | Disparition automatique sauf si l'utilisateur interagit | 
+
+ 
+ | animation entrée | | slide-down 250ms linear + fade-in | | Depuis top:-20px → top:0 · opacity 0→1 | 
+
+ 
+ 
+ 
+
+ <!-- 02 MODALS -->
+ 
+ 
+02 — Modales
+ Overlay 50% · shadow-xl · max-width 480px · header + body + footer 
+
+ 
+
+
+ 
+
+ <!-- Confirmation modal -->
+ 
+
+ 
+Modale de confirmation
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Confirmer l'ordonnance
+
+ 
+Cette action ne peut pas être annulée
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Ordonnance pour
+
+ 
+Kofi Mensah
+
+ 
+Amlodipine 5mg/j · Ramipril 10mg/j · 30 jours
+
+ 
+
+ 
+En confirmant, vous apposez votre signature numérique sur cette ordonnance. Le patient sera notifié immédiatement.
+
+ 
+
+ 
+
+ <button>Annuler</button>
+ <button>Signer &amp; confirmer</button>
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Form modal -->
+ 
+
+ 
+Modale formulaire
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Nouveau rendez-vous
+
+ 
+Planifier une consultation
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+<label>Patient</label><input>
+
+ 
+
+ 
+<label>Date</label><input>
+
+ 
+<label>Heure</label><input>
+
+ 
+
+ 
+<label>Type</label><select><option>Consultation présentielle</option><option>Téléconsultation</option></select>
+
+ 
+
+ 
+
+ <button>Annuler</button>
+ <button>Créer le rendez-vous</button>
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ 
+ | 
+ | Propriété | | Valeur | | Note | 
+ | 
+ 
+ 
+ | max-width | | 480px (standard) · 640px (large) · 380px (compact) | | Jamais pleine largeur sur desktop | 
+
+ 
+ | overlay | | rgba(0,0,0,0.50) · z-index:200 | | Fermeture au clic sur l'overlay sauf modale critique | 
+
+ 
+ | shadow | | --shadow-xl | | Niveau Z4 — élévation maximale | 
+
+ 
+ | animation | | scale 0.96→1 + fade · 250ms linear | | Entrée et sortie symétriques | 
+
+ 
+ | footer | | Actions à droite · Annuler à gauche · Primaire à droite | | Ordre CTA toujours : Annuler → Action principale | 
+
+ 
+ 
+ 
+
+ <!-- 03 DRAWERS -->
+ 
+ 
+03 — Drawers (Tiroirs)
+ Depuis la droite · 320px · shadow-xl · bg-elevated 
+
+ 
+
+ 
+
+ <!-- Background content -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Drawer -->
+ 
+
+ 
+
+ 
+Détail du patient
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+KM
+
+ 
+
+ 
+Kofi Mensah
+
+ 
+PAT-8821-KGL · 42 ans
+
+ 
+
+ 
+
+ 
+
+ 
+ Spécialité Cardiologie 
+
+ 
+ Médecin Dr. Konaté 
+
+ 
+ Dernière visite 12 mars 2026 
+
+ 
+ Statut Actif 
+
+ 
+
+ 
+
+ 
+
+ <button>Ouvrir le dossier</button>
+ <button>RDV</button>
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 04 INLINE ALERTS -->
+ 
+ 
+04 — Alertes inline
+ 4 variantes sémantiques · avec titre · dismissable · dans le flux 
+
+ 
+
+ 
+
+ 
+Alertes — toutes variantes
+
+ 
+
+ 
+ 
+
+ 
+Dossier synchronisé avec succès
+
+ 
+Toutes les modifications sont bien enregistrées et disponibles sur tous vos appareils.
+
+ 
+
+ × 
+ 
+
+ 
+
+ 
+ 
+
+ 
+Connexion instable détectée
+
+ 
+Certaines fonctionnalités peuvent être indisponibles. Le mode hors ligne est activé automatiquement.
+
+ 
+
+ × 
+ 
+
+ 
+
+ 
+ 
+
+ 
+Erreur de paiement
+
+ 
+La transaction a échoué. Vérifiez vos informations de paiement et réessayez, ou contactez le support.
+
+ 
+
+ × 
+ 
+
+ 
+
+ 
+ 
+
+ 
+Mise à jour disponible
+
+ 
+Ulamu v2.4.1 est disponible avec de nouvelles fonctionnalités et des correctifs de sécurité importants.
+
+ 
+
+ × 
+ 
+
+ 
+
+ 
+
+ <!-- 05 LOADING STATES -->
+ 
+ 
+05 — États de chargement
+ Skeletons · Spinners · Progress bars · Dots · Pulse 
+
+ 
+
+
+ 
+
+
+ <!-- SKELETONS -->
+ 
+
+ 
+Skeletons — remplacement du contenu en chargement
+
+ <!-- Card skeleton -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Table skeleton -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- SPINNERS & PROGRESS -->
+ 
+
+ 
+Spinners — tailles et contextes
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+XS·14px
+
+ 
+
+ 
+
+ 
+
+ 
+SM·20px
+
+ 
+
+ 
+
+ 
+
+ 
+MD·28px
+
+ 
+
+ 
+
+ 
+
+ 
+LG·40px
+
+ 
+
+ <!-- On button -->
+ 
+
+ 
+
+ Chargement… 
+ 
+
+ 
+
+ <!-- Muted -->
+ 
+
+ 
+
+ Spinner neutre — contexte secondaire 
+ 
+
+ 
+
+
+ 
+Dots spinner &amp; Pulse
+
+ 
+
+ 
+
+ 
+
+ Dots bounce 
+ 
+
+ 
+
+ 
+
+ Pulse dot 
+ 
+
+ 
+
+ 
+
+ Synchronisation 
+ 
+
+ 68% 
+ 
+
+ 
+
+ Chargement 
+ 
+
+ 35% 
+ 
+
+ 
+
+ 
+
+
+ 
+Empty state — aucun contenu
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Aucun dossier trouvé
+
+ 
+Il n'y a pas encore de dossiers médicaux. Créez le premier dossier pour commencer.
+
+ 
+
+ <button>
+ 
+ Nouveau dossier
+ </button>
+ 
+
+ 
+
+ 
+
+ 
+
+
+ 
+ | 
+ | Composant | | Spécification | | Usage | 
+ | 
+ 
+ 
+ | Skeleton | | gradient shimmer 1.4s · bg-muted → bg-subtle → bg-muted | | Remplace le contenu pendant le chargement initial | 
+
+ 
+ | Spinner ring | | border-top:accent · animation:spin 0.8s linear infinite | | Actions asynchrones ponctuelles (bouton, chargement partiel) | 
+
+ 
+ | Dots bounce | | 3 dots · scale 0→1 · animation-delay -0.32s / -0.16s / 0s | | Attente de réponse (chat, IA, traitement) | 
+
+ 
+ | Progress bar | | height:6px · border-radius:3px · fill:accent · transition .3s | | Opérations avec progression mesurable (sync, upload) | 
+
+ 
+ | Pulse dot | | opacity 1→0.4→1 · 1.5s ease-in-out infinite | | Indicateur de statut en temps réel (live, connecté) | 
+
+ 
+ | Empty state | | icône 56px · title display-md · desc text-sm · CTA optionnel | | Listes ou sections sans contenu — toujours avec action | 
+
+ 
+ 
+ 
+
+ <!-- RULES -->
+ 
+ 
+06 — Règles d'usage
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+Toast sans glass + grain — fond solide jamais autorisé sur toast
+
+ 
+Toast positionné à gauche, à droite ou en bas — toujours top-center
+
+ 
+Modale sans overlay sombre — toujours rgba(0,0,0,0.5)
+
+ 
+Modale sans bouton de fermeture (×) explicite en haut à droite
+
+ 
+Alert inline sans icône — couleur seule insuffisante pour l'accessibilité
+
+ 
+Spinner sans arret — toujours une durée maximale définie
+
+ 
+Empty state sans action — toujours proposer une sortie
+
+ 
+Plusieurs modales ouvertes simultanément — jamais d'empilement
+
+ 
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Toasts : disparition auto 4s (info/success) · 6s (warning/error) · action prolonge
+
+ 
+Modales : fermeture via Echap, clic overlay, ou bouton × explicite
+
+ 
+Drawer : animation slide depuis la droite · 250ms linear
+
+ 
+Alertes inline : avec titre + corps + icône + bouton de fermeture
+
+ 
+Skeleton : reproduire fidèlement la structure du contenu final
+
+ 
+Spinner sur bouton : remplace l'icône gauche, désactive le bouton
+
+ 
+Progress bar : toujours accompagnée d'un pourcentage ou d'un label
+
+ 
+Empty state : icône thématique + titre clair + description courte + CTA
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ulamu · Design System · CG-08 · v1.0
+Document validé — Phase 2 en cours

@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">E3</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Paramètres métier</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Administration</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="{{ i.badgeStyle }}">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">SN</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sylvie Ngouabi</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600)">Super-admin</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Administration</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Paramètres métier</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un compte, un dossier…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h5M11 4h3M2 8h9M2 12h3M9 12h5"></path><circle cx="9" cy="4" r="1.6"></circle><circle cx="13" cy="8" r="1.6"></circle><circle cx="7" cy="12" r="1.6"></circle></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Paramètres métier</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <button type="button" onClick="{{ ouvrirHistorique }}" style="{{ styleSecondaireMd }}flex-shrink:0;" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3l2 2"></path></svg>
+                Historique complet
+              </button>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <sc-for list="{{ trois }}" as="n" hint-placeholder-count="3">
+              <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+                <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+                <sc-for list="{{ quatre }}" as="m" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:var(--espace-4);padding:0 var(--espace-4);height:44px;border-bottom:1px solid var(--bordure-legere)">
+                    <span style="{{ styleOs }}width:210px;height:9px;border-radius:3px"></span>
+                    <span style="flex:1"></span>
+                    <span style="{{ styleOs }}width:80px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                    <span style="{{ styleOs }}width:70px;height:26px;border-radius:var(--radius-md);flex-shrink:0"></span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:860px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Les paramètres n'ont pas pu être chargés</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">Aucune modification n'est possible tant que les valeurs courantes ne sont pas confirmées : une écriture à l'aveugle changerait les tarifs de toute la plateforme.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher les paramètres</span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">Réessayer</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="position:relative;flex:1 1 240px;min-width:180px;max-width:340px;display:flex">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:10px;top:10px;pointer-events:none"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                <input type="text" value="{{ vRecherche }}" onChange="{{ majRecherche }}" placeholder="Filtrer par nom ou clé technique…" style="{{ styleChampFiltre }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              </span>
+              <sc-if value="{{ filtresVisibles }}">
+                <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                  <sc-for list="{{ filtres }}" as="f" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ f.onClick }}" style="{{ f.style }}">
+                      {{ f.label }}
+                      <sc-if value="{{ f.compteVisible }}">
+                        <span style="{{ f.compteStyle }}">{{ f.compte }}</span>
+                      </sc-if>
+                    </button>
+                  </sc-for>
+                </span>
+              </sc-if>
+              <span style="flex:1"></span>
+              <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ compteurFiltre }}</span>
+            </div>
+
+            <sc-if value="{{ groupesVisibles }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ familles }}" as="f" hint-placeholder-count="3">
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <button type="button" onClick="{{ f.onBasculer }}" aria-expanded="{{ f.ouverte }}" style="{{ f.entete }}">
+                  <span style="{{ f.tuile }}" dangerouslySetInnerHTML="{{ f.icone }}"></span>
+                  <span style="flex:1;min-width:0;text-align:left">
+                    <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                      <span style="{{ styleCarteTitre }}">{{ f.titre }}</span>
+                      <sc-if value="{{ f.sensibleVisible }}">
+                        <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--ton-ambre-fond);color:var(--ton-ambre-icone);font-size:var(--font-size-overline);font-weight:600;white-space:nowrap">Taux contractuels</span>
+                      </sc-if>
+                    </span>
+                    <span style="{{ styleCarteSousTitre }}">{{ f.aide }}</span>
+                  </span>
+                  <span style="flex-shrink:0;display:flex;align-items:center;gap:10px">
+                    <sc-if value="{{ f.modifiesVisible }}">
+                      <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--ap-50);color:var(--ap-700);font-size:var(--font-size-overline);font-weight:600;white-space:nowrap">{{ f.modifies }}</span>
+                    </sc-if>
+                    <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ f.compte }}</span>
+                    <span style="display:flex;color:var(--texte-tertiaire);transition:transform var(--dur-base) var(--ease-out);{{ f.rotation }}">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
+                    </span>
+                  </span>
+                </button>
+
+                <sc-if value="{{ f.ouverte }}">
+                <div style="overflow-x:auto">
+                  <table style="width:100%;min-width:760px;border-collapse:collapse">
+                    <thead>
+                      <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                        <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="5">
+                          <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                        </sc-for>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <sc-for list="{{ f.parametres }}" as="p" hint-placeholder-count="5">
+                        <tr style="{{ p.ligne }}" style-hover="background:var(--ap-50)">
+                          <td style="padding:var(--espace-2) var(--espace-4)">
+                            <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ p.nom }}</span>
+                            <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:9px;color:var(--texte-tertiaire)">{{ p.cle }}</span>
+                          </td>
+                          <td style="padding:var(--espace-2) var(--espace-4);font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-tertiaire)">{{ p.effet }}</td>
+                          <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                            <span style="{{ p.styleValeur }}">{{ p.valeur }}</span>
+                            <sc-if value="{{ p.ancienneVisible }}">
+                              <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:9px;color:var(--texte-tertiaire);text-decoration:line-through">{{ p.ancienne }}</span>
+                            </sc-if>
+                          </td>
+                          <td style="padding:var(--espace-2) var(--espace-4);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ p.derniere }}</td>
+                          <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                            <button type="button" onClick="{{ p.onModifier }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">Modifier</button>
+                          </td>
+                        </tr>
+                      </sc-for>
+                    </tbody>
+                  </table>
+                </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            </sc-if>
+
+            <sc-if value="{{ videFiltre }}">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-10) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h5M11 4h3M2 8h9M2 12h3M9 12h5"></path><circle cx="9" cy="4" r="1.6"></circle><circle cx="13" cy="8" r="1.6"></circle><circle cx="7" cy="12" r="1.6"></circle></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">{{ titreVide }}</span>
+                <span style="display:block;margin-top:4px;max-width:430px;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-tertiaire)">{{ corpsVide }}</span>
+              </span>
+              <sc-if value="{{ resetVisible }}">
+                <button type="button" onClick="{{ reinitialiser }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Voir tous les paramètres</button>
+              </sc-if>
+            </div>
+            </sc-if>
+
+            <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;color:var(--ap-600);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)"><strong style="font-weight:600;color:var(--texte-primaire)">Toute modification exige un motif</strong> et part au journal d'audit avec votre nom, l'ancienne et la nouvelle valeur. Les paramètres marqués « taux contractuels » engagent les contrats signés : leur changement demande une confirmation supplémentaire.</span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="{{ tuileModale }}" dangerouslySetInnerHTML="{{ iconeModale }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-4);overflow-y:auto">
+
+          <sc-if value="{{ dialogueModification }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-4)">
+            <p style="margin:0;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-secondaire)">{{ effetParametre }}</p>
+
+            <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap">
+              <span style="flex:1 1 130px;min-width:110px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+                <span style="display:block;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire)">Valeur courante</span>
+                <span style="display:block;margin-top:3px;font-family:var(--font-mono);font-size:var(--font-size-h3);font-weight:600;color:var(--texte-secondaire)">{{ valeurCourante }}</span>
+              </span>
+              <span style="flex-shrink:0;color:var(--texte-tertiaire);display:flex">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5"></path></svg>
+              </span>
+              <span style="flex:1 1 130px;min-width:110px;padding:var(--espace-3);border-radius:var(--radius-lg);background:{{ fondNouvelle }};border:1px solid {{ bordureNouvelle }}">
+                <span style="display:block;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire)">Nouvelle valeur</span>
+                <span style="display:block;margin-top:3px;font-family:var(--font-mono);font-size:var(--font-size-h3);font-weight:700;color:{{ couleurNouvelle }}">{{ apercuNouvelle }}</span>
+              </span>
+            </div>
+
+            <label style="display:flex;flex-direction:column;gap:5px;max-width:260px">
+              <span style="{{ styleLabel }}">{{ labelChamp }}</span>
+              <span style="position:relative;display:flex">
+                <input type="text" value="{{ vValeur }}" onChange="{{ majValeur }}" style="{{ styleChampValeur }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+                <sc-if value="{{ uniteVisible }}">
+                  <span style="position:absolute;right:10px;top:8px;font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-tertiaire);pointer-events:none">{{ unite }}</span>
+                </sc-if>
+              </span>
+              <span style="font-size:var(--font-size-overline);line-height:1.45;color:{{ couleurBornes }}">{{ aideBornes }}</span>
+            </label>
+
+            <sc-if value="{{ avertissementVisible }}">
+            <div style="display:flex;gap:var(--espace-3);padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--alerte-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1L1 14h14L8 1z"></path><path d="M8 6v3M8 11v.5"></path></svg>
+              </span>
+              <span style="min-width:0">
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Ce taux figure dans les contrats signés</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)">{{ corpsAvertissement }}</span>
+              </span>
+            </div>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" checked="{{ contratsAssume }}" onChange="{{ basculerContrats }}" style="width:16px;height:16px;margin-top:1px;flex-shrink:0;accent-color:var(--ap-500)" />
+              <span style="font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)">Je confirme que ce changement a été validé par le porteur et que les soignants concernés seront prévenus 30 jours avant son entrée en vigueur.</span>
+            </label>
+            </sc-if>
+
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="{{ styleLabel }}">Motif de la modification</span>
+              <textarea value="{{ vMotif }}" onChange="{{ majMotif }}" rows="3" placeholder="Pourquoi ce changement ? Cette phrase reste au journal d'audit." style="{{ styleTextarea }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none"></textarea>
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span style="font-size:var(--font-size-overline);color:{{ couleurAideMotif }}">{{ aideMotif }}</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ compteurMotif }}</span>
+              </span>
+            </label>
+
+            <sc-if value="{{ historiqueParamVisible }}">
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:var(--espace-3);border-top:1px solid var(--bordure-legere)">
+              <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire)">Modifications précédentes</span>
+              <sc-for list="{{ historiqueParam }}" as="h" hint-placeholder-count="2">
+                <span style="display:flex;gap:9px;min-width:0">
+                  <span style="width:7px;height:7px;flex-shrink:0;margin-top:5px;border-radius:50%;background:var(--texte-tertiaire)"></span>
+                  <span style="min-width:0;flex:1">
+                    <span style="display:block;font-size:var(--font-size-caption);color:var(--texte-primaire)">{{ h.resume }}</span>
+                    <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:9px;color:var(--texte-tertiaire)">{{ h.meta }}</span>
+                    <span style="display:block;margin-top:2px;font-size:var(--font-size-overline);line-height:1.45;color:var(--texte-tertiaire)">« {{ h.motif }} »</span>
+                  </span>
+                </span>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ dialogueHistorique }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ journalGlobal }}" as="j" hint-placeholder-count="5">
+              <div style="{{ j.bloc }}">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                  <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);min-width:0">{{ j.parametre }}</span>
+                  <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ j.date }}</span>
+                </span>
+                <span style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+                  <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-tertiaire);text-decoration:line-through">{{ j.avant }}</span>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5"></path></svg>
+                  <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);font-weight:600;color:var(--texte-primaire)">{{ j.apres }}</span>
+                  <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire)">· {{ j.auteur }}</span>
+                </span>
+                <span style="display:block;margin-top:4px;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)">« {{ j.motif }} »</span>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">{{ libelleAnnuler }}</button>
+          <sc-if value="{{ actionVisible }}">
+            <button type="button" onClick="{{ confirmerDialogue }}" disabled="{{ confirmationBloquee }}" style="{{ styleBoutonAction }}">Enregistrer la modification</button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:440px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">E3 · 40 paramètres en 6 familles dépliables · avant → après avec bornes vérifiées en direct · motif obligatoire sous 20 caractères bloquant · les taux contractuels exigent une case de confirmation supplémentaire · historique par paramètre et journal global</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  dossier: '<path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><path d="M9 1v4h4"/><path d="M6 9h4M8 7v4"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  reglages: '<path d="M2 4h5M11 4h3M2 8h9M2 12h3M9 12h5"/><circle cx="9" cy="4" r="1.6"/><circle cx="13" cy="8" r="1.6"/><circle cx="7" cy="12" r="1.6"/>',
+  equipe: '<circle cx="6" cy="5" r="3"/><path d="M1 14a5 5 0 0 1 10 0"/><path d="M11 3.2a3 3 0 0 1 0 5.6M12.5 14a5 5 0 0 0-1.5-3.6"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  barres: '<path d="M2 14h12M5 14V9M8 14V5M11 14V7"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  cadenas: '<rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="11.5" r="1" fill="currentColor"/>',
+  portefeuille: '<path d="M14 5H3.5a1.5 1.5 0 0 1 0-3H12"/><path d="M2 3.5V12a2 2 0 0 0 2 2h10V5"/><circle cx="11" cy="9.5" r="1" fill="currentColor"/>',
+  horloge: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  stetho: '<path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/>',
+  pill: '<path d="m7 13.7 6.7-6.7a3.3 3.3 0 1 0-4.7-4.7l-6.7 6.7a3.3 3.3 0 1 0 4.7 4.7Z"/><path d="m5.7 5.7 4.7 4.7"/>',
+  fleche: '<path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5"/>',
+};
+
+const NAV = [
+  { titre: 'Principal', items: [
+    { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+    { cle: 'verification', label: 'File de vérification', icone: G.dossier, badge: '12', tonBadge: 'alerte' },
+  ] },
+  { titre: 'Supervision', items: [
+    { cle: 'finance', label: 'Supervision financière', icone: G.trending, badge: '5' },
+    { cle: 'parametresMetier', label: 'Paramètres métier', icone: G.reglages },
+    { cle: 'admins', label: 'Administrateurs', icone: G.equipe },
+    { cle: 'pilotage', label: 'Pilotage', icone: G.barres },
+    { cle: 'signalements', label: 'Signalements', icone: G.alerte, badge: '2' },
+    { cle: 'comptes', label: 'Comptes', icone: G.cadenas },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+/* 40 paramètres en 6 familles. `contractuel` déclenche la confirmation supplémentaire. */
+const FAMILLES = [
+  { cle: 'commissions', titre: 'Commissions et reversements', icone: G.portefeuille, sensible: true,
+    aide: 'Ce que la plateforme retient sur chaque acte · figure dans les contrats signés',
+    parametres: [
+      { cle: 'COMMISSION_SOIGNANT_PCT', nom: 'Commission sur consultation', effet: 'Retenue ULAMU sur chaque consultation honorée', valeur: 12, unite: '%', min: 0, max: 30, contractuel: true, derniere: '01/06/2026 · S. Ngouabi',
+        histo: [{ resume: '15 % → 12 %', meta: '01/06/2026 · S. Ngouabi', motif: 'Alignement sur le tarif négocié avec l\u2019Ordre des médecins.' }, { resume: '18 % → 15 %', meta: '12/01/2026 · Porteur', motif: 'Baisse décidée après la phase pilote.' }] },
+      { cle: 'COMMISSION_OFFICINE_PCT', nom: 'Commission sur délivrance', effet: 'Retenue sur chaque ordonnance servie en officine', valeur: 4, unite: '%', min: 0, max: 15, contractuel: true, derniere: '01/06/2026 · S. Ngouabi', histo: [] },
+      { cle: 'FRAIS_MOBILE_MONEY_PCT', nom: 'Frais Mobile Money répercutés', effet: 'Part des frais opérateur refacturée au soignant', valeur: 1.5, unite: '%', min: 0, max: 5, contractuel: true, derniere: '15/03/2026 · Porteur', histo: [] },
+      { cle: 'SEUIL_VERSEMENT_MIN_XAF', nom: 'Seuil minimal de versement', effet: 'En dessous, les gains sont reportés au mois suivant', valeur: 5000, unite: 'XAF', min: 0, max: 50000, derniere: '01/02/2026 · Porteur', histo: [] },
+      { cle: 'JOUR_VERSEMENT_MENSUEL', nom: 'Jour de versement mensuel', effet: 'Date à laquelle les gains partent chaque mois', valeur: 5, unite: 'du mois', min: 1, max: 28, derniere: '01/02/2026 · Porteur', histo: [] },
+      { cle: 'DELAI_REMBOURSEMENT_JOURS', nom: 'Délai de demande de remboursement', effet: 'Fenêtre pendant laquelle un patient peut contester', valeur: 30, unite: 'jours', min: 7, max: 90, derniere: '10/04/2026 · F. Mbou', histo: [] },
+      { cle: 'SEUIL_DOUBLE_VALIDATION_XAF', nom: 'Seuil de double validation', effet: 'Au-delà, deux administrateurs doivent signer', valeur: 100000, unite: 'XAF', min: 10000, max: 1000000, derniere: '01/06/2026 · S. Ngouabi', histo: [] },
+    ] },
+  { cle: 'consultations', titre: 'Consultations', icone: G.stetho,
+    aide: 'Rythme des demandes, durées, expirations',
+    parametres: [
+      { cle: 'DELAI_REPONSE_DEMANDE_H', nom: 'Délai de réponse à une demande', effet: 'Passé ce délai, la demande expire sans frais', valeur: 12, unite: 'heures', min: 1, max: 72, derniere: '20/05/2026 · S. Ngouabi', histo: [] },
+      { cle: 'DUREE_TELECONSULTATION_MIN', nom: 'Durée d\u2019une téléconsultation', effet: 'Minuteur affiché aux deux parties', valeur: 30, unite: 'minutes', min: 10, max: 120, derniere: '20/05/2026 · S. Ngouabi', histo: [] },
+      { cle: 'EXPIRATIONS_AVANT_SUSPENSION', nom: 'Expirations avant suspension', effet: 'Nombre de non-réponses qui masquent la vitrine', valeur: 3, unite: 'de suite', min: 1, max: 10, derniere: '02/07/2026 · F. Mbou', histo: [] },
+      { cle: 'ANNULATION_GRATUITE_H', nom: 'Annulation sans frais', effet: 'Combien de temps avant le rendez-vous', valeur: 4, unite: 'heures', min: 0, max: 48, derniere: '20/05/2026 · S. Ngouabi', histo: [] },
+      { cle: 'DELAI_COMPTE_RENDU_H', nom: 'Délai de rédaction du compte-rendu', effet: 'Après la consultation, avant rappel automatique', valeur: 48, unite: 'heures', min: 6, max: 168, derniere: '02/07/2026 · F. Mbou', histo: [] },
+      { cle: 'MAX_CONSULTATIONS_JOUR', nom: 'Consultations maximales par jour', effet: 'Garde-fou contre la surcharge d\u2019un soignant', valeur: 20, unite: 'par jour', min: 1, max: 60, derniere: '02/07/2026 · F. Mbou', histo: [] },
+      { cle: 'PREAVIS_REPORT_H', nom: 'Préavis de report', effet: 'Délai minimal pour déplacer un rendez-vous', valeur: 12, unite: 'heures', min: 1, max: 72, derniere: '20/05/2026 · S. Ngouabi', histo: [] },
+    ] },
+  { cle: 'verification', titre: 'Vérification des comptes', icone: G.dossier,
+    aide: 'Délais, pièces exigées, validité des attestations',
+    parametres: [
+      { cle: 'DELAI_VERIFICATION_H', nom: 'Délai réglementaire de décision', effet: 'Au-delà, le dossier remonte en tête de file', valeur: 72, unite: 'heures', min: 24, max: 240, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'VALIDITE_ATTESTATION_MOIS', nom: 'Validité d\u2019une attestation d\u2019Ordre', effet: 'Ancienneté maximale acceptée au dépôt', valeur: 3, unite: 'mois', min: 1, max: 24, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'PIECES_OBLIGATOIRES_SOIGNANT', nom: 'Pièces obligatoires · soignant', effet: 'Nombre de pièces exigées pour déposer', valeur: 3, unite: 'pièces', min: 1, max: 8, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'PIECES_OBLIGATOIRES_OFFICINE', nom: 'Pièces obligatoires · officine', effet: 'Nombre de pièces exigées pour déposer', valeur: 4, unite: 'pièces', min: 1, max: 8, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'TAILLE_MAX_PIECE_MO', nom: 'Taille maximale par pièce', effet: 'Au-delà, le téléversement est refusé', valeur: 5, unite: 'Mo', min: 1, max: 25, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'RAPPEL_RENOUVELLEMENT_JOURS', nom: 'Rappel avant expiration', effet: 'Préavis envoyé au soignant', valeur: 30, unite: 'jours', min: 7, max: 90, derniere: '14/06/2026 · S. Ngouabi', histo: [] },
+      { cle: 'DEPOTS_REFUSES_AVANT_BLOCAGE', nom: 'Refus avant blocage du dépôt', effet: 'Après ce nombre, un entretien est requis', valeur: 3, unite: 'refus', min: 1, max: 10, derniere: '14/06/2026 · S. Ngouabi', histo: [] },
+    ] },
+  { cle: 'pharmacie', titre: 'Pharmacie et stock', icone: G.pill,
+    aide: 'Réservations, seuils de fraîcheur, chaîne du froid',
+    parametres: [
+      { cle: 'EXPIRATION_RESERVATION_H', nom: 'Expiration d\u2019une réservation', effet: 'Après la fermeture du jour suivant, les unités reviennent au stock', valeur: 36, unite: 'heures', min: 6, max: 96, derniere: '08/05/2026 · P. Okemba', histo: [] },
+      { cle: 'SEUIL_ALERTE_PEREMPTION_J', nom: 'Seuil d\u2019alerte de péremption', effet: 'En dessous, le lot passe en alerte rouge', valeur: 30, unite: 'jours', min: 7, max: 120, derniere: '08/05/2026 · P. Okemba', histo: [] },
+      { cle: 'SEUIL_SURVEILLANCE_J', nom: 'Seuil de surveillance', effet: 'En dessous, le lot passe en « à surveiller »', valeur: 90, unite: 'jours', min: 30, max: 365, derniere: '08/05/2026 · P. Okemba', histo: [] },
+      { cle: 'TEMP_MIN_CHAINE_FROID_C', nom: 'Température minimale · chaîne du froid', effet: 'Borne basse signalée sur les lots concernés', valeur: 2, unite: '°C', min: -20, max: 8, derniere: '01/04/2026 · Porteur', histo: [] },
+      { cle: 'TEMP_MAX_CHAINE_FROID_C', nom: 'Température maximale · chaîne du froid', effet: 'Borne haute signalée sur les lots concernés', valeur: 8, unite: '°C', min: 2, max: 25, derniere: '01/04/2026 · Porteur', histo: [] },
+      { cle: 'DELAI_RETRAIT_PERIME_J', nom: 'Délai de retrait d\u2019un lot périmé', effet: 'Après quoi l\u2019officine est signalée', valeur: 7, unite: 'jours', min: 1, max: 30, derniere: '01/04/2026 · Porteur', histo: [] },
+      { cle: 'MAX_MEMBRES_OFFICINE', nom: 'Membres maximum par officine', effet: 'Titulaire compris', valeur: 8, unite: 'membres', min: 1, max: 30, derniere: '08/05/2026 · P. Okemba', histo: [] },
+    ] },
+  { cle: 'securite', titre: 'Sécurité et sessions', icone: G.cadenas,
+    aide: 'Durées de session, tentatives, codes de secours',
+    parametres: [
+      { cle: 'INACTIVITE_SESSION_MIN', nom: 'Fermeture pour inactivité', effet: 'Session close automatiquement après ce délai', valeur: 30, unite: 'minutes', min: 5, max: 240, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'TENTATIVES_AVANT_BLOCAGE', nom: 'Tentatives avant blocage', effet: 'Connexions échouées tolérées', valeur: 5, unite: 'essais', min: 3, max: 10, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'DUREE_BLOCAGE_MIN', nom: 'Durée du blocage', effet: 'Temps d\u2019attente après trop d\u2019échecs', valeur: 15, unite: 'minutes', min: 1, max: 120, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'CODES_SECOURS_GENERES', nom: 'Codes de secours générés', effet: 'À la configuration de la double authentification', valeur: 10, unite: 'codes', min: 5, max: 20, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'VALIDITE_INVITATION_J', nom: 'Validité d\u2019une invitation', effet: 'Lien d\u2019inscription envoyé à un membre', valeur: 7, unite: 'jours', min: 1, max: 30, derniere: '08/05/2026 · P. Okemba', histo: [] },
+      { cle: 'ROTATION_MDP_JOURS', nom: 'Rotation des mots de passe admin', effet: '0 désactive l\u2019obligation de changement', valeur: 0, unite: 'jours', min: 0, max: 365, derniere: '01/03/2026 · Porteur', histo: [] },
+    ] },
+  { cle: 'plateforme', titre: 'Plateforme et communication', icone: G.reglages,
+    aide: 'Rayon de recherche, notifications, langues',
+    parametres: [
+      { cle: 'RAYON_RECHERCHE_KM', nom: 'Rayon de recherche par défaut', effet: 'Distance proposée au patient dans l\u2019annuaire', valeur: 10, unite: 'km', min: 1, max: 100, derniere: '22/06/2026 · F. Mbou', histo: [] },
+      { cle: 'RESULTATS_PAR_PAGE', nom: 'Résultats par page', effet: 'Listes et annuaire', valeur: 10, unite: 'lignes', min: 5, max: 100, derniere: '22/06/2026 · F. Mbou', histo: [] },
+      { cle: 'DELAI_REPONSE_SIGNALEMENT_H', nom: 'Délai de traitement d\u2019un signalement', effet: 'Au-delà, le signalement est marqué hors délai', valeur: 48, unite: 'heures', min: 6, max: 168, derniere: '22/06/2026 · F. Mbou', histo: [] },
+      { cle: 'RETENTION_JOURNAL_MOIS', nom: 'Conservation du journal d\u2019audit', effet: 'Durée légale minimale de rétention', valeur: 120, unite: 'mois', min: 12, max: 240, contractuel: true, derniere: '01/03/2026 · Porteur', histo: [] },
+      { cle: 'SMS_PAR_JOUR_MAX', nom: 'SMS maximum par compte et par jour', effet: 'Garde-fou contre les coûts opérateur', valeur: 12, unite: 'SMS', min: 1, max: 50, derniere: '22/06/2026 · F. Mbou', histo: [] },
+      { cle: 'DELAI_SUPPRESSION_COMPTE_J', nom: 'Délai avant suppression définitive', effet: 'Après clôture, période de rétractation', valeur: 30, unite: 'jours', min: 7, max: 180, contractuel: true, derniere: '01/03/2026 · Porteur', histo: [] },
+    ] },
+];
+
+const JOURNAL = [
+  { parametre: 'Commission sur consultation', avant: '15 %', apres: '12 %', auteur: 'S. Ngouabi', date: '01/06/2026 09:14',
+    motif: 'Alignement sur le tarif négocié avec l\u2019Ordre des médecins.' },
+  { parametre: 'Expirations avant suspension', avant: '5 de suite', apres: '3 de suite', auteur: 'F. Mbou', date: '02/07/2026 15:40',
+    motif: 'Trop de patients laissés sans réponse pendant la saison des pluies.' },
+  { parametre: 'Rappel avant expiration', avant: '15 jours', apres: '30 jours', auteur: 'S. Ngouabi', date: '14/06/2026 11:02',
+    motif: 'Quinze jours ne laissaient pas le temps d\u2019obtenir une attestation à l\u2019Ordre.' },
+  { parametre: 'Seuil d\u2019alerte de péremption', avant: '15 jours', apres: '30 jours', auteur: 'P. Okemba', date: '08/05/2026 08:25',
+    motif: 'Les officines de Talangaï écoulaient trop tard leurs lots courts.' },
+  { parametre: 'Rayon de recherche par défaut', avant: '5 km', apres: '10 km', auteur: 'F. Mbou', date: '22/06/2026 16:18',
+    motif: 'Couverture insuffisante à Makélékélé et Madibou.' },
+];
+
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+  accent: ['var(--ap-50)', 'var(--ap-700)', 'var(--ap-500)'],
+};
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+const formate = (v, unite) => {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  const s = Number.isInteger(n) ? n.toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ') : String(n).replace('.', ',');
+  return unite === '%' || unite === '°C' ? s + ' ' + unite : s + ' ' + unite;
+};
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'parametresMetier',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    recherche: '', filtre: 'tous', ouvertes: { commissions: true },
+    valeurs: {}, dialogue: null, cible: null, saisie: '', motif: '', contratsAssume: false,
+    toast: null,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.tToast) clearTimeout(this.tToast);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  valeurDe(p) {
+    const v = this.state.valeurs[p.cle];
+    return v === undefined ? p.valeur : v.valeur;
+  }
+  ancienneDe(p) {
+    const v = this.state.valeurs[p.cle];
+    return v === undefined ? null : v.ancienne;
+  }
+
+  seg(actif) {
+    return 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid ' +
+      (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 28, px: 11, fs: 'var(--font-size-caption)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const dialogue = this.state.dialogue;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false, dialogue: null }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k, dialogue: null }) },
+    ];
+
+    const enTete = (align) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + align +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;background:var(--fond-surface-2)';
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    const q = this.state.recherche.trim().toLowerCase();
+    /* Tous les compteurs dérivent de `source` : en état vide, aucune pastille ne reste garnie. */
+    const source = vide ? [] : FAMILLES;
+    const total = source.reduce((n, f) => n + f.parametres.length, 0);
+    const nbContractuels = source.reduce((n, f) => n + f.parametres.filter((p) => p.contractuel).length, 0);
+    const nbModifies = vide ? 0 : Object.keys(this.state.valeurs).length;
+    const familles = source.map((f) => {
+      const params = f.parametres.filter((p) => {
+        const okQ = !q || p.nom.toLowerCase().includes(q) || p.cle.toLowerCase().includes(q);
+        const okFiltre = this.state.filtre === 'tous'
+          ? true
+          : this.state.filtre === 'contractuels' ? !!p.contractuel
+          : this.state.filtre === 'modifies' ? this.state.valeurs[p.cle] !== undefined : true;
+        return okQ && okFiltre;
+      });
+      return { famille: f, params };
+    }).filter((x) => x.params.length > 0);
+
+    const nbVisibles = familles.reduce((n, x) => n + x.params.length, 0);
+    /* Une recherche ouvre d'office les familles qui répondent — sinon on ne voit rien. */
+    const forcerOuvert = q !== '' || this.state.filtre !== 'tous';
+
+    const cible = this.state.cible;
+    let param = null, famParam = null;
+    if (cible) {
+      FAMILLES.forEach((f) => {
+        const p = f.parametres.find((x) => x.cle === cible);
+        if (p) { param = p; famParam = f; }
+      });
+    }
+    const saisie = this.state.saisie;
+    const nombre = parseFloat(String(saisie).replace(',', '.'));
+    const valide = !isNaN(nombre) && param && nombre >= param.min && nombre <= param.max;
+    const inchange = param && valide && nombre === this.valeurDe(param);
+    const motif = this.state.motif;
+    const motifCourt = motif.trim().length < 20;
+    const contratsRequis = param && param.contractuel && !this.state.contratsAssume;
+    const bloquee = !valide || inchange || motifCourt || contratsRequis;
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : L < 1024 ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement, estErreur: erreur,
+      contenuVisible: !chargement && !erreur,
+      trois: [1, 2, 3], quatre: [1, 2, 3, 4],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          const [bgb, fgb] = i.tonBadge ? PILULES.warning : ['var(--erreur-accent)', '#fff'];
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            badgeStyle: 'flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:' + bgb +
+              ';color:' + fgb + ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center',
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+
+      sousTitrePage: vide ? 'Aucun paramètre chargé'
+        : total + ' paramètres en ' + source.length + ' familles · ' + nbContractuels + ' engagent les contrats signés' +
+          (nbModifies > 0 ? ' · ' + nbModifies + ' modifié' + (nbModifies > 1 ? 's' : '') + ' aujourd\u2019hui' : ''),
+      actionsEntete: L >= 720,
+
+      vRecherche: this.state.recherche,
+      majRecherche: (e) => set({ recherche: e.target.value }),
+      styleChampFiltre: 'width:100%;height:34px;box-sizing:border-box;padding:0 10px 0 32px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      filtresVisibles: L >= 760,
+      filtres: [
+        { k: 'tous', label: 'Tous', compte: total },
+        { k: 'contractuels', label: 'Taux contractuels', compte: nbContractuels },
+        { k: 'modifies', label: 'Modifiés', compte: nbModifies },
+      ].map((f) => {
+        const actif = this.state.filtre === f.k;
+        return {
+          label: f.label,
+          compte: String(f.compte),
+          compteVisible: L >= 1000,
+          compteStyle: 'font-family:var(--font-mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:9999px;background:' +
+            (actif ? 'var(--ap-50)' : 'var(--fond-input)') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-tertiaire)'),
+          style: this.seg(actif),
+          onClick: () => set({ filtre: f.k }),
+        };
+      }),
+      compteurFiltre: vide ? '0 paramètre' : nbVisibles + ' sur ' + total + ' paramètres',
+
+      groupesVisibles: familles.length > 0,
+      videFiltre: familles.length === 0,
+      titreVide: vide ? 'Aucun paramètre chargé'
+        : q ? 'Aucun paramètre ne correspond à « ' + this.state.recherche.trim() + ' »'
+        : this.state.filtre === 'modifies' ? 'Aucune modification aujourd\u2019hui' : 'Aucun paramètre dans ce filtre',
+      corpsVide: vide
+        ? 'Les 40 paramètres métier apparaîtront ici dès que la configuration sera lue depuis le serveur.'
+        : this.state.filtre === 'modifies'
+        ? 'Les paramètres que vous changez apparaissent ici, avec leur ancienne valeur, jusqu\u2019à la fin de la journée.'
+        : 'Essayez un autre terme, ou cherchez par clé technique (COMMISSION_, DELAI_, SEUIL_…).',
+      resetVisible: !vide,
+      reinitialiser: () => set({ recherche: '', filtre: 'tous' }),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      styleCarteTitre: 'font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)',
+      styleCarteSousTitre: 'display:block;margin-top:2px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-tertiaire)',
+      styleLabel: 'font-size:var(--font-size-label);font-weight:600;color:var(--texte-secondaire)',
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleSecondaireSm: this.bouton('secondary', 'sm'),
+      styleIconBouton: iconBouton,
+      styleTextarea: 'width:100%;box-sizing:border-box;padding:9px 10px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-family:var(--font-body);font-size:var(--font-size-body-sm);line-height:1.5;resize:vertical;outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear',
+
+      colonnes: ['Paramètre', 'Effet', 'Valeur', 'Dernière modification', ''].map((c, i) => ({
+        label: c, style: enTete(i === 2 || i === 4 ? 'right' : 'left'),
+      })),
+
+      familles: familles.map((x) => {
+        const f = x.famille;
+        const ouverte = forcerOuvert || !!this.state.ouvertes[f.cle];
+        const modifies = x.params.filter((p) => this.state.valeurs[p.cle] !== undefined).length;
+        return {
+          titre: f.titre, aide: f.aide, ouverte,
+          sensibleVisible: !!f.sensible,
+          compte: x.params.length + ' paramètre' + (x.params.length > 1 ? 's' : ''),
+          modifies: modifies + ' modifié' + (modifies > 1 ? 's' : ''),
+          modifiesVisible: modifies > 0,
+          icone: { __html: SVG(15, '1.5', f.icone) },
+          tuile: 'width:28px;height:28px;flex-shrink:0;border-radius:var(--radius-md);background:' +
+            (f.sensible ? 'var(--ton-ambre-fond)' : 'var(--ap-50)') + ';color:' +
+            (f.sensible ? 'var(--ton-ambre-icone)' : 'var(--ap-600)') + ';display:flex;align-items:center;justify-content:center',
+          rotation: ouverte ? 'transform:rotate(180deg)' : '',
+          entete: 'display:flex;align-items:center;gap:var(--espace-2);width:100%;padding:var(--espace-3) var(--espace-4);border:0;' +
+            (ouverte ? 'border-bottom:1px solid var(--bordure-legere);' : '') +
+            'background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent);text-align:left;transition:background var(--dur-fast) linear',
+          onBasculer: () => set({ ouvertes: { ...this.state.ouvertes, [f.cle]: !this.state.ouvertes[f.cle] } }),
+          parametres: x.params.map((p, k) => {
+            const ancienne = this.ancienneDe(p);
+            const modifie = ancienne !== null;
+            return {
+              nom: p.nom, cle: p.cle, effet: p.effet,
+              valeur: formate(this.valeurDe(p), p.unite),
+              ancienne: ancienne === null ? '' : formate(ancienne, p.unite),
+              ancienneVisible: modifie,
+              styleValeur: 'font-family:var(--font-mono);font-size:var(--font-size-body-sm);font-weight:600;color:' +
+                (modifie ? 'var(--ap-600)' : 'var(--texte-primaire)'),
+              derniere: modifie ? 'à l\u2019instant · vous' : p.derniere,
+              ligne: 'background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+                ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+              onModifier: () => set({
+                dialogue: 'modification', cible: p.cle,
+                saisie: String(this.valeurDe(p)).replace('.', ','), motif: '', contratsAssume: false,
+              }),
+            };
+          }),
+        };
+      }),
+
+      dialogueOuvert: !!dialogue,
+      dialogueModification: dialogue === 'modification',
+      dialogueHistorique: dialogue === 'historique',
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(dialogue === 'historique' ? 560 : 500, Math.max(280, L - 40)) +
+        'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      tuileModale: 'width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;background:' +
+        (param && param.contractuel ? 'var(--ton-ambre-fond)' : 'var(--ap-50)') + ';color:' +
+        (param && param.contractuel ? 'var(--ton-ambre-icone)' : 'var(--ap-600)'),
+      iconeModale: { __html: SVG(16, '1.5', dialogue === 'historique' ? G.horloge : famParam ? famParam.icone : G.reglages) },
+      titreDialogue: dialogue === 'historique' ? 'Journal des paramètres' : (param ? param.nom : ''),
+      sousTitreDialogue: dialogue === 'historique' ? '5 dernières modifications · toutes tracées' : (param ? param.cle : ''),
+
+      effetParametre: param ? param.effet + '.' : '',
+      valeurCourante: param ? formate(this.valeurDe(param), param.unite) : '',
+      apercuNouvelle: param ? (valide ? formate(nombre, param.unite) : '—') : '',
+      fondNouvelle: valide && !inchange ? 'var(--ap-50)' : 'var(--fond-surface-2)',
+      bordureNouvelle: valide && !inchange ? 'var(--ap-200)' : 'var(--bordure-legere)',
+      couleurNouvelle: valide && !inchange ? 'var(--ap-700)' : 'var(--texte-tertiaire)',
+      labelChamp: param ? 'Nouvelle valeur' + (param.unite ? ' (' + param.unite + ')' : '') : '',
+      vValeur: saisie,
+      majValeur: (e) => set({ saisie: e.target.value }),
+      unite: param ? param.unite : '',
+      uniteVisible: !!(param && param.unite),
+      styleChampValeur: 'width:100%;height:34px;box-sizing:border-box;padding:0 ' +
+        (param && param.unite ? (param.unite.length * 7 + 18) : 10) + 'px 0 10px;border-radius:var(--radius-md);border:1px solid ' +
+        (saisie !== '' && !valide ? 'var(--erreur-accent)' : 'var(--bordure-normale)') +
+        ';background:var(--fond-surface-2);color:var(--texte-primaire);font-family:var(--font-mono);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      aideBornes: param
+        ? (saisie !== '' && !valide
+            ? 'Valeur hors bornes : de ' + formate(param.min, param.unite) + ' à ' + formate(param.max, param.unite) + '.'
+            : inchange ? 'C\u2019est déjà la valeur courante.'
+            : 'Bornes autorisées : de ' + formate(param.min, param.unite) + ' à ' + formate(param.max, param.unite) + '.')
+        : '',
+      couleurBornes: param && saisie !== '' && (!valide || inchange) ? 'var(--erreur-texte)' : 'var(--texte-tertiaire)',
+
+      avertissementVisible: !!(param && param.contractuel),
+      corpsAvertissement: param
+        ? 'Le changer modifie ce que perçoivent les soignants et les officines déjà sous contrat. Un préavis de 30 jours leur est légalement dû avant toute application.'
+        : '',
+      contratsAssume: this.state.contratsAssume,
+      basculerContrats: () => set({ contratsAssume: !this.state.contratsAssume }),
+
+      vMotif: motif,
+      majMotif: (e) => set({ motif: e.target.value }),
+      aideMotif: motifCourt ? 'Au moins 20 caractères — ce motif reste au journal d\u2019audit.' : 'Sera lisible par tout administrateur.',
+      couleurAideMotif: motifCourt && motif.length > 0 ? 'var(--alerte-texte)' : 'var(--texte-tertiaire)',
+      compteurMotif: motif.trim().length + ' / 20',
+
+      historiqueParamVisible: !!(param && param.histo && param.histo.length > 0),
+      historiqueParam: param && param.histo ? param.histo : [],
+
+      journalGlobal: JOURNAL.map((j, k, arr) => ({
+        parametre: j.parametre, avant: j.avant, apres: j.apres, auteur: j.auteur, date: j.date, motif: j.motif,
+        bloc: 'padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)',
+      })),
+
+      actionVisible: dialogue === 'modification',
+      libelleAnnuler: dialogue === 'historique' ? 'Fermer' : 'Annuler',
+      confirmationBloquee: bloquee,
+      styleBoutonAction: this.bouton('primary', 'md') + (bloquee ? 'opacity:.4;cursor:not-allowed;' : ''),
+      ouvrirHistorique: () => set({ dialogue: 'historique' }),
+      fermerDialogue: () => set({ dialogue: null, cible: null, saisie: '', motif: '', contratsAssume: false }),
+      confirmerDialogue: () => {
+        if (bloquee || !param) return;
+        const ancienne = this.valeurDe(param);
+        set({
+          valeurs: { ...this.state.valeurs, [param.cle]: { valeur: nombre, ancienne } },
+          dialogue: null, cible: null, saisie: '', motif: '', contratsAssume: false,
+        });
+        this.toaster('Paramètre modifié',
+          param.nom + ' : ' + formate(ancienne, param.unite) + ' → ' + formate(nombre, param.unite) + ' · inscrit au journal d\u2019audit.');
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

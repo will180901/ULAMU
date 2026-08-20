@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">B2</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Tableau de bord</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="4">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">{{ espace }}</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="2">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="{{ i.badgeStyle }}">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">{{ initiales }}</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ nom }}</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ role }}</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+              <div style="display:flex;align-items:center;gap:var(--espace-3)">
+                <span style="width:40px;height:40px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700">{{ initiales }}</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ nom }}</span>
+                  <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rattachement }}</span>
+                </span>
+              </div>
+            </div>
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="5" r="3.5"></circle><path d="M2 14a6 6 0 0 1 12 0"></path></svg>
+                Mes paramètres
+              </button>
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">{{ espace }}</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Tableau de bord</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ placeholderRecherche }}</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+        <button type="button" aria-label="Notifications" style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"></path></svg>
+          <span aria-hidden="true" style="position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:9999px;background:var(--succes-texte);box-shadow:0 0 0 2px var(--fond-surface),0 0 6px 1px var(--succes-texte);animation:ul-blink 1.4s ease-in-out infinite"></span>
+        </button>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}" dangerouslySetInnerHTML="{{ iconeTitre }}"></span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">{{ titrePage }}</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <span style="display:flex;align-items:center;gap:var(--espace-2);flex-shrink:0">
+                <button type="button" aria-label="Rafraîchir" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+                </button>
+                <button type="button" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <span style="display:flex" dangerouslySetInnerHTML="{{ iconeAction }}"></span>
+                  {{ libelleAction }}
+                </button>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estPlein }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div style="{{ styleGrilleKpi }}">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div class="ul-grain" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                  <div style="display:flex;align-items:flex-start;gap:var(--espace-3)">
+                    <span style="{{ k.tuile }}" dangerouslySetInnerHTML="{{ k.icone }}"></span>
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);text-transform:uppercase;letter-spacing:.07em;font-weight:600;color:var(--texte-tertiaire)">{{ k.label }}</span>
+                      <span style="display:block;margin-top:4px;font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--texte-primaire)">{{ k.valeur }}</span>
+                      <span style="display:block;margin-top:3px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ k.aide }}</span>
+                      <span style="{{ k.tendanceStyle }}">
+                        <span style="display:flex;width:12px;height:12px" dangerouslySetInnerHTML="{{ k.tendanceIcone }}"></span>
+                        {{ k.tendance }}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="{{ styleGrilleMixte }}">
+              <div class="ul-grain-fine" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+                <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                  <span style="width:26px;height:26px;flex-shrink:0;border-radius:var(--radius-md);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 14h12M5 14V9M8 14V5M11 14V7"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)">{{ titreGraphique }}</span>
+                    <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ periodeGraphique }}</span>
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;flex-shrink:0;font-size:var(--font-size-caption);color:var(--texte-secondaire)">
+                    <span style="width:7px;height:7px;border-radius:2px;background:var(--ap-500)"></span>{{ legende }}
+                  </span>
+                </div>
+                <div style="padding:var(--espace-4)" dangerouslySetInnerHTML="{{ graphique }}"></div>
+              </div>
+
+              <div class="ul-grain-fine" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+                <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                  <span style="flex:1;min-width:0;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;color:var(--texte-primaire)">{{ titreResume }}</span>
+                </div>
+                <div style="padding:var(--espace-3) var(--espace-4);display:flex;flex-direction:column;gap:var(--espace-2)">
+                  <sc-for list="{{ resume }}" as="r" hint-placeholder-count="4">
+                    <span style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);padding-bottom:8px;border-bottom:1px solid var(--bordure-legere)">
+                      <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                        <span style="{{ r.point }}"></span>
+                        <span style="font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</span>
+                      </span>
+                      <span style="flex-shrink:0;font-family:var(--font-mono);font-size:var(--font-size-body-sm);font-weight:500;color:var(--texte-primaire)">{{ r.valeur }}</span>
+                    </span>
+                  </sc-for>
+                  <p style="margin:2px 0 0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire)">{{ noteResume }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="ul-grain-fine" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <span style="width:26px;height:26px;flex-shrink:0;border-radius:var(--radius-md);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center" dangerouslySetInnerHTML="{{ iconeListe }}"></span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)">{{ titreListe }}</span>
+                  <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreListe }}</span>
+                </span>
+                <sc-if value="{{ ongletsVisibles }}">
+                  <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg);flex-shrink:0">
+                    <sc-for list="{{ onglets }}" as="t" hint-placeholder-count="3">
+                      <button type="button" role="tab" aria-selected="{{ t.actif }}" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                    </sc-for>
+                  </span>
+                </sc-if>
+              </div>
+              <div style="overflow-x:auto">
+                <table style="width:100%;min-width:560px;border-collapse:collapse">
+                  <thead>
+                    <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                      <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="5">
+                        <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                      </sc-for>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ lignes }}" as="l" hint-placeholder-count="5">
+                      <tr style="{{ l.style }}" style-hover="background:var(--ap-50)">
+                        <td style="padding:var(--espace-2) var(--espace-4);font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ l.c1 }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:flex;align-items:center;gap:var(--espace-2);min-width:0">
+                            <span style="width:26px;height:26px;flex-shrink:0;border-radius:9999px;background:var(--ton-bleu-fond);color:var(--ton-bleu-icone);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-overline);font-weight:700">{{ l.initiales }}</span>
+                            <span style="min-width:0">
+                              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap">{{ l.c2 }}</span>
+                              <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ l.ref }}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);font-size:var(--font-size-body-sm);color:var(--texte-secondaire)">{{ l.c3 }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="{{ l.pilule }}"><span style="{{ l.point }}"></span>{{ l.statut }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-primaire);white-space:nowrap">{{ l.c5 }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-2) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ piedListe }}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-for list="{{ pagination }}" as="p" hint-placeholder-count="4">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                </span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleKpi }}">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4);display:flex;gap:var(--espace-3)">
+                  <span style="{{ styleOs }}width:38px;height:38px;border-radius:var(--radius-lg);flex-shrink:0"></span>
+                  <span style="flex:1">
+                    <span style="{{ styleOs }}display:block;width:60%;height:9px;border-radius:3px"></span>
+                    <span style="{{ styleOs }}display:block;width:45%;height:20px;margin-top:8px;border-radius:4px"></span>
+                    <span style="{{ styleOs }}display:block;width:70%;height:9px;margin-top:8px;border-radius:3px"></span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="{{ styleGrilleMixte }}">
+              <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                <span style="{{ styleOs }}display:block;width:40%;height:11px;border-radius:3px"></span>
+                <span style="{{ styleOs }}display:block;width:100%;height:170px;margin-top:16px;border-radius:var(--radius-md)"></span>
+              </div>
+              <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4);display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                  <span style="{{ styleOs }}display:block;width:100%;height:11px;border-radius:3px"></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ cinq }}" as="n" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:var(--espace-4);padding:var(--espace-2) var(--espace-4);border-bottom:1px solid var(--bordure-legere);height:40px;box-sizing:border-box">
+                  <span style="{{ styleOs }}width:44px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:26px;height:26px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:150px;height:9px;border-radius:3px"></span>
+                  <span style="flex:1"></span>
+                  <span style="{{ styleOs }}width:84px;height:16px;border-radius:9999px;flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estVide }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+            <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)" dangerouslySetInnerHTML="{{ iconeVide }}"></span>
+            <span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">{{ titreVide }}</span>
+              <span style="display:block;margin-top:4px;max-width:400px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-tertiaire)">{{ descVide }}</span>
+            </span>
+            <button type="button" style="{{ stylePrimaire }}margin-top:4px;" style-hover="background:var(--ap-600)">{{ actionVide }}</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--erreur-texte)">Vos indicateurs n'ont pas pu être chargés</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--erreur-texte)">Le serveur n'a pas répondu dans le délai imparti. Votre session reste ouverte — rien n'a été perdu.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--erreur-fond);border:1px solid var(--erreur-bordure);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher le tableau de bord</span>
+                <span style="display:block;margin-top:4px;max-width:400px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-tertiaire)">Vérifiez votre connexion, puis réessayez. Si le problème persiste, prévenez l'administration ULAMU.</span>
+              </span>
+              <span style="display:flex;gap:var(--espace-2);margin-top:4px">
+                <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+                  Réessayer
+                </button>
+                <button type="button" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">Signaler l'incident</button>
+              </span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">B2 · Un seul écran adaptatif : navigation, KPI, graphique et file changent avec le rôle · dégradé réservé au remplissage d'aire (0.18→0) · pharmacie : aucune identité de patient · échelle et densité CMS-SARIS</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;soignant&quot;,&quot;pharmacie&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;soignant&quot;,&quot;tsType&quot;:&quot;'soignant' | 'pharmacie' | 'admin'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  shield: '<path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"/><path d="M5.5 8l2 2 3-3"/>',
+  stetho: '<path d="M3.3 1.3H2.7a1.3 1.3 0 0 0-1.3 1.3v3.4a4 4 0 0 0 4 4 4 4 0 0 0 4-4V2.6a1.3 1.3 0 0 0-1.3-1.3H7.4"/><path d="M5.4 10v.7a4 4 0 0 0 4 4 4 4 0 0 0 4-4V8"/><circle cx="13.4" cy="6.6" r="1.4" fill="currentColor"/>',
+  message: '<path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"/>',
+  clipboard: '<rect x="3" y="3" width="10" height="12" rx="1.5"/><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  trendingDown: '<path d="M2 5l4 4 3-3 5 6"/><path d="M10 12h4V8"/>',
+  minus: '<path d="M3 8h10"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  clock: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  barres: '<path d="M2 14h12M5 14V9M8 14V5M11 14V7"/>',
+  hospital: '<rect x="2" y="3" width="12" height="12" rx="1"/><path d="M8 7v4M6 9h4"/><path d="M5 3V2M11 3V2"/>',
+  /* `pill` de Lucide, ramené de 24×24 à 16×16 : capsule fermée à 45° + trait de refente
+     perpendiculaire au grand axe, exactement du diamètre de la capsule (milieu réel 8,8). */
+  pill: '<path d="m7 13.7 6.7-6.7a3.3 3.3 0 1 0-4.7-4.7l-6.7 6.7a3.3 3.3 0 1 0 4.7 4.7Z"/><path d="m5.7 5.7 4.7 4.7"/>',
+  ordonnance: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/><path d="M12 10l-1.5 2h2.5L11.5 14"/>',
+  calendrier: '<rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/><rect x="5" y="9" width="2" height="2" rx=".5" fill="currentColor"/>',
+  dossier: '<path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><path d="M9 1v4h4"/><path d="M6 9h4M8 7v4"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  cadenas: '<rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="11.5" r="1" fill="currentColor"/>',
+  /* `sliders` de CG-10 : le `settings` (cercle + 8 rayons) se lit comme un soleil à 17 px. */
+  reglages: '<path d="M2 4h5M11 4h3M2 8h9M2 12h3M9 12h5"/><circle cx="9" cy="4" r="1.6"/><circle cx="13" cy="8" r="1.6"/><circle cx="7" cy="12" r="1.6"/>',
+  equipe: '<circle cx="6" cy="5" r="3"/><path d="M1 14a5 5 0 0 1 10 0"/><path d="M11 3.2a3 3 0 0 1 0 5.6M12.5 14a5 5 0 0 0-1.5-3.6"/>',
+  activity: '<path d="M2 8h2l2-5 3 10 2-5h3"/>',
+  check: '<path d="M2 9l4 4 8-8"/>',
+  premier: '<path d="M11 4L7 8l4 4M5 4v8"/>',
+  precedent: '<path d="M10 4L6 8l4 4"/>',
+  suivant: '<path d="M6 4l4 4-4 4"/>',
+  dernier: '<path d="M5 4l4 4-4 4M11 4v8"/>',
+};
+
+const TONS = {
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)'],
+  accent: ['var(--ap-50)', 'var(--ap-600)'],
+  ambre: ['var(--ton-ambre-fond)', 'var(--ton-ambre-icone)'],
+  emeraude: ['var(--ton-emeraude-fond)', 'var(--ton-emeraude-icone)'],
+  bleu: ['var(--ton-bleu-fond)', 'var(--ton-bleu-icone)'],
+  violet: ['var(--ton-violet-fond)', 'var(--ton-violet-icone)'],
+  rose: ['var(--ton-rose-fond)', 'var(--ton-rose-icone)'],
+  cyan: ['var(--ton-cyan-fond)', 'var(--ton-cyan-icone)'],
+};
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+};
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+/** Aire — le seul dégradé autorisé (CG-04) : vertical, couleur de la courbe, 0.18 → 0. */
+function aire(valeurs, etiquettes, max, id) {
+  const L = 30, R = 6, H = 190, B = 22, T = 6, W = 620;
+  const larg = W - L - R, haut = H - B - T;
+  const px = (i) => L + (larg * i) / (valeurs.length - 1);
+  const py = (v) => T + haut - (haut * v) / max;
+  const pts = valeurs.map((v, i) => px(i).toFixed(1) + ',' + py(v).toFixed(1)).join(' ');
+  let g = '', ax = '', bas = '', pt = '';
+  for (let k = 0; k <= 4; k++) {
+    const v = (max / 4) * k, y = py(v);
+    g += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W - R) + '" y2="' + y.toFixed(1) + '" stroke="rgba(136,146,164,0.20)" stroke-width="1"/>';
+    ax += '<text x="' + (L - 6) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(136,146,164,0.95)">' + Math.round(v) + '</text>';
+  }
+  valeurs.forEach((v, i) => {
+    bas += '<text x="' + px(i).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(136,146,164,0.95)">' + etiquettes[i] + '</text>';
+    pt += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(v).toFixed(1) + '" r="2.4" fill="#2756A6"/>';
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:190px;display:block" role="img" aria-label="Évolution">' +
+    '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2756A6" stop-opacity="0.18"/><stop offset="100%" stop-color="#2756A6" stop-opacity="0"/></linearGradient></defs>' +
+    g + ax + bas +
+    '<polygon points="' + L + ',' + (T + haut) + ' ' + pts + ' ' + (W - R) + ',' + (T + haut) + '" fill="url(#' + id + ')"/>' +
+    '<polyline points="' + pts + '" fill="none" stroke="#2756A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' + pt + '</svg>';
+}
+
+/** Barres — même couleur, opacités différentes (CG-07). Jamais de dégradé. */
+function barres(valeurs, etiquettes, max) {
+  const L = 30, R = 6, H = 190, B = 22, T = 6, W = 620;
+  const larg = W - L - R, haut = H - B - T, pas = larg / valeurs.length, l = Math.min(34, pas * 0.55);
+  let g = '', ax = '', bar = '', bas = '';
+  for (let k = 0; k <= 4; k++) {
+    const v = (max / 4) * k, y = T + haut - (haut * v) / max;
+    g += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W - R) + '" y2="' + y.toFixed(1) + '" stroke="rgba(136,146,164,0.20)" stroke-width="1"/>';
+    ax += '<text x="' + (L - 6) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(136,146,164,0.95)">' + Math.round(v) + '</text>';
+  }
+  valeurs.forEach((v, i) => {
+    const h = (haut * v) / max, x = L + pas * i + (pas - l) / 2, y = T + haut - h;
+    bar += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + l.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="#2756A6" fill-opacity="' + (0.4 + 0.55 * (v / max)).toFixed(2) + '"/>';
+    bas += '<text x="' + (x + l / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(136,146,164,0.95)">' + etiquettes[i] + '</text>';
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:190px;display:block" role="img" aria-label="Répartition">' + g + ax + bar + bas + '</svg>';
+}
+
+const ROLES = {
+  soignant: {
+    espace: 'Espace soignant', nom: 'Dr Ange Makaya', initiales: 'AM', role: 'Cardiologue vérifié',
+    rattachement: 'Clinique de Bacongo · Brazzaville',
+    recherche: 'Rechercher un patient, une ordonnance…',
+    titre: 'Tableau de bord', sousTitre: 'Lundi 10 août 2026 · 4 demandes attendent une réponse',
+    iconeTitre: G.home, action: 'Voir mes demandes', iconeAction: G.message,
+    nav: [
+      { titre: 'Principal', items: [
+        { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+        { cle: 'verif', label: 'Ma vérification', icone: G.shield },
+      ] },
+      { titre: 'Mon activité', items: [
+        { cle: 'vitrine', label: 'Ma vitrine', icone: G.stetho },
+        { cle: 'demandes', label: 'Demandes', icone: G.message, badge: '4' },
+        { cle: 'consultations', label: 'Consultations', icone: G.clipboard },
+        { cle: 'gains', label: 'Mes gains', icone: G.trending },
+      ] },
+      { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+    ],
+    kpis: [
+      { label: 'Demandes en attente', valeur: '4', aide: '2 expirent dans moins de 2 h', tendance: '+1 depuis hier', dir: 'up', ton: 'ambre', icone: G.clock },
+      { label: 'Consultations du jour', valeur: '6', aide: '2 en téléconsultation', tendance: '+2 vs hier', dir: 'up', ton: 'accent', icone: G.stetho },
+      { label: 'Gains du mois', valeur: '486 500', aide: 'XAF · versés le 5 septembre', tendance: '+12 % vs juillet', dir: 'up', ton: 'emeraude', icone: G.trending },
+      { label: 'Taux de réponse', valeur: '92 %', aide: 'Sur les 30 derniers jours', tendance: '−3 pts', dir: 'down', ton: 'neutral', icone: G.activity },
+    ],
+    graphique: { type: 'aire', titre: 'Consultations honorées', periode: 'Mars – août 2026', legende: 'Consultations', valeurs: [42, 55, 48, 67, 74, 92], etiquettes: ['Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août'], max: 100 },
+    resume: { titre: 'Répartition du mois', note: 'Une demande refusée avec motif n\u2019entre pas dans le calcul des gains.', lignes: [
+      { label: 'Téléconsultations', valeur: '38', ton: 'accent' },
+      { label: 'En cabinet · Bacongo', valeur: '41', ton: 'bleu' },
+      { label: 'Refusées avec motif', valeur: '6', ton: 'ambre' },
+      { label: 'Expirées sans réponse', valeur: '7', ton: 'rose' },
+    ] },
+    liste: {
+      titre: 'Demandes en attente', sousTitre: '4 poignées de main ouvertes · compte à rebours de 12 h',
+      icone: G.message, pied: '1–4 sur 4 demandes',
+      colonnes: ['Reçue', 'Patient', 'Motif', 'Statut', 'Expire dans'],
+      lignes: [
+        { c1: '09:12', initiales: 'PB', c2: 'Patient', ref: 'PAT-8821-BZV', c3: 'Palpitations nocturnes', statut: 'À confirmer', ton: 'warning', c5: '1 h 42' },
+        { c1: '08:47', initiales: 'MK', c2: 'Patient', ref: 'PAT-4471-BZV', c3: 'Suivi hypertension', statut: 'À confirmer', ton: 'warning', c5: '2 h 08' },
+        { c1: 'Hier', initiales: 'AB', c2: 'Patient', ref: 'PAT-9910-BZV', c3: 'Résultats d\u2019analyses', statut: 'Paiement attendu', ton: 'info', c5: '11 h 20' },
+        { c1: 'Hier', initiales: 'LO', c2: 'Patient', ref: 'PAT-3301-BZV', c3: 'Renouvellement d\u2019ordonnance', statut: 'Confirmée', ton: 'success', c5: '—' },
+      ],
+    },
+    vide: { icone: G.message, titre: 'Aucune demande pour le moment', desc: 'Les demandes apparaissent ici dès qu\u2019un patient vous sollicite. Une vitrine complète vous rend plus visible dans l\u2019annuaire.', action: 'Compléter ma vitrine' },
+  },
+  pharmacie: {
+    espace: 'Espace pharmacie', nom: 'Clarisse Obami', initiales: 'CO', role: 'Titulaire',
+    rattachement: 'Pharmacie du Fleuve · Bacongo',
+    recherche: 'Rechercher un lot, une réservation…',
+    titre: 'Pharmacie du Fleuve', sousTitre: 'Bacongo, Brazzaville · 7 réservations à servir aujourd\u2019hui',
+    iconeTitre: G.hospital, action: 'Ouvrir la délivrance', iconeAction: G.ordonnance,
+    nav: [
+      { titre: 'Principal', items: [{ cle: 'dashboard', label: 'Tableau de bord', icone: G.home }] },
+      { titre: 'Officine', items: [
+        { cle: 'pharmacie', label: 'Ma pharmacie', icone: G.hospital },
+        { cle: 'stock', label: 'Stock', icone: G.pill, badge: '3' },
+        { cle: 'delivrance', label: 'Délivrance', icone: G.ordonnance },
+        { cle: 'reservations', label: 'Réservations', icone: G.calendrier, badge: '7' },
+      ] },
+      { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+    ],
+    kpis: [
+      { label: 'Réservations à servir', valeur: '7', aide: '3 expirent aujourd\u2019hui', tendance: '+2 vs hier', dir: 'up', ton: 'ambre', icone: G.calendrier },
+      { label: 'Alertes de stock', valeur: '3', aide: 'Lots à moins de 30 jours', tendance: '+1 cette semaine', dir: 'down', ton: 'rose', icone: G.alerte },
+      { label: 'Délivrances du jour', valeur: '21', aide: '4 délivrances partielles', tendance: '+4 vs moyenne', dir: 'up', ton: 'emeraude', icone: G.pill },
+      { label: 'Valeur du stock', valeur: '8,4 M', aide: 'XAF · 184 lots sains', tendance: 'Stable', dir: 'flat', ton: 'neutral', icone: G.barres },
+    ],
+    graphique: { type: 'barres', titre: 'Lignes servies par jour', periode: 'Semaine du 4 au 10 août 2026', legende: 'Lignes servies', valeurs: [18, 24, 21, 29, 26, 12, 21], etiquettes: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], max: 32 },
+    resume: { titre: 'Fraîcheur du stock', note: 'FEFO : le lot dont la péremption est la plus proche sort en premier.', lignes: [
+      { label: 'Lots sains', valeur: '184', ton: 'emeraude' },
+      { label: 'À surveiller (< 90 j)', valeur: '12', ton: 'bleu' },
+      { label: 'Alerte (< 30 j)', valeur: '3', ton: 'ambre' },
+      { label: 'Périmés à retirer', valeur: '1', ton: 'rose' },
+    ] },
+    liste: {
+      titre: 'File du comptoir', sousTitre: 'Aucune identité de patient n\u2019est affichée en pharmacie',
+      icone: G.calendrier, pied: '1–5 sur 7 réservations',
+      colonnes: ['Créée', 'Réservation', 'Contenu', 'Statut', 'Expire dans'],
+      lignes: [
+        { c1: '08:05', initiales: 'RV', c2: 'Réservation', ref: 'RSV-2026-01184', c3: '3 lignes · Amlodipine, Ramipril', statut: 'À servir', ton: 'warning', c5: '4 h 10' },
+        { c1: '08:31', initiales: 'RV', c2: 'Réservation', ref: 'RSV-2026-01185', c3: '1 ligne · Paracétamol 500 mg', statut: 'À servir', ton: 'warning', c5: '5 h 55' },
+        { c1: '09:02', initiales: 'RV', c2: 'Réservation', ref: 'RSV-2026-01186', c3: '2 lignes · Metformine, Aspirine', statut: 'Partielle', ton: 'info', c5: '7 h 30' },
+        { c1: 'Hier', initiales: 'RV', c2: 'Réservation', ref: 'RSV-2026-01179', c3: '4 lignes · ordonnance complète', statut: 'Servie', ton: 'success', c5: '—' },
+        { c1: 'Hier', initiales: 'RV', c2: 'Réservation', ref: 'RSV-2026-01176', c3: '1 ligne · insuline (chaîne du froid)', statut: 'Expirée', ton: 'error', c5: '—' },
+      ],
+    },
+    vide: { icone: G.calendrier, titre: 'Aucune réservation à servir', desc: 'Le comptoir est à jour. Les nouvelles réservations arrivent dès qu\u2019un patient réserve une ordonnance dans votre officine.', action: 'Vérifier le stock' },
+  },
+  admin: {
+    espace: 'Administration', nom: 'Sylvie Ngouabi', initiales: 'SN', role: 'Super-administratrice',
+    rattachement: 'ULAMU · Brazzaville',
+    recherche: 'Rechercher un compte, un dossier…',
+    titre: 'Pilotage', sousTitre: 'Lundi 10 août 2026 · 12 dossiers en attente, dont 3 hors délai',
+    iconeTitre: G.barres, action: 'Ouvrir la file de vérification', iconeAction: G.dossier,
+    nav: [
+      { titre: 'Principal', items: [
+        { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+        { cle: 'verification', label: 'File de vérification', icone: G.dossier, badge: '12' },
+      ] },
+      { titre: 'Supervision', items: [
+        { cle: 'finance', label: 'Supervision financière', icone: G.trending, badge: '5' },
+        { cle: 'parametresMetier', label: 'Paramètres métier', icone: G.reglages },
+        { cle: 'admins', label: 'Administrateurs', icone: G.equipe },
+        { cle: 'pilotage', label: 'Pilotage', icone: G.barres },
+        { cle: 'signalements', label: 'Signalements', icone: G.alerte, badge: '2' },
+        { cle: 'comptes', label: 'Comptes', icone: G.cadenas },
+      ] },
+      { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+    ],
+    kpis: [
+      { label: 'Dossiers à vérifier', valeur: '12', aide: '3 hors du délai de 72 h', tendance: '+4 cette semaine', dir: 'down', ton: 'rose', icone: G.dossier },
+      { label: 'Remboursements à trancher', valeur: '5', aide: '1 en double validation', tendance: 'Stable', dir: 'flat', ton: 'ambre', icone: G.trending },
+      { label: 'Comptes actifs', valeur: '1 284', aide: '312 soignants · 84 officines', tendance: '+37 cette semaine', dir: 'up', ton: 'emeraude', icone: G.utilisateur },
+      { label: 'Signalements ouverts', valeur: '2', aide: 'Aucun hors délai', tendance: '−3 vs juillet', dir: 'up', ton: 'neutral', icone: G.alerte },
+    ],
+    graphique: { type: 'aire', titre: 'Décisions de vérification', periode: 'S27 – S32 · 2026', legende: 'Décisions rendues', valeurs: [26, 31, 24, 38, 44, 51], etiquettes: ['S27', 'S28', 'S29', 'S30', 'S31', 'S32'], max: 60 },
+    resume: { titre: 'Intégrité du journal', note: 'Le journal d\u2019audit est scellé par chaînage : toute rupture apparaît ici.', lignes: [
+      { label: 'Entrées scellées', valeur: '48 912', ton: 'emeraude' },
+      { label: 'Dernière vérification', valeur: '10/08 07:00', ton: 'bleu' },
+      { label: 'Ruptures de chaîne', valeur: '0', ton: 'emeraude' },
+      { label: 'Actions sans motif', valeur: '0', ton: 'emeraude' },
+    ] },
+    liste: {
+      titre: 'File de vérification', sousTitre: 'Triée par urgence · délai réglementaire de 72 heures',
+      icone: G.dossier, pied: '1–5 sur 12 dossiers',
+      colonnes: ['Déposé', 'Demandeur', 'Type', 'Statut', 'Délai restant'],
+      lignes: [
+        { c1: '06/08', initiales: 'JD', c2: 'Soignant', ref: 'DOS-2026-00341', c3: 'Médecin généraliste · Moungali', statut: 'Hors délai', ton: 'error', c5: '− 18 h' },
+        { c1: '07/08', initiales: 'PM', c2: 'Structure', ref: 'DOS-2026-00344', c3: 'Officine · Talangaï', statut: 'Hors délai', ton: 'error', c5: '− 4 h' },
+        { c1: '08/08', initiales: 'GN', c2: 'Soignant', ref: 'DOS-2026-00351', c3: 'Sage-femme · Poto-Poto', statut: 'Pris en charge', ton: 'info', c5: '9 h 30' },
+        { c1: '09/08', initiales: 'BT', c2: 'Soignant', ref: 'DOS-2026-00358', c3: 'Dentiste · Bacongo', statut: 'En attente', ton: 'warning', c5: '31 h' },
+        { c1: '10/08', initiales: 'RK', c2: 'Structure', ref: 'DOS-2026-00362', c3: 'Officine · Makélékélé', statut: 'En attente', ton: 'warning', c5: '68 h' },
+      ],
+    },
+    vide: { icone: G.dossier, titre: 'La file est vide', desc: 'Aucun dossier n\u2019attend de décision. Les nouveaux dépôts arrivent ici, triés par urgence, avec leur délai affiché.', action: 'Voir l\u2019historique des décisions' },
+  },
+};
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, role: null, navActif: 'dashboard', onglet: 'jour',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() { if (this.observer) this.observer.disconnect(); }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+  get role() { return this.state.role ?? this.props.role ?? 'soignant'; }
+
+  seg(actif) {
+    return 'padding:4px 10px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 30, px: 12, fs: 'var(--font-size-body-sm)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue, role = this.role;
+    const d = ROLES[role];
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+
+    const groupesBarre = [
+      { label: 'Rôle', options: [
+        { k: 'soignant', label: 'Soignant' }, { k: 'pharmacie', label: 'Pharmacie' }, { k: 'admin', label: 'Admin' },
+      ], courant: role, appliquer: (k) => set({ role: k, navActif: 'dashboard', menuOuvert: false }) },
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+    ];
+
+    const enTete = (droite) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + (droite ? 'right' : 'left') +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;position:sticky;top:0;z-index:5;background:var(--fond-surface-2)';
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+    const g = d.graphique;
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : L < 1024 ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estPlein: etat === 'plein',
+      estChargement: etat === 'chargement',
+      estVide: etat === 'vide',
+      estErreur: etat === 'erreur',
+      quatre: [1, 2, 3, 4], cinq: [1, 2, 3, 4, 5],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((gr) => ({
+        label: gr.label,
+        options: gr.options.map((o) => ({ label: o.label, style: this.seg(gr.courant === o.k), onClick: () => gr.appliquer(o.k) })),
+      })),
+
+      espace: d.espace, nom: d.nom, initiales: d.initiales, role: d.role, rattachement: d.rattachement,
+      placeholderRecherche: d.recherche,
+      titrePage: d.titre, sousTitrePage: d.sousTitre,
+      iconeTitre: { __html: SVG(18, '1.5', d.iconeTitre) },
+      libelleAction: d.action,
+      iconeAction: { __html: SVG(15, '1.5', d.iconeAction) },
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:240px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: d.nav.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          return {
+            label: i.label,
+            titre: sidebarOuverte ? '' : i.label,
+            badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            badgeStyle: 'flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--erreur-accent);color:#fff;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center',
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      actionsEntete: L >= 760,
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrilleKpi: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' + (L < 620 ? 1 : L < 980 ? 2 : 4) + ',minmax(0,1fr))',
+      styleGrilleMixte: 'display:grid;gap:var(--espace-3);grid-template-columns:' + (L < 900 ? '1fr' : '2fr 1fr'),
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleIconBouton: iconBouton,
+
+      kpis: d.kpis.map((k) => {
+        const [bg, couleur] = TONS[k.ton];
+        const tonT = k.dir === 'up' ? 'var(--succes-accent)' : k.dir === 'down' ? 'var(--erreur-accent)' : 'var(--texte-tertiaire)';
+        return {
+          label: k.label, valeur: k.valeur, aide: k.aide, tendance: k.tendance,
+          icone: { __html: SVG(18, '1.5', k.icone) },
+          tuile: 'width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;background:' + bg + ';color:' + couleur,
+          tendanceIcone: { __html: SVG(12, '2', k.dir === 'up' ? G.trending : k.dir === 'down' ? G.trendingDown : G.minus) },
+          tendanceStyle: 'display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:var(--font-size-caption);font-weight:600;color:' + tonT,
+        };
+      }),
+
+      titreGraphique: g.titre, periodeGraphique: g.periode, legende: g.legende,
+      graphique: { __html: g.type === 'barres' ? barres(g.valeurs, g.etiquettes, g.max) : aire(g.valeurs, g.etiquettes, g.max, 'aire-' + role) },
+      titreResume: d.resume.titre, noteResume: d.resume.note,
+      resume: d.resume.lignes.map((r) => ({
+        label: r.label, valeur: r.valeur,
+        point: 'width:7px;height:7px;flex-shrink:0;border-radius:50%;background:' + TONS[r.ton][1],
+      })),
+
+      titreListe: d.liste.titre, sousTitreListe: d.liste.sousTitre, piedListe: d.liste.pied,
+      iconeListe: { __html: SVG(14, '1.5', d.liste.icone) },
+      ongletsVisibles: L >= 720,
+      onglets: [
+        { k: 'jour', label: 'Aujourd\u2019hui' }, { k: 'semaine', label: 'Semaine' }, { k: 'mois', label: 'Mois' },
+      ].map((o) => ({ label: o.label, actif: this.state.onglet === o.k, style: this.seg(this.state.onglet === o.k), onClick: () => set({ onglet: o.k }) })),
+      colonnes: d.liste.colonnes.map((c, i) => ({ label: c, style: enTete(i === d.liste.colonnes.length - 1) })),
+      lignes: d.liste.lignes.map((l, k) => {
+        const [bg, fg, dot] = PILULES[l.ton];
+        return {
+          ...l,
+          style: 'height:40px;background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+            ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em;line-height:1.4;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+        };
+      }),
+      pagination: [
+        { aria: 'Première page', icone: G.premier }, { aria: 'Page précédente', icone: G.precedent },
+        { aria: 'Page suivante', icone: G.suivant }, { aria: 'Dernière page', icone: G.dernier },
+      ].map((p, i) => ({
+        aria: p.aria,
+        icone: { __html: SVG(13, '1.5', p.icone) },
+        style: iconBouton + 'width:26px;height:26px;' + (i < 2 ? 'opacity:.45;cursor:not-allowed;' : ''),
+      })),
+
+      iconeVide: { __html: SVG(22, '1.4', d.vide.icone) },
+      titreVide: d.vide.titre, descVide: d.vide.desc, actionVide: d.vide.action,
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

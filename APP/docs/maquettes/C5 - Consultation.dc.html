@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">C5</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Consultation</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Espace soignant</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--erreur-accent);color:#fff;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">AM</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr Ange Makaya</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600)">Cardiologue vérifié</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Consultations</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">{{ refConsultation }}</span>
+          </nav>
+        </sc-if>
+        <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:9999px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);flex-shrink:0">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--succes-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+          <span style="font-size:var(--font-size-overline);font-weight:600;color:var(--texte-secondaire);white-space:nowrap">Échange chiffré</span>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="width:38px;height:38px;flex-shrink:0;border-radius:9999px;background:var(--ton-bleu-fond);color:var(--ton-bleu-icone);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">PB</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Palpitations nocturnes</h1>
+                <span style="{{ pilulePage }}"><span style="{{ pointPage }}"></span>{{ libellePage }}</span>
+              </span>
+              <span style="display:block;margin-top:3px;font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ refConsultation }} · PAT-8821-BZV · téléconsultation</span>
+            </span>
+            <sc-if value="{{ minuteurVisible }}">
+              <span style="display:flex;align-items:center;gap:9px;flex-shrink:0;padding:6px 12px;border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+                <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:{{ couleurMinuteur }};animation:ul-blink 2s ease-in-out infinite"></span>
+                <span>
+                  <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-h3);font-weight:600;line-height:1.1;color:{{ couleurMinuteur }}">{{ minuteur }}</span>
+                  <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-tertiaire)">Horloge serveur</span>
+                </span>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleZoneContenu }}">
+
+          <sc-if value="{{ estErreur }}">
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--espace-3);padding:var(--espace-4) 0;max-width:900px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Connexion au fil interrompue</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">Vos messages déjà envoyés sont arrivés. Le minuteur continue de tourner côté serveur : la consultation n'est pas perdue.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Reconnexion nécessaire</span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">Reprendre la consultation</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ styleSplit }}">
+
+            <div class="ul-grain-fine" style="{{ styleCarteFil }}">
+
+              <div style="{{ styleEnteteFil }}">
+                <span style="width:40px;height:40px;flex-shrink:0;border-radius:9999px;background:var(--ton-bleu-fond);color:var(--ton-bleu-icone);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">PB</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Patient PAT-8821-BZV</span>
+                  <span style="{{ styleStatutFil }}">{{ statutFil }}</span>
+                </span>
+                <sc-if value="{{ selectionActive }}">
+                  <button type="button" onClick="{{ quitterSelection }}" style="{{ styleSecondaireSm }}flex-shrink:0;" style-hover="background:var(--fond-input)">Quitter la sélection</button>
+                </sc-if>
+                <sc-if value="{{ chiffreVisible }}">
+                  <span style="display:inline-flex;align-items:center;gap:5px;flex-shrink:0;font-size:var(--font-size-overline);font-weight:600;color:var(--texte-tertiaire)">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+                    Chiffré
+                  </span>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ epingleVisible }}">
+                <button type="button" onClick="{{ epingleSuivant }}" style="{{ styleBandeauEpingle }}">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ap-600)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9.5 2.5l4 4-2 1-1.5 4-5.5-5.5 4-1.5 1-2z"></path><path d="M5.5 10.5L2 14"></path></svg>
+                  <span style="flex:1;min-width:0;text-align:left">
+                    <span style="display:block;font-size:var(--font-size-caption);font-weight:700;color:var(--ap-700)">{{ epingleTitre }}</span>
+                    <span style="display:block;font-size:var(--font-size-label);color:var(--texte-secondaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ epingleApercu }}</span>
+                  </span>
+                  <sc-if value="{{ epinglePlusieurs }}">
+                    <span aria-hidden="true" style="flex-shrink:0;width:24px;height:24px;border-radius:var(--radius-md);background:var(--fond-surface);border:1px solid var(--ap-200);color:var(--ap-700);display:flex;align-items:center;justify-content:center">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
+                    </span>
+                  </sc-if>
+                </button>
+              </sc-if>
+
+              <div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
+              <div ref="{{ refFil }}" onScroll="{{ auDefilement }}" style="flex:1;min-height:0;overflow-y:auto;padding:var(--espace-4);display:flex;flex-direction:column">
+
+                <sc-if value="{{ estChargement }}">
+                <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+                  <sc-for list="{{ squelettes }}" as="s" hint-placeholder-count="5">
+                    <span style="{{ s.conteneur }}">
+                      <span style="{{ styleOs }}{{ s.bulle }}"></span>
+                    </span>
+                  </sc-for>
+                </div>
+                </sc-if>
+
+                <sc-if value="{{ estVide }}">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:var(--espace-8) var(--espace-4)">
+                  <span style="width:44px;height:44px;border-radius:var(--radius-xl);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"></path></svg>
+                  </span>
+                  <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">La consultation vient de commencer</span>
+                  <span style="max-width:360px;font-size:var(--font-size-caption);line-height:1.55;color:var(--texte-tertiaire)">Le patient a rejoint l'échange. Ouvrez par une question sur le motif : le premier message donne le ton de la consultation.</span>
+                </div>
+                </sc-if>
+
+                <sc-if value="{{ filVisibleContenu }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ fil }}" as="e" hint-placeholder-count="6">
+                  <div style="{{ e.conteneur }}">
+
+                    <sc-if value="{{ e.estJour }}">
+                      <span style="position:sticky;top:0;z-index:3;display:block;text-align:center;margin:6px 0 10px;pointer-events:none">
+                        <span style="display:inline-block;padding:4px 12px;border-radius:9999px;font-size:10.5px;font-weight:600;color:var(--texte-secondaire);background:color-mix(in srgb, var(--fond-surface) 92%, transparent);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:0 1px 4px rgba(15,23,42,.08)">{{ e.libelle }}</span>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ e.estSysteme }}">
+                      <span style="display:flex;justify-content:center;margin:10px 0">
+                        <span style="display:inline-flex;align-items:center;gap:6px;max-width:80%;padding:5px 12px;border-radius:9999px;background:var(--fond-surface-2);font-size:11.5px;font-weight:500;color:var(--texte-tertiaire);text-align:center">
+                          <span style="display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ e.icone }}"></span>
+                          {{ e.libelle }}
+                        </span>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ e.estMessage }}">
+                      <span style="{{ e.rangee }}" onClick="{{ e.onRangee }}">
+                        <sc-if value="{{ e.caseVisible }}">
+                          <span style="{{ e.caseStyle }}">
+                            <sc-if value="{{ e.selectionne }}">
+                              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l4 4 8-8"></path></svg>
+                            </sc-if>
+                          </span>
+                        </sc-if>
+                        <sc-if value="{{ e.avatarVisible }}">
+                          <span style="{{ e.avatar }}">{{ e.initiales }}</span>
+                        </sc-if>
+                        <sc-if value="{{ e.gouttiere }}">
+                          <span aria-hidden="true" style="width:28px;flex-shrink:0"></span>
+                        </sc-if>
+                        <span style="{{ e.colonne }}">
+                          <span style="{{ e.bulle }}">
+                            <sc-if value="{{ e.marqueurVisible }}">
+                              <span style="{{ e.marqueur }}">
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9.5 2.5l4 4-2 1-1.5 4-5.5-5.5 4-1.5 1-2z"></path><path d="M5.5 10.5L2 14"></path></svg>
+                                Retenu pour le compte-rendu
+                              </span>
+                            </sc-if>
+                            <sc-if value="{{ e.citationVisible }}">
+                              <span style="{{ e.citation }}">
+                                <span style="{{ e.citationFilet }}"></span>
+                                <span style="min-width:0">
+                                  <span style="display:block;font-size:11px;font-weight:700;color:{{ e.citationAuteurCouleur }}">{{ e.citationAuteur }}</span>
+                                  <span style="display:block;font-size:11px;line-height:1.4;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">{{ e.citationTexte }}</span>
+                                </span>
+                              </span>
+                            </sc-if>
+                            <sc-if value="{{ e.pieceVisible }}">
+                              <span style="{{ e.piece }}">
+                                <span style="width:28px;height:28px;flex-shrink:0;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:{{ e.pieceFondIcone }}">
+                                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"></path><path d="M9 1v4h4"></path></svg>
+                                </span>
+                                <span style="min-width:0">
+                                  <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-caption);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.pieceNom }}</span>
+                                  <span style="display:block;font-size:var(--font-size-overline);opacity:.75">{{ e.pieceMeta }}</span>
+                                </span>
+                              </span>
+                            </sc-if>
+                            <sc-if value="{{ e.texteVisible }}">
+                              <span style="{{ e.corps }}">{{ e.texte }}</span>
+                            </sc-if>
+                            <sc-if value="{{ e.chevronVisible }}">
+                              <button type="button" onClick="{{ e.onMenu }}" aria-label="Actions du message" style="{{ e.chevron }}">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
+                              </button>
+                            </sc-if>
+                            <sc-if value="{{ e.menuOuvert }}">
+                              <span role="menu" style="{{ e.menu }}">
+                                <span style="display:flex;gap:2px;padding:5px;border-bottom:1px solid var(--bordure-legere)">
+                                  <sc-for list="{{ e.rapides }}" as="r" hint-placeholder-count="3">
+                                    <button type="button" onClick="{{ r.onClick }}" title="{{ r.titre }}" style="{{ r.style }}" style-hover="background:var(--fond-surface-2);color:var(--ap-600)" dangerouslySetInnerHTML="{{ r.icone }}"></button>
+                                  </sc-for>
+                                </span>
+                                <span style="display:block;padding:4px">
+                                  <sc-for list="{{ e.actions }}" as="a" hint-placeholder-count="4">
+                                    <button type="button" onClick="{{ a.onClick }}" style="{{ a.style }}" style-hover="background:{{ a.survol }}">
+                                      <span style="display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ a.icone }}"></span>
+                                      {{ a.label }}
+                                    </button>
+                                  </sc-for>
+                                </span>
+                              </span>
+                            </sc-if>
+                          </span>
+
+                          <span style="{{ e.pied }}">
+                            <span style="font-size:10px;color:var(--texte-tertiaire)">{{ e.heure }}</span>
+                            <sc-if value="{{ e.modifieVisible }}">
+                              <span style="font-size:10px;font-style:italic;color:var(--texte-tertiaire)">modifié</span>
+                            </sc-if>
+                            <sc-if value="{{ e.accuseVisible }}">
+                              <span style="display:flex;flex-shrink:0;color:{{ e.accuseCouleur }}" dangerouslySetInnerHTML="{{ e.accuse }}"></span>
+                            </sc-if>
+                          </span>
+
+                          <sc-if value="{{ e.lectureVisible }}">
+                            <span style="padding-inline:2px;font-size:10px;color:var(--ap-600)">{{ e.lecture }}</span>
+                          </sc-if>
+                        </span>
+                      </span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+
+                <sc-if value="{{ frappeVisible }}">
+                  <span style="display:flex;justify-content:flex-start;margin-top:8px;padding-left:36px">
+                    <span title="Le patient écrit…" aria-label="Le patient écrit" style="display:inline-flex;align-items:center;gap:5px;padding:11px 14px;border-radius:4px 16px 16px 16px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);box-shadow:var(--ombre-1)">
+                      <sc-for list="{{ points }}" as="p" hint-placeholder-count="3">
+                        <span style="{{ p }}"></span>
+                      </sc-for>
+                    </span>
+                  </span>
+                </sc-if>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ boutonBasVisible }}">
+                <button type="button" onClick="{{ allerEnBas }}" aria-label="Descendre au dernier message" style="{{ styleBoutonBas }}" style-hover="background:var(--fond-surface-2)">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"></path></svg>
+                  <sc-if value="{{ nouveauxVisible }}">
+                    <span style="position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:9999px;background:var(--ap-500);color:#fff;font-size:10.5px;font-weight:700;line-height:19px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.25)">{{ nouveaux }}</span>
+                  </sc-if>
+                </button>
+              </sc-if>
+              </div>
+
+              <sc-if value="{{ selectionActive }}">
+              <div style="flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);flex-wrap:wrap;padding:10px var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface)">
+                <span style="flex:1;min-width:0;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ libelleSelection }}</span>
+                <button type="button" onClick="{{ retenirSelection }}" disabled="{{ selectionVide }}" style="{{ styleRetenirSelection }}" style-hover="background:var(--ap-50)">Retenir pour le compte-rendu</button>
+                <button type="button" onClick="{{ supprimerSelection }}" disabled="{{ selectionVide }}" style="{{ styleSupprimerSelection }}" style-hover="background:var(--erreur-fond)">Supprimer</button>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ composeurVisible }}">
+              <div style="flex-shrink:0;border-top:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <sc-if value="{{ citationEnCours }}">
+                  <span style="display:flex;align-items:center;gap:10px;padding:8px var(--espace-4);border-bottom:1px solid var(--bordure-legere)">
+                    <span style="width:3px;align-self:stretch;border-radius:2px;background:var(--ap-500);flex-shrink:0"></span>
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-size:11px;font-weight:700;color:var(--ap-700)">{{ citationAuteur }}</span>
+                      <span style="display:block;margin-top:1px;font-size:var(--font-size-label);color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ citationTexte }}</span>
+                    </span>
+                    <button type="button" onClick="{{ annulerCitation }}" aria-label="Annuler la citation" style="width:26px;height:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:9999px;background:transparent;color:var(--texte-tertiaire)" style-hover="background:var(--fond-input)">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+                    </button>
+                  </span>
+                </sc-if>
+                <div style="display:flex;align-items:flex-end;gap:6px;padding:12px var(--espace-4)">
+                  <button type="button" onClick="{{ joindre }}" aria-label="Joindre un document" style="{{ styleBoutonComposeur }}" style-hover="background:var(--fond-surface-2);color:var(--ap-600)">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3.5l-5 5a2.1 2.1 0 0 0 3 3l6-6a3.5 3.5 0 0 0-5-5l-6 6a5 5 0 0 0 7 7l4-4"></path></svg>
+                  </button>
+                  <textarea value="{{ vBrouillon }}" onChange="{{ majBrouillon }}" onKeyDown="{{ toucheComposeur }}" rows="1" placeholder="Écrire au patient…" style="{{ styleComposeur }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none"></textarea>
+                  <button type="button" onClick="{{ envoyer }}" disabled="{{ envoiBloque }}" aria-label="Envoyer" style="{{ styleBoutonEnvoyer }}" style-hover="background:var(--ap-600)">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 1.5L7 9"></path><path d="M14.5 1.5l-4.8 13-2.7-5.5L1.5 6.3l13-4.8z"></path></svg>
+                  </button>
+                </div>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ filClosVisible }}">
+              <div style="flex-shrink:0;display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="flex-shrink:0;display:flex;color:var(--texte-tertiaire)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="1.5"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path></svg>
+                </span>
+                <span style="flex:1;min-width:0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire)">Consultation terminée — l'échange est clos et archivé. Le compte-rendu reste modifiable jusqu'à sa signature.</span>
+              </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ panneauVisible }}">
+            <div style="{{ stylePanneau }}">
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="5" r="3.5"></circle><path d="M2 14a6 6 0 0 1 12 0"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Contexte patient</span>
+                    <span style="{{ styleCarteSousTitre }}">Transmis avec la demande</span>
+                  </span>
+                </div>
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ contexte }}" as="c" hint-placeholder-count="4">
+                    <span style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--espace-3)">
+                      <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap">{{ c.label }}</span>
+                      <span style="{{ c.valeurStyle }}">{{ c.valeur }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="{{ styleCarteEntete }}">
+                  <span style="{{ styleCarteTuile }}">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="10" height="12" rx="1.5"></rect><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0">
+                    <span style="{{ styleCarteTitre }}">Livrables</span>
+                    <span style="{{ styleCarteSousTitre }}">{{ sousTitreLivrables }}</span>
+                  </span>
+                </div>
+                <div style="padding:var(--espace-3);display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ livrables }}" as="l" hint-placeholder-count="2">
+                    <button type="button" onClick="{{ l.onClick }}" style="{{ l.style }}" style-hover="background:var(--ap-50);border-color:var(--ap-200)">
+                      <span style="{{ l.tuile }}" dangerouslySetInnerHTML="{{ l.icone }}"></span>
+                      <span style="flex:1;min-width:0;text-align:left">
+                        <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ l.titre }}</span>
+                        <span style="display:block;margin-top:1px;font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ l.etat }}</span>
+                      </span>
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><path d="M6 4l4 4-4 4"></path></svg>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <sc-if value="{{ terminerVisible }}">
+              <div class="ul-grain-fine" style="{{ styleCarte }}">
+                <div style="padding:var(--espace-4);display:flex;flex-direction:column;gap:var(--espace-2)">
+                  <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Terminer la consultation</span>
+                  <span style="font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-tertiaire)">L'échange sera clos. Vous disposerez ensuite de 48 heures pour signer le compte-rendu.</span>
+                  <button type="button" onClick="{{ ouvrirCloture }}" style="{{ stylePrimaire }}margin-top:2px;width:100%;" style-hover="background:var(--ap-600)">Terminer</button>
+                </div>
+              </div>
+              </sc-if>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center" dangerouslySetInnerHTML="{{ iconeModale }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-3);overflow-y:auto">
+          <p style="margin:0;font-size:var(--font-size-body-sm);line-height:1.6;color:var(--texte-secondaire)">{{ corpsDialogue }}</p>
+          <sc-if value="{{ recapVisible }}">
+            <div style="display:flex;flex-direction:column;gap:7px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+              <sc-for list="{{ recap }}" as="r" hint-placeholder-count="4">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                  <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ r.label }}</span>
+                  <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);color:var(--texte-primaire);text-align:right">{{ r.valeur }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Annuler</button>
+          <button type="button" onClick="{{ confirmerDialogue }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">{{ actionDialogue }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:440px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">C5 · Minuteur serveur qui compte vraiment · fil SARIS : séparateurs de jour, regroupement par auteur, citation, accusés de lecture à deux coches, indicateur de frappe · ⏎ envoie, ⇧⏎ retourne à la ligne · clore la consultation verrouille l'échange</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  shield: '<path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"/><path d="M5.5 8l2 2 3-3"/>',
+  stetho: '<path d="M3.3 1.3H2.7a1.3 1.3 0 0 0-1.3 1.3v3.4a4 4 0 0 0 4 4 4 4 0 0 0 4-4V2.6a1.3 1.3 0 0 0-1.3-1.3H7.4"/><path d="M5.4 10v.7a4 4 0 0 0 4 4 4 4 0 0 0 4-4V8"/><circle cx="13.4" cy="6.6" r="1.4" fill="currentColor"/>',
+  message: '<path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"/>',
+  clipboard: '<rect x="3" y="3" width="10" height="12" rx="1.5"/><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  ordonnance: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/>',
+  horloge: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  checkCircle: '<circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/>',
+  cadenas: '<rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/>',
+  drapeau: '<path d="M3 14V2h9l-2 3 2 3H3"/>',
+  repondre: '<path d="M7 4L3 8l4 4"/><path d="M3 8h6a4 4 0 0 1 4 4v1"/>',
+  epingle: '<path d="M9.5 2.5l4 4-2 1-1.5 4-5.5-5.5 4-1.5 1-2z"/><path d="M5.5 10.5L2 14"/>',
+  copier: '<rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H3.5A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>',
+  coche: '<rect x="2" y="2" width="12" height="12" rx="2.5"/><path d="M5 8.2l2 2 4-4.4"/>',
+  transferer: '<path d="M9 4l4 4-4 4"/><path d="M13 8H7a4 4 0 0 0-4 4v1"/>',
+  corbeille: '<path d="M3 4h10M6 2h4M5 4l1 9h4l1-9"/>',
+};
+/* Accusés de lecture SARIS : une coche = envoyé, deux = lu. */
+const COCHE = '<svg width="14" height="11" viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6.5l3.5 3.5L11 3"/></svg>';
+const DOUBLE_COCHE = '<svg width="17" height="11" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6.5l3.5 3.5L11 3"/><path d="M7.5 10L14 3"/></svg>';
+
+const NAV = [
+  { titre: 'Principal', items: [
+    { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+    { cle: 'verif', label: 'Ma vérification', icone: G.shield },
+  ] },
+  { titre: 'Mon activité', items: [
+    { cle: 'vitrine', label: 'Ma vitrine', icone: G.stetho },
+    { cle: 'demandes', label: 'Demandes', icone: G.message, badge: '3' },
+    { cle: 'consultations', label: 'Consultations', icone: G.clipboard },
+    { cle: 'gains', label: 'Mes gains', icone: G.trending },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+/* auteur : 'patient' | 'soignant' | 'systeme' | 'jour' */
+const FIL = [
+  { type: 'jour', libelle: 'Aujourd\u2019hui' },
+  { type: 'systeme', libelle: 'Consultation ouverte · échange chiffré de bout en bout', icone: 'cadenas' },
+  { type: 'message', auteur: 'patient', heure: '08:31', texte: 'Bonjour Docteur. Merci de me recevoir aussi vite.' },
+  { type: 'message', auteur: 'patient', heure: '08:31', texte: 'Depuis une semaine je me réveille la nuit avec le cœur qui bat très vite, parfois pendant dix minutes. Cela arrive surtout après une journée de travail chargée.' },
+  { type: 'message', auteur: 'soignant', heure: '08:33', texte: 'Bonjour. Je vous remercie pour ces précisions, elles sont utiles.\n\nQuelques questions pour cadrer : ressentez-vous une douleur dans la poitrine, un essoufflement, ou des vertiges pendant ces épisodes ?', accuse: 'lu' },
+  { type: 'message', auteur: 'patient', heure: '08:35', texte: 'Pas de douleur, non. Un peu d\u2019essoufflement au début mais ça passe. Jamais de vertige.' },
+  { type: 'message', auteur: 'soignant', heure: '08:36', texte: 'Très bien, c\u2019est rassurant. Prenez-vous du café, du thé fort ou des boissons énergisantes en fin de journée ?', accuse: 'lu' },
+  { type: 'message', auteur: 'patient', heure: '08:38', texte: 'Trois ou quatre cafés par jour, dont un vers dix-sept heures. Et je dors mal en ce moment.',
+    citation: { auteur: 'Dr Ange Makaya', texte: 'Prenez-vous du café, du thé fort ou des boissons énergisantes en fin de journée ?' } },
+  { type: 'message', auteur: 'patient', heure: '08:39', piece: { nom: 'tension-releve-aout.pdf', meta: 'Relevé tensionnel · 320 Ko' } },
+  { type: 'message', auteur: 'soignant', heure: '08:42', texte: 'J\u2019ai bien reçu votre relevé, merci. Les chiffres sont corrects, autour de 13/8.\n\nJe retiens des palpitations d\u2019allure bénigne, favorisées par la caféine et le manque de sommeil. Je vous propose un bêta-bloquant à faible dose et un Holter des 24 heures pour être certain.', accuse: 'envoye' },
+];
+
+const CONTEXTE = [
+  { label: 'Âge', valeur: '46 ans' },
+  { label: 'Sexe', valeur: 'Masculin' },
+  { label: 'Antécédents', valeur: 'Hypertension traitée', mono: false },
+  { label: 'Allergies', valeur: 'Aucune connue', ton: 'succes' },
+  { label: 'Traitement en cours', valeur: 'Ramipril 5 mg', mono: false },
+  { label: 'Honoraires', valeur: '12 500 XAF' },
+];
+
+const CHAMP = 'width:100%;box-sizing:border-box;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;';
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+const duree = (s) => {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return (h > 0 ? String(h).padStart(2, '0') + ':' : '') + String(m).padStart(2, '0') + ':' + String(x).padStart(2, '0');
+};
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'consultations',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    ecoule: 738, close: false, messages: [], brouillon: '', citation: null,
+    frappe: true, dialogue: null, toast: null,
+    /* Messagerie SARIS : sélection multiple, menu par message, épingles, ancrage bas. */
+    selection: [], menuMsg: null, retenus: [2, 9], epingle: 0, enBas: true, nouveaux: 0,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+    /* Minuteur autoritatif : il compte vers le haut et ne s'arrête qu'à la clôture. */
+    this.horloge = setInterval(() => {
+      this.setState((s) => (s.close ? null : { ecoule: s.ecoule + 1 }));
+    }, 1000);
+    /* L'indicateur de frappe s'éteint puis se rallume, comme un vrai fil. */
+    this.frappeTimer = setInterval(() => {
+      this.setState((s) => ({ frappe: !s.frappe }));
+    }, 5200);
+    /* Un fil de discussion s'ouvre sur son dernier message, jamais sur le premier. */
+    this.ancrer();
+    /* Le patient finit par répondre : c'est ce qui alimente le compteur du bouton. */
+    this.reponseTimer = setTimeout(() => {
+      const d = new Date();
+      this.recevoirMessage({
+        type: 'message', auteur: 'patient',
+        heure: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'),
+        texte: 'Merci docteur. Je passe prendre les comprimés à la Pharmacie du Fleuve cet après-midi.',
+      });
+    }, 14000);
+  }
+
+  /** Colle le fil en bas — à l'ouverture et après chaque envoi. */
+  ancrer() {
+    requestAnimationFrame(() => {
+      if (this.filEl) this.filEl.scrollTop = this.filEl.scrollHeight;
+    });
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.horloge) clearInterval(this.horloge);
+    if (this.frappeTimer) clearInterval(this.frappeTimer);
+    if (this.reponseTimer) clearTimeout(this.reponseTimer);
+    if (this.tToast) clearTimeout(this.tToast);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  seg(actif) {
+    return 'padding:5px 11px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 30, px: 12, fs: 'var(--font-size-body-sm)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+
+  basculerChoix(i) {
+    this.setState((s) => ({
+      selection: s.selection.indexOf(i) >= 0 ? s.selection.filter((x) => x !== i) : s.selection.concat([i]),
+    }));
+  }
+
+  envoyerMessage() {
+    const texte = this.state.brouillon.trim();
+    if (!texte || this.state.close) return;
+    const d = new Date();
+    this.setState((s) => ({
+      messages: s.messages.concat([{
+        type: 'message', auteur: 'soignant',
+        heure: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'),
+        texte, accuse: 'envoye', citation: s.citation,
+      }]),
+      brouillon: '', citation: null,
+    }));
+    /* Envoyer ramène toujours l'auteur à sa propre bulle. */
+    this.setState({ enBas: true, nouveaux: 0 });
+    this.ancrer();
+  }
+
+  /** Message entrant : on ne bouge pas la vue si l'utilisateur lit plus haut — on compte. */
+  recevoirMessage(msg) {
+    this.setState((s) => ({
+      messages: s.messages.concat([msg]),
+      nouveaux: s.enBas ? 0 : s.nouveaux + 1,
+    }));
+    if (this.state.enBas) this.ancrer();
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const empile = L < 1100;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const close = this.state.close;
+    const dialogue = this.state.dialogue;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k, close: false, messages: [] }) },
+    ];
+
+    const iconBouton = 'width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+
+    /* ── Fil de discussion, à l'image du MessageThread de CMS-SARIS ─────────────
+       Bulles 16 px au coin extérieur / 4 px au coin de la gouttière, ombre de 1 px
+       plutôt qu'une bordure, séparateur de jour en pilule collante, événements
+       système en pilule centrée, chevron d'actions révélé au survol, sélection
+       multiple par case, épingles en bandeau. La logique métier ULAMU est
+       conservée : accusés, citation, pièce jointe, retenue pour le compte-rendu,
+       et fil verrouillé dès la clôture. */
+    const brut = vide ? [{ type: 'jour', libelle: 'Aujourd\u2019hui' }] : FIL.concat(this.state.messages);
+    const selection = this.state.selection;
+    const selectionActive = selection.length > 0;
+    const retenus = this.state.retenus;
+    let precedent = null;
+    const fil = brut.map((e, i) => {
+      if (e.type === 'jour') { precedent = null; return { estJour: true, libelle: e.libelle, conteneur: 'display:block' }; }
+      if (e.type === 'systeme') {
+        precedent = null;
+        return { estSysteme: true, libelle: e.libelle, icone: { __html: SVG(12, '1.5', G[e.icone]) }, conteneur: 'display:block' };
+      }
+      const moi = e.auteur === 'soignant';
+      const suivant = brut[i + 1];
+      const groupe = precedent === e.auteur;
+      /* Dernier d'une grappe : c'est lui qui porte le coin cassé et le pied. */
+      const finGrappe = !suivant || suivant.type !== 'message' || suivant.auteur !== e.auteur;
+      precedent = e.auteur;
+      const choisi = selection.indexOf(i) >= 0;
+      const retenu = retenus.indexOf(i) >= 0;
+      const menuOuvert = this.state.menuMsg === i;
+      const R = '16px';
+      const rayons = moi
+        ? 'border-radius:' + R + ' ' + (finGrappe ? '4px' : R) + ' ' + R + ' ' + R
+        : 'border-radius:' + (finGrappe ? '4px' : R) + ' ' + R + ' ' + R + ' ' + R;
+      const texteMsg = e.texte || (e.piece ? e.piece.nom : '');
+      const citer = () => set({ citation: { auteur: moi ? 'Dr Ange Makaya' : 'Patient PAT-8821-BZV', texte: texteMsg }, menuMsg: null });
+      const basculerRetenu = () => this.setState((s) => ({
+        menuMsg: null,
+        retenus: s.retenus.indexOf(i) >= 0 ? s.retenus.filter((x) => x !== i) : s.retenus.concat([i]),
+        toast: { titre: s.retenus.indexOf(i) >= 0 ? 'Message retiré du compte-rendu' : 'Message retenu pour le compte-rendu',
+                 corps: texteMsg.slice(0, 90) + (texteMsg.length > 90 ? '…' : '') },
+      }));
+      return {
+        estMessage: true,
+        conteneur: 'display:block;margin-top:' + (groupe ? '2px' : '10px'),
+        rangee: 'display:flex;align-items:flex-end;gap:8px;padding:2px 2px;border-radius:8px;justify-content:' +
+          (moi ? 'flex-end' : 'flex-start') + (choisi ? ';background:var(--ap-50)' : '') +
+          (selectionActive ? ';cursor:pointer' : ''),
+        onRangee: selectionActive ? () => this.basculerChoix(i) : null,
+        caseVisible: selectionActive,
+        selectionne: choisi,
+        caseStyle: 'width:18px;height:18px;flex-shrink:0;align-self:center;border-radius:5px;display:flex;align-items:center;justify-content:center;border:1.5px solid ' +
+          (choisi ? 'var(--ap-500)' : 'var(--bordure-forte)') + ';background:' + (choisi ? 'var(--ap-500)' : 'transparent') +
+          ';color:#fff',
+        avatarVisible: !moi && !groupe,
+        gouttiere: !moi && groupe,
+        initiales: 'PB',
+        avatar: 'width:28px;height:28px;flex-shrink:0;border-radius:9999px;background:var(--ton-bleu-fond);color:var(--ton-bleu-icone);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:9.5px;font-weight:700',
+        colonne: 'display:flex;flex-direction:column;align-items:' + (moi ? 'flex-end' : 'flex-start') + ';min-width:0;max-width:min(76%,540px)',
+        /* Bulle : ombre douce, pas de bordure — c'est la signature SARIS. */
+        bulle: 'position:relative;display:block;width:fit-content;max-width:100%;padding:' +
+          (retenu ? '7px 12px 9px' : '9px 12px') + ';' + rayons + ';background:' +
+          (moi ? 'var(--ap-500)' : 'var(--fond-surface-2)') + ';color:' + (moi ? '#fff' : 'var(--texte-primaire)') +
+          /* La bulle entrante garde une arête dans les deux thèmes : bordure toujours
+             présente (en sombre l'ombre ne se voit pas) + fond distinct de la carte. */
+          (moi ? ';box-shadow:var(--ombre-1)' : ';border:1px solid var(--bordure-legere);box-shadow:var(--ombre-1)') +
+          (retenu ? ';outline:1.5px solid var(--ap-300);outline-offset:1px' : ''),
+        marqueurVisible: retenu,
+        marqueur: 'display:inline-flex;align-items:center;gap:4px;margin-bottom:5px;font-size:9.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:' +
+          (moi ? 'rgba(255,255,255,.85)' : 'var(--ap-600)'),
+        texteVisible: !!e.texte,
+        texte: e.texte || '',
+        corps: 'display:block;font-size:var(--font-size-body-sm);line-height:1.5;white-space:pre-line;word-break:break-word;padding-right:' +
+          (close ? '0' : '14px'),
+        citationVisible: !!e.citation,
+        citationAuteur: e.citation ? e.citation.auteur : '',
+        citationTexte: e.citation ? e.citation.texte : '',
+        citationAuteurCouleur: moi ? 'rgba(255,255,255,.92)' : 'var(--ap-700)',
+        citation: 'display:flex;gap:8px;margin-bottom:6px;padding:6px 8px;border-radius:6px;background:' +
+          (moi ? 'rgba(255,255,255,.14)' : 'var(--fond-surface)'),
+        citationFilet: 'width:2.5px;align-self:stretch;flex-shrink:0;border-radius:2px;background:' +
+          (moi ? 'rgba(255,255,255,.55)' : 'var(--ap-400)'),
+        pieceVisible: !!e.piece,
+        pieceNom: e.piece ? e.piece.nom : '',
+        pieceMeta: e.piece ? e.piece.meta : '',
+        pieceFondIcone: moi ? 'rgba(255,255,255,.18)' : 'var(--ap-50)',
+        piece: 'display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;background:' +
+          (moi ? 'rgba(255,255,255,.12)' : 'var(--fond-surface)'),
+        chevronVisible: !close && !selectionActive,
+        chevron: 'position:absolute;top:5px;' + (moi ? 'right:5px' : 'right:5px') +
+          ';width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9999px;background:transparent;color:' +
+          (moi ? 'rgba(255,255,255,.75)' : 'var(--texte-tertiaire)') + ';opacity:' + (menuOuvert ? '1' : '.45') +
+          ';transition:opacity var(--dur-fast) linear',
+        onMenu: (ev) => { ev.stopPropagation(); this.setState((s) => ({ menuMsg: s.menuMsg === i ? null : i })); },
+        menuOuvert,
+        menu: 'position:absolute;z-index:40;top:26px;' + (moi ? 'right:0' : 'left:0') +
+          ';width:216px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-normale);box-shadow:var(--ombre-4);overflow:hidden;text-align:left;animation:ul-pop var(--dur-fast) var(--ease-out)',
+        rapides: [
+          { titre: 'Citer ce message', icone: G.repondre, onClick: citer },
+          { titre: retenu ? 'Ne plus retenir' : 'Retenir pour le compte-rendu', icone: G.epingle, onClick: basculerRetenu },
+          { titre: 'Copier le texte', icone: G.copier, onClick: () => this.setState({ menuMsg: null, toast: { titre: 'Texte copié', corps: 'Le message est dans le presse-papiers.' } }) },
+        ].map((r) => ({
+          titre: r.titre, onClick: r.onClick,
+          icone: { __html: SVG(15, '1.5', r.icone) },
+          style: 'width:34px;height:30px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--texte-secondaire);transition:background var(--dur-fast) linear',
+        })),
+        actions: [
+          { label: 'Sélectionner des messages', icone: G.coche, onClick: () => this.setState({ menuMsg: null, selection: [i] }) },
+          { label: retenu ? 'Retirer du compte-rendu' : 'Retenir pour le compte-rendu', icone: G.epingle, onClick: basculerRetenu },
+          { label: 'Transférer au confrère', icone: G.transferer, onClick: () => this.setState({ menuMsg: null, toast: { titre: 'Transfert préparé', corps: 'Choisissez le confrère destinataire dans la liste.' } }) },
+          moi ? { label: 'Supprimer pour tous', icone: G.corbeille, danger: true, onClick: () => this.setState({ menuMsg: null, toast: { titre: 'Message supprimé', corps: 'La trace de la suppression reste au journal d\u2019audit.' } }) } : null,
+        ].filter(Boolean).map((a) => ({
+          label: a.label, onClick: a.onClick,
+          icone: { __html: SVG(14, '1.5', a.icone) },
+          survol: a.danger ? 'var(--erreur-fond)' : 'var(--fond-surface-2)',
+          style: 'width:100%;display:flex;align-items:center;gap:9px;padding:7px 10px;border:0;border-radius:6px;background:transparent;text-align:left;font-size:var(--font-size-body-sm);color:' +
+            (a.danger ? 'var(--erreur-texte)' : 'var(--texte-primaire)') + ';transition:background var(--dur-fast) linear',
+        })),
+        pied: 'display:flex;align-items:center;gap:5px;margin-top:3px;padding-inline:2px',
+        heure: e.heure,
+        modifieVisible: !!e.modifie,
+        accuseVisible: moi,
+        accuseCouleur: e.accuse === 'lu' ? 'var(--ap-500)' : 'var(--texte-tertiaire)',
+        accuse: { __html: e.accuse === 'lu' ? DOUBLE_COCHE : COCHE },
+        lectureVisible: moi && e.accuse === 'lu' && finGrappe && i === brut.length - 1,
+        lecture: 'Lu par le patient',
+      };
+    });
+    const nbRetenus = retenus.length;
+
+    const livrables = [
+      { cle: 'ordonnance', titre: 'Ordonnance', etat: 'Aucune ligne prescrite', icone: G.ordonnance, ton: 'emeraude' },
+      { cle: 'compte-rendu', titre: 'Compte-rendu', etat: 'Brouillon · motif renseigné', icone: G.clipboard, ton: 'accent' },
+    ];
+    const tons = { emeraude: ['var(--ton-emeraude-fond)', 'var(--ton-emeraude-icone)'], accent: ['var(--ap-50)', 'var(--ap-600)'] };
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : empile ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement, estVide: vide, estErreur: erreur,
+      contenuVisible: !erreur,
+      filVisibleContenu: !chargement && !vide,
+      squelettes: [
+        { moi: false, w: 220 }, { moi: false, w: 300 }, { moi: true, w: 260 }, { moi: false, w: 180 }, { moi: true, w: 320 },
+      ].map((s) => ({
+        conteneur: 'display:flex;justify-content:' + (s.moi ? 'flex-end' : 'flex-start'),
+        bulle: 'display:block;width:' + s.w + 'px;max-width:78%;height:' + (s.w > 250 ? 52 : 34) + 'px;border-radius:var(--radius-xl);',
+      })),
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      /* ── Chrome du fil, repris de SARIS ── */
+      styleEnteteFil: 'flex-shrink:0;display:flex;align-items:center;gap:10px;padding:10px var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface)',
+      statutFil: close ? 'Consultation clôturée · fil en lecture seule'
+        : this.state.frappe ? 'en train d\u2019écrire…' : 'en ligne',
+      styleStatutFil: 'display:block;margin-top:1px;font-size:var(--font-size-caption);color:' +
+        (close ? 'var(--texte-tertiaire)' : this.state.frappe ? 'var(--ap-600)' : 'var(--succes-texte)'),
+      chiffreVisible: L >= 900 && !selectionActive,
+
+      selectionActive,
+      selectionVide: selection.length === 0,
+      libelleSelection: selection.length + ' message' + (selection.length > 1 ? 's' : '') + ' sélectionné' + (selection.length > 1 ? 's' : ''),
+      quitterSelection: () => set({ selection: [] }),
+      retenirSelection: () => {
+        if (!selection.length) return;
+        this.setState((s) => ({
+          retenus: s.retenus.concat(s.selection.filter((i) => s.retenus.indexOf(i) < 0)),
+          selection: [],
+          toast: { titre: selection.length + ' message' + (selection.length > 1 ? 's' : '') + ' retenu' + (selection.length > 1 ? 's' : ''),
+                   corps: 'Ils seront reportés dans le compte-rendu de la consultation.' },
+        }));
+      },
+      styleRetenirSelection: 'display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:var(--radius-md);border:1px solid var(--ap-200);background:var(--fond-surface);color:var(--ap-700);font-size:var(--font-size-body-sm);font-weight:600;white-space:nowrap;transition:background var(--dur-fast) linear' +
+        (selection.length === 0 ? ';opacity:.4;cursor:not-allowed' : ''),
+      supprimerSelection: () => {
+        if (!selection.length) return;
+        set({ selection: [] });
+        this.toaster('Messages supprimés', 'La suppression est inscrite au journal d\u2019audit avec son auteur.');
+      },
+      styleSupprimerSelection: 'display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:var(--radius-md);border:1px solid var(--erreur-bordure);background:var(--fond-surface);color:var(--erreur-texte);font-size:var(--font-size-body-sm);font-weight:600;white-space:nowrap;transition:background var(--dur-fast) linear' +
+        (selection.length === 0 ? ';opacity:.4;cursor:not-allowed' : ''),
+
+      epingleVisible: nbRetenus > 0 && !selectionActive,
+      epinglePlusieurs: nbRetenus > 1,
+      epingleTitre: nbRetenus > 1 ? nbRetenus + ' messages retenus pour le compte-rendu' : 'Message retenu pour le compte-rendu',
+      epingleApercu: (() => {
+        const idx = retenus[this.state.epingle % Math.max(1, nbRetenus)];
+        const m = brut[idx];
+        const t = m && (m.texte || (m.piece ? m.piece.nom : ''));
+        return t ? t.replace(/\n+/g, ' ').slice(0, 110) : '';
+      })(),
+      epingleSuivant: () => this.setState((s) => ({ epingle: s.epingle + 1 })),
+      styleBandeauEpingle: 'flex-shrink:0;display:flex;align-items:center;gap:9px;width:100%;padding:8px var(--espace-4);border:0;border-bottom:1px solid var(--bordure-legere);background:var(--ap-50);text-align:left;cursor:' +
+        (nbRetenus > 1 ? 'pointer' : 'default'),
+
+      refFil: (el) => { this.filEl = el; },
+      auDefilement: (ev) => {
+        const el = ev.target;
+        const enBas = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+        if (enBas !== this.state.enBas) this.setState({ enBas, nouveaux: enBas ? 0 : this.state.nouveaux });
+      },
+      boutonBasVisible: !this.state.enBas,
+      nouveauxVisible: this.state.nouveaux > 0,
+      nouveaux: String(this.state.nouveaux),
+      allerEnBas: () => {
+        if (this.filEl) this.filEl.scrollTop = this.filEl.scrollHeight;
+        set({ enBas: true, nouveaux: 0 });
+      },
+      styleBoutonBas: 'position:absolute;right:18px;bottom:16px;z-index:20;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:9999px;background:var(--fond-surface);color:var(--texte-secondaire);box-shadow:var(--ombre-3);transition:background var(--dur-fast) linear',
+
+      styleBoutonComposeur: 'width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:9999px;background:transparent;color:var(--texte-tertiaire);transition:background var(--dur-fast) linear,color var(--dur-fast) linear',
+      joindre: () => this.toaster('Document joint', 'holter-24h-ordonnance.pdf · 210 Ko — visible par le patient.'),
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      refConsultation: 'CSL-2026-04120',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      libellePage: close ? 'Terminée' : 'En cours',
+      pilulePage: 'display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;white-space:nowrap;background:' +
+        (close ? 'var(--fond-surface-2)' : 'var(--succes-fond)') + ';color:' + (close ? 'var(--texte-secondaire)' : 'var(--succes-texte)'),
+      pointPage: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' +
+        (close ? 'var(--texte-tertiaire)' : 'var(--succes-accent)'),
+      minuteurVisible: L >= 640,
+      minuteur: duree(this.state.ecoule),
+      couleurMinuteur: close ? 'var(--texte-tertiaire)' : this.state.ecoule > 1800 ? 'var(--alerte-texte)' : 'var(--texte-primaire)',
+
+      styleZoneContenu: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden',
+      styleSplit: 'flex:1;min-height:0;display:' + (empile ? 'flex' : 'grid') + ';gap:var(--espace-3);padding:var(--espace-4) 0;' +
+        (empile ? 'flex-direction:column;overflow-y:auto;' : 'grid-template-columns:minmax(0,1fr) 300px;'),
+      styleCarteFil: (empile ? 'height:520px;flex-shrink:0;' : 'min-height:0;') +
+        'display:flex;flex-direction:column;min-width:0;background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      panneauVisible: L >= 620,
+      stylePanneau: 'display:flex;flex-direction:column;gap:var(--espace-3);min-width:0;' +
+        (empile ? '' : 'overflow-y:auto;'),
+
+      fil,
+      frappeVisible: !close && !vide && !chargement && this.state.frappe,
+      points: [0, 1, 2].map((i) => 'width:5px;height:5px;border-radius:50%;background:var(--texte-tertiaire);animation:ul-blink 1.2s ease-in-out ' + (i * 0.18).toFixed(2) + 's infinite'),
+
+      composeurVisible: !close && !chargement,
+      filClosVisible: close,
+      vBrouillon: this.state.brouillon,
+      majBrouillon: (e) => set({ brouillon: e.target.value }),
+      toucheComposeur: (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.envoyerMessage(); }
+      },
+      envoyer: () => this.envoyerMessage(),
+      envoiBloque: !this.state.brouillon.trim(),
+      /* Composeur SARIS : champ en pilule, envoi rond. */
+      styleComposeur: 'flex:1;min-width:0;min-height:36px;max-height:120px;box-sizing:border-box;padding:9px 14px;border-radius:18px;border:1px solid var(--bordure-normale);background:var(--fond-surface);color:var(--texte-primaire);font-family:var(--font-body);font-size:var(--font-size-body-sm);line-height:1.5;resize:none;outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      styleBoutonEnvoyer: 'width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:9999px;background:var(--ap-500);color:#fff;transition:background var(--dur-fast) linear;' +
+        (this.state.brouillon.trim() ? '' : 'opacity:.4;cursor:not-allowed;'),
+      styleBoutonCitation: 'width:26px;height:26px;flex-shrink:0;align-self:center;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-md);background:transparent;color:var(--texte-tertiaire);opacity:.5;transition:opacity var(--dur-fast) linear,background var(--dur-fast) linear',
+
+      citationEnCours: !!this.state.citation,
+      citationAuteur: this.state.citation ? this.state.citation.auteur : '',
+      citationTexte: this.state.citation ? this.state.citation.texte : '',
+      annulerCitation: () => set({ citation: null }),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden;flex-shrink:0',
+      styleCarteEntete: 'display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)',
+      styleCarteTuile: 'width:28px;height:28px;flex-shrink:0;border-radius:var(--radius-md);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleCarteTitre: 'display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)',
+      styleCarteSousTitre: 'display:block;margin-top:2px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-tertiaire)',
+      contexte: CONTEXTE.map((c) => ({
+        label: c.label, valeur: c.valeur,
+        valeurStyle: 'font-family:' + (c.mono === false ? 'var(--font-body)' : 'var(--font-mono)') +
+          ';font-size:var(--font-size-caption);font-weight:500;text-align:right;color:' +
+          (c.ton === 'succes' ? 'var(--succes-texte)' : 'var(--texte-primaire)'),
+      })),
+
+      sousTitreLivrables: close ? 'À compléter sous 48 h' : 'Rédigeables pendant la consultation',
+      livrables: livrables.map((l) => {
+        const [bg, couleur] = tons[l.ton];
+        return {
+          titre: l.titre, etat: l.etat,
+          icone: { __html: SVG(15, '1.5', l.icone) },
+          tuile: 'width:30px;height:30px;flex-shrink:0;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:' + bg + ';color:' + couleur,
+          style: 'display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:1px solid var(--bordure-legere);border-radius:var(--radius-lg);background:var(--fond-surface-2);transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear',
+          onClick: () => this.toaster(l.titre + ' — écran C4', 'La rédaction se fait dans la fiche de consultation.'),
+        };
+      }),
+      terminerVisible: !close,
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleIconBouton: iconBouton,
+
+      dialogueOuvert: !!dialogue,
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(500, Math.max(280, L - 40)) + 'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      iconeModale: { __html: SVG(16, '1.5', G.checkCircle) },
+      titreDialogue: 'Terminer cette consultation ?',
+      sousTitreDialogue: 'L\u2019échange sera clos et archivé',
+      corpsDialogue: 'Le patient ne pourra plus écrire dans ce fil. Vous disposerez de 48 heures pour signer le compte-rendu, et l\u2019ordonnance restera modifiable jusqu\u2019à cette signature.',
+      recapVisible: true,
+      recap: [
+        { label: 'Durée de l\u2019échange', valeur: duree(this.state.ecoule) },
+        { label: 'Messages échangés', valeur: String(FIL.filter((e) => e.type === 'message').length + this.state.messages.length) },
+        { label: 'Honoraires', valeur: '12 500 XAF' },
+        { label: 'Net après commission', valeur: '11 000 XAF' },
+      ],
+      actionDialogue: 'Terminer la consultation',
+      ouvrirCloture: () => set({ dialogue: 'cloture' }),
+      fermerDialogue: () => set({ dialogue: null }),
+      confirmerDialogue: () => {
+        set({ dialogue: null, close: true, citation: null });
+        this.toaster('Consultation terminée', 'Il vous reste 48 heures pour signer le compte-rendu.');
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Consultations'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

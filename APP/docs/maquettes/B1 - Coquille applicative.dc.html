@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">B1</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Coquille applicative</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="4">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="{{ styleCadre }}">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Espace soignant</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="2">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--erreur-accent);color:#fff;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">AM</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr Ange Makaya</span>
+              <span style="display:flex;align-items:center;gap:5px;margin-top:1px">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M3.3 1.3H2.7a1.3 1.3 0 0 0-1.3 1.3v3.4a4 4 0 0 0 4 4 4 4 0 0 0 4-4V2.6a1.3 1.3 0 0 0-1.3-1.3H7.4"></path><path d="M5.4 10v.7a4 4 0 0 0 4 4 4 4 0 0 0 4-4V8"></path></svg>
+                <span style="font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cardiologue vérifié</span>
+              </span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+              <div style="display:flex;align-items:center;gap:var(--espace-3)">
+                <span style="width:40px;height:40px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700">AM</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Dr Ange Makaya</span>
+                  <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Clinique de Bacongo · Brazzaville</span>
+                </span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:var(--espace-2)">
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--ap-50);color:var(--ap-700);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em">
+                  <span style="width:5px;height:5px;border-radius:50%;background:var(--ap-500)"></span>Soignant
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--succes-fond);color:var(--succes-texte);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em">
+                  <span style="width:5px;height:5px;border-radius:50%;background:var(--succes-accent)"></span>Dossier validé
+                </span>
+              </div>
+            </div>
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2.5"></circle><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"></path></svg>
+                Mes paramètres
+              </button>
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Espace soignant</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">{{ pageTitre }}</span>
+          </nav>
+        </sc-if>
+
+        <button type="button" onClick="{{ ouvrirPalette }}" style="{{ styleRecherche }}" style-hover="border-color:var(--bordure-forte)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un patient, une ordonnance…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </button>
+
+        <sc-if value="{{ rideauVisible }}">
+          <button type="button" role="switch" aria-checked="{{ rideau }}" onClick="{{ basculerRideau }}" title="Rideau de confidentialité" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 8px;border:0;border-radius:9999px;background:transparent" style-hover="background:var(--fond-surface-2)">
+            <span style="display:flex" dangerouslySetInnerHTML="{{ iconeRideau }}"></span>
+            <span aria-hidden="true" style="{{ styleRail }}">
+              <span style="{{ styleCurseur }}"></span>
+            </span>
+          </button>
+        </sc-if>
+
+        <button type="button" onClick="{{ ouvrirTiroir }}" aria-label="Notifications (3 non lues)" style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"></path></svg>
+          <span aria-hidden="true" style="position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:9999px;background:var(--succes-texte);box-shadow:0 0 0 2px var(--fond-surface),0 0 6px 1px var(--succes-texte);animation:ul-blink 1.4s ease-in-out infinite"></span>
+        </button>
+      </header>
+
+      <div style="{{ styleZone }}">
+
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"></path><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"></rect></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">{{ pageTitre }}</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">Lundi 10 août 2026 · 4 demandes attendent une réponse</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <span style="display:flex;align-items:center;gap:var(--espace-2);flex-shrink:0">
+                <button type="button" aria-label="Rafraîchir" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+                </button>
+                <button type="button" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"></path></svg>
+                  Voir mes demandes
+                </button>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estPlein }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div class="ul-grain-fine" style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="position:relative;flex:1 1 240px;min-width:180px;max-width:340px;display:flex">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:10px;top:10px;pointer-events:none"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                <input type="text" value="{{ valeurFiltre }}" onChange="{{ majFiltre }}" placeholder="Filtrer les consultations…" style="width:100%;height:34px;padding:0 10px 0 32px;font-size:var(--font-size-body-sm);border-radius:var(--radius-md);background:var(--fond-surface-2);border:1px solid var(--bordure-normale);color:var(--texte-primaire);outline:none;box-sizing:border-box" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12)" />
+              </span>
+              <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                <sc-for list="{{ onglets }}" as="t" hint-placeholder-count="3">
+                  <button type="button" role="tab" aria-selected="{{ t.actif }}" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                </sc-for>
+              </span>
+              <span style="flex:1"></span>
+              <span style="display:flex;align-items:center;gap:var(--espace-2)">
+                <button type="button" style="{{ styleSecondaire }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1 4h14M4 8h8M7 12h2"></path></svg>
+                  Filtres
+                </button>
+                <button type="button" style="{{ styleSecondaire }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M2 13h12"></path></svg>
+                  Exporter
+                </button>
+              </span>
+            </div>
+
+            <div style="{{ styleGrilleKpi }}">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div class="ul-grain" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                  <div style="display:flex;align-items:flex-start;gap:var(--espace-3)">
+                    <span style="{{ k.tuile }}" dangerouslySetInnerHTML="{{ k.icone }}"></span>
+                    <span style="flex:1;min-width:0">
+                      <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);text-transform:uppercase;letter-spacing:.07em;font-weight:600;color:var(--texte-tertiaire)">{{ k.label }}</span>
+                      <span style="display:block;margin-top:4px;font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--texte-primaire)">{{ k.valeur }}</span>
+                      <span style="display:block;margin-top:3px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ k.aide }}</span>
+                      <span style="{{ k.tendanceStyle }}">
+                        <span style="display:flex;width:12px;height:12px" dangerouslySetInnerHTML="{{ k.tendanceIcone }}"></span>
+                        {{ k.tendance }}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div class="ul-grain-fine" style="background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <span style="width:26px;height:26px;flex-shrink:0;border-radius:var(--radius-md);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="10" height="12" rx="1.5"></rect><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"></path></svg>
+                </span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.012em;line-height:1.2;color:var(--texte-primaire)">Consultations du jour</span>
+                  <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">6 rendez-vous · 2 en téléconsultation</span>
+                </span>
+                <span style="flex-shrink:0;font-family:var(--font-mono);font-size:var(--font-size-overline);padding:2px 7px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface-2);color:var(--texte-secondaire)">6</span>
+              </div>
+              <div style="overflow-x:auto">
+                <table style="width:100%;min-width:560px;border-collapse:collapse">
+                  <thead>
+                    <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                      <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="5">
+                        <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                      </sc-for>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ lignes }}" as="l" hint-placeholder-count="6">
+                      <tr style="{{ l.style }}" style-hover="background:var(--ap-50)">
+                        <td style="padding:var(--espace-2) var(--espace-4);font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ l.heure }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:flex;align-items:center;gap:var(--espace-2);min-width:0">
+                            <span style="width:26px;height:26px;flex-shrink:0;border-radius:9999px;background:var(--ton-bleu-fond);color:var(--ton-bleu-icone);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-overline);font-weight:700">{{ l.initiales }}</span>
+                            <span style="min-width:0">
+                              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap">{{ l.patient }}</span>
+                              <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ l.ref }}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);font-size:var(--font-size-body-sm);color:var(--texte-secondaire)">{{ l.motif }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="{{ l.pilule }}">
+                            <span style="{{ l.point }}"></span>{{ l.statut }}
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-primaire);white-space:nowrap">{{ l.montant }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-2) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="display:flex;align-items:center;gap:var(--espace-2)">
+                  <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap">Lignes par page</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface);font-size:var(--font-size-caption);color:var(--texte-primaire)">
+                    10
+                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
+                  </span>
+                </span>
+                <span style="flex:1;text-align:center;font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap">1–6 sur 6 consultations</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-for list="{{ pagination }}" as="p" hint-placeholder-count="4">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                  <span style="min-width:56px;text-align:center;font-size:var(--font-size-caption);font-weight:500;color:var(--texte-secondaire)">1 / 1</span>
+                  <sc-for list="{{ paginationSuite }}" as="p" hint-placeholder-count="2">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                </span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleKpi }}">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4);display:flex;gap:var(--espace-3)">
+                  <span style="{{ styleOs }}width:38px;height:38px;border-radius:var(--radius-lg);flex-shrink:0"></span>
+                  <span style="flex:1">
+                    <span style="{{ styleOs }}display:block;width:60%;height:9px;border-radius:3px"></span>
+                    <span style="{{ styleOs }}display:block;width:45%;height:20px;margin-top:8px;border-radius:4px"></span>
+                    <span style="{{ styleOs }}display:block;width:70%;height:9px;margin-top:8px;border-radius:3px"></span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ six }}" as="n" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;gap:var(--espace-4);padding:var(--espace-2) var(--espace-4);border-bottom:1px solid var(--bordure-legere);height:40px;box-sizing:border-box">
+                  <span style="{{ styleOs }}width:44px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:26px;height:26px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:150px;height:9px;border-radius:3px"></span>
+                  <span style="flex:1"></span>
+                  <span style="{{ styleOs }}width:84px;height:16px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:64px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+            <p style="display:flex;align-items:center;gap:8px;margin:0;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+              <span style="width:13px;height:13px;border-radius:50%;border:2px solid var(--bordure-normale);border-top-color:var(--ap-500);animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+              Chargement de votre journée…
+            </p>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estVide }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl);color:var(--texte-secondaire)">
+            <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="10" height="12" rx="1.5"></rect><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"></path></svg>
+            </span>
+            <span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Aucune consultation aujourd'hui</span>
+              <span style="display:block;margin-top:4px;max-width:400px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-tertiaire)">Votre journée est libre. Ouvrez vos disponibilités pour que les patients puissent vous adresser une demande.</span>
+            </span>
+            <button type="button" style="{{ stylePrimaire }}margin-top:4px;" style-hover="background:var(--ap-600)">Ouvrir mes disponibilités</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--erreur-texte)">Vos données n'ont pas pu être chargées</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--erreur-texte)">Le serveur n'a pas répondu dans le délai imparti. Votre session reste ouverte — rien n'a été perdu.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--erreur-fond);border:1px solid var(--erreur-bordure);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher votre journée</span>
+                <span style="display:block;margin-top:4px;max-width:400px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-tertiaire)">Vérifiez votre connexion, puis réessayez. Si le problème persiste, prévenez l'administration ULAMU.</span>
+              </span>
+              <span style="display:flex;gap:var(--espace-2);margin-top:4px">
+                <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+                  Réessayer
+                </button>
+                <button type="button" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">Signaler l'incident</button>
+              </span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ tiroirOuvert }}">
+      <div onClick="{{ fermerTiroir }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.40);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)"></div>
+    </sc-if>
+    <sc-if value="{{ tiroirOuvert }}">
+      <aside role="dialog" aria-modal="true" aria-label="Notifications" class="ul-grain" style="{{ styleTiroir }}">
+        <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:12px var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 80%, transparent)">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2a5 5 0 0 0-5 5v2l-1 2h12l-1-2V7a5 5 0 0 0-5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"></path></svg>
+          </span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">Notifications</span>
+            <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">3 non lues</span>
+          </span>
+          <button type="button" onClick="{{ fermerTiroir }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+        <div style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bordure-legere)">
+          <button type="button" style="{{ stylePuce }}" style-hover="background:var(--fond-input)">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 9l3 3 6-6M6 12l2 2 7-7"></path></svg>
+            Tout marquer comme lu
+          </button>
+          <span style="flex:1"></span>
+          <button type="button" style="{{ stylePuce }}" style-hover="background:var(--fond-input)">Sélectionner</button>
+        </div>
+        <div style="flex:1;overflow-y:auto">
+          <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="3">
+            <div role="button" tabindex="0" style="{{ n.style }}" style-hover="background:var(--ap-100)">
+              <span style="{{ n.tuile }}" dangerouslySetInnerHTML="{{ n.icone }}"></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:flex;align-items:baseline;gap:8px">
+                  <sc-if value="{{ n.nonLu }}">
+                    <span aria-hidden="true" style="width:6px;height:6px;flex-shrink:0;align-self:center;border-radius:9999px;background:var(--ap-500)"></span>
+                  </sc-if>
+                  <span style="flex:1;min-width:0;font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.titre }}</span>
+                  <span style="flex-shrink:0;font-size:var(--font-size-overline);color:var(--texte-tertiaire);font-variant-numeric:tabular-nums">{{ n.temps }}</span>
+                </span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-label);line-height:1.4;color:var(--texte-secondaire)">{{ n.message }}</span>
+              </span>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0;align-self:center"><path d="M6 4l4 4-4 4"></path></svg>
+            </div>
+          </sc-for>
+        </div>
+      </aside>
+    </sc-if>
+
+    <sc-if value="{{ paletteOuverte }}">
+      <div onClick="{{ fermerPalette }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ paletteOuverte }}">
+      <div role="dialog" aria-modal="true" aria-label="Recherche globale" onClick="{{ stop }}" class="ul-grain" style="{{ stylePalette }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 var(--espace-4);height:46px;border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <input type="text" value="{{ valeurPalette }}" onChange="{{ majPalette }}" placeholder="Rechercher…" style="flex:1;border:0;outline:none;background:transparent;font-size:var(--font-size-body-lg);color:var(--texte-primaire)" />
+          <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:2px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface-2);color:var(--texte-tertiaire)">Échap</span>
+        </div>
+        <div style="padding:var(--espace-1);max-height:320px;overflow-y:auto">
+          <sc-for list="{{ resultats }}" as="r" hint-placeholder-count="4">
+            <div style="{{ r.style }}">
+              <sc-if value="{{ r.estEntete }}">
+                <span style="display:block;padding:8px 10px 4px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ r.label }}</span>
+              </sc-if>
+              <sc-if value="{{ r.estItem }}">
+                <span style="display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--radius-md);background:{{ r.fond }}">
+                  <span style="display:flex;flex-shrink:0;color:{{ r.couleurIcone }}" dangerouslySetInnerHTML="{{ r.icone }}"></span>
+                  <span style="flex:1;min-width:0;font-family:{{ r.police }};font-size:var(--font-size-body-sm);color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</span>
+                  <span style="flex-shrink:0;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ r.meta }}</span>
+                </span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">B1 · Échelle CMS-SARIS : titre de page 18 · KPI 22 · titre de carte 14 · corps 13 · caption 11 · overline 10 · rayons 6/8/10 · topbar 48 · rail 68 → 264 au survol · grain fort sur le fond, fin sur les surfaces · couleurs ULAMU intactes</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+/* Géométries reprises au caractère près du catalogue CG-10 §03 (Lucide). */
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  shield: '<path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"/><path d="M5.5 8l2 2 3-3"/>',
+  stetho: '<path d="M3.3 1.3H2.7a1.3 1.3 0 0 0-1.3 1.3v3.4a4 4 0 0 0 4 4 4 4 0 0 0 4-4V2.6a1.3 1.3 0 0 0-1.3-1.3H7.4"/><path d="M5.4 10v.7a4 4 0 0 0 4 4 4 4 0 0 0 4-4V8"/><circle cx="13.4" cy="6.6" r="1.4" fill="currentColor"/>',
+  message: '<path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 2V4a1 1 0 0 1 1-1z"/>',
+  clipboard: '<rect x="3" y="3" width="10" height="12" rx="1.5"/><path d="M6 3V2h4v1M6 7h4M6 10h4M6 13h2"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  trendingDown: '<path d="M2 5l4 4 3-3 5 6"/><path d="M10 12h4V8"/>',
+  minus: '<path d="M3 8h10"/>',
+  /* « Mes paramètres » : le glyphe `settings` de CG-10 (cercle + 8 rayons) se lit comme un
+     soleil à 17 px dans le rail — remplacé par `user-patient` du même catalogue. */
+  settings: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  clock: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  wallet: '<path d="M2 14h12M5 14V9M8 14V5M11 14V7"/>',
+  check: '<path d="M2 9l4 4 8-8"/>',
+  checkCircle: '<circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  activity: '<path d="M2 8h2l2-5 3 10 2-5h3"/>',
+  ordonnance: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/><path d="M12 10l-1.5 2h2.5L11.5 14"/>',
+  oeil: '<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>',
+  oeilBarre: '<path d="M2 2l12 12"/><path d="M6.3 3.4A7.5 7.5 0 0 1 8 3.2c4.5 0 7 4.8 7 4.8a13 13 0 0 1-2.2 2.8M4.2 4.7A13 13 0 0 0 1 8s2.5 4.8 7 4.8c.7 0 1.3-.1 1.9-.3"/><path d="M6.6 6.6a2 2 0 0 0 2.8 2.8"/>',
+  premier: '<path d="M11 4L7 8l4 4M5 4v8"/>',
+  precedent: '<path d="M10 4L6 8l4 4"/>',
+  suivant: '<path d="M6 4l4 4-4 4"/>',
+  dernier: '<path d="M5 4l4 4-4 4M11 4v8"/>',
+};
+
+const GROUPES = [
+  { titre: 'Principal', items: [
+    { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+    { cle: 'verification', label: 'Ma vérification', icone: G.shield },
+  ] },
+  { titre: 'Mon activité', items: [
+    { cle: 'vitrine', label: 'Ma vitrine', icone: G.stetho },
+    { cle: 'demandes', label: 'Demandes', icone: G.message, badge: '4' },
+    { cle: 'consultations', label: 'Consultations', icone: G.clipboard },
+    { cle: 'gains', label: 'Mes gains', icone: G.trending },
+  ] },
+  { titre: 'Compte', items: [
+    { cle: 'parametres', label: 'Mes paramètres', icone: G.settings },
+  ] },
+];
+const TITRES = {
+  dashboard: 'Tableau de bord', verification: 'Ma vérification', vitrine: 'Ma vitrine',
+  demandes: 'Demandes', consultations: 'Consultations', gains: 'Mes gains', parametres: 'Mes paramètres',
+};
+
+const KPIS = [
+  { label: 'Demandes en attente', valeur: '4', aide: '2 expirent dans moins de 2 h', tendance: '+1 depuis hier', dir: 'up', ton: 'ambre', icone: G.clock },
+  { label: 'Consultations du jour', valeur: '6', aide: '2 en téléconsultation', tendance: '+2 vs hier', dir: 'up', ton: 'accent', icone: G.stetho },
+  { label: 'Gains du mois', valeur: '486 500', aide: 'XAF · versés le 5 septembre', tendance: '+12 % vs juillet', dir: 'up', ton: 'emeraude', icone: G.wallet },
+  { label: 'Taux de réponse', valeur: '92 %', aide: 'Sur les 30 derniers jours', tendance: '−3 pts', dir: 'down', ton: 'neutral', icone: G.activity },
+];
+
+const LIGNES = [
+  { heure: '08:30', initiales: 'PN', patient: 'Patient suivi', ref: 'PAT-8821-BZV', motif: 'Contrôle tensionnel', statut: 'Terminée', ton: 'success', montant: '15 000 XAF' },
+  { heure: '09:15', initiales: 'MK', patient: 'Patient suivi', ref: 'PAT-4471-BZV', motif: 'Douleurs thoraciques', statut: 'Terminée', ton: 'success', montant: '25 000 XAF' },
+  { heure: '11:00', initiales: 'AB', patient: 'Patient suivi', ref: 'PAT-9910-BZV', motif: 'Résultats d\u2019analyses', statut: 'En cours', ton: 'info', montant: '15 000 XAF' },
+  { heure: '13:45', initiales: 'LO', patient: 'Patient suivi', ref: 'PAT-3301-BZV', motif: 'Renouvellement d\u2019ordonnance', statut: 'À venir', ton: 'neutral', montant: '10 000 XAF' },
+  { heure: '15:30', initiales: 'GT', patient: 'Patient suivi', ref: 'PAT-7754-BZV', motif: 'Téléconsultation · Talangaï', statut: 'À venir', ton: 'neutral', montant: '12 500 XAF' },
+  { heure: '17:00', initiales: 'NS', patient: 'Patient suivi', ref: 'PAT-6620-BZV', motif: 'Bilan post-opératoire', statut: 'Paiement attendu', ton: 'warning', montant: '20 000 XAF' },
+];
+
+const NOTIFS = [
+  { titre: 'Nouvelle demande de consultation', message: 'Patient PAT-4471-BZV · la poignée de main expire dans 1 h 42.', temps: '4 min', niveau: 'info', lu: false },
+  { titre: 'Versement reçu', message: '142 500 XAF crédités · Mobile Money · référence VER-2026-0884.', temps: '1 h', niveau: 'succes', lu: false },
+  { titre: 'Pièce de vérification à renouveler', message: 'Attestation d\u2019inscription à l\u2019Ordre — expire le 30 septembre 2026.', temps: 'hier', niveau: 'alerte', lu: false },
+  { titre: 'Compte-rendu enregistré', message: 'Consultation CSL-2026-04120 · le patient a été notifié.', temps: '2 j', niveau: 'succes', lu: true },
+];
+
+const TONS = {
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)'],
+  accent: ['var(--ap-50)', 'var(--ap-600)'],
+  success: ['var(--succes-fond)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-accent)'],
+  ambre: ['var(--ton-ambre-fond)', 'var(--ton-ambre-icone)'],
+  emeraude: ['var(--ton-emeraude-fond)', 'var(--ton-emeraude-icone)'],
+  bleu: ['var(--ton-bleu-fond)', 'var(--ton-bleu-icone)'],
+};
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+  accent: ['var(--ap-50)', 'var(--ap-700)', 'var(--ap-500)'],
+};
+
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'dashboard', onglet: 'jour',
+    survol: false, menuOuvert: false, navMobile: false, tiroir: false, palette: false,
+    rideau: false, filtre: '', recherche: 'ord', largeur: 1440,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((entrees) => {
+      const l = Math.round(entrees[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() { if (this.observer) this.observer.disconnect(); }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  seg(actif) {
+    return 'padding:4px 10px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 30, px: 12, fs: 'var(--font-size-body-sm)', gap: 5 }
+            : taille === 'lg' ? { h: 44, px: 22, fs: 'var(--font-size-body-lg)', gap: 7 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = {
+      primary: ['var(--ap-500)', '#fff', 'transparent'],
+      secondary: ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'],
+      ghost: ['transparent', 'var(--texte-secondaire)', 'transparent'],
+      danger: ['var(--erreur-accent)', '#fff', 'transparent'],
+    }[variante];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const estCompact = L < 1024;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+    ];
+
+    const enTete = (droite) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + (droite ? 'right' : 'left') +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;position:sticky;top:0;z-index:5;background:var(--fond-surface-2)';
+
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    const nav = (item, groupeIndex) => {
+      const actif = this.state.navActif === item.cle;
+      const ouvert = sidebarOuverte;
+      return {
+        label: item.label,
+        titre: ouvert ? '' : item.label,
+        badge: item.badge,
+        badgeVisible: ouvert && !!item.badge,
+        pastilleRail: !ouvert && !!item.badge,
+        labelVisible: ouvert,
+        actifOuvert: actif && ouvert,
+        icone: { __html: SVG(17, actif ? '2' : '1.5', item.icone) },
+        /* Rail : cible carrée de 40×38 centrée dans les 68 px, avec 14 px de marge de
+           chaque côté — l'anneau de focus (3 px + 2 px de décalage) tient sans être
+           rogné par l'`overflow:hidden` de la barre, et le survol se voit vraiment. */
+        style: 'position:relative;display:flex;align-items:center;width:' + (ouvert ? '100%' : '40px') +
+          ';height:' + (ouvert ? 'auto' : '38px') +
+          ';justify-content:' + (ouvert ? 'flex-start' : 'center') + ';gap:' + (ouvert ? 'var(--espace-2)' : '0') +
+          ';padding:' + (ouvert ? '8px var(--espace-3)' : '0') + ';margin:' + (ouvert ? '0' : '2px 14px') +
+          ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' + (actif ? '600' : '500') +
+          ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+          ';background:' + (actif ? 'var(--ap-50)' : 'transparent') +
+          ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+        onClick: () => ULAMU_ALLER(item.label, () => set({ navActif: item.cle, menuOuvert: false })),
+      };
+    };
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : estCompact ? 'tablette' : 'bureau'),
+      estMobile, estCompact,
+      sidebarOuverte,
+      estPlein: etat === 'plein',
+      estChargement: etat === 'chargement',
+      estVide: etat === 'vide',
+      estErreur: etat === 'erreur',
+      quatre: [1, 2, 3, 4], six: [1, 2, 3, 4, 5, 6],
+      styleOs: OS,
+      pageTitre: TITRES[this.state.navActif] || 'Tableau de bord',
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      styleCadre: 'display:flex;justify-content:center',
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;' +
+        'width:' + (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;' +
+        'background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));' +
+        'border-right:1px solid var(--glass-bordure);user-select:none;' +
+        'box-shadow:' + ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';' +
+        'transform:' + (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') + ';' +
+        'transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:240px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: GROUPES.map((g, gi) => ({
+        titre: g.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: g.items.map((i) => nav(i, gi)),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) +
+        'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      rideauVisible: L >= 560,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire);transition:border-color var(--dur-fast) linear',
+
+      rideau: this.state.rideau,
+      iconeRideau: { __html: SVG(14, '1.5', this.state.rideau ? G.oeilBarre : G.oeil) },
+      styleRail: 'position:relative;width:32px;height:18px;border-radius:9999px;flex-shrink:0;transition:background .18s;background:' +
+        (this.state.rideau ? 'var(--ap-500)' : 'var(--bordure-normale)'),
+      styleCurseur: 'position:absolute;top:2px;left:' + (this.state.rideau ? '16px' : '2px') +
+        ';width:14px;height:14px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.28);transition:left .18s',
+
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      actionsEntete: L >= 720,
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrilleKpi: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' +
+        (L < 620 ? 1 : L < 900 ? 2 : 4) + ',minmax(0,1fr))',
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaire: this.bouton('secondary', 'sm'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleIconBouton: iconBouton,
+      stylePuce: 'display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1px solid var(--bordure-legere);border-radius:9999px;background:var(--fond-surface-2);font-size:var(--font-size-caption);font-weight:600;color:var(--texte-secondaire);transition:background var(--dur-fast) linear',
+
+      valeurFiltre: this.state.filtre,
+      majFiltre: (e) => set({ filtre: e.target.value }),
+      onglets: [
+        { k: 'jour', label: 'Aujourd\u2019hui' }, { k: 'semaine', label: 'Semaine' }, { k: 'mois', label: 'Mois' },
+      ].map((o) => ({ label: o.label, actif: this.state.onglet === o.k, style: this.seg(this.state.onglet === o.k), onClick: () => set({ onglet: o.k }) })),
+
+      kpis: KPIS.map((k) => {
+        const [bg, couleur] = TONS[k.ton];
+        const tonTendance = k.dir === 'up' ? 'var(--succes-accent)' : k.dir === 'down' ? 'var(--erreur-accent)' : 'var(--texte-tertiaire)';
+        return {
+          label: k.label, valeur: k.valeur, aide: k.aide, tendance: k.tendance,
+          icone: { __html: SVG(18, '1.5', k.icone) },
+          tuile: 'width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;background:' + bg + ';color:' + couleur,
+          tendanceIcone: { __html: SVG(12, '2', k.dir === 'up' ? G.trending : k.dir === 'down' ? G.trendingDown : G.minus) },
+          tendanceStyle: 'display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:var(--font-size-caption);font-weight:600;color:' + tonTendance,
+        };
+      }),
+
+      colonnes: ['Heure', 'Patient', 'Motif', 'Statut', 'Honoraires'].map((c, i) => ({ label: c, style: enTete(i === 4) })),
+      lignes: LIGNES.map((l, k) => {
+        const [bg, fg, dot] = PILULES[l.ton];
+        return {
+          ...l,
+          style: 'height:40px;background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+            ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em;line-height:1.4;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+        };
+      }),
+
+      pagination: [
+        { aria: 'Première page', icone: { __html: SVG(13, '1.5', G.premier) } },
+        { aria: 'Page précédente', icone: { __html: SVG(13, '1.5', G.precedent) } },
+      ].map((p) => ({ ...p, style: iconBouton + 'width:26px;height:26px;opacity:.45;cursor:not-allowed;' })),
+      paginationSuite: [
+        { aria: 'Page suivante', icone: { __html: SVG(13, '1.5', G.suivant) } },
+        { aria: 'Dernière page', icone: { __html: SVG(13, '1.5', G.dernier) } },
+      ].map((p) => ({ ...p, style: iconBouton + 'width:26px;height:26px;opacity:.45;cursor:not-allowed;' })),
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      basculerRideau: () => set({ rideau: !this.state.rideau }),
+
+      tiroirOuvert: this.state.tiroir,
+      ouvrirTiroir: () => set({ tiroir: true, menuOuvert: false }),
+      fermerTiroir: () => set({ tiroir: false }),
+      styleTiroir: 'position:absolute;top:0;right:0;bottom:0;z-index:1001;width:' + Math.min(420, Math.max(300, L - 40)) +
+        'px;display:flex;flex-direction:column;background-color:var(--fond-surface);border-left:1px solid var(--bordure-legere);box-shadow:-12px 0 40px rgba(15,23,42,.18);animation:ul-drawer-in .18s var(--ease-out)',
+      notifications: NOTIFS.map((n) => {
+        const [bg, couleur] = TONS[n.niveau === 'succes' ? 'success' : n.niveau === 'alerte' ? 'warning' : 'info'];
+        const icone = n.niveau === 'succes' ? G.checkCircle : n.niveau === 'alerte' ? G.alerte : G.message;
+        return {
+          titre: n.titre, message: n.message, temps: n.temps,
+          icone: { __html: SVG(15, '1.5', icone) },
+          tuile: 'width:30px;height:30px;flex-shrink:0;margin-top:1px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:' + bg + ';color:' + couleur,
+          /* Non lu : une pastille devant le titre, pas de liseré de bord. */
+          nonLu: !n.lu,
+          style: 'position:relative;width:100%;display:flex;gap:11px;align-items:flex-start;padding:12px var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:' +
+            (n.lu ? 'transparent' : 'var(--ap-50)') + ';transition:background var(--dur-fast) linear',
+        };
+      }),
+
+      paletteOuverte: this.state.palette,
+      ouvrirPalette: () => set({ palette: true, menuOuvert: false }),
+      fermerPalette: () => set({ palette: false }),
+      stylePalette: 'position:absolute;top:72px;left:50%;transform:translateX(-50%);z-index:1001;width:' +
+        Math.min(560, Math.max(280, L - 48)) + 'px;display:flex;flex-direction:column;background-color:var(--fond-surface);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      valeurPalette: this.state.recherche,
+      majPalette: (e) => set({ recherche: e.target.value }),
+      resultats: [
+        { entete: 'Ordonnances' },
+        { label: 'ORD-2026-00412-BZV', meta: 'Bacongo · 12 août', icone: G.ordonnance, mono: true, actif: true },
+        { label: 'ORD-2026-00398-BZV', meta: 'Poto-Poto · 09 août', icone: G.ordonnance, mono: true },
+        { entete: 'Aller à' },
+        { label: 'Demandes en attente', meta: '⌘4', icone: G.message },
+        { label: 'Mes gains', meta: '⌘6', icone: G.trending },
+      ].map((r) => ({
+        estEntete: !!r.entete,
+        estItem: !r.entete,
+        label: r.entete || r.label,
+        meta: r.meta || '',
+        police: r.mono ? 'var(--font-mono)' : 'var(--font-body)',
+        fond: r.actif ? 'var(--fond-surface-2)' : 'transparent',
+        couleurIcone: r.actif ? 'var(--ap-600)' : 'var(--texte-tertiaire)',
+        icone: { __html: r.icone ? SVG(14, '1.5', r.icone) : '' },
+        style: 'display:block',
+      })),
+
+      stop: (e) => e.stopPropagation(),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

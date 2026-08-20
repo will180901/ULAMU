@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-11 États &amp; Accessibilité 
+
+
+ 
+ 
+
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-11 États &amp; Accessibilité
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Design System · Module CG-11
+
+ 
+États &amp; Accessibilité
+
+ 
+Catalogue exhaustif des 8 états UI par composant, système de focus ring unifié, ratios de contraste WCAG vérifiés, navigation clavier complète avec ordre de tabulation, attributs ARIA par composant, et comportement responsive de chaque élément selon les 6 breakpoints Ulamu.
+
+ 
+
+
+ <!-- ══ 01 CATALOGUE DES ÉTATS ══ -->
+ 
+ 
+01 — Catalogue des états UI
+ 8 états × 6 composants · matrice de référence complète 
+
+ 
+
+ 
+
+ 
+Matrice états / composants — référence de conformité
+
+ 
+
+ 
+ | 
+ 
+
+ | Composant | 
+ | Default | 
+ | Hover | 
+ | Focus | 
+ | Active | 
+ | Disabled | 
+ | Error | 
+ | Loading | 
+ | Empty | 
+ 
+
+ | 
+ 
+ 
+
+ | Bouton primaire | 
+ | 
+ accent-500 
+ | 
+ | 
+ accent-600 ↑ 
+ | 
+ | 
+ ring 3px 
+ | 
+ | 
+ scale .97 
+ | 
+ | 
+ opacity .4 
+ | 
+ | 
+ — 
+ | 
+ | 
+ spinner 
+ | 
+ | 
+ — 
+ | 
+ 
+
+ 
+
+ | Bouton secondaire | 
+ | 
+ bg-muted 
+ | 
+ | 
+ bg-subtle 
+ | 
+ | 
+ ring 3px 
+ | 
+ | 
+ scale .97 
+ | 
+ | 
+ opacity .4 
+ | 
+ | 
+ — 
+ | 
+ | 
+ spinner 
+ | 
+ | 
+ — 
+ | 
+ 
+
+ 
+
+ | Input / Champ | 
+ | 
+ border-default 
+ | 
+ | 
+ border-strong 
+ | 
+ | 
+ border-accent + ring 
+ | 
+ | 
+ avec valeur 
+ | 
+ | 
+ bg-muted .5 
+ | 
+ | 
+ border-error + ring 
+ | 
+ | 
+ — 
+ | 
+ | 
+ placeholder 
+ | 
+ 
+
+ 
+
+ | Nav item sidebar | 
+ | 
+ transparent 
+ | 
+ | 
+ bg-muted 
+ | 
+ | 
+ ring 3px 
+ | 
+ | 
+ accent bg 
+ | 
+ | 
+ opacity .4 
+ | 
+ | 
+ — 
+ | 
+ | 
+ — 
+ | 
+ | 
+ — 
+ | 
+ 
+
+ 
+
+ | Card | 
+ | 
+ shadow-sm 
+ | 
+ | 
+ shadow-md ↑1px 
+ | 
+ | 
+ ring 3px 
+ | 
+ | 
+ scale .98 
+ | 
+ | 
+ opacity .4 
+ | 
+ | 
+ border-error 
+ | 
+ | 
+ skeleton 
+ | 
+ | 
+ empty state 
+ | 
+ 
+
+ 
+
+ | Toggle / Switch | 
+ | 
+ bg-muted 
+ | 
+ | 
+ border-strong 
+ | 
+ | 
+ ring 3px 
+ | 
+ | 
+ accent ON 
+ | 
+ | 
+ opacity .4 
+ | 
+ | 
+ — 
+ | 
+ | 
+ — 
+ | 
+ | 
+ — 
+ | 
+ 
+
+ 
+ 
+ 
+
+
+ <!-- Live demos -->
+ 
+
+ 
+Rendu live de chaque état — Boutons &amp; Inputs
+
+ 
+
+
+ <!-- BUTTONS -->
+ 
+
+ 
+Boutons — 8 états
+
+ 
+
+ 
+
+ <button>Confirmer</button>
+ 
+Default
+
+ 
+
+ 
+
+ <button>Confirmer</button>
+ 
+Hover
+
+ 
+
+ 
+
+ <button>Confirmer</button>
+ 
+Focus
+
+ 
+
+ 
+
+ <button>Confirmer</button>
+ 
+Active
+
+ 
+
+ 
+
+ <button>Confirmer</button>
+ 
+Disabled
+
+ 
+
+ 
+
+ <button>
+Chargement</button>
+ 
+Loading
+
+ 
+
+ 
+
+ <button>Annuler</button>
+ 
+Secondary
+
+ 
+
+ 
+
+ <button>Voir plus</button>
+ 
+Ghost
+
+ 
+
+ 
+
+ 
+
+
+ <!-- INPUTS -->
+ 
+
+ 
+Inputs — 8 états
+
+ 
+
+ 
+
+ <input>
+ 
+Default
+
+ 
+
+ 
+
+ <input>
+ 
+Hover
+
+ 
+
+ 
+
+ <input>
+ 
+Focus
+
+ 
+
+ 
+
+ <input>
+ 
+Filled
+
+ 
+
+ 
+
+ 
+
+ <input>
+ 
+ 
+
+ 
+Error
+
+ 
+
+ 
+
+ 
+
+ <input>
+ 
+ 
+
+ 
+Success
+
+ 
+
+ 
+
+ <input>
+ 
+Disabled
+
+ 
+
+ 
+
+ <input>
+ 
+Empty
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 02 FOCUS RING ══ -->
+ 
+ 
+02 — Système de focus ring
+ Spécification unique · :focus-visible · WCAG 2.4.7 · jamais outline:none 
+
+ 
+
+ 
+
+
+ <!-- Spec cards -->
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <button>Valider</button>
+ ✓ Conforme 
+ 
+
+ 
+
+ 
+
+ 
+Focus ring standard ★
+
+ 
+outline: 3px solid rgba(39,86,166,0.30) outline-offset: 2px :focus-visible uniquement
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <button>Valider</button>
+ ✕ Non conforme 
+ 
+
+ 
+
+ 
+
+ 
+Ring trop fin / trop serré
+
+ 
+outline: 2px solid — trop fin outline-offset: 0px — collé au composant Lisibilité dégradée
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <button>Valider</button>
+ ✕ WCAG 2.4.7 FAIL 
+ 
+
+ 
+
+ 
+
+ 
+outline:none sans alternative
+
+ 
+Violation WCAG 2.4.7 Navigation clavier impossible Jamais autorisé sur Ulamu
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <input>
+ ✓ Conforme 
+ 
+
+ 
+
+ 
+
+ 
+Input au focus
+
+ 
+border-color: --accent-500 box-shadow: 0 0 0 3px rgba(39,86,166,0.12) Combinaison bordure + halo
+
+ 
+
+ 
+
+
+ 
+
+
+ <!-- Keyboard navigation simulation -->
+ 
+Simulation navigation clavier — cliquez Tab pour parcourir
+
+ 
+
+ 
+
+ 
+
+ 
+Tableau de bord
+Navigation principale
+
+ Tab 1 
+ ↵ actif 
+ 
+
+ 
+
+ 
+
+ 
+Patients
+Liste des dossiers
+
+ Tab 2 
+ ↵ actif 
+ 
+
+ 
+
+ 
+
+ 
+Rendez-vous
+Planning médical
+
+ Tab 3 
+ ↵ actif 
+ 
+
+ 
+
+ 
+
+ 
+Paramètres
+Configuration compte
+
+ Tab 4 
+ ↵ actif 
+ 
+
+ 
+Cliquez sur un élément pour voir le focus ring Ulamu · outline 3px rgba(39,86,166,0.30) + offset 2px
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 03 CONTRASTE WCAG ══ -->
+ 
+ 
+03 — Ratios de contraste WCAG
+ WCAG 2.1 AA minimum · ratios vérifiés sur les deux thèmes 
+
+ 
+
+ 
+
+
+ 
+
+
+ <!-- text-primary / bg-base LIGHT -->
+ 
+
+ 
+
+ 
+Titre médical
+
+ 
+Corps de texte standard
+
+ 
+
+ 
+
+ 
+16.7:1
+
+ ✓ AAA · Texte normal 
+ 
+text-primary #111112 bg-base #FAFAFA · Mode clair
+
+ 
+
+ 
+
+
+ <!-- text-primary / bg-base DARK -->
+ 
+
+ 
+
+ 
+Titre médical
+
+ 
+Corps de texte standard
+
+ 
+
+ 
+
+ 
+18.1:1
+
+ ✓ AAA · Texte normal 
+ 
+text-primary #F4F4F5 bg-base #111113 · Mode sombre
+
+ 
+
+ 
+
+
+ <!-- text-secondary / bg-elevated LIGHT -->
+ 
+
+ 
+
+ 
+Description
+
+ 
+Métadonnées patient
+
+ 
+
+ 
+
+ 
+9.7:1
+
+ ✓ AA · Texte normal 
+ 
+text-secondary #3F3F46 bg-elevated #FFFFFF · Mode clair
+
+ 
+
+ 
+
+
+ <!-- text-secondary / bg-elevated DARK -->
+ 
+
+ 
+
+ 
+Description
+
+ 
+Métadonnées patient
+
+ 
+
+ 
+
+ 
+4.8:1
+
+ ✓ AA · Texte normal 
+ 
+text-secondary #A1A1AA bg-elevated #2A2A2F · Mode sombre
+
+ 
+
+ 
+
+
+ <!-- white / accent-500 -->
+ 
+
+ 
+
+ 
+Valider
+
+ 
+Texte bouton primaire
+
+ 
+
+ 
+
+ 
+5.9:1
+
+ ✓ AA · Texte normal 
+ 
+white #FFFFFF accent-500 #2756A6 · Bouton primaire
+
+ 
+
+ 
+
+
+ <!-- text-tertiary — notice -->
+ 
+
+ 
+
+ 
+Il y a 5 min
+
+ 
+Timestamps · hints
+
+ 
+
+ 
+
+ 
+4.6:1
+
+ ✓ AA · Texte &gt;18px ou gras 
+ 
+text-tertiary #71717A bg-base #FAFAFA · Texte secondaire ⚠ Usage : taille min 14px Bold 
+
+ 
+
+ 
+
+
+ 
+
+
+ <!-- Checker grid -->
+ 
+
+ 
+Vérificateur de combinaisons fréquentes dans Ulamu
+
+ 
+
+
+ 
+
+ 
+
+ 
+Aa
+
+ 
+Bb
+
+ 
+
+ 
+
+ 
+Texte sur bg-elevated
+
+ ✓ AA+ 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Aa
+
+ 
+
+ 
+
+ 
+Blanc sur accent-500
+
+ ✓ AA 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Confirmé
+
+ 
+
+ 
+
+ 
+Success text / bg
+
+ ✓ AA 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Erreur
+
+ 
+
+ 
+
+ 
+Error text / bg
+
+ ✓ AA 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Alerte
+
+ 
+
+ 
+
+ 
+Warning text / bg
+
+ ✓ AA 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Désactivé
+
+ 
+
+ 
+
+ 
+Disabled / bg-muted
+
+ — Non requis 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Lien
+
+ 
+
+ 
+
+ 
+accent-500 / bg-elevated
+
+ ✓ AA 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Hint
+
+ 
+
+ 
+
+ 
+text-tertiary / bg-base
+
+ ⚠ Min 14px 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 04 NAVIGATION CLAVIER ══ -->
+ 
+ 
+04 — Navigation clavier
+ Tab order · raccourcis globaux · comportement par composant 
+
+ 
+
+ 
+
+
+ <!-- Tab order diagram -->
+ 
+Ordre de tabulation — structure de page Ulamu
+
+ 
+
+ 
+
+ <!-- Topbar -->
+ 
+
+ 
+1
+
+ 
+
+ 
+
+ 
+2
+
+ 
+3
+
+ 
+
+ <!-- Layout -->
+ 
+
+ 
+
+ 
+4
+
+ 
+5
+
+ 
+6
+
+ 
+
+ 
+7
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+8
+
+ 
+9
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Les numéros indiquent l'ordre de tabulation naturel (flux DOM)
+
+ 
+
+
+ <!-- Keyboard shortcuts -->
+ 
+
+ 
+Raccourcis globaux Ulamu
+
+ 
+
+ 
+ ⌘ K 
+
+ 
+Ouvrir la recherche globale (patients, médecins, ordonnances)
+
+ 
+
+ 
+
+ 
+ Esc 
+
+ 
+Fermer la modale, le drawer, le dropdown ou le menu contextuel actif
+
+ 
+
+ 
+
+ 
+ Tab 
+
+ 
+Aller à l'élément interactif suivant dans l'ordre naturel du DOM
+
+ 
+
+ 
+
+ 
+ Shift Tab 
+
+ 
+Revenir à l'élément interactif précédent
+
+ 
+
+ 
+
+ 
+ ↑ ↓ 
+
+ 
+Naviguer dans une liste, un menu, un select ou un accordion ouvert
+
+ 
+
+ 
+
+ 
+ Enter 
+
+ 
+Activer le bouton ou le lien focusé, ouvrir un accordion, valider un formulaire
+
+ 
+
+ 
+
+ 
+ Space 
+
+ 
+Cocher/décocher une checkbox, activer un toggle, ouvrir un select
+
+ 
+
+ 
+
+ 
+ ⌘ Enter 
+
+ 
+Soumettre un formulaire dans une modale sans cliquer le bouton
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Composants keyboard behavior -->
+ 
+Comportement clavier par composant
+
+ 
+
+ 
+
+ 
+Sidebar Navigation
+
+ 
+
+ 
+ Tab 
+
+ 
+Passe d'un nav item au suivant
+
+ 
+
+ 
+
+ 
+ Enter 
+
+ 
+Active le nav item focusé, change la vue
+
+ 
+
+ 
+
+ 
+ ↑ ↓ 
+
+ 
+Navigation entre items adjacents dans la sidebar
+
+ 
+
+ 
+
+ 
+
+ 
+Modale
+
+ 
+
+ 
+ Tab 
+
+ 
+Cycle dans les éléments de la modale uniquement (focus trap)
+
+ 
+
+ 
+
+ 
+ Esc 
+
+ 
+Ferme la modale et retourne le focus sur l'élément déclencheur
+
+ 
+
+ 
+
+ 
+ Enter 
+
+ 
+Valide l'action primaire de la modale si un bouton est focusé
+
+ 
+
+ 
+
+ 
+
+ 
+Accordion
+
+ 
+
+ 
+ Enter ou Space 
+
+ 
+Ouvre ou ferme l'accordion focusé
+
+ 
+
+ 
+
+ 
+ Tab 
+
+ 
+Passe au prochain élément interactif (après le contenu ouvert)
+
+ 
+
+ 
+
+ 
+ ↑ ↓ 
+
+ 
+Passe d'un en-tête d'accordion à l'autre
+
+ 
+
+ 
+
+ 
+
+ 
+Tabs
+
+ 
+
+ 
+ ← → 
+
+ 
+Change d'onglet actif horizontalement
+
+ 
+
+ 
+
+ 
+ Tab 
+
+ 
+Saute directement dans le contenu de l'onglet actif
+
+ 
+
+ 
+
+ 
+ Home / End 
+
+ 
+Premier / dernier onglet
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 05 ARIA ══ -->
+ 
+ 
+05 — Attributs ARIA
+ Rôles · attributs obligatoires · états dynamiques · composants Ulamu 
+
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+Sidebar Navigation
+
+ 
+
+ &lt;nav aria-label = "Navigation principale" &gt; 
+ &lt;ul role = "list" &gt; 
+ &lt;li&gt; 
+ &lt;a 
+ href = "/dashboard" 
+ aria-current = "page" ← page active 
+ aria-label = "Tableau de bord" 
+ &gt; 
+ &lt;svg aria-hidden = "true" &gt;...&lt;/svg&gt; 
+ Tableau de bord
+ &lt;/a&gt; 
+ &lt;/li&gt; 
+ &lt;/ul&gt; 
+ &lt;/nav&gt; 
+ 
+
+
+ 
+Modale
+
+ 
+
+ &lt;div 
+ role = "dialog" 
+ aria-modal = "true" 
+ aria-labelledby = "modal-title" 
+ aria-describedby = "modal-desc" 
+ &gt; 
+ &lt;h2 id = "modal-title" &gt; 
+ Confirmer l'ordonnance
+ &lt;/h2&gt; 
+ &lt;p id = "modal-desc" &gt; 
+ Cette action est irréversible
+ &lt;/p&gt; 
+ &lt;/div&gt; 
+ 
+
+
+ 
+Accordion
+
+ 
+
+ &lt;button 
+ aria-expanded = "true" ← ouvert 
+ aria-controls = "acc-body-1" 
+ id = "acc-hdr-1" 
+ &gt; 
+ Mode hors ligne ?
+ &lt;/button&gt; 
+ &lt;div 
+ id = "acc-body-1" 
+ role = "region" 
+ aria-labelledby = "acc-hdr-1" 
+ hidden ← retiré quand ouvert 
+ &gt; 
+ Contenu de l'accordion...
+ &lt;/div&gt; 
+ 
+
+ 
+
+
+ 
+
+ 
+Toast / Notification live
+
+ 
+
+ &lt;div 
+ role = "status" ← info/success 
+ <!-- ou role="alert" pour error/warning --> 
+ aria-live = "polite" ← polite 
+ <!-- ou aria-live="assertive" pour erreurs --> 
+ aria-atomic = "true" 
+ &gt; 
+ Ordonnance créée avec succès
+ &lt;/div&gt; 
+ 
+
+
+ 
+Tabs
+
+ 
+
+ &lt;div role = "tablist" 
+ aria-label = "Dossier patient" &gt; 
+ &lt;button 
+ role = "tab" 
+ aria-selected = "true" 
+ aria-controls = "tab-info" 
+ id = "tab-btn-info" 
+ &gt; Informations &lt;/button&gt; 
+ &lt;/div&gt; 
+ &lt;div 
+ role = "tabpanel" 
+ id = "tab-info" 
+ aria-labelledby = "tab-btn-info" 
+ &gt; 
+ Contenu de l'onglet...
+ &lt;/div&gt; 
+ 
+
+
+ 
+Toggle Switch
+
+ 
+
+ &lt;button 
+ role = "switch" 
+ aria-checked = "true" ← ON 
+ aria-label = "Notifications activées" 
+ &gt; 
+ <!-- visuel du toggle --> 
+ &lt;/button&gt; 
+ 
+
+
+ <!-- ARIA table -->
+ 
+ | 
+ | Composant | | role | | Attribut clé | 
+ | 
+ 
+ 
+ | Sidebar nav | | navigation | | aria-label · aria-current="page" | 
+
+ 
+ | Modale | | dialog | | aria-modal · aria-labelledby · focus trap | 
+
+ 
+ | Toast info | | status | | aria-live="polite" · aria-atomic | 
+
+ 
+ | Toast erreur | | alert | | aria-live="assertive" · aria-atomic | 
+
+ 
+ | Accordion | | button | | aria-expanded · aria-controls | 
+
+ 
+ | Tabs | | tablist/tab | | aria-selected · aria-controls | 
+
+ 
+ | Toggle | | switch | | aria-checked="true|false" | 
+
+ 
+ | Pagination | | navigation | | aria-label · aria-current="page" sur page active | 
+
+ 
+ | Icône déco. | | — | | aria-hidden="true" · obligatoire sur SVG décoratif | 
+
+ 
+ | Input champ | | — | | aria-invalid="true" en état error · aria-describedby→message | 
+
+ 
+ 
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 06 RESPONSIVE ══ -->
+ 
+ 
+06 — Comportement responsive
+ Desktop prioritaire · 6 breakpoints · adaptation progressive 
+
+ 
+
+ 
+
+
+ <!-- Wireframe previews -->
+ 
+Aperçu des layouts par breakpoint
+
+ 
+
+
+ <!-- Desktop 1280+ -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Desktop ★ ≥ 1280px
+
+ 
+
+
+ <!-- Laptop 1024 -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Laptop ≥ 1024px
+
+ 
+
+
+ <!-- Tablet 768 -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Tablette ≥ 768px
+
+ 
+
+
+ <!-- Mobile 480 -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Mobile L ≥ 480px
+
+ 
+
+
+ <!-- Mobile XS 360 -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Mobile XS ≥ 360px
+
+ 
+
+
+ 
+
+
+ <!-- Responsive matrix -->
+ 
+Comportement de chaque composant selon le breakpoint
+
+ 
+
+
+ 
+
+ 
+
+ Sidebar 
+ Composant critique 
+ ★ priorité haute 
+ 
+
+ 
+
+ 
+≥ 1280px
+ Étendue 240px Labels + icônes + badges + section labels
+
+ 
+≥ 1024px
+ Étendue 240px Identique desktop
+
+ 
+≥ 768px
+ Réduite 56px Icônes seules + tooltip au survol
+
+ 
+&lt; 768px
+ Bottom navigation 4–5 icônes principales + hamburger
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ Topbar 
+ Navigation principale 
+ adaptatif 
+ 
+
+ 
+
+ 
+≥ 1280px
+ Complète Logo + nom + search + actions + avatar
+
+ 
+≥ 768px
+ Compacte Logo + search réduit + actions
+
+ 
+≥ 480px
+ Minimale Logo + icône search + avatar
+
+ 
+&lt; 480px
+ Logo seul Search en bottom sheet · hamburger
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ Grille de contenu 
+ Layout principal 
+ ★ priorité haute 
+ 
+
+ 
+
+ 
+≥ 1280px
+ 12 colonnes Gouttière 24px · max-width 1140px
+
+ 
+≥ 1024px
+ 8 colonnes Gouttière 20px
+
+ 
+≥ 768px
+ 4 colonnes Gouttière 16px
+
+ 
+&lt; 480px
+ 1 colonne Gouttière 12px · pleine largeur
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ Cards 
+ Grilles de contenu 
+ adaptatif 
+ 
+
+ 
+
+ 
+≥ 1280px
+ 3 colonnes Cards patient / médecin
+
+ 
+≥ 768px
+ 2 colonnes Adaptation tablette
+
+ 
+≥ 480px
+ 1 colonne Cards pleine largeur
+
+ 
+KPI cards
+ 4 → 2 → 1 Adaptation progressive
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ Modales 
+ Overlay dialogs 
+ adaptatif 
+ 
+
+ 
+
+ 
+≥ 1280px
+ max-width 480px Centré · overlay opaque
+
+ 
+≥ 768px
+ max-width 480px Identique desktop
+
+ 
+≥ 480px
+ width 90vw Marges latérales 5vw
+
+ 
+&lt; 480px
+ Bottom sheet Monte depuis le bas · radius top
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ Tableaux de données 
+ Data tables 
+ adaptatif 
+ 
+
+ 
+
+ 
+≥ 1024px
+ Toutes colonnes Affichage normal
+
+ 
+≥ 768px
+ Colonnes réduites Colonnes secondaires masquées
+
+ 
+≥ 480px
+ Scroll horizontal overflow-x: auto · min-width maintenu
+
+ 
+&lt; 480px
+ Cards mode Chaque ligne devient une card
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 07 RÈGLES ══ -->
+ 
+ 
+07 — Règles d'usage
+
+ 
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+outline:none sur tout élément interactif sans alternative de focus visible
+
+ 
+Utiliser la couleur seule pour indiquer un état error, warning ou success
+
+ 
+Supprimer l'état hover sur les éléments interactifs — WCAG 1.4.11
+
+ 
+Texte non-décoratif sous 3:1 de contraste — WCAG 1.4.3 minimum AA
+
+ 
+Modale sans focus trap — le Tab doit cycler à l'intérieur uniquement
+
+ 
+Toast sans role="status" ou role="alert" — lecteur d'écran ne l'annonce pas
+
+ 
+Icônes SVG décoratives sans aria-hidden="true" — lues par les screen readers
+
+ 
+Input sans label visible ou aria-label — le placeholder ne suffit pas
+
+ 
+État disabled via opacity seule sur le fond — toujours cursor:not-allowed aussi
+
+ 
+Tableau sans en-têtes &lt;th scope&gt; — navigation screen reader impossible
+
+ 
+ 
+
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Focus ring unifié sur tous les composants : outline 3px rgba(39,86,166,0.30) + offset 2px
+
+ 
+Utiliser :focus-visible (pas :focus) pour éviter le ring au clic souris
+
+ 
+Toujours combiner couleur + icône + texte pour les états sémantiques
+
+ 
+Tester les ratios de contraste dans les deux thèmes avant validation
+
+ 
+Implémenter focus trap dans toutes les modales et drawers
+
+ 
+Retourner le focus sur l'élément déclencheur à la fermeture d'une modale
+
+ 
+aria-live="polite" sur les toasts info/success · "assertive" sur les erreurs
+
+ 
+aria-hidden="true" sur toutes les icônes SVG décoratives
+
+ 
+Tester la navigation clavier complète sur chaque nouvelle page implémentée
+
+ 
+Sur mobile : bottom navigation (4-5 items max) · modales en bottom sheets
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ulamu · Design System · CG-11 · v1.0
+
+ 
+Document validé — Phase 2 en cours

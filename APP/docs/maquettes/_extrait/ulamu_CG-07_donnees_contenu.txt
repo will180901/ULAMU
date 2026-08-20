@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-07 Données & Contenu 
+
+
+ 
+ 
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-07 Données &amp; Contenu
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+ 
+ 
+
+ 
+Design System · Module CG-07
+
+ 
+Données &amp; Contenu
+
+ 
+Tableaux de données, cartes (cards), listes, accordéons, statistiques KPI et graphiques. Tous les composants sont rendus en live avec les dégradés autorisés sous les courbes d'area chart, et aucun dégradé ailleurs.
+
+ 
+
+
+ <!-- 01 TABLEAUX -->
+ 
+ 
+01 — Tableaux de données
+ Bordures 1px subtle · tri · sélection · toolbar · pagination 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ <input>
+ 
+
+ 
+Filtrer
+
+ 
+Exporter
+
+ 120 patients 
+ 
+
+ 
+ | 
+ 
+
+ | 
+ | 
+ | Nom ↑ | 
+ | ID ↕ | 
+ | Spécialité ↕ | 
+ | Dernière consultation ↕ | 
+ | Statut ↕ | 
+ | | 
+ 
+
+ | 
+ 
+ 
+
+ | 
+ | 
+ | 
+KM
+Kofi Mensah
+ | 
+ | PAT-8821-KGL | 
+ | Cardiologie | 
+ | 12 mars 2026 | 
+ | Actif | 
+ | | 
+ 
+
+ 
+
+ | 
+ | 
+ | 
+AD
+Ama Diallo
+ | 
+ | PAT-4412-ABJ | 
+ | Pédiatrie | 
+ | 08 mars 2026 | 
+ | En attente | 
+ | | 
+ 
+
+ 
+
+ | 
+ | 
+ | 
+FD
+Fatou Dembélé
+ | 
+ | PAT-9910-DKR | 
+ | Neurologie | 
+ | 01 mars 2026 | 
+ | Actif | 
+ | | 
+ 
+
+ 
+
+ | 
+ | 
+ | 
+MB
+Moussa Bamba
+ | 
+ | PAT-3301-BKO | 
+ | Médecine générale | 
+ | 22 fév. 2026 | 
+ | Inactif | 
+ | | 
+ 
+
+ 
+
+ | 
+ | 
+ | 
+JN
+Jeanne Nkosi
+ | 
+ | PAT-7754-LOS | 
+ | Gynécologie | 
+ | 14 mars 2026 | 
+ | Archivé | 
+ | | 
+ 
+
+ 
+ 
+ 
+
+ Affichage 1–5 sur 120 
+ 
+
+ 
+
+ 
+1
+
+ 
+2
+
+ 
+3
+
+ … 
+ 
+24
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 02 CARDS -->
+ 
+ 
+02 — Cards
+ Patient · Médecin · KPI metric · hover shadow 
+
+ 
+
+
+ <!-- KPI cards -->
+ 
+KPI Cards — dashboard metrics
+
+ 
+
+ 
+
+ 
+Patients actifs
+
+ 
+2 841
+
+ 
++12% ce mois
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+Consultations
+
+ 
+418
+
+ 
++8% ce mois
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+Ordonnances
+
+ 
+156
+
+ 
+-3% ce mois
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+Revenus (FCFA)
+
+ 
+4.2M
+
+ 
+→ Stable
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+
+ <!-- Content cards -->
+ 
+Content cards — Patient · Médecin · Ordonnance
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Kofi Mensah
+
+ 
+PAT-8821-KGL · 42 ans
+
+ 
+
+ 
+
+ 
+ Actif 
+ 
+
+ 
+
+ 
+
+ 
+Suivi cardiologique. Hypertension artérielle traitée depuis 2019.
+
+ 
+
+ 
+Dernière visite
+12 mars 2026
+
+ 
+Médecin
+Dr. Konaté
+
+ 
+
+ 
+
+ 
+
+ 3 ordonnances actives 
+ Voir dossier → 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+AK
+
+ 
+
+ 
+Dr. Amara Konaté
+
+ 
+Cardiologie · Dakar
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Cardiologie 
+ Médecine interne 
+ 
+
+ 
+
+ 
+142
+Consultations
+
+ 
+4.9
+Note /5
+
+ 
+
+ 
+
+ 
+
+ Disponible aujourd'hui 
+ Prendre RDV → 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Ordonnance
+
+ 
+ORD-2026-00412-DKR
+
+ 
+
+ Valide 
+ 
+
+ 
+
+ 
+Prescrite par Dr. Konaté pour Kofi Mensah 
+
+ 
+
+ 
+ Amlodipine 5mg/j 30 jours 
+
+ 
+ Ramipril 10mg/j 30 jours 
+
+ 
+
+ 
+
+ 
+
+ Expire le 11 avr. 2026 
+ Télécharger → 
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 03 LISTS -->
+ 
+ 
+03 — Listes
+ Items avec avatar · méta · badge · action contextuelle 
+
+ 
+
+ 
+
+ 
+Liste de consultations récentes
+
+ 
+
+ 
+
+ 
+KM
+
+ 
+
+ 
+Kofi Mensah — Consultation cardiologie
+
+ 
+Dr. Amara Konaté · Clinique du Plateau, Dakar
+
+ 
+
+ 
+
+ Aujourd'hui 14h30 
+ Terminée 
+ 
+
+ 
+
+ 
+
+ 
+AD
+
+ 
+
+ 
+Ama Diallo — Pédiatrie, suivi mensuel
+
+ 
+Dr. Fatou Sow · Centre de santé Médina
+
+ 
+
+ 
+
+ Demain 09h00 
+ Confirmée 
+ 
+
+ 
+
+ 
+
+ 
+FD
+
+ 
+
+ 
+Fatou Dembélé — Neurologie, IRM résultats
+
+ 
+Dr. Boubacar Ndiaye · Hôpital Principal
+
+ 
+
+ 
+
+ 16 mars 11h00 
+ Planifiée 
+ 
+
+ 
+
+ 
+
+ 
+MB
+
+ 
+
+ 
+Moussa Bamba — Téléconsultation urgente
+
+ 
+Dr. Amara Konaté · En ligne
+
+ 
+
+ 
+
+ Il y a 2h 
+ Annulée 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 04 ACCORDIONS -->
+ 
+ 
+04 — Accordéons
+ Expand/collapse · border-radius · transition chevron 
+
+ 
+
+ 
+
+ 
+FAQ médicale — accordéon standard
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Comment créer une ordonnance numérique ?
+ 
+
+ 
+ 
+
+ 
+Depuis votre tableau de bord médecin, accédez à la section Ordonnances puis cliquez sur Nouvelle ordonnance. Remplissez le formulaire avec les médicaments prescrits, les posologies et la durée. La signature numérique sera appliquée automatiquement via votre certificat médical enregistré.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Comment partager un dossier médical avec un spécialiste ?
+ 
+
+ 
+ 
+
+ 
+Ouvrez le dossier du patient, cliquez sur Partager, sélectionnez le médecin destinataire et définissez les droits d'accès (lecture seule ou modification). Le médecin recevra une notification sécurisée et pourra accéder au dossier pendant la durée définie.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ L'application fonctionne-t-elle hors ligne ?
+ 
+
+ 
+ 
+
+ 
+Oui, Ulamu dispose d'un mode hors ligne complet. Vos derniers dossiers consultés, les rendez-vous du jour et les ordonnances en cours sont disponibles sans connexion. Les modifications sont synchronisées automatiquement dès le retour de la connectivité.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Comment configurer l'authentification à deux facteurs ?
+ 
+
+ 
+ 
+
+ 
+Rendez-vous dans Paramètres → Sécurité → Authentification à deux facteurs. Activez le switch TOTP puis scannez le QR code généré avec votre application d'authentification. Le 2FA est désactivé par défaut et son activation est entièrement facultative.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 05 GRAPHIQUES -->
+ 
+ 
+05 — Graphiques
+ Area chart · Bar chart · Donut · Sparklines — dégradés autorisés sous courbes uniquement 
+
+ 
+
+ 
+
+
+ <!-- Area Chart -->
+ 
+
+ 
+
+ 
+
+ 
+Consultations par mois
+
+ 
+Janv. – Juin 2026
+
+ 
+
+ 
+
+ 
+Consultations
+
+ 
+Téléconsultations
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 500 
+ 400 
+ 300 
+ 200 
+ 100 
+ 0 
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ Jan Fév Mar Avr Mai Juin 
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Bar + Donut -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Consultations par spécialité
+
+ 
+Ce mois
+
+ 
+
+ 
+
+ 
+
+ 
+ Card. 
+
+ 
+ Péd. 
+
+ 
+ Neu. 
+
+ 
+ Gén. 
+
+ 
+ Gyn. 
+
+ 
+ Oph. 
+
+ 
+
+ 
+
+ 
+
+ 
+Répartition patients
+Par type
+
+ 
+
+ 
+ 
+
+ 
+ Actifs 50% 
+
+ 
+ Nouveaux 30% 
+
+ 
+ Inactifs 20% 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- RULES -->
+ 
+ 
+06 — Règles d'usage
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+Lignes de tableau alternées colorées — border-subtle 1px uniquement
+
+ 
+Dégradé sur les barres (bar chart) ou le donut — area chart uniquement
+
+ 
+Dépasser stop-opacity 0.18 pour le fill area chart
+
+ 
+Cards sans border-radius minimum --radius-xl (14px)
+
+ 
+KPI card sans sparkline — toujours accompagner la valeur d'une tendance
+
+ 
+Accordéon sans animation de chevron — transition .25s linear obligatoire
+
+ 
+Graphiques sans légende — toujours identifier les séries
+
+ 
+Valeurs numériques KPI en Inter — utiliser Plus Jakarta Sans 800
+
+ 
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Tableaux : toolbar (search + filtres) + footer (info + pagination) systématiques
+
+ 
+Tri de colonne : indicateur visuel ↑ ↓ ↕ avec couleur accent sur colonne active
+
+ 
+Cards : hover → transform translateY(-1px) + shadow-md
+
+ 
+KPI sparkline : area chart avec gradient couleur → transparent, h:36px
+
+ 
+Donut : max 3 segments, valeur totale au centre, légende à droite
+
+ 
+Bar chart : barres de même couleur avec opacités différentes pour hiérarchiser
+
+ 
+Accordéon : contenu chargé une fois ouvert, chevron animé .25s
+
+ 
+Listes : border-bottom subtle entre items, jamais de fond alterné
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ulamu · Design System · CG-07 · v1.0
+Document validé — Phase 2 en cours

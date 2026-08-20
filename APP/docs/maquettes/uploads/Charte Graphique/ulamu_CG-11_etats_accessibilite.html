@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-11 États &amp; Accessibilité</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --accent-300:#6F92DA;--accent-500:#2756A6;--accent-600:#1F479A;
+  --accent-100:#C6D4F2;--accent-200:#9DB5E8;
+  --radius-sm:4px;--radius-md:6px;--radius-lg:10px;--radius-xl:14px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;
+  --sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;
+  --grain-svg:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"]{
+  --bg-base:#FAFAFA;--bg-subtle:#F4F4F5;--bg-muted:#EBEBEC;--bg-elevated:#FFFFFF;
+  --glass-bg:rgba(255,255,255,0.72);--glass-blur:12px;--glass-border:rgba(0,0,0,0.07);
+  --text-primary:#111112;--text-secondary:#3F3F46;--text-tertiary:#71717A;--text-disabled:#A1A1AA;
+  --text-accent:var(--accent-600);
+  --border-subtle:rgba(0,0,0,0.07);--border-default:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+  --shadow-xl:0 8px 32px rgba(0,0,0,0.12),0 4px 8px rgba(0,0,0,0.08);
+  --grain-opacity:0.035;--grain-btn:0.06;
+  --success-bg:#F0FAF3;--success-text:#2B6B40;--success-border:#A8D5B5;--success-dot:#3D9A5C;
+  --warning-bg:#FEF9EC;--warning-text:#7A5515;--warning-border:#EDD68A;--warning-dot:#C49128;
+  --error-bg:#FDF2F2;--error-text:#7A2323;--error-border:#E8AAAA;--error-dot:#C44040;
+  --info-bg:#F0F5FD;--info-text:#1D3F7A;--info-border:#A8C0E8;
+}
+[data-theme="dark"]{
+  --bg-base:#111113;--bg-subtle:#18181B;--bg-muted:#222226;--bg-elevated:#2A2A2F;
+  --glass-bg:rgba(28,28,33,0.72);--glass-blur:14px;--glass-border:rgba(255,255,255,0.07);
+  --text-primary:#F4F4F5;--text-secondary:#A1A1AA;--text-tertiary:#71717A;--text-disabled:#52525B;
+  --text-accent:var(--accent-300);
+  --border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);
+  --shadow-lg:0 6px 24px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.35);
+  --shadow-xl:0 12px 40px rgba(0,0,0,0.65),0 4px 12px rgba(0,0,0,0.45);
+  --grain-opacity:0.055;--grain-btn:0.09;
+  --success-bg:#0F2318;--success-text:#6DBF8A;--success-border:#1F4A30;--success-dot:#4CAF6E;
+  --warning-bg:#241B09;--warning-text:#D4A430;--warning-border:#4A3512;--warning-dot:#C49128;
+  --error-bg:#200F0F;--error-text:#E07070;--error-border:#3D1A1A;--error-dot:#C44040;
+  --info-bg:#0C1528;--info-text:#7AAAE0;--info-border:#1A2E55;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;transition:background .25s linear,color .25s linear;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain-opacity);background-image:var(--grain-svg);background-size:180px 180px}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.tl{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.lm{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.ln{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.tdv{width:1px;height:20px;background:var(--border-default)}
+.mbc{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.mbc .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .mbc .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.ttog{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer}
+.topt{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px;font-family:var(--font-body)}
+.topt.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+
+/* ── PAGE ── */
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.ph{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.mid{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .mid{color:var(--accent-300)}
+.mid::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.pt{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.pd{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.sec{margin-bottom:var(--sp-12)}
+.shd{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.stit{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.ssub{font-size:13px;color:var(--text-tertiary)}
+.sdiv{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+.dw{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-8);box-shadow:var(--shadow-sm)}
+.dsl{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.dsl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.tk{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle);display:inline-block}
+.tv{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.tu{font-size:11px;color:var(--text-secondary);line-height:1.5}
+.tt{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:12px}
+.tt thead{background:var(--bg-muted)}
+.tt th{padding:9px 13px;text-align:left;font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.tt td{padding:9px 13px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+.tt tr:hover td{background:var(--bg-subtle)}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rc{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rc.f{border-color:#E8AAAA;background:#FDF2F2}
+.rc.a{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rc.f{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rc.a{border-color:#1F4A30;background:#0F2318}
+.rt{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rc.f .rt{color:#7A2323}.rc.a .rt{color:#2B6B40}
+[data-theme="dark"] .rc.f .rt{color:#E07070}[data-theme="dark"] .rc.a .rt{color:#6DBF8A}
+.rl{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rl li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rl li::before{position:absolute;left:0;top:1px}
+.rc.f .rl li::before{content:'✕';color:#C44040;font-size:11px}
+.rc.a .rl li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ═══════════════════════════
+   01 — CATALOGUE DES ÉTATS
+═══════════════════════════ */
+.states-matrix{overflow-x:auto}
+.sm-table{width:100%;border-collapse:collapse;min-width:860px}
+.sm-table thead tr{border-bottom:2px solid var(--border-default)}
+.sm-table th{padding:10px 12px;text-align:center;font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.sm-table th:first-child{text-align:left;width:140px}
+.sm-table td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.sm-table tr:last-child td{border-bottom:none}
+.sm-table tr:hover td{background:var(--bg-subtle)}
+.sm-comp{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--text-primary)}
+.sm-cell{display:flex;align-items:center;justify-content:center}
+
+/* State chips */
+.sc{display:inline-flex;align-items:center;justify-content:center;height:28px;border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:9px;font-weight:600;padding:0 8px;white-space:nowrap;border:1px solid transparent;letter-spacing:.04em}
+.sc-def{background:var(--bg-elevated);border-color:var(--border-default);color:var(--text-secondary)}
+.sc-hvr{background:var(--bg-muted);border-color:var(--border-strong);color:var(--text-primary)}
+.sc-foc{background:var(--bg-elevated);border-color:var(--accent-500);color:var(--accent-500);outline:2px solid rgba(39,86,166,0.22);outline-offset:2px}
+[data-theme="dark"] .sc-foc{color:var(--accent-300);border-color:var(--accent-300)}
+.sc-act{background:var(--accent-500);border-color:var(--accent-600);color:#fff}
+.sc-dis{background:var(--bg-muted);border-color:var(--border-subtle);color:var(--text-disabled);opacity:.45}
+.sc-err{background:var(--error-bg);border-color:var(--error-border);color:var(--error-text)}
+.sc-lod{background:var(--bg-muted);border-color:var(--border-subtle);color:var(--text-disabled)}
+.sc-emp{background:var(--bg-subtle);border-color:var(--border-subtle);color:var(--text-disabled);font-style:italic}
+.sc-na{color:var(--text-disabled);font-size:12px}
+
+/* State spinner inline */
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp-xs{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+.sp-acc{border:1.5px solid rgba(39,86,166,.2);border-top-color:var(--accent-500)}
+[data-theme="dark"] .sp-acc{border-top-color:var(--accent-300)}
+
+/* ═══════════════════════════
+   LIVE STATES DEMOS
+═══════════════════════════ */
+.states-demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.states-panel{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.states-panel-hd{background:var(--bg-muted);border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) var(--sp-5);font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase}
+.states-panel-body{padding:var(--sp-5);display:flex;flex-wrap:wrap;gap:var(--sp-4);align-items:flex-start}
+.state-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2)}
+.state-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);letter-spacing:.04em;text-align:center}
+
+/* Buttons states */
+.btn-s{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);font-family:var(--font-body);font-weight:500;border:none;cursor:pointer;padding:8px 16px;font-size:13px;border-radius:var(--radius-md);transition:all .25s linear}
+.btn-s::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:var(--grain-btn)}
+.bs-def{background:var(--accent-500);color:#fff}
+.bs-hvr{background:var(--accent-600);color:#fff;transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.bs-foc{background:var(--accent-500);color:#fff;outline:3px solid rgba(39,86,166,0.30);outline-offset:2px}
+.bs-act{background:var(--accent-600);color:#fff;transform:scale(0.97)}
+.bs-lod{background:var(--accent-500);color:#fff;pointer-events:none}
+.bs-dis{background:var(--accent-500);color:#fff;opacity:.4;cursor:not-allowed}
+.bs-sec{background:var(--bg-muted);color:var(--text-primary);border:1px solid var(--border-default)}
+.bs-sec-hvr{background:var(--bg-subtle);color:var(--text-primary);border:1px solid var(--border-strong)}
+.bs-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-subtle)}
+
+/* Input states */
+.inp-s{height:36px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:0 12px;font-family:var(--font-body);font-size:13px;color:var(--text-primary);width:170px;outline:none}
+.inp-s::placeholder{color:var(--text-disabled)}
+.is-def{}
+.is-hvr{border-color:var(--border-strong)}
+.is-foc{border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(39,86,166,0.12)}
+.is-filled{border-color:var(--border-default)}
+.is-err{border-color:var(--error-dot);box-shadow:0 0 0 3px rgba(196,64,64,0.10)}
+.is-suc{border-color:var(--success-dot);box-shadow:0 0 0 3px rgba(61,154,92,0.10)}
+.is-dis{background:var(--bg-muted);color:var(--text-disabled);cursor:not-allowed;opacity:.5}
+
+/* ═══════════════════════════
+   02 — FOCUS RING
+═══════════════════════════ */
+.focus-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+.focus-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.focus-demo{height:90px;display:flex;align-items:center;justify-content:center;background:var(--bg-subtle);border-bottom:1px solid var(--border-subtle)}
+.focus-meta{padding:var(--sp-4)}
+.fm-name{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:3px}
+.fm-spec{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);line-height:1.55}
+
+/* Focus ring spec */
+.fr-wrap{position:relative;display:inline-flex}
+.fr-el{outline:3px solid rgba(39,86,166,0.30);outline-offset:2px}
+.fr-wrong{outline:2px solid var(--accent-500);outline-offset:0px}
+.fr-none{outline:none !important}
+.no-good-badge{background:var(--error-bg);border:1px solid var(--error-border);border-radius:var(--radius-sm);padding:2px 6px;font-family:var(--font-mono);font-size:9px;color:var(--error-text);margin-top:4px;display:inline-block}
+.ok-badge{background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--radius-sm);padding:2px 6px;font-family:var(--font-mono);font-size:9px;color:var(--success-text);margin-top:4px;display:inline-block}
+
+/* Keyboard nav simulation */
+.kb-sim{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-5);background:var(--bg-subtle);border-radius:var(--radius-xl);border:1px solid var(--border-subtle)}
+.kb-item{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);transition:all .2s linear;cursor:pointer}
+.kb-item.kb-focused{outline:3px solid rgba(39,86,166,0.30);outline-offset:2px;border-color:var(--accent-500)}
+.kb-item-icon{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kb-item-content{flex:1}
+.kb-item-title{font-size:13px;font-weight:500;color:var(--text-primary)}
+.kb-item-sub{font-size:11px;color:var(--text-tertiary)}
+.kb-badge{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);background:var(--bg-muted);padding:2px 6px;border-radius:3px}
+.kb-indicator{font-family:var(--font-mono);font-size:9px;color:var(--accent-500);opacity:0;transition:opacity .2s linear}
+[data-theme="dark"] .kb-indicator{color:var(--accent-300)}
+.kb-item.kb-focused .kb-indicator{opacity:1}
+.kb-hint{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);text-align:center;margin-top:var(--sp-2)}
+
+/* ═══════════════════════════
+   03 — CONTRASTE WCAG
+═══════════════════════════ */
+.contrast-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.contrast-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.contrast-swatch{height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-1);padding:var(--sp-3);position:relative;border-bottom:1px solid var(--border-subtle)}
+.contrast-big{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-0.3px;line-height:1}
+.contrast-small{font-size:11px;font-weight:400;opacity:.8}
+.contrast-meta{padding:var(--sp-4)}
+.cm-ratio{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-0.5px;line-height:1;margin-bottom:4px}
+.cm-pass{font-size:11px;font-weight:600;padding:2px 7px;border-radius:3px;display:inline-flex;align-items:center;gap:4px;margin-bottom:var(--sp-2)}
+.cm-pass.aa{background:var(--success-bg);color:var(--success-text);border:1px solid var(--success-border)}
+.cm-pass.aaa{background:rgba(39,86,166,0.12);color:var(--accent-500);border:1px solid rgba(39,86,166,0.25)}
+[data-theme="dark"] .cm-pass.aaa{color:var(--accent-300)}
+.cm-pass.fail{background:var(--error-bg);color:var(--error-text);border:1px solid var(--error-border)}
+.cm-combo{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);line-height:1.5}
+
+/* Contrast checker */
+.checker-demo{background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-6);margin-top:var(--sp-6)}
+.checker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)}
+.chk-pair{border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border-subtle)}
+.chk-preview{height:64px;display:flex;align-items:center;justify-content:center;gap:var(--sp-2)}
+.chk-preview-big{font-family:var(--font-display);font-size:18px;font-weight:800}
+.chk-preview-sm{font-size:12px;font-weight:400}
+.chk-info{padding:var(--sp-3);background:var(--bg-elevated);border-top:1px solid var(--border-subtle)}
+.chk-name{font-family:var(--font-mono);font-size:9px;color:var(--text-tertiary);margin-bottom:3px}
+.chk-badge{font-family:var(--font-mono);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px}
+.chk-ok{background:var(--success-bg);color:var(--success-text)}
+.chk-no{background:var(--error-bg);color:var(--error-text)}
+
+/* ═══════════════════════════
+   04 — NAVIGATION CLAVIER
+═══════════════════════════ */
+.kbd-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.kbd-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-5);box-shadow:var(--shadow-sm)}
+.kbd-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:var(--sp-4)}
+.kbd-row{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.kbd-row:last-child{border-bottom:none}
+.kbd-keys{display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap;min-width:100px}
+.kbd{display:inline-flex;align-items:center;justify-content:center;height:22px;min-width:22px;padding:0 6px;border-radius:4px;background:var(--bg-muted);border:1px solid var(--border-strong);font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-secondary);box-shadow:0 1px 0 var(--border-strong);white-space:nowrap}
+.kbd-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;flex:1}
+
+/* Tab order diagram */
+.tab-order{position:relative;background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-6);overflow:hidden}
+.to-topbar{height:44px;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);margin-bottom:var(--sp-3);display:flex;align-items:center;padding:0 var(--sp-4);gap:var(--sp-3)}
+.to-layout{display:flex;gap:var(--sp-3);height:260px}
+.to-sidebar{width:100px;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-2);display:flex;flex-direction:column;gap:4px}
+.to-content{flex:1;display:flex;flex-direction:column;gap:var(--sp-3)}
+.to-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)}
+/* Tab order badges */
+.tab-n{width:20px;height:20px;border-radius:50%;background:var(--accent-500);color:#fff;font-family:var(--font-mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 2px var(--bg-elevated),0 0 0 3px var(--accent-500);position:relative;z-index:1}
+.to-nav-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:var(--radius-sm)}
+.to-nav-item.act{background:rgba(39,86,166,0.12)}
+.to-mini-bar{height:7px;border-radius:2px;background:var(--bg-muted)}
+.to-mini-btn{height:26px;border-radius:var(--radius-sm);background:var(--accent-500);opacity:.7;display:flex;align-items:center;justify-content:center}
+
+/* ═══════════════════════════
+   05 — ARIA
+═══════════════════════════ */
+.aria-code{background:var(--bg-muted);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4) var(--sp-5);font-family:var(--font-mono);font-size:12px;line-height:1.8;color:var(--text-secondary);overflow-x:auto;margin-bottom:var(--sp-3)}
+.aria-attr{color:var(--accent-500)}
+[data-theme="dark"] .aria-attr{color:var(--accent-300)}
+.aria-val{color:var(--success-dot)}
+.aria-tag{color:var(--text-tertiary)}
+.aria-comment{color:var(--text-disabled);font-style:italic}
+
+/* ═══════════════════════════
+   06 — RESPONSIVE
+═══════════════════════════ */
+.resp-grid{display:flex;flex-direction:column;gap:var(--sp-4)}
+.resp-row{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.resp-row-hd{background:var(--bg-muted);border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) var(--sp-5);display:flex;align-items:center;gap:var(--sp-4)}
+.resp-bp-name{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)}
+.resp-bp-val{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.resp-priority{font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;margin-left:auto}
+.resp-priority.primary{background:rgba(39,86,166,0.12);color:var(--accent-500);border:1px solid rgba(39,86,166,0.25)}
+[data-theme="dark"] .resp-priority.primary{color:var(--accent-300)}
+.resp-priority.adapt{background:var(--bg-subtle);color:var(--text-tertiary);border:1px solid var(--border-default)}
+.resp-row-body{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.resp-cell{padding:var(--sp-4) var(--sp-5);border-right:1px solid var(--border-subtle)}
+.resp-cell:last-child{border-right:none}
+.resp-cell-title{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.05em;text-transform:uppercase;margin-bottom:var(--sp-2)}
+.resp-cell-val{font-size:12px;color:var(--text-secondary);line-height:1.6}
+.resp-cell-val strong{color:var(--text-primary);font-weight:500}
+
+/* Wireframe previews */
+.wf-row{display:flex;gap:var(--sp-4);margin-top:var(--sp-4);overflow-x:auto;padding-bottom:var(--sp-2)}
+.wf-device{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:var(--sp-2)}
+.wf-screen{border:1px solid var(--border-default);border-radius:var(--radius-md);overflow:hidden;background:var(--bg-base)}
+.wf-label{font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);text-align:center}
+
+/* Wf internals */
+.wf-tb{height:28px;background:var(--glass-bg);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;padding:0 8px;gap:4px}
+.wf-tb-dot{width:14px;height:14px;background:var(--accent-500);border-radius:2px}
+.wf-tb-sp{flex:1}
+.wf-tb-av{width:16px;height:16px;border-radius:50%;background:var(--bg-muted)}
+.wf-sb{width:50px;background:var(--glass-bg);border-right:1px solid var(--border-subtle);padding:4px 3px;display:flex;flex-direction:column;gap:3px;align-items:center}
+.wf-sb-ico{width:20px;height:20px;border-radius:3px;background:var(--bg-muted)}
+.wf-sb-ico.act{background:rgba(39,86,166,0.18)}
+.wf-ct{flex:1;padding:6px;display:flex;flex-direction:column;gap:4px}
+.wf-ct-ln{height:5px;border-radius:2px;background:var(--bg-muted)}
+.wf-ct-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:4px;padding:4px;flex:1;display:flex;flex-direction:column;gap:3px}
+
+/* Bottom nav */
+.wf-bnav{height:32px;background:var(--glass-bg);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-around;padding:0 4px}
+.wf-bnav-ico{width:24px;height:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.wf-bnav-dot{width:16px;height:3px;border-radius:1px;background:var(--bg-muted)}
+.wf-bnav-dot.act{background:var(--accent-500)}
+.wf-bnav-lbl{font-family:var(--font-mono);font-size:4px;color:var(--text-disabled)}
+
+/* FOOTER */
+.pfoot{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.fmeta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.fbdg{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.fbdgd{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+@media(max-width:960px){.contrast-grid{grid-template-columns:1fr 1fr}.focus-grid{grid-template-columns:1fr 1fr}.kbd-grid{grid-template-columns:1fr}.states-demo-grid{grid-template-columns:1fr}.resp-row-body{grid-template-columns:1fr 1fr}.rg{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}.topbar{padding:0 var(--sp-4)}.pt{font-size:24px}.contrast-grid,.focus-grid,.checker-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="tl">
+    <a class="logo" href="#"><div class="lm"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div><span class="ln">ulamu</span></a>
+    <div class="tdv"></div>
+    <div class="mbc"><span class="tag">CG-11</span>États &amp; Accessibilité</div>
+  </div>
+  <div class="ttog" onclick="toggleTheme()">
+    <div class="topt" id="ol"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair</div>
+    <div class="topt active" id="od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="ph">
+    <div class="mid">Design System · Module CG-11</div>
+    <h1 class="pt">États &amp; Accessibilité</h1>
+    <p class="pd">Catalogue exhaustif des 8 états UI par composant, système de focus ring unifié, ratios de contraste WCAG vérifiés, navigation clavier complète avec ordre de tabulation, attributs ARIA par composant, et comportement responsive de chaque élément selon les 6 breakpoints Ulamu.</p>
+  </div>
+
+  <!-- ══ 01 CATALOGUE DES ÉTATS ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">01 — Catalogue des états UI</h2><span class="ssub">8 états × 6 composants · matrice de référence complète</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Matrice états / composants — référence de conformité</div>
+      <div class="states-matrix">
+        <table class="sm-table">
+          <thead>
+            <tr>
+              <th>Composant</th>
+              <th>Default</th>
+              <th>Hover</th>
+              <th>Focus</th>
+              <th>Active</th>
+              <th>Disabled</th>
+              <th>Error</th>
+              <th>Loading</th>
+              <th>Empty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="sm-comp">Bouton primaire</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def" style="background:var(--accent-500);color:#fff;border-color:var(--accent-600)">accent-500</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr" style="background:var(--accent-600);color:#fff;border-color:var(--accent-600)">accent-600 ↑</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc" style="background:var(--accent-500);color:#fff;border-color:var(--accent-600)">ring 3px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-act">scale .97</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">opacity .4</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-lod"><span class="sp-xs" style="margin-right:3px"></span>spinner</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="sm-comp">Bouton secondaire</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def">bg-muted</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr">bg-subtle</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc">ring 3px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-act">scale .97</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">opacity .4</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-lod"><span class="sp-acc" style="width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(39,86,166,.2);border-top-color:var(--accent-500);animation:spin .7s linear infinite;display:inline-block;margin-right:3px"></span>spinner</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="sm-comp">Input / Champ</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def">border-default</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr">border-strong</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc">border-accent + ring</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-def">avec valeur</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">bg-muted .5</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-err">border-error + ring</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-emp">placeholder</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="sm-comp">Nav item sidebar</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def">transparent</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr">bg-muted</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc">ring 3px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-act" style="background:rgba(39,86,166,.14);color:var(--accent-500);border-color:rgba(39,86,166,.2)">accent bg</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">opacity .4</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="sm-comp">Card</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def">shadow-sm</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr">shadow-md ↑1px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc">ring 3px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-act">scale .98</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">opacity .4</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-err">border-error</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-lod">skeleton</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-emp">empty state</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="sm-comp">Toggle / Switch</span></td>
+              <td><div class="sm-cell"><span class="sc sc-def">bg-muted</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-hvr">border-strong</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-foc">ring 3px</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-act" style="background:var(--accent-500);color:#fff;border-color:var(--accent-600)">accent ON</span></div></td>
+              <td><div class="sm-cell"><span class="sc sc-dis">opacity .4</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+              <td><div class="sm-cell"><span class="sc-na">—</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Live demos -->
+      <div style="margin-top:var(--sp-8)">
+        <div class="dsl">Rendu live de chaque état — Boutons &amp; Inputs</div>
+        <div class="states-demo-grid">
+
+          <!-- BUTTONS -->
+          <div class="states-panel">
+            <div class="states-panel-hd">Boutons — 8 états</div>
+            <div class="states-panel-body">
+              <div class="state-item">
+                <button class="btn-s bs-def">Confirmer</button>
+                <div class="state-lbl">Default</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-hvr">Confirmer</button>
+                <div class="state-lbl">Hover</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-foc">Confirmer</button>
+                <div class="state-lbl">Focus</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-act">Confirmer</button>
+                <div class="state-lbl">Active</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-dis">Confirmer</button>
+                <div class="state-lbl">Disabled</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-lod"><div class="sp-xs"></div>Chargement</button>
+                <div class="state-lbl">Loading</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-sec">Annuler</button>
+                <div class="state-lbl">Secondary</div>
+              </div>
+              <div class="state-item">
+                <button class="btn-s bs-ghost">Voir plus</button>
+                <div class="state-lbl">Ghost</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- INPUTS -->
+          <div class="states-panel">
+            <div class="states-panel-hd">Inputs — 8 états</div>
+            <div class="states-panel-body">
+              <div class="state-item">
+                <input class="inp-s is-def" type="text" placeholder="Nom du patient…"/>
+                <div class="state-lbl">Default</div>
+              </div>
+              <div class="state-item">
+                <input class="inp-s is-hvr" type="text" placeholder="Survol actif…"/>
+                <div class="state-lbl">Hover</div>
+              </div>
+              <div class="state-item">
+                <input class="inp-s is-foc" type="text" value="Dr. Konaté"/>
+                <div class="state-lbl">Focus</div>
+              </div>
+              <div class="state-item">
+                <input class="inp-s is-filled" type="text" value="Kofi Mensah"/>
+                <div class="state-lbl">Filled</div>
+              </div>
+              <div class="state-item" style="position:relative">
+                <div style="position:relative;display:inline-flex;align-items:center">
+                  <input class="inp-s is-err" type="email" value="kofi@"/>
+                  <svg style="position:absolute;right:10px;color:var(--error-dot)" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>
+                </div>
+                <div class="state-lbl">Error</div>
+              </div>
+              <div class="state-item" style="position:relative">
+                <div style="position:relative;display:inline-flex;align-items:center">
+                  <input class="inp-s is-suc" type="email" value="kofi@ulamu.app"/>
+                  <svg style="position:absolute;right:10px;color:var(--success-dot)" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+                </div>
+                <div class="state-lbl">Success</div>
+              </div>
+              <div class="state-item">
+                <input class="inp-s is-dis" type="text" value="Non modifiable" disabled/>
+                <div class="state-lbl">Disabled</div>
+              </div>
+              <div class="state-item">
+                <input class="inp-s is-def" type="text" placeholder="Placeholder vide"/>
+                <div class="state-lbl">Empty</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 FOCUS RING ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">02 — Système de focus ring</h2><span class="ssub">Spécification unique · :focus-visible · WCAG 2.4.7 · jamais outline:none</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <!-- Spec cards -->
+      <div class="focus-grid" style="margin-bottom:var(--sp-8)">
+
+        <div class="focus-card">
+          <div class="focus-demo">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)">
+              <button class="btn-s bs-def fr-el" style="outline:3px solid rgba(39,86,166,0.30);outline-offset:2px">Valider</button>
+              <span class="ok-badge">✓ Conforme</span>
+            </div>
+          </div>
+          <div class="focus-meta">
+            <div class="fm-name">Focus ring standard ★</div>
+            <div class="fm-spec">outline: 3px solid rgba(39,86,166,0.30)<br>outline-offset: 2px<br>:focus-visible uniquement</div>
+          </div>
+        </div>
+
+        <div class="focus-card">
+          <div class="focus-demo">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)">
+              <button class="btn-s bs-def" style="outline:2px solid var(--accent-500);outline-offset:0px">Valider</button>
+              <span class="no-good-badge">✕ Non conforme</span>
+            </div>
+          </div>
+          <div class="focus-meta">
+            <div class="fm-name">Ring trop fin / trop serré</div>
+            <div class="fm-spec">outline: 2px solid — trop fin<br>outline-offset: 0px — collé au composant<br>Lisibilité dégradée</div>
+          </div>
+        </div>
+
+        <div class="focus-card">
+          <div class="focus-demo">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)">
+              <button class="btn-s bs-def fr-none">Valider</button>
+              <span class="no-good-badge">✕ WCAG 2.4.7 FAIL</span>
+            </div>
+          </div>
+          <div class="focus-meta">
+            <div class="fm-name">outline:none sans alternative</div>
+            <div class="fm-spec">Violation WCAG 2.4.7<br>Navigation clavier impossible<br>Jamais autorisé sur Ulamu</div>
+          </div>
+        </div>
+
+        <div class="focus-card">
+          <div class="focus-demo">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-2)">
+              <input class="inp-s is-foc" type="text" value="Focus input" style="width:160px"/>
+              <span class="ok-badge">✓ Conforme</span>
+            </div>
+          </div>
+          <div class="focus-meta">
+            <div class="fm-name">Input au focus</div>
+            <div class="fm-spec">border-color: --accent-500<br>box-shadow: 0 0 0 3px rgba(39,86,166,0.12)<br>Combinaison bordure + halo</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Keyboard navigation simulation -->
+      <div class="dsl">Simulation navigation clavier — cliquez Tab pour parcourir</div>
+      <div class="kb-sim" id="kbSim">
+        <div class="kb-item" tabindex="0">
+          <div class="kb-item-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/></svg></div>
+          <div class="kb-item-content"><div class="kb-item-title">Tableau de bord</div><div class="kb-item-sub">Navigation principale</div></div>
+          <span class="kb-badge">Tab 1</span>
+          <span class="kb-indicator">↵ actif</span>
+        </div>
+        <div class="kb-item" tabindex="0">
+          <div class="kb-item-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14a6 6 0 0 1 12 0"/></svg></div>
+          <div class="kb-item-content"><div class="kb-item-title">Patients</div><div class="kb-item-sub">Liste des dossiers</div></div>
+          <span class="kb-badge">Tab 2</span>
+          <span class="kb-indicator">↵ actif</span>
+        </div>
+        <div class="kb-item" tabindex="0">
+          <div class="kb-item-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg></div>
+          <div class="kb-item-content"><div class="kb-item-title">Rendez-vous</div><div class="kb-item-sub">Planning médical</div></div>
+          <span class="kb-badge">Tab 3</span>
+          <span class="kb-indicator">↵ actif</span>
+        </div>
+        <div class="kb-item" tabindex="0">
+          <div class="kb-item-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41"/></svg></div>
+          <div class="kb-item-content"><div class="kb-item-title">Paramètres</div><div class="kb-item-sub">Configuration compte</div></div>
+          <span class="kb-badge">Tab 4</span>
+          <span class="kb-indicator">↵ actif</span>
+        </div>
+        <div class="kb-hint">Cliquez sur un élément pour voir le focus ring Ulamu · outline 3px rgba(39,86,166,0.30) + offset 2px</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 03 CONTRASTE WCAG ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">03 — Ratios de contraste WCAG</h2><span class="ssub">WCAG 2.1 AA minimum · ratios vérifiés sur les deux thèmes</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <div class="contrast-grid">
+
+        <!-- text-primary / bg-base LIGHT -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#FAFAFA">
+            <div class="contrast-big" style="color:#111112">Titre médical</div>
+            <div class="contrast-small" style="color:#111112">Corps de texte standard</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">16.7:1</div>
+            <span class="cm-pass aaa">✓ AAA · Texte normal</span>
+            <div class="cm-combo">text-primary #111112<br>bg-base #FAFAFA · Mode clair</div>
+          </div>
+        </div>
+
+        <!-- text-primary / bg-base DARK -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#111113">
+            <div class="contrast-big" style="color:#F4F4F5">Titre médical</div>
+            <div class="contrast-small" style="color:#F4F4F5">Corps de texte standard</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">18.1:1</div>
+            <span class="cm-pass aaa">✓ AAA · Texte normal</span>
+            <div class="cm-combo">text-primary #F4F4F5<br>bg-base #111113 · Mode sombre</div>
+          </div>
+        </div>
+
+        <!-- text-secondary / bg-elevated LIGHT -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#FFFFFF">
+            <div class="contrast-big" style="color:#3F3F46;font-size:18px">Description</div>
+            <div class="contrast-small" style="color:#3F3F46">Métadonnées patient</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">9.7:1</div>
+            <span class="cm-pass aa">✓ AA · Texte normal</span>
+            <div class="cm-combo">text-secondary #3F3F46<br>bg-elevated #FFFFFF · Mode clair</div>
+          </div>
+        </div>
+
+        <!-- text-secondary / bg-elevated DARK -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#2A2A2F">
+            <div class="contrast-big" style="color:#A1A1AA;font-size:18px">Description</div>
+            <div class="contrast-small" style="color:#A1A1AA">Métadonnées patient</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">4.8:1</div>
+            <span class="cm-pass aa">✓ AA · Texte normal</span>
+            <div class="cm-combo">text-secondary #A1A1AA<br>bg-elevated #2A2A2F · Mode sombre</div>
+          </div>
+        </div>
+
+        <!-- white / accent-500 -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#2756A6">
+            <div class="contrast-big" style="color:#FFFFFF">Valider</div>
+            <div class="contrast-small" style="color:#FFFFFF">Texte bouton primaire</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">5.9:1</div>
+            <span class="cm-pass aa">✓ AA · Texte normal</span>
+            <div class="cm-combo">white #FFFFFF<br>accent-500 #2756A6 · Bouton primaire</div>
+          </div>
+        </div>
+
+        <!-- text-tertiary — notice -->
+        <div class="contrast-card">
+          <div class="contrast-swatch" style="background:#FAFAFA">
+            <div class="contrast-big" style="color:#71717A;font-size:16px">Il y a 5 min</div>
+            <div class="contrast-small" style="color:#71717A">Timestamps · hints</div>
+          </div>
+          <div class="contrast-meta">
+            <div class="cm-ratio" style="color:var(--text-primary)">4.6:1</div>
+            <span class="cm-pass aa">✓ AA · Texte &gt;18px ou gras</span>
+            <div class="cm-combo">text-tertiary #71717A<br>bg-base #FAFAFA · Texte secondaire<br><span style="color:var(--warning-text)">⚠ Usage : taille min 14px Bold</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Checker grid -->
+      <div class="checker-demo">
+        <div class="dsl">Vérificateur de combinaisons fréquentes dans Ulamu</div>
+        <div class="checker-grid">
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--bg-elevated)">
+              <div class="chk-preview-big" style="color:var(--text-primary)">Aa</div>
+              <div class="chk-preview-sm" style="color:var(--text-secondary)">Bb</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Texte sur bg-elevated</div>
+              <span class="chk-badge chk-ok">✓ AA+</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--accent-500)">
+              <div class="chk-preview-big" style="color:#fff">Aa</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Blanc sur accent-500</div>
+              <span class="chk-badge chk-ok">✓ AA</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--success-bg)">
+              <div class="chk-preview-big" style="color:var(--success-text);font-size:14px">Confirmé</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Success text / bg</div>
+              <span class="chk-badge chk-ok">✓ AA</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--error-bg)">
+              <div class="chk-preview-big" style="color:var(--error-text);font-size:14px">Erreur</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Error text / bg</div>
+              <span class="chk-badge chk-ok">✓ AA</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--warning-bg)">
+              <div class="chk-preview-big" style="color:var(--warning-text);font-size:14px">Alerte</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Warning text / bg</div>
+              <span class="chk-badge chk-ok">✓ AA</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--bg-muted)">
+              <div class="chk-preview-big" style="color:var(--text-disabled);font-size:14px">Désactivé</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">Disabled / bg-muted</div>
+              <span class="chk-badge chk-no">— Non requis</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--bg-elevated)">
+              <div class="chk-preview-big" style="color:var(--accent-500);font-size:16px">Lien</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">accent-500 / bg-elevated</div>
+              <span class="chk-badge chk-ok">✓ AA</span>
+            </div>
+          </div>
+
+          <div class="chk-pair">
+            <div class="chk-preview" style="background:var(--bg-base)">
+              <div class="chk-preview-big" style="color:var(--text-tertiary);font-size:16px">Hint</div>
+            </div>
+            <div class="chk-info">
+              <div class="chk-name">text-tertiary / bg-base</div>
+              <span class="chk-badge" style="background:var(--warning-bg);color:var(--warning-text)">⚠ Min 14px</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 04 NAVIGATION CLAVIER ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">04 — Navigation clavier</h2><span class="ssub">Tab order · raccourcis globaux · comportement par composant</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <!-- Tab order diagram -->
+      <div class="dsl" style="margin-bottom:var(--sp-4)">Ordre de tabulation — structure de page Ulamu</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);margin-bottom:var(--sp-8)">
+        <div class="tab-order">
+          <!-- Topbar -->
+          <div class="to-topbar">
+            <div style="width:22px;height:22px;background:var(--accent-500);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center"><div class="tab-n" style="width:14px;height:14px;font-size:7px">1</div></div>
+            <div style="height:7px;background:rgba(255,255,255,0.12);border-radius:2px;width:50px"></div>
+            <div style="flex:1"></div>
+            <div style="height:22px;background:rgba(255,255,255,0.10);border:1px solid var(--glass-border);border-radius:3px;width:110px;display:flex;align-items:center;padding:0 6px;gap:4px"><div class="tab-n" style="width:14px;height:14px;font-size:7px;flex-shrink:0">2</div><div style="height:5px;background:rgba(255,255,255,0.12);border-radius:2px;flex:1"></div></div>
+            <div class="tab-n" style="margin-left:var(--sp-2)">3</div>
+          </div>
+          <!-- Layout -->
+          <div class="to-layout">
+            <div class="to-sidebar">
+              <div class="to-nav-item act"><div class="tab-n" style="flex-shrink:0">4</div><div style="height:5px;background:rgba(39,86,166,0.3);border-radius:2px;flex:1"></div></div>
+              <div class="to-nav-item"><div class="tab-n">5</div><div style="height:5px;background:var(--bg-muted);border-radius:2px;flex:1"></div></div>
+              <div class="to-nav-item"><div class="tab-n">6</div><div style="height:5px;background:var(--bg-muted);border-radius:2px;flex:1"></div></div>
+              <div style="flex:1"></div>
+              <div class="to-nav-item"><div class="tab-n">7</div><div style="height:5px;background:var(--bg-muted);border-radius:2px;flex:1"></div></div>
+            </div>
+            <div class="to-content">
+              <div style="height:8px;background:var(--bg-muted);border-radius:2px;width:160px"></div>
+              <div class="to-card">
+                <div class="to-mini-bar" style="width:55%"></div>
+                <div class="to-mini-bar" style="width:80%;opacity:.5"></div>
+                <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-1)">
+                  <div class="to-mini-btn" style="flex:1"><div class="tab-n" style="width:14px;height:14px;font-size:7px">8</div></div>
+                  <div class="to-mini-btn" style="flex:1;opacity:.5"><div class="tab-n" style="width:14px;height:14px;font-size:7px">9</div></div>
+                </div>
+              </div>
+              <div class="to-card" style="flex:1">
+                <div class="to-mini-bar" style="width:40%"></div>
+                <div style="flex:1;background:var(--bg-subtle);border-radius:3px;margin-top:var(--sp-2)"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:var(--sp-3);font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">Les numéros indiquent l'ordre de tabulation naturel (flux DOM)</div>
+        </div>
+
+        <!-- Keyboard shortcuts -->
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase;margin-bottom:var(--sp-2)">Raccourcis globaux Ulamu</div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">K</span></div>
+            <div class="kbd-desc">Ouvrir la recherche globale (patients, médecins, ordonnances)</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">Esc</span></div>
+            <div class="kbd-desc">Fermer la modale, le drawer, le dropdown ou le menu contextuel actif</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Aller à l'élément interactif suivant dans l'ordre naturel du DOM</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">Shift</span><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Revenir à l'élément interactif précédent</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">↑</span><span class="kbd">↓</span></div>
+            <div class="kbd-desc">Naviguer dans une liste, un menu, un select ou un accordion ouvert</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">Enter</span></div>
+            <div class="kbd-desc">Activer le bouton ou le lien focusé, ouvrir un accordion, valider un formulaire</div>
+          </div>
+          <div class="kbd-row" style="border-bottom:1px solid var(--border-subtle);padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">Space</span></div>
+            <div class="kbd-desc">Cocher/décocher une checkbox, activer un toggle, ouvrir un select</div>
+          </div>
+          <div class="kbd-row" style="padding:var(--sp-3) 0">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">Enter</span></div>
+            <div class="kbd-desc">Soumettre un formulaire dans une modale sans cliquer le bouton</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Composants keyboard behavior -->
+      <div class="dsl">Comportement clavier par composant</div>
+      <div class="kbd-grid">
+        <div class="kbd-card">
+          <div class="kbd-title">Sidebar Navigation</div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Passe d'un nav item au suivant</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Enter</span></div>
+            <div class="kbd-desc">Active le nav item focusé, change la vue</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">↑</span><span class="kbd">↓</span></div>
+            <div class="kbd-desc">Navigation entre items adjacents dans la sidebar</div>
+          </div>
+        </div>
+        <div class="kbd-card">
+          <div class="kbd-title">Modale</div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Cycle dans les éléments de la modale uniquement (focus trap)</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Esc</span></div>
+            <div class="kbd-desc">Ferme la modale et retourne le focus sur l'élément déclencheur</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Enter</span></div>
+            <div class="kbd-desc">Valide l'action primaire de la modale si un bouton est focusé</div>
+          </div>
+        </div>
+        <div class="kbd-card">
+          <div class="kbd-title">Accordion</div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Enter</span><span style="font-size:10px;color:var(--text-tertiary)">ou</span><span class="kbd">Space</span></div>
+            <div class="kbd-desc">Ouvre ou ferme l'accordion focusé</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Passe au prochain élément interactif (après le contenu ouvert)</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">↑</span><span class="kbd">↓</span></div>
+            <div class="kbd-desc">Passe d'un en-tête d'accordion à l'autre</div>
+          </div>
+        </div>
+        <div class="kbd-card">
+          <div class="kbd-title">Tabs</div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">←</span><span class="kbd">→</span></div>
+            <div class="kbd-desc">Change d'onglet actif horizontalement</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Tab</span></div>
+            <div class="kbd-desc">Saute directement dans le contenu de l'onglet actif</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Home</span><span style="font-size:10px;color:var(--text-tertiary)">/</span><span class="kbd">End</span></div>
+            <div class="kbd-desc">Premier / dernier onglet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 05 ARIA ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">05 — Attributs ARIA</h2><span class="ssub">Rôles · attributs obligatoires · états dynamiques · composants Ulamu</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6)">
+
+        <div>
+          <div class="dsl">Sidebar Navigation</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;nav</span> <span class="aria-attr">aria-label</span>=<span class="aria-val">"Navigation principale"</span><span class="aria-tag">&gt;</span>
+  <span class="aria-tag">&lt;ul</span> <span class="aria-attr">role</span>=<span class="aria-val">"list"</span><span class="aria-tag">&gt;</span>
+    <span class="aria-tag">&lt;li&gt;</span>
+      <span class="aria-tag">&lt;a</span>
+        <span class="aria-attr">href</span>=<span class="aria-val">"/dashboard"</span>
+        <span class="aria-attr">aria-current</span>=<span class="aria-val">"page"</span>  <span class="aria-comment">← page active</span>
+        <span class="aria-attr">aria-label</span>=<span class="aria-val">"Tableau de bord"</span>
+      <span class="aria-tag">&gt;</span>
+        <span class="aria-tag">&lt;svg</span> <span class="aria-attr">aria-hidden</span>=<span class="aria-val">"true"</span><span class="aria-tag">&gt;...&lt;/svg&gt;</span>
+        Tableau de bord
+      <span class="aria-tag">&lt;/a&gt;</span>
+    <span class="aria-tag">&lt;/li&gt;</span>
+  <span class="aria-tag">&lt;/ul&gt;</span>
+<span class="aria-tag">&lt;/nav&gt;</span>
+          </div>
+
+          <div class="dsl">Modale</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;div</span>
+  <span class="aria-attr">role</span>=<span class="aria-val">"dialog"</span>
+  <span class="aria-attr">aria-modal</span>=<span class="aria-val">"true"</span>
+  <span class="aria-attr">aria-labelledby</span>=<span class="aria-val">"modal-title"</span>
+  <span class="aria-attr">aria-describedby</span>=<span class="aria-val">"modal-desc"</span>
+<span class="aria-tag">&gt;</span>
+  <span class="aria-tag">&lt;h2</span> <span class="aria-attr">id</span>=<span class="aria-val">"modal-title"</span><span class="aria-tag">&gt;</span>
+    Confirmer l'ordonnance
+  <span class="aria-tag">&lt;/h2&gt;</span>
+  <span class="aria-tag">&lt;p</span> <span class="aria-attr">id</span>=<span class="aria-val">"modal-desc"</span><span class="aria-tag">&gt;</span>
+    Cette action est irréversible
+  <span class="aria-tag">&lt;/p&gt;</span>
+<span class="aria-tag">&lt;/div&gt;</span>
+          </div>
+
+          <div class="dsl">Accordion</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;button</span>
+  <span class="aria-attr">aria-expanded</span>=<span class="aria-val">"true"</span>  <span class="aria-comment">← ouvert</span>
+  <span class="aria-attr">aria-controls</span>=<span class="aria-val">"acc-body-1"</span>
+  <span class="aria-attr">id</span>=<span class="aria-val">"acc-hdr-1"</span>
+<span class="aria-tag">&gt;</span>
+  Mode hors ligne ?
+<span class="aria-tag">&lt;/button&gt;</span>
+<span class="aria-tag">&lt;div</span>
+  <span class="aria-attr">id</span>=<span class="aria-val">"acc-body-1"</span>
+  <span class="aria-attr">role</span>=<span class="aria-val">"region"</span>
+  <span class="aria-attr">aria-labelledby</span>=<span class="aria-val">"acc-hdr-1"</span>
+  <span class="aria-attr">hidden</span>  <span class="aria-comment">← retiré quand ouvert</span>
+<span class="aria-tag">&gt;</span>
+  Contenu de l'accordion...
+<span class="aria-tag">&lt;/div&gt;</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="dsl">Toast / Notification live</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;div</span>
+  <span class="aria-attr">role</span>=<span class="aria-val">"status"</span>  <span class="aria-comment">← info/success</span>
+  <span class="aria-comment"><!-- ou role="alert" pour error/warning --></span>
+  <span class="aria-attr">aria-live</span>=<span class="aria-val">"polite"</span>  <span class="aria-comment">← polite</span>
+  <span class="aria-comment"><!-- ou aria-live="assertive" pour erreurs --></span>
+  <span class="aria-attr">aria-atomic</span>=<span class="aria-val">"true"</span>
+<span class="aria-tag">&gt;</span>
+  Ordonnance créée avec succès
+<span class="aria-tag">&lt;/div&gt;</span>
+          </div>
+
+          <div class="dsl">Tabs</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;div</span> <span class="aria-attr">role</span>=<span class="aria-val">"tablist"</span>
+     <span class="aria-attr">aria-label</span>=<span class="aria-val">"Dossier patient"</span><span class="aria-tag">&gt;</span>
+  <span class="aria-tag">&lt;button</span>
+    <span class="aria-attr">role</span>=<span class="aria-val">"tab"</span>
+    <span class="aria-attr">aria-selected</span>=<span class="aria-val">"true"</span>
+    <span class="aria-attr">aria-controls</span>=<span class="aria-val">"tab-info"</span>
+    <span class="aria-attr">id</span>=<span class="aria-val">"tab-btn-info"</span>
+  <span class="aria-tag">&gt;</span>Informations<span class="aria-tag">&lt;/button&gt;</span>
+<span class="aria-tag">&lt;/div&gt;</span>
+<span class="aria-tag">&lt;div</span>
+  <span class="aria-attr">role</span>=<span class="aria-val">"tabpanel"</span>
+  <span class="aria-attr">id</span>=<span class="aria-val">"tab-info"</span>
+  <span class="aria-attr">aria-labelledby</span>=<span class="aria-val">"tab-btn-info"</span>
+<span class="aria-tag">&gt;</span>
+  Contenu de l'onglet...
+<span class="aria-tag">&lt;/div&gt;</span>
+          </div>
+
+          <div class="dsl">Toggle Switch</div>
+          <div class="aria-code">
+<span class="aria-tag">&lt;button</span>
+  <span class="aria-attr">role</span>=<span class="aria-val">"switch"</span>
+  <span class="aria-attr">aria-checked</span>=<span class="aria-val">"true"</span>  <span class="aria-comment">← ON</span>
+  <span class="aria-attr">aria-label</span>=<span class="aria-val">"Notifications activées"</span>
+<span class="aria-tag">&gt;</span>
+  <span class="aria-comment"><!-- visuel du toggle --></span>
+<span class="aria-tag">&lt;/button&gt;</span>
+          </div>
+
+          <!-- ARIA table -->
+          <table class="tt" style="margin-top:var(--sp-4)">
+            <thead><tr><th>Composant</th><th>role</th><th>Attribut clé</th></tr></thead>
+            <tbody>
+              <tr><td class="tv">Sidebar nav</td><td><span class="tk">navigation</span></td><td class="tu">aria-label · aria-current="page"</td></tr>
+              <tr><td class="tv">Modale</td><td><span class="tk">dialog</span></td><td class="tu">aria-modal · aria-labelledby · focus trap</td></tr>
+              <tr><td class="tv">Toast info</td><td><span class="tk">status</span></td><td class="tu">aria-live="polite" · aria-atomic</td></tr>
+              <tr><td class="tv">Toast erreur</td><td><span class="tk">alert</span></td><td class="tu">aria-live="assertive" · aria-atomic</td></tr>
+              <tr><td class="tv">Accordion</td><td><span class="tk">button</span></td><td class="tu">aria-expanded · aria-controls</td></tr>
+              <tr><td class="tv">Tabs</td><td><span class="tk">tablist/tab</span></td><td class="tu">aria-selected · aria-controls</td></tr>
+              <tr><td class="tv">Toggle</td><td><span class="tk">switch</span></td><td class="tu">aria-checked="true|false"</td></tr>
+              <tr><td class="tv">Pagination</td><td><span class="tk">navigation</span></td><td class="tu">aria-label · aria-current="page" sur page active</td></tr>
+              <tr><td class="tv">Icône déco.</td><td><span class="tk">—</span></td><td class="tu">aria-hidden="true" · obligatoire sur SVG décoratif</td></tr>
+              <tr><td class="tv">Input champ</td><td><span class="tk">—</span></td><td class="tu">aria-invalid="true" en état error · aria-describedby→message</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 RESPONSIVE ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">06 — Comportement responsive</h2><span class="ssub">Desktop prioritaire · 6 breakpoints · adaptation progressive</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+
+      <!-- Wireframe previews -->
+      <div class="dsl">Aperçu des layouts par breakpoint</div>
+      <div class="wf-row" style="margin-bottom:var(--sp-8)">
+
+        <!-- Desktop 1280+ -->
+        <div class="wf-device">
+          <div class="wf-screen" style="width:200px;height:130px">
+            <div class="wf-tb"><div class="wf-tb-dot"></div><div class="wf-tb-sp"></div><div class="wf-tb-av"></div></div>
+            <div style="display:flex;height:calc(100% - 28px)">
+              <div class="wf-sb" style="width:36px">
+                <div class="wf-sb-ico act"></div>
+                <div class="wf-sb-ico"></div>
+                <div class="wf-sb-ico"></div>
+              </div>
+              <div class="wf-ct">
+                <div class="wf-ct-ln" style="width:70%"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;flex:1">
+                  <div class="wf-ct-card"><div class="wf-ct-ln" style="width:60%"></div><div class="wf-ct-ln" style="width:40%;opacity:.5"></div></div>
+                  <div class="wf-ct-card"><div class="wf-ct-ln" style="width:70%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="wf-label">Desktop ★<br>≥ 1280px</div>
+        </div>
+
+        <!-- Laptop 1024 -->
+        <div class="wf-device">
+          <div class="wf-screen" style="width:160px;height:110px">
+            <div class="wf-tb" style="height:22px"><div class="wf-tb-dot"></div><div class="wf-tb-sp"></div><div class="wf-tb-av"></div></div>
+            <div style="display:flex;height:calc(100% - 22px)">
+              <div class="wf-sb" style="width:28px">
+                <div class="wf-sb-ico act" style="width:16px;height:16px"></div>
+                <div class="wf-sb-ico" style="width:16px;height:16px"></div>
+                <div class="wf-sb-ico" style="width:16px;height:16px"></div>
+              </div>
+              <div class="wf-ct">
+                <div class="wf-ct-ln" style="width:70%"></div>
+                <div class="wf-ct-card" style="flex:1"><div class="wf-ct-ln" style="width:60%"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="wf-label">Laptop<br>≥ 1024px</div>
+        </div>
+
+        <!-- Tablet 768 -->
+        <div class="wf-device">
+          <div class="wf-screen" style="width:110px;height:140px">
+            <div class="wf-tb" style="height:22px"><div class="wf-tb-dot"></div><div class="wf-tb-sp"></div><div class="wf-tb-av"></div></div>
+            <div style="display:flex;height:calc(100% - 54px)">
+              <div class="wf-sb" style="width:22px">
+                <div class="wf-sb-ico act" style="width:12px;height:12px;border-radius:2px"></div>
+                <div class="wf-sb-ico" style="width:12px;height:12px;border-radius:2px"></div>
+              </div>
+              <div class="wf-ct">
+                <div class="wf-ct-card" style="flex:1"><div class="wf-ct-ln" style="width:70%"></div><div class="wf-ct-ln" style="width:50%;opacity:.5"></div></div>
+              </div>
+            </div>
+            <div class="wf-bnav"><div class="wf-bnav-ico"><div class="wf-bnav-dot act"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot"></div></div></div>
+          </div>
+          <div class="wf-label">Tablette<br>≥ 768px</div>
+        </div>
+
+        <!-- Mobile 480 -->
+        <div class="wf-device">
+          <div class="wf-screen" style="width:72px;height:130px;border-radius:6px">
+            <div class="wf-tb" style="height:20px;padding:0 5px"><div class="wf-tb-dot" style="width:8px;height:8px"></div><div class="wf-tb-sp"></div><div class="wf-tb-av" style="width:12px;height:12px"></div></div>
+            <div class="wf-ct" style="padding:4px">
+              <div class="wf-ct-ln" style="width:80%"></div>
+              <div class="wf-ct-card"><div class="wf-ct-ln" style="width:100%"></div><div class="wf-ct-ln" style="width:80%;opacity:.5"></div></div>
+              <div class="wf-ct-card"><div class="wf-ct-ln" style="width:90%"></div></div>
+            </div>
+            <div class="wf-bnav" style="height:28px"><div class="wf-bnav-ico"><div class="wf-bnav-dot act"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot"></div></div></div>
+          </div>
+          <div class="wf-label">Mobile L<br>≥ 480px</div>
+        </div>
+
+        <!-- Mobile XS 360 -->
+        <div class="wf-device">
+          <div class="wf-screen" style="width:56px;height:110px;border-radius:6px">
+            <div class="wf-tb" style="height:18px;padding:0 4px"><div class="wf-tb-dot" style="width:6px;height:6px"></div><div class="wf-tb-sp"></div><div class="wf-tb-av" style="width:10px;height:10px"></div></div>
+            <div class="wf-ct" style="padding:3px">
+              <div class="wf-ct-ln" style="width:100%"></div>
+              <div class="wf-ct-card"><div class="wf-ct-ln" style="width:100%"></div><div class="wf-ct-ln" style="width:80%;opacity:.5"></div></div>
+            </div>
+            <div class="wf-bnav" style="height:24px"><div class="wf-bnav-ico"><div class="wf-bnav-dot act" style="width:10px"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot" style="width:10px"></div></div><div class="wf-bnav-ico"><div class="wf-bnav-dot" style="width:10px"></div></div></div>
+          </div>
+          <div class="wf-label">Mobile XS<br>≥ 360px</div>
+        </div>
+
+      </div>
+
+      <!-- Responsive matrix -->
+      <div class="dsl">Comportement de chaque composant selon le breakpoint</div>
+      <div class="resp-grid">
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Sidebar</span>
+            <span class="resp-bp-val">Composant critique</span>
+            <span class="resp-priority primary">★ priorité haute</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1280px</div><div class="resp-cell-val"><strong>Étendue 240px</strong><br>Labels + icônes + badges + section labels</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1024px</div><div class="resp-cell-val"><strong>Étendue 240px</strong><br>Identique desktop</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>Réduite 56px</strong><br>Icônes seules + tooltip au survol</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">&lt; 768px</div><div class="resp-cell-val"><strong>Bottom navigation</strong><br>4–5 icônes principales + hamburger</div></div>
+          </div>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Topbar</span>
+            <span class="resp-bp-val">Navigation principale</span>
+            <span class="resp-priority adapt">adaptatif</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1280px</div><div class="resp-cell-val"><strong>Complète</strong><br>Logo + nom + search + actions + avatar</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>Compacte</strong><br>Logo + search réduit + actions</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 480px</div><div class="resp-cell-val"><strong>Minimale</strong><br>Logo + icône search + avatar</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">&lt; 480px</div><div class="resp-cell-val"><strong>Logo seul</strong><br>Search en bottom sheet · hamburger</div></div>
+          </div>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Grille de contenu</span>
+            <span class="resp-bp-val">Layout principal</span>
+            <span class="resp-priority primary">★ priorité haute</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1280px</div><div class="resp-cell-val"><strong>12 colonnes</strong><br>Gouttière 24px · max-width 1140px</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1024px</div><div class="resp-cell-val"><strong>8 colonnes</strong><br>Gouttière 20px</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>4 colonnes</strong><br>Gouttière 16px</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">&lt; 480px</div><div class="resp-cell-val"><strong>1 colonne</strong><br>Gouttière 12px · pleine largeur</div></div>
+          </div>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Cards</span>
+            <span class="resp-bp-val">Grilles de contenu</span>
+            <span class="resp-priority adapt">adaptatif</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1280px</div><div class="resp-cell-val"><strong>3 colonnes</strong><br>Cards patient / médecin</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>2 colonnes</strong><br>Adaptation tablette</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 480px</div><div class="resp-cell-val"><strong>1 colonne</strong><br>Cards pleine largeur</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">KPI cards</div><div class="resp-cell-val"><strong>4 → 2 → 1</strong><br>Adaptation progressive</div></div>
+          </div>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Modales</span>
+            <span class="resp-bp-val">Overlay dialogs</span>
+            <span class="resp-priority adapt">adaptatif</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1280px</div><div class="resp-cell-val"><strong>max-width 480px</strong><br>Centré · overlay opaque</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>max-width 480px</strong><br>Identique desktop</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 480px</div><div class="resp-cell-val"><strong>width 90vw</strong><br>Marges latérales 5vw</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">&lt; 480px</div><div class="resp-cell-val"><strong>Bottom sheet</strong><br>Monte depuis le bas · radius top</div></div>
+          </div>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp-row-hd">
+            <span class="resp-bp-name">Tableaux de données</span>
+            <span class="resp-bp-val">Data tables</span>
+            <span class="resp-priority adapt">adaptatif</span>
+          </div>
+          <div class="resp-row-body">
+            <div class="resp-cell"><div class="resp-cell-title">≥ 1024px</div><div class="resp-cell-val"><strong>Toutes colonnes</strong><br>Affichage normal</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 768px</div><div class="resp-cell-val"><strong>Colonnes réduites</strong><br>Colonnes secondaires masquées</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">≥ 480px</div><div class="resp-cell-val"><strong>Scroll horizontal</strong><br>overflow-x: auto · min-width maintenu</div></div>
+            <div class="resp-cell"><div class="resp-cell-title">&lt; 480px</div><div class="resp-cell-val"><strong>Cards mode</strong><br>Chaque ligne devient une card</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 07 RÈGLES ══ -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">07 — Règles d'usage</h2></div>
+    <div class="sdiv"></div>
+    <div class="rg">
+      <div class="rc f">
+        <div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>Interdictions absolues</div>
+        <ul class="rl">
+          <li>outline:none sur tout élément interactif sans alternative de focus visible</li>
+          <li>Utiliser la couleur seule pour indiquer un état error, warning ou success</li>
+          <li>Supprimer l'état hover sur les éléments interactifs — WCAG 1.4.11</li>
+          <li>Texte non-décoratif sous 3:1 de contraste — WCAG 1.4.3 minimum AA</li>
+          <li>Modale sans focus trap — le Tab doit cycler à l'intérieur uniquement</li>
+          <li>Toast sans role="status" ou role="alert" — lecteur d'écran ne l'annonce pas</li>
+          <li>Icônes SVG décoratives sans aria-hidden="true" — lues par les screen readers</li>
+          <li>Input sans label visible ou aria-label — le placeholder ne suffit pas</li>
+          <li>État disabled via opacity seule sur le fond — toujours cursor:not-allowed aussi</li>
+          <li>Tableau sans en-têtes &lt;th scope&gt; — navigation screen reader impossible</li>
+        </ul>
+      </div>
+      <div class="rc a">
+        <div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Bonnes pratiques obligatoires</div>
+        <ul class="rl">
+          <li>Focus ring unifié sur tous les composants : outline 3px rgba(39,86,166,0.30) + offset 2px</li>
+          <li>Utiliser :focus-visible (pas :focus) pour éviter le ring au clic souris</li>
+          <li>Toujours combiner couleur + icône + texte pour les états sémantiques</li>
+          <li>Tester les ratios de contraste dans les deux thèmes avant validation</li>
+          <li>Implémenter focus trap dans toutes les modales et drawers</li>
+          <li>Retourner le focus sur l'élément déclencheur à la fermeture d'une modale</li>
+          <li>aria-live="polite" sur les toasts info/success · "assertive" sur les erreurs</li>
+          <li>aria-hidden="true" sur toutes les icônes SVG décoratives</li>
+          <li>Tester la navigation clavier complète sur chaque nouvelle page implémentée</li>
+          <li>Sur mobile : bottom navigation (4-5 items max) · modales en bottom sheets</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot">
+    <div class="fmeta">ulamu · Design System · CG-11 · v1.0</div>
+    <div class="fbdg"><div class="fbdgd"></div>Document validé — Phase 2 en cours</div>
+  </footer>
+
+</main>
+<script>
+function toggleTheme(){
+  const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme',d?'light':'dark');
+  document.getElementById('ol').classList.toggle('active',d);
+  document.getElementById('od').classList.toggle('active',!d);
+}
+(function(){
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.getElementById('od').classList.toggle('active',d);
+  document.getElementById('ol').classList.toggle('active',!d);
+})();
+
+/* Focus ring simulation on kb items */
+document.querySelectorAll('.kb-item').forEach(item=>{
+  item.addEventListener('focus',()=>item.classList.add('kb-focused'));
+  item.addEventListener('blur',()=>item.classList.remove('kb-focused'));
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.kb-item').forEach(i=>i.classList.remove('kb-focused'));
+    item.classList.add('kb-focused');
+    item.focus();
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-03 Espacements, Grilles & Mise en Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   ULAMU DESIGN SYSTEM — CG-03
+   Espacements · Grilles · Mise en Page
+══════════════════════════════════════════════════════ */
+:root {
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --accent-300:#6F92DA; --accent-500:#2756A6; --accent-600:#1F479A;
+  --radius-sm:4px; --radius-md:6px; --radius-lg:10px; --radius-xl:14px;
+
+  /* SPACING SCALE — base 4px */
+  --sp-0:  0px;
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+
+  /* LAYOUT */
+  --layout-sidebar-width:     240px;
+  --layout-sidebar-collapsed: 56px;
+  --layout-topbar-height:     56px;
+  --layout-content-max:       1140px;
+  --layout-content-padding:   32px;
+  --layout-section-gap:       48px;
+  --layout-card-gap:          16px;
+}
+
+[data-theme="light"] {
+  --bg-base:#FAFAFA; --bg-subtle:#F4F4F5; --bg-muted:#EBEBEC; --bg-elevated:#FFFFFF;
+  --glass-bg:rgba(255,255,255,0.72); --glass-blur:12px; --glass-border:rgba(0,0,0,0.07);
+  --text-primary:#111112; --text-secondary:#3F3F46; --text-tertiary:#71717A; --text-disabled:#A1A1AA;
+  --text-accent:var(--accent-600);
+  --border-subtle:rgba(0,0,0,0.07); --border-default:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05); --shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+  --grain-opacity:0.035;
+  --accent-guide:rgba(39,86,166,0.12); --accent-guide-border:rgba(39,86,166,0.30);
+  --gutter-color:rgba(39,86,166,0.08);
+}
+[data-theme="dark"] {
+  --bg-base:#111113; --bg-subtle:#18181B; --bg-muted:#222226; --bg-elevated:#2A2A2F;
+  --glass-bg:rgba(28,28,33,0.72); --glass-blur:14px; --glass-border:rgba(255,255,255,0.07);
+  --text-primary:#F4F4F5; --text-secondary:#A1A1AA; --text-tertiary:#71717A; --text-disabled:#52525B;
+  --text-accent:var(--accent-300);
+  --border-subtle:rgba(255,255,255,0.06); --border-default:rgba(255,255,255,0.10); --border-strong:rgba(255,255,255,0.18);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.35); --shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);
+  --shadow-lg:0 6px 24px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.35);
+  --grain-opacity:0.055;
+  --accent-guide:rgba(39,86,166,0.20); --accent-guide-border:rgba(111,146,218,0.35);
+  --gutter-color:rgba(39,86,166,0.12);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--bg-base);
+  color:var(--text-primary);
+  min-height:100vh;
+  transition:background .25s linear,color .25s linear;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:var(--grain-opacity);
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.logo-mark{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.logo-name{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.topbar-divider{width:1px;height:20px;background:var(--border-default)}
+.module-breadcrumb{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.module-breadcrumb .tag{background:rgba(39,86,166,0.1);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.2)}
+[data-theme="dark"] .module-breadcrumb .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.theme-toggle{display:flex;align-items:center;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer;transition:border-color .25s linear}
+.theme-toggle:hover{border-color:var(--border-strong)}
+.toggle-option{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px}
+.toggle-option.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+
+/* ── PAGE ── */
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.page-header{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.module-id{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .module-id{color:var(--accent-300)}
+.module-id::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.page-desc{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.section{margin-bottom:var(--sp-12)}
+.section-header{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.section-title{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.section-subtitle{font-size:13px;color:var(--text-tertiary)}
+.section-divider{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+
+/* ── TOKEN TABLE ── */
+.token-table{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:13px}
+.token-table thead{background:var(--bg-muted)}
+.token-table th{padding:10px 14px;text-align:left;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.token-table td{padding:10px 14px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.token-table tr:last-child td{border-bottom:none}
+.token-table tr:hover td{background:var(--bg-subtle)}
+.tt-token{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 7px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:inline-block}
+.tt-value{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+.tt-usage{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+/* ── SPACING SCALE VISUALIZER ── */
+.scale-list{display:flex;flex-direction:column;gap:var(--sp-2)}
+.scale-item{display:grid;grid-template-columns:120px 48px 1fr;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-4);border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);transition:background .2s linear}
+.scale-item:hover{background:var(--bg-subtle)}
+.scale-token-label{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent)}
+.scale-px{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)}
+.scale-bar-wrap{position:relative;height:20px;display:flex;align-items:center}
+.scale-bar{height:12px;border-radius:3px;background:var(--accent-500);opacity:.75;transition:width .3s linear}
+.scale-bar-label{position:absolute;left:0;top:50%;transform:translateY(-50%);font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,.85);padding-left:5px;white-space:nowrap;pointer-events:none}
+
+/* ── SPACING DEMO BOXES ── */
+.spacing-demo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--sp-3)}
+.spacing-demo-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-4);background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg)}
+.spacing-demo-box{background:var(--accent-guide);border:1px dashed var(--accent-guide-border);border-radius:2px;width:100%}
+.spacing-demo-label{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);text-align:center}
+.spacing-demo-px{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-accent);text-align:center}
+
+/* ── GRID VISUALIZER ── */
+.grid-demo{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--sp-6);
+  box-shadow:var(--shadow-md);
+  margin-bottom:var(--sp-4);
+  overflow:hidden;
+}
+.grid-demo-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:8px}
+.grid-demo-label::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.col-grid{display:grid;gap:0;position:relative}
+.col-cell{height:48px;border-radius:var(--radius-sm);background:var(--accent-guide);border:1px solid var(--accent-guide-border);display:flex;align-items:center;justify-content:center}
+.col-cell-label{font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--accent-500);opacity:.7}
+[data-theme="dark"] .col-cell-label{color:var(--accent-300)}
+.gutter-indicator{position:absolute;top:0;height:100%;background:var(--gutter-color);pointer-events:none}
+
+/* ── LAYOUT WIREFRAME ── */
+.wireframe-wrap{
+  background:var(--bg-subtle);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  box-shadow:var(--shadow-lg);
+}
+.wf-browser-bar{
+  height:36px;background:var(--bg-muted);border-bottom:1px solid var(--border-default);
+  display:flex;align-items:center;padding:0 var(--sp-4);gap:var(--sp-2);
+}
+.wf-dot{width:10px;height:10px;border-radius:50%}
+.wf-url{flex:1;height:20px;background:var(--bg-elevated);border-radius:3px;max-width:320px;margin:0 auto;border:1px solid var(--border-subtle)}
+.wf-body{display:flex;flex-direction:column}
+.wf-topbar{
+  height:56px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;align-items:center;
+  padding:0 var(--sp-6);
+  gap:var(--sp-4);
+  position:relative;
+}
+.wf-topbar-logo{width:24px;height:24px;background:var(--accent-500);border-radius:var(--radius-sm);flex-shrink:0}
+.wf-topbar-title{height:10px;background:var(--bg-muted);border-radius:3px;width:80px}
+.wf-topbar-spacer{flex:1}
+.wf-topbar-search{height:28px;background:var(--bg-muted);border-radius:var(--radius-md);width:180px;border:1px solid var(--border-subtle)}
+.wf-topbar-avatar{width:28px;height:28px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-subtle)}
+.wf-main{display:flex;height:480px}
+.wf-sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--glass-bg);
+  backdrop-filter:blur(14px);
+  border-right:1px solid var(--border-subtle);
+  padding:var(--sp-4) var(--sp-3);
+  display:flex;flex-direction:column;gap:var(--sp-1);
+}
+.wf-nav-item{height:32px;border-radius:var(--radius-md);display:flex;align-items:center;padding:0 var(--sp-3);gap:var(--sp-3)}
+.wf-nav-item.active{background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.2)}
+.wf-nav-icon{width:16px;height:16px;border-radius:3px;flex-shrink:0}
+.wf-nav-icon.accent{background:var(--accent-500)}
+.wf-nav-icon.muted{background:var(--bg-muted)}
+.wf-nav-label{height:8px;border-radius:2px;background:var(--bg-muted);flex:1}
+.wf-nav-label.accent{background:rgba(39,86,166,0.3)}
+.wf-nav-section{height:1px;background:var(--border-subtle);margin:var(--sp-2) 0}
+.wf-sidebar-footer{margin-top:auto;display:flex;flex-direction:column;gap:var(--sp-1)}
+.wf-content{flex:1;padding:var(--sp-6);overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4)}
+.wf-breadcrumb{height:8px;background:var(--bg-muted);border-radius:2px;width:200px}
+.wf-content-title{height:16px;background:var(--text-primary);opacity:.08;border-radius:3px;width:240px}
+.wf-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)}
+.wf-kpi{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)}
+.wf-kpi-label{height:6px;background:var(--bg-muted);border-radius:2px;width:60%}
+.wf-kpi-value{height:20px;background:var(--text-primary);opacity:.07;border-radius:3px;width:70%}
+.wf-kpi-delta{height:6px;background:#3D9A5C;opacity:.4;border-radius:2px;width:40%}
+.wf-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);flex:1}
+.wf-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3)}
+.wf-card-header{height:10px;background:var(--text-primary);opacity:.07;border-radius:2px;width:55%}
+.wf-card-line{height:6px;background:var(--bg-muted);border-radius:2px}
+.wf-card-chart{flex:1;min-height:80px;background:var(--bg-subtle);border-radius:var(--radius-md);display:flex;align-items:flex-end;padding:var(--sp-2);gap:var(--sp-1);overflow:hidden}
+.wf-bar{border-radius:2px 2px 0 0;flex:1}
+
+/* ── ANNOTATION OVERLAYS ── */
+.wireframe-container{position:relative}
+.anno{position:absolute;z-index:10;pointer-events:none}
+.anno-line{position:absolute;background:var(--accent-500);opacity:.6}
+.anno-tag{
+  position:absolute;
+  background:var(--accent-500);
+  color:#fff;
+  font-family:var(--font-mono);font-size:9px;font-weight:600;
+  padding:2px 6px;border-radius:3px;
+  white-space:nowrap;
+  z-index:20;
+}
+.anno-dim{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  color:var(--accent-500);
+}
+[data-theme="dark"] .anno-dim{color:var(--accent-300)}
+
+/* ── ZONE MAP ── */
+.zone-map{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.zone-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.zone-card-top{padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:var(--sp-3)}
+.zone-icon{width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.zone-name{font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:-0.1px;color:var(--text-primary)}
+.zone-card-body{padding:var(--sp-4) var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-2)}
+.zone-prop{display:flex;justify-content:space-between;align-items:center;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)}
+.zone-prop:last-child{border-bottom:none}
+.zone-prop-key{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)}
+.zone-prop-val{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent)}
+
+/* ── BREAKPOINTS ── */
+.bp-row{display:flex;flex-direction:column;gap:var(--sp-3)}
+.bp-item{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--sp-4) var(--sp-5);display:grid;grid-template-columns:140px 100px 1fr;align-items:center;gap:var(--sp-4)}
+.bp-item:hover{background:var(--bg-subtle)}
+.bp-name{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text-primary)}
+.bp-val{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.bp-bar-wrap{position:relative;height:24px;display:flex;align-items:center}
+.bp-bar{height:12px;border-radius:3px;background:var(--accent-guide);border:1px solid var(--accent-guide-border);position:relative;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+.bp-bar-label{font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--accent-500);opacity:.8}
+[data-theme="dark"] .bp-bar-label{color:var(--accent-300)}
+
+/* ── RULES ── */
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rule-card{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rule-card.forbidden{border-color:#E8AAAA;background:#FDF2F2}
+.rule-card.allowed{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rule-card.forbidden{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rule-card.allowed{border-color:#1F4A30;background:#0F2318}
+.rule-card-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rule-card.forbidden .rule-card-title{color:#7A2323}
+.rule-card.allowed .rule-card-title{color:#2B6B40}
+[data-theme="dark"] .rule-card.forbidden .rule-card-title{color:#E07070}
+[data-theme="dark"] .rule-card.allowed .rule-card-title{color:#6DBF8A}
+.rule-list{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rule-list li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rule-list li::before{position:absolute;left:0;top:1px}
+.rule-card.forbidden .rule-list li::before{content:'✕';color:#C44040;font-size:11px}
+.rule-card.allowed .rule-list li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ── DENSITY DEMO ── */
+.density-compare{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-4)}
+.density-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.density-header{background:var(--bg-muted);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.density-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.07em;text-transform:uppercase}
+.density-badge{font-family:var(--font-mono);font-size:9px;color:var(--text-tertiary);background:var(--bg-elevated);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle)}
+.density-list-item{border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:10px}
+.density-list-item:last-child{border-bottom:none}
+.density-avatar{border-radius:50%;background:var(--accent-guide);border:1px solid var(--accent-guide-border);flex-shrink:0}
+.density-text-block{flex:1;display:flex;flex-direction:column;gap:4px}
+.density-name{background:var(--text-primary);opacity:.09;border-radius:2px}
+.density-sub{background:var(--bg-muted);border-radius:2px}
+.density-dot{border-radius:50%;flex-shrink:0}
+
+/* FOOTER */
+.page-footer{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.footer-meta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.footer-badge{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.footer-badge-dot{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+@media(max-width:960px){
+  .zone-map{grid-template-columns:1fr 1fr}
+  .density-compare{grid-template-columns:1fr}
+  .wf-kpi-row{grid-template-columns:1fr 1fr}
+  .wf-sidebar{width:180px}
+  .rules-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}
+  .topbar{padding:0 var(--sp-4)}
+  .page-title{font-size:24px}
+  .zone-map{grid-template-columns:1fr}
+  .bp-item{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+      </div>
+      <span class="logo-name">ulamu</span>
+    </a>
+    <div class="topbar-divider"></div>
+    <div class="module-breadcrumb">
+      <span class="tag">CG-03</span>
+      Espacements · Grilles · Mise en Page
+    </div>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Basculer le thème">
+    <div class="toggle-option" id="opt-light">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Clair
+    </div>
+    <div class="toggle-option active" id="opt-dark">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>
+      Sombre
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="module-id">Design System · Module CG-03</div>
+    <h1 class="page-title">Espacements, Grilles &amp; Mise en Page</h1>
+    <p class="page-desc">Système d'espacement à base 4px, échelle de 14 paliers nommés, grilles de colonnes par contexte, zones de layout annotées (sidebar hybride, topbar, contenu, zones de densité) et breakpoints responsives. Aucune valeur de marge ou de padding ne doit être codée en dur hors de ce référentiel.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       01 — ÉCHELLE D'ESPACEMENT
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">01 — Échelle d'espacement</h2>
+      <span class="section-subtitle">Base 4px · 14 paliers nommés · visualisation proportionnelle</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="scale-list">
+      <div class="scale-item"><span class="scale-token-label">--sp-1</span><span class="scale-px">4px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:4px"><span class="scale-bar-label"></span></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-2</span><span class="scale-px">8px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:8px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-3</span><span class="scale-px">12px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:12px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-4</span><span class="scale-px">16px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:16px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-5</span><span class="scale-px">20px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:20px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-6</span><span class="scale-px">24px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:24px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-8</span><span class="scale-px">32px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:32px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-10</span><span class="scale-px">40px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:40px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-12</span><span class="scale-px">48px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:48px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-16</span><span class="scale-px">64px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:64px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-20</span><span class="scale-px">80px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:80px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-24</span><span class="scale-px">96px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:96px"></div></div></div>
+      <div class="scale-item"><span class="scale-token-label">--sp-32</span><span class="scale-px">128px</span><div class="scale-bar-wrap"><div class="scale-bar" style="width:128px"></div></div></div>
+    </div>
+
+    <!-- Visual boxes -->
+    <div style="margin-top:var(--sp-8)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4)">Représentation visuelle des espaces</p>
+      <div class="spacing-demo-grid">
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:4px"></div><div class="spacing-demo-px">4px</div><div class="spacing-demo-label">--sp-1</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:8px"></div><div class="spacing-demo-px">8px</div><div class="spacing-demo-label">--sp-2</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:12px"></div><div class="spacing-demo-px">12px</div><div class="spacing-demo-label">--sp-3</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:16px"></div><div class="spacing-demo-px">16px</div><div class="spacing-demo-label">--sp-4</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:20px"></div><div class="spacing-demo-px">20px</div><div class="spacing-demo-label">--sp-5</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:24px"></div><div class="spacing-demo-px">24px</div><div class="spacing-demo-label">--sp-6</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:32px"></div><div class="spacing-demo-px">32px</div><div class="spacing-demo-label">--sp-8</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:40px"></div><div class="spacing-demo-px">40px</div><div class="spacing-demo-label">--sp-10</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:48px"></div><div class="spacing-demo-px">48px</div><div class="spacing-demo-label">--sp-12</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:64px"></div><div class="spacing-demo-px">64px</div><div class="spacing-demo-label">--sp-16</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:80px"></div><div class="spacing-demo-px">80px</div><div class="spacing-demo-label">--sp-20</div></div>
+        <div class="spacing-demo-item"><div class="spacing-demo-box" style="height:96px"></div><div class="spacing-demo-px">96px</div><div class="spacing-demo-label">--sp-24</div></div>
+      </div>
+    </div>
+
+    <!-- Token usage table -->
+    <div style="margin-top:var(--sp-8)">
+      <table class="token-table">
+        <thead><tr><th>Token</th><th>Valeur</th><th>Usages typiques</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tt-token">--sp-1</span></td><td class="tt-value">4px</td><td class="tt-usage">Gap entre icône et label, espacement interne micro-badge</td></tr>
+          <tr><td><span class="tt-token">--sp-2</span></td><td class="tt-value">8px</td><td class="tt-usage">Gap entre éléments inline, padding interne badge/tag</td></tr>
+          <tr><td><span class="tt-token">--sp-3</span></td><td class="tt-value">12px</td><td class="tt-usage">Padding horizontal des boutons compacts, gap entre icône et texte nav</td></tr>
+          <tr><td><span class="tt-token">--sp-4</span></td><td class="tt-value">16px</td><td class="tt-usage">Padding interne des cards, gap entre champs de formulaire, padding nav item</td></tr>
+          <tr><td><span class="tt-token">--sp-5</span></td><td class="tt-value">20px</td><td class="tt-usage">Padding horizontal des boutons standards, espacement vertical liste</td></tr>
+          <tr><td><span class="tt-token">--sp-6</span></td><td class="tt-value">24px</td><td class="tt-usage">Padding interne des sections, gap entre KPI cards, margin entre blocs</td></tr>
+          <tr><td><span class="tt-token">--sp-8</span></td><td class="tt-value">32px</td><td class="tt-usage">Padding horizontal du contenu principal, margin entre sections proches</td></tr>
+          <tr><td><span class="tt-token">--sp-10</span></td><td class="tt-value">40px</td><td class="tt-usage">Margin top des titres de page, espacement important entre groupes</td></tr>
+          <tr><td><span class="tt-token">--sp-12</span></td><td class="tt-value">48px</td><td class="tt-usage">Gap entre sections majeures d'une page</td></tr>
+          <tr><td><span class="tt-token">--sp-16</span></td><td class="tt-value">64px</td><td class="tt-usage">Padding vertical des pages, espace entre modules distincts</td></tr>
+          <tr><td><span class="tt-token">--sp-20</span></td><td class="tt-value">80px</td><td class="tt-usage">Zones de respiration importantes (landing, empty states)</td></tr>
+          <tr><td><span class="tt-token">--sp-24</span></td><td class="tt-value">96px</td><td class="tt-usage">Marges verticales des grandes sections promotionnelles</td></tr>
+          <tr><td><span class="tt-token">--sp-32</span></td><td class="tt-value">128px</td><td class="tt-usage">Espacement maximal — reserved aux pages d'onboarding/auth</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       02 — GRILLES DE COLONNES
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">02 — Grilles de colonnes</h2>
+      <span class="section-subtitle">4 contextes · gouttières · marges · breakpoints</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <!-- 12 columns -->
+    <div class="grid-demo">
+      <div class="grid-demo-label">Grille 12 colonnes — Desktop (≥ 1280px) · Gouttière 24px</div>
+      <div class="col-grid" style="grid-template-columns:repeat(12,1fr);gap:24px">
+        <div class="col-cell"><span class="col-cell-label">1</span></div>
+        <div class="col-cell"><span class="col-cell-label">2</span></div>
+        <div class="col-cell"><span class="col-cell-label">3</span></div>
+        <div class="col-cell"><span class="col-cell-label">4</span></div>
+        <div class="col-cell"><span class="col-cell-label">5</span></div>
+        <div class="col-cell"><span class="col-cell-label">6</span></div>
+        <div class="col-cell"><span class="col-cell-label">7</span></div>
+        <div class="col-cell"><span class="col-cell-label">8</span></div>
+        <div class="col-cell"><span class="col-cell-label">9</span></div>
+        <div class="col-cell"><span class="col-cell-label">10</span></div>
+        <div class="col-cell"><span class="col-cell-label">11</span></div>
+        <div class="col-cell"><span class="col-cell-label">12</span></div>
+      </div>
+    </div>
+
+    <!-- 8 columns -->
+    <div class="grid-demo">
+      <div class="grid-demo-label">Grille 8 colonnes — Laptop (≥ 1024px) · Gouttière 20px</div>
+      <div class="col-grid" style="grid-template-columns:repeat(8,1fr);gap:20px">
+        <div class="col-cell"><span class="col-cell-label">1</span></div>
+        <div class="col-cell"><span class="col-cell-label">2</span></div>
+        <div class="col-cell"><span class="col-cell-label">3</span></div>
+        <div class="col-cell"><span class="col-cell-label">4</span></div>
+        <div class="col-cell"><span class="col-cell-label">5</span></div>
+        <div class="col-cell"><span class="col-cell-label">6</span></div>
+        <div class="col-cell"><span class="col-cell-label">7</span></div>
+        <div class="col-cell"><span class="col-cell-label">8</span></div>
+      </div>
+    </div>
+
+    <!-- 4 columns -->
+    <div class="grid-demo">
+      <div class="grid-demo-label">Grille 4 colonnes — Tablette (≥ 768px) · Gouttière 16px</div>
+      <div class="col-grid" style="grid-template-columns:repeat(4,1fr);gap:16px">
+        <div class="col-cell"><span class="col-cell-label">1</span></div>
+        <div class="col-cell"><span class="col-cell-label">2</span></div>
+        <div class="col-cell"><span class="col-cell-label">3</span></div>
+        <div class="col-cell"><span class="col-cell-label">4</span></div>
+      </div>
+    </div>
+
+    <!-- 2 columns -->
+    <div class="grid-demo">
+      <div class="grid-demo-label">Grille 2 colonnes — Mobile (≥ 360px) · Gouttière 12px</div>
+      <div class="col-grid" style="grid-template-columns:repeat(2,1fr);gap:12px">
+        <div class="col-cell"><span class="col-cell-label">1</span></div>
+        <div class="col-cell"><span class="col-cell-label">2</span></div>
+      </div>
+    </div>
+
+    <!-- Layout combos -->
+    <div style="margin-top:var(--sp-6)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4)">Combinaisons de colonnes fréquentes dans Ulamu</p>
+      <table class="token-table">
+        <thead><tr><th>Contexte</th><th>Colonnes</th><th>Répartition</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td class="tt-value">Dashboard KPI</td><td class="tt-value">12 col</td><td class="tt-value">3+3+3+3</td><td class="tt-usage">4 KPI cards de poids égal</td></tr>
+          <tr><td class="tt-value">Dashboard mixte</td><td class="tt-value">12 col</td><td class="tt-value">8+4</td><td class="tt-usage">Graphique principal + résumé latéral</td></tr>
+          <tr><td class="tt-value">Dossier patient</td><td class="tt-value">12 col</td><td class="tt-value">4+8</td><td class="tt-usage">Sidebar infos patient + contenu médical</td></tr>
+          <tr><td class="tt-value">Listes & tableaux</td><td class="tt-value">12 col</td><td class="tt-value">12</td><td class="tt-usage">Pleine largeur dans la zone de contenu</td></tr>
+          <tr><td class="tt-value">Formulaires</td><td class="tt-value">8 col</td><td class="tt-value">centré</td><td class="tt-usage">Formulaire centré, max-width 680px</td></tr>
+          <tr><td class="tt-value">Cartes médecins</td><td class="tt-value">12 col</td><td class="tt-value">4+4+4</td><td class="tt-usage">Grille de 3 profil cards</td></tr>
+          <tr><td class="tt-value">Pharmacie stocks</td><td class="tt-value">12 col</td><td class="tt-value">6+6</td><td class="tt-usage">Tableau stocks + graphique évolution</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       03 — LAYOUT WIREFRAME ANNOTÉ
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">03 — Layout Ulamu — Wireframe annoté</h2>
+      <span class="section-subtitle">Navigation hybride · Sidebar fixe + Topbar contextuelle</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <!-- Dimension annotations above -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-8);margin-bottom:var(--sp-4);flex-wrap:wrap">
+      <div class="anno-dim">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.5"><path d="M2 8h12M2 5l3 3-3 3M14 5l-3 3 3 3"/></svg>
+        Sidebar : 240px (étendue) · 56px (réduite)
+      </div>
+      <div class="anno-dim">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.5"><path d="M8 2v12M5 2l3-3 3 3M5 14l3 3 3-3"/></svg>
+        Topbar : 56px hauteur
+      </div>
+      <div class="anno-dim">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.5"><path d="M2 8h12M2 5l3 3-3 3M14 5l-3 3 3 3"/></svg>
+        Contenu max : 1140px · Padding H : 32px
+      </div>
+    </div>
+
+    <div class="wireframe-wrap">
+      <!-- browser bar -->
+      <div class="wf-browser-bar">
+        <div class="wf-dot" style="background:#FF5F57"></div>
+        <div class="wf-dot" style="background:#FFBD2E"></div>
+        <div class="wf-dot" style="background:#28C840"></div>
+        <div class="wf-url"></div>
+      </div>
+
+      <div class="wf-body">
+        <!-- Topbar -->
+        <div class="wf-topbar">
+          <div class="wf-topbar-logo"></div>
+          <div class="wf-topbar-title"></div>
+          <div class="wf-topbar-spacer"></div>
+          <div class="wf-topbar-search"></div>
+          <div style="width:var(--sp-3)"></div>
+          <div class="wf-topbar-avatar"></div>
+          <!-- annotation -->
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;border:1.5px dashed var(--accent-guide-border);pointer-events:none;border-radius:0"></div>
+          <div style="position:absolute;top:-18px;left:var(--sp-4);font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--accent-500);background:var(--bg-base);padding:0 4px">
+            TOPBAR · h:56px · glass · blur:12px
+          </div>
+        </div>
+
+        <div class="wf-main">
+          <!-- Sidebar -->
+          <div class="wf-sidebar" style="position:relative">
+            <div class="wf-nav-item active">
+              <div class="wf-nav-icon accent"></div>
+              <div class="wf-nav-label accent"></div>
+            </div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-section"></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-nav-section"></div>
+            <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            <div class="wf-sidebar-footer">
+              <div class="wf-nav-section"></div>
+              <div class="wf-nav-item"><div class="wf-nav-icon muted"></div><div class="wf-nav-label"></div></div>
+            </div>
+            <!-- annotation sidebar -->
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;border:1.5px dashed var(--accent-guide-border);pointer-events:none"></div>
+            <div style="position:absolute;bottom:var(--sp-4);right:calc(-1 * var(--sp-3));transform:translateX(100%);font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--accent-500);background:var(--bg-base);padding:0 4px;white-space:nowrap">
+              SIDEBAR · w:240px · glass · blur:14px
+            </div>
+          </div>
+
+          <!-- Content area -->
+          <div class="wf-content">
+            <div class="wf-breadcrumb"></div>
+            <div class="wf-content-title"></div>
+
+            <!-- KPI row -->
+            <div class="wf-kpi-row">
+              <div class="wf-kpi"><div class="wf-kpi-label"></div><div class="wf-kpi-value"></div><div class="wf-kpi-delta"></div></div>
+              <div class="wf-kpi"><div class="wf-kpi-label"></div><div class="wf-kpi-value"></div><div class="wf-kpi-delta"></div></div>
+              <div class="wf-kpi"><div class="wf-kpi-label"></div><div class="wf-kpi-value"></div><div class="wf-kpi-delta" style="background:#C49128"></div></div>
+              <div class="wf-kpi"><div class="wf-kpi-label"></div><div class="wf-kpi-value"></div><div class="wf-kpi-delta"></div></div>
+            </div>
+
+            <!-- 2-col grid -->
+            <div class="wf-grid-2">
+              <div class="wf-card">
+                <div class="wf-card-header"></div>
+                <div class="wf-card-line" style="width:90%"></div>
+                <div class="wf-card-chart">
+                  <div class="wf-bar" style="height:35%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                  <div class="wf-bar" style="height:60%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                  <div class="wf-bar" style="height:45%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                  <div class="wf-bar" style="height:80%;background:var(--accent-500);opacity:.4;border:1px solid var(--accent-guide-border)"></div>
+                  <div class="wf-bar" style="height:65%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                  <div class="wf-bar" style="height:55%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                </div>
+              </div>
+              <div class="wf-card">
+                <div class="wf-card-header"></div>
+                <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-subtle)">
+                    <div style="width:24px;height:24px;border-radius:50%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                    <div style="flex:1;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                    <div style="width:40px;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-subtle)">
+                    <div style="width:24px;height:24px;border-radius:50%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                    <div style="flex:1;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                    <div style="width:40px;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;padding:6px 0">
+                    <div style="width:24px;height:24px;border-radius:50%;background:var(--accent-guide);border:1px solid var(--accent-guide-border)"></div>
+                    <div style="flex:1;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                    <div style="width:40px;height:7px;background:var(--bg-muted);border-radius:2px"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- padding annotation -->
+            <div style="margin-top:var(--sp-2);display:flex;align-items:center;gap:var(--sp-2)">
+              <div style="width:32px;height:8px;background:var(--gutter-color);border:1px dashed var(--accent-guide-border);border-radius:2px"></div>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled)">padding: --sp-6 (24px) top/bottom · --sp-8 (32px) left/right</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       04 — ZONES DE LAYOUT
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">04 — Zones de layout</h2>
+      <span class="section-subtitle">Propriétés précises de chaque zone de l'interface</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="zone-map">
+
+      <!-- TOPBAR -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M1 7h14" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          </div>
+          <span class="zone-name">Topbar</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">height</span><span class="zone-prop-val">56px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">position</span><span class="zone-prop-val">sticky top:0</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--glass-bg</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">blur</span><span class="zone-prop-val">12px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border-bottom</span><span class="zone-prop-val">1px --glass-border</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding H</span><span class="zone-prop-val">--sp-8 (32px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">z-index</span><span class="zone-prop-val">100</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">contenu</span><span class="zone-prop-val">logo · search · avatar</span></div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="14" rx="1.5" stroke="var(--accent-500)" stroke-width="1.5"/><rect x="8" y="1" width="7" height="14" rx="1.5" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          </div>
+          <span class="zone-name">Sidebar</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">width (étendue)</span><span class="zone-prop-val">240px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">width (réduite)</span><span class="zone-prop-val">56px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">position</span><span class="zone-prop-val">fixed left:0</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--glass-bg</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">blur</span><span class="zone-prop-val">14px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border-right</span><span class="zone-prop-val">1px --border-subtle</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding V</span><span class="zone-prop-val">--sp-4 (16px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding H</span><span class="zone-prop-val">--sp-3 (12px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">nav-item height</span><span class="zone-prop-val">32px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">nav-item gap</span><span class="zone-prop-val">--sp-1 (4px)</span></div>
+        </div>
+      </div>
+
+      <!-- CONTENT AREA -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M4 5h8M4 8h6M4 11h5" stroke="var(--accent-500)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <span class="zone-name">Zone contenu</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">max-width</span><span class="zone-prop-val">1140px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">margin</span><span class="zone-prop-val">0 auto</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding H</span><span class="zone-prop-val">--sp-8 (32px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding V top</span><span class="zone-prop-val">--sp-12 (48px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding V bottom</span><span class="zone-prop-val">--sp-16 (64px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">section-gap</span><span class="zone-prop-val">--sp-12 (48px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">card-gap</span><span class="zone-prop-val">--sp-4 (16px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--bg-base</span></div>
+        </div>
+      </div>
+
+      <!-- CARDS -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="10" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M4 4V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          </div>
+          <span class="zone-name">Cards</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--bg-elevated</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border</span><span class="zone-prop-val">1px --border-subtle</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border-radius</span><span class="zone-prop-val">--radius-xl (14px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding</span><span class="zone-prop-val">--sp-5 (20px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">gap interne</span><span class="zone-prop-val">--sp-3 à --sp-4</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">shadow</span><span class="zone-prop-val">--shadow-sm</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">hover shadow</span><span class="zone-prop-val">--shadow-md</span></div>
+        </div>
+      </div>
+
+      <!-- MODALES -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M5 5h6M5 8h4" stroke="var(--accent-500)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <span class="zone-name">Modales</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">max-width</span><span class="zone-prop-val">540px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--bg-elevated</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border</span><span class="zone-prop-val">1px --border-default</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border-radius</span><span class="zone-prop-val">--radius-xl (14px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding</span><span class="zone-prop-val">--sp-6 (24px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">shadow</span><span class="zone-prop-val">--shadow-lg</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">overlay</span><span class="zone-prop-val">rgba(0,0,0,0.5)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">z-index</span><span class="zone-prop-val">200</span></div>
+        </div>
+      </div>
+
+      <!-- TOASTS -->
+      <div class="zone-card">
+        <div class="zone-card-top">
+          <div class="zone-icon" style="background:rgba(39,86,166,0.12);border:1px solid rgba(39,86,166,0.25)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="12" height="7" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M6 5V4a2 2 0 0 1 4 0v1" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          </div>
+          <span class="zone-name">Toasts</span>
+        </div>
+        <div class="zone-card-body">
+          <div class="zone-prop"><span class="zone-prop-key">position</span><span class="zone-prop-val">top center</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">top offset</span><span class="zone-prop-val">--sp-4 (16px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">max-width</span><span class="zone-prop-val">420px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">background</span><span class="zone-prop-val">--glass-bg</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">blur</span><span class="zone-prop-val">12px</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border</span><span class="zone-prop-val">1px --glass-border</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">border-radius</span><span class="zone-prop-val">--radius-lg (10px)</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">padding</span><span class="zone-prop-val">--sp-3 --sp-4</span></div>
+          <div class="zone-prop"><span class="zone-prop-key">z-index</span><span class="zone-prop-val">300</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       05 — DENSITÉ D'INFORMATION
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">05 — Densité d'information</h2>
+      <span class="section-subtitle">Ulamu est AÉRÉ — style Linear/Vercel</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="density-compare">
+
+      <!-- Compact (NOT Ulamu) -->
+      <div class="density-card">
+        <div class="density-header" style="padding:var(--sp-3) var(--sp-4)">
+          <span class="density-label">Compact</span>
+          <span class="density-badge">❌ Non Ulamu</span>
+        </div>
+        <div>
+          <div class="density-list-item" style="padding:6px var(--sp-4)">
+            <div class="density-avatar" style="width:24px;height:24px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:8px;width:80%"></div>
+              <div class="density-sub" style="height:6px;width:55%;margin-top:3px"></div>
+            </div>
+            <div class="density-dot" style="width:6px;height:6px;background:#3D9A5C"></div>
+          </div>
+          <div class="density-list-item" style="padding:6px var(--sp-4)">
+            <div class="density-avatar" style="width:24px;height:24px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:8px;width:70%"></div>
+              <div class="density-sub" style="height:6px;width:45%;margin-top:3px"></div>
+            </div>
+            <div class="density-dot" style="width:6px;height:6px;background:#C49128"></div>
+          </div>
+          <div class="density-list-item" style="padding:6px var(--sp-4)">
+            <div class="density-avatar" style="width:24px;height:24px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:8px;width:85%"></div>
+              <div class="density-sub" style="height:6px;width:50%;margin-top:3px"></div>
+            </div>
+            <div class="density-dot" style="width:6px;height:6px;background:#C44040"></div>
+          </div>
+        </div>
+        <div style="padding:var(--sp-3) var(--sp-4);border-top:1px solid var(--border-subtle)">
+          <p style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled)">row-height: 36px · padding V: 6px · gap: 4px</p>
+        </div>
+      </div>
+
+      <!-- Balanced -->
+      <div class="density-card">
+        <div class="density-header" style="padding:var(--sp-3) var(--sp-4)">
+          <span class="density-label">Équilibré</span>
+          <span class="density-badge">⚖️ Intermédiaire</span>
+        </div>
+        <div>
+          <div class="density-list-item" style="padding:10px var(--sp-5)">
+            <div class="density-avatar" style="width:32px;height:32px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:9px;width:80%"></div>
+              <div class="density-sub" style="height:7px;width:55%;margin-top:5px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#3D9A5C"></div>
+          </div>
+          <div class="density-list-item" style="padding:10px var(--sp-5)">
+            <div class="density-avatar" style="width:32px;height:32px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:9px;width:70%"></div>
+              <div class="density-sub" style="height:7px;width:45%;margin-top:5px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#C49128"></div>
+          </div>
+          <div class="density-list-item" style="padding:10px var(--sp-5)">
+            <div class="density-avatar" style="width:32px;height:32px"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:9px;width:85%"></div>
+              <div class="density-sub" style="height:7px;width:50%;margin-top:5px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#3D9A5C"></div>
+          </div>
+        </div>
+        <div style="padding:var(--sp-3) var(--sp-4);border-top:1px solid var(--border-subtle)">
+          <p style="font-family:var(--font-mono);font-size:9px;color:var(--text-disabled)">row-height: 52px · padding V: 10px · gap: 5px</p>
+        </div>
+      </div>
+
+      <!-- Aéré — ULAMU -->
+      <div class="density-card" style="border-color:rgba(39,86,166,0.35)">
+        <div class="density-header" style="padding:var(--sp-4) var(--sp-5);background:rgba(39,86,166,0.08)">
+          <span class="density-label" style="color:var(--accent-500)">Aéré</span>
+          <span class="density-badge" style="background:rgba(39,86,166,0.12);border-color:rgba(39,86,166,0.25);color:var(--accent-500)">✓ Style Ulamu</span>
+        </div>
+        <div>
+          <div class="density-list-item" style="padding:var(--sp-4) var(--sp-5)">
+            <div class="density-avatar" style="width:36px;height:36px;border-color:var(--accent-guide-border)"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:10px;width:80%"></div>
+              <div class="density-sub" style="height:8px;width:55%;margin-top:6px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#3D9A5C"></div>
+          </div>
+          <div class="density-list-item" style="padding:var(--sp-4) var(--sp-5)">
+            <div class="density-avatar" style="width:36px;height:36px;border-color:var(--accent-guide-border)"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:10px;width:70%"></div>
+              <div class="density-sub" style="height:8px;width:45%;margin-top:6px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#C49128"></div>
+          </div>
+          <div class="density-list-item" style="padding:var(--sp-4) var(--sp-5)">
+            <div class="density-avatar" style="width:36px;height:36px;border-color:var(--accent-guide-border)"></div>
+            <div class="density-text-block">
+              <div class="density-name" style="height:10px;width:85%"></div>
+              <div class="density-sub" style="height:8px;width:50%;margin-top:6px"></div>
+            </div>
+            <div class="density-dot" style="width:8px;height:8px;background:#3D9A5C"></div>
+          </div>
+        </div>
+        <div style="padding:var(--sp-3) var(--sp-5);border-top:1px solid rgba(39,86,166,0.15)">
+          <p style="font-family:var(--font-mono);font-size:9px;color:var(--accent-500)">row-height: 64px · padding V: --sp-4 (16px) · gap: --sp-3 (12px)</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       06 — BREAKPOINTS RESPONSIFS
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">06 — Breakpoints responsifs</h2>
+      <span class="section-subtitle">Desktop prioritaire · adaptation progressive vers le mobile</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="bp-row">
+      <div class="bp-item">
+        <div>
+          <div class="bp-name">Mobile</div>
+          <div class="bp-val" style="font-size:11px;color:var(--text-disabled);margin-top:2px">xs</div>
+        </div>
+        <div class="bp-val">≥ 360px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:18%"><span class="bp-bar-label">1 col · gutter 12px · sidebar cachée</span></div>
+        </div>
+      </div>
+      <div class="bp-item">
+        <div>
+          <div class="bp-name">Smartphone L</div>
+          <div class="bp-val" style="font-size:11px;color:var(--text-disabled);margin-top:2px">sm</div>
+        </div>
+        <div class="bp-val">≥ 480px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:28%"><span class="bp-bar-label">2 col · gutter 12px · nav bottom sheet</span></div>
+        </div>
+      </div>
+      <div class="bp-item">
+        <div>
+          <div class="bp-name">Tablette</div>
+          <div class="bp-val" style="font-size:11px;color:var(--text-disabled);margin-top:2px">md</div>
+        </div>
+        <div class="bp-val">≥ 768px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:48%"><span class="bp-bar-label">4 col · gutter 16px · sidebar réduite 56px</span></div>
+        </div>
+      </div>
+      <div class="bp-item">
+        <div>
+          <div class="bp-name">Laptop</div>
+          <div class="bp-val" style="font-size:11px;color:var(--text-disabled);margin-top:2px">lg</div>
+        </div>
+        <div class="bp-val">≥ 1024px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:70%"><span class="bp-bar-label">8 col · gutter 20px · sidebar étendue 240px</span></div>
+        </div>
+      </div>
+      <div class="bp-item" style="border-color:rgba(39,86,166,0.35)">
+        <div>
+          <div class="bp-name" style="color:var(--accent-500)">Desktop ★</div>
+          <div class="bp-val" style="font-size:11px;color:var(--accent-500);margin-top:2px;opacity:.7">xl — PRIORITAIRE</div>
+        </div>
+        <div class="bp-val" style="color:var(--accent-500)">≥ 1280px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:90%;background:rgba(39,86,166,0.2);border-color:rgba(39,86,166,0.4)"><span class="bp-bar-label" style="color:var(--accent-500)">12 col · gutter 24px · layout hybride complet</span></div>
+        </div>
+      </div>
+      <div class="bp-item">
+        <div>
+          <div class="bp-name">Wide</div>
+          <div class="bp-val" style="font-size:11px;color:var(--text-disabled);margin-top:2px">2xl</div>
+        </div>
+        <div class="bp-val">≥ 1536px</div>
+        <div class="bp-bar-wrap">
+          <div class="bp-bar" style="width:100%"><span class="bp-bar-label">12 col · max-width 1140px centré · marges auto</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       07 — RÈGLES D'USAGE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">07 — Règles d'usage</h2>
+      <span class="section-subtitle">Obligations et interdictions absolues</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="rules-grid">
+      <div class="rule-card forbidden">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>
+          Interdictions absolues
+        </div>
+        <ul class="rule-list">
+          <li>Coder une valeur de margin/padding en px hors de l'échelle --sp-*</li>
+          <li>Utiliser des valeurs impaires (5px, 7px, 9px) — tout est multiple de 4</li>
+          <li>Placer deux sections sans au minimum --sp-8 (32px) de séparation</li>
+          <li>Dépasser 1140px de largeur pour la zone de contenu principal</li>
+          <li>Utiliser la sidebar étendue (240px) sans topbar visible simultanément</li>
+          <li>Afficher plus de 12 colonnes dans la grille de contenu</li>
+          <li>Mettre du contenu dans les gouttières de la grille</li>
+          <li>Utiliser des lignes alternées colorées dans les tableaux</li>
+          <li>Aligner les toasts à gauche ou à droite — toujours centrés horizontalement</li>
+        </ul>
+      </div>
+      <div class="rule-card allowed">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          Bonnes pratiques obligatoires
+        </div>
+        <ul class="rule-list">
+          <li>Toujours utiliser les tokens --sp-* — jamais de px hardcodés</li>
+          <li>Respecter la hiérarchie de densité : aéré partout, sauf exception justifiée</li>
+          <li>Sidebar hybride : étendue (240px) par défaut, réduite (56px) sur demande utilisateur</li>
+          <li>Tables : séparateurs 1px uniquement — border-subtle, aucune ligne alternée</li>
+          <li>Cards : padding --sp-5 (20px) minimum pour garantir la respiration</li>
+          <li>Toujours tester le layout à 1280px (desktop prioritaire) avant toute autre taille</li>
+          <li>Sur mobile (< 768px), la sidebar se transforme en bottom navigation</li>
+          <li>Gap entre KPI cards : toujours --sp-4 (16px), jamais moins</li>
+          <li>Contenu de formulaire : max-width 680px, centré dans la zone de contenu</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="page-footer">
+    <div class="footer-meta">ulamu · Design System · CG-03 · v1.0</div>
+    <div class="footer-badge">
+      <div class="footer-badge-dot"></div>
+      Document validé — Phase 2 en cours
+    </div>
+  </footer>
+
+</main>
+
+<script>
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('opt-light').classList.toggle('active',isDark);
+  document.getElementById('opt-dark').classList.toggle('active',!isDark);
+}
+(function(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.getElementById('opt-dark').classList.toggle('active',isDark);
+  document.getElementById('opt-light').classList.toggle('active',!isDark);
+})();
+</script>
+</body>
+</html>

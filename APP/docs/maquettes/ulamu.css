@@ -1,0 +1,227 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ULAMU — jetons partagés des maquettes web
+   Couleurs : ULAMU (apps/web/src/styles/globals.css), intactes.
+   Échelle, rayons, densité, ombres, grain, verre : CMS-SARIS
+   (packages/ui/src/styles/globals.css + apps/web/src/components/saris/*).
+   Un seul fichier pour tous les écrans : c'est ce qui empêche la dérive entre pages.
+   Aucune classe de composant ici — le style des composants reste en inline.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Accent ULAMU (cobalt) ── */
+  --ap-50: #E9EDF1;
+  --ap-100: #DBE1E8;
+  --ap-200: #C3CBD5;
+  --ap-300: #A3ACB8;
+  --ap-400: #2756A6;
+  --ap-400-rgb: 39, 86, 166;
+  --ap-500: #2756A6;
+  --ap-600: #1F479A;
+  --ap-700: #3F4A58;
+  --ap-800: #2F3845;
+  --ap-900: #1F2731;
+
+  /* ── Or Congo (décoratif, jamais la marque) ── */
+  --as-50: #F6EBD2;
+  --as-500: #B08322;
+  --as-700: #6C5115;
+
+  /* ── Surfaces ── */
+  --fond-page: #F4F6F8;
+  --fond-surface: #FFFFFF;
+  --fond-surface-2: #F0F2F5;
+  --fond-input: #EAECF0;
+  --bordure-input: #B5BCC8;
+
+  /* ── Texte (jamais de noir pur) ── */
+  --texte-primaire: #242B34;
+  --texte-secondaire: #54606E;
+  --texte-tertiaire: #8892A4;
+
+  /* ── Bordures ── */
+  --bordure-legere: rgba(15, 23, 42, 0.09);
+  --bordure-normale: rgba(15, 23, 42, 0.16);
+  --bordure-forte: rgba(15, 23, 42, 0.30);
+
+  /* ── Sémantique ── */
+  --succes-fond: #EAF3EC; --succes-texte: #2D6A3F; --succes-accent: #3D7A5E; --succes-bordure: rgba(45, 106, 63, 0.2);
+  --erreur-fond: #F5EAEA; --erreur-texte: #7A2E2E; --erreur-accent: #9B4444; --erreur-bordure: rgba(122, 46, 46, 0.2);
+  --alerte-fond: #F5EEDF; --alerte-texte: #6B4D1A; --alerte-accent: #8A6A2A; --alerte-bordure: rgba(107, 77, 26, 0.2);
+  --info-fond: #E6EFF5; --info-texte: #2A4F6B; --info-accent: #3A6080; --info-bordure: rgba(42, 79, 107, 0.2);
+  /* Alias SARIS (--avert-*) pour que les motifs repris pointent au bon endroit. */
+  --avert-fond: var(--alerte-fond); --avert-texte: var(--alerte-texte); --avert-accent: var(--alerte-accent);
+
+  /* ── Tons décoratifs (tuiles d'icône, avatars — jamais sémantiques) ── */
+  --ton-bleu-fond: #E9EDF9; --ton-bleu-icone: #3D5FA8;
+  --ton-violet-fond: #F1EAFB; --ton-violet-icone: #7C4EC2;
+  --ton-emeraude-fond: #E7F5EE; --ton-emeraude-icone: #2E8A5C;
+  --ton-ambre-fond: #FCF3E1; --ton-ambre-icone: #B3801E;
+  --ton-cyan-fond: #E5F5F7; --ton-cyan-icone: #2A8E9C;
+  --ton-rose-fond: #FBEAF1; --ton-rose-icone: #C24E82;
+
+  /* ── Ombres — réservées à ce qui flotte ── */
+  --ombre-0: none;
+  --ombre-1: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ombre-2: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ombre-3: 0 4px 16px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.06);
+  --ombre-4: 0 8px 32px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.06);
+  --ombre-5: 0 16px 44px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.07);
+
+  /* ── Verre dépoli ── */
+  --verre-fond: color-mix(in srgb, var(--fond-surface) 82%, transparent);
+  --verre-blur: 14px;
+  --glass-sidebar-bg: rgba(255, 255, 255, 0.74); --glass-sidebar-blur: 14px;
+  --glass-header-bg: color-mix(in srgb, var(--fond-surface) 78%, transparent);
+  --glass-bordure: rgba(15, 23, 42, 0.09);
+
+  /* ── Grain sérigraphié ── */
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.030 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-size-fine: 110px;
+  --grain-size: 180px;
+  --grain-size-strong: 240px;
+
+  /* ── Rayons — plafond 10 px ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+
+  /* ── Espacement (base 4 px) ── */
+  --espace-1: 4px; --espace-2: 8px; --espace-3: 12px; --espace-4: 16px; --espace-5: 20px;
+  --espace-6: 24px; --espace-8: 32px; --espace-10: 40px; --espace-12: 48px; --espace-16: 64px;
+
+  /* ── Échelle typographique — valeurs SARIS ── */
+  --font-size-h1: 22px;
+  --font-size-h2: 18px;
+  --font-size-h3: 16px;
+  --font-size-h4: 14px;
+  --font-size-body-lg: 15px;
+  --font-size-body: 14px;
+  --font-size-body-sm: 13px;
+  --font-size-label: 12px;
+  --font-size-caption: 11px;
+  --font-size-overline: 10px;
+
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── Mouvement — CG-09 ── */
+  --dur-press: 80ms; --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 250ms; --dur-slower: 350ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ── Structure ── */
+  --sidebar-width: 264px;
+  --sidebar-rail: 68px;
+  --topbar-height: 48px;
+  --contenu-max: 1100px;
+  --ligne-h: 40px;
+  --ligne-alt: var(--fond-surface-2);
+}
+
+[data-theme="dark"] {
+  --ap-50: #1D2531; --ap-100: #26303E; --ap-200: #33404F; --ap-300: #55627A;
+  --ap-400: #2756A6; --ap-500: #3A6BC0; --ap-600: #4C7ACB; --ap-700: #B7C0CB;
+
+  --as-50: #332705; --as-500: #C99A2E; --as-700: #E2C583;
+
+  --fond-page: #0D1117;
+  --fond-surface: #161B22;
+  --fond-surface-2: #1C222C;
+  --fond-input: #21262D;
+  --bordure-input: #30363D;
+
+  --texte-primaire: #E6EDF3;
+  --texte-secondaire: #9DA7B3;
+  --texte-tertiaire: #6E7781;
+
+  --bordure-legere: rgba(230, 237, 243, 0.08);
+  --bordure-normale: rgba(230, 237, 243, 0.14);
+  --bordure-forte: rgba(230, 237, 243, 0.26);
+
+  --succes-fond: #16281D; --succes-texte: #7EE2A0; --succes-accent: #56C47A; --succes-bordure: rgba(126, 226, 160, 0.22);
+  --erreur-fond: #2A1818; --erreur-texte: #E29999; --erreur-accent: #C45656; --erreur-bordure: rgba(226, 153, 153, 0.22);
+  --alerte-fond: #2A2415; --alerte-texte: #E2C978; --alerte-accent: #C4A156; --alerte-bordure: rgba(226, 201, 120, 0.22);
+  --info-fond: #17202B; --info-texte: #99BFE2; --info-accent: #5691C4; --info-bordure: rgba(153, 191, 226, 0.22);
+
+  --ton-bleu-fond: #1A2233; --ton-bleu-icone: #7C9BE0;
+  --ton-violet-fond: #241D33; --ton-violet-icone: #B08FE8;
+  --ton-emeraude-fond: #152A21; --ton-emeraude-icone: #5FC894;
+  --ton-ambre-fond: #2A2314; --ton-ambre-icone: #D9AC53;
+  --ton-cyan-fond: #14262A; --ton-cyan-icone: #56B3C0;
+  --ton-rose-fond: #2A1A22; --ton-rose-icone: #D983AB;
+
+  /* Une ombre portée ne se voit pas sur fond sombre : la hiérarchie passe par la bordure. */
+  --ombre-1: none; --ombre-2: none; --ombre-3: none;
+  --ombre-4: 0 10px 30px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --ombre-5: 0 16px 44px rgba(0, 0, 0, 0.62), 0 4px 10px rgba(0, 0, 0, 0.45);
+
+  --verre-fond: color-mix(in srgb, var(--fond-surface) 72%, transparent);
+  --glass-sidebar-bg: rgba(13, 17, 23, 0.76);
+  --glass-header-bg: color-mix(in srgb, var(--fond-surface) 74%, transparent);
+  --glass-bordure: rgba(230, 237, 243, 0.09);
+
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.040 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.055 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --ligne-alt: rgba(230, 237, 243, 0.028);
+}
+
+/* ── Réinitialisations ─────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--fond-page);
+  color: var(--texte-primaire);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.012em; margin: 0; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--ap-600); text-decoration: none; font-weight: 600; }
+a:hover { color: var(--ap-400); text-decoration: underline; }
+[data-theme="dark"] a { color: var(--ap-600); }
+[data-theme="dark"] a:hover { color: #8FB0E8; }
+
+/* Anneau de focus UNIQUE dans toute l'application (CG-05 §01, CG-11 §02). */
+*:focus-visible {
+  outline: 3px solid rgba(var(--ap-400-rgb), 0.30);
+  outline-offset: 2px;
+}
+
+/* Barres de défilement discrètes. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bordure-normale); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bordure-forte); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Grain : trois intensités, appliquées par classe (jamais inline) ───────── */
+.ul-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); }
+.ul-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); }
+.ul-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); }
+
+@media (prefers-contrast: more) {
+  .ul-grain-fine, .ul-grain, .ul-grain-strong { background-image: none; }
+}
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+@keyframes ul-spin { to { transform: rotate(360deg); } }
+@keyframes ul-shimmer { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
+@keyframes ul-pop { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ul-modal-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes ul-drawer-in { from { transform: translateX(24px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
+@keyframes ul-blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.82); } }
+@keyframes ul-step-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

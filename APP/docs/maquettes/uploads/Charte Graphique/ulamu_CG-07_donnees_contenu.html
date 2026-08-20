@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-07 Données & Contenu</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--font-display:'Plus Jakarta Sans',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace;--accent-300:#6F92DA;--accent-500:#2756A6;--accent-600:#1F479A;--radius-sm:4px;--radius-md:6px;--radius-lg:10px;--radius-xl:14px;--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;--grain-svg:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+[data-theme="light"]{--bg-base:#FAFAFA;--bg-subtle:#F4F4F5;--bg-muted:#EBEBEC;--bg-elevated:#FFFFFF;--glass-bg:rgba(255,255,255,0.72);--glass-blur:12px;--glass-border:rgba(0,0,0,0.07);--text-primary:#111112;--text-secondary:#3F3F46;--text-tertiary:#71717A;--text-disabled:#A1A1AA;--text-accent:var(--accent-600);--border-subtle:rgba(0,0,0,0.07);--border-default:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);--grain-opacity:0.035;--grain-btn:0.06;--success-bg:#F0FAF3;--success-text:#2B6B40;--success-border:#A8D5B5;--success-dot:#3D9A5C;--warning-bg:#FEF9EC;--warning-text:#7A5515;--warning-border:#EDD68A;--warning-dot:#C49128;--error-bg:#FDF2F2;--error-text:#7A2323;--error-border:#E8AAAA;--error-dot:#C44040}
+[data-theme="dark"]{--bg-base:#111113;--bg-subtle:#18181B;--bg-muted:#222226;--bg-elevated:#2A2A2F;--glass-bg:rgba(28,28,33,0.72);--glass-blur:14px;--glass-border:rgba(255,255,255,0.07);--text-primary:#F4F4F5;--text-secondary:#A1A1AA;--text-tertiary:#71717A;--text-disabled:#52525B;--text-accent:var(--accent-300);--border-subtle:rgba(255,255,255,0.06);--border-default:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18);--shadow-sm:0 1px 3px rgba(0,0,0,0.35);--shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);--grain-opacity:0.055;--grain-btn:0.09;--success-bg:#0F2318;--success-text:#6DBF8A;--success-border:#1F4A30;--success-dot:#4CAF6E;--warning-bg:#241B09;--warning-text:#D4A430;--warning-border:#4A3512;--warning-dot:#C49128;--error-bg:#200F0F;--error-text:#E07070;--error-border:#3D1A1A;--error-dot:#C44040}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;transition:background .25s linear,color .25s linear;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain-opacity);background-image:var(--grain-svg);background-size:180px 180px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.tl{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.lm{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.ln{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.tdv{width:1px;height:20px;background:var(--border-default)}
+.mbc{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.mbc .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .mbc .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.ttog{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer}
+.topt{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px;font-family:var(--font-body)}
+.topt.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.ph{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.mid{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .mid{color:var(--accent-300)}
+.mid::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.pt{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.pd{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.sec{margin-bottom:var(--sp-12)}
+.shd{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.stit{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.ssub{font-size:13px;color:var(--text-tertiary)}
+.sdiv{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+.dw{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-8);box-shadow:var(--shadow-sm)}
+.dsl{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.dsl::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+.tk{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle);display:inline-block}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rc{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rc.f{border-color:#E8AAAA;background:#FDF2F2}
+.rc.a{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rc.f{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rc.a{border-color:#1F4A30;background:#0F2318}
+.rt{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rc.f .rt{color:#7A2323}.rc.a .rt{color:#2B6B40}
+[data-theme="dark"] .rc.f .rt{color:#E07070}[data-theme="dark"] .rc.a .rt{color:#6DBF8A}
+.rl{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rl li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rl li::before{position:absolute;left:0;top:1px}
+.rc.f .rl li::before{content:'✕';color:#C44040;font-size:11px}
+.rc.a .rl li::before{content:'✓';color:#3D9A5C;font-size:11px}
+.pfoot{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.fmeta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.fbdg{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.fbdgd{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+/* ═══ TABLE ═══ */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead tr{border-bottom:1px solid var(--border-default)}
+.data-table th{padding:10px 14px;text-align:left;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;cursor:pointer;white-space:nowrap;user-select:none}
+.data-table th:hover{color:var(--text-secondary)}
+.data-table th .sort-icon{display:inline-block;margin-left:4px;opacity:.4;font-size:10px}
+.data-table th.sorted .sort-icon{opacity:1;color:var(--accent-500)}
+[data-theme="dark"] .data-table th.sorted .sort-icon{color:var(--accent-300)}
+.data-table tbody tr{border-bottom:1px solid var(--border-subtle);transition:background .15s linear}
+.data-table tbody tr:last-child{border-bottom:none}
+.data-table tbody tr:hover{background:var(--bg-subtle)}
+.data-table tbody tr.selected{background:rgba(39,86,166,0.06)}
+.data-table td{padding:12px 14px;color:var(--text-secondary);vertical-align:middle}
+.td-name{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-primary);display:flex;align-items:center;gap:var(--sp-3)}
+.td-av{width:28px;height:28px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
+.td-mono{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+.td-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:var(--radius-sm);border:1px solid transparent}
+.td-badge.suc{background:var(--success-bg);color:var(--success-text);border-color:var(--success-border)}
+.td-badge.wrn{background:var(--warning-bg);color:var(--warning-text);border-color:var(--warning-border)}
+.td-badge.err{background:var(--error-bg);color:var(--error-text);border-color:var(--error-border)}
+.td-badge.neu{background:var(--bg-muted);color:var(--text-tertiary);border-color:var(--border-default)}
+.cb-cell{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--border-strong);background:var(--bg-base);display:flex;align-items:center;justify-content:center}
+.cb-cell.ck{background:var(--accent-500);border-color:var(--accent-500)}
+.table-toolbar{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4);flex-wrap:wrap}
+.table-search{height:32px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-base);padding:0 10px 0 30px;font-family:var(--font-body);font-size:13px;color:var(--text-primary);width:220px;outline:none;transition:border-color .2s linear}
+.table-search:focus{border-color:var(--accent-500)}
+.table-search::placeholder{color:var(--text-disabled)}
+.tsearch-wrap{position:relative}
+.tsearch-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);pointer-events:none}
+.table-btn{height:32px;padding:0 12px;border-radius:var(--radius-md);border:1px solid var(--border-default);background:var(--bg-muted);font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:var(--sp-2);transition:all .2s linear}
+.table-btn:hover{background:var(--bg-subtle);color:var(--text-primary)}
+.table-count{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);margin-left:auto}
+.table-foot{display:flex;align-items:center;justify-content:space-between;padding-top:var(--sp-4);border-top:1px solid var(--border-subtle);margin-top:var(--sp-2)}
+.tf-info{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)}
+.tf-pages{display:flex;align-items:center;gap:var(--sp-1)}
+.tf-pg{min-width:28px;height:28px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--text-tertiary);cursor:pointer;transition:background .15s linear;font-family:var(--font-body)}
+.tf-pg:hover{background:var(--bg-muted)}
+.tf-pg.act{background:var(--accent-500);color:#fff}
+
+/* ═══ CARDS ═══ */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .25s linear,transform .25s linear;cursor:pointer}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.card-header{padding:var(--sp-5);border-bottom:1px solid var(--border-subtle);display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3)}
+.card-title{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-0.2px;color:var(--text-primary)}
+.card-subtitle{font-size:12px;color:var(--text-tertiary);margin-top:2px}
+.card-body{padding:var(--sp-5)}
+.card-footer{padding:var(--sp-4) var(--sp-5);border-top:1px solid var(--border-subtle);background:var(--bg-subtle);display:flex;align-items:center;justify-content:space-between}
+.cf-meta{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px}
+/* KPI card */
+.kpi-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-5);box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:box-shadow .25s linear}
+.kpi-card:hover{box-shadow:var(--shadow-md)}
+.kpi-card::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;opacity:calc(var(--grain-opacity)*0.6)}
+.kpi-label{font-family:var(--font-body);font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--sp-2)}
+.kpi-value{font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:-0.5px;color:var(--text-primary);line-height:1;margin-bottom:var(--sp-2)}
+.kpi-delta{font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px}
+.kpi-delta.up{color:var(--success-dot)}.kpi-delta.down{color:var(--error-dot)}.kpi-delta.flat{color:var(--text-tertiary)}
+.kpi-sparkline{margin-top:var(--sp-4);height:36px}
+.kpi-sparkline svg{width:100%;height:100%;overflow:visible}
+
+/* ═══ LISTS ═══ */
+.list-item{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) 0;border-bottom:1px solid var(--border-subtle)}
+.list-item:last-child{border-bottom:none}
+.li-av{width:36px;height:36px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+.li-content{flex:1}
+.li-title{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text-primary)}
+.li-sub{font-size:12px;color:var(--text-tertiary);margin-top:2px}
+.li-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.li-time{font-family:var(--font-mono);font-size:11px;color:var(--text-disabled)}
+.li-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid transparent}
+
+/* ═══ ACCORDIONS ═══ */
+.accordion{border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden}
+.acc-item{border-bottom:1px solid var(--border-subtle)}
+.acc-item:last-child{border-bottom:none}
+.acc-header{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);cursor:pointer;transition:background .2s linear;user-select:none}
+.acc-header:hover{background:var(--bg-subtle)}
+.acc-header.open{background:var(--bg-subtle)}
+.acc-title{font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--text-primary);display:flex;align-items:center;gap:var(--sp-3)}
+.acc-icon{width:18px;height:18px;border-radius:var(--radius-sm);background:var(--bg-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.acc-chevron{transition:transform .25s linear;color:var(--text-tertiary);flex-shrink:0}
+.acc-header.open .acc-chevron{transform:rotate(180deg)}
+.acc-body{padding:0 var(--sp-5) var(--sp-5);font-size:13px;color:var(--text-secondary);line-height:1.6;display:none}
+.acc-body.open{display:block}
+
+/* ═══ CHARTS ═══ */
+.chart-card{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--sp-6);box-shadow:var(--shadow-sm)}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--sp-5)}
+.chart-title{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-0.2px;color:var(--text-primary)}
+.chart-period{font-size:12px;color:var(--text-tertiary);margin-top:2px}
+.chart-legend{display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chart-area{position:relative}
+.chart-area svg{width:100%;overflow:visible}
+.chart-yaxis{display:flex;flex-direction:column;justify-content:space-between;height:180px;margin-right:var(--sp-3)}
+.y-label{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);text-align:right;white-space:nowrap}
+.chart-xaxis{display:flex;justify-content:space-between;margin-top:var(--sp-2);padding-left:44px}
+.x-label{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)}
+
+/* Donut chart */
+.donut-wrap{display:flex;align-items:center;gap:var(--sp-8)}
+.donut-legend{display:flex;flex-direction:column;gap:var(--sp-3)}
+.donut-legend-item{display:flex;align-items:center;gap:var(--sp-3)}
+.donut-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.donut-legend-label{font-size:13px;color:var(--text-secondary)}
+.donut-legend-val{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text-primary);margin-left:auto}
+
+/* Bar chart */
+.bar-chart-wrap{display:flex;gap:var(--sp-2);align-items:flex-end;height:120px;padding:0 var(--sp-2)}
+.bar-group{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);flex:1}
+.bar{border-radius:3px 3px 0 0;width:100%;transition:opacity .2s linear}
+.bar:hover{opacity:.85}
+.bar-label{font-family:var(--font-mono);font-size:9px;color:var(--text-disabled);text-align:center}
+
+@media(max-width:900px){.card-grid{grid-template-columns:1fr 1fr}.rg{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}.topbar{padding:0 var(--sp-4)}.pt{font-size:24px}.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="tl">
+    <a class="logo" href="#"><div class="lm"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg></div><span class="ln">ulamu</span></a>
+    <div class="tdv"></div>
+    <div class="mbc"><span class="tag">CG-07</span>Données &amp; Contenu</div>
+  </div>
+  <div class="ttog" onclick="toggleTheme()">
+    <div class="topt" id="ol"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair</div>
+    <div class="topt active" id="od"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre</div>
+  </div>
+</header>
+<main class="page">
+  <div class="ph">
+    <div class="mid">Design System · Module CG-07</div>
+    <h1 class="pt">Données &amp; Contenu</h1>
+    <p class="pd">Tableaux de données, cartes (cards), listes, accordéons, statistiques KPI et graphiques. Tous les composants sont rendus en live avec les dégradés autorisés sous les courbes d'area chart, et aucun dégradé ailleurs.</p>
+  </div>
+
+  <!-- 01 TABLEAUX -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">01 — Tableaux de données</h2><span class="ssub">Bordures 1px subtle · tri · sélection · toolbar · pagination</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="table-toolbar">
+        <div class="tsearch-wrap">
+          <span class="tsearch-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg></span>
+          <input class="table-search" placeholder="Rechercher un patient…" type="text"/>
+        </div>
+        <div class="table-btn"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h12M4 8h8M6 12h4"/></svg>Filtrer</div>
+        <div class="table-btn"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v8M5 7l3 3 3-3M3 13h10"/></svg>Exporter</div>
+        <span class="table-count">120 patients</span>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:36px"><div class="cb-cell ck"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5L3.5 7.5L8.5 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></th>
+            <th class="sorted">Nom <span class="sort-icon">↑</span></th>
+            <th>ID <span class="sort-icon">↕</span></th>
+            <th>Spécialité <span class="sort-icon">↕</span></th>
+            <th>Dernière consultation <span class="sort-icon">↕</span></th>
+            <th>Statut <span class="sort-icon">↕</span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="selected">
+            <td><div class="cb-cell ck"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5L3.5 7.5L8.5 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></td>
+            <td><div class="td-name"><div class="td-av">KM</div>Kofi Mensah</div></td>
+            <td><span class="td-mono">PAT-8821-KGL</span></td>
+            <td>Cardiologie</td>
+            <td><span class="td-mono">12 mars 2026</span></td>
+            <td><span class="td-badge suc"><span style="width:5px;height:5px;border-radius:50%;background:var(--success-dot)"></span>Actif</span></td>
+            <td><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-tertiary);cursor:pointer"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></td>
+          </tr>
+          <tr>
+            <td><div class="cb-cell"></div></td>
+            <td><div class="td-name"><div class="td-av" style="background:#2D6A4F">AD</div>Ama Diallo</div></td>
+            <td><span class="td-mono">PAT-4412-ABJ</span></td>
+            <td>Pédiatrie</td>
+            <td><span class="td-mono">08 mars 2026</span></td>
+            <td><span class="td-badge wrn"><span style="width:5px;height:5px;border-radius:50%;background:var(--warning-dot)"></span>En attente</span></td>
+            <td><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-tertiary);cursor:pointer"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></td>
+          </tr>
+          <tr>
+            <td><div class="cb-cell"></div></td>
+            <td><div class="td-name"><div class="td-av" style="background:#C1440E">FD</div>Fatou Dembélé</div></td>
+            <td><span class="td-mono">PAT-9910-DKR</span></td>
+            <td>Neurologie</td>
+            <td><span class="td-mono">01 mars 2026</span></td>
+            <td><span class="td-badge suc"><span style="width:5px;height:5px;border-radius:50%;background:var(--success-dot)"></span>Actif</span></td>
+            <td><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-tertiary);cursor:pointer"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></td>
+          </tr>
+          <tr>
+            <td><div class="cb-cell"></div></td>
+            <td><div class="td-name"><div class="td-av" style="background:#5C2D7E">MB</div>Moussa Bamba</div></td>
+            <td><span class="td-mono">PAT-3301-BKO</span></td>
+            <td>Médecine générale</td>
+            <td><span class="td-mono">22 fév. 2026</span></td>
+            <td><span class="td-badge err"><span style="width:5px;height:5px;border-radius:50%;background:var(--error-dot)"></span>Inactif</span></td>
+            <td><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-tertiary);cursor:pointer"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></td>
+          </tr>
+          <tr>
+            <td><div class="cb-cell"></div></td>
+            <td><div class="td-name"><div class="td-av" style="background:#1A5F7A">JN</div>Jeanne Nkosi</div></td>
+            <td><span class="td-mono">PAT-7754-LOS</span></td>
+            <td>Gynécologie</td>
+            <td><span class="td-mono">14 mars 2026</span></td>
+            <td><span class="td-badge neu">Archivé</span></td>
+            <td><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-tertiary);cursor:pointer"><circle cx="8" cy="4" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="8" cy="12" r="1"/></svg></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-foot">
+        <span class="tf-info">Affichage 1–5 sur 120</span>
+        <div class="tf-pages">
+          <div class="tf-pg"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 4L6 8l4 4"/></svg></div>
+          <div class="tf-pg act">1</div>
+          <div class="tf-pg">2</div>
+          <div class="tf-pg">3</div>
+          <span style="color:var(--text-disabled);font-size:12px;padding:0 4px">…</span>
+          <div class="tf-pg">24</div>
+          <div class="tf-pg"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 CARDS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">02 — Cards</h2><span class="ssub">Patient · Médecin · KPI metric · hover shadow</span></div>
+    <div class="sdiv"></div>
+
+    <!-- KPI cards -->
+    <div class="dsl" style="margin-bottom:var(--sp-4)">KPI Cards — dashboard metrics</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4);margin-bottom:var(--sp-8)">
+      <div class="kpi-card">
+        <div class="kpi-label">Patients actifs</div>
+        <div class="kpi-value">2 841</div>
+        <div class="kpi-delta up"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4l5 5H3l5-5z"/></svg>+12% ce mois</div>
+        <div class="kpi-sparkline">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none"><defs><linearGradient id="sp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2756A6" stop-opacity="0.18"/><stop offset="100%" stop-color="#2756A6" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,28 C20,24 40,16 60,18 C80,20 100,10 120,12 L120,36 L0,36Z" fill="url(#sp1)"/>
+          <path d="M0,28 C20,24 40,16 60,18 C80,20 100,10 120,12" fill="none" stroke="#2756A6" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Consultations</div>
+        <div class="kpi-value">418</div>
+        <div class="kpi-delta up"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4l5 5H3l5-5z"/></svg>+8% ce mois</div>
+        <div class="kpi-sparkline">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none"><defs><linearGradient id="sp2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3D9A5C" stop-opacity="0.18"/><stop offset="100%" stop-color="#3D9A5C" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,30 C15,26 30,22 50,20 C70,18 90,14 120,16 L120,36 L0,36Z" fill="url(#sp2)"/>
+          <path d="M0,30 C15,26 30,22 50,20 C70,18 90,14 120,16" fill="none" stroke="#3D9A5C" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ordonnances</div>
+        <div class="kpi-value">156</div>
+        <div class="kpi-delta down"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l5-5H3l5 5z"/></svg>-3% ce mois</div>
+        <div class="kpi-sparkline">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none"><defs><linearGradient id="sp3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C44040" stop-opacity="0.15"/><stop offset="100%" stop-color="#C44040" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,16 C20,18 40,20 60,22 C80,24 100,26 120,28 L120,36 L0,36Z" fill="url(#sp3)"/>
+          <path d="M0,16 C20,18 40,20 60,22 C80,24 100,26 120,28" fill="none" stroke="#C44040" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Revenus (FCFA)</div>
+        <div class="kpi-value">4.2M</div>
+        <div class="kpi-delta flat">→ Stable</div>
+        <div class="kpi-sparkline">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none"><defs><linearGradient id="sp4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2756A6" stop-opacity="0.12"/><stop offset="100%" stop-color="#2756A6" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,20 C30,19 60,22 90,18 C100,17 110,20 120,19 L120,36 L0,36Z" fill="url(#sp4)"/>
+          <path d="M0,20 C30,19 60,22 90,18 C100,17 110,20 120,19" fill="none" stroke="#2756A6" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content cards -->
+    <div class="dsl" style="margin-bottom:var(--sp-4)">Content cards — Patient · Médecin · Ordonnance</div>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Kofi Mensah</div>
+            <div class="card-subtitle">PAT-8821-KGL · 42 ans</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--sp-2)">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--success-dot)"></span>
+            <span style="font-size:11px;font-weight:500;color:var(--success-text)">Actif</span>
+          </div>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5">Suivi cardiologique. Hypertension artérielle traitée depuis 2019.</div>
+          <div style="display:flex;gap:var(--sp-3)">
+            <div style="flex:1;background:var(--bg-subtle);border-radius:var(--radius-md);padding:var(--sp-3)"><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">Dernière visite</div><div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-top:2px">12 mars 2026</div></div>
+            <div style="flex:1;background:var(--bg-subtle);border-radius:var(--radius-md);padding:var(--sp-3)"><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">Médecin</div><div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-top:2px">Dr. Konaté</div></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="cf-meta"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" opacity=".5"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7 7h1v4.5H7V7z"/></svg>3 ordonnances actives</span>
+          <span style="font-size:12px;color:var(--accent-500);cursor:pointer;font-weight:500">Voir dossier →</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:var(--sp-3)">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-500);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:15px;color:#fff;flex-shrink:0">AK</div>
+            <div>
+              <div class="card-title">Dr. Amara Konaté</div>
+              <div class="card-subtitle">Cardiologie · Dakar</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:3px;background:rgba(39,86,166,0.10);color:var(--accent-500);border:1px solid rgba(39,86,166,0.20)">Cardiologie</span>
+            <span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:3px;background:var(--bg-muted);color:var(--text-secondary);border:1px solid var(--border-default)">Médecine interne</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+            <div style="text-align:center;padding:var(--sp-3);background:var(--bg-subtle);border-radius:var(--radius-md)"><div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text-primary)">142</div><div style="font-size:11px;color:var(--text-tertiary)">Consultations</div></div>
+            <div style="text-align:center;padding:var(--sp-3);background:var(--bg-subtle);border-radius:var(--radius-md)"><div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text-primary)">4.9</div><div style="font-size:11px;color:var(--text-tertiary)">Note /5</div></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="cf-meta"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" style="color:var(--success-dot)"><circle cx="8" cy="8" r="7"/></svg>Disponible aujourd'hui</span>
+          <span style="font-size:12px;color:var(--accent-500);cursor:pointer;font-weight:500">Prendre RDV →</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Ordonnance</div>
+            <div class="card-subtitle" style="font-family:var(--font-mono);font-size:11px">ORD-2026-00412-DKR</div>
+          </div>
+          <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:3px;background:var(--success-bg);color:var(--success-text);border:1px solid var(--success-border)">Valide</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div style="font-size:13px;color:var(--text-secondary)">Prescrite par <strong style="color:var(--text-primary)">Dr. Konaté</strong> pour <strong style="color:var(--text-primary)">Kofi Mensah</strong></div>
+          <div style="background:var(--bg-subtle);border-radius:var(--radius-md);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2)">
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-secondary)">Amlodipine 5mg/j</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)">30 jours</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-secondary)">Ramipril 10mg/j</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)">30 jours</span></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="cf-meta">Expire le 11 avr. 2026</span>
+          <span style="font-size:12px;color:var(--accent-500);cursor:pointer;font-weight:500">Télécharger →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 LISTS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">03 — Listes</h2><span class="ssub">Items avec avatar · méta · badge · action contextuelle</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">Liste de consultations récentes</div>
+      <div>
+        <div class="list-item">
+          <div class="li-av">KM</div>
+          <div class="li-content">
+            <div class="li-title">Kofi Mensah — Consultation cardiologie</div>
+            <div class="li-sub">Dr. Amara Konaté · Clinique du Plateau, Dakar</div>
+          </div>
+          <div class="li-right">
+            <span class="li-time">Aujourd'hui 14h30</span>
+            <span class="li-badge suc" style="background:var(--success-bg);color:var(--success-text);border-color:var(--success-border)">Terminée</span>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="li-av" style="background:#2D6A4F">AD</div>
+          <div class="li-content">
+            <div class="li-title">Ama Diallo — Pédiatrie, suivi mensuel</div>
+            <div class="li-sub">Dr. Fatou Sow · Centre de santé Médina</div>
+          </div>
+          <div class="li-right">
+            <span class="li-time">Demain 09h00</span>
+            <span class="li-badge wrn" style="background:var(--warning-bg);color:var(--warning-text);border-color:var(--warning-border)">Confirmée</span>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="li-av" style="background:#C1440E">FD</div>
+          <div class="li-content">
+            <div class="li-title">Fatou Dembélé — Neurologie, IRM résultats</div>
+            <div class="li-sub">Dr. Boubacar Ndiaye · Hôpital Principal</div>
+          </div>
+          <div class="li-right">
+            <span class="li-time">16 mars 11h00</span>
+            <span class="li-badge" style="background:rgba(39,86,166,0.10);color:var(--accent-500);border-color:rgba(39,86,166,0.20)">Planifiée</span>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="li-av" style="background:#5C2D7E">MB</div>
+          <div class="li-content">
+            <div class="li-title">Moussa Bamba — Téléconsultation urgente</div>
+            <div class="li-sub">Dr. Amara Konaté · En ligne</div>
+          </div>
+          <div class="li-right">
+            <span class="li-time">Il y a 2h</span>
+            <span class="li-badge err" style="background:var(--error-bg);color:var(--error-text);border-color:var(--error-border)">Annulée</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ACCORDIONS -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">04 — Accordéons</h2><span class="ssub">Expand/collapse · border-radius · transition chevron</span></div>
+    <div class="sdiv"></div>
+    <div class="dw">
+      <div class="dsl">FAQ médicale — accordéon standard</div>
+      <div class="accordion">
+        <div class="acc-item">
+          <div class="acc-header open" onclick="toggleAcc(this)">
+            <div class="acc-title">
+              <div class="acc-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></svg></div>
+              Comment créer une ordonnance numérique ?
+            </div>
+            <svg class="acc-chevron" style="transform:rotate(180deg)" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="acc-body open">Depuis votre tableau de bord médecin, accédez à la section Ordonnances puis cliquez sur Nouvelle ordonnance. Remplissez le formulaire avec les médicaments prescrits, les posologies et la durée. La signature numérique sera appliquée automatiquement via votre certificat médical enregistré.</div>
+        </div>
+        <div class="acc-item">
+          <div class="acc-header" onclick="toggleAcc(this)">
+            <div class="acc-title">
+              <div class="acc-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/></svg></div>
+              Comment partager un dossier médical avec un spécialiste ?
+            </div>
+            <svg class="acc-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="acc-body">Ouvrez le dossier du patient, cliquez sur Partager, sélectionnez le médecin destinataire et définissez les droits d'accès (lecture seule ou modification). Le médecin recevra une notification sécurisée et pourra accéder au dossier pendant la durée définie.</div>
+        </div>
+        <div class="acc-item">
+          <div class="acc-header" onclick="toggleAcc(this)">
+            <div class="acc-title">
+              <div class="acc-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg></div>
+              L'application fonctionne-t-elle hors ligne ?
+            </div>
+            <svg class="acc-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="acc-body">Oui, Ulamu dispose d'un mode hors ligne complet. Vos derniers dossiers consultés, les rendez-vous du jour et les ordonnances en cours sont disponibles sans connexion. Les modifications sont synchronisées automatiquement dès le retour de la connectivité.</div>
+        </div>
+        <div class="acc-item">
+          <div class="acc-header" onclick="toggleAcc(this)">
+            <div class="acc-title">
+              <div class="acc-icon"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h3"/></svg></div>
+              Comment configurer l'authentification à deux facteurs ?
+            </div>
+            <svg class="acc-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+          <div class="acc-body">Rendez-vous dans Paramètres → Sécurité → Authentification à deux facteurs. Activez le switch TOTP puis scannez le QR code généré avec votre application d'authentification. Le 2FA est désactivé par défaut et son activation est entièrement facultative.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 GRAPHIQUES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">05 — Graphiques</h2><span class="ssub">Area chart · Bar chart · Donut · Sparklines — dégradés autorisés sous courbes uniquement</span></div>
+    <div class="sdiv"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+
+      <!-- Area Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Consultations par mois</div>
+            <div class="chart-period">Janv. – Juin 2026</div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#2756A6"></div>Consultations</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3D9A5C"></div>Téléconsultations</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:var(--sp-2)">
+          <div class="chart-yaxis">
+            <span class="y-label">500</span>
+            <span class="y-label">400</span>
+            <span class="y-label">300</span>
+            <span class="y-label">200</span>
+            <span class="y-label">100</span>
+            <span class="y-label">0</span>
+          </div>
+          <div style="flex:1">
+            <div class="chart-area">
+              <svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg" style="height:180px">
+                <defs>
+                  <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2756A6" stop-opacity="0.18"/><stop offset="100%" stop-color="#2756A6" stop-opacity="0"/></linearGradient>
+                  <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3D9A5C" stop-opacity="0.15"/><stop offset="100%" stop-color="#3D9A5C" stop-opacity="0"/></linearGradient>
+                </defs>
+                <!-- Grid -->
+                <line x1="0" y1="36" x2="400" y2="36" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+                <line x1="0" y1="72" x2="400" y2="72" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+                <line x1="0" y1="108" x2="400" y2="108" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+                <line x1="0" y1="144" x2="400" y2="144" stroke="currentColor" stroke-opacity="0.06" stroke-width="1"/>
+                <!-- Area 1 -->
+                <path d="M0,120 C40,110 80,80 130,70 C180,60 220,90 270,60 C310,40 360,50 400,40 L400,180 L0,180Z" fill="url(#cg1)"/>
+                <path d="M0,120 C40,110 80,80 130,70 C180,60 220,90 270,60 C310,40 360,50 400,40" fill="none" stroke="#2756A6" stroke-width="2" stroke-linecap="round"/>
+                <!-- Area 2 -->
+                <path d="M0,145 C40,138 80,125 130,120 C180,115 220,130 270,118 C310,108 360,115 400,108 L400,180 L0,180Z" fill="url(#cg2)"/>
+                <path d="M0,145 C40,138 80,125 130,120 C180,115 220,130 270,118 C310,108 360,115 400,108" fill="none" stroke="#3D9A5C" stroke-width="2" stroke-linecap="round"/>
+                <!-- Dots highlight -->
+                <circle cx="270" cy="60" r="4" fill="#2756A6" stroke="var(--bg-elevated)" stroke-width="2"/>
+                <circle cx="270" cy="118" r="4" fill="#3D9A5C" stroke="var(--bg-elevated)" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="chart-xaxis">
+              <span class="x-label">Jan</span><span class="x-label">Fév</span><span class="x-label">Mar</span><span class="x-label">Avr</span><span class="x-label">Mai</span><span class="x-label">Juin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar + Donut -->
+      <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Consultations par spécialité</div>
+              <div class="chart-period">Ce mois</div>
+            </div>
+          </div>
+          <div class="bar-chart-wrap">
+            <div class="bar-group"><div class="bar" style="height:80%;background:var(--accent-500);opacity:.85"></div><span class="bar-label">Card.</span></div>
+            <div class="bar-group"><div class="bar" style="height:55%;background:var(--accent-500);opacity:.65"></div><span class="bar-label">Péd.</span></div>
+            <div class="bar-group"><div class="bar" style="height:40%;background:var(--accent-500);opacity:.55"></div><span class="bar-label">Neu.</span></div>
+            <div class="bar-group"><div class="bar" style="height:70%;background:var(--accent-500);opacity:.75"></div><span class="bar-label">Gén.</span></div>
+            <div class="bar-group"><div class="bar" style="height:30%;background:var(--accent-500);opacity:.45"></div><span class="bar-label">Gyn.</span></div>
+            <div class="bar-group"><div class="bar" style="height:48%;background:var(--accent-500);opacity:.60"></div><span class="bar-label">Oph.</span></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Répartition patients</div><div class="chart-period">Par type</div></div></div>
+          <div class="donut-wrap">
+            <svg width="100" height="100" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--bg-muted)" stroke-width="6"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#2756A6" stroke-width="6" stroke-dasharray="50 50" stroke-dashoffset="25" stroke-linecap="round"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#3D9A5C" stroke-width="6" stroke-dasharray="30 70" stroke-dashoffset="-25" stroke-linecap="round"/>
+              <circle cx="21" cy="21" r="15.9" fill="none" stroke="#C49128" stroke-width="6" stroke-dasharray="20 80" stroke-dashoffset="-55" stroke-linecap="round"/>
+              <text x="21" y="25" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" font-family="Plus Jakarta Sans">2841</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#2756A6"></div><span class="donut-legend-label">Actifs</span><span class="donut-legend-val">50%</span></div>
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#3D9A5C"></div><span class="donut-legend-label">Nouveaux</span><span class="donut-legend-val">30%</span></div>
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#C49128"></div><span class="donut-legend-label">Inactifs</span><span class="donut-legend-val">20%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="sec">
+    <div class="shd"><h2 class="stit">06 — Règles d'usage</h2></div>
+    <div class="sdiv"></div>
+    <div class="rg">
+      <div class="rc f"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>Interdictions absolues</div>
+        <ul class="rl">
+          <li>Lignes de tableau alternées colorées — border-subtle 1px uniquement</li>
+          <li>Dégradé sur les barres (bar chart) ou le donut — area chart uniquement</li>
+          <li>Dépasser stop-opacity 0.18 pour le fill area chart</li>
+          <li>Cards sans border-radius minimum --radius-xl (14px)</li>
+          <li>KPI card sans sparkline — toujours accompagner la valeur d'une tendance</li>
+          <li>Accordéon sans animation de chevron — transition .25s linear obligatoire</li>
+          <li>Graphiques sans légende — toujours identifier les séries</li>
+          <li>Valeurs numériques KPI en Inter — utiliser Plus Jakarta Sans 800</li>
+        </ul>
+      </div>
+      <div class="rc a"><div class="rt"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>Bonnes pratiques obligatoires</div>
+        <ul class="rl">
+          <li>Tableaux : toolbar (search + filtres) + footer (info + pagination) systématiques</li>
+          <li>Tri de colonne : indicateur visuel ↑ ↓ ↕ avec couleur accent sur colonne active</li>
+          <li>Cards : hover → transform translateY(-1px) + shadow-md</li>
+          <li>KPI sparkline : area chart avec gradient couleur → transparent, h:36px</li>
+          <li>Donut : max 3 segments, valeur totale au centre, légende à droite</li>
+          <li>Bar chart : barres de même couleur avec opacités différentes pour hiérarchiser</li>
+          <li>Accordéon : contenu chargé une fois ouvert, chevron animé .25s</li>
+          <li>Listes : border-bottom subtle entre items, jamais de fond alterné</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot"><div class="fmeta">ulamu · Design System · CG-07 · v1.0</div><div class="fbdg"><div class="fbdgd"></div>Document validé — Phase 2 en cours</div></footer>
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('ol').classList.toggle('active',d);document.getElementById('od').classList.toggle('active',!d)}
+(function(){const d=document.documentElement.getAttribute('data-theme')==='dark';document.getElementById('od').classList.toggle('active',d);document.getElementById('ol').classList.toggle('active',!d)})();
+function toggleAcc(header){const body=header.nextElementSibling;const isOpen=header.classList.contains('open');header.classList.toggle('open',!isOpen);body.classList.toggle('open',!isOpen)}
+</script>
+</body>
+</html>

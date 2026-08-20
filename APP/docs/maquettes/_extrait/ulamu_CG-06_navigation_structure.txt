@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-06 Navigation & Structure 
+
+
+ 
+ 
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-06 Navigation &amp; Structure
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+ 
+ 
+
+ 
+Design System · Module CG-06
+
+ 
+Navigation &amp; Structure
+
+ 
+Composants de navigation et de structure d'Ulamu : sidebar hybride (étendue + réduite), topbar contextuelle, breadcrumb, onglets (3 styles), pagination et menus contextuels. Tous les composants sont rendus en live dans les deux thèmes.
+
+ 
+
+
+ <!-- 01 SIDEBAR -->
+ 
+ 
+01 — Sidebar
+ Fixe gauche · glass + grain · étendue 240px · réduite 56px 
+
+ 
+
+
+ <!-- Étendue -->
+ 
+État étendu — 240px
+
+ 
+
+ 
+
+ <!-- Brand -->
+ 
+
+ 
+
+ ulamu 
+ 
+
+ <!-- Section principale -->
+ Principal 
+ 
+ 
+ Tableau de bord 
+ 
+ 
+ 
+ Patients 
+ 24 
+ 
+ 
+ 
+ Dossiers médicaux 
+ 
+ 
+ 
+ Rendez-vous 
+ 3 
+ 
+ 
+
+ Médical 
+ 
+ 
+ Ordonnances 
+ 
+ 
+ 
+ Consultations 
+ 
+ 
+ 
+ Analytics 
+ 
+ 
+
+ 
+ 
+ Paramètres 
+ 
+ <!-- Footer -->
+ 
+
+ 
+
+ 
+
+ 
+AK
+
+ 
+
+ 
+Dr. Amara Konaté
+
+ 
+Cardiologue
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ <!-- Content -->
+ 
+
+ 
+Tableau de bord
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Réduite -->
+ 
+État réduit — 56px (icônes seules)
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+AK
+
+ 
+
+ 
+
+ 
+ | 
+ | État | | Largeur | | Comportement | | Déclencheur | 
+ | 
+ 
+ 
+ | Étendu | | 240px | | Affiche icône + label + badges | | Par défaut ≥ 1024px | 
+
+ 
+ | Réduit | | 56px | | Icônes seules + tooltip au survol | | Toggle bouton · ≤ 768px auto | 
+
+ 
+ | Caché | | 0px | | Off-screen, overlay sur mobile | | < 768px · bouton hamburger | 
+
+ 
+ 
+ 
+
+ 
+Tokens sidebar
+
+ 
+
+ 
+ background --glass-bg 
+
+ 
+ blur 14px 
+
+ 
+ nav-item height 32px 
+
+ 
+ active bg rgba(39,86,166,0.12) 
+
+ 
+ gap items --sp-1 (4px) 
+
+ 
+ padding H --sp-3 (12px) 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 02 TOPBAR -->
+ 
+ 
+02 — Topbar
+ Sticky · glass + grain · height 56px · z-index 100 
+
+ 
+
+ 
+
+ 
+Topbar Ulamu — rendu live
+
+ 
+
+ 
+
+ ulamu 
+ 
+
+ 
+
+ 
+ Rechercher un patient, médecin… 
+ ⌘K 
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+AK
+
+ 
+
+ 
+ | 
+ | Zone | | Composant | | Spécification | 
+ | 
+ 
+ 
+ | Gauche | | Logo + Nom | | Logo-mark 24px + Plus Jakarta Sans 15px 700 · séparateur 1px | 
+
+ 
+ | Centre | | Search bar | | max-width 280px · bg-muted · border-subtle · placeholder + raccourci ⌘K | 
+
+ 
+ | Droite | | Actions + Avatar | | Notif (dot rouge si non lus) · Settings · Avatar 30px avec initiales | 
+
+ 
+ | Background | | Glass | | --glass-bg · blur 12px · border-bottom 1px --glass-border · grain ×0.7 | 
+
+ 
+ | Position | | Sticky | | top:0 · z-index:100 · height:56px · shadow-sm | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- 03 BREADCRUMB -->
+ 
+ 
+03 — Breadcrumb
+ Navigation contextuelle · séparateur chevron · 13px Inter 
+
+ 
+
+ 
+
+ 
+
+ 
+Simple — 3 niveaux
+
+ 
+ Tableau de bord 
+ 
+ Patients 
+ 
+ Kofi Mensah 
+ 
+ 
+
+ 
+
+ 
+Long — 5 niveaux avec troncature
+
+ 
+ Accueil 
+ 
+ … 
+ 
+ Dossiers médicaux 
+ 
+ Ordonnance ORD-2026-00412 
+ 
+ 
+
+ 
+
+ 
+Avec icône home
+
+ 
+ Accueil 
+ 
+ Médecins 
+ 
+ Dr. Amara Konaté 
+ 
+ 
+
+ 
+
+ 
+
+ <!-- 04 TABS -->
+ 
+ 
+04 — Onglets (Tabs)
+ Underline · Pills · Vertical — 3 styles contextuels 
+
+ 
+
+ 
+
+
+ 
+
+ 
+Style 1 — Underline (défaut, pages principales)
+
+ 
+
+ 
+
+ 
+ Informations
+ 
+
+ 
+
+ 
+ Historique
+ 
+
+ 
+Ordonnances 3 
+
+ 
+Paiements
+
+ 
+Analytics
+
+ 
+
+ 
+
+ Informations du patient 
+ Contenu de l'onglet actif affiché ici. Le contenu des autres onglets est caché et chargé à la demande.
+ 
+
+ 
+
+
+ 
+
+ 
+Style 2 — Pills (filtres, vues alternatives)
+
+ 
+
+ 
+Semaine
+
+ 
+Mois
+
+ 
+Trimestre
+
+ 
+Année
+
+ 
+
+ 
+
+
+ 
+
+ 
+Style 3 — Vertical (paramètres, profil)
+
+ 
+
+ 
+
+ 
+
+ 
+ Profil
+ 
+
+ 
+
+ 
+ Notifications
+ 
+
+ 
+
+ 
+ Sécurité
+ 
+
+ 
+
+ 
+ Apparence
+ 
+
+ 
+
+ 
+ Facturation
+ 
+
+ 
+
+ 
+
+ Profil utilisateur 
+ Paramètres de profil du Dr. Amara Konaté. Modifier vos informations personnelles, photo, spécialité et coordonnées professionnelles.
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 05 PAGINATION -->
+ 
+ 
+05 — Pagination
+ Numérotée · ellipsis · prev/next · taille de page 
+
+ 
+
+ 
+
+ 
+
+ 
+Standard — page 4 sur 12
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+1
+
+ 
+2
+
+ 
+3
+
+ 
+4
+
+ 
+5
+
+ 
+…
+
+ 
+12
+
+ 
+
+ 
+ 
+
+ 
+
+ Affichage 31–40 sur 120 résultats 
+ 
+
+ 
+
+ 
+
+ 
+Compacte — peu de pages
+
+ 
+
+ 
+
+ 
+ Précédent
+ 
+
+ 
+
+ 
+1
+
+ 
+2
+
+ 
+3
+
+ 
+
+ 
+
+ Suivant
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- 06 CONTEXT MENU -->
+ 
+ 
+06 — Menus contextuels
+ Dropdown · Context menu · bg-elevated · shadow-lg · raccourcis 
+
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+Menu contextuel patient
+
+ 
+
+ 
+Actions patient
+
+ 
+
+ 
+ Ouvrir le dossier 
+ ⌘O 
+ 
+
+ 
+
+ 
+ Prendre rendez-vous 
+ ⌘R 
+ 
+
+ 
+
+ 
+ Créer une ordonnance 
+ 
+
+ 
+
+ 
+ Exporter le dossier 
+ 
+
+ 
+
+ 
+
+ 
+ Consulter le profil 
+ 
+
+ 
+
+ 
+
+ 
+ Archiver le patient 
+ ⌫ 
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+Menu dropdown — sélection
+
+ 
+
+ 
+
+ 
+ Cardiologie 
+ 
+
+ 
+
+ 
+
+ Pédiatrie 
+ 
+
+ 
+
+ 
+
+ Neurologie 
+ 
+
+ 
+
+ 
+
+ Gynécologie 
+ 
+
+ 
+
+ 
+
+ Médecine générale 
+ 
+
+ 
+
+ 
+
+ 
+ Ajouter une spécialité 
+ 
+
+ 
+
+ 
+
+ 
+Tokens menu contextuel
+
+ 
+
+ 
+ background --bg-elevated 
+
+ 
+ border 1px --border-default 
+
+ 
+ border-radius --radius-lg (10px) 
+
+ 
+ shadow --shadow-lg 
+
+ 
+ item height 36px 
+
+ 
+ item hover --bg-subtle 
+
+ 
+ z-index 20 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- RULES -->
+ 
+ 
+07 — Règles d'usage
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+Sidebar sans glassmorphism — toujours glass + grain
+
+ 
+Nav item actif sans indicateur visuel clair (fond + couleur)
+
+ 
+Breadcrumb sans lien cliquable sur les segments non-finaux
+
+ 
+Plus de 3 styles de tabs différents dans la même interface
+
+ 
+Pagination avec moins de 3 pages numérotées visibles
+
+ 
+Menu contextuel sans ombre --shadow-lg — jamais plat
+
+ 
+Topbar sans grain overlay — partie de l'identité visuelle
+
+ 
+Topbar hors position sticky — toujours visible en scrollant
+
+ 
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Sidebar : section labels en monospace uppercase pour les groupes
+
+ 
+Nav badge : pills accent pour les nouveaux éléments, warning si urgence
+
+ 
+Breadcrumb : tronquer au milieu pour les chemins > 4 niveaux
+
+ 
+Tabs underline : par défaut sur les pages principales (dossier, tableau de bord)
+
+ 
+Tabs pills : pour les filtres temporels et les vues alternatives
+
+ 
+Pagination : toujours afficher le total de résultats en info-texte
+
+ 
+Menus contextuels : grouper les actions par thème avec separateur
+
+ 
+Actions destructives : toujours en bas du menu, couleur danger, séparateur avant
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ulamu · Design System · CG-06 · v1.0
+Document validé — Phase 2 en cours

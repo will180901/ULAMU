@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-02 Typographie 
+
+
+ 
+ 
+
+<!-- ── TOPBAR ── -->
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ ulamu 
+ 
+ 
+
+ 
+
+ CG-02 
+ Typographie
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Clair
+ 
+
+ 
+
+ 
+ Sombre
+ 
+
+ 
+
+ 
+
+<!-- ── PAGE ── -->
+ 
+
+ <!-- PAGE HEADER -->
+ 
+
+ 
+Design System · Module CG-02
+
+ 
+Typographie
+
+ 
+Système typographique complet d'Ulamu. Deux familles humanistes complémentaires, une échelle de 16 paliers, des tokens nommés et des règles d'usage précises par contexte — titres, corps, labels, captions, code. Aucune police utilisée dans l'interface ne doit être hors de ce référentiel.
+
+ 
+
+
+ <!-- ══════════════════════════════════════════
+ 01 — FAMILLES DE POLICES
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+01 — Familles de polices
+
+ Duo humaniste · Plus Jakarta Sans + Inter + JetBrains Mono 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- DISPLAY -->
+ 
+
+ 
+
+ Display · Titres 
+ 
+
+ 
+Plus Jakarta Sans
+
+ 
+
+ Rôle : Tous les titres, headings, KPI metrics, logo, labels d'interface importants. 
+ Pourquoi : Géométrie légère portée par des terminaisons humanistes — elle est expressive sans être froide. Ses poids 700/800 ont une présence mémorable aux petites tailles, parfaite pour les dashboards denses. 
+ Source : Google Fonts · Open Font License
+ 
+
+ 
+
+ 
+
+ Dossier médical du patient 
+ Light 300 
+ 
+
+ 
+
+ Dossier médical du patient 
+ Regular 400 
+ 
+
+ 
+
+ Dossier médical du patient 
+ Medium 500 
+ 
+
+ 
+
+ Dossier médical du patient 
+ SemiBold 600 
+ 
+
+ 
+
+ Dossier médical du patient 
+ Bold 700 
+ 
+
+ 
+
+ Dossier médical du patient 
+ ExtraBold 800 ★ 
+ 
+
+ 
+
+ 
+
+
+ <!-- BODY -->
+ 
+
+ 
+
+ Corps · Labels · UI 
+ 
+
+ 
+Inter
+
+ 
+
+ Rôle : Corps de texte, descriptions, labels de formulaire, contenu de tableaux, métadonnées, hints. 
+ Pourquoi : Optimisée pour les interfaces numériques, Inter offre une lisibilité irréprochable à toutes les tailles. Ses proportions neutres ne concurrencent pas Plus Jakarta Sans mais la complètent. 
+ Source : Google Fonts · Open Font License
+ 
+
+ 
+
+ 
+
+ Consultation du 12 mars 2026 
+ Light 300 
+ 
+
+ 
+
+ Consultation du 12 mars 2026 
+ Regular 400 ★ 
+ 
+
+ 
+
+ Consultation du 12 mars 2026 
+ Medium 500 ★ 
+ 
+
+ 
+
+ Consultation du 12 mars 2026 
+ SemiBold 600 
+ 
+
+ 
+
+ 
+
+
+ <!-- MONO -->
+ 
+
+ 
+
+ Mono · Code · Tokens 
+ 
+
+ 
+JetBrains Mono
+
+ 
+
+ Rôle : Valeurs de tokens dans les outils dev, codes d'ordonnances, identifiants patients, références système, valeurs numériques techniques. 
+ Pourquoi : Ligatures de programmation intelligentes, lecture aisée des chiffres ambigus (0/O, 1/l). Discrétion parfaite dans l'interface tout en restant clairement distincte des deux autres familles. 
+ Source : Google Fonts · Open Font License
+ 
+
+ 
+
+ 
+
+ ORD-2026-00412-DKR 
+ Regular 400 ★ 
+ 
+
+ 
+
+ ORD-2026-00412-DKR 
+ Medium 500 ★ 
+ 
+
+ 
+
+ ORD-2026-00412-DKR 
+ SemiBold 600 
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 02 — ÉCHELLE TYPOGRAPHIQUE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+02 — Échelle typographique
+
+ 16 paliers nommés · taille · poids · interlignage · rendu live 
+ 
+
+ 
+
+
+ <!-- DISPLAY scale -->
+ 
+
+ 
+DISPLAY — Plus Jakarta Sans
+
+
+ 
+
+ display-2xl 
+ 40px 
+ ExtraBold 800 
+ lh 1.1 
+ 
+ Ulamu 
+
+ 
+
+ 
+
+ display-xl 
+ 32px 
+ ExtraBold 800 
+ lh 1.15 
+ 
+ Tableau de bord 
+
+ 
+
+ 
+
+ display-lg 
+ 24px 
+ Bold 700 
+ lh 1.2 
+ 
+ Dossier médical 
+
+ 
+
+ 
+
+ display-md 
+ 20px 
+ Bold 700 
+ lh 1.25 
+ 
+ Dr. Amara Konaté 
+
+ 
+
+ 
+
+ display-sm 
+ 18px 
+ SemiBold 600 
+ lh 1.3 
+ 
+ Rendez-vous du soir 
+
+ 
+
+ 
+
+
+ <!-- TEXT scale -->
+ 
+
+ 
+TEXT — Inter
+
+
+ 
+
+ text-xl 
+ 18px 
+ Regular 400 
+ lh 1.65 
+ 
+ Accès aux soins facilité pour tous 
+
+ 
+
+ 
+
+ text-lg 
+ 16px 
+ Regular 400 
+ lh 1.6 
+ 
+ Le patient est suivi depuis le 03 janvier 2026 
+
+ 
+
+ 
+
+ text-md 
+ 15px 
+ Regular 400 
+ lh 1.6 
+ 
+ Ordonnance numérique signée par le Dr. Konaté 
+
+ 
+
+ 
+
+ text-sm 
+ 13px 
+ Regular 400 
+ lh 1.55 
+ 
+ Consultez votre médecin avant toute automédication 
+
+ 
+
+ 
+
+ text-xs 
+ 12px 
+ Regular 400 
+ lh 1.5 
+ 
+ Dernière mise à jour il y a 3 minutes · Synchronisé 
+
+ 
+
+ 
+
+
+ <!-- LABEL scale -->
+ 
+
+ 
+LABEL — Inter Medium
+
+
+ 
+
+ label-lg 
+ 14px 
+ Medium 500 
+ lh 1.4 
+ 
+ Nom du patient 
+
+ 
+
+ 
+
+ label-md 
+ 13px 
+ Medium 500 
+ lh 1.4 
+ 
+ Spécialité · Cardiologie 
+
+ 
+
+ 
+
+ label-sm 
+ 12px 
+ Medium 500 
+ lh 1.4 
+ 
+ Statut actif · En ligne 
+
+ 
+
+ 
+
+ caption 
+ 11px 
+ Regular 400 
+ lh 1.45 
+ 
+ Les champs marqués * sont obligatoires 
+
+ 
+
+ 
+
+
+ <!-- MONO scale -->
+ 
+
+ 
+CODE / MONO — JetBrains Mono
+
+
+ 
+
+ code 
+ 13px 
+ Regular 400 
+ lh 1.6 
+ 
+ ORD-2026-00412-DKR · PAT-8821-KGL 
+
+ 
+
+ 
+
+ code-sm 
+ 11px 
+ Medium 500 
+ lh 1.5 
+ 
+ --accent-500 · #2756A6 · rgba(39,86,166,0.1) 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 03 — SPECIMEN VIVANT
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+03 — Specimen — Hiérarchie en contexte
+
+ Rendu live des deux familles combinées 
+ 
+
+ 
+
+
+ 
+
+ <!-- Display specimen -->
+ 
+
+ 
+Plus Jakarta Sans · Display
+
+ 
+
+ 
+
+ 
+Ulamu
+
+ 
+display-2xl · 40px · 800 · lh 1.1
+
+ 
+
+ 
+
+ 
+Tableau de bord
+
+ 
+display-xl · 32px · 800 · lh 1.15
+
+ 
+
+ 
+
+ 
+Dossier médical
+
+ 
+display-lg · 24px · 700 · lh 1.2
+
+ 
+
+ 
+
+ 
+Dr. Amara Konaté
+
+ 
+display-md · 20px · 700
+
+ 
+
+ 
+
+ 
+Rendez-vous confirmé
+
+ 
+display-sm · 18px · 600
+
+ 
+
+ 
+
+ 
+
+ « Notre application vise à établir un lien direct entre les patients et leurs médecins. »
+ 
+
+ 
+Plus Jakarta Sans · Italic · Regular
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Body specimen -->
+ 
+
+ 
+Inter · Corps & Labels
+
+ 
+
+ 
+
+ 
+Le patient Kofi Mensah, 42 ans, consulte pour des douleurs thoraciques récurrentes depuis 3 semaines. Antécédents : hypertension traitée depuis 2019.
+
+ 
+text-lg · 16px · 400 · lh 1.6
+
+ 
+
+ 
+
+ 
+Ordonnance numérique signée le 12 mars 2026 par Dr. Konaté. Médicaments : Amlodipine 5mg/j, Ramipril 10mg/j. Renouvellement dans 30 jours.
+
+ 
+text-sm · 13px · 400 · lh 1.55
+
+ 
+
+ 
+
+ 
+Nom du patient
+
+ 
+Spécialité · Cardiologie
+
+ 
+Dernière connexion il y a 5 min
+
+ 
+label-md · label-sm · caption
+
+ 
+
+ 
+
+ 
+ORD-2026-00412-DKR
+
+ 
+--accent-500 · rgba(39,86,166,0.1)
+
+ 
+code · code-sm
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 04 — COMPOSANTS UI EN CONTEXTE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+04 — Typographie dans les composants
+
+ Carte patient · Tableau · Formulaire · KPI 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- CARTE PATIENT -->
+ 
+
+ 
+Carte Patient
+
+ 
+
+ 
+
+ 
+
+ 
+Patient · ID PAT-8821-KGL
+
+ 
+Kofi Mensah
+
+ 
+
+ 
+Suivi cardiologique. Hypertension artérielle traitée depuis 2019. Dernière consultation le 08 mars 2026.
+
+ 
+
+ 
+
+ 
+ 42 ans
+ 
+
+ 
+· Dakar, SN
+
+ 
+
+ Actif 
+ 
+
+ 
+
+ 
+
+ Title → display-md · Subtitle → label-sm + code-sm · Body → text-sm · Meta → caption + code-sm
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- TABLEAU -->
+ 
+
+ 
+Tableau de données
+
+ 
+
+ 
+ | 
+ 
+
+ | Médecin | 
+ | Spécialité | 
+ | Consultations | 
+ 
+
+ | 
+ 
+ 
+
+ | Dr. Konaté | 
+ | Cardiologie | 
+ | 142 | 
+ 
+
+ 
+
+ | Dr. Diallo | 
+ | Pédiatrie | 
+ | 98 | 
+ 
+
+ 
+
+ | Dr. Mbeki | 
+ | Neurologie | 
+ | 67 | 
+ 
+
+ 
+ 
+ 
+
+ Header → label-sm (uppercase 0.05em) · Cell name → label-md · Cell text → text-sm · Cell number → code
+ 
+
+ 
+
+ 
+
+
+ <!-- FORMULAIRE -->
+ 
+
+ 
+Formulaire
+
+ 
+
+ 
+
+ 
+Nom complet * 
+
+ 
+Kofi Mensah
+
+ 
+
+ 
+
+ 
+Date de naissance
+
+ 
+JJ/MM/AAAA
+
+ 
+Format attendu : jour / mois / année à 4 chiffres
+
+ 
+
+ 
+
+ Label → label-lg · Input → text-md · Placeholder → text-md (disabled) · Hint → caption
+ 
+
+ 
+
+ 
+
+
+ <!-- KPI DASHBOARD -->
+ 
+
+ 
+KPI · Dashboard
+
+ 
+
+ 
+
+ 
+
+ 
+Patients actifs
+
+ 
+2 841
+
+ 
++12% ce mois
+
+ 
+
+ 
+
+ 
+Consultations
+
+ 
+418
+
+ 
++8% ce mois
+
+ 
+
+ 
+
+ 
+
+ Label → label-sm (uppercase) · Value → display-lg (800) · Delta → label-sm (success)
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 05 — TOKENS RÉFÉRENCE COMPLÈTE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+05 — Tokens de référence
+
+ Valeurs CSS variables complètes 
+ 
+
+ 
+
+
+ 
+ | 
+ 
+ | Token | | Famille | | Taille · Poids · Interlignage | | Usage principal | 
+
+ | 
+ 
+ 
+ | display-2xl | | Plus Jakarta Sans | | 40px · 800 · 1.1 | | Page title principal, logo, splash screens | 
+
+ 
+ | display-xl | | Plus Jakarta Sans | | 32px · 800 · 1.15 | | Titre de page, heading section principale | 
+
+ 
+ | display-lg | | Plus Jakarta Sans | | 24px · 700 · 1.2 | | Titre de module, nom de dossier patient, H2 | 
+
+ 
+ | display-md | | Plus Jakarta Sans | | 20px · 700 · 1.25 | | Nom de médecin/patient dans une card, H3 | 
+
+ 
+ | display-sm | | Plus Jakarta Sans | | 18px · 600 · 1.3 | | Sous-titres de section, titres de modal | 
+
+ 
+ | text-xl | | Inter | | 18px · 400 · 1.65 | | Corps intro, paragraphe de bienvenue | 
+
+ 
+ | text-lg | | Inter | | 16px · 400 · 1.6 | | Corps de texte standard (descriptions, ordonnances) | 
+
+ 
+ | text-md | | Inter | | 15px · 400 · 1.6 | | Corps secondaire, valeurs dans cards | 
+
+ 
+ | text-sm | | Inter | | 13px · 400 · 1.55 | | Contenu de tableaux, listes, descriptions courtes | 
+
+ 
+ | text-xs | | Inter | | 12px · 400 · 1.5 | | Métadonnées, timestamps, info secondaire | 
+
+ 
+ | label-lg | | Inter | | 14px · 500 · 1.4 | | Labels de formulaires, titres de sidebar section | 
+
+ 
+ | label-md | | Inter | | 13px · 500 · 1.4 | | Labels UI, noms dans listes, titres de navigation | 
+
+ 
+ | label-sm | | Inter | | 12px · 500 · 1.4 | | Badges, tags, statuts, en-têtes de colonnes | 
+
+ 
+ | caption | | Inter | | 11px · 400 · 1.45 | | Notes de bas de page, hints de formulaire, légales | 
+
+ 
+ | code | | JetBrains Mono | | 13px · 400 · 1.6 | | IDs patients/ordonnances, tokens, valeurs système | 
+
+ 
+ | code-sm | | JetBrains Mono | | 11px · 500 · 1.5 | | Tags de token CSS, labels de composants, doc design | 
+
+ 
+ 
+ 
+
+ <!-- ══════════════════════════════════════════
+ 06 — RÈGLES D'USAGE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+06 — Règles d'usage
+
+ Obligations et interdictions absolues 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+ Interdictions absolues
+ 
+
+ 
+ 
+Utiliser Arial, Roboto, Helvetica ou toute police hors du système
+
+ 
+Dépasser 40px pour les titres — jamais de taille "héroïque" surdimensionnée
+
+ 
+Utiliser Plus Jakarta Sans pour le corps de texte long (lisibilité dégradée)
+
+ 
+Utiliser Inter pour les grandes métriques KPI (impact insuffisant)
+
+ 
+Mélanger plus de 2 familles visibles dans un même écran
+
+ 
+Utiliser le poids 300 (Light) pour des éléments interactifs
+
+ 
+Mettre du texte en ALL CAPS avec la famille Display sur plus de 3 mots
+
+ 
+Appliquer letter-spacing négatif à Inter en dessous de 16px
+
+ 
+Utiliser JetBrains Mono pour du texte courant ou des titres
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ Bonnes pratiques obligatoires
+ 
+
+ 
+ 
+Toujours utiliser les tokens nommés — jamais de taille px codée en dur
+
+ 
+Plus Jakarta Sans pour tous les headings H1→H3, KPI metrics, noms propres mis en avant
+
+ 
+Inter pour tout le texte de lecture longue et tous les labels UI
+
+ 
+JetBrains Mono exclusivement pour IDs, codes, tokens et valeurs numériques techniques
+
+ 
+Respecter la hiérarchie : jamais un text-sm plus grand qu'un display-sm dans le même contexte
+
+ 
+Interlignage 1.5+ obligatoire dès que le texte dépasse une ligne
+
+ 
+Poids 800 réservé aux niveaux display-2xl et display-xl uniquement
+
+ 
+Toujours tester la lisibilité des deux thèmes avant de valider un choix typographique
+
+ 
+letter-spacing -0.8px à -0.2px sur les grandes tailles display uniquement
+
+ 
+ 
+
+ 
+
+ 
+
+ <!-- FOOTER -->
+ 
+ 
+ulamu · Design System · CG-02 · v1.0
+
+ 
+
+ 
+
+ Document validé — Phase 2 en cours

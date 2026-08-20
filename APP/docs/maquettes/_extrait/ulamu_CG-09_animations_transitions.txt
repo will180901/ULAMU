@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-09 Animations &amp; Transitions 
+
+
+ 
+ 
+ 
+ 
+
+ 
+ ulamu 
+ 
+
+ 
+ CG-09 Animations &amp; Transitions
+
+ 
+
+ 
+
+ 
+Clair
+
+ 
+Sombre
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+Design System · Module CG-09
+
+ 
+Animations &amp; Transitions
+
+ 
+Système complet d'animation d'Ulamu : 4 paliers de durée nommés, 4 courbes d'easing avec justification fonctionnelle, catalogue exhaustif par type d'interaction, micro-interactions autorisées en live et effets strictement interdits. Chaque animation a une raison d'être — jamais décorative, toujours fonctionnelle.
+
+ 
+
+
+ <!-- ══ 01 DURÉES ══ -->
+ 
+ 
+01 — Durées standards
+ 4 paliers nommés · base 200ms · aucune valeur ms hors tokens 
+
+ 
+
+ 
+
+ 
+Échelle de durée — survolez pour visualiser la vitesse
+
+ 
+
+ 
+
+ --dur-fast 
+ 150ms 
+ 
+
+ 
+
+ 
+
+ --dur-base ★ 
+ 200ms 
+ 
+
+ 
+
+ 
+
+ --dur-moderate 
+ 250ms 
+ 
+
+ 
+
+ 
+
+ --dur-slow 
+ 350ms 
+ 
+
+ 
+
+ 
+
+ 
+ | 
+ | Token | | Valeur | | Type d'interaction | | Exemples | 
+ | 
+ 
+ 
+ | --dur-fast | | 150ms | | Micro-feedback instantané | | Nav item active, focus ring, badge pulse, tab switch | 
+
+ 
+ | --dur-base ★ | | 200ms | | Interactions UI standard | | Hover bouton, focus input, toggle slide, card hover lift | 
+
+ 
+ | --dur-moderate | | 250ms | | Transitions de composants | | Toast slide-down, modal scale-in, accordion expand, chevron | 
+
+ 
+ | --dur-slow | | 350ms | | Transitions de layout | | Sidebar collapse, drawer slide, page route transition | 
+
+ 
+ | Exception | | 80ms | | Press / :active state | | Bouton scale(0.97) — quasi-instantané pour retour haptique | 
+
+ 
+ | Exception | | 1400ms | | Skeleton shimmer | | Gradient sweep infini — lent pour ne pas distraire | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- ══ 02 EASINGS ══ -->
+ 
+ 
+02 — Courbes d'easing
+ 4 courbes · cliquez pour déclencher l'animation · courbe SVG de référence 
+
+ 
+
+ 
+
+ 
+Cliquez sur chaque carte pour déclencher
+
+ 
+
+
+ 
+
+ 
+
+ 
+Cliquez
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Linear
+
+ 
+Vitesse constante du début à la fin. Aucune accélération ni décélération — parfaite neutralité mécanique.
+
+ 
+linear
+
+ 
+ 
+couleurs · opacités · fonds · shimmer
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Cliquez
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Ease Out
+
+ 
+Démarre vite, décélère à l'arrivée. Donne une sensation naturelle d'entrée — l'élément se pose avec douceur.
+
+ 
+ease-out
+
+ 
+ 
+accordion · drawer · dropdown open
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Cliquez
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Ease In
+
+ 
+Démarre lentement, accélère à la sortie. Réservé aux éléments qui disparaissent — ils s'éloignent naturellement.
+
+ 
+ease-in
+
+ 
+ 
+toast exit · modal close · sortie d'éléments
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Cliquez
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Spring ★
+
+ 
+Légèrement élastique — dépasse la cible puis revient. Donne de la vie aux composants interactifs clés d'Ulamu.
+
+ 
+cubic-bezier(0.34, 1.56, 0.64, 1)
+
+ 
+ 
+toggle · modal open · toast in · checkbox
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ <!-- ══ 03 CATALOGUE ══ -->
+ 
+ 
+03 — Catalogue par interaction
+ Référence complète · durée · easing · propriétés · composants ciblés 
+
+ 
+
+ 
+
+ 
+ | 
+ | Interaction | | Durée | | Easing | | Propriétés animées | | Composants | 
+ | 
+ 
+ 
+ | Hover bouton | | --dur-base | | linear | | background-color · box-shadow · transform translateY | | Tous les .btn | 
+
+ 
+ | Press bouton :active | | 80ms | | linear | | transform: scale(0.97) | | Boutons primaires, danger | 
+
+ 
+ | Focus input | | --dur-base | | linear | | border-color · box-shadow (ring 3px rgba) | | Input · Select · Textarea | 
+
+ 
+ | Nav item active | | --dur-fast | | linear | | background-color · color · border | | Sidebar nav items | 
+
+ 
+ | Toggle thumb slide | | --dur-base | | spring ★ | | left (thumb) · background + border (track) | | Toggle / Switch | 
+
+ 
+ | Checkbox check | | --dur-base | | spring ★ | | transform: scale(0→1) · opacity (checkmark SVG) | | Checkbox | 
+
+ 
+ | Card hover lift | | --dur-base | | linear | | transform: translateY(-1 à -2px) · box-shadow | | Cards · KPI cards | 
+
+ 
+ | Tab switch | | --dur-fast | | linear | | background-color · color · border-bottom-color | | Tabs underline · pills · vertical | 
+
+ 
+ | Accordion expand | | --dur-moderate | | ease-out | | max-height · padding (body) · rotate(180deg) (chevron) | | Accordéon | 
+
+ 
+ | Chevron rotation | | --dur-moderate | | spring ★ | | transform: rotate(0→180deg) | | Accordion · Select dropdown | 
+
+ 
+ | Toast entrée | | --dur-moderate | | spring ★ | | transform: translateY(-44px→0) · opacity (0→1) | | Toast system (z:300) | 
+
+ 
+ | Toast sortie | | --dur-moderate | | ease-in | | transform: translateY(0→-20px) · opacity (1→0) | | Toast system (z:300) | 
+
+ 
+ | Modal open | | --dur-moderate | | spring ★ | | transform: scale(0.91→1) · opacity · overlay fade-in | | Modal (z:200) | 
+
+ 
+ | Modal close | | --dur-moderate | | ease-in | | transform: scale(1→0.95) · opacity · overlay fade-out | | Modal (z:200) | 
+
+ 
+ | Drawer slide-in | | --dur-slow | | ease-out | | transform: translateX(100%→0) | | Drawer droit | 
+
+ 
+ | Drawer slide-out | | --dur-slow | | ease-in | | transform: translateX(0→100%) | | Drawer droit | 
+
+ 
+ | Sidebar collapse | | --dur-slow | | ease-out | | width (240px→56px) · opacity labels (1→0) | | Sidebar (z:9) | 
+
+ 
+ | Dropdown open | | --dur-moderate | | ease-out | | transform: scaleY(0→1) · opacity · transform-origin: top | | Menus contextuels | 
+
+ 
+ | Skeleton shimmer | | 1400ms | | ease-in-out | | background-position (gradient sweep continu) | | Skeletons (infini) | 
+
+ 
+ | Spinner ring | | 800ms | | linear | | transform: rotate(0→360deg) | | Spinners (infini) | 
+
+ 
+ | Progress fill | | 300ms | | linear | | width (0→N%) — exception documentée | | Progress bars | 
+
+ 
+ | Theme toggle global | | --dur-moderate | | linear | | background · color · border-color (CSS variables entier UI) | | body + tous les composants | 
+
+ 
+ | Focus ring apparition | | --dur-fast | | linear | | outline: 3px solid rgba(39,86,166,0.30) · outline-offset: 2px | | Tout élément interactif | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- ══ 04 MICRO-INTERACTIONS ══ -->
+ 
+ 
+04 — Micro-interactions autorisées
+ Toutes interactives — survolez et cliquez pour déclencher les animations 
+
+ 
+
+ 
+
+
+ <!-- BOUTON -->
+ 
+
+ 
+<button> Confirmer l'acte </button>
+
+ 
+
+ 
+Bouton — Hover + Press
+
+ 
+hover: translateY(-2px) + shadow-md · 200ms linear active: scale(0.97) · 80ms linear
+
+ 
+
+ 
+
+
+ <!-- TOGGLE -->
+ 
+
+ 
+
+ 
+
+ 
+ Notifications 
+
+ 
+ Mode hors ligne 
+
+ 
+
+ 
+
+ 
+
+ 
+Toggle — Spring thumb
+
+ 
+thumb left: 200ms cubic-bezier(0.34,1.56,0.64,1) track bg: 200ms linear · cliquez
+
+ 
+
+ 
+
+
+ <!-- INPUT -->
+ 
+
+ 
+<input>
+
+ 
+
+ 
+Input — Focus ring
+
+ 
+border-color accent-500 + ring rgba(.12) 200ms linear · cliquez dans le champ
+
+ 
+
+ 
+
+
+ <!-- CARD HOVER -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Card — Hover lift
+
+ 
+translateY(-2px) + shadow-md · 200ms linear active: scale(0.98) · survolez
+
+ 
+
+ 
+
+
+ <!-- NAV -->
+ 
+
+ 
+
+ 
+
+ 
+Tableau de bord
+
+ 
+Patients
+
+ 
+Rendez-vous
+
+ 
+
+ 
+
+ 
+
+ 
+Nav item — Active state
+
+ 
+bg rgba(39,86,166,0.12) + border · 150ms linear cliquez pour changer
+
+ 
+
+ 
+
+
+ <!-- CHECKBOX -->
+ 
+
+ 
+
+ 
+
+ 
+ Consultation en ligne 
+
+ 
+ Ordonnance requise 
+
+ 
+
+ 
+
+ 
+
+ 
+Checkbox — Spring check
+
+ 
+scale(0→1) + opacity · 200ms spring cliquez pour cocher
+
+ 
+
+ 
+
+
+ <!-- ACCORDION -->
+ 
+
+ 
+
+ 
+
+ 
+
+ Mode hors ligne ? 
+ 
+ 
+
+ 
+Ulamu fonctionne hors ligne avec synchronisation automatique dès le retour de connexion.
+
+ 
+
+ 
+
+ 
+
+ 
+Accordion — Expand + chevron
+
+ 
+max-height ease-out + rotate spring · 250ms cliquez pour ouvrir
+
+ 
+
+ 
+
+
+ <!-- TOAST -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Rendez-vous confirmé 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Toast — Slide-down + fade
+
+ 
+translateY(-44→0) + opacity · 250ms spring rejouer ↺ 
+
+ 
+
+ 
+
+
+ <!-- MODAL -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Confirmer l'ordonnance
+
+ 
+Signature numérique requise
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Modal — Scale-in + fade
+
+ 
+scale(0.91→1) + opacity · 250ms spring rejouer ↺ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══ 05 EFFETS INTERDITS ══ -->
+ 
+ 
+05 — Effets interdits
+ Ces animations violent les principes Ulamu — aucune exception tolérée 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+Bounce exagéré
+
+ 
+Overshoot > 20%. Distrait, donne une impression de jouet. Utiliser uniquement le spring calibré (0.34, 1.56, 0.64, 1).
+
+ 
+
+ 
+
+
+ 
+
+ 
+✚
+
+ 
+
+ 
+Rotation décorative
+
+ 
+Icône en rotation permanente sans raison fonctionnelle. Seul le spinner de chargement peut tourner, et uniquement lors d'une opération async.
+
+ 
+
+ 
+
+
+ 
+
+ 
+<button>Sauvegarder</button>
+
+ 
+
+ 
+Transition > 400ms
+
+ 
+Survolez ce bouton — le délai est perceptible et frustrant. Toute interaction UI courante doit rester sous 350ms.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+Clignotement (blink)
+
+ 
+Alternance brutale on/off. Inaccessible (WCAG 2.3 : pas de flash > 3/s) et cliniquement risqué pour les personnes photosensibles.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ Survolez la barre 
+ 
+
+ 
+
+ 
+Transition width/height
+
+ 
+Animer width ou height cause des reflows coûteux. Utiliser transform:scaleX ou transform:scaleY — même résultat visuel, coût GPU nul.
+
+ 
+
+ 
+
+
+ 
+
+ 
+<button>Valider</button>
+
+ 
+
+ 
+Couleur animée en boucle
+
+ 
+Background-color en animation infinie sur un composant interactif. Détruit la lisibilité sémantique des couleurs et désoriente l'utilisateur.
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ══ 06 RÈGLES ══ -->
+ 
+ 
+06 — Règles d'usage
+
+ 
+
+ 
+
+ 
+
+ 
+Interdictions absolues
+
+ 
+ 
+Durée > 400ms sur toute interaction UI courante (hover, focus, click)
+
+ 
+Animations CSS infinies hors spinners et skeleton shimmer
+
+ 
+Animer width ou height — utiliser transform:scale* exclusivement
+
+ 
+Clignotement ou flash de toute fréquence (risque WCAG 2.3)
+
+ 
+Rotation permanente non fonctionnelle d'icônes ou de texte
+
+ 
+Overshoot > 20% — spring(0.34, 1.56, 0.64, 1) est le plafond autorisé
+
+ 
+Couleur animée en boucle sur composants interactifs
+
+ 
+Animer left, top, margin ou padding — utiliser transform:translate
+
+ 
+Parallax, scroll-jacking ou toute animation pilotée par le scroll
+
+ 
+Animation sans justification fonctionnelle documentée
+
+ 
+ 
+
+ 
+
+ 
+Bonnes pratiques obligatoires
+
+ 
+ 
+Toujours utiliser les tokens --dur-* — jamais de valeur ms codée en dur hors exceptions
+
+ 
+Propriétés GPU uniquement : transform · opacity · filter · backdrop-filter
+
+ 
+Spring réservé aux composants à retour perçu clé : toggle, checkbox, modal, toast
+
+ 
+Linear obligatoire pour toutes les transitions de couleur et d'opacité
+
+ 
+Ease-out pour les entrées · ease-in pour les sorties — toujours symétriques
+
+ 
+Transition :active (press) à 80ms maximum — feedback quasi-instantané
+
+ 
+Implémenter prefers-reduced-motion : désactiver toutes animations non-essentielles
+
+ 
+Card hover : translateY(-1 à -2px) maximum — pas de déplacement supérieur
+
+ 
+Tester chaque animation dans les deux thèmes avant validation
+
+ 
+Tout mouvement doit avoir sa durée et easing référencés dans ce catalogue
+
+ 
+ 
+
+ 
+
+
+ <!-- REDUCED MOTION NOTICE -->
+ 
+
+ 
+
+ 
+ Règle prefers-reduced-motion — Implémentation obligatoire
+ 
+
+ 
+Lorsque prefers-reduced-motion: reduce est détecté, le comportement suivant s'applique systématiquement :
+
+ 
+
+ 
+
+ 
+Désactiver complètement
+
+ 
+ 
+ → Animations de layout (modal, toast, drawer)
+
+ 
+ → Effets spring et overshoot
+
+ 
+ → Skeleton shimmer (remplacer par opacité statique)
+
+ 
+ → Card hover translateY
+
+ 
+ 
+
+ 
+
+ 
+Conserver (durée réduite)
+
+ 
+ 
+ → Focus ring (apparition instantanée, accessibility)
+
+ 
+ → Changements de couleur hover/active
+
+ 
+ → Spinner de chargement (fonctionnel)
+
+ 
+ → Toggle track background (sans spring)
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ 
+ulamu · Design System · CG-09 · v1.0
+
+ 
+Document validé — Phase 2 en cours

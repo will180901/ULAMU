@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-04 Effets de Surface & Atmosphère 
+
+
+ 
+ 
+
+<!-- ── TOPBAR ── -->
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ ulamu 
+ 
+ 
+
+ 
+
+ CG-04 
+ Effets de Surface &amp; Atmosphère
+ 
+
+ 
+
+ 
+
+ 
+
+ Clair
+ 
+
+ 
+
+ Sombre
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- PAGE HEADER -->
+ 
+
+ 
+Design System · Module CG-04
+
+ 
+Effets de Surface &amp; Atmosphère
+
+ 
+Grain de texture, verre poli (glassmorphism), système d'ombres par niveau Z, et règle absolue des dégradés. Ces quatre couches d'effets créent la profondeur atmosphérique d'Ulamu — un brouillard chaud, humain, mémorable. Chaque composant vit à un niveau Z précis avec des propriétés définies.
+
+ 
+
+
+ <!-- ══════════════════════════════════════════
+ 01 — GRAIN DE TEXTURE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+01 — Grain de texture
+
+ Moyen · présent partout · intensité variable selon le composant 
+ 
+
+ 
+
+
+ <!-- Intensity scale -->
+ 
+
+ 
+
+ 
+
+ Aucun 
+ 
+
+ 
+
+ 
+Zéro grain
+
+ 
+opacity: 0 — ❌ Non Ulamu
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Subtil 
+ 
+
+ 
+
+ 
+Discret
+
+ 
+opacity: 0.025 — Contenus
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Moyen ★ 
+ 
+
+ 
+
+ 
+Moyen — Ulamu
+
+ 
+opacity: 0.055 — Global body
+
+ 
+
+ 
+
+ 
+
+ 
+
+ Fort 
+ 
+
+ 
+
+ 
+Prononcé
+
+ 
+opacity: 0.10 — Boutons
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Grain on buttons -->
+ 
+
+ 
+Grain sur les boutons — très visible, effet sérigraphié
+
+ 
+
+ <button>Confirmer</button>
+ <button>Annuler</button>
+ <button>Voir plus</button>
+ <button>Supprimer</button>
+ 
+Grain visible sur chaque bouton opacity var(--grain-btn): 0.06-0.09
+
+ 
+
+ 
+
+
+ <!-- Grain token table -->
+ 
+ | 
+ | Token / Variable | | Valeur | | Composant cible | 
+ | 
+ 
+ 
+ | --grain-opacity (body) | | 0.035 (light) · 0.055 (dark) | | Overlay global sur body — brouillard atmosphérique de fond | 
+
+ 
+ | --grain-btn | | 0.06 (light) · 0.09 (dark) | | Overlay sur tous les boutons — effet affiche sérigraphiée | 
+
+ 
+ | Grain cards (×0.6) | | ~0.021 / ~0.033 | | Cards et surfaces élevées — grain discret pour la matière | 
+
+ 
+ | Grain glass (×0.8) | | ~0.028 / ~0.044 | | Surfaces glass (sidebar, topbar, toasts) — grain sur verre | 
+
+ 
+ | baseFrequency | | 0.9 | | Grain fin, pas de motif grossier — cohérence sur tous les écrans | 
+
+ 
+ | numOctaves | | 4 | | Texture riche mais naturelle, pas mécanique | 
+
+ 
+ | background-size | | 180px × 180px | | Tuile de grain — taille optimale pour densité et seamless tiling | 
+
+ 
+ 
+ 
+
+ <!-- ══════════════════════════════════════════
+ 02 — GLASSMORPHISM
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+02 — Verre poli (Glassmorphism)
+
+ Sidebar · Topbar · Toasts — les 3 seuls composants glass 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- SIDEBAR glass -->
+ 
+
+ 
+
+ <!-- Blobs background -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Glass sidebar -->
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+SIDEBAR · Verre poli
+
+ 
+
+
+ <!-- TOPBAR glass -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Content behind topbar -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Glass topbar -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+TOPBAR · Verre poli
+
+ 
+
+
+ <!-- TOAST glass -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Content -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- Glass toast -->
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+TOAST · Centré en haut · Verre poli
+
+ 
+
+
+ 
+
+
+ <!-- Glass spec cards -->
+ 
+
+ 
+
+ 
+
+ 
+ Sidebar
+ 
+
+ 
+ background --glass-bg 
+
+ 
+ backdrop-filter blur(14px) 
+
+ 
+ border-right 1px --glass-border 
+
+ 
+ grain overlay opacity ×0.90 
+
+ 
+ light bg rgba(255,255,255,0.72) 
+
+ 
+ dark bg rgba(28,28,33,0.72) 
+
+ 
+
+ 
+
+ 
+
+ 
+ Topbar
+ 
+
+ 
+ background --glass-bg 
+
+ 
+ backdrop-filter blur(12px) 
+
+ 
+ border-bottom 1px --glass-border 
+
+ 
+ grain overlay opacity ×0.70 
+
+ 
+ light bg rgba(255,255,255,0.72) 
+
+ 
+ dark bg rgba(28,28,33,0.72) 
+
+ 
+
+ 
+
+ 
+
+ 
+ Toasts
+ 
+
+ 
+ background --glass-bg 
+
+ 
+ backdrop-filter blur(12px) 
+
+ 
+ border 1px --glass-border 
+
+ 
+ position top center fixed 
+
+ 
+ max-width 420px 
+
+ 
+ grain overlay opacity ×1.00 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 03 — OMBRES & ÉLÉVATIONS
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+03 — Ombres &amp; Élévations (Z-layers)
+
+ 5 niveaux · profondeur Z légère · jamais d'ombres colorées 
+ 
+
+ 
+
+
+ 
+
+
+ 
+
+ 
+Z0
+
+ 
+Plat
+
+ 
+Aucune ombre. Utilisé pour les éléments intégrés dans la page, sans relief nécessaire.
+
+ 
+box-shadow: none
+
+ 
+
+ Séparateurs 
+ Lignes de table 
+ Fonds de page 
+ 
+
+ 
+
+
+ 
+
+ 
+Z1
+
+ 
+--shadow-sm
+
+ 
+Élévation minimale. Soulève légèrement l'élément du fond sans le déconnecter.
+
+ 
+0 1px 2px rgba(0,0,0,0.05)
+
+ 
+
+ Cards 
+ Topbar 
+ Inputs focus 
+ Sidebar 
+ 
+
+ 
+
+
+ 
+
+ 
+Z2
+
+ 
+--shadow-md
+
+ 
+Élévation standard. Profondeur visible mais discrète — état hover des cards.
+
+ 
+0 2px 8px rgba(0,0,0,0.08) + 0 1px 2px rgba(0,0,0,0.04)
+
+ 
+
+ Cards hover 
+ Dropdowns 
+ Popovers 
+ 
+
+ 
+
+
+ 
+
+ 
+Z3
+
+ 
+--shadow-lg
+
+ 
+Élévation forte. Réservée aux éléments qui flottent au-dessus du contenu.
+
+ 
+0 6px 24px rgba(0,0,0,0.55) + 0 2px 6px rgba(0,0,0,0.35)
+
+ 
+
+ Toasts 
+ Tooltips 
+ Menus ctx. 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- Shadow visual comparison -->
+ 
+
+ 
+
+ 
+
+ 
+Z0 · Plat
+
+ 
+--shadow: none
+
+ 
+
+ 
+
+ 
+
+ 
+Z1 · Minimal
+
+ 
+--shadow-sm
+
+ 
+
+ 
+
+ 
+
+ 
+Z2 · Standard
+
+ 
+--shadow-md
+
+ 
+
+ 
+
+ 
+
+ 
+Z3 · Fort
+
+ 
+--shadow-lg
+
+ 
+
+ 
+
+ 
+
+ 
+Z4 · Maximal
+
+ 
+--shadow-xl
+
+ 
+
+ 
+
+
+ <!-- shadow token table -->
+ 
+ | 
+ | Token | | Valeur light | | Valeur dark | | Usage | 
+ | 
+ 
+ 
+ | --shadow-sm | | 0 1px 2px rgba(0,0,0,0.05) | | 0 1px 3px rgba(0,0,0,0.35) | | Cards, topbar, sidebar, inputs au focus | 
+
+ 
+ | --shadow-md | | 0 2px 8px rgba(0,0,0,0.08) + 0 1px 2px rgba(0,0,0,0.04) | | 0 2px 10px rgba(0,0,0,0.45) + … | | Cards en hover, dropdowns, popovers | 
+
+ 
+ | --shadow-lg | | 0 4px 16px rgba(0,0,0,0.10) + … | | 0 6px 24px rgba(0,0,0,0.55) + … | | Toasts, tooltips, menus contextuels | 
+
+ 
+ | --shadow-xl | | 0 8px 32px rgba(0,0,0,0.12) + … | | 0 12px 40px rgba(0,0,0,0.65) + … | | Modales, drawers, confirmations critiques | 
+
+ 
+ 
+ 
+
+ <!-- ══════════════════════════════════════════
+ 04 — RÈGLE DES DÉGRADÉS (RAPPEL VISUEL)
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+04 — Règle absolue des dégradés
+
+ Interdit partout · autorisé uniquement sous les courbes de graphiques 
+ 
+
+ 
+
+
+ 
+
+ 
+
+
+ <!-- FORBIDDEN -->
+ 
+
+ 
+❌ Dégradés interdits
+
+
+ 
+
+ 
+
+ Bouton primaire 
+ 
+
+ 
+
+ INTERDIT 
+ Dégradé sur bouton — utiliser couleur unie --accent-500
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ INTERDIT 
+ Fond de page avec dégradé — utiliser --bg-base uni
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+Badge accent
+
+ 
+
+ 
+
+ INTERDIT 
+ Dégradé sur badge/tag — fond uni rgba() uniquement
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ INTERDIT 
+ Dégradé sur card/surface — ombre Z légère à la place
+ 
+
+ 
+
+ 
+
+
+ <!-- ALLOWED -->
+ 
+
+ 
+✓ Dégradé autorisé — Area charts uniquement
+
+
+ 
+
+ 
+Consultations / 6 derniers mois
+
+ 
+
+ 
+ 
+
+ 
+
+ ✓ OK 
+ Area fill · stop-opacity 0.18→0 · couleur de la courbe uniquement
+ 
+
+ 
+
+
+ 
+
+ 
+Patients actifs vs Nouveaux patients
+
+ 
+
+ 
+ 
+
+ 
+
+ ✓ OK 
+ Multi-courbes · chaque area fill hérite de la couleur de sa ligne
+ 
+
+ 
+
+
+ 
+
+ 
+Spécifications du dégradé autorisé
+
+ 
+
+ 
+ Direction vertical · x1=0 y1=0 x2=0 y2=1 
+
+ 
+ stop-opacity départ 0.12 → 0.18 max 
+
+ 
+ stop-opacity fin 0 (transparent) 
+
+ 
+ couleur identique à la stroke de la courbe 
+
+ 
+ type de graphique Area chart uniquement 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 05 — COMPOSITION ATMOSPHÉRIQUE COMPLÈTE
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+05 — Composition atmosphérique complète
+
+ Tous les effets combinés · rendu live de l'interface Ulamu 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Topbar glass + grain -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Sidebar glass + grain -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Content area -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- area chart with allowed gradient -->
+ 
+
+ 
+
+ 
+
+ 
+ 
+
+ 
+
+ 
+
+
+ <!-- Toast floating -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+
+ <!-- Layer stack annotation -->
+ 
+
+ 
+Stack de couches Z — du bas vers le haut
+
+
+ 
+
+ z:0 
+ 
+
+ Page background 
+ --bg-base · grain body ×1 
+ 
+
+ 
+
+ 
+
+ z:1 
+ 
+
+ Cards · Surfaces élevées 
+ --shadow-sm · grain ×0.6 
+ 
+
+ 
+
+ 
+
+ z:9 
+ 
+
+ Sidebar fixe gauche 
+ glass · blur 14px · grain ×0.9 
+ 
+
+ 
+
+ 
+
+ z:10 
+ 
+
+ Topbar sticky 
+ glass · blur 12px · grain ×0.7 
+ 
+
+ 
+
+ 
+
+ z:20 
+ 
+
+ Dropdowns · Menus · Popovers 
+ --shadow-md · bg-elevated 
+ 
+
+ 
+
+ 
+
+ z:100 
+ 
+
+ Toasts 
+ glass · blur 12px · --shadow-lg · top center 
+ 
+
+ 
+
+ 
+
+ z:200 
+ 
+
+ Modales · Drawers 
+ --shadow-xl · overlay rgba(0,0,0,0.5) 
+ 
+
+ 
+
+ 
+
+ z:9999 
+ 
+
+ Grain overlay global (::before body) 
+ pointer-events:none · toujours au-dessus 
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ══════════════════════════════════════════
+ 06 — RÈGLES
+ ══════════════════════════════════════════ -->
+ 
+ 
+
+ 
+06 — Règles d'usage
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+ Interdictions absolues
+ 
+
+ 
+ 
+Appliquer du glassmorphism sur des composants autres que sidebar, topbar et toasts
+
+ 
+Utiliser des dégradés sur boutons, fonds, cards, textes, icônes ou badges
+
+ 
+Créer un dégradé sous les barres (bar chart), donut ou gauge — area uniquement
+
+ 
+Dépasser stop-opacity 0.18 pour le fill d'area chart
+
+ 
+Utiliser des ombres colorées (ex: box-shadow avec une couleur non-neutre)
+
+ 
+Appliquer --shadow-xl sur des éléments inline ou dans le flux du contenu
+
+ 
+Supprimer le grain de texture globalement — il fait partie de l'identité Ulamu
+
+ 
+Utiliser backdrop-filter sans fallback pour les navigateurs sans support
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ Bonnes pratiques obligatoires
+ 
+
+ 
+ 
+Grain sur body via ::before fixe — une seule instance, z-index 9999, pointer-events:none
+
+ 
+Grain sur boutons via ::after — opacity var(--grain-btn), visible et caractériel
+
+ 
+Glass toujours combiné avec grain — jamais de surface glass sans texture
+
+ 
+Ombres en niveaux progressifs Z0→Z4 uniquement — pas de valeurs personnalisées
+
+ 
+Toasts : toujours glass + grain + shadow-lg + position top center fixed
+
+ 
+Cards : shadow-sm au repos, shadow-md au hover — transition .25s linear
+
+ 
+Area chart : gradient vertical, même couleur que la stroke, opacity 0.18→0
+
+ 
+Tester les effets glass dans les deux thèmes avant validation — comportement différent
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ulamu · Design System · CG-04 · v1.0
+
+ 
+Document validé — Phase 2 en cours

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">E7</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Comptes</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Administration</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="{{ i.badgeStyle }}">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">SN</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sylvie Ngouabi</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600)">Super-administratrice</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Administration</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Comptes</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un compte, un dossier…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="1.5"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path><circle cx="8" cy="11.5" r="1" fill="currentColor"></circle></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Comptes</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <button type="button" onClick="{{ exporter }}" style="{{ styleSecondaireMd }}flex-shrink:0;" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M2 13h12"></path></svg>
+                Exporter la liste
+              </button>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleCompteurs }}">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                  <span style="{{ styleOs }}display:block;width:58%;height:9px;border-radius:3px"></span>
+                  <span style="{{ styleOs }}display:block;width:34%;height:20px;margin-top:8px;border-radius:4px"></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ huit }}" as="n" hint-placeholder-count="8">
+                <div style="display:flex;align-items:center;gap:var(--espace-4);padding:0 var(--espace-4);height:44px;border-bottom:1px solid var(--bordure-legere)">
+                  <span style="{{ styleOs }}width:28px;height:28px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:170px;height:9px;border-radius:3px"></span>
+                  <span style="flex:1"></span>
+                  <span style="{{ styleOs }}width:80px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:84px;height:16px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:64px;height:26px;border-radius:var(--radius-md);flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:860px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">La liste des comptes n'a pas pu être chargée</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">Aucune suspension ni réactivation n'est possible tant que les statuts affichés ne sont pas à jour.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher les comptes</span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">Réessayer</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estVide }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-10) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+            <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.6"></circle><path d="M1.5 13.5a4.5 4.5 0 0 1 9 0"></path><path d="M11 3.2a2.6 2.6 0 0 1 0 4.9M12 9.4a4.5 4.5 0 0 1 2.5 4.1"></path></svg>
+            </span>
+            <span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Aucun compte enregistré</span>
+              <span style="display:block;margin-top:4px;max-width:430px;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-tertiaire)">Les comptes apparaissent ici dès la première inscription. Un compte ne peut être créé que par son titulaire, jamais par l'administration.</span>
+            </span>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div style="{{ styleGrilleCompteurs }}">
+              <sc-for list="{{ compteurs }}" as="c" hint-placeholder-count="4">
+                <button type="button" onClick="{{ c.onClick }}" style="{{ c.carte }}" style-hover="border-color:var(--bordure-forte)">
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <span style="{{ c.point }}"></span>
+                    <span style="flex:1;min-width:0;text-align:left;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                  </span>
+                  <span style="display:flex;align-items:baseline;gap:6px;margin-top:6px">
+                    <span style="font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:{{ c.couleurValeur }}">{{ c.valeur }}</span>
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ c.unite }}</span>
+                  </span>
+                  <span style="display:block;margin-top:3px;text-align:left;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ c.aide }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <div class="ul-grain-fine" style="{{ styleCarte }}">
+              <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <span style="position:relative;flex:1 1 220px;min-width:170px;max-width:320px;display:flex">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:10px;top:10px;pointer-events:none"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                  <input type="text" value="{{ vRecherche }}" onChange="{{ majRecherche }}" placeholder="Filtrer par nom ou identifiant…" style="{{ styleChampFiltre }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+                </span>
+                <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                  <sc-for list="{{ onglets }}" as="t" hint-placeholder-count="4">
+                    <button type="button" role="tab" aria-selected="{{ t.actif }}" onClick="{{ t.onClick }}" style="{{ t.style }}">
+                      {{ t.label }}
+                      <sc-if value="{{ t.compteVisible }}">
+                        <span style="{{ t.compteStyle }}">{{ t.compte }}</span>
+                      </sc-if>
+                    </button>
+                  </sc-for>
+                </span>
+                <span style="flex:1"></span>
+                <sc-if value="{{ typeVisible }}">
+                  <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap">Type</span>
+                    <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                      <sc-for list="{{ types }}" as="t" hint-placeholder-count="3">
+                        <button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                      </sc-for>
+                    </span>
+                  </span>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ tableVisible }}" hint-placeholder-val="{{ true }}">
+              <div style="overflow-x:auto">
+                <table style="width:100%;min-width:840px;border-collapse:collapse">
+                  <thead>
+                    <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                      <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="6">
+                        <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                      </sc-for>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ comptes }}" as="c" hint-placeholder-count="8">
+                      <tr style="{{ c.ligne }}" style-hover="background:var(--ap-50)">
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:flex;align-items:center;gap:var(--espace-2);min-width:0">
+                            <span style="{{ c.avatar }}">{{ c.initiales }}</span>
+                            <span style="min-width:0">
+                              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap">{{ c.nom }}</span>
+                              <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ c.identifiant }}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:flex;align-items:center;gap:6px;min-width:0">
+                            <span style="display:flex;flex-shrink:0;color:var(--texte-tertiaire)" dangerouslySetInnerHTML="{{ c.iconeType }}"></span>
+                            <span style="font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ c.typeLibelle }}</span>
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ c.arrondissement }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="{{ c.pilule }}"><span style="{{ c.point }}"></span>{{ c.statutLibelle }}</span>
+                          <sc-if value="{{ c.motifVisible }}">
+                            <span style="display:block;margin-top:2px;font-size:9px;line-height:1.4;color:var(--texte-tertiaire);max-width:190px">{{ c.motifCourt }}</span>
+                          </sc-if>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ c.derniereActivite }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                          <span style="display:inline-flex;align-items:center;gap:6px">
+                            <sc-if value="{{ c.suspendable }}">
+                              <button type="button" onClick="{{ c.onSuspendre }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--alerte-fond);border-color:var(--alerte-bordure);color:var(--alerte-texte)">Suspendre</button>
+                            </sc-if>
+                            <sc-if value="{{ c.reactivable }}">
+                              <button type="button" onClick="{{ c.onReactiver }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--succes-fond);border-color:var(--succes-bordure);color:var(--succes-texte)">Réactiver</button>
+                            </sc-if>
+                            <sc-if value="{{ c.bannissable }}">
+                              <button type="button" onClick="{{ c.onBannir }}" style="{{ styleSecondaireSm }}" style-hover="background:var(--erreur-fond);border-color:var(--erreur-bordure);color:var(--erreur-texte)">Bannir</button>
+                            </sc-if>
+                            <sc-if value="{{ c.definitif }}">
+                              <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">Définitif</span>
+                            </sc-if>
+                          </span>
+                        </td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ videFiltre }}">
+              <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6)">
+                <span style="width:44px;height:44px;border-radius:var(--radius-xl);background:var(--fond-surface-2);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                </span>
+                <span>
+                  <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">{{ titreVideFiltre }}</span>
+                  <span style="display:block;margin-top:4px;max-width:420px;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-tertiaire)">{{ corpsVideFiltre }}</span>
+                </span>
+                <button type="button" onClick="{{ reinitialiser }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Voir tous les comptes</button>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{ piedVisible }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-2) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ piedTable }}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-for list="{{ pagination }}" as="p" hint-placeholder-count="4">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                  <span style="min-width:56px;text-align:center;font-size:var(--font-size-caption);font-weight:500;color:var(--texte-secondaire)">1 / 17</span>
+                </span>
+              </div>
+              </sc-if>
+            </div>
+
+            <div style="display:flex;align-items:flex-start;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--ap-600);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0;font-size:var(--font-size-caption);line-height:1.55;color:var(--texte-secondaire)"><strong style="font-weight:600;color:var(--texte-primaire)">Une suspension est réversible, un bannissement ne l'est pas.</strong> Dans les deux cas, les consultations en cours se terminent normalement et les comptes-rendus signés sont conservés : la loi impose leur archivage, quel que soit le sort du compte. Chaque décision exige un motif, inscrit au journal d'audit et notifié au titulaire.</span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="{{ tuileModale }}" dangerouslySetInnerHTML="{{ iconeModale }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-3);overflow-y:auto">
+          <p style="margin:0;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-secondaire)">{{ corpsDialogue }}</p>
+
+          <div style="display:flex;flex-direction:column;gap:7px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+            <sc-for list="{{ recapDialogue }}" as="r" hint-placeholder-count="4">
+              <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                <span style="font-size:var(--font-size-caption);color:var(--texte-secondaire);flex-shrink:0">{{ r.label }}</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);font-weight:600;color:{{ r.couleur }};text-align:right;min-width:0">{{ r.valeur }}</span>
+              </span>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ dureeVisible }}">
+            <span style="display:flex;flex-direction:column;gap:5px">
+              <span style="{{ styleLabel }}">Durée de la suspension</span>
+              <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg);align-self:flex-start">
+                <sc-for list="{{ durees }}" as="d" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ d.onClick }}" style="{{ d.style }}">{{ d.label }}</button>
+                </sc-for>
+              </span>
+            </span>
+          </sc-if>
+
+          <label style="display:flex;flex-direction:column;gap:5px">
+            <span style="{{ styleLabel }}">Motif — notifié au titulaire et inscrit au journal</span>
+            <textarea value="{{ vMotif }}" onChange="{{ majMotif }}" rows="3" placeholder="Expliquez la décision en une ou deux phrases…" style="{{ styleZoneTexte }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none"></textarea>
+            <span style="{{ styleCompteur }}">{{ compteurMotif }}</span>
+          </label>
+
+          <sc-if value="{{ confirmationSaisieVisible }}">
+            <label style="display:flex;flex-direction:column;gap:5px">
+              <span style="{{ styleLabel }}">Saisissez BANNIR pour confirmer</span>
+              <input type="text" value="{{ vConfirmation }}" onChange="{{ majConfirmation }}" placeholder="BANNIR" style="{{ styleChampMono }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            </label>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Annuler</button>
+          <button type="button" onClick="{{ confirmerDialogue }}" disabled="{{ confirmationBloquee }}" style="{{ styleBoutonAction }}">{{ actionDialogue }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:440px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">E7 · Suspension réversible avec durée, réactivation, bannissement irréversible derrière une saisie · motif de 20 caractères minimum dans les trois cas · un compte banni n'offre plus aucune action · les 4 compteurs filtrent la table</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  dossier: '<path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z"/><path d="M9 1v4h4"/><path d="M6 9h4M8 7v4"/>',
+  trending: '<path d="M2 11l4-4 3 3 5-6"/><path d="M10 4h4v4"/>',
+  reglages: '<circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>',
+  equipe: '<circle cx="6" cy="5.5" r="2.6"/><path d="M1.5 13.5a4.5 4.5 0 0 1 9 0"/><path d="M11 3.2a2.6 2.6 0 0 1 0 4.9M12 9.4a4.5 4.5 0 0 1 2.5 4.1"/>',
+  barres: '<path d="M2 14h12M5 14V9M8 14V5M11 14V7"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  cadenas: '<rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><circle cx="8" cy="11.5" r="1" fill="currentColor"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  stetho: '<path d="M4 3a2 2 0 0 0-2 2v1a5 5 0 0 0 10 0V5a2 2 0 0 0-2-2H4z"/><path d="M12 6v3a4 4 0 0 0 4 4"/><circle cx="14" cy="13" r="1.5" fill="currentColor"/>',
+  hospital: '<rect x="2" y="3" width="12" height="12" rx="1"/><path d="M8 7v4M6 9h4"/><path d="M5 3V2M11 3V2"/>',
+  horloge: '<circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>',
+  interdit: '<circle cx="8" cy="8" r="6.5"/><path d="M3.5 3.5l9 9"/>',
+  checkCircle: '<circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4"/>',
+  premier: '<path d="M11 4L7 8l4 4M5 4v8"/>',
+  precedent: '<path d="M10 4L6 8l4 4"/>',
+  suivant: '<path d="M6 4l4 4-4 4"/>',
+  dernier: '<path d="M5 4l4 4-4 4M11 4v8"/>',
+};
+
+const NAV = [
+  { titre: 'Principal', items: [
+    { cle: 'dashboard', label: 'Tableau de bord', icone: G.home },
+    { cle: 'verification', label: 'File de vérification', icone: G.dossier, badge: '12', tonBadge: 'alerte' },
+  ] },
+  { titre: 'Supervision', items: [
+    { cle: 'finance', label: 'Supervision financière', icone: G.trending, badge: '5' },
+    { cle: 'parametresMetier', label: 'Paramètres métier', icone: G.reglages },
+    { cle: 'admins', label: 'Administrateurs', icone: G.equipe },
+    { cle: 'pilotage', label: 'Pilotage', icone: G.barres },
+    { cle: 'signalements', label: 'Signalements', icone: G.alerte, badge: '5' },
+    { cle: 'comptes', label: 'Comptes', icone: G.cadenas },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+const TYPES = {
+  patient: { label: 'Patient', icone: G.utilisateur },
+  soignant: { label: 'Soignant', icone: G.stetho },
+  structure: { label: 'Structure', icone: G.hospital },
+};
+
+const COMPTES = [
+  { nom: 'Dr Ange Makaya', initiales: 'AM', identifiant: 'USR-2026-00312', type: 'soignant', arrondissement: 'Bacongo', statut: 'actif', activite: 'À l\u2019instant' },
+  { nom: 'Dr Firmin Loubaki', initiales: 'FL', identifiant: 'USR-2026-00298', type: 'soignant', arrondissement: 'Moungali', statut: 'suspendu', activite: 'Il y a 3 j', motif: 'Signalement confirmé · propos inappropriés · 15 jours', echeance: 'jusqu\u2019au 20/08' },
+  { nom: 'Pharmacie du Fleuve', initiales: 'PF', identifiant: 'STR-2026-00061', type: 'structure', arrondissement: 'Bacongo', statut: 'actif', activite: 'Il y a 12 min' },
+  { nom: 'Dr Sylvain Bakala', initiales: 'SB', identifiant: 'USR-2026-00187', type: 'soignant', arrondissement: 'Poto-Poto', statut: 'suspendu', activite: 'Il y a 8 j', motif: 'Exercice hors compétence déclarée · 15 jours', echeance: 'jusqu\u2019au 20/08' },
+  { nom: 'Patient', initiales: 'PA', identifiant: 'PAT-8821-BZV', type: 'patient', arrondissement: 'Talangaï', statut: 'actif', activite: 'Il y a 2 h' },
+  { nom: 'Dr Grégoire Nkouka', initiales: 'GN', identifiant: 'USR-2026-00104', type: 'soignant', arrondissement: 'Ouenzé', statut: 'banni', activite: 'Il y a 42 j', motif: 'Fausse attestation d\u2019inscription à l\u2019Ordre' },
+  { nom: 'Pharmacie de Talangaï', initiales: 'PT', identifiant: 'STR-2026-00084', type: 'structure', arrondissement: 'Talangaï', statut: 'actif', activite: 'Il y a 40 min' },
+  { nom: 'Patiente', initiales: 'PB', identifiant: 'PAT-4471-BZV', type: 'patient', arrondissement: 'Bacongo', statut: 'actif', activite: 'Hier' },
+  { nom: 'Dr Bertrand Tchicaya', initiales: 'BT', identifiant: 'USR-2026-00341', type: 'soignant', arrondissement: 'Bacongo', statut: 'actif', activite: 'Il y a 5 h' },
+  { nom: 'Officine de Makélékélé', initiales: 'OM', identifiant: 'STR-2026-00092', type: 'structure', arrondissement: 'Makélékélé', statut: 'cloture', activite: 'Il y a 21 j', motif: 'Clôture demandée par la titulaire' },
+];
+
+const STATUTS = {
+  actif: ['Actif', 'success'],
+  suspendu: ['Suspendu', 'warning'],
+  banni: ['Banni', 'error'],
+  cloture: ['Clôturé', 'neutral'],
+};
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+};
+const AVATARS = {
+  soignant: ['var(--ton-bleu-fond)', 'var(--ton-bleu-icone)'],
+  structure: ['var(--ton-emeraude-fond)', 'var(--ton-emeraude-icone)'],
+  patient: ['var(--ton-violet-fond)', 'var(--ton-violet-icone)'],
+};
+const CHAMP = 'width:100%;height:34px;box-sizing:border-box;padding:0 10px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;';
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+const MOTIF_MIN = 20;
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'comptes',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    recherche: '', onglet: 'tous', type: 'tous', statutsLocaux: {},
+    dialogue: null, cible: null, motif: '', duree: '15', confirmation: '', toast: null,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.tToast) clearTimeout(this.tToast);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  statutDe(c) {
+    const l = this.state.statutsLocaux[c.identifiant];
+    return l ? l.statut : c.statut;
+  }
+  motifDe(c) {
+    const l = this.state.statutsLocaux[c.identifiant];
+    return l ? l.motif : c.motif;
+  }
+
+  seg(actif) {
+    return 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid ' +
+      (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 28, px: 11, fs: 'var(--font-size-caption)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : variante === 'danger' ? ['var(--erreur-accent)', '#fff', 'transparent']
+            : variante === 'alerte' ? ['var(--alerte-accent)', '#fff', 'transparent']
+            : variante === 'succes' ? ['var(--succes-accent)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear,color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4200);
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const dialogue = this.state.dialogue;
+    const cible = this.state.cible;
+    const motif = this.state.motif;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k, dialogue: null }) },
+    ];
+
+    const enTete = (align) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + align +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;position:sticky;top:0;z-index:5;background:var(--fond-surface-2)';
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    const toutes = vide ? [] : COMPTES;
+    const compte = { actifs: 0, suspendus: 0, bannis: 0, clotures: 0 };
+    toutes.forEach((c) => {
+      const s = this.statutDe(c);
+      if (s === 'actif') compte.actifs += 1;
+      else if (s === 'suspendu') compte.suspendus += 1;
+      else if (s === 'banni') compte.bannis += 1;
+      else compte.clotures += 1;
+    });
+
+    const q = this.state.recherche.trim().toLowerCase();
+    const visibles = toutes.filter((c) => {
+      const s = this.statutDe(c);
+      const okOnglet = this.state.onglet === 'tous' ? true
+        : this.state.onglet === 'actifs' ? s === 'actif'
+        : this.state.onglet === 'suspendus' ? s === 'suspendu'
+        : this.state.onglet === 'bannis' ? (s === 'banni' || s === 'cloture') : true;
+      const okType = this.state.type === 'tous' || c.type === this.state.type;
+      const okQ = !q || c.nom.toLowerCase().includes(q) || c.identifiant.toLowerCase().includes(q);
+      return okOnglet && okType && okQ;
+    });
+
+    const motifOk = motif.trim().length >= MOTIF_MIN;
+    const confirmationOk = dialogue !== 'bannir' || this.state.confirmation.trim().toUpperCase() === 'BANNIR';
+    const bloquee = !motifOk || !confirmationOk;
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : L < 1024 ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement, estErreur: erreur, estVide: vide,
+      contenuVisible: !chargement && !erreur && !vide,
+      quatre: [1, 2, 3, 4], huit: [1, 2, 3, 4, 5, 6, 7, 8],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          const [bgb, fgb] = i.tonBadge ? PILULES.warning : ['var(--erreur-accent)', '#fff'];
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            badgeStyle: 'flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:' + bgb +
+              ';color:' + fgb + ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center',
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrilleCompteurs: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' + (L < 620 ? 2 : L < 1000 ? 2 : 4) + ',minmax(0,1fr))',
+
+      sousTitrePage: vide ? 'Aucun compte enregistré'
+        : '1 284 comptes · ' + compte.suspendus + ' suspendu' + (compte.suspendus > 1 ? 's' : '') + ', ' + compte.bannis + ' banni' + (compte.bannis > 1 ? 's' : ''),
+      actionsEntete: L >= 700,
+      exporter: () => this.toaster('Export lancé', 'La liste des comptes sera disponible au format signé dans quelques instants.'),
+
+      compteurs: [
+        { k: 'actifs', label: 'Comptes actifs', valeur: compte.actifs, unite: 'sur 1 284', aide: 'Accès complet à la plateforme', ton: 'success' },
+        { k: 'suspendus', label: 'Suspendus', valeur: compte.suspendus, unite: 'temporaire', aide: 'Réactivation possible à tout moment', ton: 'warning' },
+        { k: 'bannis', label: 'Bannis', valeur: compte.bannis, unite: 'définitif', aide: 'Aucun retour possible', ton: 'error' },
+        { k: 'bannis', label: 'Clôturés', valeur: compte.clotures, unite: 'à la demande', aide: 'Fermés par leur titulaire', ton: 'neutral' },
+      ].map((c) => {
+        const [bg, fg, dot] = PILULES[c.ton];
+        const actif = this.state.onglet === c.k;
+        return {
+          label: c.label, valeur: String(c.valeur), unite: c.unite, aide: c.aide,
+          couleurValeur: c.valeur === 0 ? 'var(--texte-tertiaire)' : fg,
+          point: 'width:8px;height:8px;flex-shrink:0;border-radius:50%;background:' + dot,
+          carte: 'display:block;width:100%;padding:var(--espace-4);border-radius:var(--radius-xl);text-align:left;background:' +
+            (actif ? bg : 'var(--fond-surface)') + ';border:1px solid ' + (actif ? dot : 'var(--bordure-legere)') +
+            ';transition:border-color var(--dur-fast) linear,background var(--dur-fast) linear',
+          onClick: () => set({ onglet: actif ? 'tous' : c.k }),
+        };
+      }),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      vRecherche: this.state.recherche,
+      majRecherche: (e) => set({ recherche: e.target.value }),
+      styleChampFiltre: 'width:100%;height:34px;box-sizing:border-box;padding:0 10px 0 32px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      onglets: [
+        { k: 'tous', label: 'Tous', compte: toutes.length },
+        { k: 'actifs', label: 'Actifs', compte: compte.actifs },
+        { k: 'suspendus', label: 'Suspendus', compte: compte.suspendus },
+        { k: 'bannis', label: 'Fermés', compte: compte.bannis + compte.clotures },
+      ].map((o) => {
+        const actif = this.state.onglet === o.k;
+        return {
+          label: o.label, actif,
+          compte: String(o.compte),
+          compteVisible: L >= 1020,
+          compteStyle: 'font-family:var(--font-mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:9999px;background:' +
+            (actif ? 'var(--ap-50)' : 'var(--fond-input)') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-tertiaire)'),
+          style: this.seg(actif),
+          onClick: () => set({ onglet: o.k }),
+        };
+      }),
+      typeVisible: L >= 940,
+      types: [
+        { k: 'tous', label: 'Tous' }, { k: 'soignant', label: 'Soignants' },
+        { k: 'structure', label: 'Structures' }, { k: 'patient', label: 'Patients' },
+      ].map((t) => ({ label: t.label, style: this.seg(this.state.type === t.k), onClick: () => set({ type: t.k }) })),
+
+      tableVisible: visibles.length > 0,
+      videFiltre: visibles.length === 0,
+      titreVideFiltre: q ? 'Aucun résultat pour « ' + this.state.recherche.trim() + ' »' : 'Aucun compte dans ce filtre',
+      corpsVideFiltre: 'Ajustez la recherche, le statut ou le type pour retrouver un compte.',
+      reinitialiser: () => set({ onglet: 'tous', type: 'tous', recherche: '' }),
+
+      colonnes: ['Titulaire', 'Type', 'Arrondissement', 'Statut', 'Dernière activité', ''].map((c, i) => ({
+        label: c, style: enTete(i === 5 ? 'right' : 'left'),
+      })),
+      comptes: visibles.map((c, k) => {
+        const s = this.statutDe(c);
+        const [libelle, ton] = STATUTS[s];
+        const [bg, fg, dot] = PILULES[ton];
+        const [abg, acouleur] = AVATARS[c.type];
+        const m = this.motifDe(c);
+        const l = this.state.statutsLocaux[c.identifiant];
+        return {
+          nom: c.nom, initiales: c.initiales, identifiant: c.identifiant,
+          typeLibelle: TYPES[c.type].label,
+          iconeType: { __html: SVG(13, '1.5', TYPES[c.type].icone) },
+          arrondissement: c.arrondissement,
+          statutLibelle: libelle,
+          derniereActivite: c.activite,
+          motifVisible: !!m && (s === 'suspendu' || s === 'banni' || s === 'cloture'),
+          motifCourt: m ? (s === 'suspendu' && (l ? l.echeance : c.echeance) ? m + ' · ' + (l ? l.echeance : c.echeance) : m) : '',
+          suspendable: s === 'actif',
+          reactivable: s === 'suspendu',
+          bannissable: s === 'actif' || s === 'suspendu',
+          definitif: s === 'banni' || s === 'cloture',
+          avatar: 'width:28px;height:28px;flex-shrink:0;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-overline);font-weight:700;background:' + abg + ';color:' + acouleur,
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+          ligne: 'background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+            ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+          onSuspendre: () => set({ dialogue: 'suspendre', cible: c, motif: '', duree: '15', confirmation: '' }),
+          onReactiver: () => set({ dialogue: 'reactiver', cible: c, motif: '', confirmation: '' }),
+          onBannir: () => set({ dialogue: 'bannir', cible: c, motif: '', confirmation: '' }),
+        };
+      }),
+      piedVisible: visibles.length > 0,
+      piedTable: visibles.length + ' compte' + (visibles.length > 1 ? 's' : '') + ' affiché' + (visibles.length > 1 ? 's' : '') + ' · 1 284 au total',
+      pagination: [
+        { aria: 'Première page', icone: G.premier }, { aria: 'Page précédente', icone: G.precedent },
+        { aria: 'Page suivante', icone: G.suivant }, { aria: 'Dernière page', icone: G.dernier },
+      ].map((p, i) => ({
+        aria: p.aria,
+        icone: { __html: SVG(13, '1.5', p.icone) },
+        style: iconBouton + 'width:26px;height:26px;' + (i < 2 ? 'opacity:.45;cursor:not-allowed;' : ''),
+      })),
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleSecondaireSm: this.bouton('secondary', 'sm'),
+      styleIconBouton: iconBouton,
+      styleLabel: 'font-size:var(--font-size-label);font-weight:600;color:var(--texte-secondaire)',
+      styleChampMono: CHAMP + 'font-family:var(--font-mono);letter-spacing:.06em;',
+      styleZoneTexte: 'width:100%;box-sizing:border-box;padding:9px 10px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-family:var(--font-body);font-size:var(--font-size-body-sm);line-height:1.5;resize:vertical;outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear',
+      styleCompteur: 'font-family:var(--font-mono);font-size:var(--font-size-overline);color:' +
+        (motifOk ? 'var(--succes-texte)' : 'var(--texte-tertiaire)'),
+      compteurMotif: motif.trim().length + ' / ' + MOTIF_MIN + ' caractères minimum',
+
+      dialogueOuvert: !!dialogue,
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(500, Math.max(280, L - 40)) +
+        'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      tuileModale: 'width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;background:' +
+        (dialogue === 'reactiver' ? 'var(--succes-fond)' : dialogue === 'suspendre' ? 'var(--alerte-fond)' : 'var(--erreur-fond)') +
+        ';color:' + (dialogue === 'reactiver' ? 'var(--succes-accent)' : dialogue === 'suspendre' ? 'var(--alerte-accent)' : 'var(--erreur-accent)'),
+      iconeModale: { __html: SVG(16, '1.5', dialogue === 'reactiver' ? G.checkCircle : dialogue === 'suspendre' ? G.horloge : G.interdit) },
+      titreDialogue: dialogue === 'suspendre' ? 'Suspendre ce compte ?'
+        : dialogue === 'reactiver' ? 'Réactiver ce compte ?'
+        : dialogue === 'bannir' ? 'Bannir définitivement ce compte ?' : '',
+      sousTitreDialogue: cible ? cible.nom + ' · ' + cible.identifiant : '',
+      corpsDialogue: dialogue === 'suspendre'
+        ? 'L\u2019accès est fermé pour la durée choisie et la vitrine disparaît de l\u2019annuaire. Les consultations déjà engagées se poursuivent jusqu\u2019à leur terme. La réactivation est possible à tout moment.'
+        : dialogue === 'reactiver'
+        ? 'Le compte retrouve immédiatement l\u2019intégralité de ses accès et sa vitrine réapparaît dans l\u2019annuaire. La suspension reste inscrite au dossier.'
+        : 'Le bannissement est irréversible : ce compte ne pourra jamais être réactivé, même sur demande du titulaire. Les comptes-rendus signés restent archivés conformément à la loi.',
+      recapDialogue: cible ? [
+        { label: 'Type de compte', valeur: TYPES[cible.type].label, couleur: 'var(--texte-primaire)' },
+        { label: 'Arrondissement', valeur: cible.arrondissement, couleur: 'var(--texte-primaire)' },
+        { label: 'Statut actuel', valeur: STATUTS[this.statutDe(cible)][0], couleur: 'var(--texte-primaire)' },
+        { label: 'Après décision', valeur: dialogue === 'suspendre' ? 'Suspendu ' + this.state.duree + ' jours'
+            : dialogue === 'reactiver' ? 'Actif' : 'Banni définitivement',
+          couleur: dialogue === 'reactiver' ? 'var(--succes-texte)' : dialogue === 'suspendre' ? 'var(--alerte-texte)' : 'var(--erreur-texte)' },
+      ] : [],
+      dureeVisible: dialogue === 'suspendre',
+      durees: [
+        { k: '7', label: '7 jours' }, { k: '15', label: '15 jours' }, { k: '30', label: '30 jours' },
+      ].map((d) => ({ label: d.label, style: this.seg(this.state.duree === d.k), onClick: () => set({ duree: d.k }) })),
+      vMotif: motif,
+      majMotif: (e) => set({ motif: e.target.value }),
+      confirmationSaisieVisible: dialogue === 'bannir',
+      vConfirmation: this.state.confirmation,
+      majConfirmation: (e) => set({ confirmation: e.target.value }),
+      confirmationBloquee: bloquee,
+      styleBoutonAction: this.bouton(dialogue === 'reactiver' ? 'succes' : dialogue === 'suspendre' ? 'alerte' : 'danger', 'md') +
+        (bloquee ? 'opacity:.4;cursor:not-allowed;' : ''),
+      actionDialogue: dialogue === 'suspendre' ? 'Suspendre ' + this.state.duree + ' jours'
+        : dialogue === 'reactiver' ? 'Réactiver le compte' : 'Bannir définitivement',
+      fermerDialogue: () => set({ dialogue: null, cible: null, motif: '', confirmation: '' }),
+      confirmerDialogue: () => {
+        if (bloquee || !cible) return;
+        const t = { ...this.state.statutsLocaux };
+        if (dialogue === 'suspendre') {
+          t[cible.identifiant] = { statut: 'suspendu', motif: motif.trim(), echeance: this.state.duree + ' jours' };
+        } else if (dialogue === 'reactiver') {
+          t[cible.identifiant] = { statut: 'actif', motif: null };
+        } else {
+          t[cible.identifiant] = { statut: 'banni', motif: motif.trim() };
+        }
+        const nom = cible.nom;
+        const acte = dialogue === 'suspendre' ? 'Compte suspendu' : dialogue === 'reactiver' ? 'Compte réactivé' : 'Compte banni';
+        const detail = dialogue === 'suspendre' ? nom + ' · ' + this.state.duree + ' jours · motif notifié au titulaire.'
+          : dialogue === 'reactiver' ? nom + ' retrouve tous ses accès · la vitrine est republiée.'
+          : nom + ' · bannissement définitif inscrit au journal d\u2019audit.';
+        set({ statutsLocaux: t, dialogue: null, cible: null, motif: '', confirmation: '' });
+        this.toaster(acte, detail);
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ulamu — CG-04 Effets de Surface & Atmosphère</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════
+   ULAMU DESIGN SYSTEM — CG-04
+   Effets de Surface · Grain · Glass · Ombres · Élévations
+══════════════════════════════════════════════════════ */
+:root {
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --accent-100:#C6D4F2; --accent-200:#9DB5E8; --accent-300:#6F92DA;
+  --accent-400:#4B75CD; --accent-500:#2756A6; --accent-600:#1F479A;
+  --radius-sm:4px; --radius-md:6px; --radius-lg:10px; --radius-xl:14px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;
+  --sp-6:24px;--sp-8:32px;--sp-10:40px;--sp-12:48px;--sp-16:64px;
+
+  /* GRAIN SVG DATA */
+  --grain-svg: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] {
+  --bg-base:#FAFAFA; --bg-subtle:#F4F4F5; --bg-muted:#EBEBEC; --bg-elevated:#FFFFFF;
+  --glass-bg:rgba(255,255,255,0.72); --glass-blur:12px; --glass-border:rgba(0,0,0,0.07);
+  --text-primary:#111112; --text-secondary:#3F3F46; --text-tertiary:#71717A; --text-disabled:#A1A1AA;
+  --text-accent:var(--accent-600);
+  --border-subtle:rgba(0,0,0,0.07); --border-default:rgba(0,0,0,0.12); --border-strong:rgba(0,0,0,0.22);
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+  --shadow-xl:0 8px 32px rgba(0,0,0,0.12),0 4px 8px rgba(0,0,0,0.08);
+  --grain-opacity:0.035;
+  --grain-btn:0.06;
+  --accent-guide:rgba(39,86,166,0.10); --accent-guide-border:rgba(39,86,166,0.25);
+}
+[data-theme="dark"] {
+  --bg-base:#111113; --bg-subtle:#18181B; --bg-muted:#222226; --bg-elevated:#2A2A2F;
+  --glass-bg:rgba(28,28,33,0.72); --glass-blur:14px; --glass-border:rgba(255,255,255,0.07);
+  --text-primary:#F4F4F5; --text-secondary:#A1A1AA; --text-tertiary:#71717A; --text-disabled:#52525B;
+  --text-accent:var(--accent-300);
+  --border-subtle:rgba(255,255,255,0.06); --border-default:rgba(255,255,255,0.10); --border-strong:rgba(255,255,255,0.18);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md:0 2px 10px rgba(0,0,0,0.45),0 1px 2px rgba(0,0,0,0.30);
+  --shadow-lg:0 6px 24px rgba(0,0,0,0.55),0 2px 6px rgba(0,0,0,0.35);
+  --shadow-xl:0 12px 40px rgba(0,0,0,0.65),0 4px 12px rgba(0,0,0,0.45);
+  --grain-opacity:0.055;
+  --grain-btn:0.09;
+  --accent-guide:rgba(39,86,166,0.18); --accent-guide-border:rgba(111,146,218,0.30);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--bg-base);
+  color:var(--text-primary);
+  min-height:100vh;
+  transition:background .25s linear,color .25s linear;
+  overflow-x:hidden;
+}
+/* Global grain on body */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:var(--grain-opacity);
+  background-image:var(--grain-svg);
+  background-size:180px 180px;
+}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-border);padding:0 var(--sp-8);height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:var(--sp-4)}
+.logo{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none}
+.logo-mark{width:28px;height:28px;background:var(--accent-500);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.logo-name{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.3px;color:var(--text-primary)}
+.topbar-divider{width:1px;height:20px;background:var(--border-default)}
+.module-breadcrumb{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:6px}
+.module-breadcrumb .tag{background:rgba(39,86,166,0.10);color:var(--accent-500);font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid rgba(39,86,166,0.20)}
+[data-theme="dark"] .module-breadcrumb .tag{background:rgba(39,86,166,0.18);color:var(--accent-300);border-color:rgba(111,146,218,0.25)}
+.theme-toggle{display:flex;background:var(--bg-muted);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:4px;cursor:pointer;transition:border-color .25s linear}
+.theme-toggle:hover{border-color:var(--border-strong)}
+.toggle-option{padding:5px 12px;border-radius:var(--radius-md);font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--text-tertiary);transition:all .25s linear;user-select:none;display:flex;align-items:center;gap:5px}
+.toggle-option.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+
+/* ── LAYOUT ── */
+.page{max-width:1140px;margin:0 auto;padding:var(--sp-12) var(--sp-8) var(--sp-16)}
+.page-header{margin-bottom:var(--sp-12);padding-bottom:var(--sp-8);border-bottom:1px solid var(--border-subtle)}
+.module-id{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--accent-500);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+[data-theme="dark"] .module-id{color:var(--accent-300)}
+.module-id::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-0.8px;color:var(--text-primary);line-height:1.15;margin-bottom:var(--sp-4)}
+.page-desc{font-size:15px;color:var(--text-secondary);line-height:1.65;max-width:700px}
+.section{margin-bottom:var(--sp-12)}
+.section-header{display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-6)}
+.section-title{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.3px;color:var(--text-primary)}
+.section-subtitle{font-size:13px;color:var(--text-tertiary)}
+.section-divider{height:1px;background:var(--border-subtle);margin-bottom:var(--sp-6)}
+
+/* ── TOKEN TABLE ── */
+.token-table{width:100%;border-collapse:collapse;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;font-size:13px}
+.token-table thead{background:var(--bg-muted)}
+.token-table th{padding:10px 14px;text-align:left;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle)}
+.token-table td{padding:10px 14px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.token-table tr:last-child td{border-bottom:none}
+.token-table tr:hover td{background:var(--bg-subtle)}
+.tt-token{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent);background:var(--bg-muted);padding:2px 7px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:inline-block}
+.tt-value{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+.tt-usage{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+/* ── RULES ── */
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.rule-card{border-radius:var(--radius-lg);border:1px solid var(--border-subtle);padding:var(--sp-5);background:var(--bg-subtle)}
+.rule-card.forbidden{border-color:#E8AAAA;background:#FDF2F2}
+.rule-card.allowed{border-color:#A8D5B5;background:#F0FAF3}
+[data-theme="dark"] .rule-card.forbidden{border-color:#3D1A1A;background:#200F0F}
+[data-theme="dark"] .rule-card.allowed{border-color:#1F4A30;background:#0F2318}
+.rule-card-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.rule-card.forbidden .rule-card-title{color:#7A2323}
+.rule-card.allowed .rule-card-title{color:#2B6B40}
+[data-theme="dark"] .rule-card.forbidden .rule-card-title{color:#E07070}
+[data-theme="dark"] .rule-card.allowed .rule-card-title{color:#6DBF8A}
+.rule-list{list-style:none;display:flex;flex-direction:column;gap:var(--sp-2)}
+.rule-list li{font-size:12px;line-height:1.5;color:var(--text-secondary);padding-left:var(--sp-4);position:relative}
+.rule-list li::before{position:absolute;left:0;top:1px}
+.rule-card.forbidden .rule-list li::before{content:'✕';color:#C44040;font-size:11px}
+.rule-card.allowed .rule-list li::before{content:'✓';color:#3D9A5C;font-size:11px}
+
+/* ══════════════════════════════════════════
+   01 — GRAIN SECTION
+══════════════════════════════════════════ */
+
+/* The actual grain texture utility */
+.grain-overlay{
+  position:relative;
+  overflow:hidden;
+}
+.grain-overlay::after{
+  content:'';
+  position:absolute;inset:0;
+  pointer-events:none;
+  background-image:var(--grain-svg);
+  background-size:180px 180px;
+  border-radius:inherit;
+}
+
+.grain-demo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+.grain-card{
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  border:1px solid var(--border-subtle);
+  box-shadow:var(--shadow-md);
+  position:relative;
+}
+.grain-card-face{
+  height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.grain-card-face::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:var(--grain-svg);
+  background-size:180px 180px;
+  pointer-events:none;
+  border-radius:0;
+}
+.grain-card-meta{
+  padding:var(--sp-4);
+  background:var(--bg-elevated);
+  border-top:1px solid var(--border-subtle);
+}
+.grain-card-name{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px}
+.grain-card-val{font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary)}
+
+/* Grain intensity levels */
+.grain-none::after{opacity:0}
+.grain-subtle::after{opacity:0.025}
+.grain-medium::after{opacity:0.055}
+.grain-strong::after{opacity:0.10}
+
+/* Button grain demo */
+.btn-grain-demo{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-4);
+  padding:var(--sp-6);
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  flex-wrap:wrap;
+}
+
+.btn-demo{
+  position:relative;
+  overflow:hidden;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--sp-2);
+  padding:9px 18px;
+  border-radius:var(--radius-md);
+  font-family:var(--font-body);
+  font-size:14px;
+  font-weight:500;
+  border:none;
+  cursor:pointer;
+  transition:all .25s linear;
+}
+.btn-demo::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:var(--grain-svg);
+  background-size:180px 180px;
+  pointer-events:none;
+  opacity:var(--grain-btn);
+}
+.btn-primary{background:var(--accent-500);color:#fff}
+.btn-primary:hover{background:var(--accent-600)}
+.btn-secondary{background:var(--bg-muted);color:var(--text-primary);border:1px solid var(--border-default)}
+.btn-secondary:hover{background:var(--bg-subtle)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-subtle)}
+.btn-ghost:hover{background:var(--bg-subtle)}
+.btn-danger{background:#C44040;color:#fff}
+.btn-danger:hover{background:#A83535}
+
+/* ══════════════════════════════════════════
+   02 — GLASSMORPHISM SECTION
+══════════════════════════════════════════ */
+
+.glass-demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+
+/* Background scene for glass demos */
+.glass-scene{
+  position:relative;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  height:260px;
+  border:1px solid var(--border-subtle);
+}
+
+.glass-scene-bg{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Decorative bg blobs */
+.blob{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(40px);
+  opacity:0.35;
+}
+
+.glass-element{
+  position:absolute;
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+}
+.glass-element::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:var(--grain-svg);
+  background-size:180px 180px;
+  pointer-events:none;
+  opacity:calc(var(--grain-opacity) * 0.8);
+}
+
+/* Sidebar glass */
+.glass-sidebar-demo{
+  width:72px;height:200px;
+  left:16px;top:50%;
+  transform:translateY(-50%);
+  padding:12px 8px;
+  display:flex;flex-direction:column;gap:6px;align-items:center;
+}
+.glass-sidebar-icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center}
+.glass-sidebar-icon.active{background:var(--accent-500)}
+.glass-sidebar-icon.idle{background:rgba(255,255,255,0.08)}
+[data-theme="light"] .glass-sidebar-icon.idle{background:rgba(0,0,0,0.06)}
+
+/* Topbar glass */
+.glass-topbar-demo{
+  top:0;left:0;right:0;height:48px;
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+}
+.glass-tb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-500)}
+.glass-tb-bar{height:8px;border-radius:3px;background:rgba(255,255,255,0.12);flex:1;max-width:120px}
+[data-theme="light"] .glass-tb-bar{background:rgba(0,0,0,0.08)}
+.glass-tb-avatar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2)}
+[data-theme="light"] .glass-tb-avatar{background:rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.12)}
+
+/* Toast glass */
+.glass-toast-demo{
+  width:calc(100% - 32px);max-width:280px;
+  top:16px;left:50%;
+  transform:translateX(-50%);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.glass-toast-icon{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.glass-toast-text{display:flex;flex-direction:column;gap:3px;flex:1}
+.glass-toast-title{height:8px;border-radius:2px;background:rgba(255,255,255,0.2);width:80%}
+[data-theme="light"] .glass-toast-title{background:rgba(0,0,0,0.12)}
+.glass-toast-sub{height:6px;border-radius:2px;background:rgba(255,255,255,0.1);width:55%}
+[data-theme="light"] .glass-toast-sub{background:rgba(0,0,0,0.08)}
+
+/* Glass scene labels */
+.glass-scene-label{
+  position:absolute;bottom:10px;left:0;right:0;
+  text-align:center;
+  font-family:var(--font-mono);font-size:9px;font-weight:600;
+  color:rgba(255,255,255,0.5);
+  letter-spacing:.06em;text-transform:uppercase;
+}
+[data-theme="light"] .glass-scene-label{color:rgba(0,0,0,0.35)}
+
+/* Glass specs */
+.glass-specs{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:var(--sp-4);margin-top:var(--sp-4);
+}
+.glass-spec-card{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--sp-5);
+  box-shadow:var(--shadow-sm);
+}
+.glass-spec-name{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-2)}
+.glass-spec-row{display:flex;justify-content:space-between;padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)}
+.glass-spec-row:last-child{border-bottom:none}
+.glass-spec-key{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)}
+.glass-spec-val{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-accent)}
+
+/* ══════════════════════════════════════════
+   03 — SHADOW ELEVATION SECTION
+══════════════════════════════════════════ */
+
+.elevation-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-6);padding:var(--sp-8);background:var(--bg-subtle);border-radius:var(--radius-xl);border:1px solid var(--border-subtle)}
+
+.elev-card{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--sp-5);
+  display:flex;flex-direction:column;gap:var(--sp-3);
+  position:relative;
+  transition:all .25s linear;
+}
+.elev-card:hover{transform:translateY(-2px)}
+.elev-card.z0{box-shadow:none;border-style:dashed}
+.elev-card.z1{box-shadow:var(--shadow-sm)}
+.elev-card.z2{box-shadow:var(--shadow-md)}
+.elev-card.z3{box-shadow:var(--shadow-lg)}
+.elev-card.z4{box-shadow:var(--shadow-xl)}
+
+.elev-z-badge{
+  position:absolute;top:-10px;left:var(--sp-4);
+  background:var(--accent-500);color:#fff;
+  font-family:var(--font-mono);font-size:9px;font-weight:700;
+  padding:2px 8px;border-radius:3px;
+}
+.elev-name{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)}
+.elev-usage{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.elev-value{font-family:var(--font-mono);font-size:10px;color:var(--text-disabled);line-height:1.6;margin-top:var(--sp-1)}
+.elev-component-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:var(--sp-1)}
+.elev-tag{font-family:var(--font-mono);font-size:9px;color:var(--text-tertiary);background:var(--bg-muted);padding:2px 6px;border-radius:3px;border:1px solid var(--border-subtle)}
+
+/* Shadow comparison visual */
+.shadow-compare{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:var(--sp-6);
+  align-items:end;
+  padding:var(--sp-10) var(--sp-8);
+  background:var(--bg-subtle);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border-subtle);
+  margin-top:var(--sp-6);
+}
+.shadow-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-4)}
+.shadow-box{
+  width:64px;height:64px;
+  background:var(--bg-elevated);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border-subtle);
+}
+.shadow-box.s0{box-shadow:none;border-style:dashed}
+.shadow-box.s1{box-shadow:var(--shadow-sm)}
+.shadow-box.s2{box-shadow:var(--shadow-md)}
+.shadow-box.s3{box-shadow:var(--shadow-lg)}
+.shadow-box.s4{box-shadow:var(--shadow-xl)}
+.shadow-label{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);text-align:center}
+.shadow-token{font-family:var(--font-mono);font-size:9px;color:var(--text-accent);text-align:center;margin-top:2px}
+
+/* ══════════════════════════════════════════
+   04 — GRADIENT SECTION
+══════════════════════════════════════════ */
+
+.gradient-rule-box{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);
+  padding:var(--sp-6);
+  box-shadow:var(--shadow-sm);
+  margin-bottom:var(--sp-6);
+}
+.gradient-compare{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6)}
+.gradient-col-label{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:6px}
+.gradient-col-label::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+
+/* FORBIDDEN gradient demos */
+.grad-forbidden-item{
+  border-radius:var(--radius-lg);
+  border:1.5px solid #E8AAAA;
+  overflow:hidden;
+  margin-bottom:var(--sp-3);
+  position:relative;
+}
+[data-theme="dark"] .grad-forbidden-item{border-color:#3D1A1A}
+.grad-forbidden-face{height:52px;display:flex;align-items:center;justify-content:center;padding:0 var(--sp-4)}
+.grad-forbidden-label{font-family:var(--font-mono);font-size:10px;color:#7A2323;background:#FDF2F2;padding:4px 10px;border-top:1px solid #E8AAAA;display:flex;align-items:center;gap:6px}
+[data-theme="dark"] .grad-forbidden-label{color:#E07070;background:#200F0F;border-color:#3D1A1A}
+.grad-forbidden-badge{background:#E8AAAA;color:#7A2323;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;flex-shrink:0}
+[data-theme="dark"] .grad-forbidden-badge{background:#3D1A1A;color:#E07070}
+
+/* ALLOWED gradient demos */
+.chart-allowed{
+  background:var(--bg-elevated);
+  border:1.5px solid #A8D5B5;
+  border-radius:var(--radius-lg);
+  padding:var(--sp-4) var(--sp-4) var(--sp-3);
+  margin-bottom:var(--sp-3);
+}
+[data-theme="dark"] .chart-allowed{border-color:#1F4A30}
+.chart-label-ok{font-family:var(--font-mono);font-size:10px;color:#2B6B40;margin-top:var(--sp-2);display:flex;align-items:center;gap:6px}
+[data-theme="dark"] .chart-label-ok{color:#6DBF8A}
+.chart-ok-badge{background:#A8D5B5;color:#2B6B40;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;flex-shrink:0}
+[data-theme="dark"] .chart-ok-badge{background:#1F4A30;color:#6DBF8A}
+
+/* Multi-line chart */
+.chart-container{position:relative;height:100px}
+.chart-container svg{width:100%;height:100%;overflow:visible}
+
+/* ══════════════════════════════════════════
+   05 — ATMOSPHERE COMPOSITION
+══════════════════════════════════════════ */
+.atmo-demo{
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  border:1px solid var(--border-subtle);
+  box-shadow:var(--shadow-xl);
+  position:relative;
+}
+.atmo-browser-bar{height:32px;background:var(--bg-muted);border-bottom:1px solid var(--border-default);display:flex;align-items:center;padding:0 var(--sp-4);gap:var(--sp-2)}
+.atmo-dot{width:9px;height:9px;border-radius:50%}
+.atmo-body{display:flex;height:400px;position:relative}
+
+/* Layered backdrop */
+.atmo-topbar{
+  position:absolute;top:0;left:0;right:0;height:48px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--glass-border);
+  z-index:10;
+  display:flex;align-items:center;padding:0 var(--sp-5);gap:var(--sp-3);
+  overflow:hidden;
+}
+.atmo-topbar::after{
+  content:'';position:absolute;inset:0;
+  background-image:var(--grain-svg);background-size:180px 180px;
+  opacity:calc(var(--grain-opacity) * 0.7);pointer-events:none;
+}
+.atmo-sidebar{
+  position:absolute;top:48px;left:0;bottom:0;width:220px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-right:1px solid var(--border-subtle);
+  z-index:9;
+  padding:var(--sp-4) var(--sp-3);
+  display:flex;flex-direction:column;gap:var(--sp-1);
+  overflow:hidden;
+}
+.atmo-sidebar::after{
+  content:'';position:absolute;inset:0;
+  background-image:var(--grain-svg);background-size:180px 180px;
+  opacity:calc(var(--grain-opacity) * 0.9);pointer-events:none;
+}
+.atmo-content{
+  position:absolute;top:48px;left:220px;right:0;bottom:0;
+  background:var(--bg-base);
+  padding:var(--sp-6);
+  display:flex;flex-direction:column;gap:var(--sp-4);
+  overflow:hidden;
+}
+/* Sidebar nav */
+.atmo-nav{height:30px;border-radius:var(--radius-md);display:flex;align-items:center;padding:0 var(--sp-3);gap:var(--sp-3)}
+.atmo-nav.active{background:var(--accent-guide);border:1px solid var(--accent-guide-border)}
+.atmo-nav-dot{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.atmo-nav-dot.accent{background:var(--accent-500)}
+.atmo-nav-dot.muted{background:var(--bg-muted)}
+.atmo-nav-bar{flex:1;height:6px;border-radius:2px;background:var(--bg-muted)}
+.atmo-nav-bar.accent{background:rgba(39,86,166,0.3)}
+.atmo-sep{height:1px;background:var(--border-subtle);margin:var(--sp-2) 0}
+/* Content */
+.atmo-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
+.atmo-kpi{
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  padding:var(--sp-4);
+  box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;gap:var(--sp-2);
+  position:relative;overflow:hidden;
+}
+.atmo-kpi::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:calc(var(--grain-opacity)*0.6);pointer-events:none}
+.atmo-kpi-l{height:6px;border-radius:2px;background:var(--bg-muted);width:60%}
+.atmo-kpi-v{height:14px;border-radius:2px;background:var(--text-primary);opacity:.08;width:70%}
+.atmo-kpi-d{height:5px;border-radius:2px;background:#3D9A5C;opacity:.5;width:40%}
+.atmo-card{
+  flex:1;
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  padding:var(--sp-4);
+  box-shadow:var(--shadow-sm);
+  display:flex;flex-direction:column;gap:var(--sp-3);
+  position:relative;overflow:hidden;
+}
+.atmo-card::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:calc(var(--grain-opacity)*0.5);pointer-events:none}
+/* Toast overlay */
+.atmo-toast{
+  position:absolute;top:60px;left:50%;transform:translateX(calc(-50% + 110px));
+  background:var(--glass-bg);
+  backdrop-filter:blur(12px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-lg);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:var(--shadow-lg);
+  z-index:20;min-width:200px;
+  overflow:hidden;
+}
+.atmo-toast::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;opacity:var(--grain-opacity);pointer-events:none}
+.atmo-toast-dot{width:8px;height:8px;border-radius:50%;background:#3D9A5C;flex-shrink:0}
+.atmo-toast-lines{display:flex;flex-direction:column;gap:4px;flex:1}
+.atmo-toast-t{height:7px;border-radius:2px;background:rgba(255,255,255,0.15);width:85%}
+[data-theme="light"] .atmo-toast-t{background:rgba(0,0,0,0.10)}
+.atmo-toast-s{height:5px;border-radius:2px;background:rgba(255,255,255,0.08);width:60%}
+[data-theme="light"] .atmo-toast-s{background:rgba(0,0,0,0.06)}
+
+/* layer annotation */
+.layer-annotation{
+  background:var(--bg-elevated);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-xl);padding:var(--sp-5);
+  margin-top:var(--sp-4);
+  display:flex;flex-direction:column;gap:var(--sp-3);
+}
+.layer-row{display:flex;align-items:center;gap:var(--sp-4)}
+.layer-z{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--accent-500);width:36px;flex-shrink:0;text-align:right}
+[data-theme="dark"] .layer-z{color:var(--accent-300)}
+.layer-bar{height:28px;border-radius:var(--radius-md);display:flex;align-items:center;padding:0 var(--sp-3);border:1px solid var(--border-subtle);flex:1;position:relative;overflow:hidden}
+.layer-bar::after{content:'';position:absolute;inset:0;background-image:var(--grain-svg);background-size:180px 180px;pointer-events:none;border-radius:inherit}
+.layer-name{font-family:var(--font-body);font-size:12px;font-weight:500;color:var(--text-primary);z-index:1}
+.layer-props{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-left:auto;z-index:1}
+
+/* FOOTER */
+.page-footer{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between}
+.footer-meta{font-size:12px;color:var(--text-disabled);font-family:var(--font-mono)}
+.footer-badge{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary)}
+.footer-badge-dot{width:6px;height:6px;border-radius:50%;background:#3D9A5C}
+
+@media(max-width:960px){
+  .grain-demo-grid{grid-template-columns:repeat(2,1fr)}
+  .glass-demo-grid{grid-template-columns:1fr}
+  .elevation-row{grid-template-columns:repeat(2,1fr)}
+  .shadow-compare{grid-template-columns:repeat(3,1fr)}
+  .gradient-compare{grid-template-columns:1fr}
+  .glass-specs{grid-template-columns:1fr}
+  .rules-grid{grid-template-columns:1fr}
+  .atmo-sidebar{width:160px}
+  .atmo-content{left:160px}
+}
+@media(max-width:640px){
+  .page{padding:var(--sp-8) var(--sp-4) var(--sp-12)}
+  .topbar{padding:0 var(--sp-4)}
+  .page-title{font-size:24px}
+  .elevation-row{grid-template-columns:1fr}
+  .atmo-kpi-row{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="white" opacity=".9"/><rect x="5.5" y="12.5" width="5" height="1.5" rx=".75" fill="white" opacity=".7"/></svg>
+      </div>
+      <span class="logo-name">ulamu</span>
+    </a>
+    <div class="topbar-divider"></div>
+    <div class="module-breadcrumb">
+      <span class="tag">CG-04</span>
+      Effets de Surface &amp; Atmosphère
+    </div>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Basculer le thème">
+    <div class="toggle-option" id="opt-light">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Clair
+    </div>
+    <div class="toggle-option active" id="opt-dark">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"/></svg>Sombre
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="module-id">Design System · Module CG-04</div>
+    <h1 class="page-title">Effets de Surface &amp; Atmosphère</h1>
+    <p class="page-desc">Grain de texture, verre poli (glassmorphism), système d'ombres par niveau Z, et règle absolue des dégradés. Ces quatre couches d'effets créent la profondeur atmosphérique d'Ulamu — un brouillard chaud, humain, mémorable. Chaque composant vit à un niveau Z précis avec des propriétés définies.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       01 — GRAIN DE TEXTURE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">01 — Grain de texture</h2>
+      <span class="section-subtitle">Moyen · présent partout · intensité variable selon le composant</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <!-- Intensity scale -->
+    <div class="grain-demo-grid" style="margin-bottom:var(--sp-8)">
+      <div class="grain-card">
+        <div class="grain-card-face grain-overlay grain-none" style="background:var(--bg-muted)">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);position:relative;z-index:1">Aucun</span>
+        </div>
+        <div class="grain-card-meta">
+          <div class="grain-card-name">Zéro grain</div>
+          <div class="grain-card-val">opacity: 0 — ❌ Non Ulamu</div>
+        </div>
+      </div>
+      <div class="grain-card">
+        <div class="grain-card-face grain-overlay grain-subtle" style="background:var(--bg-elevated)">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);position:relative;z-index:1">Subtil</span>
+        </div>
+        <div class="grain-card-meta">
+          <div class="grain-card-name">Discret</div>
+          <div class="grain-card-val">opacity: 0.025 — Contenus</div>
+        </div>
+      </div>
+      <div class="grain-card">
+        <div class="grain-card-face grain-overlay grain-medium" style="background:var(--bg-elevated)">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);position:relative;z-index:1">Moyen ★</span>
+        </div>
+        <div class="grain-card-meta">
+          <div class="grain-card-name">Moyen — Ulamu</div>
+          <div class="grain-card-val">opacity: 0.055 — Global body</div>
+        </div>
+      </div>
+      <div class="grain-card">
+        <div class="grain-card-face grain-overlay grain-strong" style="background:var(--bg-elevated)">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);position:relative;z-index:1">Fort</span>
+        </div>
+        <div class="grain-card-meta">
+          <div class="grain-card-name">Prononcé</div>
+          <div class="grain-card-val">opacity: 0.10 — Boutons</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grain on buttons -->
+    <div style="margin-bottom:var(--sp-6)">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-4)">Grain sur les boutons — très visible, effet sérigraphié</p>
+      <div class="btn-grain-demo">
+        <button class="btn-demo btn-primary">Confirmer</button>
+        <button class="btn-demo btn-secondary">Annuler</button>
+        <button class="btn-demo btn-ghost">Voir plus</button>
+        <button class="btn-demo btn-danger">Supprimer</button>
+        <div style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-disabled)">Grain visible sur chaque bouton<br/>opacity var(--grain-btn): 0.06-0.09</div>
+      </div>
+    </div>
+
+    <!-- Grain token table -->
+    <table class="token-table">
+      <thead><tr><th>Token / Variable</th><th>Valeur</th><th>Composant cible</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tt-token">--grain-opacity (body)</span></td><td class="tt-value">0.035 (light) · 0.055 (dark)</td><td class="tt-usage">Overlay global sur body — brouillard atmosphérique de fond</td></tr>
+        <tr><td><span class="tt-token">--grain-btn</span></td><td class="tt-value">0.06 (light) · 0.09 (dark)</td><td class="tt-usage">Overlay sur tous les boutons — effet affiche sérigraphiée</td></tr>
+        <tr><td><span class="tt-token">Grain cards (×0.6)</span></td><td class="tt-value">~0.021 / ~0.033</td><td class="tt-usage">Cards et surfaces élevées — grain discret pour la matière</td></tr>
+        <tr><td><span class="tt-token">Grain glass (×0.8)</span></td><td class="tt-value">~0.028 / ~0.044</td><td class="tt-usage">Surfaces glass (sidebar, topbar, toasts) — grain sur verre</td></tr>
+        <tr><td><span class="tt-token">baseFrequency</span></td><td class="tt-value">0.9</td><td class="tt-usage">Grain fin, pas de motif grossier — cohérence sur tous les écrans</td></tr>
+        <tr><td><span class="tt-token">numOctaves</span></td><td class="tt-value">4</td><td class="tt-usage">Texture riche mais naturelle, pas mécanique</td></tr>
+        <tr><td><span class="tt-token">background-size</span></td><td class="tt-value">180px × 180px</td><td class="tt-usage">Tuile de grain — taille optimale pour densité et seamless tiling</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       02 — GLASSMORPHISM
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">02 — Verre poli (Glassmorphism)</h2>
+      <span class="section-subtitle">Sidebar · Topbar · Toasts — les 3 seuls composants glass</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="glass-demo-grid">
+
+      <!-- SIDEBAR glass -->
+      <div class="glass-scene">
+        <div class="glass-scene-bg">
+          <!-- Blobs background -->
+          <div class="blob" style="width:160px;height:160px;top:-20px;left:-30px;background:var(--accent-400)"></div>
+          <div class="blob" style="width:120px;height:120px;bottom:20px;right:-10px;background:#5C2D7E"></div>
+          <div class="blob" style="width:80px;height:80px;top:60px;right:40px;background:#2B6B40"></div>
+          <div style="position:absolute;inset:0;background:var(--bg-base);opacity:0.6"></div>
+        </div>
+        <!-- Glass sidebar -->
+        <div class="glass-element glass-sidebar-demo">
+          <div class="glass-sidebar-icon active">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="white" opacity=".9"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+          </div>
+          <div class="glass-sidebar-icon idle"></div>
+          <div class="glass-sidebar-icon idle"></div>
+          <div class="glass-sidebar-icon idle"></div>
+          <div style="height:1px;background:var(--glass-border);width:100%;margin:4px 0"></div>
+          <div class="glass-sidebar-icon idle"></div>
+          <div class="glass-sidebar-icon idle"></div>
+          <div style="flex:1"></div>
+          <div class="glass-sidebar-icon idle"></div>
+        </div>
+        <div class="glass-scene-label">SIDEBAR · Verre poli</div>
+      </div>
+
+      <!-- TOPBAR glass -->
+      <div class="glass-scene">
+        <div class="glass-scene-bg">
+          <div class="blob" style="width:200px;height:100px;top:-30px;left:20px;background:var(--accent-300)"></div>
+          <div class="blob" style="width:100px;height:100px;bottom:40px;right:30px;background:#C1440E;opacity:0.25"></div>
+          <div style="position:absolute;inset:0;background:var(--bg-base);opacity:0.55"></div>
+          <!-- Content behind topbar -->
+          <div style="position:absolute;top:60px;left:16px;right:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="height:10px;background:var(--bg-muted);border-radius:2px;width:55%"></div>
+            <div style="height:7px;background:var(--bg-muted);border-radius:2px;width:80%;opacity:.5"></div>
+            <div style="height:7px;background:var(--bg-muted);border-radius:2px;width:65%;opacity:.3"></div>
+          </div>
+        </div>
+        <!-- Glass topbar -->
+        <div class="glass-element glass-topbar-demo">
+          <div class="glass-tb-dot"></div>
+          <div class="glass-tb-bar"></div>
+          <div style="flex:1"></div>
+          <div class="glass-tb-avatar"></div>
+        </div>
+        <div class="glass-scene-label">TOPBAR · Verre poli</div>
+      </div>
+
+      <!-- TOAST glass -->
+      <div class="glass-scene">
+        <div class="glass-scene-bg">
+          <div class="blob" style="width:180px;height:180px;top:30px;left:10px;background:var(--accent-400);opacity:0.3"></div>
+          <div class="blob" style="width:140px;height:80px;bottom:0;right:0;background:#2B6B40;opacity:0.2"></div>
+          <div style="position:absolute;inset:0;background:var(--bg-base);opacity:0.65"></div>
+          <!-- Content -->
+          <div style="position:absolute;top:80px;left:16px;right:16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:12px">
+            <div style="height:8px;background:var(--bg-muted);border-radius:2px;width:70%;margin-bottom:6px"></div>
+            <div style="height:6px;background:var(--bg-muted);border-radius:2px;width:50%"></div>
+          </div>
+        </div>
+        <!-- Glass toast -->
+        <div class="glass-element glass-toast-demo">
+          <div class="glass-toast-icon" style="background:rgba(61,154,92,0.25)">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="#3D9A5C"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          </div>
+          <div class="glass-toast-text">
+            <div class="glass-toast-title"></div>
+            <div class="glass-toast-sub"></div>
+          </div>
+        </div>
+        <div class="glass-scene-label">TOAST · Centré en haut · Verre poli</div>
+      </div>
+
+    </div>
+
+    <!-- Glass spec cards -->
+    <div class="glass-specs">
+      <div class="glass-spec-card">
+        <div class="glass-spec-name">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="14" rx="1.5" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          Sidebar
+        </div>
+        <div class="glass-spec-row"><span class="glass-spec-key">background</span><span class="glass-spec-val">--glass-bg</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">backdrop-filter</span><span class="glass-spec-val">blur(14px)</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">border-right</span><span class="glass-spec-val">1px --glass-border</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">grain overlay</span><span class="glass-spec-val">opacity ×0.90</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">light bg</span><span class="glass-spec-val">rgba(255,255,255,0.72)</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">dark bg</span><span class="glass-spec-val">rgba(28,28,33,0.72)</span></div>
+      </div>
+      <div class="glass-spec-card">
+        <div class="glass-spec-name">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="5" rx="1.5" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          Topbar
+        </div>
+        <div class="glass-spec-row"><span class="glass-spec-key">background</span><span class="glass-spec-val">--glass-bg</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">backdrop-filter</span><span class="glass-spec-val">blur(12px)</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">border-bottom</span><span class="glass-spec-val">1px --glass-border</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">grain overlay</span><span class="glass-spec-val">opacity ×0.70</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">light bg</span><span class="glass-spec-val">rgba(255,255,255,0.72)</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">dark bg</span><span class="glass-spec-val">rgba(28,28,33,0.72)</span></div>
+      </div>
+      <div class="glass-spec-card">
+        <div class="glass-spec-name">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="2" stroke="var(--accent-500)" stroke-width="1.5"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="var(--accent-500)" stroke-width="1.5"/></svg>
+          Toasts
+        </div>
+        <div class="glass-spec-row"><span class="glass-spec-key">background</span><span class="glass-spec-val">--glass-bg</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">backdrop-filter</span><span class="glass-spec-val">blur(12px)</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">border</span><span class="glass-spec-val">1px --glass-border</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">position</span><span class="glass-spec-val">top center fixed</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">max-width</span><span class="glass-spec-val">420px</span></div>
+        <div class="glass-spec-row"><span class="glass-spec-key">grain overlay</span><span class="glass-spec-val">opacity ×1.00</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       03 — OMBRES & ÉLÉVATIONS
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">03 — Ombres &amp; Élévations (Z-layers)</h2>
+      <span class="section-subtitle">5 niveaux · profondeur Z légère · jamais d'ombres colorées</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="elevation-row">
+
+      <div class="elev-card z0">
+        <div class="elev-z-badge">Z0</div>
+        <div class="elev-name">Plat</div>
+        <div class="elev-usage">Aucune ombre. Utilisé pour les éléments intégrés dans la page, sans relief nécessaire.</div>
+        <div class="elev-value">box-shadow: none</div>
+        <div class="elev-component-list">
+          <span class="elev-tag">Séparateurs</span>
+          <span class="elev-tag">Lignes de table</span>
+          <span class="elev-tag">Fonds de page</span>
+        </div>
+      </div>
+
+      <div class="elev-card z1">
+        <div class="elev-z-badge">Z1</div>
+        <div class="elev-name">--shadow-sm</div>
+        <div class="elev-usage">Élévation minimale. Soulève légèrement l'élément du fond sans le déconnecter.</div>
+        <div class="elev-value">0 1px 2px rgba(0,0,0,0.05)</div>
+        <div class="elev-component-list">
+          <span class="elev-tag">Cards</span>
+          <span class="elev-tag">Topbar</span>
+          <span class="elev-tag">Inputs focus</span>
+          <span class="elev-tag">Sidebar</span>
+        </div>
+      </div>
+
+      <div class="elev-card z2">
+        <div class="elev-z-badge">Z2</div>
+        <div class="elev-name">--shadow-md</div>
+        <div class="elev-usage">Élévation standard. Profondeur visible mais discrète — état hover des cards.</div>
+        <div class="elev-value">0 2px 8px rgba(0,0,0,0.08)<br/>+ 0 1px 2px rgba(0,0,0,0.04)</div>
+        <div class="elev-component-list">
+          <span class="elev-tag">Cards hover</span>
+          <span class="elev-tag">Dropdowns</span>
+          <span class="elev-tag">Popovers</span>
+        </div>
+      </div>
+
+      <div class="elev-card z3">
+        <div class="elev-z-badge">Z3</div>
+        <div class="elev-name">--shadow-lg</div>
+        <div class="elev-usage">Élévation forte. Réservée aux éléments qui flottent au-dessus du contenu.</div>
+        <div class="elev-value">0 6px 24px rgba(0,0,0,0.55)<br/>+ 0 2px 6px rgba(0,0,0,0.35)</div>
+        <div class="elev-component-list">
+          <span class="elev-tag">Toasts</span>
+          <span class="elev-tag">Tooltips</span>
+          <span class="elev-tag">Menus ctx.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Shadow visual comparison -->
+    <div class="shadow-compare">
+      <div class="shadow-item">
+        <div class="shadow-box s0"></div>
+        <div class="shadow-label">Z0 · Plat</div>
+        <div class="shadow-token">--shadow: none</div>
+      </div>
+      <div class="shadow-item">
+        <div class="shadow-box s1"></div>
+        <div class="shadow-label">Z1 · Minimal</div>
+        <div class="shadow-token">--shadow-sm</div>
+      </div>
+      <div class="shadow-item">
+        <div class="shadow-box s2"></div>
+        <div class="shadow-label">Z2 · Standard</div>
+        <div class="shadow-token">--shadow-md</div>
+      </div>
+      <div class="shadow-item">
+        <div class="shadow-box s3"></div>
+        <div class="shadow-label">Z3 · Fort</div>
+        <div class="shadow-token">--shadow-lg</div>
+      </div>
+      <div class="shadow-item">
+        <div class="shadow-box s4"></div>
+        <div class="shadow-label">Z4 · Maximal</div>
+        <div class="shadow-token">--shadow-xl</div>
+      </div>
+    </div>
+
+    <!-- shadow token table -->
+    <table class="token-table" style="margin-top:var(--sp-6)">
+      <thead><tr><th>Token</th><th>Valeur light</th><th>Valeur dark</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tt-token">--shadow-sm</span></td><td class="tt-value">0 1px 2px rgba(0,0,0,0.05)</td><td class="tt-value">0 1px 3px rgba(0,0,0,0.35)</td><td class="tt-usage">Cards, topbar, sidebar, inputs au focus</td></tr>
+        <tr><td><span class="tt-token">--shadow-md</span></td><td class="tt-value">0 2px 8px rgba(0,0,0,0.08) + 0 1px 2px rgba(0,0,0,0.04)</td><td class="tt-value">0 2px 10px rgba(0,0,0,0.45) + …</td><td class="tt-usage">Cards en hover, dropdowns, popovers</td></tr>
+        <tr><td><span class="tt-token">--shadow-lg</span></td><td class="tt-value">0 4px 16px rgba(0,0,0,0.10) + …</td><td class="tt-value">0 6px 24px rgba(0,0,0,0.55) + …</td><td class="tt-usage">Toasts, tooltips, menus contextuels</td></tr>
+        <tr><td><span class="tt-token">--shadow-xl</span></td><td class="tt-value">0 8px 32px rgba(0,0,0,0.12) + …</td><td class="tt-value">0 12px 40px rgba(0,0,0,0.65) + …</td><td class="tt-usage">Modales, drawers, confirmations critiques</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       04 — RÈGLE DES DÉGRADÉS (RAPPEL VISUEL)
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">04 — Règle absolue des dégradés</h2>
+      <span class="section-subtitle">Interdit partout · autorisé uniquement sous les courbes de graphiques</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="gradient-rule-box">
+      <div class="gradient-compare">
+
+        <!-- FORBIDDEN -->
+        <div>
+          <div class="gradient-col-label">❌ Dégradés interdits</div>
+
+          <div class="grad-forbidden-item">
+            <div class="grad-forbidden-face" style="background:linear-gradient(135deg,#2756A6,#6F92DA)">
+              <span style="color:white;font-family:var(--font-body);font-size:13px;font-weight:500">Bouton primaire</span>
+            </div>
+            <div class="grad-forbidden-label">
+              <span class="grad-forbidden-badge">INTERDIT</span>
+              Dégradé sur bouton — utiliser couleur unie --accent-500
+            </div>
+          </div>
+
+          <div class="grad-forbidden-item">
+            <div class="grad-forbidden-face" style="background:linear-gradient(180deg,#18181B,#2756A620)">
+              <div style="height:40px;width:90%;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle)"></div>
+            </div>
+            <div class="grad-forbidden-label">
+              <span class="grad-forbidden-badge">INTERDIT</span>
+              Fond de page avec dégradé — utiliser --bg-base uni
+            </div>
+          </div>
+
+          <div class="grad-forbidden-item">
+            <div class="grad-forbidden-face" style="background:var(--bg-muted)">
+              <div style="padding:6px 16px;border-radius:var(--radius-md);background:linear-gradient(90deg,#2756A6,#9DB5E8);color:white;font-size:13px;font-weight:500;font-family:var(--font-body)">Badge accent</div>
+            </div>
+            <div class="grad-forbidden-label">
+              <span class="grad-forbidden-badge">INTERDIT</span>
+              Dégradé sur badge/tag — fond uni rgba() uniquement
+            </div>
+          </div>
+
+          <div class="grad-forbidden-item">
+            <div class="grad-forbidden-face" style="background:var(--bg-muted)">
+              <div style="padding:8px 16px;border-radius:var(--radius-md);background:linear-gradient(180deg,rgba(255,255,255,0.15),rgba(255,255,255,0));border:1px solid var(--border-default)">
+                <div style="height:8px;border-radius:2px;background:var(--bg-muted);width:70%"></div>
+              </div>
+            </div>
+            <div class="grad-forbidden-label">
+              <span class="grad-forbidden-badge">INTERDIT</span>
+              Dégradé sur card/surface — ombre Z légère à la place
+            </div>
+          </div>
+        </div>
+
+        <!-- ALLOWED -->
+        <div>
+          <div class="gradient-col-label">✓ Dégradé autorisé — Area charts uniquement</div>
+
+          <div class="chart-allowed">
+            <p style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-bottom:var(--sp-3)">Consultations / 6 derniers mois</p>
+            <div class="chart-container">
+              <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2756A6" stop-opacity="0.18"/>
+                    <stop offset="100%" stop-color="#2756A6" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="25" x2="500" y2="25" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+                <line x1="0" y1="50" x2="500" y2="50" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+                <line x1="0" y1="75" x2="500" y2="75" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+                <path d="M0,70 C60,60 120,30 180,40 C240,50 300,20 360,30 C420,40 470,25 500,35 L500,100 L0,100Z" fill="url(#g1)"/>
+                <path d="M0,70 C60,60 120,30 180,40 C240,50 300,20 360,30 C420,40 470,25 500,35" fill="none" stroke="#2756A6" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="0" cy="70" r="3" fill="#2756A6"/>
+                <circle cx="180" cy="40" r="3" fill="#2756A6"/>
+                <circle cx="300" cy="20" r="4" fill="#2756A6" stroke="var(--bg-elevated)" stroke-width="2"/>
+                <circle cx="500" cy="35" r="3" fill="#2756A6"/>
+              </svg>
+            </div>
+            <div class="chart-label-ok">
+              <span class="chart-ok-badge">✓ OK</span>
+              Area fill · stop-opacity 0.18→0 · couleur de la courbe uniquement
+            </div>
+          </div>
+
+          <div class="chart-allowed" style="margin-top:var(--sp-3)">
+            <p style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);margin-bottom:var(--sp-3)">Patients actifs vs Nouveaux patients</p>
+            <div class="chart-container">
+              <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2756A6" stop-opacity="0.15"/>
+                    <stop offset="100%" stop-color="#2756A6" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3D9A5C" stop-opacity="0.12"/>
+                    <stop offset="100%" stop-color="#3D9A5C" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="33" x2="500" y2="33" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+                <line x1="0" y1="66" x2="500" y2="66" stroke="currentColor" stroke-opacity="0.05" stroke-width="1"/>
+                <path d="M0,65 C80,50 160,35 250,45 C340,55 420,30 500,40 L500,100 L0,100Z" fill="url(#g2)"/>
+                <path d="M0,65 C80,50 160,35 250,45 C340,55 420,30 500,40" fill="none" stroke="#2756A6" stroke-width="2" stroke-linecap="round"/>
+                <path d="M0,80 C80,72 160,60 250,68 C340,76 420,55 500,62 L500,100 L0,100Z" fill="url(#g3)"/>
+                <path d="M0,80 C80,72 160,60 250,68 C340,76 420,55 500,62" fill="none" stroke="#3D9A5C" stroke-width="2" stroke-linecap="round" stroke-dasharray="none"/>
+              </svg>
+            </div>
+            <div class="chart-label-ok">
+              <span class="chart-ok-badge">✓ OK</span>
+              Multi-courbes · chaque area fill hérite de la couleur de sa ligne
+            </div>
+          </div>
+
+          <div style="margin-top:var(--sp-4);padding:var(--sp-4);background:var(--bg-subtle);border-radius:var(--radius-md);border:1px solid var(--border-subtle)">
+            <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-3)">Spécifications du dégradé autorisé</p>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">Direction</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-accent)">vertical · x1=0 y1=0 x2=0 y2=1</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">stop-opacity départ</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-accent)">0.12 → 0.18 max</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">stop-opacity fin</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-accent)">0 (transparent)</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">couleur</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-accent)">identique à la stroke de la courbe</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary)">type de graphique</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-accent)">Area chart uniquement</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       05 — COMPOSITION ATMOSPHÉRIQUE COMPLÈTE
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">05 — Composition atmosphérique complète</h2>
+      <span class="section-subtitle">Tous les effets combinés · rendu live de l'interface Ulamu</span>
+    </div>
+    <div class="section-divider"></div>
+
+    <div class="atmo-demo">
+      <div class="atmo-browser-bar">
+        <div class="atmo-dot" style="background:#FF5F57"></div>
+        <div class="atmo-dot" style="background:#FFBD2E"></div>
+        <div class="atmo-dot" style="background:#28C840"></div>
+        <div style="flex:1;height:16px;background:var(--bg-elevated);border-radius:3px;max-width:280px;margin:0 auto;border:1px solid var(--border-subtle)"></div>
+      </div>
+      <div class="atmo-body" style="height:400px">
+
+        <!-- Topbar glass + grain -->
+        <div class="atmo-topbar">
+          <div style="width:22px;height:22px;background:var(--accent-500);border-radius:var(--radius-sm);flex-shrink:0"></div>
+          <div style="height:8px;background:rgba(255,255,255,0.12);border-radius:2px;width:60px"></div>
+          <div style="flex:1"></div>
+          <div style="height:26px;background:rgba(255,255,255,0.08);border-radius:var(--radius-md);width:160px;border:1px solid var(--glass-border)"></div>
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid var(--glass-border)"></div>
+        </div>
+
+        <!-- Sidebar glass + grain -->
+        <div class="atmo-sidebar">
+          <div class="atmo-nav active">
+            <div class="atmo-nav-dot accent"></div>
+            <div class="atmo-nav-bar accent"></div>
+          </div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div class="atmo-sep"></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+          <div style="flex:1"></div>
+          <div class="atmo-sep"></div>
+          <div class="atmo-nav"><div class="atmo-nav-dot muted"></div><div class="atmo-nav-bar"></div></div>
+        </div>
+
+        <!-- Content area -->
+        <div class="atmo-content">
+          <div style="height:8px;background:var(--bg-muted);border-radius:2px;width:180px"></div>
+          <div style="height:13px;background:var(--text-primary);opacity:.07;border-radius:3px;width:220px"></div>
+          <div class="atmo-kpi-row">
+            <div class="atmo-kpi"><div class="atmo-kpi-l"></div><div class="atmo-kpi-v"></div><div class="atmo-kpi-d"></div></div>
+            <div class="atmo-kpi"><div class="atmo-kpi-l"></div><div class="atmo-kpi-v"></div><div class="atmo-kpi-d" style="background:#C49128"></div></div>
+            <div class="atmo-kpi"><div class="atmo-kpi-l"></div><div class="atmo-kpi-v"></div><div class="atmo-kpi-d"></div></div>
+          </div>
+          <!-- area chart with allowed gradient -->
+          <div class="atmo-card">
+            <div style="height:8px;background:var(--text-primary);opacity:.07;border-radius:2px;width:40%"></div>
+            <div style="flex:1;min-height:60px;position:relative">
+              <svg style="width:100%;height:100%;position:absolute;top:0;left:0" viewBox="0 0 400 80" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2756A6" stop-opacity="0.15"/>
+                    <stop offset="100%" stop-color="#2756A6" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,55 C50,45 100,25 160,35 C220,45 280,15 340,25 C370,30 390,22 400,28 L400,80 L0,80Z" fill="url(#ga)"/>
+                <path d="M0,55 C50,45 100,25 160,35 C220,45 280,15 340,25 C370,30 390,22 400,28" fill="none" stroke="#2756A6" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toast floating -->
+        <div class="atmo-toast">
+          <div class="atmo-toast-dot"></div>
+          <div class="atmo-toast-lines">
+            <div class="atmo-toast-t"></div>
+            <div class="atmo-toast-s"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Layer stack annotation -->
+    <div class="layer-annotation">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--text-disabled);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--sp-2)">Stack de couches Z — du bas vers le haut</p>
+
+      <div class="layer-row">
+        <span class="layer-z">z:0</span>
+        <div class="layer-bar" style="background:var(--bg-base)">
+          <span class="layer-name">Page background</span>
+          <span class="layer-props">--bg-base · grain body ×1</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:1</span>
+        <div class="layer-bar" style="background:var(--bg-elevated)">
+          <span class="layer-name">Cards · Surfaces élevées</span>
+          <span class="layer-props">--shadow-sm · grain ×0.6</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:9</span>
+        <div class="layer-bar" style="background:var(--glass-bg)">
+          <span class="layer-name">Sidebar fixe gauche</span>
+          <span class="layer-props">glass · blur 14px · grain ×0.9</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:10</span>
+        <div class="layer-bar" style="background:var(--glass-bg)">
+          <span class="layer-name">Topbar sticky</span>
+          <span class="layer-props">glass · blur 12px · grain ×0.7</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:20</span>
+        <div class="layer-bar" style="background:var(--bg-elevated);box-shadow:var(--shadow-md)">
+          <span class="layer-name">Dropdowns · Menus · Popovers</span>
+          <span class="layer-props">--shadow-md · bg-elevated</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:100</span>
+        <div class="layer-bar" style="background:var(--glass-bg);box-shadow:var(--shadow-lg)">
+          <span class="layer-name">Toasts</span>
+          <span class="layer-props">glass · blur 12px · --shadow-lg · top center</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:200</span>
+        <div class="layer-bar" style="background:var(--bg-elevated);box-shadow:var(--shadow-xl)">
+          <span class="layer-name">Modales · Drawers</span>
+          <span class="layer-props">--shadow-xl · overlay rgba(0,0,0,0.5)</span>
+        </div>
+      </div>
+      <div class="layer-row">
+        <span class="layer-z">z:9999</span>
+        <div class="layer-bar" style="background:rgba(39,86,166,0.08);border-color:var(--accent-guide-border)">
+          <span class="layer-name" style="color:var(--accent-500)">Grain overlay global (::before body)</span>
+          <span class="layer-props" style="color:var(--accent-300)">pointer-events:none · toujours au-dessus</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       06 — RÈGLES
+  ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">06 — Règles d'usage</h2>
+    </div>
+    <div class="section-divider"></div>
+    <div class="rules-grid">
+      <div class="rule-card forbidden">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 9.1L4.9 3.5 3.5 4.9l6.6 6.6 1.4-1.4z"/></svg>
+          Interdictions absolues
+        </div>
+        <ul class="rule-list">
+          <li>Appliquer du glassmorphism sur des composants autres que sidebar, topbar et toasts</li>
+          <li>Utiliser des dégradés sur boutons, fonds, cards, textes, icônes ou badges</li>
+          <li>Créer un dégradé sous les barres (bar chart), donut ou gauge — area uniquement</li>
+          <li>Dépasser stop-opacity 0.18 pour le fill d'area chart</li>
+          <li>Utiliser des ombres colorées (ex: box-shadow avec une couleur non-neutre)</li>
+          <li>Appliquer --shadow-xl sur des éléments inline ou dans le flux du contenu</li>
+          <li>Supprimer le grain de texture globalement — il fait partie de l'identité Ulamu</li>
+          <li>Utiliser backdrop-filter sans fallback pour les navigateurs sans support</li>
+        </ul>
+      </div>
+      <div class="rule-card allowed">
+        <div class="rule-card-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.3 4.3a1 1 0 0 0-1.4 0L6.5 9.6 4.1 7.2a1 1 0 0 0-1.4 1.4l3.1 3.1a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4z"/></svg>
+          Bonnes pratiques obligatoires
+        </div>
+        <ul class="rule-list">
+          <li>Grain sur body via ::before fixe — une seule instance, z-index 9999, pointer-events:none</li>
+          <li>Grain sur boutons via ::after — opacity var(--grain-btn), visible et caractériel</li>
+          <li>Glass toujours combiné avec grain — jamais de surface glass sans texture</li>
+          <li>Ombres en niveaux progressifs Z0→Z4 uniquement — pas de valeurs personnalisées</li>
+          <li>Toasts : toujours glass + grain + shadow-lg + position top center fixed</li>
+          <li>Cards : shadow-sm au repos, shadow-md au hover — transition .25s linear</li>
+          <li>Area chart : gradient vertical, même couleur que la stroke, opacity 0.18→0</li>
+          <li>Tester les effets glass dans les deux thèmes avant validation — comportement différent</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <div class="footer-meta">ulamu · Design System · CG-04 · v1.0</div>
+    <div class="footer-badge"><div class="footer-badge-dot"></div>Document validé — Phase 2 en cours</div>
+  </footer>
+
+</main>
+
+<script>
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('opt-light').classList.toggle('active',isDark);
+  document.getElementById('opt-dark').classList.toggle('active',!isDark);
+}
+(function(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.getElementById('opt-dark').classList.toggle('active',isDark);
+  document.getElementById('opt-light').classList.toggle('active',!isDark);
+})();
+</script>
+</body>
+</html>

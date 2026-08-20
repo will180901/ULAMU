@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="ulamu.css" />
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--fond-page);padding:14px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1460px;margin:0 auto 12px;padding:7px 12px;background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ap-600);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:2px 6px;border-radius:var(--radius-sm)">D2</span>
+      <span style="font-family:var(--font-display);font-size:var(--font-size-body-sm);font-weight:700;color:var(--texte-primaire)">Stock</span>
+      <span style="font-family:var(--font-body);font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ mesure }}</span>
+    </span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <span style="display:inline-flex;gap:2px;padding:2px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </span>
+      </span>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:center">
+  <div class="ul-grain-strong" ref="{{ refCadre }}" style="{{ styleFrame }}">
+
+    <aside onMouseEnter="{{ survolerSidebar }}" onMouseLeave="{{ quitterSidebar }}" style="{{ styleSidebar }}">
+      <div style="{{ styleSidebarEntete }}">
+        <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:#fff;border:1px solid var(--bordure-legere);box-shadow:0 1px 2px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+        </span>
+        <sc-if value="{{ sidebarOuverte }}">
+          <span style="flex:1;min-width:0;white-space:nowrap">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--texte-primaire)">ulamu</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.07em;line-height:1;color:var(--texte-tertiaire)">Espace pharmacie</span>
+          </span>
+        </sc-if>
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ fermerNavMobile }}" aria-label="Fermer le menu" style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-legere);border-radius:var(--radius-md);background:var(--fond-surface);color:var(--texte-secondaire)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </sc-if>
+      </div>
+
+      <nav aria-label="Navigation principale" style="{{ styleNav }}">
+        <sc-for list="{{ groupes }}" as="gr" hint-placeholder-count="3">
+          <div style="{{ gr.style }}">
+            <sc-if value="{{ gr.libelleVisible }}">
+              <p style="margin:8px 0 4px;padding:0 var(--espace-3);font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-tertiaire);white-space:nowrap">{{ gr.titre }}</p>
+            </sc-if>
+            <sc-if value="{{ gr.separateurVisible }}">
+              <div style="height:1px;background:var(--bordure-legere);margin:6px 16px 8px"></div>
+            </sc-if>
+            <sc-for list="{{ gr.items }}" as="i" hint-placeholder-count="4">
+              <button type="button" onClick="{{ i.onClick }}" title="{{ i.titre }}" style="{{ i.style }}">
+                <sc-if value="{{ i.actifOuvert }}">
+                  <span aria-hidden="true" style="position:absolute;left:-8px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--ap-500)"></span>
+                </sc-if>
+                <span style="position:relative;display:flex;flex-shrink:0" dangerouslySetInnerHTML="{{ i.icone }}"></span>
+                <sc-if value="{{ i.pastilleRail }}">
+                  <span aria-hidden="true" style="position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:9999px;background:var(--erreur-accent);border:1.5px solid var(--glass-sidebar-bg)"></span>
+                </sc-if>
+                <sc-if value="{{ i.labelVisible }}">
+                  <span style="flex:1;min-width:0;text-align:left;font-size:var(--font-size-body-sm);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.label }}</span>
+                </sc-if>
+                <sc-if value="{{ i.badgeVisible }}">
+                  <span style="{{ i.badgeStyle }}">{{ i.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </nav>
+
+      <div style="{{ styleSidebarPied }}">
+        <button type="button" onClick="{{ basculerMenu }}" aria-label="Menu utilisateur" style="{{ styleBoutonUtilisateur }}">
+          <span style="width:32px;height:32px;flex-shrink:0;border-radius:9999px;background:var(--ap-50);color:var(--ap-600);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:var(--font-size-caption);font-weight:700">CO</span>
+          <sc-if value="{{ sidebarOuverte }}">
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Clarisse Obami</span>
+              <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);font-weight:600;color:var(--ap-600)">Titulaire</span>
+            </span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M5 6l3-3 3 3M11 10l-3 3-3-3"></path></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{ menuOuvert }}">
+          <div role="menu" class="ul-grain-fine" style="{{ styleMenuUtilisateur }}">
+            <div style="padding:var(--espace-1)">
+              <button type="button" role="menuitem" onClick="{{ basculerTheme }}" style="{{ styleItemMenu }}" style-hover="background:var(--fond-surface-2);color:var(--texte-primaire)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 10A5.5 5.5 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z"></path></svg>
+                <span style="flex:1;text-align:left">Thème</span>
+                <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ themeLibelle }}</span>
+              </button>
+              <div style="height:1px;background:var(--bordure-legere);margin:4px 0"></div>
+              <button type="button" role="menuitem" onClick="{{ deconnexion }}" style="{{ styleItemMenuDanger }}" style-hover="background:var(--erreur-fond)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"></path></svg>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+
+    <sc-if value="{{ voileMobile }}">
+      <div aria-hidden="true" onClick="{{ fermerNavMobile }}" style="position:absolute;inset:0;z-index:49;background:rgba(15,23,42,.45)"></div>
+    </sc-if>
+
+    <main style="{{ styleMain }}">
+      <header style="{{ styleTopbar }}">
+        <sc-if value="{{ estMobile }}">
+          <button type="button" onClick="{{ ouvrirNavMobile }}" aria-label="Menu" style="margin-right:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--texte-secondaire)" style-hover="background:var(--fond-surface-2)">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ filVisible }}">
+          <nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:6px;min-width:0;margin-right:auto;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">
+            <button type="button" onClick="{{ allerAccueil }}" style="border:0;background:transparent;padding:0;font-size:var(--font-size-caption);color:var(--texte-secondaire);white-space:nowrap" style-hover="color:var(--texte-primaire)">Pharmacie du Fleuve</button>
+            <span style="color:var(--bordure-normale)">/</span>
+            <span style="color:var(--texte-primaire);font-weight:500;white-space:nowrap">Stock</span>
+          </nav>
+        </sc-if>
+        <span style="{{ styleRecherche }}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+          <sc-if value="{{ rechercheLarge }}">
+            <span style="flex:1;text-align:left;font-size:var(--font-size-body-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rechercher un lot, une réservation…</span>
+            <span style="font-family:var(--font-mono);font-size:var(--font-size-overline);padding:1px 5px;border:1px solid var(--bordure-legere);border-radius:var(--radius-sm);background:var(--fond-surface);color:var(--texte-tertiaire)">⌘K</span>
+          </sc-if>
+        </span>
+      </header>
+
+      <div style="{{ styleZone }}">
+        <div class="ul-grain-fine" style="{{ styleEntetePage }}">
+          <div style="display:flex;align-items:center;gap:var(--espace-3)">
+            <span style="{{ styleTuileTitre }}">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11.5L11.5 4.5"></path><rect x="2.5" y="5.5" width="5" height="9" rx="2.5" transform="rotate(-45 2.5 5.5)"></rect></svg>
+            </span>
+            <span style="flex:1;min-width:0">
+              <h1 style="font-size:var(--font-size-h2);line-height:1.2;color:var(--texte-primaire)">Stock</h1>
+              <p style="margin:3px 0 0;font-size:var(--font-size-body-sm);color:var(--texte-tertiaire)">{{ sousTitrePage }}</p>
+            </span>
+            <sc-if value="{{ actionsEntete }}">
+              <span style="display:flex;align-items:center;gap:var(--espace-2);flex-shrink:0">
+                <button type="button" onClick="{{ ouvrirSortie }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11V2M4.5 5.5L8 2l3.5 3.5"></path><path d="M2 14h12"></path></svg>
+                  Sortie
+                </button>
+                <button type="button" onClick="{{ ouvrirEntree }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v9M4.5 7.5L8 11l3.5-3.5"></path><path d="M2 14h12"></path></svg>
+                  Entrée de lot
+                </button>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{ styleDefilement }}">
+
+          <sc-if value="{{ estChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleFraicheur }}">
+              <sc-for list="{{ quatre }}" as="n" hint-placeholder-count="4">
+                <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);padding:var(--espace-4)">
+                  <span style="{{ styleOs }}display:block;width:56%;height:9px;border-radius:3px"></span>
+                  <span style="{{ styleOs }}display:block;width:38%;height:20px;margin-top:8px;border-radius:4px"></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden">
+              <div style="height:44px;border-bottom:1px solid var(--bordure-legere);background:var(--fond-surface-2)"></div>
+              <sc-for list="{{ huit }}" as="n" hint-placeholder-count="8">
+                <div style="display:flex;align-items:center;gap:var(--espace-4);padding:0 var(--espace-4);height:40px;border-bottom:1px solid var(--bordure-legere)">
+                  <span style="{{ styleOs }}width:26px;height:26px;border-radius:var(--radius-md);flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:170px;height:9px;border-radius:3px"></span>
+                  <span style="flex:1"></span>
+                  <span style="{{ styleOs }}width:70px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:84px;height:16px;border-radius:9999px;flex-shrink:0"></span>
+                  <span style="{{ styleOs }}width:48px;height:9px;border-radius:3px;flex-shrink:0"></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estErreur }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3);max-width:900px">
+            <div role="alert" style="display:flex;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+              <span style="flex-shrink:0;margin-top:1px;color:var(--erreur-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+              </span>
+              <span>
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">Le stock n'a pas pu être chargé</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--texte-secondaire)">Par sécurité, aucune entrée ni sortie n'est enregistrable tant que les quantités affichées ne sont pas à jour.</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-8) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+              <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--erreur-accent)">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><circle cx="8" cy="13" r="1"></circle></svg>
+              </span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Impossible d'afficher le stock</span>
+              <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}" style-hover="background:var(--ap-600)">Réessayer</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ estVide }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--espace-3);padding:var(--espace-10) var(--espace-6);background:var(--fond-surface-2);border:1px dashed var(--bordure-normale);border-radius:var(--radius-xl)">
+            <span style="width:48px;height:48px;border-radius:var(--radius-xl);background:var(--fond-surface);border:1px solid var(--bordure-legere);display:flex;align-items:center;justify-content:center;color:var(--texte-tertiaire)">
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11.5L11.5 4.5"></path><rect x="2.5" y="5.5" width="5" height="9" rx="2.5" transform="rotate(-45 2.5 5.5)"></rect></svg>
+            </span>
+            <span>
+              <span style="display:block;font-size:var(--font-size-body);font-weight:600;color:var(--texte-primaire)">Aucun lot en stock</span>
+              <span style="display:block;margin-top:4px;max-width:430px;font-size:var(--font-size-body-sm);line-height:1.55;color:var(--texte-tertiaire)">Enregistrez une première entrée pour commencer à suivre vos lots. Chaque lot porte sa date de péremption : c'est elle qui décide de l'ordre de sortie.</span>
+            </span>
+            <button type="button" onClick="{{ ouvrirEntree }}" style="{{ stylePrimaire }}margin-top:4px;" style-hover="background:var(--ap-600)">Enregistrer une entrée</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ contenuVisible }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+
+            <div style="{{ styleGrilleFraicheur }}">
+              <sc-for list="{{ fraicheur }}" as="f" hint-placeholder-count="4">
+                <button type="button" onClick="{{ f.onClick }}" style="{{ f.carte }}" style-hover="border-color:var(--bordure-forte)">
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <span style="{{ f.point }}"></span>
+                    <span style="flex:1;min-width:0;text-align:left;font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.label }}</span>
+                  </span>
+                  <span style="display:flex;align-items:baseline;gap:6px;margin-top:6px">
+                    <span style="font-family:var(--font-display);font-size:var(--font-size-h1);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:{{ f.couleurValeur }}">{{ f.valeur }}</span>
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ f.unite }}</span>
+                  </span>
+                  <span style="display:block;margin-top:3px;text-align:left;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ f.aide }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ alerteVisible }}">
+            <div role="alert" style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;color:var(--alerte-accent);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1L1 14h14L8 1z"></path><path d="M8 6v3M8 11v.5"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--alerte-texte)">{{ titreAlerte }}</span>
+                <span style="display:block;margin-top:2px;font-size:var(--font-size-body-sm);line-height:1.5;color:var(--alerte-texte)">{{ corpsAlerte }}</span>
+              </span>
+              <button type="button" onClick="{{ voirAlertes }}" style="{{ styleSecondaireSm }}flex-shrink:0;" style-hover="background:var(--fond-input)">Voir les lots</button>
+            </div>
+            </sc-if>
+
+            <div class="ul-grain-fine" style="{{ styleCarte }}">
+              <div style="display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-3) var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:color-mix(in srgb, var(--fond-surface-2) 55%, transparent)">
+                <span style="position:relative;flex:1 1 220px;min-width:170px;max-width:320px;display:flex">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--texte-tertiaire)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:10px;top:10px;pointer-events:none"><circle cx="6.5" cy="6.5" r="4.5"></circle><path d="M10.5 10.5l3 3"></path></svg>
+                  <input type="text" value="{{ vRecherche }}" onChange="{{ majRecherche }}" placeholder="Filtrer par molécule ou n° de lot…" style="{{ styleChampFiltre }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+                </span>
+                <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                  <sc-for list="{{ onglets }}" as="t" hint-placeholder-count="4">
+                    <button type="button" role="tab" aria-selected="{{ t.actif }}" onClick="{{ t.onClick }}" style="{{ t.style }}">
+                      {{ t.label }}
+                      <sc-if value="{{ t.compteVisible }}">
+                        <span style="{{ t.compteStyle }}">{{ t.compte }}</span>
+                      </sc-if>
+                    </button>
+                  </sc-for>
+                </span>
+                <span style="flex:1"></span>
+                <sc-if value="{{ triVisible }}">
+                  <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                    <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire);white-space:nowrap">Tri</span>
+                    <span style="display:inline-flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+                      <sc-for list="{{ tris }}" as="t" hint-placeholder-count="2">
+                        <button type="button" onClick="{{ t.onClick }}" title="{{ t.aide }}" style="{{ t.style }}">{{ t.label }}</button>
+                      </sc-for>
+                    </span>
+                  </span>
+                </sc-if>
+              </div>
+
+              <div style="overflow-x:auto">
+                <table style="width:100%;min-width:760px;border-collapse:collapse">
+                  <thead>
+                    <tr style="background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+                      <sc-for list="{{ colonnes }}" as="c" hint-placeholder-count="6">
+                        <th scope="col" style="{{ c.style }}">{{ c.label }}</th>
+                      </sc-for>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ lots }}" as="l" hint-placeholder-count="8">
+                      <tr style="{{ l.ligne }}" style-hover="background:var(--ap-50)">
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="display:flex;align-items:center;gap:var(--espace-2);min-width:0">
+                            <span style="{{ l.tuile }}" dangerouslySetInnerHTML="{{ l.icone }}"></span>
+                            <span style="min-width:0">
+                              <span style="display:flex;align-items:center;gap:7px">
+                                <span style="font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire);white-space:nowrap">{{ l.molecule }}</span>
+                                <sc-if value="{{ l.froidVisible }}">
+                                  <span title="Chaîne du froid" style="display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:9999px;background:var(--ton-cyan-fond);color:var(--ton-cyan-icone);font-size:9px;font-weight:600;white-space:nowrap">
+                                    <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 1v14M2 4.5l12 7M14 4.5l-12 7"></path></svg>
+                                    2–8 °C
+                                  </span>
+                                </sc-if>
+                              </span>
+                              <span style="display:block;font-size:var(--font-size-overline);color:var(--texte-tertiaire);white-space:nowrap">{{ l.forme }}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-secondaire);white-space:nowrap">{{ l.numero }}</td>
+                        <td style="padding:var(--espace-2) var(--espace-4);white-space:nowrap">
+                          <span style="display:block;font-family:var(--font-mono);font-size:var(--font-size-body-sm);color:var(--texte-primaire)">{{ l.peremption }}</span>
+                          <span style="display:block;font-size:var(--font-size-overline);color:{{ l.couleurJours }}">{{ l.jours }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                          <span style="font-family:var(--font-mono);font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ l.quantite }}</span>
+                          <span style="font-size:var(--font-size-overline);color:var(--texte-tertiaire)"> / {{ l.initiale }}</span>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4)">
+                          <span style="{{ l.pilule }}"><span style="{{ l.point }}"></span>{{ l.etat }}</span>
+                          <sc-if value="{{ l.fefoVisible }}">
+                            <span style="display:block;margin-top:2px;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.05em;color:var(--ap-600)">SORT EN PREMIER</span>
+                          </sc-if>
+                        </td>
+                        <td style="padding:var(--espace-2) var(--espace-4);text-align:right;white-space:nowrap">
+                          <button type="button" onClick="{{ l.onSortie }}" disabled="{{ l.sortieBloquee }}" style="{{ l.styleSortie }}" style-hover="background:var(--fond-input);border-color:var(--bordure-forte)">Sortie</button>
+                        </td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--espace-3);flex-wrap:wrap;padding:var(--espace-2) var(--espace-4);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2)">
+                <span style="font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ piedTable }}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-for list="{{ pagination }}" as="p" hint-placeholder-count="4">
+                    <button type="button" aria-label="{{ p.aria }}" style="{{ p.style }}" dangerouslySetInnerHTML="{{ p.icone }}"></button>
+                  </sc-for>
+                  <span style="min-width:52px;text-align:center;font-size:var(--font-size-caption);font-weight:500;color:var(--texte-secondaire)">1 / 3</span>
+                </span>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3) var(--espace-4);background:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl)">
+              <span style="flex-shrink:0;color:var(--ap-600);display:flex">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 7v4.5M8 5v.5"></path></svg>
+              </span>
+              <span style="flex:1;min-width:0;font-size:var(--font-size-caption);line-height:1.5;color:var(--texte-secondaire)"><strong style="font-weight:600;color:var(--texte-primaire)">FEFO — first expired, first out.</strong> À la délivrance, ULAMU propose toujours le lot dont la péremption est la plus proche. Un lot périmé ne peut plus sortir : il doit être retiré du stock avec un motif.</span>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </main>
+
+    <sc-if value="{{ dialogueOuvert }}">
+      <div onClick="{{ fermerDialogue }}" style="position:absolute;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+    </sc-if>
+    <sc-if value="{{ dialogueOuvert }}">
+      <div role="dialog" aria-modal="true" onClick="{{ stop }}" class="ul-grain" style="{{ styleModale }}">
+        <div style="display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-4);border-bottom:1px solid var(--bordure-legere);flex-shrink:0">
+          <span style="width:34px;height:34px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center" dangerouslySetInnerHTML="{{ iconeModale }}"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:var(--font-size-h4);font-weight:700;color:var(--texte-primaire)">{{ titreDialogue }}</span>
+            <span style="display:block;margin-top:2px;font-size:var(--font-size-caption);color:var(--texte-tertiaire)">{{ sousTitreDialogue }}</span>
+          </span>
+          <button type="button" onClick="{{ fermerDialogue }}" aria-label="Fermer" style="{{ styleIconBouton }}" style-hover="background:var(--fond-input)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"></path></svg>
+          </button>
+        </div>
+
+        <div style="padding:var(--espace-5);display:flex;flex-direction:column;gap:var(--espace-3);overflow-y:auto">
+
+          <sc-if value="{{ dialogueEntree }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="{{ styleGrilleChamps }}">
+              <label style="display:flex;flex-direction:column;gap:5px">
+                <span style="{{ styleLabel }}">Molécule</span>
+                <input type="text" value="{{ vMolecule }}" onChange="{{ majMolecule }}" placeholder="Amlodipine 5 mg" style="{{ styleChamp }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              </label>
+              <label style="display:flex;flex-direction:column;gap:5px">
+                <span style="{{ styleLabel }}">Numéro de lot</span>
+                <input type="text" value="{{ vNumero }}" onChange="{{ majNumero }}" placeholder="LOT-2026-…" style="{{ styleChampMono }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              </label>
+              <label style="display:flex;flex-direction:column;gap:5px">
+                <span style="{{ styleLabel }}">Date de péremption</span>
+                <input type="date" value="{{ vDate }}" onChange="{{ majDate }}" style="{{ styleChampMono }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              </label>
+              <label style="display:flex;flex-direction:column;gap:5px">
+                <span style="{{ styleLabel }}">Quantité reçue</span>
+                <input type="text" value="{{ vQuantite }}" onChange="{{ majQuantite }}" placeholder="120" style="{{ styleChampMono }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+              </label>
+            </div>
+            <sc-if value="{{ apercuVisible }}">
+              <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3);border-radius:var(--radius-lg);background:{{ apercuFond }}">
+                <span style="flex-shrink:0;display:flex;color:{{ apercuCouleur }}" dangerouslySetInnerHTML="{{ apercuIcone }}"></span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:{{ apercuTexte }}">{{ apercuTitre }}</span>
+                  <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:{{ apercuTexte }}">{{ apercuCorps }}</span>
+                </span>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ dialogueSortie }}">
+          <div style="display:flex;flex-direction:column;gap:var(--espace-3)">
+            <div style="display:flex;align-items:center;gap:var(--espace-3);padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+              <span style="width:30px;height:30px;flex-shrink:0;border-radius:var(--radius-md);background:var(--fond-surface);border:1px solid var(--bordure-legere);color:var(--texte-tertiaire);display:flex;align-items:center;justify-content:center">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11.5L11.5 4.5"></path><rect x="2.5" y="5.5" width="5" height="9" rx="2.5" transform="rotate(-45 2.5 5.5)"></rect></svg>
+              </span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ lotChoisiTitre }}</span>
+                <span style="display:block;margin-top:1px;font-family:var(--font-mono);font-size:var(--font-size-overline);color:var(--texte-tertiaire)">{{ lotChoisiMeta }}</span>
+              </span>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:5px;max-width:200px">
+              <span style="{{ styleLabel }}">Quantité sortie</span>
+              <input type="text" value="{{ vSortie }}" onChange="{{ majSortie }}" placeholder="0" style="{{ styleChampMono }}" style-focus="border-color:var(--ap-400);box-shadow:0 0 0 3px rgba(39,86,166,.12);outline:none" />
+            </label>
+            <span style="display:flex;flex-direction:column;gap:5px">
+              <span style="{{ styleLabel }}">Motif</span>
+              <span style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ motifs }}" as="m" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ m.onClick }}" style="{{ m.style }}" style-hover="background:var(--fond-input)">{{ m.label }}</button>
+                </sc-for>
+              </span>
+            </span>
+            <sc-if value="{{ erreurSortieVisible }}">
+              <span role="alert" style="display:flex;align-items:center;gap:7px;font-size:var(--font-size-caption);color:var(--erreur-texte)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink:0"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                {{ erreurSortie }}
+              </span>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:7px;padding:var(--espace-3);border-radius:var(--radius-lg);background:var(--fond-surface-2);border:1px solid var(--bordure-legere)">
+              <sc-for list="{{ recapSortie }}" as="r" hint-placeholder-count="2">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                  <span style="font-size:var(--font-size-caption);color:var(--texte-secondaire)">{{ r.label }}</span>
+                  <span style="font-family:var(--font-mono);font-size:var(--font-size-caption);font-weight:{{ r.poids }};color:{{ r.couleur }}">{{ r.valeur }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:var(--espace-2);padding:var(--espace-3) var(--espace-5);border-top:1px solid var(--bordure-legere);background:var(--fond-surface-2);flex-shrink:0">
+          <button type="button" onClick="{{ fermerDialogue }}" style="{{ styleSecondaireMd }}" style-hover="background:var(--fond-input)">Annuler</button>
+          <button type="button" onClick="{{ confirmerDialogue }}" disabled="{{ confirmationBloquee }}" style="{{ styleBoutonAction }}" style-hover="background:var(--ap-600)">{{ actionDialogue }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toastVisible }}">
+      <div role="status" class="ul-grain-fine" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;align-items:center;gap:var(--espace-3);min-width:300px;max-width:440px;padding:12px var(--espace-4);border:1px solid var(--glass-bordure);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);animation:ul-pop var(--dur-slow) var(--ease-out)">
+        <span style="flex-shrink:0;color:var(--succes-accent);display:flex">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M5 8.5l2 2 4-4"></path></svg>
+        </span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:var(--font-size-body-sm);font-weight:600;color:var(--texte-primaire)">{{ titreToast }}</span>
+          <span style="display:block;margin-top:1px;font-size:var(--font-size-caption);line-height:1.45;color:var(--texte-secondaire)">{{ corpsToast }}</span>
+        </span>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1460px;margin:10px auto 0;font-family:var(--font-mono);font-size:var(--font-size-overline);line-height:1.6;color:var(--texte-tertiaire)">D2 · FEFO appliqué pour de vrai : le lot le plus proche de la péremption est marqué « sort en premier » · 4 cartes de fraîcheur qui filtrent la table · un lot périmé ne peut pas sortir · l'entrée juge la date saisie en direct · la sortie exige un motif et se plafonne au reste du lot</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:940},&quot;vueInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bureau&quot;,&quot;tablette&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;bureau&quot;,&quot;tsType&quot;:&quot;'bureau' | 'tablette' | 'mobile'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SVG = (n, sw, inner) =>
+  '<svg width="' + n + '" height="' + n + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+  '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+
+const G = {
+  home: '<path d="M1 6.5L8 1l7 5.5V15H1V6.5z"/><rect x="5.5" y="9" width="5" height="6" rx=".5" fill="currentColor" opacity=".35"/>',
+  hospital: '<rect x="2" y="3" width="12" height="12" rx="1"/><path d="M8 7v4M6 9h4"/><path d="M5 3V2M11 3V2"/>',
+  /* `pill` de Lucide, ramené de 24×24 à 16×16 : capsule fermée à 45° + trait de refente
+     perpendiculaire au grand axe, exactement du diamètre de la capsule (milieu réel 8,8). */
+  pill: '<path d="m7 13.7 6.7-6.7a3.3 3.3 0 1 0-4.7-4.7l-6.7 6.7a3.3 3.3 0 1 0 4.7 4.7Z"/><path d="m5.7 5.7 4.7 4.7"/>',
+  ordonnance: '<rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/><path d="M12 10l-1.5 2h2.5L11.5 14"/>',
+  calendrier: '<rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 3V1M11 3V1M2 7h12"/><rect x="5" y="9" width="2" height="2" rx=".5" fill="currentColor"/>',
+  utilisateur: '<circle cx="8" cy="5" r="3.5"/><path d="M2 14a6 6 0 0 1 12 0"/>',
+  entrant: '<path d="M8 2v9M4.5 7.5L8 11l3.5-3.5"/><path d="M2 14h12"/>',
+  sortant: '<path d="M8 11V2M4.5 5.5L8 2l3.5 3.5"/><path d="M2 14h12"/>',
+  check: '<path d="M2 9l4 4 8-8"/>',
+  alerte: '<path d="M8 1L1 14h14L8 1z"/><path d="M8 6v3M8 11v.5"/>',
+  croix: '<circle cx="8" cy="8" r="7"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/>',
+  info: '<circle cx="8" cy="8" r="7"/><path d="M8 7v4.5M8 5v.5"/>',
+  premier: '<path d="M11 4L7 8l4 4M5 4v8"/>',
+  precedent: '<path d="M10 4L6 8l4 4"/>',
+  suivant: '<path d="M6 4l4 4-4 4"/>',
+  dernier: '<path d="M5 4l4 4-4 4M11 4v8"/>',
+};
+
+const NAV = [
+  { titre: 'Principal', items: [{ cle: 'dashboard', label: 'Tableau de bord', icone: G.home }] },
+  { titre: 'Officine', items: [
+    { cle: 'pharmacie', label: 'Ma pharmacie', icone: G.hospital },
+    { cle: 'stock', label: 'Stock', icone: G.pill, badge: '3', tonBadge: 'alerte' },
+    { cle: 'delivrance', label: 'Délivrance', icone: G.ordonnance },
+    { cle: 'reservations', label: 'Réservations', icone: G.calendrier, badge: '7' },
+  ] },
+  { titre: 'Compte', items: [{ cle: 'parametres', label: 'Mes paramètres', icone: G.utilisateur }] },
+];
+
+/* Aujourd'hui = 10/08/2026 dans toutes les maquettes. */
+const AUJOURD_HUI = new Date(2026, 7, 10);
+const jours = (iso) => Math.round((new Date(iso) - AUJOURD_HUI) / 86400000);
+const dateFr = (iso) => {
+  const d = new Date(iso);
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+};
+
+const LOTS = [
+  { molecule: 'Insuline glargine', forme: 'Stylo 100 UI/ml', numero: 'LOT-2025-8841', peremption: '2026-08-24', quantite: 6, initiale: 20, froid: true },
+  { molecule: 'Amoxicilline 500 mg', forme: 'Gélules · boîte de 12', numero: 'LOT-2026-0117', peremption: '2026-09-02', quantite: 14, initiale: 60 },
+  { molecule: 'Paracétamol 500 mg', forme: 'Comprimés · boîte de 20', numero: 'LOT-2026-0088', peremption: '2026-09-05', quantite: 42, initiale: 200 },
+  { molecule: 'Metformine 850 mg', forme: 'Comprimés · boîte de 30', numero: 'LOT-2026-0204', peremption: '2026-10-18', quantite: 68, initiale: 120 },
+  { molecule: 'Amlodipine 5 mg', forme: 'Comprimés · boîte de 30', numero: 'LOT-2026-0231', peremption: '2026-11-30', quantite: 95, initiale: 150 },
+  { molecule: 'Ramipril 5 mg', forme: 'Comprimés · boîte de 28', numero: 'LOT-2026-0255', peremption: '2027-02-14', quantite: 110, initiale: 140 },
+  { molecule: 'Artéméther-luméfantrine', forme: 'Comprimés · boîte de 24', numero: 'LOT-2026-0262', peremption: '2027-04-30', quantite: 180, initiale: 200 },
+  { molecule: 'Sérum physiologique', forme: 'Ampoules 10 ml · boîte de 20', numero: 'LOT-2025-7712', peremption: '2026-07-28', quantite: 8, initiale: 40 },
+];
+
+const PILULES = {
+  success: ['var(--succes-fond)', 'var(--succes-texte)', 'var(--succes-accent)'],
+  warning: ['var(--alerte-fond)', 'var(--alerte-texte)', 'var(--alerte-accent)'],
+  error: ['var(--erreur-fond)', 'var(--erreur-texte)', 'var(--erreur-accent)'],
+  info: ['var(--info-fond)', 'var(--info-texte)', 'var(--info-accent)'],
+  neutral: ['var(--fond-surface-2)', 'var(--texte-secondaire)', 'var(--texte-tertiaire)'],
+};
+const CHAMP = 'width:100%;height:34px;box-sizing:border-box;padding:0 10px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface-2);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;';
+const OS = 'background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite;';
+
+/** Classe de fraîcheur d'un lot — la règle métier centrale de l'écran. */
+function classe(lot) {
+  const j = jours(lot.peremption);
+  if (j < 0) return 'perime';
+  if (j < 30) return 'alerte';
+  if (j < 90) return 'surveiller';
+  return 'sain';
+}
+const LIBELLES = {
+  perime: ['Périmé', 'error'],
+  alerte: ['Alerte', 'warning'],
+  surveiller: ['À surveiller', 'info'],
+  sain: ['Sain', 'success'],
+};
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: null, etat: null, vue: null, navActif: 'stock',
+    survol: false, menuOuvert: false, navMobile: false, largeur: 1440,
+    recherche: '', onglet: 'tous', tri: 'fefo',
+    dialogue: null, lotChoisi: null,
+    molecule: '', numero: '', date: '', quantite: '', sortie: '', motif: null,
+    toast: null,
+  };
+
+  componentDidMount() {
+    this.observer = new ResizeObserver((e) => {
+      const l = Math.round(e[0].contentRect.width);
+      if (l && Math.abs(l - this.state.largeur) > 2) this.setState({ largeur: l });
+    });
+    if (this.cadre) this.observer.observe(this.cadre);
+  }
+  componentWillUnmount() {
+    if (this.observer) this.observer.disconnect();
+    if (this.tToast) clearTimeout(this.tToast);
+  }
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get vue() { return this.state.vue ?? this.props.vueInitiale ?? 'bureau'; }
+
+  seg(actif) {
+    return 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid ' +
+      (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-size:var(--font-size-caption);font-weight:' + (actif ? '600' : '500') +
+      ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' + (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') +
+      (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  bouton(variante, taille) {
+    const t = taille === 'sm' ? { h: 28, px: 11, fs: 'var(--font-size-caption)', gap: 5 }
+            : { h: 36, px: 16, fs: 'var(--font-size-body)', gap: 6 };
+    const v = variante === 'primary' ? ['var(--ap-500)', '#fff', 'transparent']
+            : ['var(--fond-surface-2)', 'var(--texte-primaire)', 'var(--bordure-normale)'];
+    return 'display:inline-flex;align-items:center;justify-content:center;gap:' + t.gap + 'px;height:' + t.h +
+      'px;padding:0 ' + t.px + 'px;font-size:' + t.fs + ';font-weight:600;border-radius:var(--radius-md);background:' +
+      v[0] + ';color:' + v[1] + ';border:1px solid ' + v[2] + ';white-space:nowrap;transition:background var(--dur-fast) linear,border-color var(--dur-fast) linear;';
+  }
+
+  toaster(titre, corps) {
+    if (this.tToast) clearTimeout(this.tToast);
+    this.setState({ toast: { titre, corps } });
+    this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, vue = this.vue;
+    const set = (p) => this.setState(p);
+    const L = this.state.largeur;
+    const estMobile = L < 768;
+    const sidebarOuverte = estMobile ? true : (this.state.survol || this.state.menuOuvert);
+    const cadreLargeur = vue === 'mobile' ? 390 : vue === 'tablette' ? 900 : 1460;
+    const chargement = etat === 'chargement', erreur = etat === 'erreur', vide = etat === 'vide';
+    const dialogue = this.state.dialogue;
+
+    const groupesBarre = [
+      { label: 'Vue', options: [
+        { k: 'bureau', label: 'Bureau' }, { k: 'tablette', label: 'Tablette' }, { k: 'mobile', label: 'Mobile' },
+      ], courant: vue, appliquer: (k) => set({ vue: k, navMobile: false, survol: false, menuOuvert: false }) },
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k, dialogue: null }) },
+    ];
+
+    const enTete = (droite) =>
+      'padding:var(--espace-2) var(--espace-4);text-align:' + (droite ? 'right' : 'left') +
+      ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire);white-space:nowrap;position:sticky;top:0;z-index:5;background:var(--fond-surface-2)';
+    const iconBouton = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-secondaire);transition:background var(--dur-fast) linear;';
+
+    const compte = { perime: 0, alerte: 0, surveiller: 0, sain: 0 };
+    LOTS.forEach((l) => { compte[classe(l)] += 1; });
+
+    /* FEFO : le premier lot non périmé de la liste triée par péremption sort en premier. */
+    const parPeremption = LOTS.slice().sort((a, b) => new Date(a.peremption) - new Date(b.peremption));
+    const premierFefo = parPeremption.find((l) => classe(l) !== 'perime');
+
+    const q = this.state.recherche.trim().toLowerCase();
+    let visibles = LOTS.filter((l) => {
+      const okOnglet = this.state.onglet === 'tous' || classe(l) === this.state.onglet;
+      const okQ = !q || l.molecule.toLowerCase().includes(q) || l.numero.toLowerCase().includes(q);
+      return okOnglet && okQ;
+    });
+    visibles = visibles.sort((a, b) => this.state.tri === 'fefo'
+      ? new Date(a.peremption) - new Date(b.peremption)
+      : a.molecule.localeCompare(b.molecule, 'fr'));
+
+    const lot = this.state.lotChoisi;
+    const qteSortie = parseInt((this.state.sortie || '').replace(/[^0-9]/g, ''), 10);
+    const sortie = isNaN(qteSortie) ? 0 : qteSortie;
+    const tropSortie = lot && sortie > lot.quantite;
+    const erreurSortie = tropSortie ? 'Il ne reste que ' + lot.quantite + ' unités dans ce lot.' : '';
+    const sortieInvalide = !lot || sortie <= 0 || tropSortie || !this.state.motif;
+
+    /* L'entrée juge la date saisie sur-le-champ : c'est là qu'on évite un lot déjà périmé. */
+    const dateSaisie = this.state.date;
+    const jSaisis = dateSaisie ? jours(dateSaisie) : null;
+    const apercu = jSaisis === null ? null
+      : jSaisis < 0
+        ? { ton: 'error', icone: G.croix, titre: 'Ce lot est déjà périmé', corps: 'Un lot dont la date est passée ne peut pas entrer en stock. Vérifiez la date portée sur la boîte.' }
+      : jSaisis < 30
+        ? { ton: 'warning', icone: G.alerte, titre: 'Péremption dans ' + jSaisis + ' jours', corps: 'Ce lot entrera directement en alerte de fraîcheur et sortira en priorité au comptoir.' }
+      : jSaisis < 90
+        ? { ton: 'info', icone: G.info, titre: 'Péremption dans ' + jSaisis + ' jours', corps: 'Ce lot sera classé « à surveiller ». Il passera avant les lots plus récents.' }
+        : { ton: 'success', icone: G.check, titre: 'Lot sain · ' + jSaisis + ' jours de marge', corps: 'Il prendra sa place dans l\u2019ordre FEFO selon sa date.' };
+    const apercuTons = apercu ? PILULES[apercu.ton] : ['', '', ''];
+    const entreeInvalide = !this.state.molecule.trim() || !this.state.numero.trim() || !dateSaisie ||
+      !this.state.quantite.trim() || (jSaisis !== null && jSaisis < 0);
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      mesure: L + ' px · ' + (estMobile ? 'mobile' : L < 1024 ? 'tablette' : 'bureau'),
+      estMobile, sidebarOuverte,
+      estChargement: chargement, estVide: vide, estErreur: erreur,
+      contenuVisible: !chargement && !erreur && !vide,
+      quatre: [1, 2, 3, 4], huit: [1, 2, 3, 4, 5, 6, 7, 8],
+      styleOs: OS,
+      themeLibelle: theme === 'dark' ? 'Sombre' : 'Clair',
+      refCadre: (el) => { this.cadre = el; if (el && this.observer) this.observer.observe(el); },
+
+      barreGroupes: groupesBarre.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.seg(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      styleFrame: 'position:relative;width:100%;max-width:' + cadreLargeur + 'px;height:' + (vue === 'mobile' ? 760 : 800) +
+        'px;background-color:var(--fond-page);border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--ombre-3)',
+      styleSidebar: 'position:absolute;left:0;top:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow:hidden;width:' +
+        (estMobile ? 264 : sidebarOuverte ? 264 : 68) + 'px;background:var(--glass-sidebar-bg);backdrop-filter:blur(var(--glass-sidebar-blur));-webkit-backdrop-filter:blur(var(--glass-sidebar-blur));border-right:1px solid var(--glass-bordure);user-select:none;box-shadow:' +
+        ((estMobile ? this.state.navMobile : sidebarOuverte) ? 'var(--ombre-4)' : 'none') + ';transform:' +
+        (estMobile ? 'translateX(' + (this.state.navMobile ? '0' : '-100%') + ')' : 'none') +
+        ';transition:width .18s ease, transform .22s ease, box-shadow .18s ease',
+      styleSidebarEntete: 'flex-shrink:0;display:flex;align-items:center;gap:var(--espace-2);padding:' +
+        (sidebarOuverte ? '12px var(--espace-4)' : '12px 0') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+        ';border-bottom:1px solid var(--bordure-legere)',
+      styleNav: 'flex:1;overflow-y:auto;overflow-x:hidden;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0'),
+      styleSidebarPied: 'position:relative;flex-shrink:0;padding:' + (sidebarOuverte ? 'var(--espace-2)' : '8px 0') +
+        ';border-top:1px solid var(--bordure-legere)',
+      styleBoutonUtilisateur: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);justify-content:' +
+        (sidebarOuverte ? 'flex-start' : 'center') + ';padding:' + (sidebarOuverte ? 'var(--espace-2)' : '6px 0') +
+        ';border:0;border-radius:var(--radius-md);background:transparent;text-align:left;transition:background var(--dur-fast) linear',
+      styleMenuUtilisateur: 'position:absolute;left:var(--espace-2);bottom:calc(100% + 6px);width:224px;border:1px solid var(--bordure-normale);border-radius:var(--radius-xl);background-color:var(--fond-surface);box-shadow:var(--ombre-4);overflow:hidden;z-index:60;animation:ul-pop var(--dur-slow) var(--ease-out)',
+      styleItemMenu: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--texte-secondaire);text-align:left;transition:background var(--dur-fast) linear',
+      styleItemMenuDanger: 'width:100%;display:flex;align-items:center;gap:var(--espace-2);padding:var(--espace-2) var(--espace-3);border:0;border-radius:var(--radius-md);background:transparent;font-size:var(--font-size-body-sm);color:var(--erreur-accent);text-align:left;transition:background var(--dur-fast) linear',
+
+      groupes: NAV.map((gr, gi) => ({
+        titre: gr.titre,
+        libelleVisible: sidebarOuverte,
+        separateurVisible: !sidebarOuverte && gi > 0,
+        style: 'margin-top:' + (gi > 0 ? (sidebarOuverte ? 'var(--espace-3)' : '10px') : '0'),
+        items: gr.items.map((i) => {
+          const actif = this.state.navActif === i.cle;
+          const [bgb, fgb] = i.tonBadge ? PILULES.warning : ['var(--erreur-accent)', '#fff'];
+          return {
+            label: i.label, titre: sidebarOuverte ? '' : i.label, badge: i.badge,
+            badgeVisible: sidebarOuverte && !!i.badge,
+            pastilleRail: !sidebarOuverte && !!i.badge,
+            labelVisible: sidebarOuverte,
+            actifOuvert: actif && sidebarOuverte,
+            icone: { __html: SVG(17, actif ? '2' : '1.5', i.icone) },
+            badgeStyle: 'flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:' + bgb +
+              ';color:' + fgb + ';font-family:var(--font-mono);font-size:var(--font-size-overline);font-weight:700;line-height:18px;text-align:center',
+            style: 'position:relative;display:flex;align-items:center;width:' + (sidebarOuverte ? '100%' : '40px') +
+              ';height:' + (sidebarOuverte ? 'auto' : '38px') + ';justify-content:' + (sidebarOuverte ? 'flex-start' : 'center') +
+              ';gap:' + (sidebarOuverte ? 'var(--espace-2)' : '0') + ';padding:' + (sidebarOuverte ? '8px var(--espace-3)' : '0') +
+              ';margin:' + (sidebarOuverte ? '0' : '2px 14px') + ';border:0;border-radius:var(--radius-md);text-align:left;font-weight:' +
+              (actif ? '600' : '500') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-secondaire)') +
+              ';background:' + (actif ? 'var(--ap-50)' : 'transparent') + ';transition:background var(--dur-fast) linear,color var(--dur-fast) linear;',
+            onClick: () => ULAMU_ALLER(i.label, () => set({ navActif: i.cle, menuOuvert: false })),
+          };
+        }),
+      })),
+
+      styleMain: 'position:absolute;top:0;bottom:0;right:0;left:' + (estMobile ? 0 : 68) + 'px;display:flex;flex-direction:column;overflow:hidden',
+      styleTopbar: 'flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 var(--espace-4);border-bottom:1px solid var(--bordure-legere);background:var(--glass-header-bg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      filVisible: !estMobile,
+      rechercheLarge: L >= 640,
+      styleRecherche: 'display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;' +
+        (L >= 640 ? 'width:280px;flex:0 1 280px;min-width:160px;' : 'width:30px;justify-content:center;') +
+        'border:1px solid var(--bordure-normale);border-radius:var(--radius-md);background:var(--fond-surface-2);color:var(--texte-tertiaire)',
+      styleZone: 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0 ' +
+        (estMobile ? 'var(--espace-2) var(--espace-2)' : 'var(--espace-4) var(--espace-4)'),
+      styleEntetePage: 'flex-shrink:0;margin:0 ' + (estMobile ? '-8px' : '-16px') + ';padding:' +
+        (estMobile ? 'var(--espace-3) var(--espace-4)' : 'var(--espace-4) var(--espace-6)') +
+        ';background-color:var(--fond-surface);border-bottom:1px solid var(--bordure-legere)',
+      styleTuileTitre: 'width:' + (estMobile ? 32 : 38) + 'px;height:' + (estMobile ? 32 : 38) +
+        'px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--ap-50);color:var(--ap-600);display:flex;align-items:center;justify-content:center',
+      styleDefilement: 'flex:1;min-height:0;overflow-y:auto;padding-top:var(--espace-4)',
+      styleGrilleFraicheur: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' + (L < 620 ? 2 : L < 1000 ? 2 : 4) + ',minmax(0,1fr))',
+
+      sousTitrePage: vide ? 'Aucun lot enregistré'
+        : LOTS.length + ' lots · ' + compte.alerte + ' en alerte, ' + compte.perime + ' périmé' + (compte.perime > 1 ? 's' : '') + ' à retirer',
+      actionsEntete: L >= 720,
+
+      fraicheur: [
+        { k: 'sain', label: 'Lots sains', valeur: compte.sain, unite: '> 90 jours', aide: 'Aucune action requise', ton: 'success' },
+        { k: 'surveiller', label: 'À surveiller', valeur: compte.surveiller, unite: '< 90 jours', aide: 'Sortent avant les autres', ton: 'info' },
+        { k: 'alerte', label: 'Alerte', valeur: compte.alerte, unite: '< 30 jours', aide: 'À écouler en priorité', ton: 'warning' },
+        { k: 'perime', label: 'Périmés', valeur: compte.perime, unite: 'à retirer', aide: 'Sortie bloquée', ton: 'error' },
+      ].map((f) => {
+        const [bg, fg, dot] = PILULES[f.ton];
+        const actif = this.state.onglet === f.k;
+        return {
+          label: f.label, valeur: String(f.valeur), unite: f.unite, aide: f.aide,
+          couleurValeur: f.valeur === 0 ? 'var(--texte-tertiaire)' : fg,
+          point: 'width:8px;height:8px;flex-shrink:0;border-radius:50%;background:' + dot,
+          carte: 'display:block;width:100%;padding:var(--espace-4);border-radius:var(--radius-xl);text-align:left;background:' +
+            (actif ? bg : 'var(--fond-surface)') + ';border:1px solid ' +
+            (actif ? dot : 'var(--bordure-legere)') + ';transition:border-color var(--dur-fast) linear,background var(--dur-fast) linear',
+          onClick: () => set({ onglet: actif ? 'tous' : f.k }),
+        };
+      }),
+
+      alerteVisible: compte.alerte > 0 || compte.perime > 0,
+      titreAlerte: compte.perime > 0
+        ? compte.perime + ' lot' + (compte.perime > 1 ? 's' : '') + ' périmé' + (compte.perime > 1 ? 's' : '') + ' encore en rayon'
+        : compte.alerte + ' lots arrivent à péremption',
+      corpsAlerte: compte.perime > 0
+        ? 'Un lot périmé ne peut plus être délivré. Retirez-le du stock avec un motif pour que le comptoir cesse de le proposer.'
+        : 'Ces lots doivent être écoulés en priorité. Le comptoir les propose déjà en premier.',
+      voirAlertes: () => set({ onglet: compte.perime > 0 ? 'perime' : 'alerte' }),
+
+      styleCarte: 'background-color:var(--fond-surface);border:1px solid var(--bordure-legere);border-radius:var(--radius-xl);overflow:hidden',
+      vRecherche: this.state.recherche,
+      majRecherche: (e) => set({ recherche: e.target.value }),
+      styleChampFiltre: 'width:100%;height:34px;box-sizing:border-box;padding:0 10px 0 32px;border-radius:var(--radius-md);border:1px solid var(--bordure-normale);background:var(--fond-surface);color:var(--texte-primaire);font-size:var(--font-size-body-sm);outline:none;transition:border-color var(--dur-fast) linear,box-shadow var(--dur-fast) linear;',
+      onglets: [
+        { k: 'tous', label: 'Tous', compte: LOTS.length },
+        { k: 'alerte', label: 'Alerte', compte: compte.alerte },
+        { k: 'surveiller', label: 'À surveiller', compte: compte.surveiller },
+        { k: 'perime', label: 'Périmés', compte: compte.perime },
+      ].map((o) => {
+        const actif = this.state.onglet === o.k;
+        return {
+          label: o.label, actif,
+          compte: String(o.compte),
+          compteVisible: L >= 1000,
+          compteStyle: 'font-family:var(--font-mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:9999px;background:' +
+            (actif ? 'var(--ap-50)' : 'var(--fond-input)') + ';color:' + (actif ? 'var(--ap-700)' : 'var(--texte-tertiaire)'),
+          style: this.seg(actif),
+          onClick: () => set({ onglet: o.k }),
+        };
+      }),
+      triVisible: L >= 900,
+      tris: [
+        { k: 'fefo', label: 'FEFO', aide: 'Par date de péremption croissante — l\u2019ordre de sortie réel' },
+        { k: 'nom', label: 'Molécule', aide: 'Par ordre alphabétique' },
+      ].map((t) => ({
+        label: t.label, aide: t.aide,
+        style: this.seg(this.state.tri === t.k),
+        onClick: () => set({ tri: t.k }),
+      })),
+
+      colonnes: ['Produit', 'N° de lot', 'Péremption', 'Reste', 'Fraîcheur', ''].map((c, i) => ({
+        label: c, style: enTete(i === 3 || i === 5),
+      })),
+      lots: visibles.map((l, k) => {
+        const cl = classe(l);
+        const [libelle, ton] = LIBELLES[cl];
+        const [bg, fg, dot] = PILULES[ton];
+        const j = jours(l.peremption);
+        const perime = cl === 'perime';
+        return {
+          molecule: l.molecule, forme: l.forme, numero: l.numero,
+          peremption: dateFr(l.peremption),
+          jours: perime ? 'périmé depuis ' + Math.abs(j) + ' j' : 'dans ' + j + ' j',
+          couleurJours: perime ? 'var(--erreur-texte)' : j < 30 ? 'var(--alerte-texte)' : 'var(--texte-tertiaire)',
+          quantite: String(l.quantite), initiale: String(l.initiale),
+          etat: libelle,
+          froidVisible: !!l.froid,
+          icone: { __html: SVG(14, '1.5', G.pill) },
+          tuile: 'width:26px;height:26px;flex-shrink:0;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:' +
+            (perime ? 'var(--erreur-fond)' : 'var(--fond-surface-2)') + ';color:' +
+            (perime ? 'var(--erreur-accent)' : 'var(--texte-tertiaire)'),
+          pilule: 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:var(--font-size-overline);font-weight:600;letter-spacing:.02em;white-space:nowrap;background:' + bg + ';color:' + fg,
+          point: 'width:5px;height:5px;border-radius:50%;flex-shrink:0;background:' + dot,
+          fefoVisible: premierFefo && l.numero === premierFefo.numero && this.state.tri === 'fefo',
+          sortieBloquee: perime,
+          styleSortie: this.bouton('secondary', 'sm') + (perime ? 'opacity:.35;cursor:not-allowed;' : ''),
+          onSortie: () => { if (!perime) set({ dialogue: 'sortie', lotChoisi: l, sortie: '', motif: null }); },
+          ligne: 'background:' + (k % 2 === 1 ? 'var(--ligne-alt)' : 'transparent') +
+            ';border-bottom:1px solid var(--bordure-legere);transition:background var(--dur-fast) linear',
+        };
+      }),
+      piedTable: visibles.length + ' lot' + (visibles.length > 1 ? 's' : '') + ' affiché' + (visibles.length > 1 ? 's' : '') +
+        ' sur ' + LOTS.length + ' · tri ' + (this.state.tri === 'fefo' ? 'FEFO' : 'alphabétique'),
+      pagination: [
+        { aria: 'Première page', icone: G.premier }, { aria: 'Page précédente', icone: G.precedent },
+        { aria: 'Page suivante', icone: G.suivant }, { aria: 'Dernière page', icone: G.dernier },
+      ].map((p, i) => ({
+        aria: p.aria,
+        icone: { __html: SVG(13, '1.5', p.icone) },
+        style: iconBouton + 'width:26px;height:26px;' + (i < 2 ? 'opacity:.45;cursor:not-allowed;' : ''),
+      })),
+
+      stylePrimaire: this.bouton('primary', 'md'),
+      styleSecondaireMd: this.bouton('secondary', 'md'),
+      styleSecondaireSm: this.bouton('secondary', 'sm'),
+      styleIconBouton: iconBouton,
+      styleLabel: 'font-size:var(--font-size-label);font-weight:600;color:var(--texte-secondaire)',
+      styleChamp: CHAMP,
+      styleChampMono: CHAMP + 'font-family:var(--font-mono);',
+      styleGrilleChamps: 'display:grid;gap:var(--espace-3);grid-template-columns:repeat(' + (L < 700 ? 1 : 2) + ',minmax(0,1fr))',
+
+      dialogueOuvert: !!dialogue,
+      dialogueEntree: dialogue === 'entree',
+      dialogueSortie: dialogue === 'sortie',
+      styleModale: 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;width:' +
+        Math.min(dialogue === 'entree' ? 560 : 460, Math.max(280, L - 40)) +
+        'px;max-height:calc(100% - 40px);display:flex;flex-direction:column;background-color:var(--fond-surface);border-radius:var(--radius-xl);box-shadow:var(--ombre-5);overflow:hidden;animation:ul-modal-in var(--dur-slow) var(--ease-out)',
+      iconeModale: { __html: SVG(16, '1.5', dialogue === 'entree' ? G.entrant : G.sortant) },
+      titreDialogue: dialogue === 'entree' ? 'Enregistrer une entrée de lot' : 'Enregistrer une sortie',
+      sousTitreDialogue: dialogue === 'entree' ? 'La date de péremption détermine l\u2019ordre de sortie'
+        : 'Toute sortie hors délivrance exige un motif',
+
+      vMolecule: this.state.molecule, majMolecule: (e) => set({ molecule: e.target.value }),
+      vNumero: this.state.numero, majNumero: (e) => set({ numero: e.target.value }),
+      vDate: this.state.date, majDate: (e) => set({ date: e.target.value }),
+      vQuantite: this.state.quantite, majQuantite: (e) => set({ quantite: e.target.value }),
+      apercuVisible: !!apercu,
+      apercuTitre: apercu ? apercu.titre : '',
+      apercuCorps: apercu ? apercu.corps : '',
+      apercuIcone: { __html: apercu ? SVG(16, '1.5', apercu.icone) : '' },
+      apercuFond: apercuTons[0],
+      apercuTexte: apercuTons[1],
+      apercuCouleur: apercuTons[2],
+
+      lotChoisiTitre: lot ? lot.molecule : '',
+      lotChoisiMeta: lot ? lot.numero + ' · péremption ' + dateFr(lot.peremption) + ' · reste ' + lot.quantite : '',
+      vSortie: this.state.sortie, majSortie: (e) => set({ sortie: e.target.value }),
+      motifs: ['Casse', 'Retour fournisseur', 'Périmé', 'Don', 'Inventaire'].map((m) => ({
+        label: m,
+        style: this.seg(this.state.motif === m) + (this.state.motif === m ? '' : 'border-color:var(--bordure-legere);background:var(--fond-surface-2);'),
+        onClick: () => set({ motif: m }),
+      })),
+      erreurSortieVisible: !!erreurSortie,
+      erreurSortie,
+      recapSortie: [
+        { label: 'Quantité sortie', valeur: String(sortie), couleur: 'var(--texte-primaire)', poids: '500' },
+        { label: 'Reste après sortie', valeur: lot ? String(Math.max(0, lot.quantite - sortie)) : '—', couleur: 'var(--texte-primaire)', poids: '700' },
+      ],
+
+      confirmationBloquee: dialogue === 'entree' ? entreeInvalide : sortieInvalide,
+      styleBoutonAction: this.bouton('primary', 'md') +
+        ((dialogue === 'entree' ? entreeInvalide : sortieInvalide) ? 'opacity:.4;cursor:not-allowed;' : ''),
+      actionDialogue: dialogue === 'entree' ? 'Enregistrer le lot' : 'Enregistrer la sortie',
+      ouvrirEntree: () => set({ dialogue: 'entree', molecule: '', numero: '', date: '', quantite: '' }),
+      ouvrirSortie: () => set({ dialogue: 'sortie', lotChoisi: premierFefo, sortie: '', motif: null }),
+      fermerDialogue: () => set({ dialogue: null, lotChoisi: null }),
+      confirmerDialogue: () => {
+        if (dialogue === 'entree') {
+          if (entreeInvalide) return;
+          const nom = this.state.molecule;
+          set({ dialogue: null, molecule: '', numero: '', date: '', quantite: '' });
+          this.toaster('Lot enregistré', nom + ' · il prend sa place dans l\u2019ordre FEFO selon sa péremption.');
+        } else {
+          if (sortieInvalide) return;
+          const nom = lot.molecule, m = this.state.motif;
+          set({ dialogue: null, lotChoisi: null, sortie: '', motif: null });
+          this.toaster('Sortie enregistrée', sortie + ' unités de ' + nom + ' · motif : ' + m.toLowerCase() + '.');
+        }
+      },
+      stop: (e) => e.stopPropagation(),
+
+      toastVisible: !!this.state.toast,
+      titreToast: this.state.toast ? this.state.toast.titre : '',
+      corpsToast: this.state.toast ? this.state.toast.corps : '',
+
+      menuOuvert: this.state.menuOuvert,
+      basculerMenu: () => set({ menuOuvert: !this.state.menuOuvert }),
+      deconnexion: () => ULAMU_ALLER('Se déconnecter'),
+      allerAccueil: () => ULAMU_ALLER('Tableau de bord'),
+      basculerTheme: () => set({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      survolerSidebar: () => { if (!estMobile) set({ survol: true }); },
+      quitterSidebar: () => { if (!estMobile) set({ survol: false, menuOuvert: false }); },
+      voileMobile: estMobile && this.state.navMobile,
+      ouvrirNavMobile: () => set({ navMobile: true }),
+      fermerNavMobile: () => set({ navMobile: false }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

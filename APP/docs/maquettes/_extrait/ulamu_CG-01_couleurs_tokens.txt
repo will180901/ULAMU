@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+ 
+ 
+ 
+ 
+ Ulamu — CG-01 Couleurs & Tokens 
+
+
+ 
+ 
+
+<!-- ── TOPBAR ── -->
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+
+ ulamu 
+ 
+ 
+
+ 
+
+ CG-01 
+ Couleurs &amp; Tokens
+ 
+
+ 
+
+
+ <!-- Toggle -->
+ 
+
+ 
+
+ 
+ Clair
+ 
+
+ 
+
+ 
+ Sombre
+ 
+
+ 
+
+ 
+
+<!-- ── PAGE ── -->
+ 
+
+ <!-- ── PAGE HEADER ── -->
+ 
+
+ 
+Design System · Module CG-01
+
+ 
+Couleurs &amp; Tokens
+
+ 
+Fondations chromatiques du système de design Ulamu. Ce document définit l'intégralité de la palette, les design tokens, les règles d'usage par contexte, et les contraintes absolues concernant les dégradés. Toute couleur utilisée dans l'interface doit être référencée ici.
+
+ 
+
+
+ <!-- ─────────────────────────────────
+ 1. COULEUR D'ACCENT PRINCIPALE
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+01 — Couleur d'accent principale
+
+ Bleu Cobalt · #2756A6 
+ 
+
+ 
+
+
+ 
+
+ 
+ L'accent est la seule couleur non-neutre de l'interface. Elle est réservée aux actions primaires, liens actifs, états de focus, et indicateurs d'état. Elle ne doit jamais décorer — elle doit toujours signifier . 
+ 
+
+
+ <!-- Accent scale -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 50 
+ #EBF0FA 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 100 
+ #C6D4F2 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 200 
+ #9DB5E8 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 300 
+ #6F92DA 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 400 
+ #4B75CD 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 500 · BASE 
+ #2756A6 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 600 
+ #1F479A 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 700 
+ #163588 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 800 
+ #0E2568 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 900 
+ #091849 
+ 
+
+ 
+
+ 
+
+
+ <!-- Alias tokens accent -->
+ 
+ | 
+ 
+
+ | Token | 
+ | Valeur | 
+ | Usage | 
+ 
+
+ | 
+ 
+ 
+
+ | --accent | 
+ | #2756A6 (500) | 
+ | Boutons primaires, liens actifs, icône active dans la sidebar | 
+ 
+
+ 
+
+ | --accent-hover | 
+ | #1F479A (600) | 
+ | État hover des éléments portant --accent | 
+ 
+
+ 
+
+ | --accent-subtle | 
+ | #C6D4F2 (100) | 
+ | Fond des badges, tags, et labels accent en mode clair | 
+ 
+
+ 
+
+ | --accent-fg | 
+ | #FFFFFF | 
+ | Texte/icônes sur fond --accent (ratio WCAG AA garanti) | 
+ 
+
+ 
+
+ | --accent-border | 
+ | #6F92DA (300) | 
+ | Bordure des éléments accent (focus ring, badges) | 
+ 
+
+ 
+
+ | --text-accent | 
+ | 600 (light) · 300 (dark) | 
+ | Texte de lien, label actif, token code dans la doc | 
+ 
+
+ 
+ 
+ 
+
+ <!-- ─────────────────────────────────
+ 2. ÉCHELLE DE GRIS NEUTRES
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+02 — Échelle de gris neutres
+
+ Style Notion · gris purs sans teinte bleue 
+ 
+
+ 
+
+
+ <!-- Light grays -->
+ 
+
+ 
+MODE CLAIR — Neutral Gray
+
+ 
+
+ 
+ Gray 50 #FAFAFA 
+
+ 
+ Gray 100 #F4F4F5 
+
+ 
+ Gray 200 #EBEBEC 
+
+ 
+ Gray 300 #D4D4D8 
+
+ 
+ Gray 400 #A1A1AA 
+
+ 
+ Gray 500 #71717A 
+
+ 
+ Gray 600 #52525B 
+
+ 
+ Gray 700 #3F3F46 
+
+ 
+ Gray 800 #27272A 
+
+ 
+ Gray 900 #111112 
+
+ 
+
+ 
+
+
+ <!-- Dark grays -->
+ 
+
+ 
+MODE SOMBRE — Surface tokens
+
+ 
+
+ 
+ bg-base #111113 
+
+ 
+ bg-subtle #18181B 
+
+ 
+ bg-muted #222226 
+
+ 
+ bg-elevated #2A2A2F 
+
+ 
+ border #3A3A3F 
+
+ 
+ disabled #52525B 
+
+ 
+ tertiary #71717A 
+
+ 
+ secondary #A1A1AA 
+
+ 
+ primary #D4D4D8 
+
+ 
+ high #F4F4F5 
+
+ 
+
+ 
+
+
+ <!-- Text tokens table -->
+ 
+ | 
+ | Token texte | | Valeur light | | Valeur dark | | Rôle | 
+ | 
+ 
+ 
+ | --text-primary | | #111112 | | #F4F4F5 | | Titres, labels importants, contenu principal | 
+
+ 
+ | --text-secondary | | #3F3F46 | | #A1A1AA | | Corps de texte, descriptions, métadonnées | 
+
+ 
+ | --text-tertiary | | #71717A | | #71717A | | Placeholders, hints, timestamps, légendes | 
+
+ 
+ | --text-disabled | | #A1A1AA | | #52525B | | Éléments désactivés, non-interactifs | 
+
+ 
+ | --text-inverse | | #FFFFFF | | #111112 | | Texte sur fond coloré (ex: bouton accent) | 
+
+ 
+ 
+ 
+
+ <!-- ─────────────────────────────────
+ 3. COULEURS SÉMANTIQUES
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+03 — Couleurs sémantiques
+
+ Désaturées · Intégrées au monochrome 
+ 
+
+ 
+
+
+ 
+
+
+ <!-- SUCCESS -->
+ 
+
+ 
+
+ 
+
+ Succès 
+ 
+
+ 
+
+ 
+
+ --success-bg 
+ 
+ #F0FAF3 / #0F2318 
+
+ 
+
+ 
+
+ --success-text 
+ 
+ #2B6B40 / #6DBF8A 
+
+ 
+
+ 
+
+ --success-dot 
+ 
+ #3D9A5C / #4CAF6E 
+
+ 
+
+ 
+
+ 
+ Consultation confirmée
+ 
+
+ 
+
+ 
+
+
+ <!-- WARNING -->
+ 
+
+ 
+
+ 
+
+ Avertissement 
+ 
+
+ 
+
+ 
+
+ --warning-bg 
+ 
+ #FEF9EC / #241B09 
+
+ 
+
+ 
+
+ --warning-text 
+ 
+ #7A5515 / #D4A430 
+
+ 
+
+ 
+
+ --warning-dot 
+ 
+ #C49128 (×2) 
+
+ 
+
+ 
+
+ 
+ Stock faible — pharmacie
+ 
+
+ 
+
+ 
+
+
+ <!-- ERROR -->
+ 
+
+ 
+
+ 
+
+ Erreur 
+ 
+
+ 
+
+ 
+
+ --error-bg 
+ 
+ #FDF2F2 / #200F0F 
+
+ 
+
+ 
+
+ --error-text 
+ 
+ #7A2323 / #E07070 
+
+ 
+
+ 
+
+ --error-dot 
+ 
+ #C44040 (×2) 
+
+ 
+
+ 
+
+ 
+ Connexion échouée
+ 
+
+ 
+
+ 
+
+
+ <!-- INFO -->
+ 
+
+ 
+
+ 
+
+ Information 
+ 
+
+ 
+
+ 
+
+ --info-bg 
+ 
+ #F0F5FD / #0C1528 
+
+ 
+
+ 
+
+ --info-text 
+ 
+ #1D3F7A / #7AAAE0 
+
+ 
+
+ 
+
+ --info-dot 
+ 
+ --accent-500 / --accent-300 
+
+ 
+
+ 
+
+ 
+ Synchronisation en cours
+ 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ <!-- ─────────────────────────────────
+ 4. TOKENS DE SURFACE & FONDS
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+04 — Tokens de surface &amp; fonds
+
+ Hierarchy des fonds · mode clair &amp; sombre 
+ 
+
+ 
+
+
+ 
+
+ <!-- Light surfaces -->
+ 
+
+ 
+Mode Clair
+
+ 
+
+ 
+
+ 
+ --bg-base · #FAFAFA 
+
+ 
+ --bg-subtle · #F4F4F5 
+
+ 
+ --bg-muted · #EBEBEC 
+
+ 
+ --bg-elevated · #FFFFFF 
+
+ 
+
+ 
+
+ 
+
+ <!-- Dark surfaces -->
+ 
+
+ 
+Mode Sombre
+
+ 
+
+ 
+ --bg-base · #111113 
+
+ 
+ --bg-subtle · #18181B 
+
+ 
+ --bg-muted · #222226 
+
+ 
+ --bg-elevated · #2A2A2F 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Glass tokens -->
+ 
+
+ 
+Glassmorphism — Sidebar · Topbar · Toasts
+
+ 
+ | 
+ | Token | | Light | | Dark | | Application | 
+ | 
+ 
+ 
+ | --glass-bg | | rgba(255,255,255, 0.72) | | rgba(28,28,33, 0.72) | | Fond semi-transparent des surfaces glass | 
+
+ 
+ | --glass-blur | | 12px | | 14px | | backdrop-filter: blur() appliqué à la surface | 
+
+ 
+ | --glass-border | | rgba(0,0,0, 0.07) | | rgba(255,255,255, 0.07) | | Bordure subtile de la surface glass | 
+
+ 
+ 
+ 
+
+ 
+
+ <!-- ─────────────────────────────────
+ 5. RÈGLE DES DÉGRADÉS
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+05 — Règle absolue des dégradés
+
+ Aucun dégradé dans l'interface · exception graphiques uniquement 
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+
+ 
+ Dégradés INTERDITS
+ 
+
+ 
+ 
+Boutons (primaires, secondaires, destructifs)
+
+ 
+Arrière-plans de page et de section
+
+ 
+Cartes et conteneurs
+
+ 
+Sidebar et topbar
+
+ 
+Badges, tags, et labels
+
+ 
+Textes et titres
+
+ 
+Bordures et séparateurs
+
+ 
+Icônes et illustrations d'interface
+
+ 
+ 
+
+ 
+
+ 
+
+ 
+ Dégradés AUTORISÉS (1 seul cas)
+ 
+
+ 
+ 
+Area fill sous les courbes de graphiques statistiques uniquement
+
+ 
+Direction obligatoire : vertical, du haut vers le bas
+
+ 
+Couleur de départ : couleur de la courbe à 20% d'opacité max
+
+ 
+Couleur d'arrivée : transparente (opacity 0)
+
+ 
+Effet discret, jamais dominant visuellement
+
+ 
+Interdit sur les barres, donut, et gauge — area chart uniquement
+
+ 
+ 
+
+ 
+
+
+ <!-- Visual gradient demo -->
+ 
+
+ 
+EXEMPLE VISUEL — Dégradé autorisé sous courbe de graphique
+
+ 
+La courbe reste nette et colorée. Le dégradé sous la courbe est discret, débutant à 18% d'opacité et finissant à 0% — il donne du volume sans distraire.
+
+ 
+
+ 
+ 
+
+ 
+
+ fill: url(#areaGrad) 
+ stop-opacity: 0.18 → 0 
+ stroke: #2756A6 
+ stroke-width: 2.5px 
+ 
+
+ 
+
+ 
+
+ <!-- ─────────────────────────────────
+ 6. MAP D'USAGE COULEURS / UI
+ ───────────────────────────────────── -->
+ 
+ 
+
+ 
+06 — Carte d'usage couleurs
+
+ Quel token · pour quel composant 
+ 
+
+ 
+
+
+ 
+
+ <!-- UI Preview -->
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+ <!-- Annotations -->
+ 
+
+ 
+
+ 
+
+ 
+
+ --glass-bg · --glass-border 
+ Sidebar gauche et Topbar — fond semi-transparent avec flou, bordure harmonique 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --accent (500) 
+ Icône active dans la sidebar, bouton primaire, indicateur d'état actif 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --bg-elevated 
+ Cards, surfaces élevées, modales — fond le plus clair/lumineux de la hiérarchie 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --bg-muted 
+ Barres de navigation secondaires, en-têtes de tableaux, sections distinctes 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --text-secondary 
+ Corps de texte, labels de formulaires, descriptions de cartes 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --border-subtle 
+ Séparateurs de tableaux (1px), bordures de cards et composants courants 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ --accent (200) 
+ Ligne ou titre de section mis en avant dans une card, sans surcharger 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ <!-- ── FOOTER ── -->
+ 
+ 
+ulamu · Design System · CG-01 · v1.0
+
+ 
+
+ 
+
+ Document validé — Phase 2 en cours

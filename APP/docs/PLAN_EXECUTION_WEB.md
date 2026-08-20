@@ -239,7 +239,7 @@ Ces points sont **connus, tracés, et non traités à ce jour**. Aucun ne doit a
 
 | Étape | Objet | Statut | Confirmé en ligne le |
 |---|---|---|---|
-| 0 | Pont des jetons shadcn ↔ ULAMU | à faire | |
+| 0 | Pont des jetons shadcn ↔ ULAMU | **codé** (`cdfbc66`) — 3 défauts silencieux corrigés | *en attente de push* |
 | 1 | A1 — Connexion | à faire | |
 | 2 | A2 — Inscription | à faire | |
 | 3 | A3 — Mot de passe oublié | à faire | |

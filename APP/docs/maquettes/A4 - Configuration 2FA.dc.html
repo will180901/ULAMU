@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="ulamu.css" />
+<style>
+/* Jetons : ulamu.css fait foi. Ici, uniquement ce qui est propre aux écrans d'authentification. */
+:root{
+--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--grain-fine:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-card-bg:rgba(255,255,255,.80);--glass-toast-bg:rgba(255,255,255,.88);
+}
+[data-theme="dark"]{
+--grain-btn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+--glass-card-bg:rgba(22,27,34,.80);--glass-toast-bg:rgba(22,27,34,.88);
+}
+@keyframes ul-spin{to{transform:rotate(360deg)}}
+@keyframes ul-shimmer{0%{background-position:-320px 0}100%{background-position:320px 0}}
+@keyframes ulamu-step-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important}}
+@media (prefers-contrast:more){[data-grain]{background-image:none !important}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background-color:var(--fond-page);font-family:var(--font-body);color:var(--texte-primaire);padding:20px;box-sizing:border-box">
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1120px;margin:0 auto 16px;padding:10px 14px;background-color:var(--glass-toast-bg);border:1px solid var(--bordure-legere);border-radius:10px;box-shadow:var(--ombre-1)">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--ap-400);border:1px solid var(--bordure-legere);background:var(--fond-surface-2);padding:3px 7px;border-radius:4px">A4</span>
+      <span style="font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:-.01em">Configuration 2FA</span>
+      <span style="font-family:var(--font-body);font-size:12px;color:var(--texte-tertiaire)">Écran bloquant — avant tout accès</span>
+    </div>
+    <div style="flex:1"></div>
+    <sc-for list="{{ barreGroupes }}" as="g" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--texte-tertiaire)">{{ g.label }}</span>
+        <div style="display:flex;gap:2px;padding:3px;background:var(--fond-surface-2);border:1px solid var(--bordure-legere);border-radius:var(--radius-lg)">
+          <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="2">
+            <button type="button" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div data-grain="true" style="display:flex;align-items:center;justify-content:center;min-height:760px;padding:40px 20px;border:1px solid var(--bordure-normale);border-radius:10px;background-color:var(--fond-page);background-image:var(--grain);background-size:200px 200px;max-width:1120px;margin:0 auto;box-sizing:border-box">
+
+    <div style="width:460px;max-width:100%">
+      <div style="display:flex;justify-content:center;margin-bottom:24px">
+        <span style="display:inline-flex;align-items:center;gap:9px">
+          <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2756A6"></rect><g transform="translate(4 4) scale(1.5)"><path d="M8 2C5.8 2 4 3.8 4 6c0 1.4.7 2.6 1.8 3.3L5 12h6l-.8-2.7C11.3 8.6 12 7.4 12 6c0-2.2-1.8-4-4-4z" fill="#FFFFFF" fill-opacity="0.92"></path><rect x="5.5" y="12.5" width="5" height="1.5" rx="0.75" fill="#FFFFFF" fill-opacity="0.72"></rect></g></svg>
+          <span style="font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-.02em;color:var(--texte-primaire)">ulamu</span>
+        </span>
+      </div>
+
+      <div style="border:1px solid var(--bordure-legere);border-radius:10px;overflow:hidden;background-color:var(--glass-card-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background-image:var(--grain-fine);background-size:110px 110px;box-shadow:var(--ombre-1)">
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--fond-surface-2);border-bottom:1px solid var(--bordure-legere)">
+          <span aria-hidden="true" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;color:var(--ap-600);display:flex">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1l5.5 2v5C13.5 12 11 14.5 8 15c-3-0.5-5.5-3-5.5-7V3L8 1z"></path><path d="M5.5 8l2 2 3-3"></path></svg>
+          </span>
+          <span style="min-width:0">
+            <span style="display:block;font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--texte-primaire)">Sécurisez votre compte</span>
+            <span style="display:block;margin-top:2px;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">La double authentification (TOTP) est obligatoire pour tous les comptes professionnels.</span>
+          </span>
+        </div>
+
+        <div style="padding:16px">
+
+          <sc-if value="{{ etapeScan }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:16px">
+            <p style="margin:0;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">1. Scannez ce QR code avec Google Authenticator, Authy ou une application équivalente.</p>
+
+            <div style="display:flex;justify-content:center">
+              <span style="display:block;padding:8px;border-radius:6px;border:1px solid var(--bordure-normale);background:#FFFFFF" dangerouslySetInnerHTML="{{ qr }}"></span>
+            </div>
+
+            <div>
+              <p style="margin:0 0 4px;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">Ou saisissez ce code manuellement :</p>
+              <div style="display:flex;align-items:center;gap:8px">
+                <code style="flex:1;min-width:0;font-family:var(--font-mono);font-size:13px;line-height:1.6;padding:6px 10px;border-radius:6px;background:var(--fond-surface-2);word-break:break-all;color:var(--texte-primaire)">{{ secret }}</code>
+                <button type="button" onClick="{{ copier }}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border:1px solid var(--bordure-normale);border-radius:4px;background-color:var(--fond-surface-2);background-image:var(--grain-btn);background-size:110px 110px;color:var(--texte-primaire);font-family:var(--font-body);font-size:13px;font-weight:600;transition:background-color 250ms linear" style-hover="background-color:var(--ap-50)">
+                  <span style="display:flex;width:13px;height:13px" dangerouslySetInnerHTML="{{ iconeCopie }}"></span>
+                  {{ libelleCopie }}
+                </button>
+              </div>
+            </div>
+
+            <p style="margin:0;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">2. Entrez le code à 6 chiffres généré par l'application.</p>
+
+            <div>
+              <span style="display:block;margin-bottom:6px;font-family:var(--font-body);font-size:12px;line-height:1.4;font-weight:600;color:var(--texte-secondaire)">Code TOTP</span>
+              <div role="group" aria-label="Code à six chiffres" style="display:flex;gap:8px">
+                <sc-for list="{{ casesOtp }}" as="c" hint-placeholder-count="6">
+                  <span style="{{ c.style }}">{{ c.valeur }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+                <sc-for list="{{ pave }}" as="t" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+
+            <sc-if value="{{ enErreur }}">
+              <p role="alert" style="display:flex;align-items:center;gap:6px;margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--bordure-legere);background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--erreur-texte)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7"></circle><path d="M8 5v3.5M8 11v.5"></path></svg>
+                Code invalide — réessayez.
+              </p>
+            </sc-if>
+
+            <button type="button" onClick="{{ activer }}" style="{{ stylePrimaire }}">Activer la double authentification</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ etapeCodes }}">
+          <div style="animation:ulamu-step-fade 280ms ease;display:flex;flex-direction:column;gap:16px">
+            <p style="margin:0;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">Notez ces 10 codes de secours dans un endroit sûr — ils ne seront <strong style="color:var(--texte-primaire)">plus jamais affichés</strong>. Chacun permet une seule récupération de compte si vous perdez votre application d'authentification.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px;border-radius:6px;background:var(--fond-surface-2)">
+              <sc-for list="{{ codesSecours }}" as="c" hint-placeholder-count="10">
+                <code style="font-family:var(--font-mono);font-size:13px;line-height:1.6;color:var(--texte-primaire)">{{ c }}</code>
+              </sc-for>
+            </div>
+            <p style="display:flex;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--bordure-legere);border-radius:6px;background:var(--fond-surface-2);font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--alerte-texte)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px" aria-hidden="true"><path d="M8 1L1 14h14L8 1z"></path><path d="M8 6v3M8 11v.5"></path></svg>
+              Sans authentificateur ni code de secours, aucune récupération n'est possible : le web ULAMU n'envoie ni SMS ni code par email.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button type="button" onClick="{{ terminer }}" style="{{ stylePrimaire }}">J'ai sauvegardé mes codes — continuer</button>
+              <button type="button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:9px 18px;border:1px solid var(--bordure-normale);border-radius:6px;background-color:var(--fond-surface-2);background-image:var(--grain-btn);background-size:110px 110px;color:var(--texte-primaire);font-family:var(--font-body);font-size:14px;font-weight:600;transition:background-color 250ms linear" style-hover="background-color:var(--ap-50)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M2 13h12"></path></svg>
+                Télécharger les codes
+              </button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ etapeChargement }}">
+          <div aria-busy="true" style="display:flex;flex-direction:column;gap:16px">
+            <div style="width:70%;height:13px;border-radius:4px;background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite"></div>
+            <div style="align-self:center;width:216px;height:216px;border-radius:6px;background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite"></div>
+            <div style="width:100%;height:34px;border-radius:6px;background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite"></div>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ six }}" as="n" hint-placeholder-count="6">
+                <div style="width:44px;height:44px;border-radius:6px;background:linear-gradient(90deg,var(--fond-input) 0%,var(--fond-surface-2) 50%,var(--fond-input) 100%);background-size:320px 100%;animation:ul-shimmer 1400ms linear infinite"></div>
+              </sc-for>
+            </div>
+            <p style="display:flex;align-items:center;gap:8px;margin:0;font-family:var(--font-body);font-size:12px;color:var(--texte-tertiaire)">
+              <span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--bordure-normale);border-top-color:var(--ap-400);animation:ul-spin 900ms linear infinite;display:inline-block"></span>
+              Préparation… le premier appel après connexion peut réveiller le serveur.
+            </p>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ etapeVide }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:32px 16px;border:1px dashed var(--bordure-normale);border-radius:10px;background:var(--fond-surface-2)">
+            <span style="width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--fond-surface);color:var(--texte-tertiaire);border:1px solid var(--bordure-legere)">
+              <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="1.5"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path><circle cx="8" cy="11.5" r="1" fill="currentColor"></circle></svg>
+            </span>
+            <p style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1.3;color:var(--texte-primaire)">Aucun secret généré</p>
+            <p style="margin:0;max-width:42ch;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">Le secret d'authentification n'a pas encore été créé pour ce compte. Générez-en un pour afficher le QR code.</p>
+            <button type="button" onClick="{{ genererSecret }}" style="{{ stylePrimaire }}">Générer un secret</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ etapeErreur }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:32px 16px">
+            <span style="width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--erreur-fond);color:var(--erreur-accent);border:1px solid var(--erreur-bordure)">
+              <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l12 12"></path><path d="M9.9 3.5a8 8 0 0 1 3.5 2.1"></path><path d="M2.6 5.6A8 8 0 0 1 7 3.6"></path><path d="M5 8.5a4 4 0 0 1 4.9-.5"></path><path d="M2.9 7.1A7 7 0 0 1 4.8 6"></path><circle cx="8" cy="13" r="1"></circle></svg>
+            </span>
+            <p style="margin:0;font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1.3;color:var(--texte-primaire)">Configuration indisponible</p>
+            <p style="margin:0;max-width:42ch;font-family:var(--font-body);font-size:13px;line-height:1.55;color:var(--texte-secondaire)">Impossible de préparer la double authentification pour le moment.</p>
+            <button type="button" onClick="{{ reessayer }}" style="{{ stylePrimaire }}">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a6 6 0 1 0 1.5-3.9"></path><path d="M2 3v4h4"></path></svg>
+              Réessayer
+            </button>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <p style="margin:12px 0 0;text-align:center;font-family:var(--font-body);font-size:11px;line-height:1.45;color:var(--texte-tertiaire)">Le QR code est généré sur votre poste : le secret ne part jamais vers un service tiers.</p>
+    </div>
+  </div>
+
+  <sc-if value="{{ atelierVisible }}" hint-placeholder-val="{{ true }}">
+  <p style="max-width:1120px;margin:12px auto 0;font-family:var(--font-mono);font-size:11px;color:var(--texte-tertiaire)">A4 · Carte centrée 460 px (hors coquille d'auth, comme le patrimoine) · codes de secours affichés une seule fois · à la fin : redirection vers le dossier de vérification pour un soignant ou une structure, vers le tableau de bord pour l'administration</p>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1160,&quot;height&quot;:940},&quot;themeInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etatInitial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plein&quot;,&quot;chargement&quot;,&quot;vide&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;plein&quot;,&quot;tsType&quot;:&quot;'plein' | 'chargement' | 'vide' | 'erreur'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;etapeInitiale&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;scan&quot;,&quot;codes&quot;],&quot;default&quot;:&quot;scan&quot;,&quot;tsType&quot;:&quot;'scan' | 'codes'&quot;,&quot;section&quot;:&quot;Maquette&quot;},&quot;atelierVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Maquette&quot;}}">
+const SECRET = 'JBSWY3DPEHPK3PXP4Q2LMNRXG44A';
+const CODES = [
+  'K7QP-3M8T-XZ', 'R2FD-9J4C-LW', 'M8XB-1T6Q-PV', 'A4NE-7K2H-YD', 'Z9CR-5P3M-TB',
+  'Q3HL-8D7X-KN', 'W6TS-2B9F-JR', 'E1MK-4X8P-CD', 'Y5DV-6H1T-QM', 'U8JB-3F5R-NW',
+];
+
+/** Matrice de modules déterministe + les 3 motifs de repérage : un vrai QR de démonstration
+ *  n'encode rien, mais il occupe exactement la place et la densité du QR réel (220 px, marge 1). */
+function qrSvg(taille) {
+  const n = 25, m = 1, total = n + m * 2, p = taille / total;
+  let rects = '';
+  const plein = (x, y) => rects += '<rect x="' + ((x + m) * p).toFixed(2) + '" y="' + ((y + m) * p).toFixed(2) +
+    '" width="' + (p + 0.4).toFixed(2) + '" height="' + (p + 0.4).toFixed(2) + '" fill="#0F172A"/>';
+  const dansRepere = (x, y) =>
+    (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  let graine = 20260810;
+  const suivant = () => { graine = (graine * 1103515245 + 12345) & 0x7fffffff; return graine / 0x7fffffff; };
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (dansRepere(x, y)) continue;
+      if (suivant() > 0.52) plein(x, y);
+    }
+  }
+  const repere = (ox, oy) => {
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      const bord = x === 0 || y === 0 || x === 6 || y === 6;
+      const coeur = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+      if (bord || coeur) plein(ox + x, oy + y);
+    }
+  };
+  repere(0, 0); repere(n - 7, 0); repere(0, n - 7);
+  for (let i = 8; i < n - 8; i++) { if (i % 2 === 0) { plein(i, 6); plein(6, i); } }
+  return '<svg width="' + taille + '" height="' + taille + '" viewBox="0 0 ' + taille + ' ' + taille +
+    '" role="img" aria-label="QR code de configuration TOTP"><rect width="' + taille + '" height="' + taille + '" fill="#FFFFFF"/>' + rects + '</svg>';
+}
+
+const IC_COPIE = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2"/></svg>';
+const IC_CHECK = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l4 4 8-8"/></svg>';
+
+/* ── Prototype navigable ─────────────────────────────────────────────────────
+   La sidebar relie réellement les écrans entre eux : un clic sur un item ouvre
+   le fichier correspondant et lui transmet le thème par l'URL. Un item sans
+   fichier — ou l'écran déjà ouvert — retombe sur le comportement local. */
+const ULAMU_ECRANS = {
+  'Tableau de bord': 'B2 - Tableau de bord.dc.html',
+  'Mes paramètres': 'B3 - Mes parametres.dc.html',
+  'Ma vérification': 'C1 - Ma verification.dc.html',
+  'Ma vitrine': 'C2 - Ma vitrine.dc.html',
+  'Demandes': 'C3 - Demandes.dc.html',
+  'Consultations': 'C4 - Consultations.dc.html',
+  'Mes gains': 'C6 - Mes gains.dc.html',
+  'Ma pharmacie': 'D1 - Ma pharmacie.dc.html',
+  'Stock': 'D2 - Stock.dc.html',
+  'Délivrance': 'D3 - Delivrance.dc.html',
+  'Réservations': 'D4 - Reservations.dc.html',
+  'File de vérification': 'E1 - File de verification.dc.html',
+  'Supervision financière': 'E2 - Supervision financiere.dc.html',
+  'Paramètres métier': 'E3 - Parametres metier.dc.html',
+  'Administrateurs': 'E4 - Administrateurs.dc.html',
+  'Pilotage': 'E5 - Pilotage.dc.html',
+  'Signalements': 'E6 - Signalements.dc.html',
+  'Comptes': 'E7 - Comptes.dc.html',
+  'Se déconnecter': 'A1 - Connexion.dc.html',
+};
+const ULAMU_URL = new URLSearchParams(location.search);
+const ULAMU_ALLER = (label, sinon) => {
+  const cible = ULAMU_ECRANS[label];
+  const ici = decodeURIComponent(location.pathname.split('/').pop() || '');
+  if (cible && cible !== ici) {
+    /* La racine du DOCUMENT porte data-theme (posé par l'hôte) : il faut la racine de
+       l'ÉCRAN, sinon le thème choisi est perdu à chaque navigation. */
+    const racine = [...document.querySelectorAll('[data-theme]')].find(e => e !== document.documentElement);
+    const theme = (racine && racine.getAttribute('data-theme')) || 'light';
+    location.href = encodeURI(cible) + '?theme=' + theme;
+    return;
+  }
+  if (sinon) sinon();
+};
+
+class Component extends DCLogic {
+  state = { theme: null, etat: null, etape: null, otp: '739', copie: false };
+
+  get theme() { return this.state.theme ?? ULAMU_URL.get('theme') ?? this.props.themeInitial ?? 'light'; }
+  get etat() { return this.state.etat ?? this.props.etatInitial ?? 'plein'; }
+  get etape() { return this.state.etape ?? this.props.etapeInitiale ?? 'scan'; }
+
+  segStyle(actif) {
+    return 'padding:5px 11px;border:1px solid ' + (actif ? 'var(--bordure-legere)' : 'transparent') +
+      ';border-radius:var(--radius-md);font-family:var(--font-body);font-size:var(--font-size-caption);font-weight:' +
+      (actif ? '600' : '500') + ';line-height:1.2;white-space:nowrap;transition:all var(--dur-fast) linear;background:' +
+      (actif ? 'var(--fond-surface)' : 'transparent') + ';color:' +
+      (actif ? 'var(--texte-primaire)' : 'var(--texte-secondaire)') + (actif ? ';box-shadow:var(--ombre-1)' : '');
+  }
+
+  renderVals() {
+    const theme = this.theme, etat = this.etat, etape = this.etape;
+    const set = (p) => this.setState(p);
+    const chargement = etat === 'chargement', vide = etat === 'vide', erreur = etat === 'erreur';
+    const otp = this.state.otp;
+
+    const groupes = [
+      { label: 'Thème', options: [{ k: 'light', label: 'Clair' }, { k: 'dark', label: 'Sombre' }], courant: theme, appliquer: (k) => set({ theme: k }) },
+      { label: 'État', options: [
+        { k: 'plein', label: 'Plein' }, { k: 'chargement', label: 'Chargement' },
+        { k: 'vide', label: 'Vide' }, { k: 'erreur', label: 'Erreur' },
+      ], courant: etat, appliquer: (k) => set({ etat: k }) },
+      { label: 'Écran', options: [{ k: 'scan', label: 'Scan' }, { k: 'codes', label: 'Codes de secours' }], courant: etape, appliquer: (k) => set({ etape: k, etat: 'plein' }) },
+    ];
+
+    return {
+      theme,
+      atelierVisible: this.props.atelierVisible !== false,
+      etapeChargement: chargement,
+      etapeVide: vide,
+      etapeErreur: erreur,
+      etapeScan: !chargement && !vide && !erreur && etape === 'scan',
+      etapeCodes: !chargement && !vide && !erreur && etape === 'codes',
+      enErreur: false,
+      six: [1, 2, 3, 4, 5, 6],
+      secret: SECRET,
+      codesSecours: CODES,
+      qr: { __html: qrSvg(216) },
+      iconeCopie: { __html: this.state.copie ? IC_CHECK : IC_COPIE },
+      libelleCopie: this.state.copie ? 'Copié' : 'Copier',
+
+      barreGroupes: groupes.map((g) => ({
+        label: g.label,
+        options: g.options.map((o) => ({ label: o.label, style: this.segStyle(g.courant === o.k), onClick: () => g.appliquer(o.k) })),
+      })),
+
+      stylePrimaire: 'display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 24px;border:1px solid transparent;border-radius:6px;background-color:var(--ap-400);background-image:var(--grain-btn);background-size:110px 110px;color:#fff;font-family:var(--font-body);font-size:15px;font-weight:600;transition:background-color 250ms linear',
+
+      casesOtp: [0, 1, 2, 3, 4, 5].map((i) => {
+        const rempli = i < otp.length, courant = i === otp.length;
+        return {
+          valeur: rempli ? otp[i] : '',
+          style: 'width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid ' +
+            (courant ? 'var(--ap-400)' : 'var(--bordure-input)') +
+            ';background:var(--fond-surface);font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--texte-primaire)' +
+            (courant ? ';box-shadow:0 0 0 3px rgba(39,86,166,.12)' : ''),
+        };
+      }),
+      pave: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '←'].map((t) => ({
+        label: t,
+        style: 'min-width:34px;height:30px;padding:0 8px;border:1px solid var(--bordure-legere);border-radius:6px;background-color:var(--fond-surface-2);background-image:var(--grain-btn);background-size:110px 110px;font-family:var(--font-mono);font-size:13px;color:var(--texte-secondaire);transition:background-color 200ms linear',
+        onClick: () => this.setState((s) => {
+          const c = s.otp ?? '';
+          if (t === '←') return { otp: c.slice(0, -1) };
+          return { otp: c.length >= 6 ? c : c + t };
+        }),
+      })),
+
+      copier: () => {
+        set({ copie: true });
+        setTimeout(() => this.setState({ copie: false }), 2000);
+      },
+      activer: () => set({ etape: 'codes' }),
+      terminer: () => set({ etape: 'scan', otp: '739' }),
+      genererSecret: () => set({ etat: 'plein', etape: 'scan' }),
+      reessayer: () => set({ etat: 'plein' }),
+    };
+  }
+}
+</script>
+</body>
+</html>
