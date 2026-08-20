@@ -99,7 +99,7 @@ export function ForgotPasswordPage() {
     setError(null)
     try {
       const res = await demanderCode.mutateAsync()
-      setCodeEnvoye(res.debugCode ? `Mode démo — code : ${res.debugCode}` : `Code envoyé à ${email}.`)
+      setCodeEnvoye(res.debugCode ? `Mode démo — code : ${res.debugCode}` : `Si un compte utilise ${email}, un code vient d'y être envoyé.`)
       if (res.debugCode) setCode(res.debugCode)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Envoi du code impossible — réessayez.')
@@ -277,6 +277,16 @@ export function ForgotPasswordPage() {
             </p>
 
             {error ? <Erreur>{error}</Erreur> : null}
+            {/* Le serveur renvoie « Aucun code en attente » DEUX fois pour des raisons opposées :
+                le code est faux, ou aucun compte ne porte cette adresse — il ne distingue pas, pour
+                ne pas révéler qui est inscrit. Sans cette précision, on redemande un code à l'infini
+                puisqu'il arrive à chaque fois : `requestOtp` écrit à n'importe quelle adresse. */}
+            {error && voie === 'email' ? (
+              <Aide>
+                Le code arrive même si l’adresse n’est rattachée à aucun compte. Vérifiez l’adresse, ou
+                essayez une autre méthode.
+              </Aide>
+            ) : null}
 
             <Button type="submit" size="lg" className="w-full" disabled={occupe}>
               {parTotp.isPending || parEmail.isPending ? <Spinner /> : null}
