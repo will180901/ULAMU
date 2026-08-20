@@ -799,7 +799,16 @@ export class M01Service {
     const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
     if (!row) throw new BadRequestException("Aucune association TOTP en cours");
     if (row.enabled) throw new ConflictException("TOTP déjà activé");
-    if (!verifyTotp(openSecret(row.encryptedSecret), code)) throw new UnauthorizedException("Code invalide — rescannez le QR");
+    // Même isolement qu'à la connexion : si le secret est illisible, l'utilisateur doit lire une
+    // consigne actionnable — recommencer l'association — et non un 500. Ici le repli par code de
+    // secours n'existe pas : ils ne sont créés que quelques lignes plus bas, à la confirmation.
+    let valide = false;
+    try {
+      valide = verifyTotp(openSecret(row.encryptedSecret), code);
+    } catch (e) {
+      this.logger.error(`Secret TOTP illisible à la confirmation (compte ${accountId}) : ${(e as Error).message}`);
+    }
+    if (!valide) throw new UnauthorizedException("Code invalide — rescannez le QR");
     const backupCodes = Array.from({ length: 10 }, () => randomBytes(5).toString("hex"));
     await this.prisma.$transaction(async (tx) => {
       await tx.totpSecret.update({ where: { accountId }, data: { enabled: true, enabledAt: new Date() } });
@@ -824,9 +833,34 @@ export class M01Service {
     });
   }
 
+  /**
+   * Vérifie un second facteur : le code de l'application d'authentification, sinon un code de
+   * secours.
+   *
+   * ⚠️ Le déchiffrement est isolé, et ce n'est pas une précaution théorique. `openSecret` LÈVE
+   * quand `SECRETBOX_KEY` n'est plus celle qui a scellé le secret — clé tournée, ou secret créé
+   * dans un autre environnement (c'est le cas d'un compte créé par le seed en local puis servi par
+   * l'API déployée). L'exception n'était pas rattrapée : elle remontait au client en **500**, et
+   * l'écran affichait « Internal server error » là où il fallait lire « code invalide ».
+   *
+   * Plus grave que le message : le code de secours n'était **jamais atteint**, puisqu'il n'est
+   * cherché qu'après cette ligne. Or un code de secours existe précisément pour quand le second
+   * facteur habituel ne répond plus. Le faire dépendre du secret qu'il doit suppléer le rendait
+   * inutile au moment exact où il devenait nécessaire — un compte devenait alors définitivement
+   * inaccessible.
+   */
   private async checkTotpOrBackup(accountId: string, encryptedSecret: string, code: string): Promise<boolean> {
-    if (verifyTotp(openSecret(encryptedSecret), code)) return true;
-    // Code de secours à usage unique (CU-01-08).
+    try {
+      if (verifyTotp(openSecret(encryptedSecret), code)) return true;
+    } catch (e) {
+      // Journalisé, jamais silencieux : un secret illisible est un incident d'exploitation, pas un
+      // mauvais code saisi. Sans cette trace, la panne resterait invisible côté serveur alors que
+      // des comptes se verraient refuser l'entrée.
+      this.logger.error(
+        `Secret TOTP illisible (compte ${accountId}) — SECRETBOX_KEY a-t-elle changé depuis la création du secret ? ${(e as Error).message}`,
+      );
+    }
+    // Code de secours à usage unique (CU-01-08). Atteint MÊME quand le déchiffrement a échoué.
     const backup = await this.prisma.totpBackupCode.findFirst({ where: { accountId, codeHash: hashOtp(code), consumedAt: null } });
     if (!backup) return false;
     await this.prisma.totpBackupCode.update({ where: { id: backup.id }, data: { consumedAt: new Date() } });

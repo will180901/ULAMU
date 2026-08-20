@@ -163,6 +163,61 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
     await expect(service.login({ username, password: "motdepasse1", client: "mobile", totpCode: backup })).rejects.toThrow(/invalide/);
   });
 
+  /**
+   * Régression — un secret TOTP devenu illisible ne doit pas condamner le compte.
+   *
+   * Le défaut, observé en production le 20/08/2026 : `checkTotpOrBackup` déchiffrait le secret AVANT
+   * de chercher le code de secours. Quand `SECRETBOX_KEY` ne correspond plus — clé tournée, ou
+   * compte créé par le seed en local puis servi par l'API déployée — le déchiffrement levait, et
+   * l'exception remontait au client en **500**. L'utilisateur lisait « Internal server error ».
+   *
+   * Plus grave que le message : le code de secours n'était jamais atteint. Or il n'existe QUE pour
+   * ce cas. Le compte devenait définitivement inaccessible, y compris pour un administrateur, que
+   * `disableTotp` refuse par ailleurs de dépanner (RM-01-06).
+   */
+  it("CU-01-08 — secret TOTP illisible : rejet propre, et le code de secours fonctionne encore", async () => {
+    const phone = "+242061000012";
+    const { accountId } = await registerPatient(phone);
+    const username = usernameFor(phone);
+
+    const { secret } = await service.setupTotp(accountId);
+    const { backupCodes } = await service.confirmTotp(accountId, totpAt(secret, Math.floor(Date.now() / 1000)));
+
+    // Le format reste valide, seul le contenu chiffré est altéré : c'est exactement ce que voit le
+    // serveur quand la clé n'est plus la bonne — l'étiquette d'authentification AES-GCM ne colle
+    // plus, et `openSecret` lève.
+    const row = await prisma.totpSecret.findUniqueOrThrow({ where: { accountId } });
+    const [v, iv, tag, ct] = row.encryptedSecret.split("$");
+    const altere = Buffer.from(ct as string, "base64");
+    altere[0] = (altere[0] as number) ^ 0xff;
+    await prisma.totpSecret.update({
+      where: { accountId },
+      data: { encryptedSecret: `${v}$${iv}$${tag}$${altere.toString("base64")}` },
+    });
+
+    // Le code de l'application ne peut plus être vérifié. L'utilisateur doit lire « invalide » —
+    // pas subir une erreur serveur.
+    await expect(
+      service.login({
+        username,
+        password: "motdepasse1",
+        client: "mobile",
+        totpCode: totpAt(secret, Math.floor(Date.now() / 1000)),
+      }),
+    ).rejects.toThrow(/invalide/);
+
+    // ⭐ Le cœur du test. Si cette ligne tombe un jour, c'est que quelqu'un a remis le déchiffrement
+    // devant la recherche du code de secours — et que des comptes redeviennent inaccessibles.
+    const ok = await service.login({
+      username,
+      password: "motdepasse1",
+      client: "mobile",
+      totpCode: backupCodes[0] as string,
+    });
+    expect(ok.totpRequired).toBe(false);
+    expect(ok.accountId).toBe(accountId);
+  });
+
   it("CU-01-05 — changement de numéro : OTP sur l'ancien ET le nouveau", async () => {
     const oldPhone = "+242061000004";
     const newPhone = "+242061000005";
