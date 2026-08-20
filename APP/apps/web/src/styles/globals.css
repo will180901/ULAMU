@@ -36,8 +36,8 @@
   --ap-400: #2756A6; /* accent — couleur de marque ULAMU (mobile: accent500) */
   --ap-400-rgb: 39, 86, 166; /* triplet RGB du même token, pour un rgba() (halo de focus) qui ne se
     désynchronise jamais si l'accent change un jour — piège identifié dans CMS-SARIS, à ne pas reproduire. */
-  --ap-500: #1F479A; /* accent hover — (mobile: accent600) */
-  --ap-600: #586472;
+  --ap-500: #2756A6; /* accent hover — (mobile: accent600) */
+  --ap-600: #1F479A;
   --ap-700: #3F4A58;
   --ap-800: #2F3845;
   --ap-900: #1F2731;
@@ -72,12 +72,12 @@
   --fond-surface: #FFFFFF;
   --fond-surface-2: #F0F2F5;
   --fond-input: #EAECF0;
-  --bordure-input: #8892A4;
+  --bordure-input: #B5BCC8;
 
   /* ── Texte (jamais pur noir) ── */
   --texte-primaire: #242B34;
   --texte-secondaire: #54606E;
-  --texte-tertiaire: #98A2B2;
+  --texte-tertiaire: #8892A4;
 
   /* ── Bordures ── */
   /* 0.09 et non 0.10 : la maquette fait foi (docs/maquettes/ulamu.css l.44). Écart invisible à
@@ -87,8 +87,8 @@
      CG-03/05/07, où l'alternance est rangée parmi les interdits. La maquette prime (règle posée par
      le porteur). Un seul jeton, pour que l'écart soit visible en un endroit et pas dispersé. */
   --ligne-alt: var(--fond-surface-2);
-  --bordure-normale: rgba(15, 23, 42, 0.18);
-  --bordure-forte: rgba(15, 23, 42, 0.34);
+  --bordure-normale: rgba(15, 23, 42, 0.16);
+  --bordure-forte: rgba(15, 23, 42, 0.30);
 
   /* ── Sémantique — strictement séparée de l'accent/des tons décoratifs (jamais un choix esthétique) ── */
   --succes-fond: #EAF3EC; --succes-texte: #2D6A3F; --succes-accent: #3D7A5E; --succes-bordure: rgba(45, 106, 63, 0.2);
@@ -106,26 +106,26 @@
 
   /* ── Ombres (light) — 5 niveaux, chacun = 1 ombre large diffuse + 1 liseré fin de 1px (rendu plus doux) ── */
   --ombre-0: none;
-  --ombre-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.03);
-  --ombre-2: 0 3px 8px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
-  --ombre-3: 0 8px 20px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(15, 23, 42, 0.05);
-  --ombre-4: 0 16px 36px rgba(15, 23, 42, 0.13), 0 0 0 1px rgba(15, 23, 42, 0.06);
-  --ombre-5: 0 24px 56px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.07);
+  --ombre-1: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ombre-2: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ombre-3: 0 4px 16px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.06);
+  --ombre-4: 0 8px 32px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.06);
+  --ombre-5: 0 16px 44px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.07);
 
   /* ── Verre dépoli ── */
   --verre-fond: color-mix(in srgb, var(--fond-surface) 82%, transparent);
   --verre-blur: 14px;
-  --glass-sidebar-bg: rgba(255, 255, 255, 0.72); --glass-sidebar-blur: 16px;
-  --glass-header-bg: rgba(255, 255, 255, 0.68); --glass-header-blur: 14px;
+  --glass-sidebar-bg: rgba(255, 255, 255, 0.74); --glass-sidebar-blur: 14px;
+  --glass-header-bg: color-mix(in srgb, var(--fond-surface) 78%, transparent); --glass-header-blur: 14px;
   --glass-card-bg: rgba(255, 255, 255, 0.80); --glass-card-blur: 12px;
   --glass-toast-bg: rgba(255, 255, 255, 0.88); --glass-toast-blur: 20px;
-  --glass-bordure: rgba(15, 23, 42, 0.10);
+  --glass-bordure: rgba(15, 23, 42, 0.09);
 
   /* ── Grain (bruit SVG) ── */
-  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-size-fine: 110px; --grain-size: 200px; --grain-size-strong: 260px; --grain-blend: normal;
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.030 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-size-fine: 110px; --grain-size: 180px; --grain-size-strong: 240px; --grain-blend: normal;
   /* Grain des BOUTONS — CG-05 §01 : « effet sérigraphié, obligatoire sur tous les boutons »,
      opacité 0.06 en clair / 0.09 en sombre. Ce token manquait ; les boutons empruntaient le grain
      de fond (0.03), plus faible que ce que la charte demande, et le variant `ghost` n'en avait pas
@@ -168,16 +168,16 @@
   --font-sans: var(--font-body);          /* ancien alias : pointait à tort sur la police de titre */
   --font-heading: var(--font-display);    /* ancien alias : pointait sur Sora, hors référentiel */
   --font-size-display: var(--fs-display-xl);   /* 28px → 32px */
-  --font-size-h1: var(--fs-display-lg);        /* 22px → 24px */
-  --font-size-h2: var(--fs-display-sm);        /* 18px  = 18px */
-  --font-size-h3: var(--fs-display-sm);        /* 16px → 18px — CG-02 n'a pas de titre sous 18px */
-  --font-size-h4: var(--fs-label-lg);          /* 14px  = 14px */
-  --font-size-body-lg: var(--fs-text-md);      /* 15px  = 15px */
-  --font-size-body: var(--fs-text-md);         /* 14px → 15px — CG-02 n'a pas de palier de corps à 14 */
-  --font-size-body-sm: var(--fs-text-sm);      /* 13px  = 13px */
-  --font-size-label: var(--fs-label-sm);       /* 12px  = 12px */
-  --font-size-caption: var(--fs-caption);      /* 11px  = 11px */
-  --font-size-overline: var(--fs-label-sm);    /* 10px → 12px — 10px n'existe pas dans CG-02 */
+  --font-size-h1: 22px;        /* 22px → 24px */
+  --font-size-h2: 18px;        /* 18px  = 18px */
+  --font-size-h3: 16px;        /* 16px → 18px — CG-02 n'a pas de titre sous 18px */
+  --font-size-h4: 14px;          /* 14px  = 14px */
+  --font-size-body-lg: 15px;      /* 15px  = 15px */
+  --font-size-body: 14px;         /* 14px → 15px — CG-02 n'a pas de palier de corps à 14 */
+  --font-size-body-sm: 13px;      /* 13px  = 13px */
+  --font-size-label: 12px;       /* 12px  = 12px */
+  --font-size-caption: 11px;      /* 11px  = 11px */
+  --font-size-overline: 10px;    /* 10px → 12px — 10px n'existe pas dans CG-02 */
 
   /* ── Élévation des surfaces FLOTTANTES ──────────────────────────────────────────────────────────
      Le port SARIS désactive toutes les ombres en thème sombre, au motif — juste — qu'une ombre
@@ -195,8 +195,8 @@
      entièrement : chaque composant inventait sa durée. Plafond absolu 400ms (CG-09 §05), et
      `ease-out` à l'entrée / `ease-in` à la sortie, toujours symétriques.                         */
   --dur-press: 80ms;   /* :active — retour quasi-haptique, jamais au-delà */
-  --dur-fast: 150ms;   /* micro-feedback : fond d'item, bordure, couleur */
-  --dur-base: 200ms;   /* survol, focus, bascules */
+  --dur-fast: 120ms;   /* micro-feedback : fond d'item, bordure, couleur */
+  --dur-base: 180ms;   /* survol, focus, bascules */
   --dur-slow: 250ms;   /* entrée/sortie de menus et panneaux */
   --dur-slower: 350ms; /* transitions de vue — plafond des interactions courantes */
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -271,31 +271,41 @@
   --sidebar-accent-foreground: var(--texte-primaire);
   --sidebar-border: var(--glass-bordure);
   --sidebar-ring: var(--ap-400);
+
+  /* ── Repris des maquettes (20/08/2026) — absents jusqu'ici ──────────────────────────── */
+  --avert-fond: var(--alerte-fond);
+  --avert-texte: var(--alerte-texte);
+  --avert-accent: var(--alerte-accent);
+  --sidebar-width: 264px;
+  --sidebar-rail: 68px;
+  --topbar-height: 48px;
+  --contenu-max: 1100px;
+  --ligne-h: 40px;
 }
 
 .dark {
-  --ap-50: #262E38; --ap-100: #313A45; --ap-200: #3D4753; --ap-300: #5A6573;
-  --ap-400: #2756A6; --ap-400-rgb: 39, 86, 166; --ap-500: #1F479A;
-  --ap-600: #98A6B5; --ap-700: #B7C0CB; --ap-800: #CFD6DE; --ap-900: #E0E5EB;
+  --ap-50: #1D2531; --ap-100: #26303E; --ap-200: #33404F; --ap-300: #55627A;
+  --ap-400: #2756A6; --ap-400-rgb: 39, 86, 166; --ap-500: #3A6BC0;
+  --ap-600: #4C7ACB; --ap-700: #B7C0CB; --ap-800: #CFD6DE; --ap-900: #E0E5EB;
 
   --as-50: #332705; --as-100: #4D3A08; --as-200: #6C5115; --as-300: #8C6A1C; --as-400: #B08322;
   --as-500: #C99A2E; --as-600: #D3AC57; --as-700: #E2C583; --as-800: #EEDCB1; --as-900: #F6EBD2;
 
-  --fond-page: #0D1117; --fond-surface: #161B22; --fond-surface-2: #1C2333; --fond-input: #21262D; --bordure-input: #21262D;
+  --fond-page: #0D1117; --fond-surface: #161B22; --fond-surface-2: #1C222C; --fond-input: #21262D; --bordure-input: #30363D;
 
-  --texte-primaire: #E6EDF3; --texte-secondaire: #8B949E; --texte-tertiaire: #484F58;
+  --texte-primaire: #E6EDF3; --texte-secondaire: #9DA7B3; --texte-tertiaire: #6E7781;
 
-  --bordure-legere: rgba(230, 237, 243, 0.08); --bordure-normale: rgba(230, 237, 243, 0.14); --bordure-forte: rgba(230, 237, 243, 0.28);
+  --bordure-legere: rgba(230, 237, 243, 0.08); --bordure-normale: rgba(230, 237, 243, 0.14); --bordure-forte: rgba(230, 237, 243, 0.26);
 
   /* Recalculées pour le sombre (pas juste éclaircies) : fond quasi-noir teinté + texte/accent lumineux. */
-  --succes-fond: #1A2E20; --succes-texte: #7EE2A0; --succes-accent: #56C47A; --succes-bordure: rgba(126, 226, 160, 0.25);
-  --erreur-fond: #2E1A1A; --erreur-texte: #E29999; --erreur-accent: #C45656; --erreur-bordure: rgba(226, 153, 153, 0.25);
-  --alerte-fond: #2E2717; --alerte-texte: #E2C978; --alerte-accent: #C4A156; --alerte-bordure: rgba(226, 201, 120, 0.25);
-  --info-fond: #1A222E; --info-texte: #99BFE2; --info-accent: #5691C4; --info-bordure: rgba(153, 191, 226, 0.25);
+  --succes-fond: #16281D; --succes-texte: #7EE2A0; --succes-accent: #56C47A; --succes-bordure: rgba(126, 226, 160, 0.22);
+  --erreur-fond: #2A1818; --erreur-texte: #E29999; --erreur-accent: #C45656; --erreur-bordure: rgba(226, 153, 153, 0.22);
+  --alerte-fond: #2A2415; --alerte-texte: #E2C978; --alerte-accent: #C4A156; --alerte-bordure: rgba(226, 201, 120, 0.22);
+  --info-fond: #17202B; --info-texte: #99BFE2; --info-accent: #5691C4; --info-bordure: rgba(153, 191, 226, 0.22);
 
   /* Ombres désactivées en sombre — une ombre portée ne se voit presque pas sur fond déjà sombre ;
      la hiérarchie visuelle passe par la bordure à la place (--bordure-normale/-forte). */
-  --ombre-0: none; --ombre-1: none; --ombre-2: none; --ombre-3: none; --ombre-4: none; --ombre-5: none;
+  --ombre-0: none; --ombre-1: none; --ombre-2: none; --ombre-3: none; --ombre-4: 0 10px 30px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4); --ombre-5: 0 16px 44px rgba(0, 0, 0, 0.62), 0 4px 10px rgba(0, 0, 0, 0.45);
   /* Les surfaces flottantes gardent une élévation, elles (cf. commentaire du token en :root) :
      un noir profond assombrit ce qui entoure le panneau, et la bordure est renforcée. */
   --ombre-flottante: 0 14px 36px rgba(0, 0, 0, 0.62), 0 2px 10px rgba(0, 0, 0, 0.48);
@@ -304,10 +314,10 @@
      sombre, une texture de même opacité se voit deux fois moins. */
   --grain-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
-  --verre-fond: color-mix(in srgb, var(--fond-surface) 68%, transparent);
-  --glass-sidebar-bg: rgba(13, 17, 23, 0.72); --glass-header-bg: rgba(13, 17, 23, 0.68);
+  --verre-fond: color-mix(in srgb, var(--fond-surface) 72%, transparent);
+  --glass-sidebar-bg: rgba(13, 17, 23, 0.76); --glass-header-bg: color-mix(in srgb, var(--fond-surface) 74%, transparent);
   --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
-  --glass-bordure: rgba(230, 237, 243, 0.10);
+  --glass-bordure: rgba(230, 237, 243, 0.09);
 
   /* Tons décoratifs recalculés pour le sombre — repris de `docs/maquettes/ulamu.css`, qui les
      définit alors que ce fichier ne le faisait pas. Sans eux, une tuile d'icône ou une série de
@@ -326,9 +336,9 @@
   /* Grain BLANC en sombre, et non noir. Une texture noire sur un fond quasi-noir ne se voit
      simplement pas : le grain disparaissait de tout le thème sombre. Opacités reprises de la
      maquette (0.040 / 0.055 / 0.085). */
-  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.040 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.055 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.040 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.055 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   /* Les noms shadcn (`--primary`, `--background`…) ne sont PAS repris ici : le pont du `:root`
      pointe sur les jetons ULAMU ci-dessus, que ce bloc vient de recalculer. Le sombre suit donc
@@ -921,6 +931,11 @@
    supprimé ». La version héritée de SARIS était à 2px pleins avec un décalage NÉGATIF (-2px) pour
    éviter d'être rognée par un parent `overflow:hidden` ; on suit désormais la charte, et les rares
    conteneurs qui rogneraient l'anneau devront laisser 2px de marge plutôt que l'inverse. */
+/* Grain des boutons — posé par `button.tsx` sur toutes les variantes.
+   Seul `background-image` est écrit : `background-color` reste à la variante shadcn (`bg-primary`,
+   `bg-secondary`…). Les écrire ensemble en raccourci `background` effacerait la couleur. */
+.ul-grain-btn { background-image: var(--grain-btn); background-size: 110px 110px; }
+
 .saris-focus-ring:focus-visible {
   outline: 3px solid rgba(var(--ap-400-rgb), 0.3);
   outline-offset: 2px;

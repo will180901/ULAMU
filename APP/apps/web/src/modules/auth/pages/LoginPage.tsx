@@ -1,20 +1,50 @@
 /**
- * Connexion — nom d'utilisateur OU email (l'API route sur l'un ou l'autre selon la présence d'un
- * « @ », comme sur mobile) puis TOTP en 2ᵉ étape. Réservée aux comptes PROFESSIONAL /
- * FACILITY_MEMBER / ADMIN : les patients restent sur mobile (D-039/D-044).
+ * A1 — Connexion. Refait d'après `docs/maquettes/A1 - Connexion.dc.html`.
  *
- * L'erreur porte désormais une **icône** en plus de sa couleur — `CG-05 §07` l'exige, et une erreur
- * de connexion est précisément le moment où l'on est pressé et où l'on lit mal.
+ * Deux étapes dans un seul écran : identifiants, puis code de second facteur si le compte en a un.
+ * Nom d'utilisateur OU email — l'API route sur l'un ou l'autre selon la présence d'un « @ », comme
+ * sur mobile. Réservée aux comptes PROFESSIONAL / FACILITY_MEMBER / ADMIN : les patients restent sur
+ * mobile (D-039/D-044).
+ *
+ * ⚠️ **Un écart assumé avec la maquette, et la raison est sérieuse.** La maquette affiche six cases
+ * pour le code, et sous ces cases la mention « un code de secours à 10 caractères est aussi
+ * accepté ». Les deux ne tiennent pas ensemble : six cases ne contiennent pas dix caractères. Or un
+ * code de secours est le SEUL recours quand l'application d'authentification est perdue — le
+ * 20/08/2026, un compte administrateur s'est retrouvé enfermé dehors exactement pour cette raison.
+ * Les six cases sont donc conservées telles quelles, et un lien discret bascule vers un champ libre
+ * pour le code de secours. Rien n'est retiré à la maquette ; il lui est ajouté ce que son propre
+ * texte promet.
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { AlertCircle, ShieldCheck } from 'lucide-react'
-import { Button } from '@/components/ulamu/Button'
-import { Field } from '@/components/ulamu/Field'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { Spinner } from '@/components/ui/spinner'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { ApiError } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { useLoginMutation, useLoadMeMutation } from '../hooks/useLogin'
+
+/** Libellé de champ — 12px, graisse 600, texte secondaire (mesuré sur la maquette). */
+function Libelle({ children }: { children: React.ReactNode }) {
+  return <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">{children}</span>
+}
+
+/** Bloc d'erreur en pied de formulaire — encadré, sur surface secondaire (A1). */
+function Erreur({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      role="alert"
+      className="m-0 flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2.5 text-xs leading-[1.5] text-[var(--erreur-texte)]"
+    >
+      <AlertCircle size={14} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+      {children}
+    </p>
+  )
+}
+
 
 export function LoginPage() {
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated)
@@ -23,6 +53,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [totpRequired, setTotpRequired] = useState(false)
+  /** Bascule vers le code de secours : dix caractères libres au lieu des six cases. */
+  const [modeSecours, setModeSecours] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const login = useLoginMutation()
@@ -30,8 +62,8 @@ export function LoginPage() {
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  /** Séparé de l'événement : la saisie du 6ᵉ chiffre lance la connexion sans passer par le formulaire. */
+  const lancer = async () => {
     setError(null)
     try {
       const res = await login.mutateAsync({
@@ -45,15 +77,18 @@ export function LoginPage() {
         setTotpRequired(true)
         return
       }
-      if (res.sessionToken) {
-        await loadMe.mutateAsync(res.sessionToken)
-      }
+      if (res.sessionToken) await loadMe.mutateAsync(res.sessionToken)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Connexion impossible — réessayez.')
     }
   }
 
-  const busy = login.isPending || loadMe.isPending
+  const soumettre = (e: React.FormEvent) => {
+    e.preventDefault()
+    void lancer()
+  }
+
+  const occupe = login.isPending || loadMe.isPending
 
   return (
     <AuthLayout subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
@@ -61,65 +96,159 @@ export function LoginPage() {
           vient précisément de protéger le compte. On nomme la raison, et surtout la DURÉE : sans
           elle, l'utilisateur ne peut pas anticiper la prochaine fois. */}
       {motif === 'expiration' || motif === 'refus-serveur' ? (
-        <div className="ul-notice ul-notice--warning" role="status">
-          <p className="t-label-md" style={{ margin: 0 }}>
+        <div
+          role="status"
+          className="mb-3 flex flex-col gap-1 rounded-md border border-border bg-secondary p-3 text-[var(--alerte-texte)]"
+        >
+          <span className="flex items-center gap-1.5 text-[13px] font-medium">
+            <AlertCircle size={14} strokeWidth={2} aria-hidden="true" />
             Session expirée
-          </p>
-          <p className="t-text-sm" style={{ margin: 0 }}>
+          </span>
+          <span className="text-[13px] leading-[1.55]">
             Par sécurité, une session inactive plus de 30 minutes est fermée — les postes de travail sont
             souvent partagés. Reconnectez-vous pour reprendre.
-          </p>
+          </span>
         </div>
       ) : null}
 
-      <form onSubmit={submit} className="ul-auth__form">
+      {/* `key` sur l'étape : remonter le bloc rejoue l'animation d'entrée à chaque changement. */}
+      <form onSubmit={soumettre} key={totpRequired ? "totp" : "identifiants"} className="ulamu-step-fade flex flex-col gap-3">
         {!totpRequired ? (
           <>
-            <Field
-              label="Nom d'utilisateur ou email"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="dr_kouma ou vous@exemple.com"
-              autoFocus
-              required
-            />
-            <Field label="Mot de passe" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <Link to="/mot-de-passe-oublie" className="ul-auth__link" style={{ alignSelf: 'flex-end', fontSize: 'var(--fs-caption)' }}>
+            <label className="flex flex-col gap-1">
+              <Libelle>Nom d'utilisateur ou email</Libelle>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="dr_kouma ou vous@exemple.com"
+                autoComplete="username"
+                autoFocus
+                required
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <Libelle>Mot de passe</Libelle>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </label>
+
+            <Link
+              to="/mot-de-passe-oublie"
+              className="self-end text-[11px] font-semibold text-primary hover:underline"
+            >
               Mot de passe oublié ?
             </Link>
           </>
         ) : (
           <>
-            <p className="ul-auth__note">
-              <ShieldCheck size={16} aria-hidden="true" /> Code de votre application d'authentification
+            <p className="m-0 flex items-center gap-1.5 text-[13px] leading-[1.55] text-muted-foreground">
+              <ShieldCheck size={16} strokeWidth={1.5} aria-hidden="true" />
+              Code de votre application d'authentification
             </p>
-            <Field
-              label="Code TOTP (6 chiffres)"
-              value={totpCode}
-              onChange={(e) => setTotpCode(e.target.value)}
-              maxLength={10}
-              hint="Un code de secours à 10 caractères est aussi accepté."
-              autoFocus
-              required
-            />
+
+            {!modeSecours ? (
+              <div>
+                <Libelle>Code TOTP (6 chiffres)</Libelle>
+                <div className="mt-1.5">
+                  <InputOTP
+                    maxLength={6}
+                    value={totpCode}
+                    onChange={setTotpCode}
+                    /* Six chiffres saisis = on soumet. Réclamer un clic de plus après le dernier
+                       chiffre n'apporte rien : le code est complet ou il ne l'est pas. */
+                    onComplete={() => void lancer()}
+                    autoFocus
+                  >
+                    <InputOTPGroup>
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <InputOTPSlot key={i} index={i} />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                {/* La maquette place ici un pavé numérique. Retiré sur consigne du 20/08/2026 : sur
+                    un poste de travail, le clavier fait le même travail, et les cases sont déjà
+                    entièrement saisissables au clavier. */}
+                <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  Un code de secours à 10 caractères est aussi accepté —{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModeSecours(true)
+                      setTotpCode('')
+                    }}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    en saisir un
+                  </button>
+                  .
+                </p>
+              </div>
+            ) : (
+              <label className="flex flex-col gap-1">
+                <Libelle>Code de secours (10 caractères)</Libelle>
+                <Input
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.trim())}
+                  maxLength={10}
+                  autoComplete="one-time-code"
+                  className="font-mono"
+                  autoFocus
+                  required
+                />
+                <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  Chaque code ne sert qu'une fois —{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModeSecours(false)
+                      setTotpCode('')
+                    }}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    revenir au code à 6 chiffres
+                  </button>
+                  .
+                </span>
+              </label>
+            )}
           </>
         )}
 
-        {error ? (
-          <p className="ul-auth__error" role="alert">
-            <AlertCircle size={13} aria-hidden="true" /> {error}
-          </p>
-        ) : null}
+        {error ? <Erreur>{error}</Erreur> : null}
 
-        <Button type="submit" size="lg" loading={busy}>
+        <Button type="submit" size="lg" disabled={occupe} className="w-full">
+          {occupe ? <Spinner /> : null}
           {totpRequired ? 'Vérifier' : 'Se connecter'}
         </Button>
+
+        {totpRequired ? (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setTotpRequired(false)
+              setModeSecours(false)
+              setTotpCode('')
+              setError(null)
+            }}
+          >
+            Retour
+          </Button>
+        ) : null}
       </form>
 
       {!totpRequired ? (
-        <p className="ul-auth__foot">
+        <p className="mt-4 text-center text-[11px] text-[var(--texte-tertiaire)]">
           Pas encore de compte ?{' '}
-          <Link to="/inscription" className="ul-auth__link">
+          <Link to="/inscription" className="font-semibold text-primary hover:underline">
             Créer un compte
           </Link>
         </p>
