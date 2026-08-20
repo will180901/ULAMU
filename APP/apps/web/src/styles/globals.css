@@ -719,7 +719,13 @@
   display: flex;
   width: 880px;
   max-width: 100%;
-  height: 580px;
+  /* `min-height` et non `height` : les maquettes fixent 580px, hauteur juste pour les écrans qu'elles
+     décrivent. La récupération par email, ajoutée le 20/08/2026 pour qu'aucun compte ne reste
+     enfermé dehors, dépasse cette mesure d'une douzaine de pixels — et un ascenseur interne
+     escamotait alors le logo hors du champ de vision.
+     La carte garde donc 580px partout où le contenu s'y tient, et ne s'étire que là où il le faut,
+     sans jamais dépasser les 90vh posés juste en dessous. */
+  min-height: 580px;
   max-height: 90vh;
   border-radius: var(--radius-xl);
   overflow: hidden;

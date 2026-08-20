@@ -61,7 +61,7 @@ describe('A1 — second facteur', () => {
 
     // Six cases ne contiennent pas dix caractères : la bascule est le seul chemin vers un code de
     // secours, et un code de secours est le seul recours quand l'authentificateur est perdu.
-    await u.click(screen.getByRole('button', { name: /en saisir un/i }))
+    await u.click(screen.getByRole('button', { name: /utiliser un code de secours/i }))
 
     const champ = await screen.findByLabelText(/code de secours/i)
     expect(champ).toHaveAttribute('maxLength', '10')

@@ -44,7 +44,7 @@ describe('A3 — récupération du mot de passe', () => {
 
   it('bascule vers un code de secours de 10 caractères', async () => {
     const u = monter()
-    await u.click(screen.getByRole('button', { name: /utiliser un code de secours/i }))
+    await u.click(screen.getByRole('button', { name: /^code de secours$/i }))
 
     const champ = await screen.findByLabelText(/code de secours/i)
     expect(champ).toHaveAttribute('maxLength', '10')

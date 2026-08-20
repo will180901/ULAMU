@@ -29,11 +29,27 @@ import { api, ApiError } from '@/lib/api'
 
 type Voie = 'totp' | 'secours' | 'email'
 
+/** Les deux autres voies, dans l'ordre où on les propose depuis celle qui est active. */
+const AUTRES_VOIES: Record<Voie, Voie[]> = {
+  totp: ['secours', 'email'],
+  secours: ['totp', 'email'],
+  email: ['totp', 'secours'],
+}
+const NOM_VOIE: Record<Voie, string> = {
+  totp: 'Code de l’authentificateur',
+  secours: 'Code de secours',
+  email: 'Recevoir un code par email',
+}
+
 function Libelle({ children }: { children: React.ReactNode }) {
   return <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">{children}</span>
 }
 
-/** Lien de bascule — même motif que la maquette : discret, à droite sous le champ. */
+function Aide({ children }: { children: React.ReactNode }) {
+  return <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{children}</span>
+}
+
+/** Lien de bascule — même motif que la maquette : discret, sous le champ. */
 function Bascule({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick} className="border-0 bg-transparent p-0 text-[11px] font-semibold text-primary hover:underline">
@@ -132,19 +148,22 @@ export function ForgotPasswordPage() {
           {voie === 'email' ? 'Code envoyé à l’adresse du compte' : 'Code de votre application d’authentification'}
         </p>
 
+        {/* Le bouton d'envoi et l'encart de confirmation ne coexistent JAMAIS : une fois le code parti,
+            l'encart prend sa place et porte « Renvoyer ». Les afficher tous les deux ajoutait une
+            cinquantaine de pixels à un panneau qui débordait déjà. */}
         {voie === 'email' ? (
-          <div className="flex flex-col gap-2">
+          codeEnvoye ? (
+            <p className="m-0 flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2.5 text-xs leading-[1.5] text-[var(--info-texte)]">
+              <Info size={14} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
+              <span className="min-w-0 flex-1">{codeEnvoye}</span>
+              <Bascule onClick={() => void envoyerLeCode()}>Renvoyer</Bascule>
+            </p>
+          ) : (
             <Button type="button" variant="outline" onClick={() => void envoyerLeCode()} disabled={occupe || email.length === 0}>
               {demanderCode.isPending ? <Spinner /> : null}
-              {codeEnvoye ? 'Renvoyer le code' : 'Recevoir un code par email'}
+              Recevoir un code par email
             </Button>
-            {codeEnvoye ? (
-              <p className="m-0 flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2.5 text-xs leading-[1.5] text-[var(--info-texte)]">
-                <Info size={14} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
-                {codeEnvoye}
-              </p>
-            ) : null}
-          </div>
+          )
         ) : null}
 
         {parCode ? (
@@ -159,38 +178,28 @@ export function ForgotPasswordPage() {
                 </InputOTPGroup>
               </InputOTP>
             </div>
-            <p className="mt-2 flex items-center justify-between gap-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-              {voie === 'totp' ? (
-                <>
-                  <span>Un code de secours à 10 caractères est aussi accepté.</span>
-                  <Bascule onClick={() => changerDeVoie('secours')}>Utiliser un code de secours</Bascule>
-                </>
-              ) : (
-                <>
-                  <span>Le code expire au bout de quelques minutes.</span>
-                  <Bascule onClick={() => changerDeVoie('totp')}>J’ai un authentificateur</Bascule>
-                </>
-              )}
-            </p>
           </div>
         ) : (
           <label className="flex flex-col gap-1">
             <Libelle>Code de secours (10 caractères)</Libelle>
             <Input value={code} onChange={(e) => setCode(e.target.value.trim())} maxLength={10} placeholder="XXXX-XXXX-XX" className="font-mono" autoFocus required />
-            <span className="flex items-center justify-between gap-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-              <span>Chaque code de secours ne sert qu'une fois.</span>
-              <Bascule onClick={() => changerDeVoie('totp')}>Revenir au code TOTP</Bascule>
-            </span>
+            <Aide>Chaque code de secours ne sert qu'une fois.</Aide>
           </label>
         )}
 
-        {/* Sans authentificateur ET sans code de secours, la voie email est le SEUL recours. Elle doit
-            donc rester atteignable depuis les deux autres modes, jamais enfouie. */}
-        {voie !== 'email' ? (
-          <p className="m-0 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-            Pas d’application d’authentification ? <Bascule onClick={() => changerDeVoie('email')}>Recevoir un code par email</Bascule>
-          </p>
-        ) : null}
+        {/* UNE seule ligne de recours, au lieu des trois qui s'empilaient — dont une phrase qui
+            répétait mot pour mot le lien posé à côté d'elle. Les deux voies restantes s'affichent
+            ensemble : quelqu'un qui n'a ni authentificateur ni code de secours doit voir la sortie
+            email sans avoir à la chercher. */}
+        <p className="m-0 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+          Pas de code ?{' '}
+          {AUTRES_VOIES[voie].map((v, i) => (
+            <span key={v}>
+              {i > 0 ? <span aria-hidden="true"> · </span> : null}
+              <Bascule onClick={() => changerDeVoie(v)}>{NOM_VOIE[v]}</Bascule>
+            </span>
+          ))}
+        </p>
 
         <label className="flex flex-col gap-1">
           <Libelle>Nouveau mot de passe</Libelle>

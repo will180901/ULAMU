@@ -176,8 +176,11 @@ export function LoginPage() {
                 {/* La maquette place ici un pavé numérique. Retiré sur consigne du 20/08/2026 : sur
                     un poste de travail, le clavier fait le même travail, et les cases sont déjà
                     entièrement saisissables au clavier. */}
-                <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-                  Un code de secours à 10 caractères est aussi accepté —{' '}
+                {/* Une seule ligne, et elle est actionnable. La version précédente énonçait le fait
+                    (« un code de secours est aussi accepté ») PUIS posait le lien : deux formulations
+                    du même message, sur une ligne qui s'enroulait. */}
+                <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  Pas de code ?{' '}
                   <button
                     type="button"
                     onClick={() => {
@@ -186,9 +189,8 @@ export function LoginPage() {
                     }}
                     className="font-semibold text-primary hover:underline"
                   >
-                    en saisir un
+                    Utiliser un code de secours
                   </button>
-                  .
                 </p>
               </div>
             ) : (
@@ -204,7 +206,7 @@ export function LoginPage() {
                   required
                 />
                 <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-                  Chaque code ne sert qu'une fois —{' '}
+                  Chaque code ne sert qu'une fois.{' '}
                   <button
                     type="button"
                     onClick={() => {
@@ -213,9 +215,8 @@ export function LoginPage() {
                     }}
                     className="font-semibold text-primary hover:underline"
                   >
-                    revenir au code à 6 chiffres
+                    Revenir au code à 6 chiffres
                   </button>
-                  .
                 </span>
               </label>
             )}

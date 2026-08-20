@@ -366,11 +366,19 @@ async function main(): Promise<void> {
     const phone = process.env.SEED_ADMIN_PHONE ?? "+242060000001";
     const username = process.env.SEED_ADMIN_USERNAME ?? "admin";
     const password = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!"; // DEV uniquement — à changer immédiatement
+    /* Sans adresse, ce compte n'a AUCUNE voie de récupération : la réinitialisation par email cherche
+       un compte portant l'adresse saisie, et le TOTP n'est plus imposé depuis le 20/08/2026. Un
+       administrateur qui oublie son mot de passe serait alors définitivement dehors — `disableTotp`
+       refusant par ailleurs de dépanner un ADMIN (RM-01-06).
+       Mettez une adresse que vous relevez vraiment dans SEED_ADMIN_EMAIL : le défaut ci-dessous ne
+       reçoit rien, il évite seulement de laisser le champ vide. */
+    const email = process.env.SEED_ADMIN_EMAIL ?? "admin@ulamu.cg";
     const { hashPassword } = await import("../src/common/crypto/password");
     await prisma.account.create({
       data: {
         phone,
         username,
+        email,
         passwordHash: await hashPassword(password),
         type: "ADMIN",
         facilityMemberProfile: { create: { firstName: "Super", lastName: "Admin" } },
@@ -398,7 +406,7 @@ async function main(): Promise<void> {
       },
     });
     // eslint-disable-next-line no-console
-    console.log(`Bootstrap SUPER_ADMIN créé (${username} / ${phone}, mdp ${password}) — SANS TOTP : à activer depuis l'application.`);
+    console.log(`Bootstrap SUPER_ADMIN créé (${username} / ${phone} / ${email}, mdp ${password}) — SANS TOTP : à activer depuis l'application.`);
   }
 
   // Données de démo (dev) — désactivables avec SEED_DEMO=false.
