@@ -205,6 +205,18 @@ export interface ResetPasswordTotpRequest {
   code: string
   newPassword: string
 }
+/**
+ * Réinitialisation par code reçu par EMAIL — seconde voie de récupération.
+ *
+ * Elle existait côté serveur (`POST /v1/auth/password-reset`, publique) sans être exposée ici, parce
+ * que le web imposait le TOTP à tous. Depuis que le second facteur est volontaire (20/08/2026), un
+ * compte sans authentificateur qui oublie son mot de passe n'aurait plus AUCUN recours.
+ */
+export interface ResetPasswordRequest {
+  email: string
+  otpCode: string
+  newPassword: string
+}
 
 // ── M01 — Sécurité du compte (CU-01-05/06/07) ──────────────────────────────
 
@@ -661,6 +673,7 @@ export const api = {
   setupTotp: () => request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/setup', undefined, true),
   confirmTotp: (code: string) => request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/confirm', { code }, true),
   resetPasswordByTotp: (dto: ResetPasswordTotpRequest) => request<void>('POST', '/v1/auth/password-reset/totp', dto),
+  resetPasswordByEmail: (dto: ResetPasswordRequest) => request<void>('POST', '/v1/auth/password-reset', dto),
 
   // M01 — sécurité du compte
   sessions: () => request<SessionInfo[]>('GET', '/v1/accounts/me/sessions', undefined, true),
