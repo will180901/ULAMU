@@ -931,6 +931,23 @@
    supprimé ». La version héritée de SARIS était à 2px pleins avec un décalage NÉGATIF (-2px) pour
    éviter d'être rognée par un parent `overflow:hidden` ; on suit désormais la charte, et les rares
    conteneurs qui rogneraient l'anneau devront laisser 2px de marge plutôt que l'inverse. */
+/* Remplissage automatique du navigateur — Chrome et Edge repeignent le champ en bleu pâle, par une
+   règle d'agent utilisateur qu'aucune déclaration de couleur ne peut surcharger. Un formulaire
+   entier vire alors au bleu, sans rapport avec la charte.
+   Le fond ne se surcharge pas, mais sa TRANSITION oui : repoussée à l'infini, il ne se peint jamais.
+   `-webkit-text-fill-color` reprend la main sur la couleur du texte, qui elle est surchargeable.
+   Volontairement PAS de `box-shadow` en repli (astuce répandue) : l'anneau de focus en utilise un,
+   et les deux s'annuleraient — un champ actif ne se signalerait plus au clavier. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--texte-primaire);
+  caret-color: var(--texte-primaire);
+  transition: background-color 100000s ease-in-out 0s;
+}
+
 /* Grain des boutons — posé par `button.tsx` sur toutes les variantes.
    Seul `background-image` est écrit : `background-color` reste à la variante shadcn (`bg-primary`,
    `bg-secondary`…). Les écrire ensemble en raccourci `background` effacerait la couleur. */

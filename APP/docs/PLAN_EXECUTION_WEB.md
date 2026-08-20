@@ -242,7 +242,7 @@ Ces points sont **connus, tracés, et non traités à ce jour**. Aucun ne doit a
 |---|---|---|---|
 | 0 | Pont des jetons shadcn ↔ ULAMU | **codé** (`cdfbc66`) — 3 défauts silencieux corrigés | *en attente de push* |
 | 1 | A1 — Connexion + alignement des 60 jetons sur la maquette | **codé** | *en attente de test* |
-| 2 | A2 — Inscription | à faire | |
+| 2 | A2 — Inscription (5 étapes, indicateur, consentement CGU) | **codé** | *en attente de test* |
 | 3 | A3 — Mot de passe oublié | à faire | |
 | 4 | A4 — Configuration 2FA | à faire | |
 | 5 | B1 — Coquille applicative | à faire | |
