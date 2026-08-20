@@ -80,7 +80,13 @@
   --texte-tertiaire: #98A2B2;
 
   /* ── Bordures ── */
-  --bordure-legere: rgba(15, 23, 42, 0.10);
+  /* 0.09 et non 0.10 : la maquette fait foi (docs/maquettes/ulamu.css l.44). Écart invisible à
+     l'œil, mais deux sources de vérité qui divergent finissent toujours par diverger davantage. */
+  --bordure-legere: rgba(15, 23, 42, 0.09);
+  /* Alternance douce des lignes de tableau — arbitrage du 10/08 qui s'écarte VOLONTAIREMENT de
+     CG-03/05/07, où l'alternance est rangée parmi les interdits. La maquette prime (règle posée par
+     le porteur). Un seul jeton, pour que l'écart soit visible en un endroit et pas dispersé. */
+  --ligne-alt: var(--fond-surface-2);
   --bordure-normale: rgba(15, 23, 42, 0.18);
   --bordure-forte: rgba(15, 23, 42, 0.34);
 
@@ -206,15 +212,65 @@
   --layout-sidebar-width: 240px; --layout-sidebar-collapsed: 56px;
   --layout-topbar-height: 56px; --layout-max-width: 1100px; --layout-subnav-height: 40px;
 
-  /* ── Pont shadcn ── */
-  --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0); --popover: oklch(1 0 0);
-  --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0); --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0); --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0); --card-foreground: oklch(0.145 0 0); --popover-foreground: oklch(0.145 0 0); --chart-1: oklch(0.87 0 0); --chart-2: oklch(0.556 0 0); --chart-3: oklch(0.439 0 0); --chart-4: oklch(0.371 0 0); --chart-5: oklch(0.269 0 0); --radius: 0.625rem; --sidebar: oklch(0.985 0 0); --sidebar-foreground: oklch(0.145 0 0); --sidebar-primary: oklch(0.205 0 0); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.97 0 0); --sidebar-accent-foreground: oklch(0.205 0 0); --sidebar-border: oklch(0.922 0 0); --sidebar-ring: oklch(0.708 0 0);
+  /* ── Pont shadcn → jetons ULAMU ───────────────────────────────────────────────────────────────
+     shadcn nomme ses couleurs à sa façon (`--primary`, `--background`, `--border`…) et ses
+     61 composants s'y branchent tous. Ce bloc fait pointer ces noms sur les jetons de la charte :
+     c'est ce qui donne à TOUS les composants l'apparence ULAMU d'un seul coup, sans ouvrir un seul
+     fichier de composant.
+
+     ⚠️ Ce pont existait, et `shadcn init` l'a écrasé par ses propres neutres oklch — un gris presque
+     noir. Le titre était resté, le contenu non : le cobalt de la marque avait disparu de toute
+     l'interface sans qu'aucun test ne le voie.
+
+     ⚠️ Rien à redéfinir pour le thème sombre. Ces valeurs pointent sur des jetons ULAMU que le bloc
+     `.dark` recalcule sur le MÊME élément (`<html>`) : la substitution se fait à l'usage, donc le
+     sombre suit tout seul. Dupliquer ce bloc dans `.dark` créerait deux vérités à maintenir. */
+  --background: var(--fond-page);
+  --foreground: var(--texte-primaire);
+  --card: var(--fond-surface);
+  --card-foreground: var(--texte-primaire);
+  --popover: var(--fond-surface);
+  --popover-foreground: var(--texte-primaire);
+  /* La marque. Cobalt #2756A6, seule couleur d'accent du produit (CG-01). */
+  --primary: var(--ap-400);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--fond-surface-2);
+  --secondary-foreground: var(--texte-primaire);
+  --muted: var(--fond-surface-2);
+  --muted-foreground: var(--texte-secondaire);
+  /* Malgré son nom, `accent` chez shadcn n'est PAS la couleur de marque : c'est le survol et l'état
+     actif des éléments neutres (items de menu, lignes de tableau). Le brancher sur le cobalt
+     repeindrait chaque survol en bleu vif. */
+  --accent: var(--fond-surface-2);
+  --accent-foreground: var(--texte-primaire);
+  --destructive: var(--erreur-accent);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--bordure-legere);
+  --input: var(--bordure-input);
+  /* Anneau de focus : toujours cobalt, jamais teinté par la couleur locale — même sur un bouton
+     destructeur (CG-05 §01, « WCAG AA, jamais supprimé »). */
+  --ring: var(--ap-400);
+  /* 10px = le plafond de rayon du projet (arbitrage du 10/08, contre les 14px de CG-03/CG-07). */
+  --radius: 10px;
+  /* Graphiques : le cobalt en tête, puis les tons DÉCORATIFS. Jamais les tons sémantiques — vert et
+     rouge doivent rester réservés au succès et à l'erreur, sinon une courbe verte se lit comme une
+     bonne nouvelle alors qu'elle ne dit rien de tel. */
+  --chart-1: var(--ap-400);
+  --chart-2: var(--ton-emeraude-icone);
+  --chart-3: var(--ton-ambre-icone);
+  --chart-4: var(--ton-violet-icone);
+  --chart-5: var(--ton-cyan-icone);
+  /* Barre latérale. Le fond est translucide : CG-06 §07 range « sidebar sans glassmorphism » parmi
+     les interdits absolus. Le flou (`backdrop-filter`) sera posé sur le composant à l'étape B1 —
+     une couleur translucide sans flou derrière ne fait que délaver. */
+  --sidebar: var(--glass-sidebar-bg);
+  --sidebar-foreground: var(--texte-primaire);
+  --sidebar-primary: var(--ap-400);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--fond-surface-2);
+  --sidebar-accent-foreground: var(--texte-primaire);
+  --sidebar-border: var(--glass-bordure);
+  --sidebar-ring: var(--ap-400);
 }
 
 .dark {
@@ -253,14 +309,31 @@
   --glass-card-bg: rgba(22, 27, 34, 0.80); --glass-toast-bg: rgba(22, 27, 34, 0.88);
   --glass-bordure: rgba(230, 237, 243, 0.10);
 
-  --background: oklch(0.145 0 0); --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0); --popover: oklch(0.205 0 0);
-  --primary: oklch(0.922 0 0); --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0); --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0); --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0); --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 15%); --ring: oklch(0.556 0 0); --card-foreground: oklch(0.985 0 0); --popover-foreground: oklch(0.985 0 0); --chart-1: oklch(0.87 0 0); --chart-2: oklch(0.556 0 0); --chart-3: oklch(0.439 0 0); --chart-4: oklch(0.371 0 0); --chart-5: oklch(0.269 0 0); --sidebar: oklch(0.205 0 0); --sidebar-foreground: oklch(0.985 0 0); --sidebar-primary: oklch(0.488 0.243 264.376); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.269 0 0); --sidebar-accent-foreground: oklch(0.985 0 0); --sidebar-border: oklch(1 0 0 / 10%); --sidebar-ring: oklch(0.556 0 0);
+  /* Tons décoratifs recalculés pour le sombre — repris de `docs/maquettes/ulamu.css`, qui les
+     définit alors que ce fichier ne le faisait pas. Sans eux, une tuile d'icône ou une série de
+     graphique gardait sa couleur de thème clair sur fond quasi-noir. */
+  --ton-bleu-fond: #1A2233; --ton-bleu-icone: #7C9BE0;
+  --ton-violet-fond: #241D33; --ton-violet-icone: #B08FE8;
+  --ton-emeraude-fond: #152A21; --ton-emeraude-icone: #5FC894;
+  --ton-ambre-fond: #2A2314; --ton-ambre-icone: #D9AC53;
+  --ton-cyan-fond: #14262A; --ton-cyan-icone: #56B3C0;
+  --ton-rose-fond: #2A1A22; --ton-rose-icone: #D983AB;
+
+  /* Alternance des lignes : une teinte posée, pas une surface. En sombre, `--fond-surface-2` serait
+     trop marqué et transformerait le tableau en damier. */
+  --ligne-alt: rgba(230, 237, 243, 0.028);
+
+  /* Grain BLANC en sombre, et non noir. Une texture noire sur un fond quasi-noir ne se voit
+     simplement pas : le grain disparaissait de tout le thème sombre. Opacités reprises de la
+     maquette (0.040 / 0.055 / 0.085). */
+  --grain-url-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.040 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.055 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-url-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Les noms shadcn (`--primary`, `--background`…) ne sont PAS repris ici : le pont du `:root`
+     pointe sur les jetons ULAMU ci-dessus, que ce bloc vient de recalculer. Le sombre suit donc
+     tout seul. `shadcn init` avait dupliqué ici ses neutres oklch — deux vérités concurrentes pour
+     la même couleur, et c'est la seconde qui gagnait. */
 }
 
 [data-densite="compact"] {
@@ -312,9 +385,13 @@
   --color-chart-1: var(--chart-1);
   --color-popover-foreground: var(--popover-foreground);
   --color-card-foreground: var(--card-foreground);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* shadcn dérivait ces trois rayons de `--radius` : 18px, 22px et 26px. Le projet plafonne à 10px
+     (arbitrage du 10/08), et ce bloc étant déclaré après le `:root`, c'est lui qui l'emportait —
+     n'importe quel `rounded-2xl` d'un composant shadcn aurait arrondi à 18px sans prévenir.
+     Ramenés au plafond, comme les jetons `--radius-*` de la charte plus haut. */
+  --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
+  --radius-4xl: var(--radius-4xl);
 }
 
 @layer base {
