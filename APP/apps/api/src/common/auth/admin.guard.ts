@@ -31,8 +31,17 @@ export class AdminGuard implements CanActivate {
     const assignment = await this.prisma.adminRoleAssignment.findUnique({ where: { accountId: actor.accountId } });
     if (!assignment) throw new ForbiddenException("Aucun sous-rôle admin attribué");
 
-    const totp = await this.prisma.totpSecret.findUnique({ where: { accountId: actor.accountId } });
-    if (!totp?.enabled) throw new ForbiddenException("TOTP obligatoire pour les actions admin (RM-01-06)");
+    /* RM-01-06 : TOTP obligatoire pour toute action admin. L'exigence est levable par variable
+       d'environnement le temps de la construction, mais elle vaut `true` PAR DÉFAUT — et ce sens est
+       délibéré. Un drapeau qu'on oublie de repositionner doit laisser le système fermé, jamais
+       ouvert : supprimer la règle du code obligerait quelqu'un à *penser* à la réécrire avant la
+       livraison, et personne n'y pense.
+       ⚠️ ADMIN_REQUIRE_TOTP=false est posé sur Render pendant la refonte web. À retirer au lancement
+       réel, avec le reste du MODE VITRINE (cf. render.yaml). */
+    if (process.env.ADMIN_REQUIRE_TOTP !== "false") {
+      const totp = await this.prisma.totpSecret.findUnique({ where: { accountId: actor.accountId } });
+      if (!totp?.enabled) throw new ForbiddenException("TOTP obligatoire pour les actions admin (RM-01-06)");
+    }
 
     if (required.length > 0 && assignment.role !== "SUPER_ADMIN" && !required.includes(assignment.role)) {
       throw new ForbiddenException("Sous-rôle insuffisant (matrice M02)");

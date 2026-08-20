@@ -52,6 +52,12 @@ services:
         value: "3000"          # le soignant virtuel accepte la consultation après 3 s
       - key: MOMO_AUTOCONFIRM_MS
         value: "4000"          # le paiement Mobile Money se valide tout seul après 4 s (aucun argent réel)
+      - key: ADMIN_REQUIRE_TOTP
+        value: "false"         # ⚠️ Lève RM-01-06 (TOTP obligatoire pour les actions admin) le temps de la
+                               # refonte web. Le code vaut "true" PAR DÉFAUT : retirer cette ligne suffit
+                               # à rétablir l'exigence — un oubli laisse donc le système fermé, pas ouvert.
+                               # Posé le 20/08/2026 après qu'un secret TOTP scellé en local se soit révélé
+                               # illisible par l'API déployée, enfermant le compte administrateur dehors.
       - key: CORS_ORIGINS     # origines autorisées à appeler l'API depuis un navigateur (app web pro/structure/admin)
         value: "https://ulamu-web.onrender.com,http://localhost:5173"
 

@@ -364,13 +364,9 @@ async function main(): Promise<void> {
   const adminCount = await prisma.account.count({ where: { type: "ADMIN" } });
   if (adminCount === 0) {
     const phone = process.env.SEED_ADMIN_PHONE ?? "+242060000001";
-    const username = process.env.SEED_ADMIN_USERNAME ?? "super.admin";
-    const password = process.env.SEED_ADMIN_PASSWORD ?? "admin12345"; // DEV uniquement — à changer immédiatement
-    // TOTP déjà activé pour que le compte soit testable sans repasser par le flux QR (AdminGuard l'exige).
-    // Secret fixe par défaut (dev) — reproductible entre reseeds, à charger dans une app d'authentification.
-    const totpSecretB32 = process.env.SEED_ADMIN_TOTP_SECRET ?? "JBSWY3DPEHPK3PXP";
+    const username = process.env.SEED_ADMIN_USERNAME ?? "admin";
+    const password = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!"; // DEV uniquement — à changer immédiatement
     const { hashPassword } = await import("../src/common/crypto/password");
-    const { sealSecret } = await import("../src/common/crypto/secretbox");
     await prisma.account.create({
       data: {
         phone,
@@ -379,7 +375,18 @@ async function main(): Promise<void> {
         type: "ADMIN",
         facilityMemberProfile: { create: { firstName: "Super", lastName: "Admin" } },
         adminRole: { create: { role: "SUPER_ADMIN", assignedBy: "seed" } },
-        totpSecret: { create: { encryptedSecret: sealSecret(totpSecretB32), enabled: true, enabledAt: new Date() } },
+        /* ⚠️ PLUS de secret TOTP créé ici, et ce n'est pas un allègement de sécurité — c'est la
+           correction d'un défaut constaté en production le 20/08/2026.
+
+           Le seed scellait le secret avec la clé `SECRETBOX_KEY` de la machine qui l'exécute. Or ce
+           seed tourne en local, tandis que l'API qui devra relire ce secret tourne sur Render, avec
+           sa propre clé. Le secret était donc illisible dès sa création : toute connexion admin
+           répondait 500, et le compte était définitivement inaccessible — `disableTotp` refusant par
+           ailleurs de dépanner un ADMIN (RM-01-06).
+
+           La règle qui en découle : un secret ne doit jamais être scellé par un autre environnement
+           que celui qui le relira. Le compte active donc son TOTP lui-même, depuis l'application,
+           où le secret est scellé par le serveur qui l'utilisera. */
         consents: {
           createMany: {
             data: [
@@ -391,7 +398,7 @@ async function main(): Promise<void> {
       },
     });
     // eslint-disable-next-line no-console
-    console.log(`Bootstrap SUPER_ADMIN créé (${username} / ${phone}, mdp ${password}) — secret TOTP (base32) : ${totpSecretB32}.`);
+    console.log(`Bootstrap SUPER_ADMIN créé (${username} / ${phone}, mdp ${password}) — SANS TOTP : à activer depuis l'application.`);
   }
 
   // Données de démo (dev) — désactivables avec SEED_DEMO=false.

@@ -74,7 +74,6 @@ function Chantier() {
 export function App() {
   const hasHydrated = useSessionStore((s) => s.hasHydrated)
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated)
-  const me = useSessionStore((s) => s.me)
 
   // zustand/persist hydrate en microtâche : si le stockage était déjà lu au montage, force le flag.
   useEffect(() => {
@@ -83,10 +82,6 @@ export function App() {
 
   if (!hasHydrated) return <LoadingScreen />
 
-  // TOTP obligatoire sur le web (jamais de SMS pour la récupération) — bloque tout le reste tant
-  // que ce n'est pas fait, pour que la réinitialisation par TOTP reste toujours utilisable.
-  const needsTotpSetup = isAuthenticated && !!me && me.accountType !== 'PATIENT' && !me.totpEnabled
-
   return (
     <BrowserRouter>
       <Routes>
@@ -94,14 +89,19 @@ export function App() {
         <Route path="/inscription" element={<RegisterPage />} />
         <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
         {isAuthenticated ? (
-          needsTotpSetup ? (
-            <>
-              <Route path="/configuration-totp" element={<TotpSetupPage />} />
-              <Route path="*" element={<Navigate to="/configuration-totp" replace />} />
-            </>
-          ) : (
+          /* Le TOTP n'est plus IMPOSÉ à la première connexion (décision du 20/08/2026). L'écran
+             reste accessible à `/configuration-totp` pour qui veut l'activer, et le sera depuis les
+             paramètres du compte une fois l'écran B3 reconstruit.
+
+             Ce qui a motivé le changement : un compte dont le secret TOTP était illisible se
+             retrouvait enfermé dehors, sans recours. Imposer un second facteur à la première
+             connexion transforme le moindre incident de chiffrement en compte perdu. Le second
+             facteur reste vivement recommandé — et redeviendra exigé pour les administrateurs dès
+             que `ADMIN_REQUIRE_TOTP` reprendra sa valeur par défaut côté API. */
+          <>
+            <Route path="/configuration-totp" element={<TotpSetupPage />} />
             <Route path="*" element={<Chantier />} />
-          )
+          </>
         ) : (
           <Route path="*" element={<Navigate to="/login" replace />} />
         )}
