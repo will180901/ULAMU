@@ -955,6 +955,21 @@ textarea:-webkit-autofill {
   transition: background-color 100000s ease-in-out 0s;
 }
 
+/* Squelette de chargement — la vague qui traverse un bloc gris (maquette A4).
+   CG-08 §06 impose de « reproduire fidèlement la structure du contenu final » : un squelette dit
+   CE QUI arrive, là où un rond qui tourne dit seulement qu'on attend. */
+@keyframes ul-shimmer {
+  to { background-position: -320px 0; }
+}
+.ul-shimmer {
+  background: linear-gradient(90deg, var(--fond-input) 0%, var(--fond-surface-2) 50%, var(--fond-input) 100%);
+  background-size: 320px 100%;
+  animation: ul-shimmer 1400ms linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ul-shimmer { animation: none; background: var(--fond-input); }
+}
+
 /* Grain des boutons — posé par `button.tsx` sur toutes les variantes.
    Seul `background-image` est écrit : `background-color` reste à la variante shadcn (`bg-primary`,
    `bg-secondary`…). Les écrire ensemble en raccourci `background` effacerait la couleur. */

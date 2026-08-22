@@ -301,6 +301,11 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 7 | A3 | **Voie de récupération par email ajoutée** | La maquette ne prévoit que le TOTP, devenu optionnel le matin même : un compte sans authentificateur n'avait plus **aucun** recours. Le serveur savait déjà le faire. | Porteur, 20/08 |
 | 8 | A2, A3 | **Sous-titre masqué après la première étape** | 70 px répétés à chaque étape, sans rien apprendre à quelqu'un déjà engagé — l'indicateur d'étapes le renseigne mieux. Ce sont ces 70 px qui donnent la marge quand une erreur s'affiche. | Claude, mesuré |
 | 9 | A3 | **« Si un compte utilise X… »** au lieu de « Code envoyé à X. » | Le serveur envoie un code à n'importe quelle adresse (anti-énumération) et refuse ensuite avec « Aucun code en attente ». Affirmer l'envoi enfermait l'utilisateur dans une boucle sans issue. | Claude |
+| 10 | A4 | **3 étapes au lieu d'une** (Scanner · Vérifier · Codes) | QR, secret, six cases et bouton empilés faisaient 695 px pour 620 de fenêtre. | Claude, mesuré |
+| 11 | A4 | **Le QR et le code manuel s'excluent** — « Impossible de scanner ? » remplace l'un par l'autre | Ce sont deux alternatives, pas un empilement : qui ne peut pas scanner n'a pas besoin de voir le QR. Les afficher ensemble débordait de 29 px. | Claude |
+| 12 | A4 | **Deux phrases corrigées** : la 2FA n'est plus dite « obligatoire », et l'avertissement ne dit plus que le web « n'envoie ni SMS ni code par email » | Les deux étaient vraies le 14/08 et fausses le 20/08, à cause de nos propres décisions. Les garder aurait fait mentir l'interface. | Claude |
+| 13 | A4 | **Sortie « Plus tard » ajoutée**, et sous-titre du bandeau retiré | La maquette ne prévoit aucune sortie, ce qui se tenait quand l'écran était BLOQUANT ; devenu volontaire, il enfermait qui l'ouvrait par curiosité. Le sous-titre paraphrasait le titre sur deux lignes. | Claude |
+| 14 | A4 | **Bouton « Télécharger les codes »** | Présent dans la maquette mais sans action. Recopier dix codes à la main est la première cause de perte. | Maquette, rendu fonctionnel |
 
 ### Ce qui n'est PAS un écart, et ne doit pas le devenir
 
@@ -324,8 +329,8 @@ externe — notre version est la bonne.
 | 2 | A2 — Inscription, 6 étapes, indicateur partagé (`2d16058`) | ✅ | **20/08** |
 | 3 | A3 — Mot de passe oublié, 3 étapes, 3 voies (`f82970b`, `39e91c9`) | ✅ | **20/08** |
 | — | Rangement : plus aucun ascenseur sur A1/A2/A3 (`24e8dc1`) | ✅ | **20/08** |
-| 4 | A4 — Configuration 2FA — **la suivante**, et elle ferme le chantier sécurité | à faire | |
-| 5 | B1 — Coquille applicative | à faire | |
+| 4 | A4 — Configuration 2FA, 3 étapes + correctif `useRef`/StrictMode | **codé** | *en attente de test* |
+| 5 | B1 — Coquille applicative — **la suivante** | à faire | |
 | 6 | B2 — Tableau de bord | à faire | |
 | 7 | B3 — Mes paramètres | à faire | |
 | 8–13 | C1 → C6 — Professionnel | à faire | |
