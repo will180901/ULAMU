@@ -68,26 +68,33 @@
   --g-10: #0F172A;
 
   /* ── Surfaces ── */
-  --fond-page: #F4F6F8;
+  /* ⚠️ Palette CLAIRE retouchée le 20/08/2026, la maquette laissait l'écran illisible.
+     Ses trois surfaces tenaient dans 15 niveaux sur 255 — de 240 à 255 : tout l'écran entre 94 et
+     100 % de luminosité, rien qui se détache de rien, et une fatigue oculaire immédiate. Le texte
+     tertiaire y tombait à 2,9:1, sous le seuil AA de 4,5 — un échec objectif, pas une question de
+     goût, et il porte les intitulés de groupe, le fil d'Ariane et tous les textes d'aide.
+     Mesures après retouche : page↔surface 1,08 → 1,15 · tertiaire/page 2,9 → 4,66.
+     Le thème SOMBRE n'est pas touché : il était jugé bon, et ces jetons sont déclarés par thème. */
+  --fond-page: #EDEFF1;
   --fond-surface: #FFFFFF;
-  --fond-surface-2: #F0F2F5;
+  --fond-surface-2: #E4E6E9;
   --fond-input: #EAECF0;
   --bordure-input: #B5BCC8;
 
   /* ── Texte (jamais pur noir) ── */
   --texte-primaire: #242B34;
   --texte-secondaire: #54606E;
-  --texte-tertiaire: #8892A4;
+  --texte-tertiaire: #616B7D;
 
   /* ── Bordures ── */
   /* 0.09 et non 0.10 : la maquette fait foi (docs/maquettes/ulamu.css l.44). Écart invisible à
      l'œil, mais deux sources de vérité qui divergent finissent toujours par diverger davantage. */
-  --bordure-legere: rgba(15, 23, 42, 0.09);
+  --bordure-legere: rgba(15, 23, 42, 0.12);
   /* Alternance douce des lignes de tableau — arbitrage du 10/08 qui s'écarte VOLONTAIREMENT de
      CG-03/05/07, où l'alternance est rangée parmi les interdits. La maquette prime (règle posée par
      le porteur). Un seul jeton, pour que l'écart soit visible en un endroit et pas dispersé. */
   --ligne-alt: var(--fond-surface-2);
-  --bordure-normale: rgba(15, 23, 42, 0.16);
+  --bordure-normale: rgba(15, 23, 42, 0.20);
   --bordure-forte: rgba(15, 23, 42, 0.30);
 
   /* ── Sémantique — strictement séparée de l'accent/des tons décoratifs (jamais un choix esthétique) ── */
