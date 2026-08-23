@@ -75,6 +75,7 @@ export function TotpSetupPage() {
   const [backupCodes, setBackupCodes] = useState<string[]>([])
   const [copied, setCopied] = useState(false)
   const [secretVisible, setSecretVisible] = useState(false)
+  const [codesCopies, setCodesCopies] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   /**
@@ -154,6 +155,13 @@ export function TotpSetupPage() {
     await navigator.clipboard.writeText(secret)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  /** Un code par ligne : c'est le format qu'on recolle dans un gestionnaire de mots de passe. */
+  const copierLesCodes = async () => {
+    await navigator.clipboard.writeText(backupCodes.join('\n'))
+    setCodesCopies(true)
+    setTimeout(() => setCodesCopies(false), 2000)
   }
 
   /** Les codes ne s'affichent qu'une fois : les recopier à la main est la première cause de perte. */
@@ -342,12 +350,26 @@ export function TotpSetupPage() {
                   de compte si vous perdez votre application d'authentification.
                 </p>
 
-                <div className="grid grid-cols-2 gap-1.5 rounded-md bg-secondary p-3">
-                  {backupCodes.map((c) => (
-                    <code key={c} className="font-mono text-[13px] leading-[1.6] text-foreground">
-                      {c}
-                    </code>
-                  ))}
+                {/* Le bloc porte `group` : l'action de copie n'apparaît qu'au survol, pour ne pas
+                    encombrer une grille qu'on vient lire. `ul-au-survol` la garde atteignable au
+                    clavier et sur écran tactile, où le survol n'existe pas. */}
+                <div className="group relative rounded-md bg-secondary p-3">
+                  <button
+                    type="button"
+                    onClick={() => void copierLesCodes()}
+                    aria-label="Copier les 10 codes de secours"
+                    className="ul-au-survol absolute right-2 top-2 inline-flex items-center gap-1.5 rounded border border-[var(--bordure-normale)] bg-card px-2 py-1 text-[11px] font-semibold text-foreground shadow-[var(--ombre-1)] hover:bg-[var(--ap-50)] focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
+                  >
+                    {codesCopies ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+                    {codesCopies ? 'Copiés' : 'Copier'}
+                  </button>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {backupCodes.map((c) => (
+                      <code key={c} className="font-mono text-[13px] leading-[1.6] text-foreground">
+                        {c}
+                      </code>
+                    ))}
+                  </div>
                 </div>
 
                 {/* La maquette écrit ici que « le web ULAMU n'envoie ni SMS ni code par email ». Ce

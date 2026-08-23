@@ -970,6 +970,25 @@ textarea:-webkit-autofill {
   .ul-shimmer { animation: none; background: var(--fond-input); }
 }
 
+/* Action révélée au survol du bloc qui la contient (le parent porte `group`).
+   Elle reste TOUJOURS atteignable autrement : visible dès qu'elle prend le focus clavier, et
+   affichée en permanence là où le survol n'existe pas — écrans tactiles. Une commande qu'on ne peut
+   atteindre qu'à la souris est une commande absente pour une partie des utilisateurs. */
+.ul-au-survol {
+  opacity: 0;
+  transition: opacity var(--dur-fast) linear;
+}
+/* `:focus` et non `:focus-visible` : ce dernier laisse au navigateur le soin de juger si le focus
+   « mérite » d'être montré, et il ne s'applique pas à un focus donné par programme. Un bouton
+   invisible mais focalisé est un piège — on préfère le montrer une fois de trop que pas assez. */
+.group:hover .ul-au-survol,
+.ul-au-survol:focus {
+  opacity: 1;
+}
+@media (hover: none) {
+  .ul-au-survol { opacity: 1; }
+}
+
 /* Grain des boutons — posé par `button.tsx` sur toutes les variantes.
    Seul `background-image` est écrit : `background-color` reste à la variante shadcn (`bg-primary`,
    `bg-secondary`…). Les écrire ensemble en raccourci `background` effacerait la couleur. */

@@ -306,6 +306,7 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 12 | A4 | **Deux phrases corrigées** : la 2FA n'est plus dite « obligatoire », et l'avertissement ne dit plus que le web « n'envoie ni SMS ni code par email » | Les deux étaient vraies le 14/08 et fausses le 20/08, à cause de nos propres décisions. Les garder aurait fait mentir l'interface. | Claude |
 | 13 | A4 | **Sortie « Plus tard » ajoutée**, et sous-titre du bandeau retiré | La maquette ne prévoit aucune sortie, ce qui se tenait quand l'écran était BLOQUANT ; devenu volontaire, il enfermait qui l'ouvrait par curiosité. Le sous-titre paraphrasait le titre sur deux lignes. | Claude |
 | 14 | A4 | **Bouton « Télécharger les codes »** | Présent dans la maquette mais sans action. Recopier dix codes à la main est la première cause de perte. | Maquette, rendu fonctionnel |
+| 15 | A4 | **Copie des codes de secours au survol** du bloc | Absente de la maquette. Demandée le 20/08. Révélée au survol pour ne pas encombrer une grille qu'on vient lire — mais visible au focus clavier et en permanence sur écran tactile, où le survol n'existe pas. | Porteur, 20/08 |
 
 ### Ce qui n'est PAS un écart, et ne doit pas le devenir
 
