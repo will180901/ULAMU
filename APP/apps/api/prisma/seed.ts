@@ -4,6 +4,8 @@
  * Les valeurs sont sérialisées en chaîne ; les durées sont en secondes sauf mention.
  */
 import { PrismaClient } from "@prisma/client";
+import { createHash } from "node:crypto";
+import { buildAgreementText } from "../src/modules/m03-verification-contracts/m03.policies";
 
 const prisma = new PrismaClient();
 
@@ -91,6 +93,16 @@ const DEMO_PHARMACIST = {
   firstName: "Bruno",
   lastName: "Ossona",
   pharmacyName: "Pharmacie du Marché",
+};
+
+/** Le soignant qui vient de s'inscrire : dossier vide, tout reste à faire. Sert à tester C1. */
+const DEMO_PRO_BROUILLON = {
+  phone: "+242069000110",
+  username: "dr.nouveau",
+  email: "dr.nouveau@exemple.cg",
+  password: "demo1234",
+  firstName: "Ange",
+  lastName: "Makaya",
 };
 
 const DEMO_PROS: DemoPro[] = [
@@ -192,6 +204,36 @@ async function seedDemo(): Promise<void> {
     });
   }
 
+  /**
+   * ── Soignant en BROUILLON ──
+   *
+   * Les soignants de démonstration ci-dessous sont tous déjà vérifiés, contrat signé : impossible de
+   * voir avec eux ce que traverse quelqu'un qui vient de s'inscrire — dossier vide, pièces à
+   * déposer, dépôt refusé tant qu'il en manque une. C'est pourtant l'état par lequel passe CHAQUE
+   * soignant réel, et l'écran « Ma vérification » n'existe que pour lui.
+   *
+   * Il a une adresse email, contrairement aux autres : sans elle, il ne pourrait pas récupérer son
+   * compte, et les avis de sécurité n'iraient nulle part.
+   */
+  if (!(await prisma.account.findUnique({ where: { phone: DEMO_PRO_BROUILLON.phone } }))) {
+    const compte = await prisma.account.create({
+      data: {
+        phone: DEMO_PRO_BROUILLON.phone,
+        username: DEMO_PRO_BROUILLON.username,
+        email: DEMO_PRO_BROUILLON.email,
+        passwordHash: await hashPassword(DEMO_PRO_BROUILLON.password),
+        type: "PROFESSIONAL",
+        professionalProfile: { create: {
+          firstName: DEMO_PRO_BROUILLON.firstName, lastName: DEMO_PRO_BROUILLON.lastName,
+          category: "GENERAL_PRACTITIONER", specialty: "Médecin généraliste", district: "Bacongo",
+        } },
+        consents,
+      },
+    });
+    // Dossier DRAFT sans aucune pièce — l'état exact d'un compte fraîchement créé (EF-03-01).
+    await prisma.verificationCase.create({ data: { professionalId: compte.id } });
+  }
+
   // ── Soignants vérifiés sous contrat signé ──
   const now = new Date();
   for (const pro of DEMO_PROS) {
@@ -214,20 +256,42 @@ async function seedDemo(): Promise<void> {
     const professionalId = account.id;
 
     // VerificationCase VERIFIED + contrat avec UNE version signée (RM-05-01 / D-029).
+    //
+    // ⚠️ L'empreinte était la chaîne littérale « seed-demo ». M03 régénère le texte du contrat à
+    // chaque lecture et recompare son empreinte au sceau : une valeur factice ne correspond JAMAIS,
+    // et l'écran « Ma vérification » présentait donc tous les soignants de démonstration comme
+    // porteurs d'un contrat corrompu. Le garde-fou faisait exactement son travail — c'est la donnée
+    // semée qui était fausse. On scelle maintenant la vraie empreinte du vrai texte.
     const existingCase = await prisma.verificationCase.findUnique({ where: { professionalId } });
     if (!existingCase) {
+      const texte = buildAgreementText(`${pro.firstName} ${pro.lastName}`, 10, 1);
       await prisma.verificationCase.create({
         data: {
           professionalId,
           status: "VERIFIED",
           agreement: { create: { versions: { create: {
-            version: 1, commissionPct: 10, bodyHash: "seed-demo",
+            version: 1, commissionPct: 10, bodyHash: createHash("sha256").update(texte, "utf8").digest("hex"),
             signedAt: now, signedBy: professionalId, effectiveAt: now,
           } } } },
         },
       });
-    } else if (existingCase.status !== "VERIFIED") {
-      await prisma.verificationCase.update({ where: { id: existingCase.id }, data: { status: "VERIFIED" } });
+    } else {
+      if (existingCase.status !== "VERIFIED") {
+        await prisma.verificationCase.update({ where: { id: existingCase.id }, data: { status: "VERIFIED" } });
+      }
+      // Réparation des bases déjà semées avec l'empreinte factice. Sans elle, le garde d'existence
+      // ci-dessus laisserait les anciens contrats corrompus pour toujours, et « Ma vérification »
+      // continuerait de les signaler comme tels.
+      const factices = await prisma.agreementVersion.findMany({
+        where: { bodyHash: "seed-demo", agreement: { caseId: existingCase.id } },
+      });
+      for (const v of factices) {
+        const texte = buildAgreementText(`${pro.firstName} ${pro.lastName}`, v.commissionPct, v.version);
+        await prisma.agreementVersion.update({
+          where: { id: v.id },
+          data: { bodyHash: createHash("sha256").update(texte, "utf8").digest("hex") },
+        });
+      }
     }
 
     // Offres (créées une seule fois).
@@ -345,7 +409,7 @@ async function seedDemo(): Promise<void> {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + ${DEMO_PROS.length} soignants + titulaire « ${DEMO_PHARMACIST.username} » (mdp ${DEMO_PHARMACIST.password}) + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
+  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + soignant en brouillon « ${DEMO_PRO_BROUILLON.username} » (mdp ${DEMO_PRO_BROUILLON.password}) + ${DEMO_PROS.length} soignants vérifiés + titulaire « ${DEMO_PHARMACIST.username} » (mdp ${DEMO_PHARMACIST.password}) + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
 }
 
 async function main(): Promise<void> {
