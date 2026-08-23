@@ -27,7 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Avis, Carte, Critere } from '../parts'
+import { Avis, Carte, Critere } from '@/components/ulamu/parts'
 import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 

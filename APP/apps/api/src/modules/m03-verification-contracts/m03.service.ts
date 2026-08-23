@@ -33,6 +33,7 @@ import {
   canTransition,
   isOverdue,
   missingRequiredDocs,
+  REQUIRED_DOCS,
   requiredDocsSatisfied,
   SubjectKind,
   VerificationStatusCode,
@@ -229,6 +230,94 @@ export class M03Service {
   }
 
   /** Dépose le dossier : jeu minimal exigé, puis DRAFT/NEEDS_INFO/REJECTED → SUBMITTED (CU-03-01, EF-03-04). */
+  /**
+   * Retrait d'une pièce déposée — ce que la maquette appelle « Remplacer ».
+   *
+   * Il n'existait aucun moyen d'en retirer une : un diplôme téléversé à l'envers restait attaché au
+   * dossier pour toujours, et on empilait par-dessus. L'administration voyait alors deux diplômes
+   * sans savoir lequel fait foi.
+   *
+   * Mêmes états que l'ajout : on ne touche pas à un dossier en cours d'examen — l'examinateur doit
+   * juger sur des pièces stables (EF-03-01/04).
+   */
+  async removeDocument(actor: ActorRef, documentId: string, facilityId?: string): Promise<{ removed: true }> {
+    const c = await this.resolveOwnCase(actor.accountId, facilityId);
+    if (!canAddDocuments(c.status)) {
+      throw new ConflictException(
+        "Pièces modifiables uniquement quand le dossier est « à compléter », « complément demandé » ou « refusé » (EF-03-01/04)",
+      );
+    }
+    const doc = c.documents.find((d) => d.id === documentId);
+    if (!doc) throw new NotFoundException("Pièce introuvable dans ce dossier");
+    await this.prisma.$transaction(async (tx) => {
+      await tx.supportingDocument.delete({ where: { id: doc.id } });
+      // RM-03-03 : le type de pièce, jamais la clé ni le contenu.
+      await this.audit.emit(tx, {
+        actorId: actor.accountId,
+        actorType: auditActorType(actor.accountType),
+        action: "m03.document.removed",
+        resource: `case:${c.id}`,
+        context: { kind: doc.kind },
+      });
+    });
+    // Après le commit : si l'effacement du fichier échoue, la ligne est déjà partie et le dossier est
+    // cohérent. L'inverse — fichier supprimé, ligne conservée — laisserait une pièce illisible.
+    await this.storage.remove(doc.fileKey);
+    return { removed: true };
+  }
+
+  /**
+   * Lecture d'une pièce par son DÉPOSANT.
+   *
+   * Aucune route ne savait servir ces fichiers : ils étaient écrits et chiffrés sous des clés `vd_…`
+   * que `media/avatars` (préfixe `av_`) et `media/sessions` (préfixe `sm_`) refusent toutes deux. Un
+   * diplôme téléversé partait donc dans un trou noir — invisible du déposant, et invisible de
+   * l'administration censée le vérifier.
+   *
+   * On sert par IDENTIFIANT de pièce, jamais par clé de stockage : une clé qui fuite dans un journal
+   * serait rejouable telle quelle, alors qu'un identifiant oblige à repasser par la vérification du
+   * propriétaire ci-dessous.
+   */
+  async readOwnDocument(accountId: string, documentId: string, facilityId?: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const c = await this.resolveOwnCase(accountId, facilityId);
+    const doc = c.documents.find((d) => d.id === documentId);
+    if (!doc) throw new NotFoundException("Pièce introuvable dans ce dossier");
+    return this.lireFichier(doc.fileKey);
+  }
+
+  /**
+   * Lecture d'une pièce par l'administration de vérification.
+   *
+   * Tracée, contrairement à la lecture par le déposant : consulter la pièce d'identité de quelqu'un
+   * d'autre est un accès à donnée personnelle, et la loi n° 29-2019 veut qu'il en reste une trace.
+   * Le contrôle du sous-rôle est fait par `AdminGuard` sur le contrôleur.
+   */
+  async readDocumentAsAdmin(adminAccountId: string, caseId: string, documentId: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const doc = await this.prisma.supportingDocument.findFirst({ where: { id: documentId, caseId } });
+    if (!doc) throw new NotFoundException("Pièce introuvable dans ce dossier");
+    const fichier = await this.lireFichier(doc.fileKey);
+    await this.prisma.$transaction(async (tx) => {
+      await this.audit.emit(tx, {
+        actorId: adminAccountId,
+        actorType: "admin",
+        action: "m03.document.viewed",
+        resource: `case:${caseId}`,
+        context: { kind: doc.kind },
+      });
+    });
+    return fichier;
+  }
+
+  private async lireFichier(fileKey: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const fichier = await this.storage.read(fileKey);
+    if (!fichier) {
+      // Le disque de l'instance est éphémère sur le plan gratuit : une pièce peut avoir disparu à un
+      // redéploiement alors que sa ligne est toujours là. On le dit, plutôt que de servir du vide.
+      throw new NotFoundException("Fichier introuvable — la pièce doit être redéposée");
+    }
+    return fichier;
+  }
+
   async submit(actor: ActorRef, facilityId?: string): Promise<{ caseId: string; status: VerificationStatus; announcedDelayHours: number }> {
     const c = await this.resolveOwnCase(actor.accountId, facilityId);
     const subject = this.subjectOf(c);
@@ -271,7 +360,16 @@ export class M03Service {
     subjectKind: SubjectKind;
     status: VerificationStatus;
     canPractice: boolean;
-    documents: Array<{ id: string; kind: string; fileKey: string; expiresAt: Date | null; createdAt: Date }>;
+    /** Pièces exigées pour ce type de sujet, et celles qui manquent encore (CU-03-01). */
+    requiredDocuments: readonly string[];
+    missingDocuments: string[];
+    /** Le dépôt passera-t-il ? Évite de faire tenter un geste que le serveur refusera. */
+    canSubmit: boolean;
+    /** Les pièces sont-elles encore modifiables ? Dépend de l'état du dossier (EF-03-01/04). */
+    documentsEditable: boolean;
+    /** Délai de traitement annoncé, en heures (PM-11) — lisible AVANT le dépôt, et après rechargement. */
+    announcedDelayHours: number;
+    documents: Array<{ id: string; kind: string; expiresAt: Date | null; createdAt: Date }>;
     decisions: Array<{ id: string; decision: string; reasons: string; decidedAt: Date }>;
     agreement: {
       version: number;
@@ -286,6 +384,12 @@ export class M03Service {
     const c = await this.resolveOwnCase(accountId, facilityId);
     const subject = this.subjectOf(c);
     const latest = this.latestVersion(c);
+    // La règle des pièces obligatoires existait depuis toujours côté serveur, mais restait invisible du
+    // client : l'écran ne pouvait ni marquer « Obligatoire », ni dire ce qui manque, ni savoir si le
+    // dépôt passerait. Il ne lui restait qu'à le tenter et à lire l'erreur.
+    const fournies = c.documents.map((d) => d.kind);
+    const manquantes = missingRequiredDocs(subject.kind, fournies);
+    const announcedDelayHours = await this.params.getInt("PM-11");
     // Le texte est régénéré par la fonction déterministe ; son empreinte est RECOMPARÉE au sceau —
     // toute divergence (ex. renommage du sujet) est signalée, jamais servie comme conforme (CU-03-03).
     let agreement: {
@@ -315,9 +419,17 @@ export class M03Service {
       subjectKind: subject.kind,
       status: c.status,
       canPractice: canPracticeEffective(c.status, latest?.signedAt != null),
+      requiredDocuments: REQUIRED_DOCS[subject.kind],
+      missingDocuments: manquantes,
+      canSubmit: manquantes.length === 0 && canTransition(c.status, "SUBMITTED"),
+      documentsEditable: canAddDocuments(c.status),
+      announcedDelayHours,
+      // La `fileKey` n'est plus servie : c'est une clé de stockage interne, et une clé qui traîne dans
+      // un journal ou un cache de navigateur est une pièce d'identité qui traîne. Les pièces se lisent
+      // désormais par leur identifiant, à travers une route qui vérifie qui demande.
       documents: [...c.documents]
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-        .map((d) => ({ id: d.id, kind: d.kind, fileKey: d.fileKey, expiresAt: d.expiresAt, createdAt: d.createdAt })),
+        .map((d) => ({ id: d.id, kind: d.kind, expiresAt: d.expiresAt, createdAt: d.createdAt })),
       // CU-03-02 : motifs précis visibles par le déposant ; l'admin signataire reste interne (RM-03-02).
       decisions: [...c.decisions]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())

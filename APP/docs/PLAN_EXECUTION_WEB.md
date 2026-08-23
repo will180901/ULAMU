@@ -49,6 +49,7 @@ Les trois fois où c'est arrivé, chacune validée par le porteur :
 | `AdminGuard` — drapeau `ADMIN_REQUIRE_TOTP` | Désactiver le TOTP aurait sinon rendu toute l'administration inutilisable (403 partout) |
 | `seed.ts` — `SEED_ADMIN_EMAIL`, retrait du TOTP | Le secret scellé en local était illisible par l'API déployée ; et sans adresse, le compte n'avait aucune voie de récupération |
 | **M01 — le palier B3 du 23/08** : changer son mot de passe, ajouter/changer son adresse email, régénérer les codes de secours, ré-associer l'appareil 2FA, photo pour les soignants et les officines, code de clôture par email, prérequis de clôture vérifiés | Six blocs de l'écran « Mes paramètres » n'avaient **aucun endpoint**. Sans eux, B3 aurait affiché six boutons morts. Deux étaient bloquants pour le client : un compte sans adresse ne peut pas être récupéré, et la clôture — un droit, pas une option — envoyait son code par une passerelle SMS factice. Une migration additive (3 colonnes, 2 valeurs d'énumération), 6 tests d'intégration, validé par le porteur |
+| **M03 — le palier C1 du 23/08** : lecture des pièces déposées (déposant et administration), pièces obligatoires et manquantes exposées, retrait d'une pièce, délai de traitement | **AUCUNE route ne savait servir les fichiers `vd_…`** : ni `media/avatars` (préfixe `av_`) ni `media/sessions` (préfixe `sm_`) ne les acceptent. Un diplôme téléversé était invisible de tous — y compris de l'administration censée le vérifier, qui devait donc décider à l'aveugle. Les trois autres manques empêchaient l'écran de dire ce qui est exigé, ce qui manque, et sous quel délai. Aucune migration. 6 tests d'intégration, validé par le porteur |
 
 ### Le plan se tient à jour EN MÊME TEMPS que le code
 
@@ -314,6 +315,9 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 16 | B1 | **Barre latérale écrite à la main**, sans le composant `sidebar` de shadcn | 700 lignes, 23 sous-composants, largeurs 16rem/3rem, et surtout un modèle qui POUSSE le contenu là où la maquette le RECOUVRE. Le plier coûtait plus que l'écrire. `DropdownMenu` et `Tooltip` de shadcn sont bien utilisés — eux apportent le focus et l'échappement. | Claude |
 | 17 | B1 | **Barre utilisable au clavier** : déploiement au focus, et `inert` sur le tiroir mobile fermé | La maquette n'ouvre qu'au survol. Sans le déploiement au focus, tabuler dans une barre au repos donne une suite d'icônes sans libellé. Sans `inert`, les neuf liens du tiroir fermé restent tabulables hors écran — le focus disparaîtrait sans explication. | Claude |
 | 18 | B1 | **Groupes de navigation étendus** aux parcours officine et administration | La maquette ne montre que le parcours d'un soignant. Les entrées manquantes sont réparties dans les mêmes groupes selon leur nature, pas ajoutées en vrac à la fin. | Claude |
+| 31 | C1 | **Pas d'état PAR PIÈCE (« Validée », « À corriger » avec son motif)** | `VerificationDecision` n'a aucun lien vers une pièce : le serveur ne connaît que la décision au niveau du DOSSIER, avec un motif libre. Afficher « Diplôme : à corriger » supposerait de deviner à quelle pièce se rapporte un texte libre. Chaque pièce dit donc ce qui est vrai — déposée ou attendue — et le motif de l'administration occupe son propre bloc, que la maquette prévoit aussi. **À combler si M03 associe un jour la décision aux pièces.** | Porteur, 23/08 |
+| 30 | C1 | **La « Photo d'identité » est AJOUTÉE à la liste des pièces** | La maquette ne la montre pas, mais le serveur l'exige pour déposer (`REQUIRED_DOCS.PROFESSIONAL`). Sans elle, le dépôt aurait été refusé sans que l'écran sache dire pourquoi — l'utilisateur aurait cherché longtemps. | Porteur, 23/08 |
+| 29 | C1 | **L'« Assurance responsabilité civile » facultative est OMISE** | Aucun type de pièce ne lui correspond (`ID`, `DIPLOMA`, `LICENSE`, `PHOTO`, `ADDRESS_PROOF`). En ajouter un demanderait une migration et une règle métier, pour un document que la maquette dit elle-même facultatif en téléconsultation. | Porteur, 23/08 |
 | 28 | B3 | **Le bloc « Adresse email » est AJOUTÉ** — la maquette n'en prévoit aucun | L'adresse est le canal de récupération : c'est par elle qu'arrivent le code de mot de passe oublié et celui de clôture. Les comptes créés par le seed, dont l'administrateur, n'en ont pas — et l'API répondait « ajoutez-en une d'abord » sans offrir nulle part le geste. Un écran de paramètres sans ce bloc laisse ces comptes sans issue. | Porteur, 23/08 |
 | 27 | B3 | **« Différent des 3 derniers mots de passe » remplacé par « différent du mot de passe actuel »** | Aucun historique de mots de passe n'existe en base, et en créer un signifie conserver des empreintes de mots de passe abandonnés. La règle affichée est désormais vraie et vérifiée par le serveur. **À rétablir si le client l'exige** : une table `PasswordHistory` et une migration. | Porteur, 23/08 |
 | 26 | B3 | **« Ces réglages suivent votre compte » corrigé en « restent sur cet appareil »** pour le thème, la page d'accueil et les sons | Rien ne les stocke côté serveur, et un poste d'officine est partagé : promettre le contraire trompe l'utilisateur sur ce qu'il partage avec son collègue. Les notifications, elles, suivent VRAIMENT le compte (M14) — les deux familles sont donc séparées, chacune disant où elle vit. | Porteur, 23/08 |
@@ -347,12 +351,15 @@ externe — notre version est la bonne.
 | 2 | A2 — Inscription, 6 étapes, indicateur partagé (`2d16058`) | ✅ | **20/08** |
 | 3 | A3 — Mot de passe oublié, 3 étapes, 3 voies (`f82970b`, `39e91c9`) | ✅ | **20/08** |
 | — | Rangement : plus aucun ascenseur sur A1/A2/A3 (`24e8dc1`) | ✅ | **20/08** |
-| 4 | A4 — Configuration 2FA, 3 étapes + correctif `useRef`/StrictMode | **codé** | *en attente de test* |
-| 5 | B1 — Coquille applicative (barre, topbar, menu utilisateur, navigation par rôle) | **codé** | *en attente de test* |
-| 6 | B2 — Tableau de bord adaptatif (3 rôles, données réelles) | **codé** | *en attente de test* |
-| — | *Palier serveur B3* : 6 manques comblés dans M01 + migration additive + 6 tests | **codé** | *en attente de test* |
-| 7 | B3 — Mes paramètres (4 sections, 12 blocs) | **codé** | *en attente de test* |
-| 8–13 | C1 → C6 — Professionnel — **la suite** | à faire | |
+| 4 | A4 — Configuration 2FA, 3 étapes + correctif `useRef`/StrictMode | ✅ | **20/08** |
+| 5 | B1 — Coquille applicative (barre, topbar, menu utilisateur, navigation par rôle) | ✅ | **20/08** |
+| 6 | B2 — Tableau de bord adaptatif (3 rôles, données réelles) | ✅ | **23/08** |
+| — | *Palier serveur B3* : 6 manques comblés dans M01 + migration additive + 6 tests | ✅ | **23/08** |
+| 7 | B3 — Mes paramètres (4 sections, 12 blocs) | ✅ | **23/08** |
+| — | *Incident* : base du site effacée par `npm test`, admin restauré, garde-fou posé (`72f1e92`) | ✅ | **23/08** |
+| — | *Palier serveur C1* : lecture des pièces (déposant + admin), pièces obligatoires, retrait, délai | **codé** | *en attente de test* |
+| 8 | C1 — Ma vérification (frise, pièces, motif, contrat signé) | **codé** | *en attente de test* |
+| 9–13 | C2 → C6 — Professionnel | à faire | |
 | 14–17 | D1 → D4 — Pharmacie | à faire | |
 | 18–24 | E1 → E7 — Administration | à faire | |
 | 25 | Passe finale : états, sombre, responsive, accessibilité | à faire | |

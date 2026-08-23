@@ -15,6 +15,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { EcranAVenir } from '@/components/layout/EcranAVenir'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
+import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
@@ -24,7 +25,7 @@ import { useSessionStore } from '@/state/session.store'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 
 /** Les écrans déjà refaits : ils ont leur propre route et sortent de la boucle `EcranAVenir`. */
-const ECRANS_FAITS = ['/dashboard', '/parametres']
+const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification']
 
 /**
  * Repli des routes inconnues. Il honore la préférence « page d'accueil » de B3 — sans quoi le réglage
@@ -68,6 +69,7 @@ export function App() {
               <Route element={<AppShell />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/parametres" element={<SettingsPage />} />
+                <Route path="/verification" element={<VerificationPage />} />
                 {/* Les écrans non encore refaits gardent leur route : la navigation reste entière. */}
                 {NAV_GROUPS.flatMap((g) => g.items)
                   .filter((item) => !ECRANS_FAITS.includes(item.href))

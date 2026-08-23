@@ -14,7 +14,7 @@
  *    inventer — sur une preuve légale, c'est exclu. Les textes sont là, la date attend son endpoint.
  */
 import { Globe, Info, Lock, ScrollText } from 'lucide-react'
-import { Avis, Carte } from '../parts'
+import { Avis, Carte } from '@/components/ulamu/parts'
 
 /** Textes de la maquette — ils sont le contenu produit, pas de l'habillage. */
 const CGU = [

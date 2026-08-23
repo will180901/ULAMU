@@ -1,9 +1,11 @@
 /**
- * Briques communes aux quatre sections de B3 — d'après `docs/maquettes/B3 - Mes parametres.dc.html`.
+ * Briques de mise en page communes aux écrans de la coquille — carte à bandeau, réglage, critère,
+ * avis, pilule d'état.
  *
- * Le motif de la maquette est constant : une carte à bandeau (tuile d'icône, titre, sous-titre), puis
- * le contenu. On le factorise ici plutôt que de le recopier quinze fois, sinon la quinzième version
- * finit par dériver.
+ * Écrites pour B3 « Mes paramètres », déplacées ici quand C1 « Ma vérification » a réclamé les mêmes.
+ * Le motif est constant dans toutes les maquettes : une carte à bandeau (tuile d'icône, titre,
+ * sous-titre), puis le contenu. On le factorise plutôt que de le recopier quinze fois — sinon la
+ * quinzième version finit par dériver de la première.
  */
 import type { LucideIcon } from 'lucide-react'
 import { AlertTriangle, Check } from 'lucide-react'
@@ -120,5 +122,29 @@ export function Avis({ ton, children }: { ton: 'erreur' | 'succes' | 'info'; chi
       <Icone size={13} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0" />
       <span className="min-w-0">{children}</span>
     </p>
+  )
+}
+
+/**
+ * Pilule d'état — le statut d'un dossier, d'une demande, d'une commande.
+ *
+ * Jamais la couleur seule (CG-11) : le libellé porte l'information, la teinte ne fait que la
+ * renforcer. Un écran d'officine mal calibré en plein jour rend l'ambre et le rouge très proches.
+ */
+export type TonPilule = 'succes' | 'alerte' | 'erreur' | 'info' | 'neutre'
+
+const TONS_PILULE: Record<TonPilule, string> = {
+  succes: 'bg-[var(--succes-fond)] text-[var(--succes-texte)] border-[var(--succes-bordure)]',
+  alerte: 'bg-[var(--alerte-fond)] text-[var(--alerte-texte)] border-[var(--alerte-bordure)]',
+  erreur: 'bg-[var(--erreur-fond)] text-[var(--erreur-texte)] border-[var(--erreur-bordure)]',
+  info: 'bg-[var(--info-fond)] text-[var(--info-texte)] border-[var(--info-bordure)]',
+  neutre: 'bg-secondary text-muted-foreground border-border',
+}
+
+export function Pilule({ ton, children }: { ton: TonPilule; children: React.ReactNode }) {
+  return (
+    <span className={'inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ' + TONS_PILULE[ton]}>
+      {children}
+    </span>
   )
 }

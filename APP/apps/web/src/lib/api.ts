@@ -658,19 +658,26 @@ export interface AdminAccount {
 export type VerificationStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO' | 'REVOKED'
 export type DocumentKind = 'ID' | 'DIPLOMA' | 'LICENSE' | 'PHOTO' | 'ADDRESS_PROOF'
 
-/** Jeu minimal de pièces exigé avant dépôt (m03.policies REQUIRED_DOCS). Dupliqué ici pour
- *  guider l'utilisateur AVANT l'appel — le serveur reste seul juge au moment du dépôt. */
-export const REQUIRED_DOCS: Record<'PROFESSIONAL' | 'FACILITY', DocumentKind[]> = {
-  PROFESSIONAL: ['ID', 'DIPLOMA', 'LICENSE', 'PHOTO'],
-  FACILITY: ['LICENSE', 'ID', 'ADDRESS_PROOF'],
-}
-
 export interface VerificationCase {
   caseId: string
   subjectKind: 'PROFESSIONAL' | 'FACILITY'
   status: VerificationStatus
   canPractice: boolean
-  documents: Array<{ id: string; kind: DocumentKind; fileKey: string; expiresAt: string | null; createdAt: string }>
+  /**
+   * Pièces exigées et pièces manquantes — calculées PAR LE SERVEUR (2026-08).
+   *
+   * La liste était auparavant recopiée ici, en dur. Deux vérités pour une même règle finissent
+   * toujours par diverger, et c'est l'écran qui aurait menti : le serveur reste le seul juge au
+   * moment du dépôt.
+   */
+  requiredDocuments: DocumentKind[]
+  missingDocuments: DocumentKind[]
+  canSubmit: boolean
+  /** Les pièces sont-elles encore modifiables ? Faux dès que le dossier est en examen. */
+  documentsEditable: boolean
+  /** Délai de traitement annoncé, en heures (PM-11). */
+  announcedDelayHours: number
+  documents: Array<{ id: string; kind: DocumentKind; expiresAt: string | null; createdAt: string }>
   decisions: Array<{ id: string; decision: string; reasons: string; decidedAt: string }>
   agreement: {
     version: number
@@ -689,6 +696,29 @@ export interface UploadDocumentRequest {
   fileBase64: string
   mime: string
   expiresAt?: string
+}
+
+/**
+ * Ouvre une pièce justificative dans un nouvel onglet.
+ *
+ * Impossible de mettre l'URL dans un `<a href>` : la route exige un jeton `Authorization`, et un
+ * lien ne sait pas en porter. On récupère donc le fichier avec le jeton, puis on l'ouvre depuis un
+ * `blob:` local. C'est aussi ce qui empêche l'URL d'une pièce d'identité de finir dans l'historique
+ * du navigateur ou dans un journal de serveur mandataire.
+ *
+ * L'URL rendue est révoquée par l'appelant quand il n'en a plus besoin — sinon le fichier déchiffré
+ * reste en mémoire de l'onglet jusqu'à sa fermeture.
+ */
+export async function ouvrirPieceJustificative(documentId: string): Promise<string> {
+  const token = getToken?.()
+  const res = await fetch(`${API_BASE_URL}/v1/verification/me/documents/${documentId}/file`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    if (res.status === 401) onUnauthorized?.()
+    throw new ApiError(res.status, codeFromStatus(res.status), "Cette pièce n'a pas pu être ouverte.")
+  }
+  return URL.createObjectURL(await res.blob())
 }
 
 /**
@@ -942,15 +972,31 @@ export const api = {
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),
   verificationUpload: (dto: UploadDocumentRequest) =>
     request<{ documentId: string; kind: string }>('POST', '/v1/verification/me/documents/upload', dto, true),
-  verificationSubmit: () => request<VerificationCase>('POST', '/v1/verification/me/submit', undefined, true),
+  /** ⚠️ Ne renvoie PAS le dossier complet — seulement l'accusé de dépôt (CU-03-01). */
+  verificationSubmit: () =>
+    request<{ caseId: string; status: VerificationStatus; announcedDelayHours: number }>(
+      'POST',
+      '/v1/verification/me/submit',
+      undefined,
+      true,
+    ),
+  /** Retrait d'une pièce, pour la remplacer. Refusé dès que le dossier est en examen. */
+  verificationRemoveDocument: (id: string) =>
+    request<{ removed: true }>('DELETE', `/v1/verification/me/documents/${id}`, undefined, true),
   verificationSignStart: () => request<{ expiresInSeconds: number; debugCode?: string }>(
     'POST',
     '/v1/verification/me/agreement/sign/start',
     undefined,
     true,
   ),
+  /** ⚠️ Renvoie l'accusé de signature, pas le dossier : rechargez `verificationMine` après. */
   verificationSign: (dto: { password: string; otpCode: string }) =>
-    request<VerificationCase>('POST', '/v1/verification/me/agreement/sign', dto, true),
+    request<{ caseId: string; version: number; signedAt: string; effectiveAt: string; canPractice: boolean }>(
+      'POST',
+      '/v1/verification/me/agreement/sign',
+      dto,
+      true,
+    ),
 }
 
 export { request }

@@ -18,7 +18,7 @@ import { AtSign, Camera, KeyRound, Lock, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Avis, Carte, Critere, Reglage } from '../parts'
+import { Avis, Carte, Critere, Reglage } from '@/components/ulamu/parts'
 import { api, ApiError, urlAvatar, type MeResponse } from '@/lib/api'
 
 const dateFr = (iso: string | null) =>

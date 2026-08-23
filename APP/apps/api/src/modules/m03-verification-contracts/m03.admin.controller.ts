@@ -2,7 +2,7 @@
  * M03 — côté Admin Vérification (EF-03-03/04/08, CU-03-02/05).
  * Réservé au sous-rôle ADMIN_VERIFICATION (matrice M02 §5) — TOTP exigé par AdminGuard (RM-01-06).
  */
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Query, StreamableFile, UseGuards } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
@@ -21,7 +21,24 @@ export class M03AdminController {
     return this.service.queue(query.status);
   }
 
-  /** Prise en examen d'un dossier déposé (CU-03-02). */
+  /**
+   * Lecture d'une pièce justificative pour l'examiner.
+   *
+   * Sans cette route, l'administration devait décider de la vérification d'un soignant SANS pouvoir
+   * ouvrir son diplôme ni sa pièce d'identité : les fichiers étaient stockés et chiffrés, et aucune
+   * route ne savait les servir. L'accès est tracé au journal d'audit (loi n° 29-2019).
+   */
+  @Get(":caseId/documents/:id/file")
+  async documentFile(
+    @Actor() actor: AuthenticatedActor,
+    @Param("caseId") caseId: string,
+    @Param("id") id: string,
+  ): Promise<StreamableFile> {
+    const f = await this.service.readDocumentAsAdmin(actor.accountId, caseId, id);
+    return new StreamableFile(f.buffer, { type: f.contentType });
+  }
+
+  /** Prise en examen d'un dossier déposé (CU-03-02). */  /** Prise en examen d'un dossier déposé (CU-03-02). */
   @Post(":caseId/claim")
   @HttpCode(200)
   claim(@Actor() actor: AuthenticatedActor, @Param("caseId") caseId: string) {
