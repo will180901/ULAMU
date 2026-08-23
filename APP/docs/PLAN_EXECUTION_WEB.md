@@ -307,6 +307,10 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 13 | A4 | **Sortie « Plus tard » ajoutée**, et sous-titre du bandeau retiré | La maquette ne prévoit aucune sortie, ce qui se tenait quand l'écran était BLOQUANT ; devenu volontaire, il enfermait qui l'ouvrait par curiosité. Le sous-titre paraphrasait le titre sur deux lignes. | Claude |
 | 14 | A4 | **Bouton « Télécharger les codes »** | Présent dans la maquette mais sans action. Recopier dix codes à la main est la première cause de perte. | Maquette, rendu fonctionnel |
 | 15 | A4 | **Copie des codes de secours au survol** du bloc | Absente de la maquette. Demandée le 20/08. Révélée au survol pour ne pas encombrer une grille qu'on vient lire — mais visible au focus clavier et en permanence sur écran tactile, où le survol n'existe pas. | Porteur, 20/08 |
+| 16 | B1 | **Barre latérale écrite à la main**, sans le composant `sidebar` de shadcn | 700 lignes, 23 sous-composants, largeurs 16rem/3rem, et surtout un modèle qui POUSSE le contenu là où la maquette le RECOUVRE. Le plier coûtait plus que l'écrire. `DropdownMenu` et `Tooltip` de shadcn sont bien utilisés — eux apportent le focus et l'échappement. | Claude |
+| 17 | B1 | **La barre se déploie aussi au focus clavier** (`focus-within`) | Absent de la maquette, qui n'ouvre qu'au survol. Sans cela, tabuler dans une barre au repos donne une suite d'icônes sans libellé : la navigation devient indéchiffrable sans souris. | Claude |
+| 18 | B1 | **Groupes de navigation étendus** aux parcours officine et administration | La maquette ne montre que le parcours d'un soignant. Les entrées manquantes sont réparties dans les mêmes groupes selon leur nature, pas ajoutées en vrac à la fin. | Claude |
+| 19 | B1 | **Recherche, notifications et « rideau de confidentialité » écartés** de cette étape | Périmètre décidé le 20/08. La recherche attend la palette de commandes ; les notifications existent côté serveur (M14) mais ne sont pas exposées au web ; le rideau n'a AUCUNE trace serveur ni au cahier des charges — lui inventer un comportement promettrait une protection qui n'existe pas. | Porteur, 20/08 |
 
 ### Ce qui n'est PAS un écart, et ne doit pas le devenir
 
@@ -331,8 +335,8 @@ externe — notre version est la bonne.
 | 3 | A3 — Mot de passe oublié, 3 étapes, 3 voies (`f82970b`, `39e91c9`) | ✅ | **20/08** |
 | — | Rangement : plus aucun ascenseur sur A1/A2/A3 (`24e8dc1`) | ✅ | **20/08** |
 | 4 | A4 — Configuration 2FA, 3 étapes + correctif `useRef`/StrictMode | **codé** | *en attente de test* |
-| 5 | B1 — Coquille applicative — **la suivante** | à faire | |
-| 6 | B2 — Tableau de bord | à faire | |
+| 5 | B1 — Coquille applicative (barre, topbar, menu utilisateur, navigation par rôle) | **codé** | *en attente de test* |
+| 6 | B2 — Tableau de bord — **la suivante** | à faire | |
 | 7 | B3 — Mes paramètres | à faire | |
 | 8–13 | C1 → C6 — Professionnel | à faire | |
 | 14–17 | D1 → D4 — Pharmacie | à faire | |
