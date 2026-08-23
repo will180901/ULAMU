@@ -52,8 +52,11 @@ export function AppShell() {
 
   return (
     <div className="relative h-screen overflow-hidden bg-[var(--fond-page)] saris-grain">
-      {/* Sur mobile, la barre sort du flux : translatée hors écran tant qu'on ne l'appelle pas. */}
+      {/* Sur mobile, la barre sort du flux : translatée hors écran tant qu'on ne l'appelle pas.
+          `inert` quand elle est fermée — sans lui, ses liens restent TABULABLES bien qu'invisibles :
+          le focus disparaîtrait de l'écran pendant neuf tabulations, sans que rien ne l'explique. */}
       <div
+        inert={estMobile && !navMobile}
         className={
           estMobile
             ? 'absolute inset-y-0 left-0 z-50 transition-transform duration-[var(--dur-base)] ' +

@@ -29,7 +29,7 @@ export function TopHeader({ titre, estMobile, surOuvrirNav }: { titre: string; e
           type="button"
           onClick={surOuvrirNav}
           aria-label="Ouvrir la navigation"
-          className="mr-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary"
+          className="mr-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
         >
           <Menu size={18} strokeWidth={1.5} aria-hidden="true" />
         </button>
