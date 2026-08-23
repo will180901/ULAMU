@@ -310,6 +310,7 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 16 | B1 | **Barre latérale écrite à la main**, sans le composant `sidebar` de shadcn | 700 lignes, 23 sous-composants, largeurs 16rem/3rem, et surtout un modèle qui POUSSE le contenu là où la maquette le RECOUVRE. Le plier coûtait plus que l'écrire. `DropdownMenu` et `Tooltip` de shadcn sont bien utilisés — eux apportent le focus et l'échappement. | Claude |
 | 17 | B1 | **Barre utilisable au clavier** : déploiement au focus, et `inert` sur le tiroir mobile fermé | La maquette n'ouvre qu'au survol. Sans le déploiement au focus, tabuler dans une barre au repos donne une suite d'icônes sans libellé. Sans `inert`, les neuf liens du tiroir fermé restent tabulables hors écran — le focus disparaîtrait sans explication. | Claude |
 | 18 | B1 | **Groupes de navigation étendus** aux parcours officine et administration | La maquette ne montre que le parcours d'un soignant. Les entrées manquantes sont réparties dans les mêmes groupes selon leur nature, pas ajoutées en vrac à la fin. | Claude |
+| 21 | B2 | **Ni tendances, ni graphique 6 mois, ni répartition par type** | L'API ne les calcule nulle part : `me/dashboard` renvoie 4 nombres bruts, `me/facility/:id/dashboard` en renvoie 2, aucune comparaison historique n'existe. Décision du 20/08 : construire avec le réel — chaque chiffre affiché est vrai. **À combler quand M16 saura produire ces séries.** | Porteur, 20/08 |
 | 20 | — | **Palette du thème CLAIR retouchée** : fond de page, texte tertiaire, bordures, surface secondaire | La maquette faisait tenir ses trois surfaces claires dans 15 niveaux sur 255 — tout l'écran entre 94 et 100 % de luminosité, rien qui se détache, fatigue oculaire immédiate. Et son texte tertiaire tombait à **2,9:1**, sous le seuil AA de 4,5 : un échec objectif d'accessibilité, pas une affaire de goût. Mesures après retouche : page↔surface 1,08 → **1,15**, tertiaire/page 2,9 → **4,66**. Le thème sombre, jugé bon, n'est pas touché. | Porteur, 20/08 |
 | 19 | B1 | **Recherche, notifications et « rideau de confidentialité » écartés** de cette étape | Périmètre décidé le 20/08. La recherche attend la palette de commandes ; les notifications existent côté serveur (M14) mais ne sont pas exposées au web ; le rideau n'a AUCUNE trace serveur ni au cahier des charges — lui inventer un comportement promettrait une protection qui n'existe pas. | Porteur, 20/08 |
 
@@ -337,8 +338,8 @@ externe — notre version est la bonne.
 | — | Rangement : plus aucun ascenseur sur A1/A2/A3 (`24e8dc1`) | ✅ | **20/08** |
 | 4 | A4 — Configuration 2FA, 3 étapes + correctif `useRef`/StrictMode | **codé** | *en attente de test* |
 | 5 | B1 — Coquille applicative (barre, topbar, menu utilisateur, navigation par rôle) | **codé** | *en attente de test* |
-| 6 | B2 — Tableau de bord — **la suivante** | à faire | |
-| 7 | B3 — Mes paramètres | à faire | |
+| 6 | B2 — Tableau de bord adaptatif (3 rôles, données réelles) | **codé** | *en attente de test* |
+| 7 | B3 — Mes paramètres — **la suivante** | à faire | |
 | 8–13 | C1 → C6 — Professionnel | à faire | |
 | 14–17 | D1 → D4 — Pharmacie | à faire | |
 | 18–24 | E1 → E7 — Administration | à faire | |

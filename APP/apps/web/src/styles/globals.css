@@ -936,6 +936,11 @@
 .ul-notice--warning { background: var(--alerte-fond); border-left-color: var(--alerte-accent); color: var(--alerte-texte); }
 .ul-notice--error { background: var(--erreur-fond); border-left-color: var(--erreur-accent); color: var(--erreur-texte); }
 
+/* Alias `ul-*` : c'est sous ces noms que les maquettes appellent le grain. Le préfixe `saris-` est
+   un reste du port CMS-SARIS et disparaîtra avec les derniers écrans d'authentification. */
+.ul-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
+.ul-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
+
 .saris-grain-fine { background-image: var(--grain-url-fine); background-size: var(--grain-size-fine) var(--grain-size-fine); background-blend-mode: var(--grain-blend); }
 .saris-grain { background-image: var(--grain-url); background-size: var(--grain-size) var(--grain-size); background-blend-mode: var(--grain-blend); }
 .saris-grain-strong { background-image: var(--grain-url-strong); background-size: var(--grain-size-strong) var(--grain-size-strong); background-blend-mode: var(--grain-blend); }

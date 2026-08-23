@@ -200,6 +200,24 @@ export interface SetupTotpResponse {
 export interface ConfirmTotpResponse {
   backupCodes: string[]
 }
+/**
+ * Tableaux de bord — module M16, EF-16-01. Ces routes existaient côté serveur sans être appelées
+ * par le web. Elles renvoient PEU de chiffres, et c'est une contrainte réelle du produit : ni
+ * tendance, ni série temporelle, ni répartition par type ne sont calculées nulle part. Ce que la
+ * maquette B2 en demande n'existe donc pas encore — voir §9 du plan.
+ */
+export interface ProfessionalDashboard {
+  sessionsThisMonth: number
+  earnings: { availableXaf: number; pendingXaf: number }
+  averageRating: number | null
+  confirmationRatePct: number
+}
+export interface FacilityDashboard {
+  facilityId: string
+  reservationsServed: number
+  earnings: { availableXaf: number; pendingXaf: number }
+}
+
 export interface ResetPasswordTotpRequest {
   username: string
   code: string
@@ -835,6 +853,9 @@ export const api = {
     request<void>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
 
   // Administration — pilotage et audit (sous-rôle Super)
+  professionalDashboard: () => request<ProfessionalDashboard>('GET', '/v1/me/dashboard', undefined, true),
+  facilityDashboard: (facilityId: string) =>
+    request<FacilityDashboard>('GET', `/v1/me/facility/${facilityId}/dashboard`, undefined, true),
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
   /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
   auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),

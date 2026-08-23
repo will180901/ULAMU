@@ -13,6 +13,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppShell } from '@/components/layout/AppShell'
 import { EcranAVenir } from '@/components/layout/EcranAVenir'
+import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
@@ -52,9 +53,13 @@ export function App() {
               {/* Hors coquille : cet écran a sa propre mise en page, carte centrée sans navigation. */}
               <Route path="/configuration-totp" element={<TotpSetupPage />} />
               <Route element={<AppShell />}>
-                {NAV_GROUPS.flatMap((g) => g.items).map((item) => (
-                  <Route key={item.key} path={item.href} element={<EcranAVenir titre={item.label} />} />
-                ))}
+                <Route path="/dashboard" element={<DashboardPage />} />
+                {/* Les écrans non encore refaits gardent leur route : la navigation reste entière. */}
+                {NAV_GROUPS.flatMap((g) => g.items)
+                  .filter((item) => item.href !== '/dashboard')
+                  .map((item) => (
+                    <Route key={item.key} path={item.href} element={<EcranAVenir titre={item.label} />} />
+                  ))}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </>
