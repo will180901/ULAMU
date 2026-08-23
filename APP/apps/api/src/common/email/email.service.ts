@@ -128,3 +128,21 @@ export function otpEmailTemplate(code: string, minutesValid: number): string {
   </body>
 </html>`;
 }
+
+/**
+ * Avis de sécurité — « votre mot de passe a changé », « votre adresse a changé ».
+ *
+ * Même règle que le code de vérification : AUCUN lien cliquable (menace T-13). Un avis qui invite à
+ * cliquer apprend à l'utilisateur un réflexe dont le hameçonnage vit. On décrit ce qui s'est passé,
+ * et on laisse la personne revenir par ses propres moyens.
+ */
+export function avisSecuriteTemplate(titre: string, corps: string): string {
+  return [
+    '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0F172A">',
+    '<p style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;margin:0 0 12px">ULAMU</p>',
+    `<h1 style="font-size:19px;line-height:1.3;margin:0 0 12px">${titre}</h1>`,
+    `<p style="font-size:14px;line-height:1.6;margin:0 0 16px">${corps}</p>`,
+    "<p style=\"font-size:12px;line-height:1.6;color:#64748B;margin:0\">Cet email est envoyé automatiquement. N'y répondez pas.</p>",
+    "</div>",
+  ].join("");
+}

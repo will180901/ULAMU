@@ -24,6 +24,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Spinner } from '@/components/ui/spinner'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { ApiError } from '@/lib/api'
+import { usePageAccueil } from '@/hooks/usePageAccueil'
 import { useSessionStore } from '@/state/session.store'
 import { useLoginMutation, useLoadMeMutation } from '../hooks/useLogin'
 
@@ -60,7 +61,11 @@ export function LoginPage() {
   const login = useLoginMutation()
   const loadMe = useLoadMeMutation()
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  const accueil = usePageAccueil()
+
+  // Honore la préférence « page d'accueil » de B3 : la connexion doit ouvrir là où
+  // l'utilisateur l'a demandé, sinon le réglage ne sert à rien.
+  if (isAuthenticated) return <Navigate to={accueil} replace />
 
   /** Séparé de l'événement : la saisie du 6ᵉ chiffre lance la connexion sans passer par le formulaire. */
   const lancer = async () => {

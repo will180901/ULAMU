@@ -21,7 +21,7 @@ import { hashSessionToken } from "../../common/auth/auth.guard";
 import { hashPassword, verifyPassword } from "../../common/crypto/password";
 import { openSecret, sealSecret } from "../../common/crypto/secretbox";
 import { generateTotpSecret, provisioningUri, verifyTotp } from "../../common/crypto/totp";
-import { EMAIL_GATEWAY, EmailGateway, otpEmailTemplate } from "../../common/email/email.service";
+import { EMAIL_GATEWAY, EmailGateway, avisSecuriteTemplate, otpEmailTemplate } from "../../common/email/email.service";
 import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
@@ -44,6 +44,17 @@ function hashOtp(code: string): string {
 }
 
 const OTP_MAX_VERIFY_ATTEMPTS = 3;
+
+/** « bou***@gmail.com » — assez pour reconnaître sa propre adresse, pas assez pour la lire par-dessus l'épaule. */
+function masquerEmail(email: string): string {
+  const [nom, domaine] = email.split("@");
+  return `${nom.slice(0, 3)}${"*".repeat(Math.max(1, nom.length - 3))}@${domaine}`;
+}
+
+/** « +242 06 ** ** 4 21 » — mêmes raisons, on ne montre que la fin. */
+function masquerTelephone(phone: string): string {
+  return `${"*".repeat(Math.max(0, phone.length - 3))}${phone.slice(-3)}`;
+}
 
 /** Cible d'un OTP : SOIT un téléphone (SMS — changement de numéro, action sensible), SOIT un email
  * (inscription, réinitialisation mot de passe — 2026-07). Jamais les deux à la fois. */
@@ -596,7 +607,15 @@ export class M01Service {
   async getMe(accountId: string) {
     const account = await this.prisma.account.findUnique({
       where: { id: accountId },
-      include: { patientProfile: true, professionalProfile: true, facilityMemberProfile: true, adminRole: true, totpSecret: true },
+      include: {
+        patientProfile: true,
+        professionalProfile: true,
+        facilityMemberProfile: true,
+        adminRole: true,
+        // Les codes de secours viennent avec : « Mes paramètres » doit dire combien il en reste et de
+        // quand ils datent. Dix lignes au maximum par compte — pas de quoi peser sur la requête.
+        totpSecret: { include: { backupCodes: true } },
+      },
     });
     if (!account || account.status !== "ACTIVE") {
       throw new UnauthorizedException("Compte introuvable ou inactif");
@@ -606,6 +625,7 @@ export class M01Service {
     const patient = account.patientProfile;
     const pro = account.professionalProfile;
     const facility = account.facilityMemberProfile;
+    const codesSecours = account.totpSecret?.backupCodes ?? [];
     return {
       accountId: account.id,
       accountType: account.type,
@@ -616,12 +636,17 @@ export class M01Service {
       birthDate: patient ? patient.birthDate.toISOString().slice(0, 10) : null,
       sex: patient?.sex ?? null,
       district: patient?.district ?? pro?.district ?? null,
-      avatarKey: patient?.avatarKey ?? null,
+      avatarKey: patient?.avatarKey ?? pro?.avatarKey ?? facility?.avatarKey ?? null,
       category: pro?.category ?? null,
       specialty: pro?.specialty ?? null,
       biography: pro?.biography ?? null,
       adminRole: account.adminRole?.role ?? null,
       totpEnabled: account.totpSecret?.enabled ?? false,
+      totpEnabledAt: account.totpSecret?.enabledAt?.toISOString() ?? null,
+      /** Codes de secours restants — un compte à 0 est à un incident d'être enfermé dehors. */
+      backupCodesRemaining: codesSecours.filter((c) => c.consumedAt === null).length,
+      backupCodesTotal: codesSecours.length,
+      backupCodesGeneratedAt: codesSecours[0]?.createdAt.toISOString() ?? null,
       /** 2FA par email — celle du mobile (le TOTP ci-dessus est réservé au web). */
       emailTwoFactorEnabled: account.emailTwoFactorEnabled,
       email: account.email,
@@ -632,24 +657,56 @@ export class M01Service {
    * Photo de profil (CU-01 — n'affecte QUE son propre compte). Remplace l'ancienne image (supprimée
    * du stockage), enregistre la nouvelle et renvoie le profil à jour. Réservé aux comptes patients.
    */
+  /**
+   * Photo de profil — patients, soignants ET membres de structure (2026-08).
+   *
+   * Elle était refusée à tout le monde sauf aux patients, alors que « Mes paramètres » la présente
+   * au soignant comme « visible par les patients sur votre vitrine publique » : c'est là qu'elle a
+   * le plus de valeur, puisqu'elle sert à reconnaître le praticien avant une consultation.
+   */
   async setAvatar(accountId: string, imageBase64: string, mime: string) {
     const account = await this.requireAccount(accountId);
-    if (account.type !== "PATIENT") {
-      throw new ForbiddenException("Seuls les comptes patients ont une photo de profil ici");
-    }
-    const profile = await this.prisma.patientProfile.findUnique({ where: { accountId } });
+    // Lu AVANT d'écrire le fichier : pour un compte sans profil, cela jette ici, et on n'a pas laissé
+    // une image orpheline dans le stockage.
+    const ancienneCle = await this.cleAvatar(accountId, account.type);
     const key = await this.storage.save("av", imageBase64, mime);
-    await this.prisma.patientProfile.update({ where: { accountId }, data: { avatarKey: key } });
-    await this.storage.remove(profile?.avatarKey ?? null); // best-effort : on ne garde pas l'ancienne
+    await this.ecrireAvatar(accountId, account.type, key);
+    await this.storage.remove(ancienneCle); // best-effort : on ne garde pas l'ancienne
     return this.getMe(accountId);
+  }
+
+  /**
+   * Le profil qui porte la photo dépend du type de compte : trois tables distinctes, une seule
+   * colonne. Les comptes ADMIN n'ont aucun profil — donc aucune photo à stocker nulle part.
+   *
+   * Les trois branches sont écrites en clair plutôt que déduites d'une variable : les trois délégués
+   * Prisma sont des types différents, et TypeScript refuse d'appeler `.update` sur leur union.
+   */
+  private async cleAvatar(accountId: string, type: string): Promise<string | null> {
+    const where = { accountId };
+    const select = { avatarKey: true };
+    if (type === "PATIENT") return (await this.prisma.patientProfile.findUnique({ where, select }))?.avatarKey ?? null;
+    if (type === "PROFESSIONAL") return (await this.prisma.professionalProfile.findUnique({ where, select }))?.avatarKey ?? null;
+    if (type === "FACILITY_MEMBER") return (await this.prisma.facilityMemberProfile.findUnique({ where, select }))?.avatarKey ?? null;
+    throw new ForbiddenException("Ce type de compte n'a pas de photo de profil");
+  }
+
+  private async ecrireAvatar(accountId: string, type: string, avatarKey: string | null): Promise<void> {
+    const where = { accountId };
+    const data = { avatarKey };
+    if (type === "PATIENT") await this.prisma.patientProfile.update({ where, data });
+    else if (type === "PROFESSIONAL") await this.prisma.professionalProfile.update({ where, data });
+    else if (type === "FACILITY_MEMBER") await this.prisma.facilityMemberProfile.update({ where, data });
+    else throw new ForbiddenException("Ce type de compte n'a pas de photo de profil");
   }
 
   /** Retire la photo de profil (revient aux initiales). */
   async removeAvatar(accountId: string) {
-    const profile = await this.prisma.patientProfile.findUnique({ where: { accountId } });
-    if (profile?.avatarKey) {
-      await this.prisma.patientProfile.update({ where: { accountId }, data: { avatarKey: null } });
-      await this.storage.remove(profile.avatarKey);
+    const account = await this.requireAccount(accountId);
+    const cle = await this.cleAvatar(accountId, account.type);
+    if (cle) {
+      await this.ecrireAvatar(accountId, account.type, null);
+      await this.storage.remove(cle);
     }
     return this.getMe(accountId);
   }
@@ -762,16 +819,91 @@ export class M01Service {
 
   // ── Clôture (EF-01-09 ; CU-01-07) ──────────────────────────────────────────
 
-  async requestCloseOtp(accountId: string): Promise<void> {
+  /**
+   * Les trois conditions de clôture — « Mes paramètres » les affiche, le serveur les fait respecter.
+   *
+   * Les afficher sans les vérifier reviendrait à poser une barrière sur le seul chemin que personne
+   * de mal intentionné n'emprunte : un appel direct à l'API contournerait l'écran. Elles sont donc
+   * lues ici et rejouées dans `closeAccount`.
+   *
+   * Ce que chacune protège :
+   *   consultation en cours  un patient attend une réponse à l'autre bout ;
+   *   gains non retirés      de l'argent dû resterait sur un compte fermé, sans destinataire ;
+   *   réservation active     une pharmacie garde un médicament de côté pour quelqu'un.
+   */
+  async closePrerequisites(accountId: string): Promise<Array<{ key: string; label: string; ok: boolean }>> {
+    const [consultations, gains, retraitsEnCours, reservations] = await Promise.all([
+      this.prisma.careSession.count({
+        where: { status: { in: ["PREPARING", "ACTIVE"] }, OR: [{ patientAccountId: accountId }, { professionalId: accountId }] },
+      }),
+      // Seulement le compte de gains PERSONNEL : celui d'une officine appartient à la structure, pas
+      // à l'employé qui s'en va.
+      this.prisma.earningsAccount.findUnique({
+        where: { holderType_holderId: { holderType: "PROFESSIONAL", holderId: accountId } },
+        select: { id: true, availableXaf: true },
+      }),
+      this.prisma.withdrawal.count({ where: { requestedBy: accountId, status: "PENDING" } }),
+      this.prisma.disclosure.count({ where: { patientAccountId: accountId, status: "ACTIVE" } }),
+    ]);
+    const solde = gains?.availableXaf ?? 0;
+    return [
+      {
+        key: "consultations",
+        label: consultations === 0 ? "Aucune consultation en cours" : `${consultations} consultation(s) encore ouverte(s)`,
+        ok: consultations === 0,
+      },
+      {
+        key: "gains",
+        label:
+          solde === 0 && retraitsEnCours === 0
+            ? "Aucun gain en attente de retrait"
+            : solde > 0
+              ? `${solde.toLocaleString("fr-FR")} FCFA encore disponibles à retirer`
+              : `${retraitsEnCours} retrait(s) en cours de traitement`,
+        ok: solde === 0 && retraitsEnCours === 0,
+      },
+      {
+        key: "reservations",
+        label:
+          reservations === 0
+            ? "Aucune réservation active en pharmacie"
+            : `${reservations} réservation(s) encore active(s) en pharmacie`,
+        ok: reservations === 0,
+      },
+    ];
+  }
+
+  /**
+   * Code de confirmation de clôture.
+   *
+   * Il partait systématiquement par SMS. Or la passerelle SMS de ce déploiement est une passerelle de
+   * développement (plafond Twilio en essai, cf. décision produit) : le code n'arrivait donc nulle
+   * part, et la clôture — un droit de l'utilisateur, pas une option — était impossible à terminer.
+   * Il part maintenant par email dès que le compte en a une, et retombe sur le SMS sinon. La réponse
+   * dit par où, pour que l'écran n'ait pas à le deviner.
+   */
+  async requestCloseOtp(accountId: string): Promise<{ channel: "email" | "sms"; hint: string }> {
     const account = await this.requireAccount(accountId);
+    if (account.email) {
+      await this.requestOtp({ email: account.email }, OtpPurpose.SENSITIVE_ACTION);
+      return { channel: "email", hint: masquerEmail(account.email) };
+    }
     await this.requestOtp({ phone: account.phone }, OtpPurpose.SENSITIVE_ACTION);
+    return { channel: "sms", hint: masquerTelephone(account.phone) };
   }
 
   async closeAccount(accountId: string, password: string, otpCode: string): Promise<void> {
     const account = await this.requireAccount(accountId);
     if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    // Relus au dernier moment : entre l'affichage de l'écran et le clic, une consultation a pu démarrer.
+    const bloquants = (await this.closePrerequisites(accountId)).filter((p) => !p.ok);
+    if (bloquants.length > 0) {
+      throw new ConflictException(`Clôture impossible : ${bloquants.map((p) => p.label).join(" ; ")}`);
+    }
     await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, otpCode);
+      // Même cible qu'à l'envoi, sans quoi le code reçu par email serait cherché côté téléphone.
+      const cible = account.email ? { email: account.email } : { phone: account.phone };
+      await this.consumeOtpOrThrow(tx, cible, OtpPurpose.SENSITIVE_ACTION, otpCode);
       await tx.account.update({ where: { id: accountId }, data: { status: "CLOSED", closedAt: new Date() } });
       await tx.loginSession.updateMany({ where: { accountId, revokedAt: null }, data: { revokedAt: new Date() } });
       // Le Carnet est conservé selon M07/PM-31 — rien n'est supprimé ici.
@@ -865,6 +997,174 @@ export class M01Service {
     if (!backup) return false;
     await this.prisma.totpBackupCode.update({ where: { id: backup.id }, data: { consumedAt: new Date() } });
     return true;
+  }
+
+  // ── « Mes paramètres » (B3) — gestes du compte depuis une session ouverte ──────────
+
+  /**
+   * Changement de mot de passe par un utilisateur DÉJÀ connecté.
+   *
+   * Distinct de `resetPassword`, qui sert à celui qui a perdu son accès et prouve son identité par un
+   * code reçu. Ici l'accès est là ; ce qu'on vérifie, c'est que la personne devant le clavier est bien
+   * le titulaire — sur un poste partagé de CSI, une session laissée ouverte ne doit pas suffire.
+   *
+   * La session courante SURVIT, toutes les autres tombent : autrement l'utilisateur se déconnecterait
+   * lui-même en changeant son mot de passe, ce qui le pousserait à ne jamais le faire.
+   */
+  async changePassword(
+    accountId: string,
+    currentPassword: string,
+    newPassword: string,
+    currentSessionId: string,
+  ): Promise<{ otherSessionsClosed: number }> {
+    const account = await this.requireAccount(accountId);
+    if (!(await verifyPassword(currentPassword, account.passwordHash))) {
+      throw new UnauthorizedException("Mot de passe actuel incorrect");
+    }
+    this.ensurePasswordOk(newPassword);
+    // Sans cette vérification, resaisir le même mot de passe répondrait « c'est fait » et fermerait les
+    // autres appareils sans rien avoir changé — le pire des deux mondes.
+    if (await verifyPassword(newPassword, account.passwordHash)) {
+      throw new BadRequestException("Le nouveau mot de passe doit être différent de l'actuel");
+    }
+    const passwordHash = await hashPassword(newPassword);
+    let fermees = 0;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.account.update({ where: { id: accountId }, data: { passwordHash } });
+      const r = await tx.loginSession.updateMany({
+        where: { accountId, revokedAt: null, id: { not: currentSessionId } },
+        data: { revokedAt: new Date() },
+      });
+      fermees = r.count;
+      await this.audit.emit(tx, { actorId: accountId, action: "m01.password.changed", resource: `account:${accountId}` });
+    });
+    // Prévenir l'adresse du compte : si ce n'est pas lui, c'est le seul signal qu'il recevra. Après le
+    // commit et sans jeter — une panne du fournisseur d'email n'a pas à faire échouer un changement déjà
+    // enregistré, sinon l'utilisateur croit que rien n'a bougé et resaisit son ancien mot de passe.
+    if (account.email) {
+      await this.email
+        .send(
+          account.email,
+          "Votre mot de passe ULAMU a été modifié",
+          avisSecuriteTemplate(
+            "Votre mot de passe a été modifié",
+            "Le mot de passe de votre compte ULAMU vient d'être changé depuis un appareil connecté. Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement le support : votre compte est peut-être compromis.",
+          ),
+        )
+        .catch((err) => this.logger.error(`Avis de changement de mot de passe non envoyé (compte ${accountId}) : ${String(err)}`));
+    }
+    return { otherSessionsClosed: fermees };
+  }
+
+  /**
+   * Nouveau lot de codes de secours.
+   *
+   * Ils n'étaient créés qu'une fois, à l'activation de la double authentification. Celui qui en avait
+   * consommé neuf sur dix n'avait aucun moyen d'en refaire : il attendait, sans le savoir, d'être
+   * enfermé dehors. Le lot précédent est intégralement détruit — dix codes qui traînent sur un papier
+   * oublié restent dix clés valides.
+   */
+  async regenerateBackupCodes(accountId: string, password: string, code: string): Promise<{ backupCodes: string[] }> {
+    const account = await this.requireAccount(accountId);
+    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
+    if (!row?.enabled) throw new BadRequestException("Aucune double authentification active — les codes de secours n'existent qu'avec elle");
+    // Accepte un code de l'application OU un code de secours encore valide : celui qui régénère est
+    // souvent précisément celui qui n'a plus que ça.
+    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new UnauthorizedException("Code invalide");
+    const backupCodes = Array.from({ length: 10 }, () => randomBytes(5).toString("hex"));
+    await this.prisma.$transaction(async (tx) => {
+      await tx.totpBackupCode.deleteMany({ where: { accountId } });
+      await tx.totpBackupCode.createMany({ data: backupCodes.map((c) => ({ accountId, codeHash: hashOtp(c) })) });
+      await this.audit.emit(tx, { actorId: accountId, action: "m01.totp.backup_codes.regenerated", resource: `account:${accountId}` });
+    });
+    return { backupCodes }; // affichés une seule fois (CU-01-08)
+  }
+
+  /**
+   * Ré-association de l'appareil d'authentification — téléphone perdu, changé, réinitialisé.
+   *
+   * `setupTotp` refusait tant que la double authentification était active, et `disableTotp` la réserve
+   * aux non-admins tout en exigeant un code : la seule sortie était d'appeler le support. Ici on ne
+   * désactive rien, on RÉARME — nouveau secret, ancien lot de codes détruit — et l'écran enchaîne sur
+   * `confirmTotp` exactement comme à la première configuration.
+   *
+   * Entre cet appel et la confirmation, le compte n'a plus de second facteur. C'est assumé et borné :
+   * il a fallu le mot de passe ET un facteur valide pour arriver ici, et côté admin le garde
+   * `ADMIN_REQUIRE_TOTP` continue de bloquer toute action sensible tant que la confirmation n'est pas
+   * faite. Garder l'ancien secret actif pendant ce temps rendrait le geste inutile.
+   */
+  async resetTotp(accountId: string, password: string, code: string): Promise<{ secret: string; provisioningUri: string }> {
+    const account = await this.requireAccount(accountId);
+    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
+    if (!row?.enabled) throw new BadRequestException("Aucune double authentification active — utilisez la configuration initiale");
+    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new UnauthorizedException("Code invalide");
+    const secret = generateTotpSecret();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.totpSecret.update({ where: { accountId }, data: { encryptedSecret: sealSecret(secret), enabled: false, enabledAt: null } });
+      // Les anciens codes de secours ouvraient l'ancien appareil : ils ne valent plus rien.
+      await tx.totpBackupCode.deleteMany({ where: { accountId } });
+      await this.audit.emit(tx, { actorId: accountId, action: "m01.totp.reset", resource: `account:${accountId}` });
+    });
+    return { secret, provisioningUri: provisioningUri(secret, account.phone) };
+  }
+
+  /**
+   * Première adresse email d'un compte, ou remplacement de celle en place.
+   *
+   * Il n'existait aucun moyen d'en ajouter une : `PATCH accounts/me` ne touche que les profils patients
+   * et n'a pas de champ email. L'API allait jusqu'à répondre « Aucune adresse email sur ce compte —
+   * ajoutez-en une d'abord » sans offrir nulle part le geste correspondant. Les comptes créés par le
+   * seed, dont l'administrateur, restaient donc sans canal de récupération.
+   *
+   * Quand le compte a DÉJÀ une adresse, il faut prouver les deux (EF-01-07, parade T-01) : sans la
+   * preuve sur l'ancienne, une session volée suffirait à détourner le canal de récupération, puis à
+   * réinitialiser le mot de passe en toute légalité apparente.
+   */
+  async startEmailChange(accountId: string, rawNewEmail: string): Promise<{ requiresOldEmailCode: boolean; oldEmailHint: string | null }> {
+    const account = await this.requireAccount(accountId);
+    const newEmail = this.normalizeEmailOrThrow(rawNewEmail);
+    if (account.email === newEmail) throw new ConflictException("C'est déjà l'adresse de ce compte");
+    await this.ensureEmailFree(newEmail);
+    // La NOUVELLE d'abord : si l'adresse est refusée par le fournisseur, on n'a pas déjà dérangé
+    // l'ancienne avec un code qui ne servira à rien.
+    await this.requestOtp({ email: newEmail }, OtpPurpose.EMAIL_CHANGE_NEW);
+    if (!account.email) return { requiresOldEmailCode: false, oldEmailHint: null };
+    await this.requestOtp({ email: account.email }, OtpPurpose.EMAIL_CHANGE_OLD);
+    return { requiresOldEmailCode: true, oldEmailHint: masquerEmail(account.email) };
+  }
+
+  async confirmEmailChange(accountId: string, rawNewEmail: string, newEmailCode: string, oldEmailCode?: string): Promise<{ email: string }> {
+    const account = await this.requireAccount(accountId);
+    const newEmail = this.normalizeEmailOrThrow(rawNewEmail);
+    await this.ensureEmailFree(newEmail); // relu ici : quelqu'un a pu la prendre entre les deux appels
+    const ancienne = account.email;
+    if (ancienne && !oldEmailCode) throw new BadRequestException("Code reçu à l'ancienne adresse requis");
+    await this.prisma.$transaction(async (tx) => {
+      await this.consumeOtpOrThrow(tx, { email: newEmail }, OtpPurpose.EMAIL_CHANGE_NEW, newEmailCode);
+      if (ancienne) await this.consumeOtpOrThrow(tx, { email: ancienne }, OtpPurpose.EMAIL_CHANGE_OLD, oldEmailCode as string);
+      await tx.account.update({ where: { id: accountId }, data: { email: newEmail } });
+      await this.audit.emit(tx, {
+        actorId: accountId,
+        action: ancienne ? "m01.email.changed" : "m01.email.added",
+        resource: `account:${accountId}`,
+        context: ancienne ? { from: ancienne, to: newEmail } : { to: newEmail },
+      });
+    });
+    if (ancienne) {
+      await this.email
+        .send(
+          ancienne,
+          "L'adresse email de votre compte ULAMU a changé",
+          avisSecuriteTemplate(
+            "Cette adresse n'est plus celle de votre compte",
+            "Une autre adresse email vient de remplacer celle-ci sur votre compte ULAMU. Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement le support : vous ne recevrez plus les codes de récupération.",
+          ),
+        )
+        .catch((err) => this.logger.error(`Avis de changement d'adresse non envoyé (compte ${accountId}) : ${String(err)}`));
+    }
+    return { email: newEmail };
   }
 
   // ── OTP d'action sensible — exposé aux autres modules (signature M03, transferts M02) ──

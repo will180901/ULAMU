@@ -27,6 +27,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
 import { api, ApiError, type ProfessionalCategory } from '@/lib/api'
+import { usePageAccueil } from '@/hooks/usePageAccueil'
 import { useSessionStore } from '@/state/session.store'
 import { useLoadMeMutation } from '../hooks/useLogin'
 
@@ -169,7 +170,11 @@ export function RegisterPage() {
   })
   const loadMe = useLoadMeMutation()
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  const accueil = usePageAccueil()
+
+  // Honore la préférence « page d'accueil » de B3 : la connexion doit ouvrir là où
+  // l'utilisateur l'a demandé, sinon le réglage ne sert à rien.
+  if (isAuthenticated) return <Navigate to={accueil} replace />
 
   const allerAuCode = async (e: React.FormEvent) => {
     e.preventDefault()

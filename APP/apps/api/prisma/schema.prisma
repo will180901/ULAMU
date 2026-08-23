@@ -132,6 +132,10 @@ model ProfessionalProfile {
   specialty String?
   biography String?
   district  String?
+  /// Photo de profil (clé StorageService, null = initiales) — visible des patients sur la vitrine
+  /// publique. Ajoutée en 2026-08 : elle n'existait que pour les patients, alors que c'est ici
+  /// qu'elle sert le plus.
+  avatarKey String?
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 
@@ -166,6 +170,11 @@ enum OtpPurpose {
   PASSWORD_RESET
   PHONE_CHANGE_OLD
   PHONE_CHANGE_NEW
+  /// Changement d'adresse email (2026-08). Même parade que le téléphone (EF-01-07, menace T-01) :
+  /// quand le compte a déjà une adresse, il faut prouver les DEUX — sinon une session volée suffirait
+  /// à détourner le canal de récupération. Un compte sans adresse ne prouve que la nouvelle.
+  EMAIL_CHANGE_OLD
+  EMAIL_CHANGE_NEW
   SENSITIVE_ACTION
   /// 2e facteur à la connexion, par email (mobile). Aussi utilisé pour confirmer l'ACTIVATION de cette
   /// option : dans les deux cas il s'agit de prouver qu'on relève bien l'adresse du compte.
@@ -227,6 +236,10 @@ model TotpBackupCode {
   totp       TotpSecret @relation(fields: [accountId], references: [accountId])
   codeHash   String
   consumedAt DateTime?
+  /// Date de génération du lot (2026-08) — « Mes paramètres » affiche « générés le … » pour que
+  /// l'utilisateur sache si ses codes datent d'avant un incident. Un lot est toujours régénéré
+  /// entier : tous les codes d'un compte portent donc la même date.
+  createdAt  DateTime   @default(now())
 }
 
 // ── M02 — Structures ────────────────────────────────────────────────────────
@@ -289,6 +302,8 @@ model FacilityMemberProfile {
   account   Account  @relation(fields: [accountId], references: [id])
   firstName String
   lastName  String
+  /// Photo de profil (clé StorageService, null = initiales).
+  avatarKey String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

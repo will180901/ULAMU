@@ -157,3 +157,48 @@ export class DisableTotpDto {
   @IsString() @IsNotEmpty() password!: string;
   @IsString() @Length(6, 10) code!: string;
 }
+
+// ── « Mes paramètres » (B3) — gestes du compte depuis une session déjà ouverte ────────────────────
+
+/**
+ * Changement de mot de passe par quelqu'un qui est DÉJÀ connecté.
+ *
+ * À ne pas confondre avec `ResetPasswordDto` : là, l'utilisateur a perdu son accès et prouve son
+ * identité par un code reçu. Ici il l'a encore, et prouve simplement que c'est bien lui devant le
+ * clavier — sur un poste partagé, une session laissée ouverte ne doit pas suffire à voler le compte.
+ */
+export class ChangePasswordDto {
+  @IsString() @IsNotEmpty() currentPassword!: string;
+  @IsString() @MinLength(8) @MaxLength(128) newPassword!: string;
+}
+
+/** Nouveau lot de codes de secours : mot de passe + un facteur (code TOTP courant OU code de secours). */
+export class RegenerateBackupCodesDto {
+  @IsString() @IsNotEmpty() password!: string;
+  @IsString() @Length(6, 10) code!: string;
+}
+
+/**
+ * Ré-association de l'appareil d'authentification (téléphone perdu, changé, réinitialisé).
+ *
+ * `code` accepte un code TOTP courant **ou un code de secours** : c'est précisément quand l'appareil
+ * n'est plus lisible qu'on a besoin de ce geste, et exiger un code TOTP reviendrait à réserver la
+ * réparation à ceux qui n'en ont pas besoin.
+ */
+export class ResetTotpDto {
+  @IsString() @IsNotEmpty() password!: string;
+  @IsString() @Length(6, 10) code!: string;
+}
+
+/** Première adresse email d'un compte, ou remplacement de celle en place. */
+export class StartEmailChangeDto {
+  @IsEmail({}, { message: "Adresse email invalide" }) @MaxLength(160) newEmail!: string;
+}
+
+export class ConfirmEmailChangeDto {
+  @IsEmail({}, { message: "Adresse email invalide" }) @MaxLength(160) newEmail!: string;
+  /** Code reçu à la NOUVELLE adresse — prouve qu'elle est relevée par l'utilisateur. */
+  @IsString() @Length(6, 6) newEmailCode!: string;
+  /** Code reçu à l'ANCIENNE adresse. Absent quand le compte n'en avait pas encore. */
+  @IsOptional() @IsString() @Length(6, 6) oldEmailCode?: string;
+}

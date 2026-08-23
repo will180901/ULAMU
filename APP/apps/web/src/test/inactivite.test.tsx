@@ -30,6 +30,13 @@ const ME: MeResponse = {
   specialty: null,
   biography: null,
   totpEnabled: true,
+  totpEnabledAt: '2026-03-12T10:00:00.000Z',
+  email: 'pharma.demo@exemple.test',
+  emailTwoFactorEnabled: false,
+  avatarKey: null,
+  backupCodesRemaining: 10,
+  backupCodesTotal: 10,
+  backupCodesGeneratedAt: '2026-03-12T10:00:00.000Z',
 }
 
 function Sonde() {

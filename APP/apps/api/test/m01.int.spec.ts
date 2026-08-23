@@ -254,8 +254,12 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
   it("CU-01-07 — clôture : compte fermé, sessions révoquées, reconnexion refusée", async () => {
     const phone = "+242061000007";
     const { accountId } = await registerPatient(phone, "monpass123");
-    await service.requestCloseOtp(accountId);
-    await service.closeAccount(accountId, "monpass123", lastOtpFor(phone));
+    // Le code de clôture part désormais par EMAIL dès que le compte en a une (2026-08) : la passerelle
+    // SMS de ce déploiement est une passerelle de développement, le code n'arrivait nulle part et la
+    // clôture — un droit, pas une option — ne pouvait pas aboutir chez l'utilisateur réel.
+    const canal = await service.requestCloseOtp(accountId);
+    expect(canal.channel).toBe("email");
+    await service.closeAccount(accountId, "monpass123", lastEmailOtpFor(phone));
 
     const account = await prisma.account.findUnique({ where: { id: accountId } });
     expect(account?.status).toBe("CLOSED");
@@ -332,5 +336,125 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
     // Et l'envoi suivant, lui, fonctionne normalement.
     await service.requestOtp({ email: to }, "REGISTRATION");
     expect(await prisma.otpCode.count({ where: { email: to } })).toBe(1);
+  });
+
+  // ── « Mes paramètres » (B3) — gestes du compte depuis une session ouverte ──────────
+
+  it("B3 — mot de passe changé en session : l'appareil courant reste, les autres tombent", async () => {
+    const phone = "+242061000013";
+    const { accountId, sessionToken } = await registerPatient(phone, "ancienpass1");
+    const username = usernameFor(phone);
+    // Un second appareil, qui devra sauter.
+    await service.login({ username, password: "ancienpass1", client: "mobile", deviceLabel: "Vieux téléphone" });
+    const sessions = await service.listSessions(accountId);
+    expect(sessions).toHaveLength(2);
+    const courante = await prisma.loginSession.findFirst({ where: { accountId }, orderBy: { lastActiveAt: "asc" } });
+    expect(sessionToken).toBeTruthy();
+
+    await expect(service.changePassword(accountId, "pasbon", "nouveaupass1", courante!.id)).rejects.toThrow(/actuel incorrect/);
+    // Le même mot de passe est refusé : sinon on fermerait les autres appareils sans rien changer.
+    await expect(service.changePassword(accountId, "ancienpass1", "ancienpass1", courante!.id)).rejects.toThrow(/différent/);
+
+    const r = await service.changePassword(accountId, "ancienpass1", "nouveaupass1", courante!.id);
+    expect(r.otherSessionsClosed).toBe(1);
+    const restantes = await service.listSessions(accountId);
+    expect(restantes).toHaveLength(1);
+    expect(restantes[0]!.id).toBe(courante!.id);
+
+    await expect(service.login({ username, password: "ancienpass1", client: "mobile" })).rejects.toThrow(/incorrects/);
+    expect((await service.login({ username, password: "nouveaupass1", client: "mobile" })).accountId).toBe(accountId);
+  });
+
+  it("B3 — première adresse email : un seul code ; remplacement : deux codes exigés", async () => {
+    const phone = "+242061000014";
+    const { accountId } = await registerPatient(phone);
+    // Un compte sans adresse — le cas de l'administrateur créé par le seed.
+    await prisma.account.update({ where: { id: accountId }, data: { email: null } });
+
+    const premiere = "premiere.adresse@exemple.test";
+    const depart = await service.startEmailChange(accountId, premiere);
+    expect(depart.requiresOldEmailCode).toBe(false);
+    const codeNouvelle = () => {
+      const m = [...mail.sent].reverse().find((x) => x.to === premiere && />\d{6}</.test(x.html));
+      return (m!.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
+    };
+    await service.confirmEmailChange(accountId, premiere, codeNouvelle());
+    expect((await prisma.account.findUnique({ where: { id: accountId } }))!.email).toBe(premiere);
+
+    // Maintenant qu'il y en a une, la remplacer exige de prouver les DEUX (parade T-01).
+    const seconde = "seconde.adresse@exemple.test";
+    const suite = await service.startEmailChange(accountId, seconde);
+    expect(suite.requiresOldEmailCode).toBe(true);
+    expect(suite.oldEmailHint).toContain("@exemple.test");
+    const lire = (to: string) => {
+      const m = [...mail.sent].reverse().find((x) => x.to === to && />\d{6}</.test(x.html));
+      return (m!.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
+    };
+    await expect(service.confirmEmailChange(accountId, seconde, lire(seconde))).rejects.toThrow(/ancienne adresse/);
+    await service.confirmEmailChange(accountId, seconde, lire(seconde), lire(premiere));
+    expect((await prisma.account.findUnique({ where: { id: accountId } }))!.email).toBe(seconde);
+  });
+
+  it("B3 — codes de secours régénérés : l'ancien lot ne vaut plus rien", async () => {
+    const phone = "+242061000015";
+    const { accountId } = await registerPatient(phone);
+    const username = usernameFor(phone);
+    const { secret } = await service.setupTotp(accountId);
+    const { backupCodes: ancien } = await service.confirmTotp(accountId, totpAt(secret, Math.floor(Date.now() / 1000)));
+
+    const { backupCodes: nouveau } = await service.regenerateBackupCodes(accountId, "motdepasse1", totpAt(secret, Math.floor(Date.now() / 1000)));
+    expect(nouveau).toHaveLength(10);
+    expect(nouveau).not.toEqual(ancien);
+    expect(await prisma.totpBackupCode.count({ where: { accountId } })).toBe(10);
+
+    // Un code de l'ancien lot est mort — c'est tout l'intérêt : un papier oublié ne rouvre rien.
+    await expect(
+      service.login({ username, password: "motdepasse1", client: "mobile", totpCode: ancien[0] as string }),
+    ).rejects.toThrow();
+    const ok = await service.login({ username, password: "motdepasse1", client: "mobile", totpCode: nouveau[0] as string });
+    expect(ok.accountId).toBe(accountId);
+  });
+
+  it("B3 — appareil ré-associé avec un code de secours, puis reconfirmé", async () => {
+    const phone = "+242061000016";
+    const { accountId } = await registerPatient(phone);
+    const { secret } = await service.setupTotp(accountId);
+    const { backupCodes } = await service.confirmTotp(accountId, totpAt(secret, Math.floor(Date.now() / 1000)));
+
+    // Le téléphone est perdu : seul un code de secours reste. C'est le cas que le geste doit servir.
+    const reset = await service.resetTotp(accountId, "motdepasse1", backupCodes[0] as string);
+    expect(reset.secret).not.toBe(secret);
+    const apres = await prisma.totpSecret.findUnique({ where: { accountId } });
+    expect(apres!.enabled).toBe(false);
+    expect(await prisma.totpBackupCode.count({ where: { accountId } })).toBe(0);
+
+    const { backupCodes: refaits } = await service.confirmTotp(accountId, totpAt(reset.secret, Math.floor(Date.now() / 1000)));
+    expect(refaits).toHaveLength(10);
+    // L'ancien secret ne signe plus rien.
+    await expect(
+      service.login({ username: usernameFor(phone), password: "motdepasse1", client: "mobile", totpCode: totpAt(secret, Math.floor(Date.now() / 1000)) }),
+    ).rejects.toThrow();
+  });
+
+  it("B3 — les trois prérequis de clôture sont remplis sur un compte neuf", async () => {
+    const phone = "+242061000017";
+    const { accountId } = await registerPatient(phone);
+    const prerequis = await service.closePrerequisites(accountId);
+    expect(prerequis).toHaveLength(3);
+    expect(prerequis.every((p) => p.ok)).toBe(true);
+    expect(prerequis.map((p) => p.key)).toEqual(["consultations", "gains", "reservations"]);
+  });
+
+  it("B3 — clôture refusée tant qu'un gain n'est pas retiré", async () => {
+    const phone = "+242061000018";
+    const { accountId } = await registerPatient(phone);
+    await prisma.earningsAccount.create({ data: { holderType: "PROFESSIONAL", holderId: accountId, availableXaf: 12_000 } });
+
+    const prerequis = await service.closePrerequisites(accountId);
+    expect(prerequis.find((p) => p.key === "gains")!.ok).toBe(false);
+    // Et le serveur ne se contente pas de l'afficher : il refuse le geste.
+    await service.requestCloseOtp(accountId);
+    await expect(service.closeAccount(accountId, "motdepasse1", lastEmailOtpFor(phone))).rejects.toThrow(/Clôture impossible/);
+    expect((await prisma.account.findUnique({ where: { id: accountId } }))!.status).toBe("ACTIVE");
   });
 });

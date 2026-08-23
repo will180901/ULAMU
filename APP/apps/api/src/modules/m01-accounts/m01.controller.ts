@@ -4,22 +4,27 @@ import { OtpPurpose } from "@prisma/client";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
 import {
+  ChangePasswordDto,
   CheckEmailDto,
   CheckPhoneDto,
   CheckUsernameDto,
   CloseAccountDto,
+  ConfirmEmailChangeDto,
   ConfirmPhoneChangeDto,
   ConfirmTotpDto,
   DisableEmailTwoFactorDto,
   DisableTotpDto,
   EnableEmailTwoFactorDto,
   LoginDto,
+  RegenerateBackupCodesDto,
   RegisterFacilityMemberDto,
   RegisterPatientDto,
   RegisterProfessionalDto,
   RequestOtpDto,
   ResetPasswordDto,
   ResetPasswordTotpDto,
+  ResetTotpDto,
+  StartEmailChangeDto,
   StartPhoneChangeDto,
   UpdateAvatarDto,
   UpdateProfileDto,
@@ -152,6 +157,32 @@ export class M01Controller {
     await this.service.revokeSession(actor.accountId, actor.sessionId);
   }
 
+  /**
+   * Changement de mot de passe depuis une session ouverte. `sessionId` est passé au service pour
+   * qu'il épargne la session courante en fermant les autres.
+   */
+  @Post("accounts/me/password")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  changePassword(@Actor() actor: AuthenticatedActor, @Body() dto: ChangePasswordDto) {
+    return this.service.changePassword(actor.accountId, dto.currentPassword, dto.newPassword, actor.sessionId);
+  }
+
+  /** Première adresse email du compte, ou remplacement — preuve exigée sur chaque adresse concernée. */
+  @Post("accounts/me/email/start")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  startEmailChange(@Actor() actor: AuthenticatedActor, @Body() dto: StartEmailChangeDto) {
+    return this.service.startEmailChange(actor.accountId, dto.newEmail);
+  }
+
+  @Post("accounts/me/email/confirm")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  confirmEmailChange(@Actor() actor: AuthenticatedActor, @Body() dto: ConfirmEmailChangeDto) {
+    return this.service.confirmEmailChange(actor.accountId, dto.newEmail, dto.newEmailCode, dto.oldEmailCode);
+  }
+
   @Post("accounts/me/phone-change/start")
   @HttpCode(200)
   startPhoneChange(@Actor() actor: AuthenticatedActor, @Body() dto: StartPhoneChangeDto) {
@@ -162,6 +193,12 @@ export class M01Controller {
   @HttpCode(200)
   confirmPhoneChange(@Actor() actor: AuthenticatedActor, @Body() dto: ConfirmPhoneChangeDto) {
     return this.service.confirmPhoneChange(actor.accountId, dto.newPhone, dto.oldPhoneCode, dto.newPhoneCode);
+  }
+
+  /** Les trois conditions de clôture, telles que le serveur les appliquera au moment du geste. */
+  @Get("accounts/me/close/prerequisites")
+  closePrerequisites(@Actor() actor: AuthenticatedActor) {
+    return this.service.closePrerequisites(actor.accountId);
   }
 
   @Post("accounts/me/close/request-otp")
@@ -190,6 +227,25 @@ export class M01Controller {
   @HttpCode(200)
   disableTotp(@Actor() actor: AuthenticatedActor, @Body() dto: DisableTotpDto) {
     return this.service.disableTotp(actor.accountId, dto.password, dto.code);
+  }
+
+  /** Nouveau lot de codes de secours — l'ancien lot est détruit, les nouveaux ne s'affichent qu'une fois. */
+  @Post("accounts/me/totp/backup-codes")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  regenerateBackupCodes(@Actor() actor: AuthenticatedActor, @Body() dto: RegenerateBackupCodesDto) {
+    return this.service.regenerateBackupCodes(actor.accountId, dto.password, dto.code);
+  }
+
+  /**
+   * Ré-association de l'appareil d'authentification. Renvoie un secret à scanner ; l'écran enchaîne
+   * sur `totp/confirm`, comme à la première configuration.
+   */
+  @Post("accounts/me/totp/reset")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  resetTotp(@Actor() actor: AuthenticatedActor, @Body() dto: ResetTotpDto) {
+    return this.service.resetTotp(actor.accountId, dto.password, dto.code);
   }
 
   // 2FA par email — la double authentification du mobile (le TOTP ci-dessus reste réservé au web).

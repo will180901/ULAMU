@@ -130,6 +130,16 @@ export interface MeResponse {
   biography: string | null
   adminRole: 'SUPER_ADMIN' | 'ADMIN_FINANCE' | 'ADMIN_VERIFICATION' | 'ADMIN_MAP' | null
   totpEnabled: boolean
+  totpEnabledAt: string | null
+  /** Adresse du compte — `null` tant qu'aucune n'a été ajoutée. C'est le canal de récupération. */
+  email: string | null
+  emailTwoFactorEnabled: boolean
+  /** Clé de la photo de profil (patients, soignants, membres de structure). `null` = initiales. */
+  avatarKey: string | null
+  /** Codes de secours encore utilisables. À 0, un incident enferme le compte dehors. */
+  backupCodesRemaining: number
+  backupCodesTotal: number
+  backupCodesGeneratedAt: string | null
 }
 
 // ── Inscription (Étape 2) ───────────────────────────────────────────────────
@@ -239,6 +249,8 @@ export interface ResetPasswordRequest {
 // ── M01 — Sécurité du compte (CU-01-05/06/07) ──────────────────────────────
 
 /** Une session de connexion ouverte. `current` = celle de cet onglet — on ne se révoque pas soi-même. */
+export type NotificationCategory = 'care' | 'money' | 'reminder' | 'system' | 'critical'
+
 export interface SessionInfo {
   id: string
   client: string
@@ -679,6 +691,18 @@ export interface UploadDocumentRequest {
   expiresAt?: string
 }
 
+/**
+ * URL publique d'une photo de profil. La route `media/avatars` est `@Public` côté API : la clé est un
+ * uuid non devinable, et une photo de vitrine n'est pas une donnée de santé.
+ *
+ * ⚠️ Le stockage est le disque local de l'instance API, et `render.yaml` ne déclare AUCUN disque
+ * persistant : sur le plan gratuit, les photos disparaissent au redéploiement. C'est acceptable en
+ * pilote, pas à la livraison — voir §7 du plan.
+ */
+export function urlAvatar(key: string): string {
+  return `${API_BASE_URL}/v1/media/avatars/${key}`
+}
+
 export const api = {
   login: (dto: LoginRequest) => request<LoginResponse>('POST', '/v1/auth/login', dto),
   logout: () => request<void>('POST', '/v1/accounts/me/logout', undefined, true),
@@ -700,9 +724,50 @@ export const api = {
     request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/phone-change/start', dto, true),
   confirmPhoneChange: (dto: { newPhone: string; oldPhoneCode: string; newPhoneCode: string }) =>
     request<MeResponse>('POST', '/v1/accounts/me/phone-change/confirm', dto, true),
-  requestCloseOtp: () => request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/close/request-otp', undefined, true),
+  /**
+   * Mot de passe changé depuis une session ouverte — à ne pas confondre avec `resetPasswordBy*`, qui
+   * sert quand l'accès est perdu. Le serveur ferme les AUTRES appareils et renvoie combien.
+   */
+  changePassword: (dto: { currentPassword: string; newPassword: string }) =>
+    request<{ otherSessionsClosed: number }>('POST', '/v1/accounts/me/password', dto, true),
+  /**
+   * Première adresse email du compte, ou remplacement.
+   * `requiresOldEmailCode` dit si le compte en avait déjà une : dans ce cas il faut DEUX codes, sans
+   * quoi une session volée suffirait à détourner le canal de récupération.
+   */
+  startEmailChange: (dto: { newEmail: string }) =>
+    request<{ requiresOldEmailCode: boolean; oldEmailHint: string | null }>('POST', '/v1/accounts/me/email/start', dto, true),
+  confirmEmailChange: (dto: { newEmail: string; newEmailCode: string; oldEmailCode?: string }) =>
+    request<{ email: string }>('POST', '/v1/accounts/me/email/confirm', dto, true),
+  /** Nouveau lot de codes de secours — l'ancien est détruit, ceux-ci ne s'affichent qu'une fois. */
+  regenerateBackupCodes: (dto: { password: string; code: string }) =>
+    request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/backup-codes', dto, true),
+  /** Ré-association de l'appareil : renvoie un secret à scanner, puis on enchaîne sur `confirmTotp`. */
+  resetTotp: (dto: { password: string; code: string }) =>
+    request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/reset', dto, true),
+  setAvatar: (dto: { imageBase64: string; mime: string }) =>
+    request<MeResponse>('POST', '/v1/accounts/me/avatar', dto, true),
+  removeAvatar: () => request<MeResponse>('DELETE', '/v1/accounts/me/avatar', undefined, true),
+  /** Les trois conditions de clôture, telles que le serveur les appliquera — l'écran n'en invente aucune. */
+  closePrerequisites: () =>
+    request<Array<{ key: string; label: string; ok: boolean }>>('GET', '/v1/accounts/me/close/prerequisites', undefined, true),
+  /** `channel` dit si le code part par email ou par SMS — l'écran ne doit pas le deviner. */
+  requestCloseOtp: () =>
+    request<{ channel: 'email' | 'sms'; hint: string }>('POST', '/v1/accounts/me/close/request-otp', undefined, true),
   closeAccount: (dto: { password: string; otpCode: string }) =>
     request<void>('POST', '/v1/accounts/me/close', dto, true),
+
+  // M14 — préférences de notification (les seules du lot qui suivent le compte)
+  /** `critical` remonte toujours `adjustable: false` — les alertes vitales ne se coupent pas (RM-14-02). */
+  notificationPreferences: () =>
+    request<{ preferences: Array<{ category: NotificationCategory; enabled: boolean; adjustable: boolean }> }>(
+      'GET',
+      '/v1/notifications/me/preferences',
+      undefined,
+      true,
+    ),
+  setNotificationPreference: (dto: { category: NotificationCategory; enabled: boolean }) =>
+    request<{ category: string; enabled: boolean }>('PUT', '/v1/notifications/me/preferences', dto, true),
 
   // M05 — vitrine, offres, présence
   updateMyProfessionalProfile: (dto: { specialty?: string; biography?: string; district?: string }) =>
