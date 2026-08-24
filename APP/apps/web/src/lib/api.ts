@@ -277,6 +277,29 @@ export interface Offer {
   updatedAt: string
 }
 
+/**
+ * Un article de l'annuaire — la forme EXACTE relevée sur l'API déployée le 24/08/2026.
+ *
+ * C'est ce que voit un patient qui cherche un soignant, et c'est ce qui permet à « Ma vitrine » de
+ * montrer au médecin sa fiche AU MILIEU des autres plutôt que seule. La route est `@Public()` :
+ * l'annuaire se parcourt sans compte (EF-05-04).
+ */
+export interface DirectoryItem {
+  professionalId: string
+  displayName: string
+  category: ProfessionalCategory
+  specialty: string | null
+  district: string | null
+  badgeVerified: boolean
+  rating: { avg: number | null; count: number }
+  reactivity: { confirmRatePct: number | null; avgConfirmDelayS: number | null }
+  presence: PresenceState
+  /** `true` = joignable À L'INSTANT. Un « en ligne » rassis ne compte pas (PM-26). */
+  availableNow: boolean
+  cheapestOffer: { id: string; label: string; durationMin: number; priceXaf: number; kind: OfferKind } | null
+  relevanceScore: number
+}
+
 export interface Presence {
   state: PresenceState
   since: string
@@ -812,6 +835,18 @@ export const api = {
   /** ⚠️ Le serveur DÉSACTIVE (deactivateOffer), il ne supprime pas : l'historique des sessions déjà
    *  vendues sur cette offre doit rester lisible. L'interface doit donc dire « désactiver ». */
   deactivateOffer: (id: string) => request<void>('DELETE', `/v1/offers/${id}`, undefined, true),
+  /**
+   * L'annuaire tel qu'un patient le parcourt. Route publique — pas de jeton nécessaire, et c'est
+   * voulu : on ne montre pas au médecin une version « connectée » de ce que voit un visiteur.
+   */
+  searchDirectory: (q: { category?: string; district?: string; specialty?: string; page?: number }) => {
+    const p = new URLSearchParams()
+    for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') p.set(k, String(v))
+    return request<{ items: DirectoryItem[]; page: number; pageSize: number; total: number; suggestion: string | null }>(
+      'GET',
+      `/v1/directory${p.toString() ? `?${p}` : ''}`,
+    )
+  },
   myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),

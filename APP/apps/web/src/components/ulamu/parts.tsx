@@ -16,12 +16,15 @@ export function Carte({
   titre,
   sousTitre,
   ton = 'accent',
+  action,
   children,
 }: {
   icone: LucideIcon
   titre: string
   sousTitre?: string
   ton?: 'accent' | 'danger'
+  /** Coin droit du bandeau — état d'enregistrement, bouton secondaire. Reste sur une seule ligne. */
+  action?: React.ReactNode
   children: React.ReactNode
 }) {
   const tuile =
@@ -40,6 +43,7 @@ export function Carte({
           </span>
           {sousTitre ? <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{sousTitre}</span> : null}
         </span>
+        {action ? <span className="shrink-0">{action}</span> : null}
       </div>
       <div className="flex flex-col gap-3 p-4">{children}</div>
     </section>
@@ -109,10 +113,17 @@ export function Critere({ ok, label }: { ok: boolean; label: string }) {
   )
 }
 
-/** Message inline — icône obligatoire, jamais une teinte seule (CG-08 §06). */
-export function Avis({ ton, children }: { ton: 'erreur' | 'succes' | 'info'; children: React.ReactNode }) {
+/**
+ * Message inline — icône obligatoire, jamais une teinte seule (CG-08 §06).
+ *
+ * `erreur` dit qu'une action a échoué ; `alerte` qu'une action MANQUE. La distinction n'est pas
+ * cosmétique : « aucun tarif publié » n'est pas une panne, c'est une étape qui reste à faire, et la
+ * teinte rouge de l'erreur y ferait chercher un problème qui n'existe pas.
+ */
+export function Avis({ ton, children }: { ton: 'erreur' | 'alerte' | 'succes' | 'info'; children: React.ReactNode }) {
   const styles = {
-    erreur: 'border-[var(--alerte-bordure)] bg-[var(--alerte-fond)] text-[var(--alerte-texte)]',
+    erreur: 'border-[var(--erreur-bordure)] bg-[var(--erreur-fond)] text-[var(--erreur-texte)]',
+    alerte: 'border-[var(--alerte-bordure)] bg-[var(--alerte-fond)] text-[var(--alerte-texte)]',
     succes: 'border-[var(--succes-bordure)] bg-[var(--succes-fond)] text-[var(--succes-texte)]',
     info: 'border-border bg-secondary text-muted-foreground',
   }[ton]
