@@ -999,6 +999,26 @@ export class M01Service {
     return true;
   }
 
+  /**
+   * Les consentements donnés à l'inscription.
+   *
+   * `ConsentRecord` est rempli depuis toujours — le modèle le qualifie de « preuve légale, immuable »
+   * (EF-01-08, loi n° 29-2019) — mais AUCUN endpoint ne le relisait. « Mes paramètres » affichait donc
+   * les textes des CGU sans pouvoir dire à quelle version l'utilisateur avait consenti, ni quand.
+   * Une preuve qu'on ne peut pas produire ne prouve rien.
+   */
+  async myConsents(accountId: string): Promise<Array<{ documentType: string; documentVersion: string; acceptedAt: string }>> {
+    const lignes = await this.prisma.consentRecord.findMany({
+      where: { accountId },
+      orderBy: { acceptedAt: "desc" },
+    });
+    return lignes.map((c) => ({
+      documentType: c.documentType,
+      documentVersion: c.documentVersion,
+      acceptedAt: c.acceptedAt.toISOString(),
+    }));
+  }
+
   // ── « Mes paramètres » (B3) — gestes du compte depuis une session ouverte ──────────
 
   /**

@@ -195,6 +195,12 @@ export class M01Controller {
     return this.service.confirmPhoneChange(actor.accountId, dto.newPhone, dto.oldPhoneCode, dto.newPhoneCode);
   }
 
+  /** Versions des CGU et de la politique acceptées, et quand (EF-01-08 — preuve légale). */
+  @Get("accounts/me/consents")
+  myConsents(@Actor() actor: AuthenticatedActor) {
+    return this.service.myConsents(actor.accountId);
+  }
+
   /** Les trois conditions de clôture, telles que le serveur les appliquera au moment du geste. */
   @Get("accounts/me/close/prerequisites")
   closePrerequisites(@Actor() actor: AuthenticatedActor) {

@@ -60,6 +60,10 @@ function monter(section: string, moi: Partial<MeResponse> = {}, prerequis = PRER
     { id: 's2', client: 'mobile', deviceLabel: 'Tecno Camon', lastActiveAt: new Date(Date.now() - 3600e3).toISOString(), current: false },
   ])
   vi.spyOn(api, 'closePrerequisites').mockResolvedValue(prerequis)
+  vi.spyOn(api, 'myConsents').mockResolvedValue([
+    { documentType: 'CGU', documentVersion: '1.0', acceptedAt: '2026-03-12T10:00:00.000Z' },
+    { documentType: 'PRIVACY', documentVersion: '1.0', acceptedAt: '2026-03-12T10:00:00.000Z' },
+  ])
   vi.spyOn(api, 'notificationPreferences').mockResolvedValue({
     preferences: [
       { category: 'care', enabled: true, adjustable: true },
@@ -287,5 +291,17 @@ describe('B3 — les mentions légales', () => {
     expect(texte).not.toContain('hébergées au Congo-Brazzaville')
     // Le chiffrement, lui, était vrai et le reste : AES-256-GCM au repos, HTTPS en transit.
     expect(texte).toContain('chiffrées au repos comme en transit')
+  })
+})
+
+describe('B3 — la preuve de consentement', () => {
+  /**
+   * `ConsentRecord` est rempli depuis toujours et aucun endpoint ne le relisait : l'écran affichait
+   * les textes sans pouvoir dire à quelle version on avait consenti (corrigé le 24/08/2026). Une
+   * preuve légale qu'on ne peut pas produire ne prouve rien.
+   */
+  it('affiche la version ET la date, lues en base', async () => {
+    monter('legal')
+    expect(await screen.findAllByText(/Version 1.0 · acceptée le 12 mars 2026/)).toHaveLength(2)
   })
 })

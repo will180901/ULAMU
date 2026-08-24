@@ -14,6 +14,16 @@ export interface ProfessionalDashboard {
   earnings: { availableXaf: number; pendingXaf: number };
   averageRating: number | null;
   confirmationRatePct: number;
+  /**
+   * Les six derniers mois, du plus ancien au plus récent (2026-08).
+   *
+   * Ils manquaient : la maquette B2 montrait un graphique, et rien ne calculait de série. L'écran
+   * n'affichait donc que quatre nombres bruts, sans aucune idée d'une progression.
+   *
+   * Ce n'est pas une estimation : chaque consultation payée porte sa date, chaque crédit de gains
+   * aussi. On regroupe ce qui EXISTE — un mois sans consultation vaut zéro, pas « pas de données ».
+   */
+  lastSixMonths: Array<{ month: string; sessions: number; earnedXaf: number }>;
 }
 
 export interface FacilityDashboard {
@@ -48,12 +58,31 @@ export class DashboardService {
       throw new ForbiddenException("Tableau de bord réservé aux professionnels");
     }
     const start = startOfMonth();
-    const [sessionsThisMonth, earnings, stats] = await Promise.all([
+    // Six mois pleins, en repartant du 1er du mois d'il y a cinq mois.
+    const debutSerie = new Date(start);
+    debutSerie.setMonth(debutSerie.getMonth() - 5);
+
+    const [sessionsThisMonth, earnings, stats, seances, credits] = await Promise.all([
       this.prisma.careSession.count({
         where: { professionalId: actor.accountId, paidAt: { gte: start } },
       }),
       this.payments.getEarnings("PROFESSIONAL", actor.accountId),
       this.prisma.professionalStats.findUnique({ where: { professionalId: actor.accountId } }),
+      this.prisma.careSession.findMany({
+        where: { professionalId: actor.accountId, paidAt: { gte: debutSerie } },
+        select: { paidAt: true },
+      }),
+      // Les CRÉDITS seulement : un retrait n'est pas un gain, et un remboursement n'en est pas un
+      // non plus. Les additionner donnerait une courbe qui descend quand le médecin retire son
+      // argent — l'inverse de ce que le graphique doit dire.
+      this.prisma.earningsEntry.findMany({
+        where: {
+          type: "CREDIT",
+          createdAt: { gte: debutSerie },
+          account: { holderType: "PROFESSIONAL", holderId: actor.accountId },
+        },
+        select: { createdAt: true, amountXaf: true },
+      }),
     ]);
 
     const averageRating =
@@ -63,11 +92,31 @@ export class DashboardService {
         ? Math.round((stats.confirmedTotal / stats.initiationsTotal) * 1000) / 10
         : 0;
 
+    // Les six cases sont créées VIDES d'abord : un mois sans activité doit valoir zéro et occuper
+    // sa place. Ne renvoyer que les mois vécus donnerait une courbe qui saute des mois entiers.
+    const cases = new Map<string, { month: string; sessions: number; earnedXaf: number }>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(debutSerie);
+      d.setMonth(d.getMonth() + i);
+      const cle = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      cases.set(cle, { month: cle, sessions: 0, earnedXaf: 0 });
+    }
+    const cleDe = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    for (const s of seances) {
+      const c = cases.get(cleDe(s.paidAt));
+      if (c) c.sessions += 1;
+    }
+    for (const e of credits) {
+      const c = cases.get(cleDe(e.createdAt));
+      if (c) c.earnedXaf += e.amountXaf;
+    }
+
     return {
       sessionsThisMonth,
       earnings: { availableXaf: earnings.availableXaf, pendingXaf: earnings.pendingXaf },
       averageRating,
       confirmationRatePct,
+      lastSixMonths: [...cases.values()],
     };
   }
 

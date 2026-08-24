@@ -33,10 +33,77 @@ import { Link } from 'react-router-dom'
 import { CarteKpi, Panneau } from '@/components/ulamu/CarteKpi'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { api } from '@/lib/api'
+import { api, type ProfessionalDashboard } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+
+/**
+ * Six mois d'activité, en barres.
+ *
+ * ⚠️ Ce bloc a longtemps été ABSENT : la maquette B2 le montrait, et M16 ne calculait aucune série.
+ * Plutôt qu'une courbe décorative, l'écran n'affichait que quatre nombres bruts. M16 sait désormais
+ * regrouper par mois ce qui existe déjà — chaque consultation payée porte sa date, chaque crédit
+ * aussi (correction du 24/08/2026).
+ *
+ * Écrit en SVG à la main : six barres ne justifient pas une bibliothèque de graphiques, ses 40 Ko
+ * et son thème à réaccorder. Les hauteurs sont des pourcentages du maximum — pas une échelle
+ * absolue, qui écraserait tout dès qu'un mois se détache.
+ */
+function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
+  const max = Math.max(1, ...mois.map((m) => m.sessions))
+  const nom = (cle: string) => {
+    const [a, m] = cle.split('-')
+    return new Date(Number(a), Number(m) - 1, 1).toLocaleDateString('fr-FR', { month: 'short' })
+  }
+  const total = mois.reduce((t, m) => t + m.sessions, 0)
+
+  return (
+    <Panneau icone={TrendingUp} titre="Six derniers mois" sousTitre={total === 0 ? undefined : `${total} consultations au total`}>
+      {total === 0 ? (
+        <p className="px-4 py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
+          Aucune consultation sur les six derniers mois. Vos premières apparaîtront ici.
+        </p>
+      ) : (
+        <ul className="flex items-end justify-between gap-2 p-4">
+          {mois.map((m) => (
+            <li key={m.month} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+              <span className="font-mono text-[10px] font-semibold text-foreground">{m.sessions || ''}</span>
+              <span
+                aria-hidden="true"
+                style={{ height: `${Math.round((m.sessions / max) * 76) + 4}px` }}
+                className={
+                  'w-full rounded-t-sm ' + (m.sessions > 0 ? 'bg-[var(--ap-400)]' : 'bg-secondary')
+                }
+              />
+              <span className="font-mono text-[10px] uppercase text-[var(--texte-tertiaire)]">{nom(m.month)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* Une barre sans chiffre ne se lit pas : le tableau dit ce que le dessin suggère (CG-11). */}
+      <table className="sr-only">
+        <caption>Consultations et gains par mois, sur six mois</caption>
+        <thead>
+          <tr>
+            <th scope="col">Mois</th>
+            <th scope="col">Consultations</th>
+            <th scope="col">Gains crédités</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mois.map((m) => (
+            <tr key={m.month}>
+              <th scope="row">{m.month}</th>
+              <td>{m.sessions}</td>
+              <td>{xaf(m.earnedXaf)} XAF</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Panneau>
+  )
+}
 
 /** En-tête de page — le motif commun à tous les écrans de la coquille. */
 function EnTete({ titre, sousTitre }: { titre: string; sousTitre: string }) {
@@ -127,6 +194,8 @@ function TableauSoignant() {
           aide={bord.data.averageRating === null ? 'Aucune note reçue' : `Note moyenne ${bord.data.averageRating} / 5`}
         />
       </Grille>
+
+      <SixMois mois={bord.data.lastSixMonths} />
 
       <Panneau
         icone={Handshake}

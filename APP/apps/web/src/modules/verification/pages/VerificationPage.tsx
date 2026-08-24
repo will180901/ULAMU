@@ -642,6 +642,19 @@ export function VerificationPage() {
               titre="Motif transmis par l'administration"
               sousTitre={`Décision du ${dateFr(derniereDecision.decidedAt)} · dossier ${d.caseId.slice(0, 8).toUpperCase()}`}
             >
+              {/*
+                La pièce VISÉE, quand la décision en désigne une (24/08/2026). Avant, le motif était
+                un texte libre attaché au dossier : « copie non certifiée conforme » laissait deviner
+                laquelle des quatre pièces reprendre. La nommer transforme un refus en consigne.
+              */}
+              {derniereDecision.documentKind ? (
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                    Pièce concernée
+                  </span>
+                  <Pilule ton="alerte">{PIECES[derniereDecision.documentKind].titre}</Pilule>
+                </p>
+              ) : null}
               <p className="text-[13px] leading-[1.6] whitespace-pre-wrap text-foreground">{derniereDecision.reasons}</p>
             </Carte>
           ) : null}

@@ -1,0 +1,13 @@
+-- Une décision de vérification peut désormais VISER une pièce précise.
+--
+-- Le motif était un texte libre attaché au dossier : « copie non certifiée conforme » laissait le
+-- déposant deviner laquelle de ses quatre pièces reprendre. En nommant la pièce, un refus devient
+-- une consigne.
+--
+-- Nullable : une décision peut porter sur l'ensemble du dossier, et toutes les décisions déjà
+-- prises restent valides telles quelles.
+--
+-- Volontairement SANS clé étrangère vers "SupportingDocument" : les pièces se retirent et se
+-- remplacent (EF-03-01/04), alors qu'une décision est en insertion seule et immuable (RM-03-02).
+-- Une contrainte empêcherait de retirer une pièce déjà jugée — ou emporterait la décision avec elle.
+ALTER TABLE "VerificationDecision" ADD COLUMN "documentId" TEXT;

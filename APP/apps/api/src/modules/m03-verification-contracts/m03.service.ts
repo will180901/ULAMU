@@ -370,7 +370,7 @@ export class M03Service {
     /** Délai de traitement annoncé, en heures (PM-11) — lisible AVANT le dépôt, et après rechargement. */
     announcedDelayHours: number;
     documents: Array<{ id: string; kind: string; expiresAt: Date | null; createdAt: Date }>;
-    decisions: Array<{ id: string; decision: string; reasons: string; decidedAt: Date }>;
+    decisions: Array<{ id: string; decision: string; reasons: string; documentId: string | null; documentKind: string | null; decidedAt: Date }>;
     agreement: {
       version: number;
       commissionPct: number;
@@ -433,7 +433,16 @@ export class M03Service {
       // CU-03-02 : motifs précis visibles par le déposant ; l'admin signataire reste interne (RM-03-02).
       decisions: [...c.decisions]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .map((d) => ({ id: d.id, decision: d.decision, reasons: d.reasons, decidedAt: d.createdAt })),
+        .map((d) => ({
+          id: d.id,
+          decision: d.decision,
+          reasons: d.reasons,
+          documentId: d.documentId,
+          // Le TYPE de la pièce visée, résolu ici : l'écran affiche « Diplôme » sans second appel.
+          // `null` si la pièce a été retirée depuis — la décision, elle, reste (RM-03-02).
+          documentKind: c.documents.find((x) => x.id === d.documentId)?.kind ?? null,
+          decidedAt: d.createdAt,
+        })),
       agreement,
     };
   }
@@ -526,8 +535,13 @@ export class M03Service {
       });
       if (moved.count !== 1) throw new ConflictException("Le dossier a déjà été décidé par un autre admin — rechargez la file");
       // RM-03-02 : décision motivée, horodatée, attribuée à un admin nommé — insertion seule.
+      // La pièce visée doit APPARTENIR au dossier : sans ce contrôle, un identifiant d'une autre
+      // vérification passerait, et le déposant lirait un refus désignant une pièce qu'il n'a pas.
+      if (dto.documentId && !c.documents.some((d) => d.id === dto.documentId)) {
+        throw new BadRequestException("La pièce visée n'appartient pas à ce dossier");
+      }
       await tx.verificationDecision.create({
-        data: { caseId: c.id, decision: dto.decision, reasons: dto.reasons, adminId },
+        data: { caseId: c.id, decision: dto.decision, reasons: dto.reasons, documentId: dto.documentId ?? null, adminId },
       });
 
       if (target === "VERIFIED" && commissionPct !== null) {

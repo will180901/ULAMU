@@ -18,12 +18,14 @@
  *    congolaises hors du Congo peut exiger une base légale de transfert. Le dire honnêtement est un
  *    préalable, pas une réponse. Noté au §7 du plan.
  *
- * 2. La maquette affiche « Version 1.0 · acceptée le 12 mars 2026 » sous chaque document. Le
- *    consentement EST enregistré à l'inscription (table `Consent`, preuve légale, loi n° 29-2019),
- *    mais **aucun endpoint ne le relit** : ni la version, ni la date. Les afficher voudrait dire les
- *    inventer — sur une preuve légale, c'est exclu. Les textes sont là, la date attend son endpoint.
+ * 2. ~~La version et la date acceptées manquaient~~ — **corrigé le 24/08/2026**. `ConsentRecord`
+ *    était rempli depuis toujours et AUCUN endpoint ne le relisait : l'écran affichait les textes
+ *    sans pouvoir dire à quelle version on avait consenti, ni quand. Une preuve légale qu'on ne peut
+ *    pas produire ne prouve rien. `GET /accounts/me/consents` la produit maintenant.
  */
+import { useQuery } from '@tanstack/react-query'
 import { Globe, Info, Lock, ScrollText } from 'lucide-react'
+import { api } from '@/lib/api'
 import { Avis, Carte } from '@/components/ulamu/parts'
 
 /** Textes de la maquette — ils sont le contenu produit, pas de l'habillage. */
@@ -38,6 +40,24 @@ const CONFIDENTIALITE = [
   "Seuls les professionnels engagés dans une consultation ont accès au dossier concerné, et chaque accès est inscrit au journal d'audit, consultable par l'administration.",
   "La clôture d'un compte n'efface pas les comptes-rendus signés : leur conservation est une obligation légale.",
 ]
+
+/**
+ * La mention de version, lue en base — jamais écrite en dur.
+ *
+ * C'est la trace de ce à quoi CETTE personne a consenti, à cette date. Un texte figé dans le code
+ * dirait la version d'aujourd'hui, pas celle qu'elle a acceptée.
+ */
+function Acceptation({ type }: { type: 'CGU' | 'PRIVACY' }) {
+  const consentements = useQuery({ queryKey: ['consents'], queryFn: () => api.myConsents(), retry: false })
+  const ligne = consentements.data?.find((c) => c.documentType === type)
+  if (!ligne) return null
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+      Version {ligne.documentVersion} · acceptée le{' '}
+      {new Date(ligne.acceptedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+    </p>
+  )
+}
 
 function Document({ paragraphes }: { paragraphes: string[] }) {
   return (
@@ -63,10 +83,12 @@ export function SectionLegal() {
       </Carte>
 
       <Carte icone={ScrollText} titre="Conditions générales d'utilisation" sousTitre="Acceptées lors de votre inscription">
+        <Acceptation type="CGU" />
         <Document paragraphes={CGU} />
       </Carte>
 
       <Carte icone={Lock} titre="Politique de confidentialité" sousTitre="Loi n° 29-2019 sur la protection des données">
+        <Acceptation type="PRIVACY" />
         <Document paragraphes={CONFIDENTIALITE} />
       </Carte>
 

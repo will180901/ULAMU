@@ -145,11 +145,18 @@ describe('C1 — la décision de l’administration', () => {
     const motif = "Copie du diplôme non certifiée conforme — un tampon de l'établissement est requis."
     await monter({
       status: 'REJECTED',
-      decisions: [{ id: 'x1', decision: 'REJECTED', reasons: motif, decidedAt: '2026-08-21T09:00:00.000Z' }],
+      decisions: [
+        { id: 'x1', decision: 'REJECTED', reasons: motif, documentId: 'd1', documentKind: 'DIPLOMA', decidedAt: '2026-08-21T09:00:00.000Z' },
+      ],
     })
 
     expect(screen.getByText(motif)).toBeInTheDocument()
     expect(screen.getByText(/Motif transmis par l'administration/)).toBeInTheDocument()
+    // La pièce VISÉE est nommée (correction du 24/08) : « copie non conforme » sur quatre pièces
+    // laissait deviner laquelle reprendre. Un refus nommé est une consigne.
+    // Cadré sur le bloc du MOTIF : « Diplôme » figure aussi dans la liste des pièces plus haut.
+    const motifBloc = screen.getByText('Pièce concernée').closest('section') as HTMLElement
+    expect(within(motifBloc).getByText('Diplôme')).toBeInTheDocument()
     // Et les pièces redeviennent modifiables : c'est tout l'intérêt d'un refus motivé.
     expect(screen.getAllByRole('button', { name: /Ajouter une page/ }).length).toBeGreaterThan(0)
   })
@@ -357,5 +364,25 @@ describe('C1 — l’aperçu d’une pièce', () => {
     // Sans cette libération, la pièce d'identité reste en mémoire de l'onglet jusqu'à sa fermeture —
     // sur un poste partagé, c'est exactement ce qu'on ne veut pas laisser derrière soi.
     await waitFor(() => expect(globalThis.URL.revokeObjectURL).toHaveBeenCalledWith('blob:faux'))
+  })
+})
+
+describe('C1 — une décision qui ne vise aucune pièce', () => {
+  it('n’affiche pas de pièce concernée quand la décision porte sur le dossier entier', async () => {
+    await monter({
+      status: 'REJECTED',
+      decisions: [
+        {
+          id: 'x1',
+          decision: 'REJECTED',
+          reasons: 'Dossier incomplet dans son ensemble.',
+          documentId: null,
+          documentKind: null,
+          decidedAt: '2026-08-21T09:00:00.000Z',
+        },
+      ],
+    })
+    expect(await screen.findByText(/Dossier incomplet/)).toBeInTheDocument()
+    expect(screen.queryByText('Pièce concernée')).not.toBeInTheDocument()
   })
 })

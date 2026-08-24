@@ -392,6 +392,18 @@ model VerificationDecision {
   case      VerificationCase @relation(fields: [caseId], references: [id])
   decision  String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED"
   reasons   String
+  /// Pièce VISÉE par la décision, quand il y en a une (2026-08).
+  ///
+  /// Le motif était un texte libre attaché au DOSSIER : « copie non certifiée conforme » laissait
+  /// le déposant deviner laquelle de ses quatre pièces reprendre. En nommant la pièce, un refus
+  /// devient une consigne. `null` reste possible — une décision peut porter sur l'ensemble.
+  ///
+  /// Pas de relation Prisma vers `SupportingDocument` à dessein : les pièces se retirent et se
+  /// remplacent (EF-03-01/04), alors qu'une décision est en INSERTION SEULE et immuable (RM-03-02).
+  /// Une clé étrangère empêcherait de retirer une pièce déjà jugée, ou effacerait la décision avec
+  /// elle. On garde donc l'identifiant seul, et l'écran affiche « pièce remplacée depuis » quand il
+  /// ne la retrouve plus.
+  documentId String?
   adminId   String
   createdAt DateTime         @default(now())
 }

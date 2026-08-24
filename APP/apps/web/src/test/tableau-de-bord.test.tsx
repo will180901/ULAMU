@@ -25,12 +25,12 @@
  * « note moyenne null / 5 » serait le genre de détail qui décrédibilise tout l'écran.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type Handshake, type MeResponse } from '@/lib/api'
+import { api, type Handshake, type MeResponse, type ProfessionalDashboard } from '@/lib/api'
 
 const MOI: MeResponse = {
   accountId: 'p1',
@@ -76,12 +76,17 @@ const demande = (id: string, status: Handshake['status']): Handshake => ({
   offerPriceXaf: 5000,
 })
 
-async function monter(demandes: Handshake[], note: number | null = null) {
+async function monter(
+  demandes: Handshake[],
+  note: number | null = null,
+  lastSixMonths: ProfessionalDashboard['lastSixMonths'] = [],
+) {
   vi.spyOn(api, 'professionalDashboard').mockResolvedValue({
     sessionsThisMonth: 6,
     earnings: { availableXaf: 486500, pendingXaf: 32000 },
     averageRating: note,
     confirmationRatePct: 92,
+    lastSixMonths,
   })
   // ⚠️ La forme RÉELLE : un objet `{ items }`, pas un tableau. C'est tout l'objet de ce fichier.
   vi.spyOn(api, 'myHandshakes').mockResolvedValue({ items: demandes })
@@ -134,5 +139,42 @@ describe('B2 — soignant', () => {
     await monter([demande('h1', 'INITIATED')])
     const principal = document.querySelector('main')?.textContent ?? ''
     expect(principal).not.toContain('pat')
+  })
+})
+
+describe('B2 — les six derniers mois', () => {
+  /**
+   * Ce graphique a longtemps manqué : M16 ne calculait aucune série, et l'écran n'affichait que
+   * quatre nombres bruts (correction du 24/08/2026). Deux propriétés le rendent honnête.
+   */
+  it('un mois sans activité garde sa place, à zéro', async () => {
+    await monter([], null, [
+      { month: '2026-03', sessions: 0, earnedXaf: 0 },
+      { month: '2026-04', sessions: 4, earnedXaf: 20000 },
+      { month: '2026-05', sessions: 0, earnedXaf: 0 },
+      { month: '2026-06', sessions: 2, earnedXaf: 10000 },
+      { month: '2026-07', sessions: 0, earnedXaf: 0 },
+      { month: '2026-08', sessions: 6, earnedXaf: 30000 },
+    ])
+
+    // Six colonnes, pas trois : sauter les mois vides donnerait une courbe qui ment sur le rythme.
+    const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
+    expect(within(bloc).getAllByRole('listitem')).toHaveLength(6)
+    expect(within(bloc).getByText('12 consultations au total')).toBeInTheDocument()
+  })
+
+  it('sans aucune consultation, il dit son vide au lieu de dessiner une ligne plate', async () => {
+    await monter([], null, [
+      { month: '2026-03', sessions: 0, earnedXaf: 0 },
+      { month: '2026-04', sessions: 0, earnedXaf: 0 },
+    ])
+    expect(screen.getByText(/Aucune consultation sur les six derniers mois/)).toBeInTheDocument()
+  })
+
+  it('les chiffres sont lisibles autrement que par la hauteur des barres (CG-11)', async () => {
+    await monter([], null, [{ month: '2026-08', sessions: 6, earnedXaf: 30000 }])
+    // Un tableau de secours : une barre sans chiffre ne se lit pas au lecteur d'écran.
+    const tableau = screen.getByRole('table', { name: /Consultations et gains par mois/ })
+    expect(within(tableau).getByText('30 000 XAF')).toBeInTheDocument()
   })
 })

@@ -219,6 +219,14 @@ export interface ConfirmTotpResponse {
 export interface ProfessionalDashboard {
   sessionsThisMonth: number
   earnings: { availableXaf: number; pendingXaf: number }
+  /**
+   * Les six derniers mois, du plus ancien au plus récent — ajoutés le 24/08/2026.
+   *
+   * Un mois sans activité vaut ZÉRO et garde sa place : ne renvoyer que les mois vécus donnerait
+   * une courbe qui saute des mois entiers. `earnedXaf` ne compte que les CRÉDITS — un retrait n'est
+   * pas un gain, et l'inclure ferait descendre la courbe quand le médecin touche son argent.
+   */
+  lastSixMonths: Array<{ month: string; sessions: number; earnedXaf: number }>
   averageRating: number | null
   confirmationRatePct: number
 }
@@ -749,7 +757,19 @@ export interface VerificationCase {
   /** Délai de traitement annoncé, en heures (PM-11). */
   announcedDelayHours: number
   documents: Array<{ id: string; kind: DocumentKind; expiresAt: string | null; createdAt: string }>
-  decisions: Array<{ id: string; decision: string; reasons: string; decidedAt: string }>
+  /**
+   * `documentKind` est résolu par le serveur : l'écran nomme la pièce sans second appel. Il vaut
+   * `null` quand la décision porte sur l'ensemble du dossier — ou quand la pièce visée a été
+   * remplacée depuis, la décision restant immuable (RM-03-02).
+   */
+  decisions: Array<{
+    id: string
+    decision: string
+    reasons: string
+    documentId: string | null
+    documentKind: DocumentKind | null
+    decidedAt: string
+  }>
   agreement: {
     version: number
     commissionPct: number
@@ -1069,8 +1089,12 @@ export const api = {
     request<VerificationQueue>('GET', `/v1/admin/verification/queue${status ? `?status=${status}` : ''}`, undefined, true),
   /** S'attribuer le dossier avant de décider : deux vérificateurs ne travaillent pas sur le même. */
   claimCase: (caseId: string) => request<void>('POST', `/v1/admin/verification/${caseId}/claim`, undefined, true),
-  decideCase: (caseId: string, dto: { decision: 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO'; reasons: string }) =>
-    request<void>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
+  /** `documentId` vise UNE pièce : un refus nommé est une consigne, un refus vague est une devinette. */
+  decideCase: (
+    caseId: string,
+    dto: { decision: 'VERIFIED' | 'REJECTED' | 'NEEDS_INFO'; reasons: string; documentId?: string },
+  ) =>
+    request<{ caseId: string; status: VerificationStatus }>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
 
   // Administration — pilotage et audit (sous-rôle Super)
   professionalDashboard: () => request<ProfessionalDashboard>('GET', '/v1/me/dashboard', undefined, true),
@@ -1094,6 +1118,14 @@ export const api = {
     request<void>('POST', `/v1/admin/accounts/${id}/reactivate`, { reason }, true),
 
   // M03 — dossier de vérification du déposant
+  /** Versions acceptées à l'inscription, et quand (EF-01-08 — la preuve légale, enfin lisible). */
+  myConsents: () =>
+    request<Array<{ documentType: string; documentVersion: string; acceptedAt: string }>>(
+      'GET',
+      '/v1/accounts/me/consents',
+      undefined,
+      true,
+    ),
   verificationMine: () => request<VerificationCase>('GET', '/v1/verification/me', undefined, true),
   verificationUpload: (dto: UploadDocumentRequest) =>
     request<{ documentId: string; kind: string }>('POST', '/v1/verification/me/documents/upload', dto, true),

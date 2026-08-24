@@ -1,4 +1,4 @@
-import { IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, Length, MaxLength } from "class-validator";
+import { IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUUID, Length, MaxLength } from "class-validator";
 import { DOCUMENT_KINDS, DocumentKind, VERIFICATION_STATUSES, VerificationStatusCode } from "./m03.policies";
 
 /**
@@ -41,6 +41,13 @@ export class UploadDocumentDto {
 export class DecideDto {
   @IsIn(["VERIFIED", "REJECTED", "NEEDS_INFO"]) decision!: "VERIFIED" | "REJECTED" | "NEEDS_INFO";
   @IsString() @IsNotEmpty() @MaxLength(2000) reasons!: string;
+  /**
+   * Pièce VISÉE, quand le motif en concerne une seule (2026-08).
+   *
+   * Sans elle, « copie non certifiée conforme » laissait le déposant deviner laquelle de ses quatre
+   * pièces reprendre. Facultative : une décision peut porter sur l'ensemble du dossier.
+   */
+  @IsOptional() @IsUUID() documentId?: string;
 }
 
 /** Révocation du badge (EF-03-08) — motif consigné (CU-03-05). */
