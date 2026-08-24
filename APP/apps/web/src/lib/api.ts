@@ -565,9 +565,30 @@ export interface Earnings {
   holderId: string
   /** Retirable maintenant. */
   availableXaf: number
-  /** Confirmé mais pas encore capturé (EF-13-06) — visible, mais pas encore disponible. */
+  /**
+   * Confirmé mais pas encore capturé (EF-13-06).
+   *
+   * Concrètement : des consultations honorées dont le COMPTE-RENDU n'est pas déposé. RM-06-04 —
+   * « gains crédités uniquement après dépôt du compte-rendu (qualité avant trésorerie) ». C'est la
+   * chose la plus utile que cet écran puisse dire à un médecin.
+   */
   pendingXaf: number
+  /** `CREDIT` (part d'une consultation), `WITHDRAWAL` (retrait), `REVERSAL` (remboursement). */
   entries: Array<{ id: string; type: string; amountXaf: number; reference: string; createdAt: string }>
+  /**
+   * Les cinquante derniers retraits — le serveur les renvoie et ce type les OMETTAIT (constaté le
+   * 24/08/2026 en comparant à `getMine`). Sans eux, un médecin ne pouvait pas savoir où en était
+   * l'argent qu'il avait demandé.
+   */
+  withdrawals: Array<{
+    id: string
+    amountXaf: number
+    operator: string
+    status: 'PENDING' | 'EXECUTED' | 'FAILED'
+    failReason: string | null
+    requestedAt: string
+    executedAt: string | null
+  }>
 }
 
 /** Récapitulatif d'un retrait : les frais sont annoncés AVANT confirmation (EF-13-07). */
