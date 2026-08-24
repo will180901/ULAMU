@@ -1,16 +1,28 @@
 /**
- * Stockage de fichiers média (photos de profil, photos/notes vocales de consultation).
- * MVP local : écrit sur disque sous `uploads/`, clé = `<préfixe>_<uuid>.<ext>`. L'abstraction par
- * CLÉ (et non URL) permet de basculer vers minio/S3 plus tard sans toucher aux appelants.
- * Entrée en base64 (le client mobile envoie l'image/le son encodé — pas de multipart/multer).
+ * Stockage de fichiers — pièces justificatives, photos de profil, médias de consultation.
+ *
+ * ── Pourquoi les fichiers sont DANS la base ────────────────────────────────────────────────────
+ *
+ * Ils étaient écrits sur disque, sous `uploads/`. Le plan gratuit de Render n'offre AUCUN disque
+ * persistant : chaque déploiement, chaque redémarrage, chaque réveil après veille les effaçait.
+ * Constaté le 24/08/2026 sur des pièces réelles — la ligne était toujours en base, le fichier
+ * répondait « introuvable ». Un dossier de vérification vidé sans que personne l'ait demandé.
+ *
+ * PostgreSQL est la seule chose durable ET sauvegardée dont ce déploiement dispose. Les octets y
+ * vont donc, toujours CHIFFRÉS (AES-256-GCM, cf. `secretbox`) : la base n'en voit pas plus le clair
+ * que le disque avant elle.
+ *
+ * ⚠️ Ce n'est pas ce qu'on fait à grande échelle, et c'est assumé pour ce périmètre : quelques
+ * dizaines de méga-octets face au quota Neon de 0,5 Go. L'abstraction par CLÉ (et non par URL) est
+ * conservée intacte — le jour où le volume l'exige, un pilote S3 se glisse ici sans qu'aucun
+ * appelant ne bouge.
+ *
+ * Entrée en base64 (le client envoie l'image/le son encodé — pas de multipart/multer).
  */
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { promises as fs } from "fs";
-import { join, resolve } from "path";
 import { openBuffer, sealBuffer } from "./crypto/secretbox";
-
-const ROOT = resolve(process.cwd(), "uploads");
+import { PrismaService } from "./prisma.service";
 
 /** MIME accepté → extension. On borne aux types attendus (images + audio court). */
 const EXT_BY_MIME: Record<string, string> = {
@@ -71,12 +83,17 @@ function looksLikeExecutable(buf: Buffer): boolean {
 
 @Injectable()
 export class StorageService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
-   * Garde-fou mémoire : 80 Mo après décodage — dimensionné contre les 512 Mo de RAM du plan
-   * gratuit Render (le process entier, pas juste cette requête), avec large marge. Couvre une
-   * note vocale de plusieurs heures ; en pratique bornée de toute façon par la durée de session.
+   * Plafond par fichier : 8 Mo après décodage.
+   *
+   * Il valait 80 Mo, dimensionné contre les 512 Mo de RAM de l'instance. Deux choses ont changé.
+   * Les octets vont maintenant dans une base dont le quota gratuit est de 0,5 Go : UN fichier de
+   * 80 Mo en consommerait un sixième. Et les écrans annoncent 5 Mo — 8 Mo laisse la marge de
+   * l'encodage sans démentir ce qui est affiché.
    */
-  private readonly maxBytes = 80 * 1024 * 1024;
+  private readonly maxBytes = 8 * 1024 * 1024;
 
   /** Enregistre un base64 et renvoie la clé de stockage. Tolère un préfixe data-URI. */
   async save(prefix: string, base64: string, mime: string): Promise<string> {
@@ -93,12 +110,14 @@ export class StorageService {
       throw new BadRequestException("Type de fichier non supporté");
     }
     if (buf.length > this.maxBytes) {
-      throw new BadRequestException("Fichier trop volumineux (max 80 Mo)");
+      throw new BadRequestException("Fichier trop volumineux (8 Mo maximum)");
     }
-    await fs.mkdir(ROOT, { recursive: true });
     const key = `${prefix}_${randomUUID()}.${ext}`;
-    // Chiffré au repos (AES-256-GCM, même primitive que les secrets TOTP) — le disque ne voit jamais le clair.
-    await fs.writeFile(join(ROOT, key), sealBuffer(buf));
+    // Chiffré au repos (AES-256-GCM, même primitive que les secrets TOTP) — la base ne voit jamais le clair.
+    const scelle = sealBuffer(buf);
+    await this.prisma.storedFile.create({
+      data: { key, mime: mime.toLowerCase(), data: scelle, sizeBytes: scelle.length },
+    });
     return key;
   }
 
@@ -107,27 +126,29 @@ export class StorageService {
     if (!this.isSafeKey(key)) {
       return null;
     }
-    const ext = key.split(".").pop() ?? "";
-    try {
-      const raw = await fs.readFile(join(ROOT, key));
-      let buffer: Buffer;
-      try {
-        buffer = openBuffer(raw);
-      } catch {
-        // Rétrocompatibilité : fichier écrit AVANT l'ajout du chiffrement au repos — encore en clair.
-        buffer = raw;
-      }
-      return { buffer, contentType: CONTENT_TYPE_BY_EXT[ext] ?? "application/octet-stream" };
-    } catch {
+    const row = await this.prisma.storedFile.findUnique({ where: { key } });
+    if (!row) {
       return null;
     }
+    const raw = Buffer.from(row.data);
+    let buffer: Buffer;
+    try {
+      buffer = openBuffer(raw);
+    } catch {
+      // Rétrocompatibilité : fichier écrit AVANT le chiffrement au repos — encore en clair.
+      buffer = raw;
+    }
+    const ext = key.split(".").pop() ?? "";
+    return { buffer, contentType: row.mime || CONTENT_TYPE_BY_EXT[ext] || "application/octet-stream" };
   }
 
   async remove(key: string | null | undefined): Promise<void> {
     if (!key || !this.isSafeKey(key)) {
       return;
     }
-    await fs.rm(join(ROOT, key), { force: true });
+    // `deleteMany` et non `delete` : supprimer une clé déjà absente ne doit pas jeter. Le nettoyage
+    // best-effort des appelants s'exécute parfois sur un fichier qui n'a jamais été écrit.
+    await this.prisma.storedFile.deleteMany({ where: { key } });
   }
 
   /** Anti-traversal : clé alphanumérique + _.- sans séparateur de chemin ni « .. ». */

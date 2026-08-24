@@ -25,7 +25,14 @@ export class AddDocumentDto {
  */
 export class UploadDocumentDto {
   @IsIn([...DOCUMENT_KINDS]) kind!: DocumentKind;
-  @IsString() @IsNotEmpty() fileBase64!: string;
+  /**
+   * Borne de taille — elle manquait, et le corps accepté monte à 130 Mo.
+   *
+   * Sans elle, un seul envoi pouvait remplir un quart du quota de la base et faire tomber une
+   * instance de 512 Mo de mémoire. 11 Mo de base64 valent ~8 Mo de fichier : la marge exacte du
+   * plafond de `StorageService`, au-dessus des 5 Mo annoncés par les écrans.
+   */
+  @IsString() @IsNotEmpty() @MaxLength(11_000_000) fileBase64!: string;
   @IsString() @IsNotEmpty() @MaxLength(120) mime!: string;
   @IsOptional() @IsISO8601() expiresAt?: string;
 }

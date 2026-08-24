@@ -1402,3 +1402,28 @@ model SupportProcedure {
 
   @@index([type, status])
 }
+
+/// Fichier stocké — pièces justificatives, photos de profil, médias de consultation.
+///
+/// Ils vivaient sur le disque de l'instance, et le plan gratuit de Render n'a AUCUN disque
+/// persistant : chaque déploiement les effaçait. Constaté le 24/08/2026 sur des pièces réelles, qui
+/// répondaient « fichier introuvable » alors que leur ligne était toujours en base.
+///
+/// Ils sont donc ici, avec le reste — la seule chose durable et sauvegardée dont le projet dispose.
+/// Le contenu est CHIFFRÉ avant d'arriver (AES-256-GCM, cf. `secretbox`) : PostgreSQL n'en voit
+/// jamais le clair, pas plus que le disque avant lui.
+///
+/// ⚠️ Mettre des fichiers dans une base n'est pas ce qu'on fait à grande échelle. C'est assumé pour
+/// ce périmètre — quelques dizaines de méga-octets, quota Neon de 0,5 Go — et l'abstraction par CLÉ
+/// de `StorageService` garde ouverte la bascule vers un stockage objet sans toucher aux appelants.
+model StoredFile {
+  /// `<préfixe>_<uuid>.<ext>` — `av_` avatar, `vd_` pièce justificative, `sm_` média de session.
+  key       String   @id
+  /// Type réel du fichier, déduit de l'extension à la lecture. Conservé pour ne pas en dépendre.
+  mime      String
+  /// Octets CHIFFRÉS : [1 version][12 iv][16 tag][chiffré…].
+  data      Bytes
+  /// Taille du contenu chiffré, pour mesurer l'occupation sans lire les octets.
+  sizeBytes Int
+  createdAt DateTime @default(now())
+}

@@ -33,6 +33,27 @@ La vérité, c'est `https://ulamu-web.onrender.com`.
 **Si je bute ou si j'ai un doute, je vous le dis et je propose des solutions.** Je ne devine pas, je
 ne comble pas un trou par une invention, et je ne déclare jamais « c'est fait » sans preuve.
 
+### Le cadre du projet — précisé le 24/08/2026
+
+**Ce projet est présenté en soutenance de licence d'informatique**, pas livré à un client payant.
+Trois conséquences sur tous les arbitrages qui suivent :
+
+| | |
+|---|---|
+| **Aucun budget** | Render reste en plan gratuit. Pas de disque persistant, pas d'instance payante, pas de service externe à souscrire. |
+| **Trois utilisateurs seulement** | patient, médecin, administrateur. Le patient est servi par l'application MOBILE — le web refuse les comptes patients par conception (D-012). **L'application web ne sert donc que le médecin et l'administrateur.** |
+| **Le minimum utile au processus démontré** | On construit ce qui fait la démonstration de bout en bout, pas le produit complet. |
+
+**Ce qui SORT du périmètre** : toute la branche officine — D1 à D4, la variante pharmacie du tableau
+de bord, le sujet `FACILITY` de la vérification. Quatre écrans sur les dix-huit restants.
+
+**Le processus à démontrer, validé le 24/08 :** le médecin dépose son dossier (C1) → l'administrateur
+le vérifie (E1) → le médecin ouvre sa vitrine et ses offres (C2) → un patient le sollicite depuis le
+mobile → il accepte (C3) → la consultation a lieu (C5) → compte-rendu signé et gains crédités (C6).
+
+Ce cadre ne change RIEN à l'exigence de justesse : un écran qui ment devant un jury est pire qu'un
+écran absent. Il change seulement ce qu'on construit, et ce qu'on paie.
+
 ### Le backend — règle corrigée le 20/08/2026
 
 La règle initiale disait « **sans toucher au backend** ». Elle est tombée trois fois en une journée,
@@ -284,11 +305,13 @@ Ces points sont **connus, tracés, et non traités à ce jour**. Aucun ne doit a
 | 3 | **Plan gratuit de l'API** | L'API s'endort. Un client dont la première connexion prend une minute conclura que le produit ne marche pas. |
 | 4 | **`SECRETBOX_KEY`** — ⚠️ **incident constaté le 20/08** | En local la variable est **absente** : le seed a scellé le secret 2FA de `super.admin` avec la clé de repli **écrite en clair dans les sources**. Si Render en a une autre, l'API déployée ne peut pas déchiffrer ce secret — c'est ce qui a produit le « Internal server error » à la connexion. **Deux issues, toutes deux à traiter** : si la variable est absente sur Render, le chiffrement des messages, médias et secrets 2FA ne protège rien ; si elle est présente, tout secret créé hors de Render est illisible. La règle à tenir : **aucun secret ne doit être scellé ailleurs que par l'environnement qui le relira.** Le seed ne devrait donc pas activer le 2FA d'un compte destiné à la production. |
 | 6 | **`npm run lint` de l'API ne fonctionne pas en local** | `eslint` n'est pas installé dans `apps/api/node_modules`. Le script existe mais échoue. Sans conséquence sur Render (`npm install --include=dev`), mais aucun garde-fou de style ne tourne côté API pendant le développement. |
-| 7 | **Les photos de profil disparaissent au redéploiement** — constaté le 23/08 | `StorageService` écrit dans `uploads/` sur le disque local de l'instance, et `render.yaml` ne déclare **aucun disque persistant**. Chaque redéploiement efface donc toutes les photos téléversées — et sur le plan gratuit, aussi les médias de consultation. Deux issues : un disque Render payant, ou un stockage objet externe. À trancher avant la livraison. |
+| 7 | ~~**Les fichiers disparaissent au redéploiement**~~ — **RÉSOLU le 24/08** | `StorageService` écrivait sur le disque de l'instance, et le plan gratuit de Render n'a aucun disque persistant. Constaté sur des pièces réelles : la ligne était en base, le fichier répondait « introuvable ». **Les octets vont désormais dans PostgreSQL**, toujours chiffrés — la seule chose durable ET sauvegardée dont ce déploiement dispose. Assumé pour ce périmètre (quelques dizaines de Mo face aux 0,5 Go du quota Neon) ; l'abstraction par clé garde ouverte la bascule vers un stockage objet. |
 | 8 | **Les tests d'intégration de l'API ne tournent plus tant qu'une base de test n'existe pas** — conséquence de l'incident du 23/08 | Un `npm test` a effacé la base du site : les suites vident 24 tables avant de commencer, et le projet n'a qu'une base Neon, partagée avec le déploiement. Un garde-fou (`test/garde-base-de-test.ts`) les arrête désormais sans `TEST_DATABASE_URL` distincte. **Il reste donc à créer une branche Neon de test et à l'y renseigner**, sinon le seul garde-fou automatique du backend est hors service. Les tests unitaires (465) tournent toujours. À part ça, `chantier3/4/5` dépassaient déjà leurs délais AVANT le palier B3 — vérifié en remettant le code d'origine — parce que la base est à l'autre bout du réseau. |
 
 | 9 | **Les comptes de démonstration sont dans la base de production** — 24/08 | `dr.nouveau`, `dr.armel`, `dr.solange`, `dr.firmin`, `patient.demo`, `pharma.demo` — tous avec le mot de passe `demo1234` — plus 3 pharmacies et leur stock. Créés volontairement pour tester C1, la base n'ayant qu'un seul exemplaire. Le `SEED_DEMO=false` du `.env` local existait précisément pour l'éviter. **À supprimer avant la livraison** : sinon le client hérite de six comptes ouverts avec un mot de passe connu de tous. |
 | 10 | **`ADMIN_REQUIRE_TOTP=false` sur Render** | Vérifié le 24/08 par appel réel : `admin` accède à `/v1/admin/pilot-kpis` **sans second facteur**. C'est écrit et assumé dans `render.yaml` (« le temps de la refonte web »), et le code vaut `true` par défaut — retirer la ligne suffit. Mais tant qu'elle est là, RM-01-06 est levée sur une API exposée à internet. |
+| 12 | **`SECRETBOX_KEY` n'a aucune sauvegarde** — vérifié le 24/08 | Bonne nouvelle d'abord : Render possède bien sa PROPRE clé, ce n'est pas le repli codé en dur. Preuve : un secret scellé par l'API déployée est indéchiffrable en local. Le chiffrement protège donc réellement. **Mais si cette clé est perdue, tout devient définitivement illisible** — pièces justificatives, messages de consultation, secrets 2FA. Aucune procédure de sauvegarde n'existe. À copier hors ligne, en deux endroits distincts. |
+| 13 | **La politique de confidentialité affirme un hébergement au Congo-Brazzaville** | Texte accepté à l'inscription, donc preuve légale sous la loi n° 29-2019. La réalité : `region: frankfurt` pour Render, `eu-central-1` pour Neon — tout est en Allemagne. Soit on corrige la phrase, soit on héberge au Congo. En soutenance, un jury peut lire ce texte. |
 | 5 | **Alertes `npm audit`** | 3 alertes élevées sur `react-router`. Elles concernent le mode RSC, que nous n'utilisons pas (SPA statique). À re-vérifier avant livraison. |
 
 ---
@@ -362,8 +385,11 @@ externe — notre version est la bonne.
 | — | *Incident* : base du site effacée par `npm test`, admin restauré, garde-fou posé (`72f1e92`) | ✅ | **23/08** |
 | — | *Palier serveur C1* : lecture des pièces (déposant + admin), pièces obligatoires, retrait, délai | **codé** | *en attente de test* |
 | 8 | C1 — Ma vérification (frise, pièces, motif, contrat signé) | **codé** | *en attente de test* |
-| 9–13 | C2 → C6 — Professionnel | à faire | |
-| 14–17 | D1 → D4 — Pharmacie | à faire | |
-| 18–24 | E1 → E7 — Administration | à faire | |
+| — | *Stockage* : les fichiers passent du disque éphémère à PostgreSQL, plafond par fichier | **codé** | *en attente de test* |
+| 9 | C2 — Ma vitrine — **la suivante** | à faire | |
+| 10–12 | C3 Demandes, C5 Consultation, C6 Mes gains | à faire | |
+| — | E1 — File de vérification (l'autre bout de C1) | à faire | |
+| ~~14–17~~ | ~~D1 → D4 — Pharmacie~~ — **hors périmètre soutenance (24/08)** | — | |
+| ~~18–24~~ | ~~E2 → E7~~ — **hors périmètre soutenance**, seul E1 est retenu | — | |
 | 25 | Passe finale : états, sombre, responsive, accessibilité | à faire | |
 | 26 | Préparation à la livraison (§7) | à faire | |
