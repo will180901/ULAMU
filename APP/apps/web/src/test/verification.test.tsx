@@ -20,7 +20,17 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type MeResponse, type VerificationCase } from '@/lib/api'
+import { api, lirePieceJustificative, type MeResponse, type VerificationCase } from '@/lib/api'
+
+/**
+ * Seule `lirePieceJustificative` est remplacée : elle fait un `fetch` avec jeton puis fabrique une
+ * URL `blob:`, deux choses que jsdom ne sait pas faire. `api` reste l'objet réel, donc les espions
+ * posés plus bas continuent de fonctionner.
+ */
+vi.mock('@/lib/api', async (importOriginal) => {
+  const reel = await importOriginal<typeof import('@/lib/api')>()
+  return { ...reel, lirePieceJustificative: vi.fn() }
+})
 
 const MOI: MeResponse = {
   accountId: 'p1',
@@ -292,5 +302,60 @@ describe('C1 — plusieurs fichiers pour une même pièce', () => {
     })
     expect(screen.getByText('Déposée')).toBeInTheDocument()
     expect(screen.queryByText(/Page 1/)).not.toBeInTheDocument()
+  })
+})
+
+describe('C1 — l’aperçu d’une pièce', () => {
+  beforeEach(() => {
+    // jsdom ne connaît pas les URL d'objet : on les remplace pour que la fermeture n'explose pas.
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:faux')
+    globalThis.URL.revokeObjectURL = vi.fn()
+  })
+
+  it('s’ouvre dans un tiroir venu de la DROITE, sans quitter la page', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const utilisateur = userEvent.setup()
+    vi.mocked(lirePieceJustificative).mockResolvedValue({ url: 'blob:faux', type: 'image/png' })
+
+    await monter({
+      status: 'DRAFT',
+      documents: [{ id: 'r', kind: 'ID', expiresAt: null, createdAt: '2026-08-20T10:00:00.000Z' }],
+      missingDocuments: ['DIPLOMA', 'LICENSE', 'PHOTO'],
+    })
+
+    await utilisateur.click(screen.getByRole('button', { name: 'Voir' }))
+
+    const tiroir = await screen.findByRole('dialog')
+    // Le côté n'est pas un détail : la liste des pièces doit rester visible pendant qu'on regarde un
+    // fichier, pour enchaîner recto puis verso sans perdre sa place.
+    expect(tiroir).toHaveAttribute('data-side', 'right')
+    expect(within(tiroir).getByRole('img', { name: 'Pièce d’identité' })).toBeInTheDocument()
+
+    // La page n'a pas bougé : l'écran est toujours là, DERRIÈRE le tiroir. On l'interroge par le DOM
+    // et non par son rôle : Radix marque l'arrière-plan `aria-hidden` tant qu'un panneau modal est
+    // ouvert, et c'est la bonne façon de faire — un lecteur d'écran ne doit pas lire deux plans à la
+    // fois. Visuellement, la liste des pièces reste bien à gauche du tiroir.
+    expect(document.querySelector('h1')?.textContent).toBe('Ma vérification')
+    expect(document.querySelectorAll('h1')).toHaveLength(1)
+  })
+
+  it('la fermeture libère le fichier déchiffré gardé en mémoire', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event')
+    const utilisateur = userEvent.setup()
+    vi.mocked(lirePieceJustificative).mockResolvedValue({ url: 'blob:faux', type: 'image/png' })
+
+    await monter({
+      status: 'DRAFT',
+      documents: [{ id: 'r', kind: 'ID', expiresAt: null, createdAt: '2026-08-20T10:00:00.000Z' }],
+      missingDocuments: ['DIPLOMA', 'LICENSE', 'PHOTO'],
+    })
+
+    await utilisateur.click(screen.getByRole('button', { name: 'Voir' }))
+    await screen.findByRole('dialog')
+    await utilisateur.click(screen.getByRole('button', { name: 'Fermer' }))
+
+    // Sans cette libération, la pièce d'identité reste en mémoire de l'onglet jusqu'à sa fermeture —
+    // sur un poste partagé, c'est exactement ce qu'on ne veut pas laisser derrière soi.
+    await waitFor(() => expect(globalThis.URL.revokeObjectURL).toHaveBeenCalledWith('blob:faux'))
   })
 })

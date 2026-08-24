@@ -45,14 +45,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
@@ -305,39 +298,45 @@ function BlocPiece({
       {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
 
       {/*
-        L'aperçu reste DANS la page. Ouvrir un onglet pour chaque pièce oblige à faire l'aller-retour
-        à chaque fois, et sur un poste partagé cet onglet reste ouvert derrière soi avec une pièce
-        d'identité dedans.
+        L'aperçu glisse depuis la DROITE, il ne se pose pas au milieu de l'écran. La différence n'est
+        pas décorative : la liste des pièces reste visible à gauche pendant qu'on regarde un fichier,
+        donc on enchaîne recto puis verso sans perdre sa place. Une boîte centrée masque tout et
+        oblige à refermer pour se souvenir d'où l'on venait.
+
+        Ouvrir un onglet, comme le faisait la première version, était pire encore : sur un poste
+        partagé cet onglet reste ouvert derrière soi avec une pièce d'identité dedans.
 
         Le PDF est affiché dans un cadre CLOISONNÉ (`sandbox` sans `allow-scripts`) : un PDF peut
         embarquer du script, et il n'a rien à exécuter dans le contexte de l'application. Le bouton
-        « Ouvrir dans un onglet » reste là pour les navigateurs dont le lecteur PDF refuse le
+        « Ouvrir dans un onglet » demeure pour les navigateurs dont le lecteur PDF refuse ce
         cloisonnement.
       */}
-      <Dialog open={apercu !== null} onOpenChange={(v) => (v ? undefined : fermerApercu())}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{apercu?.titre}</DialogTitle>
-          </DialogHeader>
-          {apercu ? (
-            apercu.type.startsWith('image/') ? (
-              <img src={apercu.url} alt={apercu.titre} className="max-h-[70vh] w-full rounded-md object-contain" />
-            ) : (
-              <iframe src={apercu.url} sandbox="" title={apercu.titre} className="h-[70vh] w-full rounded-md border border-border bg-card" />
-            )
-          ) : null}
-          <DialogFooter>
+      <Sheet open={apercu !== null} onOpenChange={(v) => (v ? undefined : fermerApercu())}>
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-2xl">
+          <SheetHeader className="border-b border-border">
+            <SheetTitle className="text-[15px]">{apercu?.titre}</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-auto bg-secondary p-4">
+            {apercu ? (
+              apercu.type.startsWith('image/') ? (
+                <img src={apercu.url} alt={apercu.titre} className="mx-auto max-w-full rounded-md" />
+              ) : (
+                <iframe src={apercu.url} sandbox="" title={apercu.titre} className="h-full min-h-[70vh] w-full rounded-md border border-border bg-card" />
+              )
+            ) : null}
+          </div>
+          <SheetFooter className="flex-row justify-end border-t border-border">
             <Button type="button" variant="outline" size="sm" onClick={() => apercu && window.open(apercu.url, '_blank', 'noopener')}>
               Ouvrir dans un onglet
             </Button>
-            <DialogClose asChild>
+            <SheetClose asChild>
               <Button type="button" size="sm">
                 Fermer
               </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </li>
   )
 }
