@@ -822,13 +822,18 @@ export const api = {
     request<Disclosure>('POST', `/v1/disclosures/${disclosureId}/mark-served`, undefined, true),
 
   // M02 — sous-rôles d'administration (SUPER_ADMIN)
-  admins: () => request<PlatformAdmin[]>('GET', '/v1/admins', undefined, true),
+  //
+  // ⚠️ Le préfixe est `v1/admin`, pas `v1`. Ces quatre chemins disaient `/v1/admins` et renvoyaient
+  // donc 404 — l'écran « Administrateurs » (E4) aurait été vide sans que rien n'explique pourquoi.
+  // Corrigés le 24/08/2026 après appel réel : `GET /v1/admin/admins` répond bien la liste.
+  admins: () => request<PlatformAdmin[]>('GET', '/v1/admin/admins', undefined, true),
   createAdmin: (dto: { phone: string; username: string; password: string; firstName: string; lastName: string; role: AdminRole }) =>
-    request<{ accountId: string }>('POST', '/v1/admins', dto, true),
+    request<{ accountId: string }>('POST', '/v1/admin/admins', dto, true),
   assignAdminRole: (accountId: string, role: AdminRole, reason?: string) =>
-    request<{ accountId: string; role: string }>('POST', `/v1/admins/${accountId}/role`, { role, reason }, true),
+    request<{ accountId: string; role: string }>('POST', `/v1/admin/admins/${accountId}/role`, { role, reason }, true),
   /** Le serveur refuse l'auto-révocation (continuité d'administration) et coupe les sessions du révoqué. */
-  revokeAdminRole: (accountId: string) => request<void>('DELETE', `/v1/admins/${accountId}/role`, undefined, true),
+  revokeAdminRole: (accountId: string) =>
+    request<void>('DELETE', `/v1/admin/admins/${accountId}/role`, undefined, true),
 
   // M16 — paramètres métier (SUPER_ADMIN)
   parameters: () => request<PlatformParameter[]>('GET', '/v1/admin/parameters', undefined, true),
@@ -846,14 +851,22 @@ export const api = {
   runReconciliation: () => request<ReconciliationReport>('POST', '/v1/admin/finance/reconcile', undefined, true),
 
   // M06 — poignées de main reçues
-  myHandshakes: () => request<Handshake[]>('GET', '/v1/handshakes/mine', undefined, true),
+  /**
+   * ⚠️ Renvoie `{ items }`, PAS un tableau — vérifié contre l'API déployée le 24/08/2026.
+   *
+   * Ce type déclarait `Handshake[]`, et TypeScript n'avait aucun moyen de savoir qu'il mentait : une
+   * déclaration de type est une PROMESSE faite au compilateur, pas une vérification. Le tableau de
+   * bord appelait donc `.filter` sur un objet et plantait l'écran entier, page blanche comprise.
+   */
+  myHandshakes: () => request<{ items: Handshake[] }>('GET', '/v1/handshakes/mine', undefined, true),
   confirmHandshake: (id: string) => request<Handshake>('POST', `/v1/handshakes/${id}/confirm`, undefined, true),
   /** Le motif est OBLIGATOIRE côté serveur : un refus sans explication laisse le patient sans recours. */
   refuseHandshake: (id: string, reason: string) =>
     request<Handshake>('POST', `/v1/handshakes/${id}/refuse`, { reason }, true),
 
   // M06 — session de soin
-  mySessions: () => request<CareSession[]>('GET', '/v1/care-sessions/mine', undefined, true),
+  /** ⚠️ Renvoie `{ items }`, PAS un tableau — vérifié contre l'API déployée le 24/08/2026. */
+  mySessions: () => request<{ items: CareSession[] }>('GET', '/v1/care-sessions/mine', undefined, true),
   session: (id: string) => request<CareSession>('GET', `/v1/care-sessions/${id}`, undefined, true),
   sessionMessages: (id: string) =>
     request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),

@@ -112,7 +112,7 @@ function TableauSoignant() {
   if (bord.isPending) return <Chargement />
   if (bord.isError) return <Echec onRetry={() => void bord.refetch()} />
 
-  const enAttente = (demandes.data ?? []).filter((h) => h.status === 'INITIATED')
+  const enAttente = (demandes.data?.items ?? []).filter((h) => h.status === 'INITIATED')
 
   return (
     <>
