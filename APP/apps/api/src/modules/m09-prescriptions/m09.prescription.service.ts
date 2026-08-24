@@ -303,6 +303,37 @@ export class PrescriptionService {
   // ── EF-09-09 : historique du patient ────────────────────────────────────────
 
   /** Ordonnances de l'acteur patient (actives, partielles, terminées), récentes d'abord. */
+  /**
+   * Les ordonnances que J'AI PRESCRITES — côté prescripteur (2026-08).
+   *
+   * `listForPatient` filtre sur `patientAccountId` : un médecin qui l'appelait récupérait ses
+   * propres ordonnances EN TANT QUE PATIENT, c'est-à-dire rien. Aucun moyen n'existait pour un
+   * prescripteur de relire ce qu'il avait ordonné — alors que l'écran « Consultations » le montre
+   * consultation par consultation, et qu'un médecin qui revoit un patient a besoin de savoir ce
+   * qu'il lui a déjà donné.
+   *
+   * Même vue que celle du patient : le prescripteur a écrit cette ordonnance, il n'y a rien à lui
+   * cacher de son propre acte.
+   */
+  async listForPrescriber(actor: AuthenticatedActor) {
+    const rows = await this.prisma.prescription.findMany({
+      where: { prescriberId: actor.accountId },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: { lines: true },
+    });
+    // Expiration paresseuse (PM-10) au fil de la lecture, comme côté patient (EF-09-08) : sans elle,
+    // une ordonnance périmée s'afficherait « active » jusqu'à ce que quelqu'un d'autre la lise.
+    const now = new Date();
+    const settledRows = [];
+    for (const p of rows) {
+      settledRows.push(await this.lazyExpire(p, now));
+    }
+    const meds = await this.loadMedsForLines(settledRows.flatMap((p) => p.lines));
+    const items = settledRows.map((settled) => this.toPatientView(settled, settled.lines, meds));
+    return { items };
+  }
+
   async listForPatient(actor: AuthenticatedActor) {
     const rows = await this.prisma.prescription.findMany({
       where: { patientAccountId: actor.accountId },
@@ -457,12 +488,18 @@ export class PrescriptionService {
 
   /** Vue patient d'une ordonnance et de ses lignes (jamais le Carnet — RM-09-04). */
   private toPatientView(
-    p: { id: string; status: PrescriptionStatus; qrToken: string; expiresAt: Date; createdAt: Date; cancelReason: string | null; subProfileId: string | null },
+    p: { id: string; sessionId: string; status: PrescriptionStatus; qrToken: string; expiresAt: Date; createdAt: Date; cancelReason: string | null; subProfileId: string | null },
     lines: Array<{ id: string; medicamentId: string | null; freeText: string | null; posology: string; durationDays: number | null; qtyPrescribed: number; qtyDispensed: number }>,
     medsById: Map<string, Medicament> = new Map(),
   ) {
     return {
       id: p.id,
+      /**
+       * La séance d'origine (2026-08). Elle manquait : impossible de rattacher une ordonnance à la
+       * consultation qui l'a produite, alors que « Consultations » les affiche l'une sous l'autre.
+       * Aucune fuite — le patient comme le prescripteur sont participants de cette séance.
+       */
+      sessionId: p.sessionId,
       status: p.status,
       // Le QR n'est présenté qu'au patient propriétaire (RM-09-02) ; inerte si annulée/expirée.
       qrToken: p.status === PrescriptionStatus.ACTIVE || p.status === PrescriptionStatus.PARTIALLY_DISPENSED ? p.qrToken : null,

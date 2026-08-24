@@ -41,6 +41,16 @@ export class M09Controller {
     return this.prescriptions.listForPatient(actor);
   }
 
+  /**
+   * Les ordonnances que j'ai PRESCRITES (EF-09-09, côté soignant).
+   *
+   * Déclarée AVANT `@Get(":id")`, sans quoi « prescribed » serait pris pour un identifiant.
+   */
+  @Get("prescribed")
+  listPrescribed(@Actor() actor: AuthenticatedActor) {
+    return this.prescriptions.listForPrescriber(actor);
+  }
+
   /** Détail d'une ordonnance (patient propriétaire ou prescripteur — portée vérifiée service). */
   @Get(":id")
   getOne(@Actor() actor: AuthenticatedActor, @Param("id") id: string) {

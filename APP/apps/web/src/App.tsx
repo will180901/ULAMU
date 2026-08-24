@@ -19,6 +19,7 @@ import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { VitrinePage } from '@/modules/vitrine/pages/VitrinePage'
 import { DemandesPage } from '@/modules/demandes/pages/DemandesPage'
 import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
+import { ConsultationsPage } from '@/modules/consultation/pages/ConsultationsPage'
 import { GainsPage } from '@/modules/gains/pages/GainsPage'
 import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
@@ -30,7 +31,7 @@ import { useSessionStore } from '@/state/session.store'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 
 /** Les écrans déjà refaits : ils ont leur propre route et sortent de la boucle `EcranAVenir`. */
-const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine', '/demandes', '/gains', '/admin/verification']
+const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine', '/demandes', '/gains', '/admin/verification', '/consultations']
 
 /**
  * Repli des routes inconnues. Il honore la préférence « page d'accueil » de B3 — sans quoi le réglage
@@ -79,6 +80,7 @@ export function App() {
                 <Route path="/demandes" element={<DemandesPage />} />
                 <Route path="/gains" element={<GainsPage />} />
                 <Route path="/admin/verification" element={<FileVerificationPage />} />
+                <Route path="/consultations" element={<ConsultationsPage />} />
                 {/* La séance elle-même : atteinte depuis « Consultations », jamais listée seule. */}
                 <Route path="/consultations/:sessionId" element={<ConsultationPage />} />
                 {/* Les écrans non encore refaits gardent leur route : la navigation reste entière. */}

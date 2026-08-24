@@ -370,6 +370,9 @@ est la contrepartie de la règle du §0 : un écart qui n'y figure pas est un é
 | 34 | C2 | **Ni « Publier », ni « Modifications non publiées »** | `PATCH me/professional-profile` publie immédiatement : il n'existe aucun état intermédiaire à représenter. L'enregistrement se fait 800 ms après la frappe et l'écran dit où il en est. Un bouton n'aurait ajouté que la question qu'on veut éviter — « ai-je publié ? ». | Porteur, 24/08 |
 | 33 | C2 | **« Visibilité, 30 derniers jours » retirée** | Aucune vue de vitrine n'est comptée nulle part — `ProfessionalStats` compte les poignées de main et les notes. Et la phrase « une vitrine complète est consultée deux fois plus souvent » n'a aucune source. **À rétablir si M05 se met à compter les vues.** | Porteur, 24/08 |
 | 32 | C2 | **Langues et lieux de consultation retirés** | Ni l'un ni l'autre n'existe : pas en base, pas dans l'annuaire, pas dans la recherche. Les ajouter demanderait deux tables et un champ de recherche, pour une démonstration entièrement en téléconsultation. Décision du porteur du 24/08. | Porteur, 24/08 |
+| 47 | C4 | **« Suivi en officine » retiré de chaque consultation** | La maquette montre l'avancement de la délivrance en pharmacie. Toute la branche officine est hors périmètre soutenance (§0), et `qtyDispensed` reste donc à 0 : la colonne aurait affiché « 0 / 30 délivré » sur toutes les ordonnances, ce qui se lit comme une panne. Chaque ligne dit ce qu'elle sait — le médicament, la posologie, la durée, la quantité prescrite. | Porteur, 24/08 |
+| 46 | C4 | **« Exporter le registre » et « Télécharger le PDF » retirés** | Aucun endpoint ne produit de document : ni sur M06, ni sur M09. Le bouton aurait ouvert une boîte de dialogue vide. **À combler** si le jury veut une pièce à emporter — il faudrait un générateur PDF côté serveur, un vrai chantier. | Porteur, 24/08 |
+| 45 | C4 | **« Compte-rendu à déposer sous 48 h » → 24 heures** | PM-30 = 86 400 s. La même erreur qu'en C5, au même endroit, et c'est la plus chère : un médecin qui croit disposer de 48 h laisse passer le délai, ses gains sont gelés (RM-06-04) et l'administration est alertée (EF-06-08). L'écran affiche désormais les **heures restantes**, pas une date — c'est ce qui fait agir. | Porteur, 24/08 |
 | 44 | E1 | **« 72 heures ouvrées » → 72 heures** | PM-11 vaut bien 72, mais `m03.policies` le dit sans détour : « MVP : heures pleines — les heures ouvrées seront affinées avec le modèle opérationnel ». Annoncer « ouvrées » promettrait un calcul que personne ne fait. | Porteur, 24/08 |
 | 43 | E1 | **La checklist de contrôle des pièces reste LOCALE** | Rien ne la stocke côté serveur. Elle aide l'examinateur à ne rien oublier pendant qu'il travaille, disparaît au rechargement, et l'écran le DIT (« la coche vous suit pendant l'examen, elle n'est pas enregistrée »). Elle ne bloque pas la décision : elle signale ce qui n'a pas été ouvert et engage la responsabilité. | Porteur, 24/08 |
 | 42 | E1 | **« Prendre le plus urgent » retiré** | La file est déjà triée par ancienneté et les dépassements remontent en tête. Le bouton ne ferait que cliquer la première ligne à la place de l'humain — en lui retirant le coup d'œil qui lui dit POURQUOI elle est première. | Porteur, 24/08 |
@@ -429,13 +432,14 @@ externe — notre version est la bonne.
 | 8 | C1 — Ma vérification (frise, pièces, motif, contrat signé) | **codé** | *en attente de test* |
 | — | *Stockage* : les fichiers passent du disque éphémère à PostgreSQL, plafond par fichier | **codé** | *en attente de test* |
 | 9 | C2 — Ma vitrine (repensée : aperçu comparatif, conditions de visibilité) | **codé** | *en attente de test* |
-| 10 | C3 — Demandes — **la suivante** | à faire | |
+| 10 | C3 — Demandes (file d'attente, acceptation, refus motivé court) | **codé** | *en attente de test* |
 | 11 | C5 — Consultation (fil, décompteur, contexte, compte-rendu) | **codé** | *en attente de test* |
 | 12 | C6 — Mes gains (soldes, mouvements, retrait en deux temps) | **codé** | *en attente de test* |
 | 13 | E1 — File de vérification (file, dossier, pièces, décision) | **codé** | *en attente de test* |
 | ~~14–17~~ | ~~D1 → D4 — Pharmacie~~ — **hors périmètre soutenance (24/08)** | — | |
-| 14 | C4 — Consultations (la liste) | à faire | |
-| 15–20 | E2 Finance, E3 Paramètres métier, E4 Administrateurs, E5 Pilotage, E6 Signalements, E7 Comptes | à faire | |
+| 14 | C4 — Consultations (registre, dette de comptes-rendus, ordonnances rattachées) | **codé** | *en attente de test* |
+| — | *Palier serveur C4* : `GET /prescriptions/prescribed` + `sessionId` dans la vue d'ordonnance | **codé** | *en attente de test* |
+| 15–20 | E2 Finance — **la suivante**, E3 Paramètres métier, E4 Administrateurs, E5 Pilotage, E6 Signalements, E7 Comptes | à faire | |
 | — | *Rangement* : la branche officine retirée de l'inscription et de la navigation | à faire | |
 | 25 | Passe finale : états, sombre, responsive, accessibilité | à faire | |
 | 26 | Préparation à la livraison (§7) | à faire | |

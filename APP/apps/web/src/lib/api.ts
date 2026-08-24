@@ -500,6 +500,26 @@ export interface CareSession {
   otherPartyTyping: boolean
 }
 
+/**
+ * Un élément de la LISTE des séances — volontairement plus pauvre que `CareSession`.
+ *
+ * Le serveur ne charge ni la pré-consultation, ni l'indicateur de frappe, ni les extensions pour
+ * dresser un registre : ce sont des détails de séance, pas d'historique.
+ */
+export interface SessionListItem {
+  id: string
+  status: CareSessionStatus
+  patientAccountId: string
+  professionalId: string
+  subProfileId: string | null
+  durationMin: number
+  paidAt: string
+  endsAt: string | null
+  endedAt: string | null
+  remainingSeconds: number
+  reportDepositedAt: string | null
+}
+
 export interface SessionMessage {
   id: string
   sessionId: string
@@ -530,6 +550,35 @@ export interface Medicament {
   commercialNames: string[]
   form: string | null
   dosage: string | null
+}
+
+/**
+ * Une ordonnance, telle que la voient le patient ET le prescripteur.
+ *
+ * `qrToken` vaut `null` dès qu'elle n'est plus délivrable (annulée, expirée, servie) : le QR ne doit
+ * pas rester scannable après coup (RM-09-02). `sessionId` a été ajouté le 24/08/2026 — sans lui, on
+ * ne pouvait pas rattacher une ordonnance à la consultation qui l'a produite.
+ */
+export interface Prescription {
+  id: string
+  sessionId: string
+  status: 'ACTIVE' | 'PARTIALLY_DISPENSED' | 'DISPENSED' | 'CANCELLED' | 'EXPIRED'
+  qrToken: string | null
+  subProfileId: string | null
+  expiresAt: string
+  createdAt: string
+  cancelReason: string | null
+  lines: Array<{
+    id: string
+    medicamentId: string | null
+    /** Nom du référentiel — `null` pour une ligne en texte libre (EF-09-02). */
+    medicationName: string | null
+    freeText: string | null
+    posology: string
+    durationDays: number | null
+    qtyPrescribed: number
+    qtyDispensed: number
+  }>
 }
 
 export interface PrescriptionLineInput {
@@ -997,8 +1046,17 @@ export const api = {
     request<Handshake>('POST', `/v1/handshakes/${id}/refuse`, { reason }, true),
 
   // M06 — session de soin
-  /** ⚠️ Renvoie `{ items }`, PAS un tableau — vérifié contre l'API déployée le 24/08/2026. */
-  mySessions: () => request<{ items: CareSession[] }>('GET', '/v1/care-sessions/mine', undefined, true),
+  /**
+   * ⚠️ Renvoie `{ items }`, et ses éléments sont des `SessionListItem` — un SOUS-ENSEMBLE de
+   * `CareSession` (vérifié contre `listMine` le 24/08/2026).
+   *
+   * Le déclarer `CareSession[]` promettait `preConsultation`, `otherPartyTyping`, `startedAt`… que
+   * la liste n'envoie pas. Un écran qui s'y fiait aurait lu `undefined` là où TypeScript garantissait
+   * une valeur.
+   */
+  mySessions: () => request<{ items: SessionListItem[] }>('GET', '/v1/care-sessions/mine', undefined, true),
+  /** Les ordonnances que J'AI PRESCRITES — `prescriptions/me` filtre côté PATIENT (2026-08). */
+  myPrescribed: () => request<{ items: Prescription[] }>('GET', '/v1/prescriptions/prescribed', undefined, true),
   session: (id: string) => request<CareSession>('GET', `/v1/care-sessions/${id}`, undefined, true),
   sessionMessages: (id: string) =>
     request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),
