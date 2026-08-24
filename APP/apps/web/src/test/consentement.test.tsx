@@ -53,10 +53,15 @@ function remplir(libelle: RegExp, valeur: string) {
 const continuer = async (u: ReturnType<typeof userEvent.setup>) =>
   u.click(screen.getByRole('button', { name: /^Continuer$/i }))
 
-/** Parcours le plus court jusqu'à l'étape finale : membre de structure, cinq étapes. */
+/**
+ * Parcours jusqu'à l'étape finale — cinq étapes.
+ *
+ * ⚠️ L'étape « type de compte » a disparu le 24/08/2026 avec le compte « Structure / Pharmacie » :
+ * la branche officine sort du périmètre, et laisser créer un compte dont aucun écran n'existe serait
+ * la pire des promesses. Comme il ne restait qu'un choix, l'étape entière est tombée — on ne fait
+ * pas choisir entre une option et rien. Le parcours commence donc directement au contact.
+ */
 async function allerAEtapeFinale(u: ReturnType<typeof userEvent.setup>) {
-  await u.click(screen.getByText('Structure / Pharmacie'))
-
   remplir(/Téléphone/i, '+242060000001')
   remplir(/^Email/i, 'titulaire@exemple.com')
   await continuer(u)
@@ -68,6 +73,10 @@ async function allerAEtapeFinale(u: ReturnType<typeof userEvent.setup>) {
   // ne correspondrait à rien. Pour « Nom », l'ancrage des deux côtés reste nécessaire :
   // sans lui on attraperait aussi « Nom d'utilisateur ».
   remplir(/^Nom$/, 'Ossona')
+  await continuer(u)
+
+  // Étape « profil » : propre au parcours professionnel — une officine n'avait ni catégorie ni
+  // spécialité, et c'est ce parcours-là qui a disparu.
   await continuer(u)
 
   remplir(/^Mot de passe/i, 'motdepasse1')

@@ -14,8 +14,6 @@
 import {
   Activity,
   Banknote,
-  Boxes,
-  Building2,
   ClipboardCheck,
   ClipboardList,
   Flag,
@@ -23,10 +21,8 @@ import {
   KeyRound,
   LayoutDashboard,
   MessageSquare,
-  QrCode,
   Settings,
   ShieldCheck,
-  ShoppingBag,
   SlidersHorizontal,
   Store,
   TrendingUp,
@@ -58,7 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Tableau de bord',
         icon: LayoutDashboard,
         href: '/dashboard',
-        capabilities: ['professional', 'facility', 'admin'],
+        capabilities: ['professional', 'admin'],
       },
       /* M03 — dépôt et suivi du dossier. Les administrateurs n'en ont pas : la capacité `admin` est
          volontairement absente, une entrée qui mène à une page vide est une fausse piste. */
@@ -67,7 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Ma vérification',
         icon: ShieldCheck,
         href: '/verification',
-        capabilities: ['professional', 'facility'],
+        capabilities: ['professional'],
       },
     ],
   },
@@ -82,14 +78,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'consultations', label: 'Consultations', icon: MessageSquare, href: '/consultations', capabilities: ['professional'] },
 
       /* Officine — M02, M11, M12. Réservé aux membres de structure. */
-      { key: 'pharmacie', label: 'Ma pharmacie', icon: Building2, href: '/pharmacie', capabilities: ['facility'] },
-      { key: 'stock', label: 'Stock', icon: Boxes, href: '/stock', capabilities: ['facility'] },
-      { key: 'delivrance', label: 'Délivrance', icon: QrCode, href: '/delivrance', capabilities: ['facility'] },
-      { key: 'reservations', label: 'Réservations', icon: ShoppingBag, href: '/reservations', capabilities: ['facility'] },
 
       /* M13 — soignant ET structure. La page choisit le porteur d'après le rôle ; le serveur, lui,
          réserve les retraits au titulaire d'une officine (EF-02-05). */
-      { key: 'gains', label: 'Mes gains', icon: TrendingUp, href: '/gains', capabilities: ['professional', 'facility'] },
+      { key: 'gains', label: 'Mes gains', icon: TrendingUp, href: '/gains', capabilities: ['professional'] },
     ],
   },
   {
@@ -135,7 +127,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Compte',
     items: [
-      { key: 'parametres', label: 'Mes paramètres', icon: Settings, href: '/parametres', capabilities: ['professional', 'facility', 'admin'] },
+      { key: 'parametres', label: 'Mes paramètres', icon: Settings, href: '/parametres', capabilities: ['professional', 'admin'] },
     ],
   },
 ]

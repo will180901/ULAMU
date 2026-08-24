@@ -1,7 +1,7 @@
 /**
  * A2 — Inscription. Refait d'après `docs/maquettes/A2 - Inscription.dc.html`.
  *
- * Réservée aux comptes PROFESSIONAL / FACILITY_MEMBER. Six étapes : type de compte → contact →
+ * Réservée aux comptes PROFESSIONAL. Cinq étapes : contact →
  * identité → profil (professionnels seulement) → sécurité → vérification par email.
  *
  * Le découpage en étapes COURTES n'est pas cosmétique : la carte est plafonnée à 90 vh, soit 630 px
@@ -18,7 +18,7 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { AlertCircle, Building2, Info, Stethoscope } from 'lucide-react'
+import { AlertCircle, Info } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { EtapesAuth } from '@/components/auth/EtapesAuth'
 import { Button } from '@/components/ui/button'
@@ -31,26 +31,23 @@ import { usePageAccueil } from '@/hooks/usePageAccueil'
 import { useSessionStore } from '@/state/session.store'
 import { useLoadMeMutation } from '../hooks/useLogin'
 
-type AccountType = 'PROFESSIONAL' | 'FACILITY_MEMBER'
-type Step = 'type' | 'contact' | 'identity' | 'profile' | 'security' | 'otp'
+type Step = 'contact' | 'identity' | 'profile' | 'security' | 'otp'
 
-/* Le parcours d'une structure saute l'étape « profil » : une officine n'a ni catégorie de soignant
-   ni spécialité. L'indicateur compte donc 5 pastilles au lieu de 6.
+/* ⚠️ L'ÉTAPE « TYPE » A DISPARU (24/08/2026), avec le compte « Structure / Pharmacie ».
+   La branche officine sort du périmètre de la soutenance : ses quatre écrans ne seront pas
+   construits. Or laisser quelqu'un CRÉER ce compte pour le trouver vide serait la pire des
+   promesses. Le type disparaît donc d'ici aussi — et comme il ne restait qu'un choix, l'étape
+   entière n'avait plus de raison d'être : on ne fait pas choisir entre une option et rien.
 
    « Contact » et « Identité » sont deux étapes et non une seule (20/08/2026). Les cinq champs
    réunis demandaient 634 px, or la carte est plafonnée à 90 vh — soit 630 px sur une fenêtre de
    700 px, et bien moins sur un portable. L'étape défilait donc en interne, ce qui escamotait le
    logo. Deux étapes de deux ou trois champs tiennent partout. */
-const STEPS: Record<AccountType | 'default', Step[]> = {
-  PROFESSIONAL: ['type', 'contact', 'identity', 'profile', 'security', 'otp'],
-  FACILITY_MEMBER: ['type', 'contact', 'identity', 'security', 'otp'],
-  default: ['type', 'contact', 'identity', 'security', 'otp'],
-}
+const STEPS: Step[] = ['contact', 'identity', 'profile', 'security', 'otp']
 /* Libellés d'UN MOT : chacun occupe une colonne de largeur égale, et « Profil professionnel »
    s'enroulerait sur deux lignes dans un panneau de 435 px partagé en six. La maquette fait le même
    choix dans son sélecteur compact, où elle ne garde que le premier mot. */
 const LIBELLES: Record<Step, string> = {
-  type: 'Type',
   contact: 'Contact',
   identity: 'Identité',
   profile: 'Profil',
@@ -89,41 +86,10 @@ function Erreur({ children }: { children: React.ReactNode }) {
 }
 
 /** Carte de choix du type de compte — tuile d'icône, titre, description (A2, étape 1). */
-function CarteType({
-  icon,
-  titre,
-  description,
-  onClick,
-}: {
-  icon: React.ReactNode
-  titre: string
-  description: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg border border-[var(--bordure-normale)] bg-card p-4 text-left transition-all hover:border-[var(--ap-300)] hover:bg-[var(--ap-50)] hover:shadow-[var(--ombre-1)] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
-    >
-      <span
-        aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--ap-50)] text-[var(--ap-700)]"
-      >
-        {icon}
-      </span>
-      <span>
-        <span className="block text-sm font-semibold text-foreground">{titre}</span>
-        <span className="block text-[11px] leading-[1.45] text-muted-foreground">{description}</span>
-      </span>
-    </button>
-  )
-}
 
 export function RegisterPage() {
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated)
-  const [step, setStep] = useState<Step>('type')
-  const [accountType, setAccountType] = useState<AccountType | null>(null)
+  const [step, setStep] = useState<Step>('contact')
 
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -145,13 +111,13 @@ export function RegisterPage() {
   const [otpInfo, setOtpInfo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const steps = STEPS[accountType ?? 'default']
+  const steps = STEPS
   const currentIndex = steps.indexOf(step)
 
   const requestOtp = useMutation({ mutationFn: () => api.requestOtp({ email, purpose: 'REGISTRATION' }) })
   const register = useMutation({
     mutationFn: () =>
-      accountType === 'PROFESSIONAL'
+      true
         ? api.registerProfessional({
             phone,
             email,
@@ -207,38 +173,11 @@ export function RegisterPage() {
   const confirmationDivergente = confirmPassword.length > 0 && password !== confirmPassword
 
   return (
-    <AuthLayout subtitle={step === 'type' ? 'Créez votre compte ULAMU — professionnels de santé et structures/pharmacies.' : undefined}>
+    <AuthLayout subtitle={step === 'contact' ? 'Créez votre compte ULAMU — professionnels de santé.' : undefined}>
       <EtapesAuth etapes={steps.map((c) => ({ cle: c, libelle: LIBELLES[c] }))} courant={currentIndex} aller={setStep} />
 
       <div key={step} className="ulamu-step-fade">
-        {step === 'type' ? (
-          <div className="flex flex-col gap-3">
-            <CarteType
-              icon={<Stethoscope size={20} strokeWidth={1.5} />}
-              titre="Professionnel de santé"
-              description="Médecin, spécialiste, dentiste, sage-femme, infirmier(ère)…"
-              onClick={() => {
-                setAccountType('PROFESSIONAL')
-                setStep('contact')
-              }}
-            />
-            <CarteType
-              icon={<Building2 size={20} strokeWidth={1.5} />}
-              titre="Structure / Pharmacie"
-              description="Titulaire ou membre d'une officine."
-              onClick={() => {
-                setAccountType('FACILITY_MEMBER')
-                setStep('contact')
-              }}
-            />
-            <p className="mt-1 text-center text-[11px] text-[var(--texte-tertiaire)]">
-              Déjà un compte ?{' '}
-              <Link to="/login" className="font-semibold text-primary hover:underline">
-                Se connecter
-              </Link>
-            </p>
-          </div>
-        ) : step === 'contact' ? (
+        {step === 'contact' ? (
           <form
             className="flex flex-col gap-3"
             onSubmit={(e) => {
@@ -259,16 +198,19 @@ export function RegisterPage() {
             <Button type="submit" size="lg" className="w-full">
               Continuer
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setStep('type')}>
-              Retour
-            </Button>
+            <p className="text-center text-[11px] text-[var(--texte-tertiaire)]">
+              Déjà un compte ?{' '}
+              <Link to="/login" className="font-semibold text-primary hover:underline">
+                Se connecter
+              </Link>
+            </p>
           </form>
         ) : step === 'identity' ? (
           <form
             className="flex flex-col gap-3"
             onSubmit={(e) => {
               e.preventDefault()
-              setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'security')
+              setStep('profile')
             }}
           >
             <label className="flex flex-col gap-1">
@@ -364,7 +306,7 @@ export function RegisterPage() {
               {occupe ? <Spinner /> : null}
               Continuer
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setStep(accountType === 'PROFESSIONAL' ? 'profile' : 'identity')}>
+            <Button type="button" variant="ghost" onClick={() => setStep('profile')}>
               Retour
             </Button>
           </form>

@@ -44,12 +44,21 @@ Trois conséquences sur tous les arbitrages qui suivent :
 | **Trois utilisateurs seulement** | patient, médecin, administrateur. Le patient est servi par l'application MOBILE — le web refuse les comptes patients par conception (D-012). **L'application web ne sert donc que le médecin et l'administrateur.** |
 | **Le minimum utile au processus démontré** | On construit ce qui fait la démonstration de bout en bout, pas le produit complet. |
 
-**Ce qui SORT du périmètre** : toute la branche officine — D1 à D4, la variante pharmacie du tableau
-de bord, le sujet `FACILITY` de la vérification. Quatre écrans sur les dix-huit restants.
+**Ce qui SORT du périmètre — et RIEN D'AUTRE** : la branche officine. D1 à D4, la variante pharmacie
+du tableau de bord, le sujet `FACILITY` de la vérification, et **le type de compte « structure » à
+l'inscription** : si l'on ne développe pas ses écrans, on ne doit pas laisser quelqu'un créer ce
+compte pour le trouver vide.
 
-**Le processus à démontrer, validé le 24/08 :** le médecin dépose son dossier (C1) → l'administrateur
-le vérifie (E1) → le médecin ouvre sa vitrine et ses offres (C2) → un patient le sollicite depuis le
-mobile → il accepte (C3) → la consultation a lieu (C5) → compte-rendu signé et gains crédités (C6).
+⚠️ **Correction du 24/08, au soir.** Une première version de ce paragraphe listait « la chaîne à
+démontrer » — C1, E1, C2, C3, C5, C6 — et j'en avais tiré que le reste sortait du périmètre. C'était
+faux : **C4 et E2 à E7 n'avaient jamais été écartés**. La question posée au porteur portait sur le
+PROCESSUS à démontrer, pas sur la liste des écrans à construire, et j'ai confondu les deux. Le
+porteur l'a relevé en trouvant « Consultations » encore en chantier.
+
+**Le processus à démontrer** : le médecin dépose son dossier (C1) → l'administrateur le vérifie (E1)
+→ le médecin ouvre sa vitrine (C2) → un patient le sollicite depuis le mobile → il accepte (C3) → la
+consultation a lieu (C5) → compte-rendu signé et gains crédités (C6). **Mais démontrer ce chemin
+n'autorise pas à laisser les autres écrans en chantier** : le jury ouvrira la barre latérale.
 
 Ce cadre ne change RIEN à l'exigence de justesse : un écran qui ment devant un jury est pire qu'un
 écran absent. Il change seulement ce qu'on construit, et ce qu'on paie.
@@ -425,6 +434,8 @@ externe — notre version est la bonne.
 | 12 | C6 — Mes gains (soldes, mouvements, retrait en deux temps) | **codé** | *en attente de test* |
 | 13 | E1 — File de vérification (file, dossier, pièces, décision) | **codé** | *en attente de test* |
 | ~~14–17~~ | ~~D1 → D4 — Pharmacie~~ — **hors périmètre soutenance (24/08)** | — | |
-| ~~18–24~~ | ~~E2 → E7~~ — **hors périmètre soutenance**, seul E1 est retenu | — | |
+| 14 | C4 — Consultations (la liste) | à faire | |
+| 15–20 | E2 Finance, E3 Paramètres métier, E4 Administrateurs, E5 Pilotage, E6 Signalements, E7 Comptes | à faire | |
+| — | *Rangement* : la branche officine retirée de l'inscription et de la navigation | à faire | |
 | 25 | Passe finale : états, sombre, responsive, accessibilité | à faire | |
 | 26 | Préparation à la livraison (§7) | à faire | |
