@@ -1,0 +1,448 @@
+/**
+ * E1 — File de vérification. D'après `docs/maquettes/E1 - File de verification.dc.html` et M03.
+ *
+ * L'autre bout de C1 : ici, l'administration décide si un soignant peut exercer. C'est la décision
+ * la plus lourde de la plateforme — sans badge ET contrat signé, un professionnel n'existe pour
+ * aucun patient (RM-03-01).
+ *
+ * ── Le trou que cet écran a révélé ────────────────────────────────────────────────────────────
+ *
+ * La file ne renvoyait que `documentCount` : un NOMBRE. L'administration savait qu'un dossier
+ * contenait quatre pièces, sans pouvoir en ouvrir une seule — les identifiants n'étaient exposés
+ * nulle part. On décidait de la vérification d'un soignant **sans regarder ses documents**.
+ * `GET /admin/verification/:caseId` a été ajouté pour ça (24/08/2026).
+ *
+ * ── Trois écarts à la maquette ────────────────────────────────────────────────────────────────
+ *
+ * 1. **« 72 heures ouvrées » → 72 heures.** PM-11 vaut 72, mais `m03.policies` le dit sans détour :
+ *    « MVP : heures pleines — les heures ouvrées seront affinées avec le modèle opérationnel ».
+ *    Annoncer « ouvrées » promettrait un calcul que personne ne fait.
+ * 2. **La checklist de contrôle des pièces reste LOCALE.** Rien ne la stocke côté serveur. Elle aide
+ *    l'examinateur à ne rien oublier pendant qu'il travaille ; elle disparaît au rechargement, et
+ *    l'écran ne prétend pas le contraire.
+ * 3. **« Prendre le plus urgent » retiré.** La file est déjà triée par ancienneté et les dépassements
+ *    remontent en tête : le bouton ne ferait que cliquer la première ligne à la place de l'humain,
+ *    en lui retirant le coup d'œil qui lui dit POURQUOI elle est première.
+ */
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
+import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldCheck, UserRound } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { NativeSelect } from '@/components/ui/native-select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Spinner } from '@/components/ui/spinner'
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { api, ApiError, type DocumentKind, type VerificationStatus } from '@/lib/api'
+
+const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+
+const dateFr = (iso: string) =>
+  new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+/** Les intitulés des pièces — identiques à ceux que voit le déposant, pour qu'on parle de la même. */
+const PIECES: Record<DocumentKind, string> = {
+  ID: 'Pièce d’identité',
+  DIPLOMA: 'Diplôme',
+  LICENSE: 'Attestation d’inscription à l’Ordre',
+  PHOTO: 'Photo d’identité',
+  ADDRESS_PROOF: 'Justificatif d’adresse',
+}
+
+const ETATS: Record<VerificationStatus, { libelle: string; ton: TonPilule }> = {
+  DRAFT: { libelle: 'À compléter', ton: 'neutre' },
+  SUBMITTED: { libelle: 'À prendre', ton: 'alerte' },
+  IN_REVIEW: { libelle: 'En examen', ton: 'info' },
+  NEEDS_INFO: { libelle: 'Complément demandé', ton: 'alerte' },
+  REJECTED: { libelle: 'Refusé', ton: 'erreur' },
+  VERIFIED: { libelle: 'Vérifié', ton: 'succes' },
+  REVOKED: { libelle: 'Révoqué', ton: 'erreur' },
+}
+
+/** « il y a 3 jours » — sur une file, l'ancienneté compte plus que la date. */
+function depuis(iso: string): string {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000)
+  if (h < 1) return 'à l’instant'
+  if (h < 24) return `il y a ${h} h`
+  const j = Math.floor(h / 24)
+  return `il y a ${j} jour${j > 1 ? 's' : ''}`
+}
+
+// ── Le dossier examiné ─────────────────────────────────────────────────────
+
+function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void }) {
+  const [controlees, setControlees] = useState<Set<string>>(new Set())
+  const [decision, setDecision] = useState<'VERIFIED' | 'REJECTED' | 'NEEDS_INFO'>('VERIFIED')
+  const [motif, setMotif] = useState('')
+  const [pieceVisee, setPieceVisee] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [apercu, setApercu] = useState<{ url: string; type: string; titre: string } | null>(null)
+  const [ouverture, setOuverture] = useState<string | null>(null)
+
+  const dossier = useQuery({ queryKey: ['admin-case', caseId], queryFn: () => api.adminCase(caseId), retry: false })
+  const qc = useQueryClient()
+
+  const prendre = useMutation({
+    mutationFn: () => api.claimCase(caseId),
+    onSuccess: () => {
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
+      onDecide()
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  const decider = useMutation({
+    mutationFn: () =>
+      api.decideCase(caseId, {
+        decision,
+        reasons: motif.trim(),
+        ...(pieceVisee ? { documentId: pieceVisee } : {}),
+      }),
+    onSuccess: () => {
+      setMotif('')
+      setPieceVisee('')
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
+      onDecide()
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  const voir = async (id: string, titre: string) => {
+    setOuverture(id)
+    setErreur(null)
+    try {
+      const f = await api.adminDocumentUrl(caseId, id)
+      setApercu({ ...f, titre })
+    } catch (e) {
+      setErreur(messageDe(e))
+    } finally {
+      setOuverture(null)
+    }
+  }
+
+  const fermerApercu = () => {
+    if (apercu) URL.revokeObjectURL(apercu.url)
+    setApercu(null)
+  }
+
+  if (dossier.isPending) {
+    return (
+      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
+        <Spinner className="size-4" /> Ouverture du dossier…
+      </p>
+    )
+  }
+  if (dossier.isError || !dossier.data) {
+    return <Avis ton="erreur">Ce dossier n'a pas pu être ouvert. Réessayez dans un moment.</Avis>
+  }
+
+  const d = dossier.data
+  const etat = ETATS[d.status]
+  const enExamen = d.status === 'IN_REVIEW'
+  const toutesControlees = d.documents.length > 0 && d.documents.every((x) => controlees.has(x.id))
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Carte icone={UserRound} titre={d.subjectName} sousTitre={`Déposé ${depuis(d.submittedAt)} · dossier ${d.caseId.slice(0, 8).toUpperCase()}`}>
+        <p className="flex flex-wrap items-center gap-2">
+          <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
+          {d.agreementSignedAt ? <Pilule ton="succes">Contrat signé</Pilule> : null}
+        </p>
+        {d.missingDocuments.length > 0 ? (
+          <Avis ton="alerte">
+            {d.missingDocuments.length} pièce{d.missingDocuments.length > 1 ? 's' : ''} obligatoire
+            {d.missingDocuments.length > 1 ? 's' : ''} manquante{d.missingDocuments.length > 1 ? 's' : ''} :{' '}
+            {d.missingDocuments.map((k) => PIECES[k]).join(', ')}.
+          </Avis>
+        ) : null}
+      </Carte>
+
+      {!enExamen && d.status === 'SUBMITTED' ? (
+        <Carte icone={ShieldCheck} titre="Prendre le dossier en charge" sousTitre="Il sera verrouillé pour les autres administrateurs">
+          <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+            Prenez-le en charge avant de décider. Sans cela, deux administrateurs pourraient l'examiner
+            en même temps et rendre deux décisions contradictoires sur le même soignant.
+          </p>
+          <div>
+            <Button type="button" onClick={() => prendre.mutate()} disabled={prendre.isPending}>
+              {prendre.isPending ? 'Prise en charge…' : 'Prendre en charge'}
+            </Button>
+          </div>
+        </Carte>
+      ) : null}
+
+      <Carte
+        icone={FileText}
+        titre="Pièces justificatives"
+        sousTitre="Cochez ce que vous avez contrôlé — la coche vous suit pendant l'examen, elle n'est pas enregistrée"
+      >
+        {d.documents.length === 0 ? (
+          <p className="py-3 text-center text-[12px] text-[var(--texte-tertiaire)]">Aucune pièce déposée.</p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {d.documents.map((doc, i) => {
+              const titre = PIECES[doc.kind]
+              const numero = d.documents.filter((x) => x.kind === doc.kind).length > 1 ? ` (page ${i + 1})` : ''
+              return (
+                <li key={doc.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2">
+                  <Checkbox
+                    id={`ctrl-${doc.id}`}
+                    checked={controlees.has(doc.id)}
+                    onCheckedChange={(v) =>
+                      setControlees((s) => {
+                        const n = new Set(s)
+                        if (v) n.add(doc.id)
+                        else n.delete(doc.id)
+                        return n
+                      })
+                    }
+                  />
+                  <Label htmlFor={`ctrl-${doc.id}`} className="min-w-0 flex-1 basis-40 cursor-pointer text-[13px] font-normal">
+                    {titre}
+                    {numero}
+                    <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">Déposée le {dateFr(doc.createdAt)}</span>
+                  </Label>
+                  <Button type="button" size="sm" variant="outline" onClick={() => voir(doc.id, titre)} disabled={ouverture === doc.id}>
+                    {ouverture === doc.id ? 'Ouverture…' : 'Voir'}
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </Carte>
+
+      {d.decisions.length > 0 ? (
+        <Carte icone={Clock} titre="Journal du dossier" sousTitre="Les décisions sont en insertion seule (RM-03-02)">
+          <ul className="flex flex-col gap-2">
+            {d.decisions.map((x) => (
+              <li key={x.id} className="rounded-md border border-border bg-card px-3 py-2">
+                <p className="flex flex-wrap items-center gap-2">
+                  <Pilule ton={x.decision === 'VERIFIED' ? 'succes' : 'erreur'}>{ETATS[x.decision as VerificationStatus]?.libelle ?? x.decision}</Pilule>
+                  <span className="text-[11px] text-[var(--texte-tertiaire)]">{dateFr(x.decidedAt)}</span>
+                  {x.documentKind ? <Pilule ton="alerte">{PIECES[x.documentKind]}</Pilule> : null}
+                </p>
+                <p className="mt-1 text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">{x.reasons}</p>
+              </li>
+            ))}
+          </ul>
+        </Carte>
+      ) : null}
+
+      {enExamen ? (
+        <Carte icone={Gavel} titre="Décision" sousTitre="Elle est définitive, motivée, et attribuée à votre compte">
+          <div className="flex flex-wrap gap-3">
+            <div className="min-w-0 flex-1 basis-48">
+              <Label htmlFor="decision" className="mb-1.5 block text-[13px]">
+                Décision
+              </Label>
+              <NativeSelect id="decision" value={decision} onChange={(e) => setDecision(e.target.value as typeof decision)}>
+                <option value="VERIFIED">Vérifier — le soignant pourra exercer</option>
+                <option value="NEEDS_INFO">Demander un complément</option>
+                <option value="REJECTED">Refuser</option>
+              </NativeSelect>
+            </div>
+            {decision !== 'VERIFIED' ? (
+              <div className="min-w-0 flex-1 basis-48">
+                <Label htmlFor="piece-visee" className="mb-1.5 block text-[13px]">
+                  Pièce concernée
+                </Label>
+                {/*
+                  Nommer la pièce transforme un refus en consigne. Sans elle, « copie non certifiée
+                  conforme » laisse le soignant deviner laquelle de ses quatre pièces reprendre.
+                */}
+                <NativeSelect id="piece-visee" value={pieceVisee} onChange={(e) => setPieceVisee(e.target.value)}>
+                  <option value="">Le dossier dans son ensemble</option>
+                  {d.documents.map((doc) => (
+                    <option key={doc.id} value={doc.id}>
+                      {PIECES[doc.kind]}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            ) : null}
+          </div>
+
+          <div>
+            <Label htmlFor="motif" className="mb-1.5 block text-[13px]">
+              Motif transmis au demandeur
+            </Label>
+            <Textarea id="motif" rows={3} maxLength={2000} value={motif} onChange={(e) => setMotif(e.target.value)} />
+            <p className="mt-1 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+              Le soignant lira ce texte tel quel. Un motif qui n'indique pas quoi corriger le renverra
+              au support, et le dossier reviendra inchangé.
+            </p>
+          </div>
+
+          {!toutesControlees && d.documents.length > 0 ? (
+            <Avis ton="info">
+              {controlees.size} pièce{controlees.size > 1 ? 's' : ''} contrôlée{controlees.size > 1 ? 's' : ''} sur{' '}
+              {d.documents.length}. Rien ne vous en empêche, mais décider sans avoir tout ouvert engage votre compte.
+            </Avis>
+          ) : null}
+
+          <div>
+            <Button type="button" onClick={() => decider.mutate()} disabled={decider.isPending || motif.trim().length === 0}>
+              {decider.isPending ? 'Enregistrement…' : 'Enregistrer la décision'}
+            </Button>
+          </div>
+          {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+        </Carte>
+      ) : null}
+
+      {erreur && !enExamen ? <Avis ton="erreur">{erreur}</Avis> : null}
+
+      {/* Même tiroir que « Ma vérification » : la liste reste visible pendant qu'on ouvre une pièce. */}
+      <Sheet open={apercu !== null} onOpenChange={(v) => (v ? undefined : fermerApercu())}>
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-2xl">
+          <SheetHeader className="border-b border-border">
+            <SheetTitle className="text-[15px]">{apercu?.titre}</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-auto bg-secondary p-4">
+            {apercu ? (
+              apercu.type.startsWith('image/') ? (
+                <img src={apercu.url} alt={apercu.titre} className="mx-auto max-w-full rounded-md" />
+              ) : (
+                <iframe src={apercu.url} sandbox="" title={apercu.titre} className="h-full min-h-[70vh] w-full rounded-md border border-border bg-card" />
+              )
+            ) : null}
+          </div>
+          <SheetFooter className="flex-row justify-end border-t border-border">
+            <SheetClose asChild>
+              <Button type="button" size="sm">
+                Fermer
+              </Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    </div>
+  )
+}
+
+// ── Écran ──────────────────────────────────────────────────────────────────
+
+export function FileVerificationPage() {
+  const [params, setParams] = useSearchParams()
+  const choisi = params.get('dossier')
+  const qc = useQueryClient()
+
+  const file = useQuery({ queryKey: ['verification-queue'], queryFn: () => api.verificationQueue(), retry: false })
+
+  const rafraichir = () => void qc.invalidateQueries({ queryKey: ['verification-queue'] })
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1160px] flex-col">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--ap-50)] text-[var(--ap-600)]"
+        >
+          <Inbox size={18} strokeWidth={1.5} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+            File de vérification
+          </h1>
+          <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
+            {/*
+              « 72 heures », pas « 72 heures ouvrées » : `m03.policies` dit sans détour que le MVP
+              compte des heures PLEINES, et que les heures ouvrées « seront affinées avec le modèle
+              opérationnel ». Annoncer « ouvrées » promettrait un calcul que personne ne fait.
+            */}
+            Délai cible : {file.data?.targetHours ?? 72} heures à compter du dépôt · au-delà, le dossier remonte en tête
+          </p>
+        </span>
+      </div>
+
+      {file.isPending ? (
+        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
+          <Spinner className="size-4" /> Chargement de la file…
+        </p>
+      ) : file.isError ? (
+        <div className="mx-auto max-w-lg py-8">
+          <Carte icone={AlertTriangle} titre="La file n'a pas pu être chargée" sousTitre="Aucune décision n'est enregistrable hors ligne">
+            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+              Une décision non journalisée serait invalide : elle doit être horodatée et attribuée à un
+              administrateur nommé (RM-03-02). Rien ne se décide donc sans le serveur.
+            </p>
+            <div>
+              <Button type="button" onClick={() => file.refetch()}>
+                Réessayer
+              </Button>
+            </div>
+          </Carte>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+          <section aria-label="File d'attente" className="w-full shrink-0 lg:w-80">
+            <Carte icone={Inbox} titre="Dossiers en attente" sousTitre={`${file.data.items.length} à traiter`}>
+              {file.data.items.length === 0 ? (
+                <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
+                  Aucun dossier en attente. La file est à jour.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {file.data.items.map((it) => {
+                    const actif = it.caseId === choisi
+                    const etat = ETATS[it.status]
+                    return (
+                      <li key={it.caseId}>
+                        <button
+                          type="button"
+                          aria-current={actif ? 'true' : undefined}
+                          onClick={() => setParams({ dossier: it.caseId }, { replace: true })}
+                          className={
+                            'w-full rounded-md border px-3 py-2 text-left transition-colors ' +
+                            'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
+                            (actif ? 'border-[var(--ap-200)] bg-[var(--ap-50)]' : 'border-border bg-card hover:bg-secondary')
+                          }
+                        >
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{it.subjectName}</span>
+                            {/* Deux seuils distincts (EF-03-03) : cible dépassée, puis escalade. */}
+                            {it.overdue ? (
+                              <Pilule ton="erreur">Hors délai</Pilule>
+                            ) : it.overdueTarget ? (
+                              <Pilule ton="alerte">En retard</Pilule>
+                            ) : (
+                              <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">
+                            {depuis(it.waitingSince)} · {it.documentCount} pièce{it.documentCount > 1 ? 's' : ''}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </Carte>
+          </section>
+
+          <div className="min-w-0 flex-1">
+            {choisi ? (
+              <Dossier
+                caseId={choisi}
+                onDecide={rafraichir}
+              />
+            ) : (
+              <Carte icone={ShieldCheck} titre="Sélectionnez un dossier" sousTitre="Le détail, les pièces et la décision s'affichent ici">
+                <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                  Les dossiers hors délai remontent en tête de file. Prenez-en un en charge avant de
+                  décider : cela le verrouille pour les autres administrateurs.
+                </p>
+              </Carte>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -676,10 +676,15 @@ export interface VerificationQueue {
   overdueAfterHours: number
   items: Array<{
     caseId: string
-    subjectKind: string
+    subjectKind: 'PROFESSIONAL' | 'FACILITY'
     subject: string
     subjectName: string
-    status: string
+    /**
+     * Resserré le 24/08/2026 : c'était `string`, alors que le serveur renvoie l'énumération. Un
+     * `string` oblige chaque écran à se défendre contre des valeurs que l'API ne produit pas, et
+     * laisse passer celles qu'elle produit vraiment mais qu'on a oublié de traiter.
+     */
+    status: VerificationStatus
     waitingSince: string
     documentCount: number
     /** Dépasse l'objectif PM-11. */
@@ -1088,6 +1093,45 @@ export const api = {
   verificationQueue: (status?: string) =>
     request<VerificationQueue>('GET', `/v1/admin/verification/queue${status ? `?status=${status}` : ''}`, undefined, true),
   /** S'attribuer le dossier avant de décider : deux vérificateurs ne travaillent pas sur le même. */
+  /**
+   * Le dossier complet vu par l'administration — ajouté le 24/08/2026.
+   *
+   * La file ne renvoyait que `documentCount`, un NOMBRE : l'examinateur ne pouvait ouvrir aucune
+   * pièce, faute d'identifiant. On décidait de la vérification d'un soignant sans regarder.
+   */
+  adminCase: (caseId: string) =>
+    request<{
+      caseId: string
+      subjectKind: 'PROFESSIONAL' | 'FACILITY'
+      subjectName: string
+      status: VerificationStatus
+      submittedAt: string
+      requiredDocuments: DocumentKind[]
+      missingDocuments: DocumentKind[]
+      documents: Array<{ id: string; kind: DocumentKind; expiresAt: string | null; createdAt: string }>
+      decisions: Array<{
+        id: string
+        decision: string
+        reasons: string
+        documentId: string | null
+        documentKind: DocumentKind | null
+        decidedAt: string
+      }>
+      agreementSignedAt: string | null
+    }>('GET', `/v1/admin/verification/${caseId}`, undefined, true),
+  /** Lecture d'une pièce PAR L'ADMINISTRATION — tracée au journal d'audit (loi n° 29-2019). */
+  adminDocumentUrl: async (caseId: string, documentId: string): Promise<{ url: string; type: string }> => {
+    const token = getToken?.()
+    const res = await fetch(`${API_BASE_URL}/v1/admin/verification/${caseId}/documents/${documentId}/file`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!res.ok) {
+      if (res.status === 401) onUnauthorized?.()
+      throw new ApiError(res.status, codeFromStatus(res.status), "Cette pièce n'a pas pu être ouverte.")
+    }
+    const blob = await res.blob()
+    return { url: URL.createObjectURL(blob), type: blob.type }
+  },
   claimCase: (caseId: string) => request<void>('POST', `/v1/admin/verification/${caseId}/claim`, undefined, true),
   /** `documentId` vise UNE pièce : un refus nommé est une consigne, un refus vague est une devinette. */
   decideCase: (

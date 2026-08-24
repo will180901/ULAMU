@@ -22,6 +22,18 @@ export class M03AdminController {
   }
 
   /**
+   * Le dossier complet — pièces, décisions passées, contrat.
+   *
+   * Sans cette route, la file ne donnait que le NOMBRE de pièces : l'examinateur ne pouvait en
+   * ouvrir aucune, faute d'identifiant. On décidait de la vérification d'un soignant sans regarder
+   * ses documents.
+   */
+  @Get(":caseId")
+  getCase(@Param("caseId") caseId: string) {
+    return this.service.getCaseForAdmin(caseId);
+  }
+
+  /**
    * Lecture d'une pièce justificative pour l'examiner.
    *
    * Sans cette route, l'administration devait décider de la vérification d'un soignant SANS pouvoir

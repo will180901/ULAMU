@@ -450,6 +450,59 @@ export class M03Service {
   // ── Côté admin (EF-03-03/04, CU-03-02) ─────────────────────────────────────
 
   /** File de traitement : tri par ancienneté, dépassement 2×PM-11 signalé (EF-03-03, spec §8). */
+  /**
+   * Le détail d'un dossier, pour l'administration qui l'examine.
+   *
+   * Il manquait. La file ne renvoie que `documentCount` — un NOMBRE. L'administration savait donc
+   * qu'un dossier contenait quatre pièces, sans pouvoir en ouvrir une seule : les identifiants
+   * n'étaient exposés nulle part. Décider de la vérification d'un soignant revenait à juger sans
+   * regarder. Constaté en construisant E1, le 24/08/2026.
+   *
+   * Même contenu que `getMine`, à une différence près : ni `canSubmit` ni `documentsEditable`. Ce
+   * n'est pas l'écran de quelqu'un qui complète son dossier, c'est celui de quelqu'un qui le juge.
+   */
+  async getCaseForAdmin(caseId: string): Promise<{
+    caseId: string;
+    subjectKind: SubjectKind;
+    subjectName: string;
+    status: VerificationStatus;
+    submittedAt: Date;
+    requiredDocuments: readonly string[];
+    missingDocuments: string[];
+    documents: Array<{ id: string; kind: string; expiresAt: Date | null; createdAt: Date }>;
+    decisions: Array<{ id: string; decision: string; reasons: string; documentId: string | null; documentKind: string | null; decidedAt: Date }>;
+    agreementSignedAt: Date | null;
+  }> {
+    const c = await this.requireCase(caseId);
+    const subject = this.subjectOf(c);
+    const fournies = c.documents.map((d) => d.kind);
+    const latest = this.latestVersion(c);
+    return {
+      caseId: c.id,
+      subjectKind: subject.kind,
+      subjectName: subject.name,
+      status: c.status,
+      submittedAt: c.updatedAt,
+      requiredDocuments: REQUIRED_DOCS[subject.kind],
+      // Ce qui manque intéresse AUSSI l'examinateur : c'est le premier motif de refus légitime.
+      missingDocuments: missingRequiredDocs(subject.kind, fournies),
+      documents: [...c.documents]
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+        .map((d) => ({ id: d.id, kind: d.kind, expiresAt: d.expiresAt, createdAt: d.createdAt })),
+      decisions: [...c.decisions]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .map((d) => ({
+          id: d.id,
+          decision: d.decision,
+          reasons: d.reasons,
+          documentId: d.documentId,
+          documentKind: c.documents.find((x) => x.id === d.documentId)?.kind ?? null,
+          decidedAt: d.createdAt,
+        })),
+      agreementSignedAt: latest?.signedAt ?? null,
+    };
+  }
+
   async queue(statusFilter?: VerificationStatusCode): Promise<{
     targetHours: number;
     overdueAfterHours: number;
