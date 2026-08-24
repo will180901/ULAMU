@@ -437,6 +437,20 @@ export interface Handshake {
    * valeur qui fait foi, et elle est resynchronisée à chaque interrogation.
    */
   windowRemainingSeconds: number
+  /**
+   * Fiche ANONYMISÉE du patient — prénom et âge, rien de plus (EF-06-01 : « pas plus avant
+   * paiement »). Ajoutée le 24/08/2026 : la vue ne portait qu'un identifiant technique, et le
+   * professionnel devait décider en cinq minutes sans savoir s'il s'agissait d'un enfant.
+   *
+   * Pour une demande faite au nom d'une personne à charge (Carnet familial), ce sont SES prénom et
+   * âge — pas ceux du parent qui tient le compte.
+   */
+  patientFirstName: string | null
+  patientAge: number | null
+  /** L'offre demandée : ce sur quoi le professionnel décide réellement. */
+  offerLabel: string | null
+  offerDurationMin: number | null
+  offerPriceXaf: number | null
   /** Posé quand la poignée est PAID — porte d'entrée de la session de soin. */
   sessionId: string | null
 }
@@ -896,8 +910,10 @@ export const api = {
    * bord appelait donc `.filter` sur un objet et plantait l'écran entier, page blanche comprise.
    */
   myHandshakes: () => request<{ items: Handshake[] }>('GET', '/v1/handshakes/mine', undefined, true),
+  handshake: (id: string) => request<Handshake>('GET', `/v1/handshakes/${id}`, undefined, true),
+  /** « Je suis prêt à recevoir » (EF-06-02). Ouvre la fenêtre de paiement PM-07 côté patient. */
   confirmHandshake: (id: string) => request<Handshake>('POST', `/v1/handshakes/${id}/confirm`, undefined, true),
-  /** Le motif est OBLIGATOIRE côté serveur : un refus sans explication laisse le patient sans recours. */
+  /** Motif COURT — « occupé », « hors domaine » (EF-06-02). 200 caractères au maximum. */
   refuseHandshake: (id: string, reason: string) =>
     request<Handshake>('POST', `/v1/handshakes/${id}/refuse`, { reason }, true),
 

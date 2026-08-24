@@ -17,6 +17,7 @@ import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { VitrinePage } from '@/modules/vitrine/pages/VitrinePage'
+import { DemandesPage } from '@/modules/demandes/pages/DemandesPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
@@ -26,7 +27,7 @@ import { useSessionStore } from '@/state/session.store'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 
 /** Les écrans déjà refaits : ils ont leur propre route et sortent de la boucle `EcranAVenir`. */
-const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine']
+const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine', '/demandes']
 
 /**
  * Repli des routes inconnues. Il honore la préférence « page d'accueil » de B3 — sans quoi le réglage
@@ -72,6 +73,7 @@ export function App() {
                 <Route path="/parametres" element={<SettingsPage />} />
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/vitrine" element={<VitrinePage />} />
+                <Route path="/demandes" element={<DemandesPage />} />
                 {/* Les écrans non encore refaits gardent leur route : la navigation reste entière. */}
                 {NAV_GROUPS.flatMap((g) => g.items)
                   .filter((item) => !ECRANS_FAITS.includes(item.href))

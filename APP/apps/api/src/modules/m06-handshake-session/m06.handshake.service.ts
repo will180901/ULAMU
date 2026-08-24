@@ -60,6 +60,49 @@ export interface HandshakeView {
   windowRemainingSeconds: number;
   /** Posé quand la poignée est PAID — porte d'entrée de la session (CU-06-02). */
   sessionId: string | null;
+  /**
+   * Fiche ANONYMISÉE du patient — prénom et âge, rien de plus (EF-06-01, mot pour mot :
+   * « fiche anonymisée du patient (prénom, âge — pas plus avant paiement) »).
+   *
+   * Elle manquait : la vue ne portait que `patientAccountId`, et le professionnel devait donc
+   * accepter ou refuser en cinq minutes en ne voyant qu'un identifiant technique. Il ne pouvait même
+   * pas savoir s'il s'agissait d'un enfant.
+   *
+   * Quand la demande est faite POUR UNE PERSONNE À CHARGE (Carnet familial, CU-07-04), ce sont le
+   * prénom et l'âge de cette personne qui comptent — pas ceux du parent qui tient le compte. C'est
+   * elle que le professionnel va soigner.
+   */
+  patientFirstName: string | null;
+  patientAge: number | null;
+  /** L'offre demandée : ce sur quoi le professionnel décide réellement. */
+  offerLabel: string | null;
+  offerDurationMin: number | null;
+  offerPriceXaf: number | null;
+}
+
+/** Ce que `toView` ne peut pas déduire du seul enregistrement — chargé par l'appelant. */
+interface ContexteVue {
+  patientFirstName: string | null;
+  patientAge: number | null;
+  offerLabel: string | null;
+  offerDurationMin: number | null;
+  offerPriceXaf: number | null;
+}
+
+const CONTEXTE_VIDE: ContexteVue = {
+  patientFirstName: null,
+  patientAge: null,
+  offerLabel: null,
+  offerDurationMin: null,
+  offerPriceXaf: null,
+};
+
+/** Âge en années révolues à aujourd'hui. */
+function ageEnAnnees(naissance: Date, maintenant: Date): number {
+  let age = maintenant.getFullYear() - naissance.getFullYear();
+  const moisEcoule = maintenant.getMonth() - naissance.getMonth();
+  if (moisEcoule < 0 || (moisEcoule === 0 && maintenant.getDate() < naissance.getDate())) age -= 1;
+  return Math.max(0, age);
 }
 
 type HandshakeWithSession = Handshake & { session: { id: string } | null };
@@ -267,7 +310,7 @@ export class HandshakeService {
       // Rejeu réseau d'une confirmation déjà passée : on renvoie l'état, sans effet (ADR-12).
       if (fresh.status !== HandshakeStatus.CONFIRMED) this.throwNotConfirmable(fresh.status);
     }
-    return this.toView(fresh, pm07S, Date.now());
+    return this.toView(fresh, pm07S, Date.now(), (await this.chargerContextes([fresh])).get(fresh.id));
   }
 
   async refuse(actor: AuthenticatedActor, handshakeId: string, dto: RefuseHandshakeDto): Promise<HandshakeView> {
@@ -302,7 +345,7 @@ export class HandshakeService {
     if (!refused && fresh.status !== HandshakeStatus.REFUSED) {
       throw new ConflictException(`Refus impossible : la poignée de main n'est plus en attente (statut ${fresh.status})`);
     }
-    return this.toView(fresh, pm07S, Date.now());
+    return this.toView(fresh, pm07S, Date.now(), (await this.chargerContextes([fresh])).get(fresh.id));
   }
 
   /** Annulation de la demande par le PATIENT, tant que le soignant n'a pas confirmé (INITIATED → ABANDONED). */
@@ -338,7 +381,7 @@ export class HandshakeService {
     if (!abandoned && fresh.status !== HandshakeStatus.ABANDONED) {
       throw new ConflictException(`Annulation impossible : la poignée de main n'est plus en attente (statut ${fresh.status})`);
     }
-    return this.toView(fresh, pm07S, Date.now());
+    return this.toView(fresh, pm07S, Date.now(), (await this.chargerContextes([fresh])).get(fresh.id));
   }
 
   // ── EF-06-03 / RM-06-01 (INVARIANT N°1) : paiement — ordre C1 vers M13 ───────
@@ -516,7 +559,8 @@ export class HandshakeService {
     const pm07S = await this.params.getInt("PM-07");
     await this.expireIfStale(handshake, pm07S, new Date()); // la lecture applique l'expiration
     const fresh = await this.findWithSession(handshakeId);
-    return this.toView(fresh, pm07S, Date.now());
+    const contextes = await this.chargerContextes([fresh]);
+    return this.toView(fresh, pm07S, Date.now(), contextes.get(fresh.id));
   }
 
   async listMine(actor: AuthenticatedActor): Promise<{ items: HandshakeView[] }> {
@@ -530,7 +574,9 @@ export class HandshakeService {
       take: 100,
       include: { session: { select: { id: true } } },
     });
-    return { items: rows.map((h) => this.toView(h, pm07S, Date.now())) };
+    const contextes = await this.chargerContextes(rows);
+    const maintenantMs = Date.now();
+    return { items: rows.map((h) => this.toView(h, pm07S, maintenantMs, contextes.get(h.id))) };
   }
 
   // ── Balayage public (cadencé par M16/cron plus tard — AUCUN poller ici) ──────
@@ -674,7 +720,7 @@ export class HandshakeService {
     });
   }
 
-  private toView(h: HandshakeWithSession, pm07S: number, nowMs: number): HandshakeView {
+  private toView(h: HandshakeWithSession, pm07S: number, nowMs: number, contexte: ContexteVue = CONTEXTE_VIDE): HandshakeView {
     let windowExpiresAt: Date | null = null;
     if (h.status === HandshakeStatus.INITIATED) windowExpiresAt = new Date(h.initiatedAt.getTime() + pm07S * 1000);
     if (h.status === HandshakeStatus.CONFIRMED) windowExpiresAt = h.confirmExpiresAt;
@@ -693,6 +739,63 @@ export class HandshakeService {
       // RM-06-02 : compte à rebours calculé SERVEUR.
       windowRemainingSeconds: windowExpiresAt ? Math.max(0, Math.ceil((windowExpiresAt.getTime() - nowMs) / 1000)) : 0,
       sessionId: h.session?.id ?? null,
+      ...contexte,
     };
+  }
+
+  /**
+   * Charge la fiche anonymisée et l'offre pour un lot de poignées de main.
+   *
+   * En UN aller-retour par table, pas un par ligne : la file d'un professionnel occupé se lit d'un
+   * coup, et une requête par demande ferait dix appels pour dix demandes.
+   */
+  private async chargerContextes(rows: HandshakeWithSession[]): Promise<Map<string, ContexteVue>> {
+    const maintenant = new Date();
+    const idsComptes = [...new Set(rows.filter((r) => !r.subProfileId).map((r) => r.patientAccountId))];
+    const idsSous = [...new Set(rows.map((r) => r.subProfileId).filter((x): x is string => x !== null))];
+    const idsOffres = [...new Set(rows.map((r) => r.offerId))];
+
+    const [profils, sousProfils, offres] = await Promise.all([
+      idsComptes.length
+        ? this.prisma.patientProfile.findMany({
+            where: { accountId: { in: idsComptes } },
+            select: { accountId: true, firstName: true, birthDate: true },
+          })
+        : [],
+      idsSous.length
+        ? this.prisma.subProfile.findMany({
+            where: { id: { in: idsSous } },
+            select: { id: true, firstName: true, birthDate: true },
+          })
+        : [],
+      idsOffres.length
+        ? this.prisma.careOffer.findMany({
+            where: { id: { in: idsOffres } },
+            select: { id: true, label: true, durationMin: true, priceXaf: true },
+          })
+        : [],
+    ]);
+
+    const parCompte = new Map(profils.map((p) => [p.accountId, p]));
+    const parSous = new Map(sousProfils.map((p) => [p.id, p]));
+    const parOffre = new Map(offres.map((o) => [o.id, o]));
+
+    return new Map(
+      rows.map((r) => {
+        // La personne à charge prime : c'est elle qui sera soignée (CU-07-04).
+        const personne = r.subProfileId ? parSous.get(r.subProfileId) : parCompte.get(r.patientAccountId);
+        const offre = parOffre.get(r.offerId);
+        return [
+          r.id,
+          {
+            patientFirstName: personne?.firstName ?? null,
+            patientAge: personne ? ageEnAnnees(personne.birthDate, maintenant) : null,
+            offerLabel: offre?.label ?? null,
+            offerDurationMin: offre?.durationMin ?? null,
+            offerPriceXaf: offre?.priceXaf ?? null,
+          },
+        ];
+      }),
+    );
   }
 }

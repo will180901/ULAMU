@@ -37,12 +37,18 @@ export function Carte({
         <span aria-hidden="true" className={'flex size-[26px] shrink-0 items-center justify-center rounded-md ' + tuile}>
           <Icone size={14} strokeWidth={1.5} />
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
+        {/*
+          Le titre est un VRAI titre (`h2`), pas un `span` stylé. Un lecteur d'écran liste les titres
+          d'une page pour s'y déplacer : avec des `span`, l'utilisateur devait parcourir la page
+          entière au clavier pour trouver la carte qu'il cherchait. Le `h1` reste celui de l'écran,
+          la hiérarchie est donc juste.
+        */}
+        <div className="min-w-0 flex-1">
+          <h2 className="font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
             {titre}
-          </span>
-          {sousTitre ? <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{sousTitre}</span> : null}
-        </span>
+          </h2>
+          {sousTitre ? <p className="mt-0.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{sousTitre}</p> : null}
+        </div>
         {action ? <span className="shrink-0">{action}</span> : null}
       </div>
       <div className="flex flex-col gap-3 p-4">{children}</div>

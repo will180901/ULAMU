@@ -68,6 +68,12 @@ const demande = (id: string, status: Handshake['status']): Handshake => ({
   windowExpiresAt: null,
   windowRemainingSeconds: 0,
   sessionId: null,
+  // Fiche anonymisée (EF-06-01) — le tableau de bord ne l'affiche PAS, il ne fait que compter.
+  patientFirstName: 'Mireille',
+  patientAge: 32,
+  offerLabel: 'Consultation',
+  offerDurationMin: 30,
+  offerPriceXaf: 5000,
 })
 
 async function monter(demandes: Handshake[], note: number | null = null) {
