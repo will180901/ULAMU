@@ -18,6 +18,7 @@ import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { VitrinePage } from '@/modules/vitrine/pages/VitrinePage'
 import { DemandesPage } from '@/modules/demandes/pages/DemandesPage'
+import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
@@ -74,6 +75,8 @@ export function App() {
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/vitrine" element={<VitrinePage />} />
                 <Route path="/demandes" element={<DemandesPage />} />
+                {/* La séance elle-même : atteinte depuis « Consultations », jamais listée seule. */}
+                <Route path="/consultations/:sessionId" element={<ConsultationPage />} />
                 {/* Les écrans non encore refaits gardent leur route : la navigation reste entière. */}
                 {NAV_GROUPS.flatMap((g) => g.items)
                   .filter((item) => !ECRANS_FAITS.includes(item.href))

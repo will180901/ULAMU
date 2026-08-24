@@ -457,7 +457,14 @@ export interface Handshake {
 
 // ── M06 — Session de soin (CU-06-02 à CU-06-05) ────────────────────────────
 
-export type CareSessionStatus = 'PREPARING' | 'ACTIVE' | 'ENDED' | 'REFUNDED' | 'CANCELLED'
+/**
+ * Les QUATRE états d'une séance — vérifiés contre `enum CareSessionStatus` du schéma le 24/08/2026.
+ *
+ * `CANCELLED` était déclaré ici et n'existe nulle part côté serveur : ni dans l'énumération, ni dans
+ * une ligne de M06. Un écran qui en tenait compte codait une branche que rien ne peut atteindre —
+ * et un développeur qui la lisait croyait à une annulation possible. Retiré.
+ */
+export type CareSessionStatus = 'PREPARING' | 'ACTIVE' | 'ENDED' | 'REFUNDED'
 
 export interface CareSession {
   id: string
@@ -497,6 +504,12 @@ export interface SessionMessage {
   createdAt: string
   editedAt: string | null
   deletedAt: string | null
+  /**
+   * Message cité — le serveur l'envoie et ce type l'omettait (constaté le 24/08/2026 en comparant à
+   * `MessageView`). Une omission ne casse rien à l'exécution, mais elle rend le champ invisible à
+   * quiconque lit ce fichier pour savoir ce qui arrive vraiment.
+   */
+  replyTo: { id: string; senderId: string; kind: string; preview: string } | null
   status: 'sent' | 'delivered' | 'read' | null
   reactions: Array<{ emoji: string; count: number; mine: boolean }>
 }
@@ -736,6 +749,26 @@ export interface UploadDocumentRequest {
 }
 
 /**
+ * Récupère un média de consultation (photo, note vocale) pour l'afficher.
+ *
+ * Même raison que pour les pièces justificatives : la route exige un jeton, qu'un `<img src>` ne
+ * sait pas porter. Et le serveur vérifie en plus que le demandeur est bien PARTICIPANT de la
+ * session — un contenu médical ne s'ouvre pas sur la seule connaissance d'une clé.
+ */
+export async function lireMediaSession(fileKey: string): Promise<{ url: string; type: string }> {
+  const token = getToken?.()
+  const res = await fetch(`${API_BASE_URL}/v1/media/sessions/${fileKey}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    if (res.status === 401) onUnauthorized?.()
+    throw new ApiError(res.status, codeFromStatus(res.status), "Ce média n'a pas pu être ouvert.")
+  }
+  const blob = await res.blob()
+  return { url: URL.createObjectURL(blob), type: blob.type }
+}
+
+/**
  * Récupère une pièce justificative pour l'afficher.
  *
  * Impossible de mettre l'URL dans un `<a href>` ou un `<img src>` : la route exige un jeton
@@ -924,8 +957,13 @@ export const api = {
   sessionMessages: (id: string) =>
     request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),
   /** `clientMsgId` est une clé d'idempotence (ADR-12) : un rejeu réseau ne crée pas un doublon. */
-  sendMessage: (id: string, dto: { clientMsgId: string; kind: 'TEXT'; body: string }) =>
+  sendMessage: (id: string, dto: { clientMsgId: string; kind: 'TEXT' | 'PHOTO'; body?: string; fileKey?: string }) =>
     request<SessionMessage>('POST', `/v1/care-sessions/${id}/messages`, dto, true),
+  /** Téléverse d'abord, envoie ensuite : le message ne porte que la CLÉ, jamais les octets. */
+  uploadSessionMedia: (id: string, dto: { fileBase64: string; mime: string }) =>
+    request<{ fileKey: string }>('POST', `/v1/care-sessions/${id}/media`, dto, true),
+  deleteSessionMessage: (sessionId: string, messageId: string) =>
+    request<SessionMessage>('POST', `/v1/care-sessions/${sessionId}/messages/${messageId}/delete`, undefined, true),
   typing: (id: string) => request<void>('POST', `/v1/care-sessions/${id}/typing`, undefined, true),
   extendSession: (id: string, minutes: number) =>
     request<CareSession>('POST', `/v1/care-sessions/${id}/extend`, { minutes }, true),

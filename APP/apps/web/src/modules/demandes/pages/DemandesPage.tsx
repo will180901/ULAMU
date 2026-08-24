@@ -21,7 +21,7 @@
  * (prénom, âge — pas plus avant paiement) ». La vue ne portait qu'un identifiant technique. Ajouté
  * dans le même palier — le médecin ne pouvait pas même savoir s'il s'agissait d'un enfant.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
@@ -40,27 +40,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type Handshake, type HandshakeStatus } from '@/lib/api'
+import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
-
-/**
- * Le compte à rebours PM-07.
- *
- * RM-06-02 : « Le temps du serveur fait foi ; les horloges clients sont indicatives. » La valeur
- * vient donc du serveur à chaque relecture, et on ne fait qu'égrener les secondes entre deux —
- * jamais calculer une échéance à partir de l'heure du poste, qui peut être fausse de dix minutes.
- */
-function useCompteARebours(secondesServeur: number, recuA: number): number {
-  const [maintenant, setMaintenant] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setMaintenant(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
-  return Math.max(0, secondesServeur - Math.floor((maintenant - recuA) / 1000))
-}
-
-const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
 const ETATS: Record<HandshakeStatus, { libelle: string; ton: TonPilule }> = {
   INITIATED: { libelle: 'À décider', ton: 'alerte' },
@@ -81,7 +64,7 @@ const MOTIFS_RAPIDES = [
 // ── La file ────────────────────────────────────────────────────────────────
 
 function LigneFile({ h, actif, recuA, onChoisir }: { h: Handshake; actif: boolean; recuA: number; onChoisir: () => void }) {
-  const reste = useCompteARebours(h.windowRemainingSeconds, recuA)
+  const reste = useDecompteurServeur(h.windowRemainingSeconds, recuA)
   const etat = ETATS[h.status]
   const urgent = h.status === 'INITIATED' && reste > 0 && reste < 60
 
@@ -137,7 +120,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
   const [refusOuvert, setRefusOuvert] = useState(false)
   const [motif, setMotif] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
-  const reste = useCompteARebours(h.windowRemainingSeconds, recuA)
+  const reste = useDecompteurServeur(h.windowRemainingSeconds, recuA)
   const decidable = h.status === 'INITIATED' && reste > 0
 
   const confirmer = useMutation({
