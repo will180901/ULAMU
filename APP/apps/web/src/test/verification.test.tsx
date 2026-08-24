@@ -121,7 +121,7 @@ describe('C1 — dossier en examen', () => {
   it('les pièces sont figées : ni dépôt, ni remplacement, ni retrait', async () => {
     await monter({ status: 'IN_REVIEW', documentsEditable: false, canSubmit: false })
 
-    expect(screen.queryByRole('button', { name: /^Remplacer$/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ajouter une page/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Déposer$/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Retirer/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Déposer mon dossier/ })).not.toBeInTheDocument()
@@ -141,7 +141,7 @@ describe('C1 — la décision de l’administration', () => {
     expect(screen.getByText(motif)).toBeInTheDocument()
     expect(screen.getByText(/Motif transmis par l'administration/)).toBeInTheDocument()
     // Et les pièces redeviennent modifiables : c'est tout l'intérêt d'un refus motivé.
-    expect(screen.getAllByRole('button', { name: /^Remplacer$/ }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /Ajouter une page/ }).length).toBeGreaterThan(0)
   })
 
   it('sans décision, aucun bloc de motif — on n’affiche pas un cadre vide', async () => {
@@ -255,5 +255,42 @@ describe('C1 — le délai de traitement', () => {
     const bloc = screen.getByText('Délai de traitement').closest('section') as HTMLElement
     expect(within(bloc).getByText('24')).toBeInTheDocument()
     expect(within(bloc).getByText('heures')).toBeInTheDocument()
+  })
+})
+
+describe('C1 — plusieurs fichiers pour une même pièce', () => {
+  /**
+   * La maquette dit « recto et verso sur un même fichier ». À l'usage c'est intenable : une carte
+   * nationale se photographie en deux fois, et personne n'assemble deux images dans un PDF depuis un
+   * téléphone avant de pouvoir s'inscrire. Le serveur n'a jamais interdit plusieurs pièces du même
+   * type — c'était l'écran qui n'en montrait qu'une.
+   */
+  it('les pages s’empilent, chacune avec sa date et son bouton', async () => {
+    await monter({
+      status: 'DRAFT',
+      documents: [
+        { id: 'r', kind: 'ID', expiresAt: null, createdAt: '2026-08-20T10:00:00.000Z' },
+        { id: 'v', kind: 'ID', expiresAt: null, createdAt: '2026-08-21T11:00:00.000Z' },
+      ],
+      missingDocuments: ['DIPLOMA', 'LICENSE', 'PHOTO'],
+    })
+
+    expect(screen.getByText('2 pages')).toBeInTheDocument()
+    expect(screen.getByText(/Page 1 · déposée le 20 août 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Page 2 · déposée le 21 août 2026/)).toBeInTheDocument()
+    // Un bouton « Voir » par page — on doit pouvoir vérifier le verso sans ouvrir le recto.
+    expect(screen.getAllByRole('button', { name: 'Voir' })).toHaveLength(2)
+    // Et chaque page se retire séparément : c'est le verso qui est flou, pas le recto.
+    expect(screen.getByRole('button', { name: /Retirer Pièce d’identité page 2/ })).toBeInTheDocument()
+  })
+
+  it('une pièce déposée une seule fois ne parle pas de pages', async () => {
+    await monter({
+      status: 'DRAFT',
+      documents: [{ id: 'r', kind: 'ID', expiresAt: null, createdAt: '2026-08-20T10:00:00.000Z' }],
+      missingDocuments: ['DIPLOMA', 'LICENSE', 'PHOTO'],
+    })
+    expect(screen.getByText('Déposée')).toBeInTheDocument()
+    expect(screen.queryByText(/Page 1/)).not.toBeInTheDocument()
   })
 })

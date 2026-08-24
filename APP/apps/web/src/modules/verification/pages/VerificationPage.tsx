@@ -45,8 +45,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
-import { api, ApiError, ouvrirPieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
+import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
@@ -123,7 +131,7 @@ const PIECES: Record<DocumentKind, { titre: string; icone: typeof IdCard; aide: 
   ID: {
     titre: 'Pièce d’identité',
     icone: IdCard,
-    aide: 'Carte nationale ou passeport en cours de validité, recto et verso sur un même fichier.',
+    aide: 'Carte nationale ou passeport en cours de validité. Recto et verso peuvent être déposés séparément.',
   },
   DIPLOMA: {
     titre: 'Diplôme',
@@ -150,26 +158,41 @@ const PIECES: Record<DocumentKind, { titre: string; icone: typeof IdCard; aide: 
 const MIMES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 const TAILLE_MAX = 5 * 1024 * 1024
 
-function LignePiece({
+/**
+ * Une pièce justificative et ses fichiers.
+ *
+ * ── Pourquoi PLUSIEURS fichiers par pièce ──────────────────────────────────────────────────────
+ *
+ * La maquette dit « recto et verso sur un même fichier », et la première version suivait cette
+ * consigne à la lettre : un fichier, un point. À l'usage c'est intenable. Une carte nationale se
+ * photographie en deux fois, un diplôme scanné arrive parfois page par page, et personne ne va
+ * assembler deux images dans un PDF depuis un téléphone à Brazzaville avant de pouvoir s'inscrire.
+ *
+ * Le serveur, lui, n'a jamais interdit d'attacher plusieurs pièces du même type — c'était l'écran
+ * qui n'en montrait qu'une. On affiche donc toutes les pages, avec un bouton pour en ajouter.
+ */
+function BlocPiece({
   kind,
-  document,
+  documents,
   modifiable,
   onDeposer,
   onRetirer,
   enCours,
 }: {
   kind: DocumentKind
-  document: VerificationCase['documents'][number] | undefined
+  documents: VerificationCase['documents']
   modifiable: boolean
   onDeposer: (f: File) => void
-  onRetirer: () => void
+  onRetirer: (id: string) => void
   enCours: boolean
 }) {
   const champ = useRef<HTMLInputElement>(null)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [ouverture, setOuverture] = useState(false)
+  const [apercu, setApercu] = useState<{ url: string; type: string; titre: string } | null>(null)
+  const [ouverture, setOuverture] = useState<string | null>(null)
   const info = PIECES[kind]
   const Icone = info.icone
+  const depose = documents.length > 0
 
   const choisir = (f: File | undefined) => {
     setErreur(null)
@@ -187,20 +210,24 @@ function LignePiece({
     onDeposer(f)
   }
 
-  const voir = async () => {
-    if (!document) return
-    setOuverture(true)
+  const voir = async (id: string, numero: number) => {
+    setOuverture(id)
     setErreur(null)
     try {
-      const url = await ouvrirPieceJustificative(document.id)
-      window.open(url, '_blank', 'noopener')
-      // Révoquée après un délai : la révoquer tout de suite couperait l'onglet qui vient de s'ouvrir.
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      const f = await lirePieceJustificative(id)
+      setApercu({ ...f, titre: documents.length > 1 ? `${info.titre} — page ${numero}` : info.titre })
     } catch (e) {
       setErreur(messageDe(e))
     } finally {
-      setOuverture(false)
+      setOuverture(null)
     }
+  }
+
+  // L'URL `blob:` retient le fichier DÉCHIFFRÉ en mémoire de l'onglet tant qu'elle vit. On la révoque
+  // à la fermeture : une pièce d'identité n'a pas à traîner jusqu'à ce que l'onglet soit fermé.
+  const fermerApercu = () => {
+    if (apercu) URL.revokeObjectURL(apercu.url)
+    setApercu(null)
   }
 
   return (
@@ -210,7 +237,7 @@ function LignePiece({
           aria-hidden="true"
           className={
             'flex size-8 shrink-0 items-center justify-center rounded-md ' +
-            (document ? 'bg-[var(--succes-fond)] text-[var(--succes-texte)]' : 'bg-secondary text-muted-foreground')
+            (depose ? 'bg-[var(--succes-fond)] text-[var(--succes-texte)]' : 'bg-secondary text-muted-foreground')
           }
         >
           <Icone size={15} strokeWidth={1.5} />
@@ -218,41 +245,99 @@ function LignePiece({
         <span className="min-w-0 flex-1 basis-52">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] font-medium text-foreground">{info.titre}</span>
-            <Pilule ton={document ? 'succes' : 'neutre'}>{document ? 'Déposée' : 'À déposer'}</Pilule>
+            <Pilule ton={depose ? 'succes' : 'neutre'}>
+              {depose ? (documents.length > 1 ? `${documents.length} pages` : 'Déposée') : 'À déposer'}
+            </Pilule>
           </span>
-          <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-            {document ? `Déposée le ${dateFr(document.createdAt)}` : info.aide}
-          </span>
+          <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{info.aide}</span>
         </span>
-        <span className="flex shrink-0 flex-wrap gap-2">
-          <input
-            ref={champ}
-            type="file"
-            accept={MIMES.join(',')}
-            className="sr-only"
-            onChange={(e) => choisir(e.target.files?.[0])}
-          />
-          {document ? (
-            <Button type="button" size="sm" variant="outline" onClick={voir} disabled={ouverture}>
-              {ouverture ? 'Ouverture…' : 'Voir'}
+        {modifiable ? (
+          <span className="shrink-0">
+            <input
+              ref={champ}
+              type="file"
+              accept={MIMES.join(',')}
+              className="sr-only"
+              onChange={(e) => {
+                choisir(e.target.files?.[0])
+                // Remis à zéro : sans cela, redéposer DEUX FOIS le même fichier ne déclenche aucun
+                // événement `change`, et l'utilisateur croit que le bouton ne marche pas.
+                e.target.value = ''
+              }}
+            />
+            <Button type="button" size="sm" variant={depose ? 'outline' : 'default'} onClick={() => champ.current?.click()} disabled={enCours}>
+              {depose ? 'Ajouter une page' : 'Déposer'}
+              {depose ? null : <Upload size={13} strokeWidth={1.6} aria-hidden="true" />}
             </Button>
-          ) : null}
-          {modifiable ? (
-            <>
-              <Button type="button" size="sm" variant={document ? 'outline' : 'default'} onClick={() => champ.current?.click()} disabled={enCours}>
-                {document ? 'Remplacer' : 'Déposer'}
-                {document ? null : <Upload size={13} strokeWidth={1.6} aria-hidden="true" />}
+          </span>
+        ) : null}
+      </div>
+
+      {depose ? (
+        <ul className="flex flex-col gap-1.5">
+          {documents.map((d, i) => (
+            <li key={d.id} className="flex flex-wrap items-center gap-2 rounded border border-border bg-secondary px-2.5 py-1.5">
+              <FileText size={13} strokeWidth={1.6} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1 basis-40 text-[11px] text-[var(--texte-secondaire)]">
+                {documents.length > 1 ? `Page ${i + 1} · ` : ''}
+                déposée le {dateFr(d.createdAt)}
+              </span>
+              <Button type="button" size="sm" variant="outline" onClick={() => voir(d.id, i + 1)} disabled={ouverture === d.id}>
+                {ouverture === d.id ? 'Ouverture…' : 'Voir'}
               </Button>
-              {document ? (
-                <Button type="button" size="sm" variant="ghost" onClick={onRetirer} disabled={enCours} aria-label={`Retirer ${info.titre}`}>
+              {modifiable ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onRetirer(d.id)}
+                  disabled={enCours}
+                  aria-label={`Retirer ${info.titre}${documents.length > 1 ? ` page ${i + 1}` : ''}`}
+                >
                   <Trash2 size={14} strokeWidth={1.6} aria-hidden="true" />
                 </Button>
               ) : null}
-            </>
-          ) : null}
-        </span>
-      </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+
+      {/*
+        L'aperçu reste DANS la page. Ouvrir un onglet pour chaque pièce oblige à faire l'aller-retour
+        à chaque fois, et sur un poste partagé cet onglet reste ouvert derrière soi avec une pièce
+        d'identité dedans.
+
+        Le PDF est affiché dans un cadre CLOISONNÉ (`sandbox` sans `allow-scripts`) : un PDF peut
+        embarquer du script, et il n'a rien à exécuter dans le contexte de l'application. Le bouton
+        « Ouvrir dans un onglet » reste là pour les navigateurs dont le lecteur PDF refuse le
+        cloisonnement.
+      */}
+      <Dialog open={apercu !== null} onOpenChange={(v) => (v ? undefined : fermerApercu())}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{apercu?.titre}</DialogTitle>
+          </DialogHeader>
+          {apercu ? (
+            apercu.type.startsWith('image/') ? (
+              <img src={apercu.url} alt={apercu.titre} className="max-h-[70vh] w-full rounded-md object-contain" />
+            ) : (
+              <iframe src={apercu.url} sandbox="" title={apercu.titre} className="h-[70vh] w-full rounded-md border border-border bg-card" />
+            )
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => apercu && window.open(apercu.url, '_blank', 'noopener')}>
+              Ouvrir dans un onglet
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" size="sm">
+                Fermer
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </li>
   )
 }
@@ -511,7 +596,15 @@ export function VerificationPage() {
   const d = dossier.data
   const etat = ETATS[d.status]
   const enCours = televerser.isPending || retirer.isPending
-  const parKind = new Map(d.documents.map((x) => [x.kind, x]))
+  // Regroupé par TYPE : une pièce peut avoir plusieurs pages (recto/verso, diplôme scanné page à page).
+  const parKind = new Map<DocumentKind, VerificationCase['documents']>()
+  for (const doc of d.documents) parKind.set(doc.kind, [...(parKind.get(doc.kind) ?? []), doc])
+  // Les types exigés, plus tout type déposé qui n'y figure pas — sinon un fichier envoyé par une
+  // autre voie deviendrait invisible et impossible à retirer.
+  const typesAffiches: DocumentKind[] = [
+    ...d.requiredDocuments,
+    ...[...parKind.keys()].filter((k) => !d.requiredDocuments.includes(k)),
+  ]
   const derniereDecision = d.decisions[0]
   const nomComplet = [me?.firstName, me?.lastName].filter(Boolean).join(' ') || (me?.username ?? '')
   const heures = d.announcedDelayHours
@@ -564,18 +657,15 @@ export function VerificationPage() {
             }
           >
             <ul className="flex flex-col gap-2">
-              {d.requiredDocuments.map((kind) => (
-                <LignePiece
+              {typesAffiches.map((kind) => (
+                <BlocPiece
                   key={kind}
                   kind={kind}
-                  document={parKind.get(kind)}
+                  documents={parKind.get(kind) ?? []}
                   modifiable={d.documentsEditable}
                   enCours={enCours}
                   onDeposer={(file) => televerser.mutate({ kind, file })}
-                  onRetirer={() => {
-                    const doc = parKind.get(kind)
-                    if (doc) retirer.mutate(doc.id)
-                  }}
+                  onRetirer={(id) => retirer.mutate(id)}
                 />
               ))}
             </ul>

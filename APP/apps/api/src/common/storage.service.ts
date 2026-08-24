@@ -14,6 +14,17 @@ const ROOT = resolve(process.cwd(), "uploads");
 
 /** MIME accepté → extension. On borne aux types attendus (images + audio court). */
 const EXT_BY_MIME: Record<string, string> = {
+  /**
+   * PDF (2026-08) — le format de la plupart des pièces justificatives : un diplôme scanné, une
+   * attestation d'Ordre, un justificatif d'adresse arrivent en PDF, pas en photo. Il manquait, et
+   * l'écran « Ma vérification » annonçait pourtant « PDF ou image » : le serveur répondait « type de
+   * fichier non supporté » sans que rien n'explique pourquoi.
+   *
+   * Un PDF peut embarquer du script. Il n'est jamais rendu dans le contexte de l'application : la
+   * lecture passe par un `blob:` isolé côté client (voir `LignePiece`), et le serveur ne le sert
+   * qu'aux deux personnes autorisées — le déposant et l'administration de vérification.
+   */
+  "application/pdf": "pdf",
   "image/jpeg": "jpg",
   "image/jpg": "jpg",
   "image/png": "png",
@@ -27,6 +38,7 @@ const EXT_BY_MIME: Record<string, string> = {
 };
 
 const CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  pdf: "application/pdf",
   jpg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",

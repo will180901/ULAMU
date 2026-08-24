@@ -699,17 +699,17 @@ export interface UploadDocumentRequest {
 }
 
 /**
- * Ouvre une pièce justificative dans un nouvel onglet.
+ * Récupère une pièce justificative pour l'afficher.
  *
- * Impossible de mettre l'URL dans un `<a href>` : la route exige un jeton `Authorization`, et un
- * lien ne sait pas en porter. On récupère donc le fichier avec le jeton, puis on l'ouvre depuis un
- * `blob:` local. C'est aussi ce qui empêche l'URL d'une pièce d'identité de finir dans l'historique
- * du navigateur ou dans un journal de serveur mandataire.
+ * Impossible de mettre l'URL dans un `<a href>` ou un `<img src>` : la route exige un jeton
+ * `Authorization`, et ni l'un ni l'autre ne sait en porter. On récupère donc le fichier avec le
+ * jeton, puis on l'affiche depuis un `blob:` local. C'est aussi ce qui empêche l'URL d'une pièce
+ * d'identité de finir dans l'historique du navigateur ou dans le journal d'un serveur mandataire.
  *
  * L'URL rendue est révoquée par l'appelant quand il n'en a plus besoin — sinon le fichier déchiffré
  * reste en mémoire de l'onglet jusqu'à sa fermeture.
  */
-export async function ouvrirPieceJustificative(documentId: string): Promise<string> {
+export async function lirePieceJustificative(documentId: string): Promise<{ url: string; type: string }> {
   const token = getToken?.()
   const res = await fetch(`${API_BASE_URL}/v1/verification/me/documents/${documentId}/file`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -718,7 +718,9 @@ export async function ouvrirPieceJustificative(documentId: string): Promise<stri
     if (res.status === 401) onUnauthorized?.()
     throw new ApiError(res.status, codeFromStatus(res.status), "Cette pièce n'a pas pu être ouverte.")
   }
-  return URL.createObjectURL(await res.blob())
+  // Le type vient du fichier lui-même : c'est lui qui décide si on affiche une image ou un PDF.
+  const blob = await res.blob()
+  return { url: URL.createObjectURL(blob), type: blob.type }
 }
 
 /**
