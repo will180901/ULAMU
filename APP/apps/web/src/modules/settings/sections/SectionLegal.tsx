@@ -8,6 +8,16 @@
  *    Le bouton « English » n'aurait rien traduit du tout : il aurait juste changé de couleur. On dit
  *    donc ce qui est vrai, et la place reste prête pour le jour où les traductions existeront.
  *
+ * 3. **La phrase sur l'hébergement disait le contraire de la réalité** (corrigé le 24/08/2026). Elle
+ *    affirmait « hébergées au Congo-Brazzaville ». Or `render.yaml` déclare `region: frankfurt` et la
+ *    base Neon vit en `eu-central-1` : tout est en Allemagne. Ce texte est accepté à l'inscription,
+ *    donc il vaut PREUVE sous la loi n° 29-2019 — une preuve qui affirme un fait faux ne vaut rien,
+ *    et pire, elle expose. La phrase dit maintenant où les données sont réellement.
+ *
+ *    ⚠️ Reste ouverte une question qui n'est pas la mienne : héberger des données de santé
+ *    congolaises hors du Congo peut exiger une base légale de transfert. Le dire honnêtement est un
+ *    préalable, pas une réponse. Noté au §7 du plan.
+ *
  * 2. La maquette affiche « Version 1.0 · acceptée le 12 mars 2026 » sous chaque document. Le
  *    consentement EST enregistré à l'inscription (table `Consent`, preuve légale, loi n° 29-2019),
  *    mais **aucun endpoint ne le relit** : ni la version, ni la date. Les afficher voudrait dire les
@@ -24,7 +34,7 @@ const CGU = [
 ]
 
 const CONFIDENTIALITE = [
-  'Les données de santé sont traitées conformément à la loi n° 29-2019 sur la protection des données à caractère personnel. Elles sont hébergées au Congo-Brazzaville et chiffrées au repos comme en transit.',
+  'Les données de santé sont traitées conformément à la loi n° 29-2019 sur la protection des données à caractère personnel. Elles sont chiffrées au repos comme en transit, et hébergées sur des serveurs situés en Allemagne (Francfort, Union européenne).',
   "Seuls les professionnels engagés dans une consultation ont accès au dossier concerné, et chaque accès est inscrit au journal d'audit, consultable par l'administration.",
   "La clôture d'un compte n'efface pas les comptes-rendus signés : leur conservation est une obligation légale.",
 ]

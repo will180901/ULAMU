@@ -272,3 +272,20 @@ describe('B3 — préférences', () => {
     expect(await screen.findByText(/suivent votre compte/)).toBeInTheDocument()
   })
 })
+
+describe('B3 — les mentions légales', () => {
+  /**
+   * Ce texte est accepté à l'inscription : il vaut PREUVE sous la loi n° 29-2019. Il affirmait un
+   * hébergement au Congo-Brazzaville alors que `render.yaml` déclare `region: frankfurt` et que la
+   * base Neon vit en `eu-central-1`. Une preuve qui affirme un fait faux ne protège personne.
+   */
+  it('dit où les données sont RÉELLEMENT hébergées', async () => {
+    monter('legal')
+
+    const texte = document.body.textContent ?? ''
+    expect(texte).toContain('Francfort')
+    expect(texte).not.toContain('hébergées au Congo-Brazzaville')
+    // Le chiffrement, lui, était vrai et le reste : AES-256-GCM au repos, HTTPS en transit.
+    expect(texte).toContain('chiffrées au repos comme en transit')
+  })
+})
