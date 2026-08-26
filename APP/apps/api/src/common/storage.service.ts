@@ -19,9 +19,9 @@
  *
  * Entrée en base64 (le client envoie l'image/le son encodé — pas de multipart/multer).
  */
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { openBuffer, sealBuffer } from "./crypto/secretbox";
+import { looksSealed, openBuffer, sealBuffer } from "./crypto/secretbox";
 import { PrismaService } from "./prisma.service";
 
 /** MIME accepté → extension. On borne aux types attendus (images + audio court). */
@@ -83,6 +83,8 @@ function looksLikeExecutable(buf: Buffer): boolean {
 
 @Injectable()
 export class StorageService {
+  private readonly logger = new Logger(StorageService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -121,7 +123,30 @@ export class StorageService {
     return key;
   }
 
-  /** Lit un fichier par clé. null si absent ou clé non sûre. */
+  /**
+   * Lit un fichier par clé. null si absent ou clé non sûre. **Lève** si le fichier est chiffré mais
+   * que la clé courante ne l'ouvre pas.
+   *
+   * ── Pourquoi cette distinction ─────────────────────────────────────────────────────────────────
+   *
+   * Un seul `try/catch` enveloppait `openBuffer`, et retombait sur les octets bruts. L'intention
+   * était juste — les fichiers déposés AVANT le chiffrement au repos sont encore en clair en base et
+   * doivent rester lisibles — mais `openBuffer` lève pour DEUX raisons que ce `catch` confondait :
+   * l'en-tête absent (vrai fichier en clair) et le tag d'authentification qui ne colle pas
+   * (fichier bien chiffré, `SECRETBOX_KEY` différente de celle qui l'a scellé).
+   *
+   * Dans le second cas, le service renvoyait donc le CHIFFRÉ en **HTTP 200**, avec le
+   * `Content-Type` d'origine : un « PDF » de charabia, sans une ligne de journal. Côté écran, cela
+   * ressemblait à une pièce mal déposée par le médecin — on accusait l'utilisateur avant de
+   * soupçonner le serveur. Constaté et mesuré le 25/08/2026
+   * (cf. `docs/procedure_sauvegarde_SECRETBOX_KEY.md` §2.2).
+   *
+   * `looksSealed` tranche sans la clé, puisque l'en-tête est en clair. Un échec APRÈS cet en-tête
+   * n'est plus une question de rétrocompatibilité : c'est un incident d'exploitation. On le
+   * journalise en nommant la variable en cause — comme le fait déjà M01 pour les secrets TOTP — et
+   * on refuse de servir. Contrairement au TOTP, aucun repli n'est possible : un fichier n'a pas de
+   * code de secours. Mieux vaut une panne visible qu'un fichier qui ment.
+   */
   async read(key: string): Promise<{ buffer: Buffer; contentType: string } | null> {
     if (!this.isSafeKey(key)) {
       return null;
@@ -132,9 +157,19 @@ export class StorageService {
     }
     const raw = Buffer.from(row.data);
     let buffer: Buffer;
-    try {
-      buffer = openBuffer(raw);
-    } catch {
+    if (looksSealed(raw)) {
+      try {
+        buffer = openBuffer(raw);
+      } catch (e) {
+        this.logger.error(
+          `Fichier chiffré illisible (clé ${key}) — SECRETBOX_KEY a-t-elle changé depuis le dépôt ? ` +
+            `Les octets sont intacts en base : restaurer la bonne clé les rend lisibles. ${(e as Error).message}`,
+        );
+        // 500 assumé : la pièce EXISTE et n'est pas corrompue, c'est le serveur qui ne sait plus la
+        // lire. Un 404 « introuvable » enverrait le déposant la redéposer pour rien.
+        throw new InternalServerErrorException("Fichier illisible (incident de chiffrement côté serveur)");
+      }
+    } else {
       // Rétrocompatibilité : fichier écrit AVANT le chiffrement au repos — encore en clair.
       buffer = raw;
     }

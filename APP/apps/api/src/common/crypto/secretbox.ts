@@ -31,6 +31,8 @@ export function openSecret(sealed: string): string {
 
 /** Variante binaire (médias) — même primitive, format compact : [1 octet version][12 iv][16 tag][ct...]. */
 const BUFFER_VERSION = 1;
+/** Taille de l'en-tête en clair qui précède le chiffré : 1 (version) + 12 (iv) + 16 (tag). */
+const BUFFER_HEADER_BYTES = 29;
 
 export function sealBuffer(plain: Buffer): Buffer {
   const iv = randomBytes(12);
@@ -39,12 +41,32 @@ export function sealBuffer(plain: Buffer): Buffer {
   return Buffer.concat([Buffer.from([BUFFER_VERSION]), iv, cipher.getAuthTag(), ct]);
 }
 
-/** Lève si `sealed` n'est pas dans ce format (utilisé par StorageService pour retomber sur du clair ancien). */
+/**
+ * Ce blob porte-t-il l'en-tête de `sealBuffer` ? Autrement dit : est-il CHIFFRÉ ?
+ *
+ * L'en-tête (version, iv, tag) est stocké en clair : cette reconnaissance ne dépend donc PAS de la
+ * clé. C'est ce qui permet à `StorageService` de distinguer les deux causes d'échec de `openBuffer`,
+ * qu'il confondait auparavant : « fichier d'avant le chiffrement, encore en clair » (à servir tel
+ * quel) et « fichier bien chiffré que la clé courante n'ouvre pas » (incident `SECRETBOX_KEY`).
+ *
+ * Aucun format accepté à l'écriture ne commence par l'octet 1 — PDF `%` (0x25), JPEG (0xFF), PNG
+ * (0x89), WebP/WAV `R`, OGG `O`, MP3 (0xFF ou `I`), MP4/M4A (taille de boîte, 0x00…). Un ancien
+ * fichier en clair ne peut donc pas être pris pour un chiffré.
+ */
+export function looksSealed(buf: Buffer): boolean {
+  return buf.length >= BUFFER_HEADER_BYTES && buf[0] === BUFFER_VERSION;
+}
+
+/**
+ * Lève si `sealed` n'a pas cet en-tête, et lève aussi — sur le tag d'authentification — quand la
+ * clé courante n'est pas celle qui a scellé. Les deux cas se ressemblent ici : c'est à l'appelant
+ * de les séparer avec `looksSealed`, car ils n'appellent pas du tout la même réaction.
+ */
 export function openBuffer(sealed: Buffer): Buffer {
-  if (sealed.length < 29 || sealed[0] !== BUFFER_VERSION) throw new Error("secretbox: format binaire invalide");
+  if (!looksSealed(sealed)) throw new Error("secretbox: format binaire invalide");
   const iv = sealed.subarray(1, 13);
-  const tag = sealed.subarray(13, 29);
-  const ct = sealed.subarray(29);
+  const tag = sealed.subarray(13, BUFFER_HEADER_BYTES);
+  const ct = sealed.subarray(BUFFER_HEADER_BYTES);
   const decipher = createDecipheriv("aes-256-gcm", key(), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ct), decipher.final()]);

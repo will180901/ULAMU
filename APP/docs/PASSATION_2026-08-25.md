@@ -255,6 +255,11 @@ Le code ne fait pas ce que M01 décrit. **À trancher un jour :**
 
 ### Dettes ouvertes, côté porteur
 1. **`SECRETBOX_KEY` n'a aucune sauvegarde.** Perdue = toutes les pièces justificatives illisibles
+   → procédure de sauvegarde et analyse du code : **`procedure_sauvegarde_SECRETBOX_KEY.md`**
+   (25/08). Vérifié : si la clé change, l'API **démarre normalement**, sans aucun signal.
+   `StorageService.read()` servait alors le fichier **chiffré en HTTP 200** — **corrigé le 25/08** :
+   il journalise en nommant `SECRETBOX_KEY` et lève (7 tests, `storage.service.spec.ts`).
+   **La dette elle-même reste ouverte** tant que le porteur n'a pas créé les copies hors ligne.
 2. Des comptes de démonstration avec le mot de passe `demo1234` sont dans la base de production
 3. `ADMIN_REQUIRE_TOTP=false` sur Render
 4. Les tests d'intégration API sont bloqués tant qu'une branche Neon de test n'existe pas
