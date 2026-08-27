@@ -177,14 +177,22 @@ unitaires, qui ne touchent aucune base (§8).
 
 ## 6. L'ordre de construction
 
+> **Comment lire les étiquettes.** Trois numérotations coexistent, et elles ne se ressemblent pas :
+> les **paliers** portent une lettre seule (*palier A*), les **chantiers** un numéro de 1 à 19
+> (*chantier 3*), les **écrans** une lettre suivie d'un chiffre (*C3*). Un chantier = **un écran**,
+> annoncé → validé → codé → testé en ligne → confirmé.
+>
+> *(Renuméroté le 27/08 : les chantiers s'appelaient A1, B1, B2… et se confondaient avec les écrans
+> du même nom — le chantier « D1 » construisait l'écran C1, le « F1 » l'écran E1.)*
+
 **Principe retenu : on construit dans l'ordre de la démonstration, pas dans celui du menu.** Ce qui
 doit fonctionner devant le jury passe d'abord ; ce qui l'entoure vient ensuite.
 
 ### PALIER A — Le socle *(rien ne marche sans lui)*
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **A1** | **B1 — La coquille + la présence + le plafond de 3 sessions** | aucun | F4 pt 5, pt 6 · F3-A · F3-C · F3-D |
+| **1** | **B1 — La coquille + la présence + le plafond de 3 sessions** | aucun | F4 pt 5, pt 6 · F3-A · F3-C · F3-D |
 
 **Pourquoi en premier, et sans discussion possible :** sans présence, `isAvailableForInitiation`
 renvoie `false`, le bouton « initier » du patient reste gris, et **aucune démonstration n'est
@@ -207,13 +215,13 @@ pas déranger » → le mot change et tient au rechargement. ③ laisser l'ongle
 
 ### PALIER B — La chaîne de soin
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **B1** | **C2 — Ma vitrine** (les offres) | aucun | F1 pt 1 · F3-A · F3-B · F4 pt 7, pt 8 |
-| **B2** | **C3 — Demandes** (la poignée de main) | aucun | F2 pt 2 · F3-A · F3-C · F3-E |
-| **B3** | **C5 — La consultation** | **S1** | F2 pt 1 · F4 pt 1, pt 2, pt 9 · F3-F |
-| **B4** | **C7 — Ordonnance** *(écran neuf)* + garde-fou allergies | référentiel 6 → ~60 | F4 pt 3, pt 4, pt 4bis |
-| **B5** | **C4 — Consultations** (le registre) | aucun | F2 pt 1 · F4 pt 7, pt 8, pt 9 · F3-C · F3-D |
+| **2** | **C2 — Ma vitrine** (les offres) | aucun | F1 pt 1 · F3-A · F3-B · F4 pt 7, pt 8 |
+| **3** | **C3 — Demandes** (la poignée de main) | aucun | F2 pt 2 · F3-A · F3-C · F3-E |
+| **4** | **C5 — La consultation** | **S1** | F2 pt 1 · F4 pt 1, pt 2, pt 9 · F3-F |
+| **5** | **C7 — Ordonnance** *(écran neuf)* + garde-fou allergies | référentiel 6 → ~60 | F4 pt 3, pt 4, pt 4bis |
+| **6** | **C4 — Consultations** (le registre) | aucun | F2 pt 1 · F4 pt 7, pt 8, pt 9 · F3-C · F3-D |
 
 **C2 avant C3** : sans offre publiée, aucun patient ne peut initier. C'est la porte d'entrée du
 parcours.
@@ -237,9 +245,9 @@ bouge.
 
 ### PALIER C — L'argent
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **C1** | **C6 — Mes gains** | **S2 + S3** | F1 pt 1, pt 2, pt 3, pt 6 · F4 pt 9 |
+| **7** | **C6 — Mes gains** | **S2 + S3** | F1 pt 1, pt 2, pt 3, pt 6 · F4 pt 9 |
 
 Le versement mensuel disparaît, le bouton de retrait qui existait déjà devient le seul chemin, le
 minimum de 5 000 XAF saute, et le compte de versement cède la place au vrai numéro du compte.
@@ -252,15 +260,15 @@ numéro affiché est bien celui du compte.
 
 ### PALIER D — Les conditions d'exercice
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **D1** | **C1 — Ma vérification, le contrat, l'avenant** | **S4** | F4 pt 11 · F1 pt 1, pt 2 · F2 pt 3 |
+| **8** | **C1 — Ma vérification, le contrat, l'avenant** | **S4** | F4 pt 11 · F1 pt 1, pt 2 · F2 pt 3 |
 
 Le contrat affiché est le **texte scellé que renvoie le serveur**, jamais un texte écrit dans la
 page. La signature passe par **mot de passe + OTP**, comme l'exige le serveur — pas par la case à
 cocher de la maquette. Le parcours de re-signature apparaît ici.
 
-⚠️ **Ce chantier ne se teste qu'avec E3** (palier F, chantier F4) : c'est le changement de taux dans
+⚠️ **Ce chantier ne se teste qu'avec E3** (palier F, **chantier 14**) : c'est le changement de taux dans
 E3 qui déclenche la re-signature dans C1. Les deux écrans forment **une seule fonctionnalité**.
 Prévoir de les enchaîner.
 
@@ -268,10 +276,10 @@ Prévoir de les enchaîner.
 
 ### PALIER E — Le reste du médecin
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **E1** | **B2 — Tableau de bord** | aucun | F3-D (export retiré) |
-| **E2** | **B3 — Mes paramètres** | aucun | F3-B (langue retirée) |
+| **9** | **B2 — Tableau de bord** | aucun | F3-D (export retiré) |
+| **10** | **B3 — Mes paramètres** | aucun | F3-B (langue retirée) |
 
 ⚠️ **B3 porte la phrase d'hébergement.** La maquette affirme « données hébergées au
 Congo-Brazzaville » : **c'est faux** — Render est à Francfort, Neon en `eu-central-1`. Ce texte est
@@ -282,15 +290,15 @@ accepté à l'inscription, il vaut donc **preuve**. Il avait été corrigé une 
 
 ### PALIER F — L'administration
 
-| | Chantier | Serveur | Alignement appliqué |
+| N° | Chantier | Serveur | Alignement appliqué |
 |---|---|---|---|
-| **F1** | **E1 — File de vérification** | aucun | F2 pt 3 (72 h, sans « ouvrées ») |
-| **F2** | **E7 — Comptes + procédures support** | aucun | F4 pt 10 · F3-D (pas de durée de suspension) |
-| **F3** | **E2 — Supervision financière** | aucun | F1 pt 4 · F2 pt 4 |
-| **F4** | **E3 — Paramètres métier** | **S5** | F4 pt 11 · F2 pt 5 |
-| **F5** | **E4 — Administrateurs** | aucun | F3-D (rôle d'abord, création en second) |
-| **F6** | **E5 — Pilotage** | **S6** | F3-E · F1 pt 5 |
-| **F7** | **E6 — Signalements** | aucun | F3-D (export retiré) |
+| **11** | **E1 — File de vérification** | aucun | F2 pt 3 (72 h, sans « ouvrées ») |
+| **12** | **E7 — Comptes + procédures support** | aucun | F4 pt 10 · F3-D (pas de durée de suspension) |
+| **13** | **E2 — Supervision financière** | aucun | F1 pt 4 · F2 pt 4 |
+| **14** | **E3 — Paramètres métier** | **S5** | F4 pt 11 · F2 pt 5 |
+| **15** | **E4 — Administrateurs** | aucun | F3-D (rôle d'abord, création en second) |
+| **16** | **E5 — Pilotage** | **S6** | F3-E · F1 pt 5 |
+| **17** | **E6 — Signalements** | aucun | F3-D (export retiré) |
 
 E1 en premier : c'est par elle qu'un soignant devient exerçant. E3 juste après C1 si possible, pour
 boucler l'avenant.
@@ -299,10 +307,10 @@ boucler l'avenant.
 
 ### PALIER G — Passe finale
 
-| | Chantier |
+| N° | Chantier |
 |---|---|
-| **G1** | Relire les 15 écrans **côte à côte avec leur maquette affichée**, dans les 4 états, les 3 tailles et les 2 thèmes |
-| **G2** | Solder les dettes du §9 avant toute livraison |
+| **18** | Relire les 15 écrans **côte à côte avec leur maquette affichée**, dans les 4 états, les 3 tailles et les 2 thèmes |
+| **19** | Solder les dettes du §9 avant toute livraison |
 
 ---
 
@@ -380,13 +388,13 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 *Rempli au fur et à mesure, en même temps que le code — jamais après.*
 
-| # | Chantier | Poussé le | Confirmé par le porteur |
+| N° | Chantier | Poussé le | Confirmé par le porteur |
 |---|---|---|---|
-| **A1** | **B1 — la coquille + la présence + le plafond + le rideau** — codé le 27/08. Serveur : **S7**, PM-27 servi au professionnel dans `GET /v1/presence/me` (~15 l. + 4 tests) — ajout **non prévu**, voir ci-dessous. Web : `usePresence` (battement 5 min), `useSessionsEnCours`, `IndicateurPresence`, `RideauConfidentialite`, ligne d'identité corrigée. **API 476 ✓ · web 174 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+| **1** | **B1 — la coquille + la présence + le plafond + le rideau** — codé le 27/08. Serveur : **S7**, PM-27 servi au professionnel dans `GET /v1/presence/me` (~15 l. + 4 tests) — ajout **non prévu**, voir ci-dessous. Web : `usePresence` (battement 5 min), `useSessionsEnCours`, `IndicateurPresence`, `RideauConfidentialite`, ligne d'identité corrigée. **API 476 ✓ · web 174 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
-| **B1** | **C2 — Ma vitrine** — codé le 27/08. Serveur : **S8**, `GET /v1/offers/limits` sert PM-09/PM-06/PM-25 + mon compte d'offres actives (~25 l. + 4 tests). Web : écran **entièrement réécrit** sur la forme mesurée (2 colonnes, 968 px + rail d'aperçu de 320 px), « Ce que les patients voient » alimenté par la vraie route publique, `CarteAnnuaire.tsx` supprimée (orpheline). **API 480 ✓ · web 179 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+| **2** | **C2 — Ma vitrine** — codé le 27/08. Serveur : **S8**, `GET /v1/offers/limits` sert PM-09/PM-06/PM-25 + mon compte d'offres actives (~25 l. + 4 tests). Web : écran **entièrement réécrit** sur la forme mesurée (2 colonnes, 968 px + rail d'aperçu de 320 px), « Ce que les patients voient » alimenté par la vraie route publique, `CarteAnnuaire.tsx` supprimée (orpheline). **API 480 ✓ · web 179 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
-### Ce que le chantier B1 (C2) a appris
+### Ce que le chantier 2 (C2 — Ma vitrine) a appris
 
 **La version précédente avait raison sur les faits et tort sur la forme.** Elle avait déjà retiré les
 langues, les lieux et les vues inventées — avec de bonnes raisons, écrites. Mais son en-tête disait
@@ -403,7 +411,7 @@ inventions ne reviennent pas), jamais un parti pris.
 renvoyés. Le médecin découvrait les bornes par un **refus après coup**. **Chaque chantier restant
 doit vérifier ce point** avant de coder son écran.
 
-### Ce que le chantier A1 a appris
+### Ce que le chantier 1 (B1 — la coquille) a appris
 
 **Un 7ᵉ ajout serveur est apparu — S7, non prévu au §5.** « 1 consultation sur 3 » supposait
 d'écrire le **3** dans la page : PM-27 n'était servi qu'au **patient**, dans le texte d'un message

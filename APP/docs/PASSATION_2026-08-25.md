@@ -309,9 +309,14 @@ python -m http.server 8123 --directory "…/ULAMU/APP/docs/maquettes"
 
 **Ouvrir la maquette avant d'écrire une ligne d'écran est la règle n°1 du nouveau plan.**
 
-### Le premier chantier
+### Les chantiers
 
-**A1 — B1, la coquille + la présence + le plafond de 3 sessions.** Sans présence,
+**19 chantiers, répartis en 7 paliers.** Un chantier = **un écran**, du début à la fin. Trois
+numérotations coexistent et ne se ressemblent pas : les **paliers** portent une lettre seule
+(*palier A*), les **chantiers** un numéro de 1 à 19 (*chantier 3*), les **écrans** une lettre suivie
+d'un chiffre (*C3*).
+
+**Chantier 1 — écran B1, la coquille + la présence + le plafond de 3 sessions.** Sans présence,
 `isAvailableForInitiation` renvoie `false` et aucune démonstration n'est possible. Aucun serveur à
 écrire : `POST /v1/presence/state`, `/presence/heartbeat`, `GET /presence/me` existent.
 
