@@ -362,6 +362,7 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | 6 | **Garde-fou de démarrage sur `SECRETBOX_KEY`** — §8.1 de la procédure, volontairement non appliqué : il changerait une dégradation invisible en indisponibilité totale. **Décision à prendre.** | ⏸ à trancher |
 | 7 | **Hébergement hors du Congo** — la phrase sera corrigée dans B3 (§ palier E). Ce qui reste ouvert n'est pas du ressort du code : héberger des données de santé congolaises hors du Congo peut exiger une base légale de transfert. | 🟡 partiel |
 | 8 | **Tests d'intégration API hors service** — il manque une branche Neon de test et son `TEST_DATABASE_URL`. Le seul garde-fou automatique du backend est donc à l'arrêt. | 🔴 ouvert |
+| 8bis | **La spécialité reste modifiable côté serveur** — C2 l'affiche en lecture seule (arbitrage du 27/08 : le Badge Vérifié atteste d'une qualification contrôlée par pièces), mais `PATCH /v1/me/professional-profile` accepte toujours le champ `specialty`. **Un écran ne ferme pas une porte.** Le fermer demanderait un chemin administratif pour les corrections légitimes. | ⏸ à trancher |
 | 9 | **Aucun lint sur le dépôt** — `eslint` absent partout. À installer, ou à retirer des scripts pour ne pas laisser croire qu'il tourne. | 🔴 ouvert |
 | 10 | **3 alertes `npm audit` élevées** sur `react-router` — concernent le mode RSC, non utilisé (SPA statique). À re-vérifier avant livraison. | 🟡 à revérifier |
 
@@ -382,6 +383,25 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | # | Chantier | Poussé le | Confirmé par le porteur |
 |---|---|---|---|
 | **A1** | **B1 — la coquille + la présence + le plafond + le rideau** — codé le 27/08. Serveur : **S7**, PM-27 servi au professionnel dans `GET /v1/presence/me` (~15 l. + 4 tests) — ajout **non prévu**, voir ci-dessous. Web : `usePresence` (battement 5 min), `useSessionsEnCours`, `IndicateurPresence`, `RideauConfidentialite`, ligne d'identité corrigée. **API 476 ✓ · web 174 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+| **B1** | **C2 — Ma vitrine** — codé le 27/08. Serveur : **S8**, `GET /v1/offers/limits` sert PM-09/PM-06/PM-25 + mon compte d'offres actives (~25 l. + 4 tests). Web : écran **entièrement réécrit** sur la forme mesurée (2 colonnes, 968 px + rail d'aperçu de 320 px), « Ce que les patients voient » alimenté par la vraie route publique, `CarteAnnuaire.tsx` supprimée (orpheline). **API 480 ✓ · web 179 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier B1 (C2) a appris
+
+**La version précédente avait raison sur les faits et tort sur la forme.** Elle avait déjà retiré les
+langues, les lieux et les vues inventées — avec de bonnes raisons, écrites. Mais son en-tête disait
+aussi : *« largement repensé… ce n'est pas un formulaire, c'est un miroir de concurrence… aucun
+bouton Publier… l'aperçu montre la LISTE, pas une fiche isolée »*. **C'est ça qui a été refusé** :
+un auteur qui réécrit la forme à sa façon. Le diagnostic vaut pour les écrans restants.
+
+**Un test peut protéger une invention.** L'ancien `vitrine.test.tsx` verrouillait explicitement
+« l'aperçu montre la LISTE » comme une propriété à ne jamais régresser. Réécrit : les tests
+protègent désormais des **faits** (le taux vient du contrat, les bornes viennent du serveur, les
+inventions ne reviennent pas), jamais un parti pris.
+
+**S8 confirme la prédiction de A1** : PM-09, PM-06 et PM-25 étaient vérifiés côté serveur et jamais
+renvoyés. Le médecin découvrait les bornes par un **refus après coup**. **Chaque chantier restant
+doit vérifier ce point** avant de coder son écran.
 
 ### Ce que le chantier A1 a appris
 

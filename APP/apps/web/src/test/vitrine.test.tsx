@@ -1,30 +1,43 @@
 /**
  * C2 « Ma vitrine » — l'écran qui décide si un médecin existe pour les patients.
  *
- * Trois propriétés sont verrouillées ici, et chacune répare un défaut de la maquette.
+ * ── Réécrit le 27/08/2026, en même temps que l'écran ───────────────────────────────────────────
  *
- *  1. **L'écran dit ce qui rend INVISIBLE.** `RM-05-01` écarte en base tout soignant qui n'est pas
- *     vérifié ET sous contrat signé. On peut soigner chaque mot de sa présentation et n'apparaître
- *     dans aucune recherche. La maquette n'en disait rien — elle parlait de « Prêt à publier », un
- *     état qu'elle avait inventé. Si ce bandeau disparaît, un médecin peut attendre des semaines
- *     sans comprendre.
+ * L'ancienne version de ce fichier verrouillait une propriété que le porteur a refusée :
+ * « l'aperçu montre la LISTE… une régression qui remettrait la fiche isolée retirerait à l'écran sa
+ * seule raison d'être ». C'était le parti pris de l'auteur, pas celui de la maquette — laquelle
+ * montre **une fiche seule**, dans un rail de 320 px, mesuré en l'affichant.
  *
- *  2. **L'aperçu montre la LISTE.** Un patient ne voit jamais une fiche seule : il compare. Une
- *     régression qui remettrait la fiche isolée retirerait à l'écran sa seule raison d'être.
+ * Un test qui protège une invention la rend permanente. Ceux-là protègent des FAITS.
  *
- *  3. **Le net est calculé avec la commission DU CONTRAT**, pas avec un taux écrit en dur. La
- *     maquette affichait 12 % ; le contrat de démonstration dit 10 %. C'est le contrat qui paie.
+ * ── Ce qui est verrouillé ici ──────────────────────────────────────────────────────────────────
  *
- * Les formes injectées viennent de l'API déployée, relevées le 24/08/2026 :
- *   GET /v1/directory → { items: [...], page, pageSize, total, suggestion }
+ *  1. **L'écran dit ce qui rend INVISIBLE.** RM-05-01 écarte en base tout soignant qui n'est pas
+ *     vérifié ET sous contrat signé. On peut soigner chaque mot et n'apparaître nulle part.
+ *
+ *  2. **Aucun chiffre métier n'est écrit dans la page.** Le taux vient du CONTRAT SIGNÉ (deux
+ *     médecins peuvent en avoir deux différents, RM-13-07) ; les bornes d'une offre viennent de
+ *     `GET /v1/offers/limits` (PM-09 / PM-06 / PM-25). Les tests 5 et 6 changent ces valeurs côté
+ *     serveur et exigent que la page suive.
+ *
+ *  3. **Ce que la maquette invente ne revient pas** : langues de consultation, lieux et cabinets,
+ *     et les « 318 vues de fiche » que rien ne compte.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { VitrinePage } from '@/modules/vitrine/pages/VitrinePage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type DirectoryItem, type MeResponse, type Offer, type VerificationCase } from '@/lib/api'
+import {
+  api,
+  type DirectoryProfile,
+  type MeResponse,
+  type Offer,
+  type OfferLimits,
+  type VerificationCase,
+} from '@/lib/api'
 
 const MOI: MeResponse = {
   accountId: 'p1',
@@ -60,20 +73,32 @@ const OFFRE: Offer = {
   updatedAt: '2026-08-01T00:00:00.000Z',
 }
 
-const confrere = (id: string, nom: string, prix: number): DirectoryItem => ({
-  professionalId: id,
-  displayName: nom,
+const BORNES: OfferLimits = {
+  durationMinMinutes: 10,
+  durationMaxMinutes: 60,
+  priceFloorXaf: 500,
+  maxActiveOffers: 5,
+  activeOffers: 1,
+}
+
+const PUBLIQUE: DirectoryProfile = {
+  professionalId: 'p1',
+  displayName: 'Dr Armel Konaté',
   category: 'SPECIALIST',
   specialty: 'Cardiologie',
   district: 'Moungali',
   badgeVerified: true,
-  rating: { avg: 4.5, count: 20 },
-  reactivity: { confirmRatePct: 90, avgConfirmDelayS: 300 },
+  rating: { avg: 4.6, count: 18 },
+  reactivity: { confirmRatePct: 92, avgConfirmDelayS: 240 },
   presence: 'ONLINE',
   availableNow: true,
-  cheapestOffer: { id: 'x', label: 'Consultation', durationMin: 30, priceXaf: prix, kind: 'STANDARD' },
-  relevanceScore: 0.5,
-})
+  cheapestOffer: { id: 'o1', label: 'Consultation', durationMin: 30, priceXaf: 10000, kind: 'STANDARD' },
+  relevanceScore: 0.9,
+  biography: 'Écoute d’abord.',
+  offers: [{ id: 'o1', label: 'Consultation', durationMin: 30, priceXaf: 10000, kind: 'STANDARD' }],
+  ratingDistribution: { '5': 12, '4': 6 },
+  latestComments: [{ score: 5, comment: 'Très à l’écoute.', createdAt: '2026-08-20T09:00:00.000Z' }],
+}
 
 const DOSSIER_OK: Partial<VerificationCase> = {
   status: 'VERIFIED',
@@ -104,24 +129,23 @@ const BASE_DOSSIER: VerificationCase = {
   agreement: null,
 }
 
-async function monter(opts: { dossier?: Partial<VerificationCase>; offres?: Offer[]; confreres?: DirectoryItem[] } = {}) {
+async function monter(
+  opts: {
+    dossier?: Partial<VerificationCase>
+    offres?: Offer[]
+    bornes?: Partial<OfferLimits>
+    publique?: DirectoryProfile | null
+  } = {},
+) {
   vi.spyOn(api, 'verificationMine').mockResolvedValue({ ...BASE_DOSSIER, ...opts.dossier })
   vi.spyOn(api, 'myOffers').mockResolvedValue(opts.offres ?? [OFFRE])
-  vi.spyOn(api, 'myPresence').mockResolvedValue({
-    state: 'ONLINE',
-    since: '2026-08-24T08:00:00.000Z',
-    lastHeartbeatAt: '2026-08-24T08:00:00.000Z',
-    availableForInitiation: true,
-    // PM-27 — servi depuis le 27/08 par `GET /v1/presence/me` : l'écran n'écrit plus « 3 » en dur.
-    maxConcurrentSessions: 3,
+  vi.spyOn(api, 'offerLimits').mockResolvedValue({ ...BORNES, ...opts.bornes })
+  vi.spyOn(api, 'directoryProfile').mockImplementation(async () => {
+    const p = opts.publique === undefined ? PUBLIQUE : opts.publique
+    if (!p) throw new Error('introuvable')
+    return p
   })
-  vi.spyOn(api, 'searchDirectory').mockResolvedValue({
-    items: opts.confreres ?? [],
-    page: 1,
-    pageSize: 20,
-    total: (opts.confreres ?? []).length,
-    suggestion: null,
-  })
+
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
@@ -138,117 +162,147 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('C2 — « Êtes-vous trouvable ? »', () => {
-  it('un dossier non vérifié : l’écran dit que PERSONNE ne verra la vitrine', async () => {
-    await monter({ dossier: { status: 'DRAFT', canPractice: false, agreement: null } })
+describe('C2 — « Êtes-vous visible ? »', () => {
+  it('un dossier non vérifié : l’écran dit que la fiche n’apparaît nulle part', async () => {
+    await monter({ dossier: { status: 'DRAFT', canPractice: false, agreement: null }, publique: null })
 
-    expect(await screen.findByText(/n’apparaissez dans aucune recherche/)).toBeInTheDocument()
-    expect(screen.getByText('Dossier pas encore vérifié')).toBeInTheDocument()
-    expect(screen.getByText('Contrat de partenariat non signé')).toBeInTheDocument()
+    expect(await screen.findByText(/n’apparaît pas dans l’annuaire/)).toBeInTheDocument()
     // Et une porte de sortie, pas seulement un constat (CG-08 §06).
-    expect(screen.getByRole('link', { name: /Ouvrir mon dossier/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Voir mon dossier/ })).toBeInTheDocument()
   })
 
-  it('les trois conditions réunies : la vitrine est annoncée visible', async () => {
+  it('vérifié et sous contrat mais SANS offre active : toujours insollicitable', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
+
+    expect(await screen.findByText(/sans offre active un patient n’a aucun moyen de vous solliciter/)).toBeInTheDocument()
+  })
+
+  it('les trois conditions réunies : plus aucun avertissement', async () => {
     await monter({ dossier: DOSSIER_OK })
 
-    expect(await screen.findByText(/Vous apparaissez dans les recherches/)).toBeInTheDocument()
-    expect(screen.getByText('Dossier vérifié')).toBeInTheDocument()
-    expect(screen.getByText('Contrat signé')).toBeInTheDocument()
-    expect(screen.getByText('1 tarif(s) publié(s)')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /Ouvrir mon dossier/ })).not.toBeInTheDocument()
-  })
-
-  it('vérifié et signé mais SANS tarif : toujours invisible', async () => {
-    await monter({ dossier: DOSSIER_OK, offres: [] })
-
-    // C'est la condition qu'on oublie : un patient ne peut pas solliciter sans savoir ce qu'il paie.
-    expect(await screen.findByText(/n’apparaissez dans aucune recherche/)).toBeInTheDocument()
-    expect(screen.getByText('Aucun tarif publié')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Visible dans l’annuaire/)).toBeInTheDocument())
+    expect(screen.queryByText(/n’apparaît pas dans l’annuaire/)).not.toBeInTheDocument()
   })
 })
 
-describe('C2 — l’aperçu patient', () => {
-  it('montre la fiche AU MILIEU des confrères, pas seule', async () => {
-    await monter({
-      dossier: DOSSIER_OK,
-      confreres: [confrere('c1', 'Solange Mbemba', 12000), confrere('c2', 'Firmin Okemba', 8000)],
-    })
-
-    // Trois cartes : la sienne et deux confrères. C'est ce qui rend la comparaison possible.
-    const cartes = await screen.findAllByRole('article')
-    expect(cartes).toHaveLength(3)
-    expect(within(cartes[0] as HTMLElement).getByText('Armel Konaté')).toBeInTheDocument()
-    expect(screen.getByText('Solange Mbemba')).toBeInTheDocument()
-    expect(screen.getByText('Firmin Okemba')).toBeInTheDocument()
-  })
-
-  it('la fiche du médecin est désignée comme la sienne', async () => {
-    await monter({ dossier: DOSSIER_OK, confreres: [confrere('c1', 'Solange Mbemba', 12000)] })
-    expect(await screen.findByRole('article', { name: /Votre fiche : Armel Konaté/ })).toBeInTheDocument()
-  })
-
-  it('« Ma fiche » isole la carte ; « Dans la liste » la remet parmi les autres', async () => {
-    const { default: userEvent } = await import('@testing-library/user-event')
-    const utilisateur = userEvent.setup()
-    await monter({ dossier: DOSSIER_OK, confreres: [confrere('c1', 'Solange Mbemba', 12000)] })
-    await screen.findAllByRole('article')
-
-    await utilisateur.click(screen.getByRole('button', { name: 'Ma fiche' }))
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(1))
-    expect(screen.queryByText('Solange Mbemba')).not.toBeInTheDocument()
-
-    await utilisateur.click(screen.getByRole('button', { name: 'Dans la liste' }))
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(2))
-  })
-
-  it('seul dans son arrondissement, on le lui dit au lieu d’afficher une liste vide', async () => {
-    await monter({ dossier: DOSSIER_OK, confreres: [] })
-    expect(await screen.findByText(/vous y êtes seul/)).toBeInTheDocument()
-  })
-})
-
-describe('C2 — les tarifs', () => {
-  it('le net est calculé avec la commission DU CONTRAT, pas un taux en dur', async () => {
-    // 10 000 F au patient, 10 % de commission contractuelle → 9 000 F nets.
+describe('C2 — aucun chiffre métier écrit dans la page', () => {
+  it('le net vient de la commission DU CONTRAT, pas d’un taux en dur', async () => {
+    // La maquette affichait 12 %. Le contrat de démonstration dit 10 %. C'est le contrat qui paie.
     await monter({ dossier: DOSSIER_OK })
 
+    // 10 000 − 10 % = 9 000.
     expect(await screen.findByText('9 000')).toBeInTheDocument()
-    expect(screen.getByText('net pour vous')).toBeInTheDocument()
-    // Le sous-titre annonce le taux réel du contrat — la maquette écrivait 12 % en dur.
-    expect(screen.getByText(/commission ULAMU de 10 %/)).toBeInTheDocument()
+    expect(screen.getByText(/commission 10 %/)).toBeInTheDocument()
   })
 
-  it('le repère de marché vient des confrères réels', async () => {
+  it('un AUTRE taux de contrat donne un AUTRE net — deux médecins peuvent différer (RM-13-07)', async () => {
     await monter({
-      dossier: DOSSIER_OK,
-      confreres: [confrere('c1', 'A', 8000), confrere('c2', 'B', 12000), confrere('c3', 'C', 15000)],
+      dossier: { ...DOSSIER_OK, agreement: { ...DOSSIER_OK.agreement!, commissionPct: 15 } },
     })
 
-    // Ni chiffre inventé, ni moyenne de plateforme : les prix réellement affichés à côté.
-    const repere = await screen.findByText(/Les 3 autres spécialistes/)
-    // `Intl` en français sépare les milliers par une espace fine INSÉCABLE (U+202F), pas par une
-    // espace ordinaire. `getByText` la normalise, `textContent` non — on normalise donc ici, sans
-    // quoi le test échouerait sur une différence invisible à l'œil.
-    const texte = (repere.textContent ?? '').replace(/\s/g, ' ')
-    expect(texte).toContain('8 000')
-    expect(texte).toContain('15 000')
-    expect(texte).toContain('12 000')
+    // 10 000 − 15 % = 8 500. Si un 10 était écrit dans la page, ce test tomberait.
+    expect(await screen.findByText('8 500')).toBeInTheDocument()
+    expect(screen.getByText(/commission 15 %/)).toBeInTheDocument()
   })
 
-  it('sans tarif, l’écran explique la conséquence plutôt que d’afficher un vide', async () => {
-    await monter({ dossier: DOSSIER_OK, offres: [] })
-    expect(await screen.findByText(/troisième condition pour apparaître/)).toBeInTheDocument()
+  it('les bornes d’une offre sont ANNONCÉES, et viennent du serveur', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    const aide = await screen.findByText(/Durée entre/)
+    expect(aide).toHaveTextContent('10')
+    expect(aide).toHaveTextContent('60')
+    expect(aide).toHaveTextContent('500 XAF')
+    expect(aide).toHaveTextContent('1 sur 5')
+  })
+
+  it('si E3 change PM-09/PM-06/PM-25, l’écran suit', async () => {
+    await monter({
+      dossier: DOSSIER_OK,
+      bornes: { durationMinMinutes: 15, durationMaxMinutes: 45, priceFloorXaf: 2000, maxActiveOffers: 3 },
+    })
+
+    const aide = await screen.findByText(/Durée entre/)
+    expect(aide).toHaveTextContent('15')
+    expect(aide).toHaveTextContent('45')
+    expect(aide).toHaveTextContent('2 000 XAF')
+    expect(aide).toHaveTextContent('1 sur 3')
+  })
+
+  it('au plafond d’offres actives, l’ajout est remplacé par la raison', async () => {
+    await monter({ dossier: DOSSIER_OK, bornes: { activeOffers: 5, maxActiveOffers: 5 } })
+
+    expect(await screen.findByText(/soit le maximum/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ajouter cette offre/ })).not.toBeInTheDocument()
   })
 })
 
-describe('C2 — la présentation', () => {
-  it('borne à 400 caractères et garde l’avertissement de l’Ordre', async () => {
+describe('C2 — ce que les patients voient', () => {
+  it('vient de la VRAIE route publique, appelée sur son propre identifiant', async () => {
     await monter({ dossier: DOSSIER_OK })
 
-    const bio = screen.getByLabelText('Présentation')
-    expect(bio).toHaveAttribute('maxlength', '400')
-    // La meilleure chose de la maquette : une promesse de résultat expose le praticien.
-    expect(screen.getByText(/charte de l’Ordre l’interdit/)).toBeInTheDocument()
+    await waitFor(() => expect(api.directoryProfile).toHaveBeenCalledWith('p1'))
+    expect(await screen.findByText('4.6')).toBeInTheDocument()
+    expect(screen.getByText('18 avis')).toBeInTheDocument()
+    expect(screen.getByText('92 %')).toBeInTheDocument()
+    // Le délai est traduit en langage humain : 240 s → « 4 minutes ».
+    expect(screen.getByText('4 minutes')).toBeInTheDocument()
+  })
+
+  it('dit qu’on ne peut NI répondre NI masquer un avis (famille 4, point 7)', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(await screen.findByText(/ni répondre à un\s+avis, ni le masquer/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Répondre/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('C2 — ce que la maquette invente ne revient pas', () => {
+  it('aucune langue de consultation (D-005, PM-15 : français uniquement)', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(screen.queryByText(/Langues de consultation/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Lingala')).not.toBeInTheDocument()
+  })
+
+  it('aucun lieu, cabinet ni horaire — la fiche n’a qu’un arrondissement (EF-05-01)', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(screen.queryByText(/Lieux de consultation/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/cabinet/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Arrondissement')).toBeInTheDocument()
+  })
+
+  it('aucune « vue de fiche » — rien ne les compte côté serveur', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(screen.queryByText(/Vues de la fiche/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Taux de conversion/)).not.toBeInTheDocument()
+  })
+
+  it('aucun bouton « Publier » — le serveur publie à l’enregistrement', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(screen.queryByRole('button', { name: /^Publier$/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('C2 — l’identité', () => {
+  it('la spécialité ne s’édite pas, et la raison est écrite (arbitrage du 27/08)', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    const champ = screen.getByDisplayValue('Cardiologie') as HTMLInputElement
+    expect(champ).toBeDisabled()
+    expect(screen.getByText(/Une modification passe par l’administration/)).toBeInTheDocument()
+  })
+
+  it('la présentation est bornée à 400 caractères et garde l’avertissement de l’Ordre', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    const bio = screen.getByLabelText('Présentation') as HTMLTextAreaElement
+    await userEvent.clear(bio)
+    await userEvent.paste('x'.repeat(500))
+
+    expect(bio.value).toHaveLength(400)
+    expect(screen.getByText(/promesses de résultat/)).toBeInTheDocument()
   })
 })

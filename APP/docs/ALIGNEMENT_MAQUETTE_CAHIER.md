@@ -246,12 +246,28 @@ qu'il doit re-signer. **Coût : zéro serveur.**
 **Au passage, vérifié sur le même écran :** la cloche « Notifications (3 non lues) » est **réelle** —
 `GET /v1/notifications/me/unread-count` et `GET /v1/notifications/me` existent (M14).
 
+### Groupe H — trouvés en ouvrant C2 (3 écarts, ajoutés le 27/08) ✅ **VALIDÉ 27/08**
+
+> **La règle n°1 confirme ce qu'elle avait annoncé sur B1.** Deuxième écran ouvert, trois écarts de
+> plus — dont deux qu'une lecture textuelle ne pouvait pas trouver, parce qu'ils ne se voient qu'en
+> **confrontant la maquette au schéma de la base**.
+
+| # | Écran | Maquette | Réalité vérifiée | Décision |
+|---|---|---|---|---|
+| 41 | C2 | Bloc « **Visibilité · 30 derniers jours** » : **318 vues de fiche**, 41 demandes reçues, **12,9 % de taux de conversion** | `ProfessionalStats` porte `initiationsTotal`, `confirmedTotal`, `confirmDelaySumS`, `ratingSum`, `ratingCount`, `incidentsTotal`. **Aucune vue n'est comptée nulle part.** Les deux autres existent | ✅ **Le bloc devient « Ce que les patients voient »** (famille 4, pt 7), alimenté par la **vraie route publique** `GET /v1/directory/:id` appelée sur son propre identifiant : note, nombre d'avis, taux de confirmation, délai moyen, derniers commentaires. **Les vues disparaissent** |
+| 42 | C2 | Trois **modes de consultation** fixes : « Téléconsultation », « Consultation en cabinet · sur rendez-vous », « **Créneau prioritaire · réponse garantie sous 2 heures** » | `CareOffer` = libellé **libre**, durée, prix, `kind` ∈ {STANDARD, FOLLOW_UP}. **Aucun mode n'existe.** Et la « réponse garantie sous 2 heures » n'engage personne — aucun PM, aucune règle | ✅ **Refondu en « Mes offres »** : libellé libre, durée, prix, et le type **consultation ou suivi** — le type « suivi » étant celui qui déclenche la relance automatique (famille 4, pt 8). La promesse de 2 h disparaît |
+| 43 | C2 | « **Spécialité — une modification passe par l'administration** » | **Faux** : `updateMyProfile` (M05) accepte `specialty`, `biography` et `district` du professionnel lui-même | ✅ **VALIDÉ porteur : lecture seule à l'écran.** Le Badge Vérifié atteste d'une qualification contrôlée par pièces ; un cardiologue qui se renommerait « neurochirurgien » garderait son badge, et le badge mentirait. **⚠️ La route serveur reste ouverte** — un écran ne ferme pas une porte. Dette inscrite au §9 du plan |
+
+**Non retenu comme écart, après vérification** : la limite de **400 caractères** sur la présentation.
+Le serveur en accepte 2000 ; étant **plus stricte**, la borne de la maquette ne provoque jamais de
+refus. C'est une forme, pas un fait — elle est conservée.
+
 ---
 
 **Famille 3 close le 25/08/2026 : 17 écarts sur 17, en 6 groupes.**
 Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondissement, groupe E).
 
-**Rouverte le 27/08 pour un 18ᵉ écart** (groupe G), trouvé en affichant la maquette B1. **Total général : 40 écarts.**
+**Rouverte le 27/08** : un 18ᵉ écart en affichant B1 (groupe G), puis **trois de plus en ouvrant C2** (groupe H). **Total général : 43 écarts.** Chaque écran restant est à rouvrir avant son chantier — le compte n'est pas clos.
 
 ---
 
@@ -271,6 +287,7 @@ Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondisse
 | 25/08/2026 | Point 4 — C7 Ordonnance | Validé porteur : écran neuf + référentiel élargi à ~60 (option B) |
 | 25/08/2026 | Point 3 — garde-fou allergies | Validé porteur : bloquant, motif obligatoire, limites annoncées |
 | 25/08/2026 | Famille 3 — méthode | Validé porteur : traitée par groupes de même racine, six décisions au lieu de dix-sept |
+| **27/08/2026** | **Famille 3, groupe H — C2 (3 écarts)** | Validé porteur : vues de fiche retirées, offres refondues sur le modèle serveur, spécialité en lecture seule |
 | **27/08/2026** | **Famille 3, groupe G — rideau de confidentialité (B1)** | Validé porteur : **retenu**. Absent du cahier, mais c'est une forme, pas un fait. Trouvé en **ouvrant** la maquette — invisible au `grep` |
 | 25/08/2026 | Famille 3, groupe F — épinglage | Validé porteur : retiré ; le fil reste relisible 24 h, le compte-rendu se rédige à côté |
 | 25/08/2026 | Famille 3, groupe E — chiffres non mesurés | Validé porteur : effectifs réels par arrondissement (~20 l.), population retirée, deux lignes vraies dans E5 |

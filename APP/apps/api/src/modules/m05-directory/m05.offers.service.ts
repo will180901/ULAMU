@@ -47,6 +47,30 @@ export interface OfferView extends ActiveOfferView {
   updatedAt: string;
 }
 
+/**
+ * Les bornes qu'un professionnel doit connaître AVANT de composer une offre.
+ *
+ * ⚠️ **Pourquoi elles sortent d'ici.** PM-06, PM-09 et PM-25 étaient vérifiées côté service et
+ * n'étaient **jamais renvoyées** : l'écran ne pouvait qu'écrire « entre 10 et 60 minutes » et
+ * « au moins 500 XAF » en dur, puis mentir le jour où le super-admin les change dans E3. C'est la
+ * même dette que le « 12 % » des maquettes, et que PM-27 corrigé le 27/08 côté présence.
+ *
+ * Le médecin les découvrait autrement par un refus APRÈS COUP — on lui faisait composer une offre,
+ * puis on la rejetait. Les annoncer avant est la même règle que les frais de retrait annoncés avant
+ * confirmation (EF-13-07).
+ */
+export interface OfferLimits {
+  /** PM-09 — durée autorisée, bornes incluses (minutes). */
+  durationMinMinutes: number;
+  durationMaxMinutes: number;
+  /** PM-06 — prix plancher en XAF, commission INCLUSE (D-010, RM-05-03 : prix final patient). */
+  priceFloorXaf: number;
+  /** PM-25 — offres ACTIVES maximum. */
+  maxActiveOffers: number;
+  /** Combien j'en ai d'actives en ce moment — pour dire « 3 sur 5 » sans second appel. */
+  activeOffers: number;
+}
+
 @Injectable()
 export class OffersService {
   constructor(
@@ -258,6 +282,24 @@ export class OffersService {
       orderBy: [{ active: "desc" }, { createdAt: "desc" }],
     });
     return offers.map((o) => this.toView(o));
+  }
+
+  /** Les bornes de composition d'une offre (PM-09/PM-06/PM-25) + mon compte d'offres actives. */
+  async limitsForMine(actor: AuthenticatedActor): Promise<OfferLimits> {
+    this.assertProfessional(actor);
+    const [bounds, floor, maxActive, activeOffers] = await Promise.all([
+      this.params.getIntList("PM-09"),
+      this.params.getInt("PM-06"),
+      this.params.getInt("PM-25"),
+      this.prisma.careOffer.count({ where: { professionalId: actor.accountId, active: true } }),
+    ]);
+    return {
+      durationMinMinutes: bounds[0],
+      durationMaxMinutes: bounds[1],
+      priceFloorXaf: floor,
+      maxActiveOffers: maxActive,
+      activeOffers,
+    };
   }
 
   // ── Aides internes ───────────────────────────────────────────────────────────

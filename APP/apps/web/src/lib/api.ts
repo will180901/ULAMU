@@ -272,6 +272,22 @@ export interface SessionInfo {
 export type OfferKind = 'STANDARD' | 'FOLLOW_UP'
 export type PresenceState = 'ONLINE' | 'DO_NOT_DISTURB' | 'OFFLINE'
 
+/**
+ * Bornes de composition d'une offre, servies par `GET /v1/offers/limits` (ajout du 27/08).
+ *
+ * PM-09, PM-06 et PM-25 étaient vérifiées côté serveur et **jamais renvoyées** : l'écran ne
+ * pouvait qu'écrire « entre 10 et 60 minutes » en dur, et le médecin découvrait les bornes par un
+ * refus APRÈS avoir composé son offre.
+ */
+export interface OfferLimits {
+  durationMinMinutes: number
+  durationMaxMinutes: number
+  /** Prix plancher en XAF, commission INCLUSE (D-010). */
+  priceFloorXaf: number
+  maxActiveOffers: number
+  activeOffers: number
+}
+
 export interface Offer {
   id: string
   professionalId: string
@@ -306,6 +322,23 @@ export interface DirectoryItem {
   availableNow: boolean
   cheapestOffer: { id: string; label: string; durationMin: number; priceXaf: number; kind: OfferKind } | null
   relevanceScore: number
+}
+
+/**
+ * La fiche publique complète — littéralement ce qu'un patient voit (`GET /v1/directory/:id`).
+ *
+ * C2 l'appelle avec SON PROPRE identifiant : « ce que les patients voient » n'est pas une
+ * reconstitution, c'est la vraie réponse de la vraie route publique. Et comme cette route filtre
+ * sur RM-05-01 (vérifié **et** contrat signé), une absence de réponse est elle-même l'information :
+ * le médecin n'est pas dans l'annuaire.
+ */
+export interface DirectoryProfile extends DirectoryItem {
+  biography: string | null
+  offers: Array<{ id: string; label: string; durationMin: number; priceXaf: number; kind: OfferKind }>
+  /** EF-05-07 — répartition des notes, clé = note. */
+  ratingDistribution: Record<string, number>
+  /** Anonymes, les plus récents d'abord. */
+  latestComments: Array<{ score: number; comment: string; createdAt: string }>
 }
 
 export interface Presence {
@@ -983,6 +1016,8 @@ export const api = {
   updateMyProfessionalProfile: (dto: { specialty?: string; biography?: string; district?: string }) =>
     request<MeResponse>('PATCH', '/v1/me/professional-profile', dto, true),
   myOffers: () => request<Offer[]>('GET', '/v1/offers', undefined, true),
+  /** Bornes PM-09/PM-06/PM-25 — annoncées AVANT la saisie, jamais écrites dans la page. */
+  offerLimits: () => request<OfferLimits>('GET', '/v1/offers/limits', undefined, true),
   createOffer: (dto: { label: string; durationMin: number; priceXaf: number; kind?: OfferKind }) =>
     request<Offer>('POST', '/v1/offers', dto, true),
   updateOffer: (id: string, dto: { label?: string; durationMin?: number; priceXaf?: number; kind?: OfferKind; active?: boolean }) =>
@@ -1002,6 +1037,15 @@ export const api = {
       `/v1/directory${p.toString() ? `?${p}` : ''}`,
     )
   },
+  /**
+   * La fiche publique d'un professionnel — appelée SANS jeton, comme un visiteur.
+   *
+   * C2 l'utilise sur son propre identifiant : « ce que les patients voient » doit être la vraie
+   * réponse publique, pas une reconstitution. Une 404 signifie donc quelque chose : la route filtre
+   * sur RM-05-01, et un professionnel non vérifié ou sans contrat signé n'y figure pas.
+   */
+  directoryProfile: (professionalId: string) =>
+    request<DirectoryProfile>('GET', `/v1/directory/${professionalId}`),
   myPresence: () => request<OwnPresence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),

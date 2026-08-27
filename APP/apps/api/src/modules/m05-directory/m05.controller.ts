@@ -40,6 +40,17 @@ export class M05Controller {
     return this.offers.listMine(actor);
   }
 
+  /**
+   * Bornes de composition d'une offre (PM-09/PM-06/PM-25) — annoncées AVANT la saisie.
+   *
+   * Déclarée ici, et non fondue dans `GET /v1/offers` : envelopper la liste aurait changé la forme
+   * d'un contrat existant pour une donnée qui ne bouge presque jamais.
+   */
+  @Get("offers/limits")
+  myOfferLimits(@Actor() actor: AuthenticatedActor) {
+    return this.offers.limitsForMine(actor);
+  }
+
   /** Création — PM-09/PM-06/PM-25 + vérification M03 (RM-05-01, D-029). */
   @Post("offers")
   createOffer(@Actor() actor: AuthenticatedActor, @Body() dto: CreateOfferDto) {
