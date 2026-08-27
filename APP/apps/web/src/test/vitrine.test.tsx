@@ -112,6 +112,8 @@ async function monter(opts: { dossier?: Partial<VerificationCase>; offres?: Offe
     since: '2026-08-24T08:00:00.000Z',
     lastHeartbeatAt: '2026-08-24T08:00:00.000Z',
     availableForInitiation: true,
+    // PM-27 — servi depuis le 27/08 par `GET /v1/presence/me` : l'écran n'écrit plus « 3 » en dur.
+    maxConcurrentSessions: 3,
   })
   vi.spyOn(api, 'searchDirectory').mockResolvedValue({
     items: opts.confreres ?? [],

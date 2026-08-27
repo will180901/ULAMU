@@ -35,6 +35,28 @@ function initiales(prenom?: string | null, nom?: string | null, pseudo?: string 
 
 const LIBELLE_THEME = { light: 'Clair', dark: 'Sombre', system: 'Système' } as const
 
+/**
+ * La ligne sous le nom, dans l'entête du menu.
+ *
+ * ⚠️ **La maquette y écrit « Clinique de Bacongo · Brazzaville ».** Aucune clinique n'existe :
+ * `FacilityType` ne connaît que `PHARMACY` et `LABORATORY`, et un médecin n'est rattachable à rien
+ * (alignement, famille 3, groupe A). On garde le RÔLE de la ligne — dire qui l'on est et où — avec
+ * les deux seuls champs qui existent vraiment sur la fiche : `specialty` et `district`.
+ *
+ * EF-05-01 ne connaît d'ailleurs QUE l'arrondissement : ni adresse, ni cabinet, ni horaires.
+ *
+ * Repli sur `@nom-utilisateur` quand ni l'un ni l'autre n'est renseigné — un profil neuf, ou un
+ * compte qui n'est pas un professionnel.
+ */
+function sousTitre(me: { accountType: string; specialty: string | null; district: string | null; username: string | null } | null): string {
+  if (!me) return ''
+  if (me.accountType === 'PROFESSIONAL') {
+    const parts = [me.specialty, me.district].filter((v): v is string => Boolean(v && v.trim()))
+    if (parts.length > 0) return parts.join(' · ')
+  }
+  return me.username ? `@${me.username}` : ''
+}
+
 export function UserMenu({ ouverte }: { ouverte: boolean }) {
   const navigate = useNavigate()
   const me = useSessionStore((s) => s.me)
@@ -84,7 +106,7 @@ export function UserMenu({ ouverte }: { ouverte: boolean }) {
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-semibold text-foreground">{nom}</span>
               <span className="mt-px block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[var(--texte-tertiaire)]">
-                {me?.username ? `@${me.username}` : ''}
+                {sousTitre(me)}
               </span>
             </span>
           </div>

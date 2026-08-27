@@ -231,10 +231,27 @@ qu'il doit re-signer. **Coût : zéro serveur.**
 |---|---|---|---|
 | C5 | « **Retenu pour le compte-rendu** » — épinglage de messages, avec compteur | `SessionMessage` (`schema.prisma:663`) porte réponses citées, réactions, édition et suppression ≤ 15 min, masquage individuel — **aucun épinglage**. Mais `listMessages` (`m06.session.service.ts:516`) n'exige que d'être **participant**, **sans contrainte de temps** : le fil reste entièrement relisible pendant les 24 h de rédaction — **contrairement au Carnet, qui se referme à la clôture** | **Validé :** épinglage retiré, le compte-rendu se rédige **à côté du fil**. Le médecin perd du défilement, pas de l'information. **Coût : zéro**. Écarté : le construire toucherait la table du **contenu médical**, la plus sensible du modèle (RM-06-06) — trop de risque pour un confort de défilement |
 
+### Groupe G — trouvé en OUVRANT la maquette (1 écart, ajouté le 27/08) ✅ **VALIDÉ 27/08**
+
+> **Comment il a été trouvé, et pourquoi ça compte.** Les 17 premiers écarts viennent d'une analyse
+> **textuelle** des maquettes. Le 27/08, en appliquant la règle n°1 du nouveau plan — *afficher la
+> maquette avant de coder* — un 18ᵉ est apparu en dix minutes sur le **premier** écran ouvert.
+> Il ne pouvait pas ressortir d'un `grep` : c'est un **titre d'infobulle**, pas une phrase visible.
+> **Les écrans restants sont donc à rouvrir un par un, avant leur chantier.**
+
+| Écran | Maquette | Réalité vérifiée | Décision |
+|---|---|---|---|
+| B1 | Bouton de 68 px dans la barre du haut, `title="Rideau de confidentialité"` | **Zéro occurrence dans les 40 fichiers du cahier.** Ni « rideau », ni masquage d'écran, ni mise en veille de discrétion. Présent en Bureau et Tablette, **absent en Mobile** | ✅ **VALIDÉ 27/08 — on le garde.** Masque d'un geste les données patient quand le médecin s'écarte de son écran. **Pur navigateur, zéro serveur, rien de stocké.** Application de la règle d'arbitrage : ce n'est pas un **fait** (aucun PM, aucune règle serveur) mais une **forme** — la maquette décide. Écarté : le déclencher aussi après inactivité, qui obligerait à **inventer un délai** que le cahier ne donne pas |
+
+**Au passage, vérifié sur le même écran :** la cloche « Notifications (3 non lues) » est **réelle** —
+`GET /v1/notifications/me/unread-count` et `GET /v1/notifications/me` existent (M14).
+
 ---
 
 **Famille 3 close le 25/08/2026 : 17 écarts sur 17, en 6 groupes.**
 Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondissement, groupe E).
+
+**Rouverte le 27/08 pour un 18ᵉ écart** (groupe G), trouvé en affichant la maquette B1. **Total général : 40 écarts.**
 
 ---
 
@@ -254,6 +271,7 @@ Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondisse
 | 25/08/2026 | Point 4 — C7 Ordonnance | Validé porteur : écran neuf + référentiel élargi à ~60 (option B) |
 | 25/08/2026 | Point 3 — garde-fou allergies | Validé porteur : bloquant, motif obligatoire, limites annoncées |
 | 25/08/2026 | Famille 3 — méthode | Validé porteur : traitée par groupes de même racine, six décisions au lieu de dix-sept |
+| **27/08/2026** | **Famille 3, groupe G — rideau de confidentialité (B1)** | Validé porteur : **retenu**. Absent du cahier, mais c'est une forme, pas un fait. Trouvé en **ouvrant** la maquette — invisible au `grep` |
 | 25/08/2026 | Famille 3, groupe F — épinglage | Validé porteur : retiré ; le fil reste relisible 24 h, le compte-rendu se rédige à côté |
 | 25/08/2026 | Famille 3, groupe E — chiffres non mesurés | Validé porteur : effectifs réels par arrondissement (~20 l.), population retirée, deux lignes vraies dans E5 |
 | 25/08/2026 | Famille 3, groupe D — pouvoirs d'admin | Validé porteur : rôle d'abord et création en second ; pas de durée de suspension ; export CSV du seul journal d'audit |

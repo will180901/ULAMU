@@ -1,21 +1,40 @@
 /**
- * Barre du haut — 48 px, verre dépoli, d'après la maquette B1.
+ * Barre du haut — 48 px, verre dépoli, d'après la maquette B1 (mesurée le 27/08 en l'affichant).
  *
- * Elle porte le fil d'Ariane et, sur mobile, le bouton qui ouvre la navigation.
+ * De gauche à droite : le fil d'Ariane (ou le bouton de navigation sur mobile), puis à droite la
+ * **pastille de présence** et le **rideau de confidentialité**.
  *
- * ⚠️ **Réduite au périmètre décidé le 20/08/2026** : la maquette y place aussi une recherche
- * globale, un « rideau de confidentialité » et un tiroir de notifications. Les trois sont écartés de
- * cette étape, et pour des raisons différentes — voir §9 du plan :
- *   • la recherche ouvre la palette de commandes, qui viendra à son tour ;
- *   • les notifications existent côté serveur (module M14) mais ne sont pas encore exposées au web ;
- *   • le « rideau de confidentialité » n'a AUCUNE trace côté serveur ni au cahier des charges.
- *     Lui inventer un comportement serait promettre une protection qui n'existe pas.
+ * ⚠️ **Deux éléments de la maquette restent absents, volontairement** :
+ *   • la **recherche globale** — l'alignement la conserve mais en change la PORTÉE : elle cherchera
+ *     dans les consultations et ordonnances du médecin lui-même, jamais dans les patients
+ *     (EF-06-01 impose une fiche anonymisée). Elle ira donc avec C4, quand il y aura des dossiers
+ *     à chercher — la construire ici reviendrait à chercher dans le vide ;
+ *   • le **tiroir de notifications** — réel côté serveur (M14 : `GET /v1/notifications/me` et
+ *     `/me/unread-count`), mais c'est une fonctionnalité à part entière, pas un morceau de coquille.
+ *
+ * Le « rideau de confidentialité », lui, était écarté depuis le 20/08 faute de trace au cahier.
+ * **Le porteur l'a retenu le 27/08** (40ᵉ écart) : c'est une forme, pas un fait. Voir
+ * `RideauConfidentialite.tsx` pour le raisonnement complet.
  */
 import { Menu } from 'lucide-react'
 import { useSessionStore } from '@/state/session.store'
 import { ESPACE_PAR_ROLE } from '@/config/navigation.config'
+import { IndicateurPresence } from '@/components/layout/IndicateurPresence'
+import { BoutonRideau } from '@/components/layout/RideauConfidentialite'
 
-export function TopHeader({ titre, estMobile, surOuvrirNav }: { titre: string; estMobile: boolean; surOuvrirNav: () => void }) {
+export function TopHeader({
+  titre,
+  estMobile,
+  surOuvrirNav,
+  rideau,
+  surBasculerRideau,
+}: {
+  titre: string
+  estMobile: boolean
+  surOuvrirNav: () => void
+  rideau: boolean
+  surBasculerRideau: () => void
+}) {
   const me = useSessionStore((s) => s.me)
   const espace = (me && ESPACE_PAR_ROLE[me.accountType]) ?? 'ULAMU'
 
@@ -42,6 +61,14 @@ export function TopHeader({ titre, estMobile, surOuvrirNav }: { titre: string; e
           <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium text-foreground">{titre}</span>
         </nav>
       )}
+
+      {/* La présence ne concerne que les professionnels : le composant se retire tout seul pour les
+          autres rôles (un administrateur n'a aucune disponibilité à déclarer). */}
+      <IndicateurPresence />
+
+      {/* Absent sur mobile, comme dans la maquette : un téléphone se retourne, et la place dans une
+          barre de 48 px y est comptée. */}
+      {estMobile ? null : <BoutonRideau actif={rideau} surBasculer={surBasculerRideau} />}
     </header>
   )
 }

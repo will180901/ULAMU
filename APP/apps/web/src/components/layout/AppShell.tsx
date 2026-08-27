@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
+import { VoileRideau } from '@/components/layout/RideauConfidentialite'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useIdleLogout } from '@/state/useIdleLogout'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -36,6 +37,8 @@ function useTitrePage(): string {
 export function AppShell() {
   const [survol, setSurvol] = useState(false)
   const [navMobile, setNavMobile] = useState(false)
+  // Rideau de confidentialité : état d'écran, jamais persisté (voir `RideauConfidentialite.tsx`).
+  const [rideau, setRideau] = useState(false)
   const estMobile = useIsMobile()
   const titre = useTitrePage()
   const { pathname } = useLocation()
@@ -46,6 +49,12 @@ export function AppShell() {
   // la page qu'on vient justement de demander.
   useEffect(() => {
     setNavMobile(false)
+  }, [pathname])
+
+  // Changer de page lève le rideau : on vient de demander cet écran, le garder voilé ressemblerait
+  // à une panne. Et le geste qui a mené ici prouve qu'on est bien devant la machine.
+  useEffect(() => {
+    setRideau(false)
   }, [pathname])
 
   const ouverte = estMobile ? true : survol
@@ -81,13 +90,25 @@ export function AppShell() {
         style={{ left: estMobile ? 0 : 'var(--sidebar-rail)' }}
         className="absolute inset-y-0 right-0 flex flex-col overflow-hidden"
       >
-        <TopHeader titre={titre} estMobile={estMobile} surOuvrirNav={() => setNavMobile(true)} />
+        <TopHeader
+          titre={titre}
+          estMobile={estMobile}
+          surOuvrirNav={() => setNavMobile(true)}
+          rideau={rideau}
+          surBasculerRideau={() => setRideau((v) => !v)}
+        />
         {/* `--contenu-max` centre la colonne de lecture sur les très larges écrans : une ligne de
             texte qui traverse 2000 px ne se lit pas. */}
-        <div className="flex-1 overflow-y-auto">
-          <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4">
-            <Outlet />
+        <div className="relative flex-1 overflow-hidden">
+          {/* `inert` sous le voile : sans lui, les champs masqués resteraient TABULABLES — on
+              taperait dans un formulaire qu'on ne voit pas. Le voile ne couvre PAS la barre du
+              haut, sinon le bouton qui l'a posé deviendrait inatteignable. */}
+          <div inert={rideau} className="h-full overflow-y-auto">
+            <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4">
+              <Outlet />
+            </div>
           </div>
+          {rideau ? <VoileRideau surLever={() => setRideau(false)} /> : null}
         </div>
       </main>
     </div>

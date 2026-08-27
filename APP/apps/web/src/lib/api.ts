@@ -316,6 +316,19 @@ export interface Presence {
   availableForInitiation: boolean
 }
 
+/**
+ * Ma propre présence — la précédente, plus le plafond qui me rend injoignable.
+ *
+ * `maxConcurrentSessions` (PM-27) n'était servi qu'au PATIENT, dans le texte d'un message d'erreur.
+ * L'écran du médecin ne pouvait donc qu'écrire « 3 » en dur — et mentir le jour où le super-admin
+ * le change dans E3. Ajouté côté serveur le 27/08 pour cette raison : **aucun chiffre métier n'est
+ * écrit dans une page**, on le lit ou on ne l'affiche pas.
+ */
+export interface OwnPresence extends Presence {
+  /** PM-27 — sessions simultanées maximum (EF-06-14). */
+  maxConcurrentSessions: number
+}
+
 // ── M12 — Dévoilements reçus par l'officine (CU-12-03) ─────────────────────
 
 export type DisclosureStatus = 'PENDING' | 'ACTIVE' | 'SERVED' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED'
@@ -989,7 +1002,7 @@ export const api = {
       `/v1/directory${p.toString() ? `?${p}` : ''}`,
     )
   },
-  myPresence: () => request<Presence>('GET', '/v1/presence/me', undefined, true),
+  myPresence: () => request<OwnPresence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
 

@@ -381,4 +381,25 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | # | Chantier | Poussé le | Confirmé par le porteur |
 |---|---|---|---|
-| — | *(aucun chantier commencé — le plan vient d'être écrit)* | | |
+| **A1** | **B1 — la coquille + la présence + le plafond + le rideau** — codé le 27/08. Serveur : **S7**, PM-27 servi au professionnel dans `GET /v1/presence/me` (~15 l. + 4 tests) — ajout **non prévu**, voir ci-dessous. Web : `usePresence` (battement 5 min), `useSessionsEnCours`, `IndicateurPresence`, `RideauConfidentialite`, ligne d'identité corrigée. **API 476 ✓ · web 174 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier A1 a appris
+
+**Un 7ᵉ ajout serveur est apparu — S7, non prévu au §5.** « 1 consultation sur 3 » supposait
+d'écrire le **3** dans la page : PM-27 n'était servi qu'au **patient**, dans le texte d'un message
+d'erreur. C'est la même dette que les « 12 % » et les « 48 h ». Corrigé côté serveur, ~15 lignes
+en lecture seule. **À prévoir : d'autres chiffres manqueront de la même façon**, chantier par
+chantier — l'alignement ne pouvait pas le voir, il regardait les maquettes, pas les réponses HTTP.
+
+**Un 40ᵉ écart est apparu au premier écran ouvert** — le « rideau de confidentialité » (famille 3,
+groupe G). La règle n°1 a payé dès son premier usage.
+
+**Écartés de A1, volontairement** : la **recherche globale** (elle ira avec C4 : chercher dans des
+dossiers qui n'existent pas encore n'a pas de sens) et le **tiroir de notifications** (M14 est une
+fonctionnalité à part entière, pas un morceau de coquille).
+
+**⚠️ Dette repérée : la suite web est instable sur cette machine.** Deux exécutions sur cinq se
+sont arrêtées sur un « Timeout waiting for worker to respond » — y compris **avant** tout
+changement de ce chantier. Les reprises passent intégralement. La suite dure ~105 s ; le délai
+d'attente des workers est probablement trop court pour cette machine. À corriger avant de s'y
+fier en intégration continue.

@@ -29,6 +29,26 @@ export interface PresenceView {
   availableForInitiation: boolean; // EF-05-06, calculé à l'instant de la réponse
 }
 
+/**
+ * Vue du professionnel sur SA propre présence — la précédente, plus le plafond qui le rend
+ * injoignable quand il est atteint.
+ *
+ * ⚠️ **Pourquoi PM-27 sort d'ici.** EF-06-14 plafonne les sessions simultanées, et M06 refuse
+ * l'initiation au-delà — mais ce chiffre n'était renvoyé qu'au **patient**, dans le message
+ * d'erreur. Côté médecin, l'écran ne pouvait que l'écrire en dur, et mentir le jour où le
+ * super-admin le change dans E3. C'est exactement la dette qui a produit les « 12 % » et les
+ * « 48 h » des maquettes (cf. `docs/ALIGNEMENT_MAQUETTE_CAHIER.md`). On le sert donc, en lecture
+ * seule, à celui qu'il contraint.
+ *
+ * Le **compte** de sessions en cours n'est PAS ici : le compter reviendrait à faire lire M06 par
+ * M05 (frontière de modules). Le client le déduit de `GET /v1/care-sessions/mine`, qu'il charge
+ * de toute façon.
+ */
+export interface OwnPresenceView extends PresenceView {
+  /** PM-27 — sessions simultanées maximum (EF-06-14). Lu au paramétrage, jamais en dur. */
+  maxConcurrentSessions: number;
+}
+
 @Injectable()
 export class PresenceService {
   constructor(
@@ -140,15 +160,21 @@ export class PresenceService {
     });
   }
 
-  /** Vue de l'état courant (présence du professionnel connecté). */
-  async getMine(accountId: string): Promise<PresenceView> {
-    const pm26S = await this.params.getInt("PM-26");
+  /** Vue de l'état courant (présence du professionnel connecté) + son plafond PM-27. */
+  async getMine(accountId: string): Promise<OwnPresenceView> {
+    const [pm26S, pm27] = await Promise.all([this.params.getInt("PM-26"), this.params.getInt("PM-27")]);
     const now = new Date();
     const row = await this.prisma.presenceStatus.findUnique({ where: { accountId } });
     if (!row) {
-      return { state: "OFFLINE", since: now.toISOString(), lastHeartbeatAt: now.toISOString(), availableForInitiation: false };
+      return {
+        state: "OFFLINE",
+        since: now.toISOString(),
+        lastHeartbeatAt: now.toISOString(),
+        availableForInitiation: false,
+        maxConcurrentSessions: pm27,
+      };
     }
-    return this.toView(row, now, pm26S);
+    return { ...this.toView(row, now, pm26S), maxConcurrentSessions: pm27 };
   }
 
   // ── Cloche (EF-05-06 ; CU-05-05) — déclenchement au retour en ligne ─────────
