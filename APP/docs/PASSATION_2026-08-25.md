@@ -101,8 +101,8 @@ réutilisées.
 | | Étape | État au 25/08 |
 |---|---|---|
 | 1 | Lire tout le cahier des charges | ✅ **fait** (40 fichiers) |
-| 2 | **Aligner maquette ↔ cahier, famille par famille, point par point** | 🔵 **EN COURS — 1 famille sur 4** |
-| 3 | Réécrire le plan | ⬜ pas commencé |
+| 2 | **Aligner maquette ↔ cahier, famille par famille, point par point** | ✅ **TERMINÉ le 25/08 — 4 familles, 39 écarts, tous tranchés** |
+| 3 | Réécrire le plan | 🟡 **débloqué — c'est la prochaine étape** |
 | 4 | Implémenter : **une fonctionnalité à la fois, backend d'abord, puis son frontend** | ⬜ pas commencé |
 
 > **⚠️ NE PAS TOUCHER à `PLAN_EXECUTION_WEB.md`.** Il décrit le travail refusé. Il sera réécrit à
@@ -133,7 +133,7 @@ Document vivant : **`APP/docs/ALIGNEMENT_MAQUETTE_CAHIER.md`** (non commité au 
 **Les 11 manques de la famille 4 existent DÉJÀ côté serveur**, codés et testés. Vérifié route par
 route. Aucun backend à écrire pour cette famille — c'est du travail d'interface uniquement.
 
-### Famille 4 — « ce que la maquette oublie » : 10 validés, 1 en attente
+### Famille 4 — « ce que la maquette oublie » : **11 validés sur 11, close le 25/08**
 
 | # | Point | État | Décision retenue |
 |---|---|---|---|
@@ -148,7 +148,7 @@ route. Aucun backend à écrire pour cette famille — c'est du travail d'interf
 | 8 | Proposition de suivi | ✅ validé | **Rien à construire.** Le serveur envoie la proposition **tout seul** au dépôt du compte-rendu, si une offre `FOLLOW_UP` active existe. Deux phrases seulement : dans C2 (dire que l'offre déclenche la relance), dans C4 (dire si elle est partie, et sinon pourquoi) |
 | 9 | Remboursement automatique | ✅ validé | **Rien de fonctionnel**, trois avertissements : C5 tant que le médecin n'a rien écrit (« vous ne percevrez rien »), C4 sur une consultation remboursée, C6 près du solde en attente. Limite assumée : un seul « Bonjour » annule le remboursement → **ne pas écrire cette limite à l'écran** |
 | 10 | Procédures support | ✅ validé | **Dans E7**, pas d'écran neuf (c'est là qu'on cherche le compte). Types `PHONE_CHANGE`, `OWNER_UNREACHABLE`, `RECORD_TRANSFER`, `OTHER`. Phrase imposée : « cette procédure enregistre votre intervention, elle ne change rien par elle-même » (RM-16-01). Le moins spectaculaire des onze, retenu car exigence MVP |
-| 11 | Avenant au contrat | ⏸ **EN ATTENTE** | **Présenté, pas encore validé — REPRENDRE ICI.** Proposition : dans E3, remplacer la case morale par le vrai compte (« ce taux figure dans N contrats signés ») ; dans C1, le parcours de re-signature. Changer PM-01/PM-02 dans E3 **ré-édite automatiquement** les contrats signés (lots de 500) — sans écran de re-signature dans C1, on casse les contrats sans offrir de les réparer |
+| 11 | Avenant au contrat | ✅ validé | **Option complète : les deux écrans.** Dans C1, le parcours de re-signature (ancien → nouveau taux, mot de passe + OTP comme l'exige le serveur). Dans E3, le vrai compte **avant** de confirmer, à la place de la case morale. Raison : changer PM-01 crée une version non signée → `canPractice` à `false` → offres, poignées de main **et paiements** bloqués pour tous les soignants vérifiés à la fois. **Seul point des onze avec du serveur** : ~25 lignes de lecture + 2 tests |
 
 ---
 
@@ -156,7 +156,7 @@ route. Aucun backend à écrire pour cette famille — c'est du travail d'interf
 
 Écarts déjà identifiés et vérifiés, **pas encore arbitrés**. Ne pas refaire l'extraction.
 
-### Famille 1 — l'argent (6 écarts)
+### Famille 1 — l'argent (6 écarts) — ✅ **CLOSE le 25/08, 6/6 tranchés** (détail dans `ALIGNEMENT_MAQUETTE_CAHIER.md`)
 
 | Maquette | Cahier |
 |---|---|
@@ -167,7 +167,7 @@ route. Aucun backend à écrire pour cette famille — c'est du travail d'interf
 | « Remboursement sous **15 jours** » (E5) | Immédiat, < 1 min — PM-12, EF-13-04 |
 | « Compte de versement Mobile Money vérifié » (C6) | N'existe pas. `startWithdrawal` lit le **téléphone du compte** |
 
-### Famille 2 — les délais (5 écarts)
+### Famille 2 — les délais (5 écarts) — ✅ **CLOSE le 25/08, 5/5 tranchés** (détail dans `ALIGNEMENT_MAQUETTE_CAHIER.md`)
 
 | Maquette | Cahier |
 |---|---|
@@ -177,7 +177,7 @@ route. Aucun backend à écrire pour cette famille — c'est du travail d'interf
 | Écart financier instruit sous **7 jours** (E2) | **24 h** — EF-13-09 |
 | Préavis de **30 jours** sur un changement de taux (E3) | « Notifié à l'avance », sans chiffre — EF-03-07 |
 
-### Famille 3 — concepts inexistants (15 écarts)
+### Famille 3 — concepts inexistants (15 écarts, **17 au final**) — ✅ **CLOSE le 25/08, traitée en 6 groupes** (détail dans `ALIGNEMENT_MAQUETTE_CAHIER.md`)
 
 1. **« 6 rendez-vous »** (B1) — ULAMU ne prend aucun rendez-vous (D-006, D-007). Zéro occurrence
    d'« agenda » dans les 16 modules
@@ -268,11 +268,56 @@ Le code ne fait pas ce que M01 décrit. **À trancher un jour :**
 
 ## 11. La toute prochaine action
 
-**Reprendre le point 11 de la famille 4** (avenant au contrat) : il a été présenté au porteur, qui
-n'a pas encore répondu. Le lui re-présenter brièvement, obtenir sa décision, l'inscrire dans
-`ALIGNEMENT_MAQUETTE_CAHIER.md`.
+### L'alignement est TERMINÉ
 
-**Ensuite**, ouvrir la **famille 1 — l'argent**, au même rythme : un point, ses raisons, son coût,
-une recommandation, puis attendre la validation.
+**Les 4 familles sont closes le 25/08 — 39 écarts tranchés, un par un, avec leurs raisons et leur
+coût.** Tout est écrit dans `APP/docs/ALIGNEMENT_MAQUETTE_CAHIER.md`, qui devient le document de
+référence de la reconstruction.
 
-**Ne pas coder. Ne pas toucher au plan.** Pas avant que les 4 familles soient tranchées.
+| Famille | Écarts | État |
+|---|---|---|
+| 4 — ce que la maquette oublie | 11 | ✅ close |
+| 1 — l'argent | 6 | ✅ close |
+| 2 — les délais | 5 | ✅ close |
+| 3 — concepts inexistants | 17 | ✅ close (6 groupes) |
+
+### Le principe qui a émergé, et qui commande tout le reste
+
+> **On n'écrit plus un chiffre dans une page. On le lit du serveur — ou on ne l'affiche pas.**
+> Et son corollaire : **l'écran ne calcule pas la règle, il rapporte ce que le serveur a décidé.**
+
+### Le coût serveur total de l'alignement : ~50 lignes
+
+Tout est en **lecture seule**, sur des données déjà écrites. Aucune migration, aucune écriture neuve.
+
+| # | Ajout | Pourquoi | Taille |
+|---|---|---|---|
+| 1 | Aperçu « N contrats signés » dans E3 | famille 4, pt 11 | ~15 l. |
+| 2 | Dernière version signée dans `GET /v1/verification/me` | famille 4, pt 11 (ancien → nouveau taux dans C1) | ~10 l. |
+| 3 | Brut / commission / net dans le portefeuille (jointure `PaymentSplit`) | famille 1, pt 1 | ~20 l. |
+| 4 | Délai PM-36 dans le récap de retrait | famille 1, pt 2 | ~3 l. |
+| 5 | `reportDueAt` sur les consultations | famille 2, pt 1 | ~5 l. |
+| 6 | Effectifs par arrondissement | famille 3, groupe E | ~20 l. |
+
+*(1 et 2 se cumulent dans le même chantier ; 3 à 6 sont indépendants.)*
+
+### Ce qui reste à faire, dans l'ordre
+
+**Étape 3 — réécrire `PLAN_EXECUTION_WEB.md`.** Elle est **désormais débloquée** : le plan actuel
+décrit le travail refusé, il sera remplacé en s'appuyant sur l'alignement. **À lancer sur accord du
+porteur.**
+
+**Étape 4 — implémenter, une fonctionnalité à la fois, backend d'abord.** Premier chantier déjà
+désigné : **la présence en ligne** (famille 4, pt 5) — sans elle, `isAvailableForInitiation` renvoie
+`false` et aucune démonstration n'est possible.
+
+### Points de vigilance inscrits pendant l'alignement
+
+1. **B3 — l'hébergement.** La maquette affirme « données hébergées au Congo-Brazzaville » : **c'est
+   faux** (Render à Francfort, Neon en `eu-central-1`). Ce texte est accepté à l'inscription, il vaut
+   preuve. Corrigé une fois dans le code refusé — **il reviendra tout seul si B3 est reconstruit
+   depuis la maquette.**
+2. **C1 — la signature.** La maquette signe par case à cocher + nom tapé ; le serveur exige
+   **mot de passe + OTP**. Vaut pour la première signature comme pour la re-signature.
+3. Les **trois dérives documentaires** du §9 (OTP par SMS vs email, connexion par téléphone,
+   TOTP optionnel vs obligatoire) restent **non arbitrées**.
