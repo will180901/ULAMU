@@ -102,11 +102,12 @@ réutilisées.
 |---|---|---|
 | 1 | Lire tout le cahier des charges | ✅ **fait** (40 fichiers) |
 | 2 | **Aligner maquette ↔ cahier, famille par famille, point par point** | ✅ **TERMINÉ le 25/08 — 4 familles, 39 écarts, tous tranchés** |
-| 3 | Réécrire le plan | 🟡 **débloqué — c'est la prochaine étape** |
+| 3 | Réécrire le plan | ✅ **fait le 27/08** — `PLAN_EXECUTION_WEB.md` réécrit intégralement |
 | 4 | Implémenter : **une fonctionnalité à la fois, backend d'abord, puis son frontend** | ⬜ pas commencé |
 
-> **⚠️ NE PAS TOUCHER à `PLAN_EXECUTION_WEB.md`.** Il décrit le travail refusé. Il sera réécrit à
-> l'étape 3, quand les 4 familles seront tranchées. Le réécrire avant, c'est le réécrire deux fois.
+> **✅ `PLAN_EXECUTION_WEB.md` a été réécrit le 27/08**, une fois les 4 familles tranchées. Il est
+> désormais le document opérationnel de la reconstruction. `plan_refonte_web_shadcn.md` et
+> `plan_frontend_web_2026-08-05.md` sont **périmés** : ils décrivent la construction refusée.
 
 ---
 
@@ -248,7 +249,9 @@ Le code ne fait pas ce que M01 décrit. **À trancher un jour :**
 
 - Dernier commit : `8d8c23e` — « C4 — Consultations »
 - **Non commité** : `APP/docs/ALIGNEMENT_MAQUETTE_CAHIER.md`
-- Suites vertes : **web 164 tests** (17 fichiers), **API 465 tests unitaires**, lint 0, build 3,2 s
+- Suites vertes : **web 164 tests** (17 fichiers), **API 472 tests unitaires** (16 suites, rejouées le 27/08), build `tsc` propre
+- ⚠️ **« lint 0 » était faux** : `eslint` n'est installé nulle part — absent des `package.json` de l'API, du web et de la racine, aucun binaire dans les `node_modules`. Le script `npm run lint` de l'API ne peut donc pas s'exécuter. **Aucun lint ne tourne sur ce dépôt.** Vérifié le 27/08
+- `npm run test:unit` (projet Jest `unit`) **n'ouvre aucune base** : ni `globalSetup`, ni Prisma. Il est sûr. Seul le projet `integration` passe par `test/garde-base-de-test.ts`
 - Backend : **13 modules livrés** (M01-M07, M09, M11-M14, M16). M08 / M10 / M15 = V1, non codés
 - Les fichiers (pièces justificatives, avatars, médias) sont **en base PostgreSQL**, chiffrés
   AES-256-GCM — le disque de Render n'est pas persistant
@@ -268,56 +271,56 @@ Le code ne fait pas ce que M01 décrit. **À trancher un jour :**
 
 ## 11. La toute prochaine action
 
-### L'alignement est TERMINÉ
+### Où on en est
 
-**Les 4 familles sont closes le 25/08 — 39 écarts tranchés, un par un, avec leurs raisons et leur
-coût.** Tout est écrit dans `APP/docs/ALIGNEMENT_MAQUETTE_CAHIER.md`, qui devient le document de
-référence de la reconstruction.
+| Étape | État |
+|---|---|
+| 1 — Lire le cahier des charges | ✅ fait |
+| 2 — Aligner maquette ↔ cahier | ✅ **terminé le 25/08** — 4 familles, 39 écarts |
+| 3 — Réécrire le plan | ✅ **fait le 27/08** |
+| 4 — Implémenter | 🟡 **c'est ici qu'on reprend** |
 
-| Famille | Écarts | État |
-|---|---|---|
-| 4 — ce que la maquette oublie | 11 | ✅ close |
-| 1 — l'argent | 6 | ✅ close |
-| 2 — les délais | 5 | ✅ close |
-| 3 — concepts inexistants | 17 | ✅ close (6 groupes) |
+Les deux documents de référence :
+- **`APP/docs/ALIGNEMENT_MAQUETTE_CAHIER.md`** — le **quoi** : chaque écart, sa décision, sa raison,
+  sa route serveur, son coût.
+- **`APP/docs/PLAN_EXECUTION_WEB.md`** — le **comment** : l'ordre des chantiers, le rituel, les
+  pièges, les dettes.
 
-### Le principe qui a émergé, et qui commande tout le reste
+### La correction du 27/08 sur la cause du refus
 
-> **On n'écrit plus un chiffre dans une page. On le lit du serveur — ou on ne l'affiche pas.**
-> Et son corollaire : **l'écran ne calcule pas la règle, il rapporte ce que le serveur a décidé.**
+Le plan du 20/08 accusait shadcn. **C'est faux** : les écrans **validés** (A1–A4) sont eux aussi
+construits sur shadcn (`ui/button`, `ui/input`, `ui/input-otp`, `ui/spinner`). Ce n'est pas l'outil
+qui a été refusé. **On garde shadcn.**
 
-### Le coût serveur total de l'alignement : ~50 lignes
+La vraie cause est celle que ce document avoue au §4 : les maquettes n'ont **jamais été affichées**.
 
-Tout est en **lecture seule**, sur des données déjà écrites. Aucune migration, aucune écriture neuve.
+### Ce qui débloque tout : les maquettes s'affichent
 
-| # | Ajout | Pourquoi | Taille |
-|---|---|---|---|
-| 1 | Aperçu « N contrats signés » dans E3 | famille 4, pt 11 | ~15 l. |
-| 2 | Dernière version signée dans `GET /v1/verification/me` | famille 4, pt 11 (ancien → nouveau taux dans C1) | ~10 l. |
-| 3 | Brut / commission / net dans le portefeuille (jointure `PaymentSplit`) | famille 1, pt 1 | ~20 l. |
-| 4 | Délai PM-36 dans le récap de retrait | famille 1, pt 2 | ~3 l. |
-| 5 | `reportDueAt` sur les consultations | famille 2, pt 1 | ~5 l. |
-| 6 | Effectifs par arrondissement | famille 3, groupe E | ~20 l. |
+Vérifié le 27/08. Ce ne sont pas des images, **ce sont des prototypes qui tournent** — le compte à
+rebours de C3 décrémente réellement. Et chaque maquette porte trois réglages invisibles à la
+lecture : **VUE** (Bureau/Tablette/Mobile), **THÈME** (Clair/Sombre), **ÉTAT** (Plein / Chargement /
+Vide / Erreur).
 
-*(1 et 2 se cumulent dans le même chantier ; 3 à 6 sont indépendants.)*
+Il faut les servir en HTTP, sinon `support.js` ne se charge pas :
 
-### Ce qui reste à faire, dans l'ordre
+```
+python -m http.server 8123 --directory "…/ULAMU/APP/docs/maquettes"
+```
 
-**Étape 3 — réécrire `PLAN_EXECUTION_WEB.md`.** Elle est **désormais débloquée** : le plan actuel
-décrit le travail refusé, il sera remplacé en s'appuyant sur l'alignement. **À lancer sur accord du
-porteur.**
+**Ouvrir la maquette avant d'écrire une ligne d'écran est la règle n°1 du nouveau plan.**
 
-**Étape 4 — implémenter, une fonctionnalité à la fois, backend d'abord.** Premier chantier déjà
-désigné : **la présence en ligne** (famille 4, pt 5) — sans elle, `isAvailableForInitiation` renvoie
-`false` et aucune démonstration n'est possible.
+### Le premier chantier
 
-### Points de vigilance inscrits pendant l'alignement
+**A1 — B1, la coquille + la présence + le plafond de 3 sessions.** Sans présence,
+`isAvailableForInitiation` renvoie `false` et aucune démonstration n'est possible. Aucun serveur à
+écrire : `POST /v1/presence/state`, `/presence/heartbeat`, `GET /presence/me` existent.
 
-1. **B3 — l'hébergement.** La maquette affirme « données hébergées au Congo-Brazzaville » : **c'est
-   faux** (Render à Francfort, Neon en `eu-central-1`). Ce texte est accepté à l'inscription, il vaut
-   preuve. Corrigé une fois dans le code refusé — **il reviendra tout seul si B3 est reconstruit
-   depuis la maquette.**
-2. **C1 — la signature.** La maquette signe par case à cocher + nom tapé ; le serveur exige
-   **mot de passe + OTP**. Vaut pour la première signature comme pour la re-signature.
-3. Les **trois dérives documentaires** du §9 (OTP par SMS vs email, connexion par téléphone,
-   TOTP optionnel vs obligatoire) restent **non arbitrées**.
+Le détail des 7 paliers et de leurs chantiers est au §6 du plan.
+
+### Points de vigilance reportés dans le plan (§9)
+
+1. **B3 — l'hébergement** : la maquette affirme « données hébergées au Congo-Brazzaville », **c'est
+   faux** (Francfort, `eu-central-1`), et ce texte vaut preuve. Il reviendra tout seul si B3 est
+   reconstruit depuis la maquette.
+2. **C1 — la signature** : mot de passe + OTP, pas la case à cocher de la maquette.
+3. Les **trois dérives documentaires** du §9 restent non arbitrées.

@@ -4,8 +4,25 @@
     {
       "name": "ulamu-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "APP/apps/web"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "APP/apps/web"
+      ],
       "port": 5173
+    },
+    {
+      "name": "maquettes",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8123",
+        "--directory",
+        "APP/docs/maquettes"
+      ],
+      "port": 8123
     }
   ]
 }
