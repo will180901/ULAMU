@@ -29,7 +29,6 @@ import {
   CheckCircle2,
   Clock,
   Handshake as HandshakeIcon,
-  Hourglass,
   Inbox,
   UserRound,
 } from 'lucide-react'
@@ -38,11 +37,28 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
-import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type Handshake, type HandshakeStatus } from '@/lib/api'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+
+/**
+ * L'heure de réception, comme la maquette l'affiche sur chaque ligne (« 09:12 », « Hier »).
+ *
+ * Elle vient d'`initiatedAt`, qui existe. Je l'avais omise en reconstruisant la file — rattrapée par
+ * le comparatif bloc à bloc du 27/08. Ce qui EXISTE et que la maquette montre n'a aucune raison de
+ * disparaître : ce n'est pas un écart, c'est un oubli.
+ */
+function heureRecue(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const auj = new Date()
+  const memeJour = d.toDateString() === auj.toDateString()
+  return memeJour
+    ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+}
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
 const ETATS: Record<HandshakeStatus, { libelle: string; ton: TonPilule }> = {
@@ -61,12 +77,99 @@ const MOTIFS_RAPIDES = [
   'Situation à traiter en présentiel',
 ]
 
+// ── L'urgence, et l'anneau qui la montre ────────────────────────────────────────
+
+/**
+ * Les deux bascules de couleur, arrêtées par le porteur le 25/08.
+ *
+ * La maquette virait à l'ambre « sous 2 h » et au rouge « sous 30 min » — sur une fenêtre de
+ * **douze heures** qui n'existe pas. La vraie vaut cinq minutes (PM-07), et ces deux seuils y
+ * seraient déjà passés avant l'affichage. Redéfinis à l'échelle réelle : ambre à deux minutes,
+ * rouge à une. Des paliers lisibles par un humain pressé, pas des proportions recopiées.
+ *
+ * Ce sont des seuils d'AFFICHAGE, pas des règles métier — aucun PM ne les gouverne, rien ne se
+ * déclenche à leur franchissement. C'est pourquoi ils peuvent vivre ici.
+ */
+type Onglet = 'attente' | 'confirmees' | 'closes'
+
+const AMBRE_S = 120
+const ROUGE_S = 60
+
+type Urgence = 'calme' | 'ambre' | 'rouge' | 'ecoule'
+
+function urgenceDe(reste: number, actif: boolean): Urgence {
+  if (!actif) return 'calme'
+  if (reste <= 0) return 'ecoule'
+  if (reste < ROUGE_S) return 'rouge'
+  if (reste < AMBRE_S) return 'ambre'
+  return 'calme'
+}
+
+const COULEUR: Record<Urgence, string> = {
+  calme: 'var(--ap-500)',
+  ambre: 'var(--ton-ambre-icone)',
+  rouge: 'var(--erreur-texte)',
+  ecoule: 'var(--texte-tertiaire)',
+}
+
+const CLASSE_TEXTE: Record<Urgence, string> = {
+  calme: 'text-foreground',
+  ambre: 'text-[var(--ton-ambre-icone)]',
+  rouge: 'text-[var(--erreur-texte)]',
+  ecoule: 'text-[var(--texte-tertiaire)]',
+}
+
+/**
+ * L'anneau qui décrémente — la forme de la maquette, conservée telle quelle.
+ *
+ * ⚠️ **La fenêtre totale n'est PAS écrite ici.** Elle se déduit de ce que le serveur envoie :
+ * `windowExpiresAt` moins le début de la fenêtre courante (`initiatedAt` tant qu'on décide,
+ * `confirmedAt` une fois confirmé). Si le super-admin change PM-07 dans E3, l'anneau suit sans
+ * qu'une ligne de ce fichier bouge.
+ */
+function AnneauDecompte({ reste, total, urgence }: { reste: number; total: number; urgence: Urgence }) {
+  const rayon = 26
+  const perimetre = 2 * Math.PI * rayon
+  const part = total > 0 ? Math.max(0, Math.min(1, reste / total)) : 0
+
+  return (
+    <span aria-hidden="true" className="relative flex size-[62px] shrink-0 items-center justify-center">
+      <svg viewBox="0 0 62 62" className="size-full -rotate-90">
+        <circle cx="31" cy="31" r={rayon} fill="none" stroke="var(--bordure-legere)" strokeWidth="4" />
+        <circle
+          cx="31"
+          cy="31"
+          r={rayon}
+          fill="none"
+          stroke={COULEUR[urgence]}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={perimetre}
+          strokeDashoffset={perimetre * (1 - part)}
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 300ms' }}
+        />
+      </svg>
+      <span className={'absolute font-mono text-[11px] font-semibold tabular-nums ' + CLASSE_TEXTE[urgence]}>
+        {reste > 0 ? `${Math.ceil(reste / 60)}′` : '—'}
+      </span>
+    </span>
+  )
+}
+
+/** Durée de la fenêtre courante, déduite du serveur — jamais un PM écrit dans la page. */
+function fenetreTotaleS(h: Handshake): number {
+  const fin = h.windowExpiresAt ? Date.parse(h.windowExpiresAt) : NaN
+  const debut = h.status === 'CONFIRMED' && h.confirmedAt ? Date.parse(h.confirmedAt) : Date.parse(h.initiatedAt)
+  if (Number.isNaN(fin) || Number.isNaN(debut) || fin <= debut) return 0
+  return Math.round((fin - debut) / 1000)
+}
+
 // ── La file ────────────────────────────────────────────────────────────────
 
 function LigneFile({ h, actif, recuA, onChoisir }: { h: Handshake; actif: boolean; recuA: number; onChoisir: () => void }) {
   const reste = useDecompteurServeur(h.windowRemainingSeconds, recuA)
   const etat = ETATS[h.status]
-  const urgent = h.status === 'INITIATED' && reste > 0 && reste < 60
+  const urgence = urgenceDe(reste, h.status === 'INITIATED' || h.status === 'CONFIRMED')
 
   return (
     <li>
@@ -91,12 +194,10 @@ function LigneFile({ h, actif, recuA, onChoisir }: { h: Handshake; actif: boolea
             {h.patientFirstName ?? 'Patient'}
             {h.patientAge !== null ? <span className="font-normal text-muted-foreground"> · {h.patientAge} ans</span> : null}
           </span>
+          <span className="shrink-0 font-mono text-[10px] text-[var(--texte-tertiaire)]">{heureRecue(h.initiatedAt)}</span>
           {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
             <span
-              className={
-                'shrink-0 font-mono text-[12px] font-semibold tabular-nums ' +
-                (reste === 0 ? 'text-[var(--texte-tertiaire)]' : urgent ? 'text-[var(--erreur-texte)]' : 'text-foreground')
-              }
+              className={'shrink-0 font-mono text-[12px] font-semibold tabular-nums ' + CLASSE_TEXTE[urgence]}
             >
               {mmss(reste)}
             </span>
@@ -121,6 +222,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
   const [motif, setMotif] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
   const reste = useDecompteurServeur(h.windowRemainingSeconds, recuA)
+  const urgence = urgenceDe(reste, h.status === 'INITIATED' || h.status === 'CONFIRMED')
   const decidable = h.status === 'INITIATED' && reste > 0
 
   const confirmer = useMutation({
@@ -163,6 +265,37 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
         </Avis>
       </Carte>
 
+      <Carte
+        icone={Clock}
+        ton={h.status === 'INITIATED' && reste === 0 ? 'danger' : 'accent'}
+        titre="Temps restant"
+        sousTitre="Compté par le serveur — l'horloge de ce poste n'est qu'indicative (RM-06-02)"
+      >
+        {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
+          <div className="flex items-center gap-4">
+            {/* L'anneau à gauche, les chiffres à droite — la disposition de la maquette, mesurée. */}
+            <AnneauDecompte reste={reste} total={fenetreTotaleS(h)} urgence={urgence} />
+            <div className="min-w-0 flex-1">
+              <p
+                className={
+                  'font-[family-name:var(--font-display)] text-[34px] font-bold leading-none tabular-nums ' +
+                  CLASSE_TEXTE[urgence]
+                }
+              >
+                {mmss(reste)}
+              </p>
+              <p className="mt-1.5 text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                {h.status === 'INITIATED'
+                  ? 'Passé ce délai, la demande expire d’elle-même. Rien n’est débité au patient, et vous êtes libéré — mais votre taux de confirmation, lui, baisse. Une réponse même négative vaut mieux qu’une expiration.'
+                  : 'Le patient dispose de ce temps pour payer. Sans paiement, la demande expire et vous êtes libéré.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-[13px] text-muted-foreground">Cette demande est close.</p>
+        )}
+      </Carte>
+
       <Carte icone={HandshakeIcon} titre="Ce qui est demandé" sousTitre="L'offre choisie par le patient dans votre vitrine">
         <dl className="flex flex-wrap gap-x-8 gap-y-3">
           <div>
@@ -184,32 +317,80 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
         </dl>
       </Carte>
 
-      <Carte
-        icone={Clock}
-        ton={h.status === 'INITIATED' && reste === 0 ? 'danger' : 'accent'}
-        titre="Temps restant"
-        sousTitre="Compté par le serveur — l'horloge de ce poste n'est qu'indicative (RM-06-02)"
-      >
-        {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
-          <>
-            <p
-              className={
-                'font-[family-name:var(--font-display)] text-[34px] font-bold leading-none tabular-nums ' +
-                (reste === 0 ? 'text-[var(--texte-tertiaire)]' : reste < 60 ? 'text-[var(--erreur-texte)]' : 'text-foreground')
-              }
-            >
-              {mmss(reste)}
-            </p>
-            <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
-              {h.status === 'INITIATED'
-                ? 'Passé ce délai, la demande expire d’elle-même. Rien n’est débité au patient, et vous êtes libéré.'
-                : 'Le patient dispose de ce temps pour payer. Sans paiement, la demande expire et vous êtes libéré.'}
-            </p>
-          </>
-        ) : (
-          <p className="text-[13px] text-muted-foreground">Cette demande est close.</p>
-        )}
-      </Carte>
+      {/*
+        « Ce qui se passe ensuite » — arbitrage du porteur, 27/08.
+
+        Une fois retirés le motif inventé, le message du patient, les antécédents et les pièces
+        jointes, il ne restait dans ce panneau de 958 px qu'un prénom, un âge, une offre et deux
+        boutons. La question a été posée plutôt que tranchée seul : le porteur a choisi d'y mettre
+        la SUITE du parcours, qui est réelle et qu'un médecin ignore au moment de décider.
+
+        ⚠️ **Aucun délai n'est écrit dans ce texte.** Après confirmation, le serveur rouvre une
+        fenêtre de même durée pour le paiement (PM-07 des deux côtés) : on dit « le même compte à
+        rebours », et le chiffre reste au serveur. Le démarrage automatique (PM-28) se dit de même
+        sans nombre.
+      */}
+      {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
+        <Carte icone={HandshakeIcon} titre="Ce qui se passe ensuite" sousTitre="Le parcours complet, pour décider en connaissance de cause">
+          <ol className="grid gap-2.5">
+            <li className="flex gap-2.5">
+              <span
+                aria-hidden="true"
+                className={
+                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-bold ' +
+                  (h.status === 'INITIATED' ? 'bg-[var(--ap-500)] text-white' : 'bg-secondary text-muted-foreground')
+                }
+              >
+                1
+              </span>
+              <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                <strong className="font-semibold text-foreground">Vous confirmez.</strong> Rien n’est encore
+                débité : votre accord ouvre simplement le paiement (D-007, aucun paiement sans confirmation).
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span
+                aria-hidden="true"
+                className={
+                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-bold ' +
+                  (h.status === 'CONFIRMED' ? 'bg-[var(--ap-500)] text-white' : 'bg-secondary text-muted-foreground')
+                }
+              >
+                2
+              </span>
+              <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                <strong className="font-semibold text-foreground">Le patient paie</strong>, dans le même compte
+                à rebours que celui-ci. S’il ne paie pas, la demande expire et vous êtes libéré.
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span
+                aria-hidden="true"
+                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[10px] font-bold text-muted-foreground"
+              >
+                3
+              </span>
+              <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                <strong className="font-semibold text-foreground">Il remplit sa pré-consultation</strong> —
+                symptômes, durée des troubles, photos. C’est là seulement que vous les recevez (EF-06-04).
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span
+                aria-hidden="true"
+                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[10px] font-bold text-muted-foreground"
+              >
+                4
+              </span>
+              <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                <strong className="font-semibold text-foreground">La consultation démarre</strong>, et son
+                décompteur avec. S’il tarde à transmettre, elle démarre d’elle-même — le temps payé
+                commence à courir.
+              </span>
+            </li>
+          </ol>
+        </Carte>
+      ) : null}
 
       {h.status === 'REFUSED' && h.refusalReason ? (
         <Carte icone={Ban} titre="Motif que vous avez transmis" sousTitre="Le patient l'a reçu avec des suggestions de confrères">
@@ -294,6 +475,8 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
 export function DemandesPage() {
   const qc = useQueryClient()
   const [choisi, setChoisi] = useState<string | null>(null)
+  // L'onglet ouvert. « En attente » d'abord : c'est la seule file où le temps court.
+  const [onglet, setOnglet] = useState<Onglet>('attente')
   const recuA = useRef(Date.now())
 
   /**
@@ -353,7 +536,10 @@ export function DemandesPage() {
 
   // Le repli parcourt les TROIS files, closes comprises : un professionnel qui n'a que des demandes
   // refusées voyait sinon « sélectionnez une demande » à droite, avec une liste pleine à gauche.
-  const courante = toutes.find((h) => h.id === choisi) ?? aDecider[0] ?? enCours[0] ?? closes[0] ?? null
+  const filtrees = onglet === 'attente' ? aDecider : onglet === 'confirmees' ? enCours : closes
+  // La sélection suit l'onglet : une demande choisie dans une autre file resterait au détail alors
+  // qu'elle a disparu de la liste — on ne comprendrait plus ce qu'on regarde.
+  const courante = filtrees.find((h) => h.id === choisi) ?? filtrees[0] ?? null
 
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col">
@@ -392,36 +578,41 @@ export function DemandesPage() {
         </Carte>
       ) : (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-          <section aria-label="File des demandes" className="flex w-full shrink-0 flex-col gap-4 lg:w-80">
-            {aDecider.length > 0 ? (
-              <Carte icone={Hourglass} titre="À décider" sousTitre="Les plus urgentes en premier">
-                <ul className="flex flex-col gap-2">
-                  {aDecider.map((h) => (
-                    <LigneFile key={h.id} h={h} actif={courante?.id === h.id} recuA={recuA.current} onChoisir={() => setChoisi(h.id)} />
-                  ))}
-                </ul>
-              </Carte>
-            ) : null}
+          {/*
+            Trois ONGLETS, une liste à la fois — la forme de la maquette, restaurée le 27/08.
 
-            {enCours.length > 0 ? (
-              <Carte icone={Clock} titre="En cours" sousTitre="Confirmées, en attente du patient">
-                <ul className="flex flex-col gap-2">
-                  {enCours.map((h) => (
-                    <LigneFile key={h.id} h={h} actif={courante?.id === h.id} recuA={recuA.current} onChoisir={() => setChoisi(h.id)} />
-                  ))}
-                </ul>
-              </Carte>
-            ) : null}
+            L'écran empilait auparavant trois cartes visibles ensemble. C'était lisible, mais ce
+            n'était pas le dessin : la maquette pose « En attente · Confirmées · Closes » avec leurs
+            compteurs, et n'affiche qu'une file. Sur une fenêtre de cinq minutes, ne montrer que ce
+            qui réclame une décision est d'ailleurs plus juste que de tout montrer.
+          */}
+          <section aria-label="File des demandes" className="flex w-full shrink-0 flex-col gap-3 lg:w-[340px]">
+            <Segments
+              label="Filtrer les demandes"
+              valeur={onglet}
+              onChange={setOnglet}
+              options={[
+                { cle: 'attente', label: `En attente · ${aDecider.length}` },
+                { cle: 'confirmees', label: `Confirmées · ${enCours.length}` },
+                { cle: 'closes', label: `Closes · ${closes.length}` },
+              ]}
+            />
 
-            {closes.length > 0 ? (
-              <Carte icone={Ban} titre="Closes" sousTitre="Refusées, expirées ou abandonnées">
-                <ul className="flex flex-col gap-2">
-                  {closes.map((h) => (
-                    <LigneFile key={h.id} h={h} actif={courante?.id === h.id} recuA={recuA.current} onChoisir={() => setChoisi(h.id)} />
-                  ))}
-                </ul>
-              </Carte>
-            ) : null}
+            {filtrees.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {filtrees.map((h) => (
+                  <LigneFile key={h.id} h={h} actif={courante?.id === h.id} recuA={recuA.current} onChoisir={() => setChoisi(h.id)} />
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
+                {onglet === 'attente'
+                  ? 'Aucune demande n’attend votre réponse.'
+                  : onglet === 'confirmees'
+                    ? 'Aucune demande confirmée en attente de paiement.'
+                    : 'Aucune demande close.'}
+              </p>
+            )}
           </section>
 
           <section aria-label="Détail de la demande" className="min-w-0 flex-1">

@@ -262,12 +262,27 @@ qu'il doit re-signer. **Coût : zéro serveur.**
 Le serveur en accepte 2000 ; étant **plus stricte**, la borne de la maquette ne provoque jamais de
 refus. C'est une forme, pas un fait — elle est conservée.
 
+### Groupe I — trouvés en ouvrant C3 (2 écarts, ajoutés le 27/08) ✅ **VALIDÉ 27/08**
+
+> Troisième écran ouvert, deux écarts de plus — et le premier est **le plus grave rencontré
+> jusqu'ici**, tous écrans confondus.
+
+| # | Écran | Maquette | Réalité vérifiée | Décision |
+|---|---|---|---|---|
+| 44 | C3 | « **ANTÉCÉDENTS · Hypertension traitée** », dans « Éléments transmis », **avant paiement** | Ce n'est pas une donnée que le patient a transmise : c'est une donnée du **Carnet**. EF-06-01 est catégorique — « fiche anonymisée (prénom, âge — **pas plus avant paiement**) ». Et le Carnet ne s'ouvre qu'en session, le serveur en **refermant l'accès** à la clôture (famille 4, pt 2) | ✅ **Retiré.** La maquette exposait un antécédent médical à quelqu'un qui n'a **aucun lien de soin** avec ce patient. **Précision à l'écart 8**, qui retirait tout le bloc « Éléments transmis » en bloc : le **tarif** et l'**âge** doivent RESTER (l'offre + EF-06-01) ; l'antécédent est d'une autre nature, et pire |
+| 45 | C3 | Référence lisible « **DEM-2026-04871** » sur chaque ligne et dans le détail | Le serveur n'a qu'un identifiant technique (UUID). Aucune référence lisible n'existe, ni au cahier ni en base | ✅ **Retirée.** En inventer une donnerait un numéro que le support ne pourrait pas retrouver |
+
+**Non retenu comme écart, après vérification** : l'**heure de réception** (« 09:12 », « Hier ») que la
+maquette pose sur chaque ligne. Elle vient d'`initiatedAt`, qui existe — elle est **conservée**.
+Elle avait été omise à la reconstruction, et rattrapée par le comparatif bloc à bloc : *ce qui
+existe et que la maquette montre n'a aucune raison de disparaître.*
+
 ---
 
 **Famille 3 close le 25/08/2026 : 17 écarts sur 17, en 6 groupes.**
 Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondissement, groupe E).
 
-**Rouverte le 27/08** : un 18ᵉ écart en affichant B1 (groupe G), puis **trois de plus en ouvrant C2** (groupe H). **Total général : 43 écarts.** Chaque écran restant est à rouvrir avant son chantier — le compte n'est pas clos.
+**Rouverte le 27/08** : un 18ᵉ écart en affichant B1 (groupe G), **trois de plus en ouvrant C2** (groupe H), **deux de plus en ouvrant C3** (groupe I). **Total général : 45 écarts.** Chaque écran restant est à rouvrir avant son chantier — le compte n'est pas clos, et la moyenne tient : **deux à trois écarts par écran ouvert.**
 
 ---
 
@@ -287,6 +302,7 @@ Coût serveur total de la famille : **~20 lignes** (les effectifs par arrondisse
 | 25/08/2026 | Point 4 — C7 Ordonnance | Validé porteur : écran neuf + référentiel élargi à ~60 (option B) |
 | 25/08/2026 | Point 3 — garde-fou allergies | Validé porteur : bloquant, motif obligatoire, limites annoncées |
 | 25/08/2026 | Famille 3 — méthode | Validé porteur : traitée par groupes de même racine, six décisions au lieu de dix-sept |
+| **27/08/2026** | **Famille 3, groupe I — C3 (2 écarts)** | Antécédents médicaux retirés (fuite du Carnet avant paiement), référence lisible retirée ; heure de réception conservée |
 | **27/08/2026** | **Famille 3, groupe H — C2 (3 écarts)** | Validé porteur : vues de fiche retirées, offres refondues sur le modèle serveur, spécialité en lecture seule |
 | **27/08/2026** | **Famille 3, groupe G — rideau de confidentialité (B1)** | Validé porteur : **retenu**. Absent du cahier, mais c'est une forme, pas un fait. Trouvé en **ouvrant** la maquette — invisible au `grep` |
 | 25/08/2026 | Famille 3, groupe F — épinglage | Validé porteur : retiré ; le fil reste relisible 24 h, le compte-rendu se rédige à côté |

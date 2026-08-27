@@ -397,9 +397,29 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | N° | Chantier | Poussé le | Confirmé par le porteur |
 |---|---|---|---|
+| — | *⚠️ **Les chantiers 1 et 2 n'ont pas été confirmés à l'écran.** Proposé deux fois, le porteur a choisi de poursuivre — c'est sa décision, elle est notée ici et non re-discutée. Conséquence à connaître : si un défaut visuel existe sur la coquille, il se propage à TOUS les écrans suivants, puisqu'ils vivent dedans.* | | |
 | **1** | **B1 — la coquille + la présence + le plafond + le rideau** — codé le 27/08. Serveur : **S7**, PM-27 servi au professionnel dans `GET /v1/presence/me` (~15 l. + 4 tests) — ajout **non prévu**, voir ci-dessous. Web : `usePresence` (battement 5 min), `useSessionsEnCours`, `IndicateurPresence`, `RideauConfidentialite`, ligne d'identité corrigée. **API 476 ✓ · web 174 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
 | **2** | **C2 — Ma vitrine** — codé le 27/08. Serveur : **S8**, `GET /v1/offers/limits` sert PM-09/PM-06/PM-25 + mon compte d'offres actives (~25 l. + 4 tests). Web : écran **entièrement réécrit** sur la forme mesurée (2 colonnes, 968 px + rail d'aperçu de 320 px), « Ce que les patients voient » alimenté par la vraie route publique, `CarteAnnuaire.tsx` supprimée (orpheline). **API 480 ✓ · web 179 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+| **3** | **C3 — Demandes** — codé le 27/08. **Serveur : aucun.** Web : trois **onglets** comptés à la place des trois cartes empilées, **anneau** de décompte avec ses seuils (ambre 2 min, rouge 1 min), bloc « Ce qui se passe ensuite », heure de réception restaurée, antécédents et référence retirés. **API 480 ✓ · web 187 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 3 (C3 — Demandes) a appris
+
+**L'étape 6 a servi dès son premier usage.** Le comparatif bloc à bloc a trouvé **deux défauts que
+je n'aurais pas vus** : le compteur était posé en troisième position alors que la maquette le met
+juste après l'en-tête, et j'avais **omis l'heure de réception** des lignes — alors qu'`initiatedAt`
+existe et que la maquette l'affiche. *Ce qui existe et que la maquette montre n'a aucune raison de
+disparaître : ce n'est pas un écart, c'est un oubli.*
+
+**Le pire écart de tous les écrans ouverts jusqu'ici est ici** : « ANTÉCÉDENTS · Hypertension
+traitée », affiché **avant paiement**. Ce n'est pas une donnée transmise par le patient, c'est une
+donnée du **Carnet** — exposée à quelqu'un qui n'a encore aucun lien de soin avec lui.
+
+**Un anneau peut se calculer sans connaître le délai.** La proportion se déduit de
+`windowExpiresAt − initiatedAt` : PM-07 n'apparaît nulle part dans la page, et l'anneau suivra si
+E3 le change. Même méthode pour « Ce qui se passe ensuite », qui dit « le même compte à rebours »
+plutôt que « cinq minutes ». **Un écran peut être exact sans citer un seul chiffre.**
 
 ### Ce que le chantier 2 (C2 — Ma vitrine) a appris
 

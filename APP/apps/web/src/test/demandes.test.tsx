@@ -176,6 +176,9 @@ describe('C3 — la décision', () => {
 
   it('une demande déjà close n’offre plus aucune décision', async () => {
     await monter([demande({ status: 'REFUSED', refusalReason: 'Occupé', windowRemainingSeconds: 0 })])
+    // Depuis le 27/08, les files sont en ONGLETS (forme de la maquette) : une demande close se
+    // trouve dans « Closes », pas dans la file par défaut.
+    await userEvent.click(await screen.findByRole('button', { name: /Closes/ }))
     await detail().findByText('Mireille')
 
     expect(screen.queryByRole('button', { name: /Je suis prêt à recevoir/ })).not.toBeInTheDocument()
@@ -193,24 +196,40 @@ describe('C3 — la file', () => {
     ])
 
     await detail().findByText('Bertille')
+    // On écarte les trois boutons d'onglet : ce qu'on vérifie, c'est l'ordre des DEMANDES.
     const noms = file()
       .getAllByRole('button')
       .map((b) => b.textContent ?? '')
+      .filter((t) => !/^En attente ·|^Confirmées ·|^Closes ·/.test(t))
     // Sur une fenêtre de cinq minutes, le temps restant prime sur l'ordre d'arrivée.
     expect(noms[0]).toContain('Bertille')
     expect(noms[1]).toContain('Alphonse')
   })
 
-  it('sépare ce qui attend une décision de ce qui attend le patient', async () => {
+  it('sépare ce qui attend une décision de ce qui attend le patient — en onglets comptés', async () => {
     await monter([
       demande({ id: 'a', status: 'INITIATED' }),
       demande({ id: 'b', status: 'CONFIRMED', windowRemainingSeconds: 120 }),
     ])
 
-    // « À décider » est à la fois le titre du groupe et l'état de la ligne : on cible les TITRES.
-    expect(await file().findByRole('heading', { name: 'À décider' })).toBeInTheDocument()
-    expect(file().getByRole('heading', { name: 'En cours' })).toBeInTheDocument()
+    // La maquette pose trois onglets avec leurs compteurs, et n'affiche qu'une file à la fois.
+    expect(await file().findByRole('button', { name: 'En attente · 1' })).toBeInTheDocument()
+    expect(file().getByRole('button', { name: 'Confirmées · 1' })).toBeInTheDocument()
+    expect(file().getByRole('button', { name: 'Closes · 0' })).toBeInTheDocument()
     expect(screen.getByText(/1 demande attend votre réponse/)).toBeInTheDocument()
+  })
+
+  it('changer d’onglet change la file ET le détail — on ne reste pas sur une demande disparue', async () => {
+    await monter([
+      demande({ id: 'a', status: 'INITIATED', patientFirstName: 'Alphonse' }),
+      demande({ id: 'b', status: 'CONFIRMED', windowRemainingSeconds: 120, patientFirstName: 'Bertille' }),
+    ])
+
+    await detail().findByText('Alphonse')
+    await userEvent.click(file().getByRole('button', { name: 'Confirmées · 1' }))
+
+    expect(await detail().findByText('Bertille')).toBeInTheDocument()
+    expect(detail().queryByText('Alphonse')).not.toBeInTheDocument()
   })
 
   it('file vide : l’écran explique comment être sollicité, au lieu de rester muet (CG-08 §06)', async () => {
@@ -263,5 +282,87 @@ describe('C3 — le Carnet familial', () => {
 
     expect(await detail().findByText('Yannick')).toBeInTheDocument()
     expect(detail().getByText('6 ans')).toBeInTheDocument()
+  })
+})
+
+describe('C3 — l’anneau et ses seuils', () => {
+  /**
+   * La maquette virait à l'ambre « sous 2 h » et au rouge « sous 30 min », sur une fenêtre de douze
+   * heures qui n'existe pas. Redéfinis à l'échelle réelle (PM-07 = 5 min) : ambre à deux minutes,
+   * rouge à une. Ces trois tests empêchent qu'on les recopie à nouveau depuis le dessin.
+   */
+  /** Le second cercle du SVG : le premier est la piste grise, le second l'arc qui décrémente. */
+  const anneau = () =>
+    screen
+      .getByRole('region', { name: 'Détail de la demande' })
+      .querySelector('svg circle:nth-of-type(2)') as SVGCircleElement | null
+
+  it('au-dessus de deux minutes, l’anneau reste calme', async () => {
+    await monter([demande({ windowRemainingSeconds: 240 })])
+    await detail().findByText('Mireille')
+
+    expect(anneau()?.getAttribute('stroke')).toBe('var(--ap-500)')
+  })
+
+  it('sous deux minutes, il passe à l’ambre', async () => {
+    await monter([demande({ windowRemainingSeconds: 110 })])
+    await detail().findByText('Mireille')
+
+    expect(anneau()?.getAttribute('stroke')).toBe('var(--ton-ambre-icone)')
+  })
+
+  it('sous une minute, il passe au rouge', async () => {
+    await monter([demande({ windowRemainingSeconds: 40 })])
+    await detail().findByText('Mireille')
+
+    expect(anneau()?.getAttribute('stroke')).toBe('var(--erreur-texte)')
+  })
+
+  it('la proportion vient du SERVEUR — aucune fenêtre écrite dans la page', async () => {
+    // La fenêtre totale se déduit de `windowExpiresAt − initiatedAt`. Si PM-07 change dans E3,
+    // l'anneau suit : ici une fenêtre de 600 s, à 300 s restantes → l'anneau est à moitié.
+    await monter([
+      demande({
+        initiatedAt: '2026-08-24T08:00:00.000Z',
+        windowExpiresAt: '2026-08-24T08:10:00.000Z',
+        windowRemainingSeconds: 300,
+      }),
+    ])
+    await detail().findByText('Mireille')
+
+    const c = anneau()
+    const perimetre = 2 * Math.PI * 26
+    // À moitié : le décalage vaut la moitié du périmètre.
+    expect(Number(c?.getAttribute('stroke-dashoffset'))).toBeCloseTo(perimetre / 2, 0)
+  })
+})
+
+describe('C3 — ce qui se passe ensuite', () => {
+  it('explique le parcours SANS écrire un seul délai', async () => {
+    await monter([demande({ status: 'INITIATED' })])
+    await detail().findByText('Mireille')
+
+    const carte = detail().getByText(/Ce qui se passe ensuite/).closest('section, div') as HTMLElement
+    expect(carte).toBeTruthy()
+    // Le texte parle du « même compte à rebours », jamais de « 5 minutes » ni de « 10 minutes ».
+    expect(detail().getByText(/dans le même compte/)).toBeInTheDocument()
+    expect(detail().queryByText(/5 minutes pour payer/)).not.toBeInTheDocument()
+    expect(detail().queryByText(/10 minutes/)).not.toBeInTheDocument()
+  })
+
+  it('dit que la pré-consultation n’arrive qu’APRÈS le paiement (EF-06-04)', async () => {
+    await monter([demande({ status: 'INITIATED' })])
+    await detail().findByText('Mireille')
+
+    expect(detail().getByText(/remplit sa pré-consultation/)).toBeInTheDocument()
+    expect(detail().getByText(/C’est là seulement que vous les recevez/)).toBeInTheDocument()
+  })
+
+  it('n’apparaît plus sur une demande close — il n’y a plus de suite', async () => {
+    await monter([demande({ status: 'REFUSED', refusalReason: 'Occupé', windowRemainingSeconds: 0 })])
+    await userEvent.click(await screen.findByRole('button', { name: /Closes/ }))
+    await detail().findByText('Mireille')
+
+    expect(detail().queryByText(/Ce qui se passe ensuite/)).not.toBeInTheDocument()
   })
 })
