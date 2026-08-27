@@ -33,7 +33,9 @@
  *   ET sous contrat signé. On peut soigner chaque mot et n'apparaître nulle part.
  * • **« Visibilité »** — les 318 vues de fiche ne sont comptées NULLE PART. Les deux autres chiffres
  *   existent : « demandes reçues » et le taux de confirmation. Le bloc devient « Ce que les patients
- *   voient » (famille 4, point 7), alimenté par la VRAIE route publique.
+ *   voient » (famille 4, point 7), alimenté par la VRAIE route publique — **et il reste dans le rail
+ *   de droite**, là où la maquette le pose. Il avait d'abord été déplacé à gauche par confort de
+ *   lecture ; c'était une raison, pas un fait, et la règle ne l'autorisait pas. Remis le 27/08.
  *
  * ── Deux principes tenus ───────────────────────────────────────────────────────────────────────
  *
@@ -593,77 +595,6 @@ export function VitrinePage() {
             </div>
           </Carte>
 
-          {/*
-            Remplace le bloc « Visibilité » de la maquette : ses 318 vues de fiche ne sont comptées
-            nulle part. Ce qui suit vient de la VRAIE route publique — c'est littéralement ce qu'un
-            patient lit (famille 4, point 7).
-          */}
-          <Carte icone={Users} titre="Ce que les patients voient" sousTitre="Ces chiffres sont publics et se mettent à jour tout seuls">
-            {publique.isLoading ? (
-              <Spinner />
-            ) : publique.data ? (
-              <div className="grid gap-4">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <span className="grid gap-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
-                      Note moyenne
-                    </span>
-                    <span className="flex items-baseline gap-1.5">
-                      <Star size={14} strokeWidth={1.8} aria-hidden="true" className="translate-y-px text-[var(--ton-ambre-icone)]" />
-                      <strong className="font-[family-name:var(--font-display)] text-[19px] font-bold leading-none text-foreground">
-                        {publique.data.rating.avg ?? '—'}
-                      </strong>
-                      <span className="text-[11px] text-[var(--texte-tertiaire)]">
-                        {publique.data.rating.count} avis
-                      </span>
-                    </span>
-                  </span>
-                  <span className="grid gap-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
-                      Taux de confirmation
-                    </span>
-                    <strong className="font-[family-name:var(--font-display)] text-[19px] font-bold leading-none text-foreground">
-                      {publique.data.reactivity.confirmRatePct ?? '—'} %
-                    </strong>
-                  </span>
-                  <span className="grid gap-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
-                      Délai moyen de réponse
-                    </span>
-                    <strong className="font-[family-name:var(--font-display)] text-[19px] font-bold leading-none text-foreground">
-                      {delaiHumain(publique.data.reactivity.avgConfirmDelayS) ?? '—'}
-                    </strong>
-                  </span>
-                </div>
-
-                <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
-                  Le taux de confirmation baisse quand une demande expire sans réponse — même une réponse négative
-                  vaut mieux qu’une expiration. <strong className="text-foreground">Vous ne pouvez ni répondre à un
-                  avis, ni le masquer</strong> ; un avis abusif se signale à l’administration.
-                </p>
-
-                {publique.data.latestComments.length > 0 ? (
-                  <ul className="grid gap-2">
-                    {publique.data.latestComments.slice(0, 5).map((c, i) => (
-                      <li key={i} className="rounded-md border border-border bg-card p-3">
-                        <span className="flex items-center gap-1 text-[11px] text-[var(--ton-ambre-icone)]">
-                          {'★'.repeat(c.score)}
-                          <span className="text-[var(--texte-tertiaire)]">
-                            {new Date(c.createdAt).toLocaleDateString('fr-FR')}
-                          </span>
-                        </span>
-                        <p className="mt-1 text-[13px] leading-[1.5] text-[var(--texte-secondaire)]">{c.comment}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-[13px] text-[var(--texte-tertiaire)]">
-                Ces chiffres apparaîtront dès que votre fiche sera publiée et qu’un patient vous aura sollicité.
-              </p>
-            )}
-          </Carte>
         </div>
 
         {/* Rail d'aperçu — 320 px, collant : il reste en vue pendant qu'on édite à gauche. */}
@@ -741,6 +672,81 @@ export function VitrinePage() {
                 </Avis>
               ) : null}
             </div>
+          </Carte>
+
+          {/*
+            Remplace le bloc « Visibilité » de la maquette, **à sa place** — dans le rail de droite.
+            Ses 318 vues de fiche ne sont comptées nulle part ; ce qui suit vient de la VRAIE route
+            publique, c'est littéralement ce qu'un patient lit (famille 4, point 7).
+
+            ⚠️ Ce bloc avait d'abord été posé dans la colonne de GAUCHE, au motif que la liste des
+            commentaires tenait mal dans 320 px. C'était une raison, pas un fait — et la règle est
+            que seule une contrainte réelle autorise à s'écarter de la maquette. Remis à droite le
+            27/08 : les trois chiffres s'empilent, les avis sont compacts.
+          */}
+          <Carte icone={Users} titre="Ce que les patients voient" sousTitre="Chiffres publics, mis à jour tout seuls">
+            {publique.isLoading ? (
+              <Spinner />
+            ) : publique.data ? (
+              <div className="grid gap-3">
+                <div className="grid gap-2.5">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                      Note moyenne
+                    </span>
+                    <span className="flex items-baseline gap-1.5">
+                      <Star size={12} strokeWidth={1.8} aria-hidden="true" className="translate-y-px text-[var(--ton-ambre-icone)]" />
+                      <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
+                        {publique.data.rating.avg ?? '—'}
+                      </strong>
+                      <span className="text-[11px] text-[var(--texte-tertiaire)]">{publique.data.rating.count} avis</span>
+                    </span>
+                  </span>
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                      Taux de confirmation
+                    </span>
+                    <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
+                      {publique.data.reactivity.confirmRatePct ?? '—'} %
+                    </strong>
+                  </span>
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                      Délai moyen
+                    </span>
+                    <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
+                      {delaiHumain(publique.data.reactivity.avgConfirmDelayS) ?? '—'}
+                    </strong>
+                  </span>
+                </div>
+
+                <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                  Le taux baisse quand une demande expire sans réponse — même une réponse négative vaut mieux
+                  qu’une expiration. <strong className="text-foreground">Vous ne pouvez ni répondre à un avis, ni
+                  le masquer</strong> ; un avis abusif se signale à l’administration.
+                </p>
+
+                {publique.data.latestComments.length > 0 ? (
+                  <ul className="grid gap-1.5 border-t border-border pt-2.5">
+                    {publique.data.latestComments.slice(0, 3).map((c, i) => (
+                      <li key={i}>
+                        <span className="flex items-baseline gap-1.5 text-[10px] text-[var(--ton-ambre-icone)]">
+                          {'★'.repeat(c.score)}
+                          <span className="text-[var(--texte-tertiaire)]">
+                            {new Date(c.createdAt).toLocaleDateString('fr-FR')}
+                          </span>
+                        </span>
+                        <p className="text-[12px] leading-[1.45] text-[var(--texte-secondaire)]">{c.comment}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                Ces chiffres apparaîtront dès que votre fiche sera publiée et qu’un patient vous aura sollicité.
+              </p>
+            )}
           </Carte>
         </div>
       </div>

@@ -326,9 +326,16 @@ boucler l'avenant.
    comme les écrans validés.
 5. Vérifier **en local que ça compile et que les tests passent** — uniquement pour ne pas vous faire
    pousser du code cassé.
-6. Vous donner **2 ou 3 gestes maximum** à tester en ligne, avec le résultat attendu.
-7. Attendre votre confirmation avant le chantier suivant.
-8. **Inscrire le chantier au §10** en même temps que le code, jamais après.
+6. **Contrôle de conformité, bloc par bloc ET position par position** — rouvrir la maquette et
+   dresser la liste de ses blocs dans l'ordre, colonne par colonne, puis la même liste pour l'écran
+   construit. Chaque différence doit se rattacher à une **décision d'alignement écrite**. Une
+   différence qu'on ne sait pas rattacher est un écart non traçé : on le corrige, ou on l'inscrit.
+   *(Étape ajoutée le 27/08 : sur C2, un bloc avait changé de colonne — « Visibilité » est à droite
+   dans la maquette, son remplaçant avait été posé à gauche. Ma relecture ne l'avait pas vu ; c'est
+   une question du porteur qui l'a trouvé. Le comparatif écrit, lui, ne peut pas le manquer.)*
+7. Vous donner **2 ou 3 gestes maximum** à tester en ligne, avec le résultat attendu.
+8. Attendre votre confirmation avant le chantier suivant.
+9. **Inscrire le chantier au §10** en même temps que le code, jamais après.
 
 ---
 
@@ -395,6 +402,13 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | **2** | **C2 — Ma vitrine** — codé le 27/08. Serveur : **S8**, `GET /v1/offers/limits` sert PM-09/PM-06/PM-25 + mon compte d'offres actives (~25 l. + 4 tests). Web : écran **entièrement réécrit** sur la forme mesurée (2 colonnes, 968 px + rail d'aperçu de 320 px), « Ce que les patients voient » alimenté par la vraie route publique, `CarteAnnuaire.tsx` supprimée (orpheline). **API 480 ✓ · web 179 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 2 (C2 — Ma vitrine) a appris
+
+**Un écart de forme a échappé à ma relecture, et le porteur l'a trouvé en posant une question.**
+« Visibilité » est dans le rail de DROITE dans la maquette ; son remplaçant avait été posé à
+gauche, au motif que la liste des commentaires tenait mal dans 320 px. **Une raison n'est pas un
+fait** — la règle n'autorise à s'écarter que sur une contrainte réelle, et à condition de la tracer.
+Corrigé le 27/08 : le bloc est revenu à droite, compacté. **C'est de là que vient l'étape 6 du
+§7** : un comparatif écrit ne peut pas manquer ce qu'une relecture manque.
 
 **La version précédente avait raison sur les faits et tort sur la forme.** Elle avait déjà retiré les
 langues, les lieux et les vues inventées — avec de bonnes raisons, écrites. Mais son en-tête disait
