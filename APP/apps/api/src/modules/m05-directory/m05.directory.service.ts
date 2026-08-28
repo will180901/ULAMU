@@ -59,6 +59,26 @@ export interface DirectoryItemView {
   reactivity: { confirmRatePct: number; avgConfirmDelayS: number | null }; // EF-05-01
   presence: PresenceStateCode; // état effectif (ONLINE rassis → OFFLINE)
   availableNow: boolean; // pilote le bouton « initier » (EF-05-06)
+  /**
+   * Depuis combien de secondes ce professionnel n'a plus donné signe de vie. `null` quand il est
+   * joignable — il est là, il n'y a rien à dater.
+   *
+   * ⚠️ **Deux bornes délibérées, posées ICI et pas à l'affichage.** EF-05-01 énumère ce qui est
+   * public — nom, spécialité, badge, biographie, arrondissement, note, réactivité, « statut de
+   * présence » — et n'y range PAS la dernière connexion. Le porteur a choisi de l'ajouter le
+   * 28/08/2026, mais encadrée :
+   *
+   *  1. **Rien quand il est en ligne.** Publier l'horodatage exact d'un battement de cœur ne
+   *     renseigne personne et expose une activité à la seconde près.
+   *  2. **Plafonné à une semaine.** Au-delà, la valeur est écrêtée : le client ne peut dire que
+   *     « plus d'une semaine », jamais « trois mois ». Un médecin qui s'éloigne quelque temps ne
+   *     porte pas son absence en écriteau devant tous les patients — et il n'a aucun réglage pour
+   *     le masquer, contrairement aux messageries grand public.
+   *
+   * Plafonner à l'affichage aurait laissé la donnée complète dans la réponse HTTP : n'importe qui
+   * lisant l'API aurait pu recalculer les trois mois. La borne n'a de sens qu'à la source.
+   */
+  lastSeenSeconds: number | null;
   cheapestOffer: DirectoryOfferView | null; // CU-05-01
   relevanceScore: number; // transparence du classement (RM-05-02)
 }
@@ -84,6 +104,7 @@ interface EnrichedRow {
   stats: ReactivityStats | null;
   presence: PresenceStateCode;
   availableNow: boolean;
+  lastSeenSeconds: number | null;
   cheapestOffer: DirectoryOfferView | null;
   score: number;
   ratingAvg: number | null;
@@ -91,6 +112,9 @@ interface EnrichedRow {
   confirmRatePctValue: number;
   avgDelayS: number | null;
 }
+
+/** Une semaine. Au-delà, « dernière vue » est écrêtée — voir `lastSeenSeconds`. */
+const PLAFOND_DERNIERE_VUE_S = 7 * 24 * 3600;
 
 @Injectable()
 export class DirectoryService {
@@ -327,6 +351,13 @@ export class DirectoryService {
         : "OFFLINE";
       const availableNow = presence === "ONLINE";
 
+      // Voir `lastSeenSeconds` : rien quand il est là, écrêté à une semaine quand il ne l'est pas.
+      const lastSeenSeconds = ((): number | null => {
+        if (availableNow || !presenceRow) return null;
+        const ecouleS = Math.max(0, Math.floor((nowMs - presenceRow.lastHeartbeatAt.getTime()) / 1000));
+        return Math.min(ecouleS, PLAFOND_DERNIERE_VUE_S);
+      })();
+
       const stats: ReactivityStats | null = statsRow
         ? {
             initiationsTotal: statsRow.initiationsTotal,
@@ -354,6 +385,7 @@ export class DirectoryService {
         stats,
         presence,
         availableNow,
+        lastSeenSeconds,
         cheapestOffer: cheapest
           ? { id: cheapest.id, label: cheapest.label, durationMin: cheapest.durationMin, priceXaf: cheapest.priceXaf, kind: cheapest.kind }
           : null,
@@ -418,6 +450,7 @@ export class DirectoryService {
       reactivity: { confirmRatePct: row.confirmRatePctValue, avgConfirmDelayS: row.avgDelayS },
       presence: row.presence,
       availableNow: row.availableNow,
+      lastSeenSeconds: row.lastSeenSeconds,
       cheapestOffer: row.cheapestOffer,
       relevanceScore: Math.round(row.score * 1000) / 1000,
     };

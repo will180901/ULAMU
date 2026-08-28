@@ -208,6 +208,11 @@ export interface DirectoryItem {
   reactivity: {confirmRatePct: number; avgConfirmDelayS: number | null};
   presence: PresenceState;
   availableNow: boolean;
+  /**
+   * Secondes depuis le dernier signe de vie. `null` quand le soignant est joignable.
+   * Écrêté à UNE SEMAINE côté serveur : au-delà, on ne peut dire que « plus d'une semaine ».
+   */
+  lastSeenSeconds?: number | null;
   cheapestOffer: DirectoryOffer | null;
   relevanceScore: number;
 }

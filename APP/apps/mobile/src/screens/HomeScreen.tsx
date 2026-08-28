@@ -10,7 +10,7 @@ import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {CompositeScreenProps} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Modal, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Modal, Pressable, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
 import {Avatar, Badge, Card, IconButton, Logo, PulseDot, Switch, VerifiedBadge} from '../components/ui';
 import {EmptyState, ErrorState, LoadingState} from '../components/ScreenState';
 import {Icon, IconName} from '../components/Icon';
@@ -169,9 +169,97 @@ export function HomeScreen({navigation}: Props) {
     }
   }, []);
 
+  /**
+   * Rafraîchissement au doigt — glisser du haut vers le bas.
+   *
+   * Volontairement SÉPARÉ de `load()` : celui-ci repasse le statut à « loading », ce qui remplace
+   * la liste par son squelette. Au rafraîchissement, l'utilisateur regarde déjà quelque chose —
+   * lui retirer l'écran sous les yeux pour le lui rendre une seconde plus tard donne l'impression
+   * d'une panne, pas d'une mise à jour. On garde donc l'affichage et on ne montre que la roue.
+   *
+   * L'écran n'en avait aucun : l'annuaire pouvait rester périmé (un soignant passé en ligne, un
+   * compte retiré) sans que l'utilisateur ait le moindre moyen de le corriger, sinon fermer
+   * l'application. Ajouté le 28/08/2026, sur demande du porteur.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const [list, badge, rem] = await Promise.all([
+        fetchDoctors(),
+        api.notificationsUnreadCount().catch(() => ({unread: 0})),
+        api.listReminders().catch(() => ({items: [] as Reminder[]})),
+      ]);
+      setDoctors(list.doctors);
+      setUnread(badge.unread);
+      setReminders(rem.items);
+      syncReminderNotifications(rem.items);
+      setStatus('ready'); // un rafraîchissement réussi sort aussi de l'état d'erreur
+    } catch {
+      // On ne bascule PAS en erreur : l'utilisateur garde la liste qu'il avait, même périmée.
+      // Une liste d'hier vaut mieux qu'un écran vide quand le réseau a juste hésité.
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  /**
+   * Présence en temps réel — l'annuaire se remet à jour tout seul pendant qu'on le regarde.
+   *
+   * Un soignant passe en ligne, un autre s'absente : sans cela, la liste affichée vieillit sur
+   * place et l'utilisateur décide sur une information périmée — il touche « initier » sur
+   * quelqu'un qui vient de partir.
+   *
+   * ⚠️ **Ce n'est pas du « push ».** Le serveur n'a ni WebSocket ni flux d'événements : on
+   * interroge. L'effet perçu est le même, le coût ne l'est pas, d'où les deux garde-fous :
+   *
+   *  1. **Uniquement quand l'écran est visible.** L'écoute s'arrête dès qu'on le quitte. Interroger
+   *     un écran que personne ne regarde dépense la batterie et le forfait data de l'utilisateur —
+   *     ce qui n'est pas neutre ici.
+   *  2. **Silencieux.** Aucun indicateur, aucun squelette : la liste se corrige sous les yeux sans
+   *     clignoter. Un rafraîchissement visible toutes les vingt secondes serait insupportable.
+   *
+   * Vingt secondes : assez court pour qu'une disparition se voie, assez long pour ne pas réveiller
+   * l'API en permanence (plan gratuit, elle s'endort à 15 min d'inactivité).
+   */
+  useEffect(() => {
+    let vivant = true;
+    let horloge: ReturnType<typeof setInterval> | undefined;
+
+    const sonder = () => {
+      fetchDoctors()
+        .then(r => {
+          if (vivant) setDoctors(r.doctors);
+        })
+        .catch(() => undefined); // un sondage perdu n'est pas un incident : le suivant corrigera
+    };
+
+    const demarrer = () => {
+      if (horloge) return;
+      sonder(); // tout de suite au retour sur l'écran, sans attendre le premier tour
+      horloge = setInterval(sonder, 20_000);
+    };
+    const arreter = () => {
+      if (horloge) clearInterval(horloge);
+      horloge = undefined;
+    };
+
+    const surFocus = navigation.addListener('focus', demarrer);
+    const surSortie = navigation.addListener('blur', arreter);
+    demarrer();
+
+    return () => {
+      vivant = false;
+      arreter();
+      surFocus();
+      surSortie();
+    };
+  }, [navigation]);
 
   // Rafraîchit la cloche + les rappels au retour sur l'Accueil (après lecture / gestion des rappels).
   useEffect(() => {
@@ -268,7 +356,19 @@ export function HomeScreen({navigation}: Props) {
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            colors={[colors.accent]}
+            tintColor={colors.accent}
+            progressBackgroundColor={colors.surface}
+          />
+        }>
         {/* Salutation */}
         <View>
           <Text style={styles.greetHi}>{greetingWord()}</Text>
@@ -479,6 +579,10 @@ function DoctorRow({d, onPress}: {d: DoctorVM; onPress: () => void}) {
           <Badge tone={d.online ? 'success' : 'neutral'} dot>
             {d.online ? 'Disponible maintenant' : 'Hors ligne'}
           </Badge>
+          {/* Dernière vue — seulement quand il est absent : en ligne, la pastille le dit déjà.
+              Écrêté à une semaine côté serveur (arbitrage porteur du 28/08 : EF-05-01 ne prévoit pas
+              cette donnée, on l'ajoute mais bornée). Discret : ni pastille, ni cadre. */}
+          {!d.online && d.lastSeen ? <Text style={styles.docLastSeen}>{d.lastSeen}</Text> : null}
         </View>
         {d.online && d.resp && (
           <View style={styles.docResp}>
@@ -670,6 +774,13 @@ const makeStyles = (colors: Palette) =>
   docBanner: {height: 64, overflow: 'hidden'},
   docWatermark: {position: 'absolute', right: -8, top: -14},
   docStatus: {position: 'absolute', top: 10, left: 14},
+  // Volontairement effacé : une mention de service, pas une information de premier plan.
+  docLastSeen: {
+    marginTop: 4,
+    fontSize: 10.5,
+    color: colors.textTertiary,
+    letterSpacing: 0.1,
+  },
   docResp: {
     position: 'absolute',
     top: 11,

@@ -25,6 +25,13 @@ export interface DoctorVM {
   spec: string;
   zone: string;
   online: boolean;
+  /**
+   * « Vu il y a 5 min » — `null` quand le soignant est en ligne, car il n'y a rien à dater.
+   *
+   * Le serveur écrête la valeur à une semaine : au-delà, on lit « il y a plus d'une semaine » et
+   * jamais « il y a trois mois ». Un médecin qui s'éloigne ne porte pas son absence en écriteau.
+   */
+  lastSeen: string | null;
   /** Soignant certifié par la procédure de vérification ULAMU (M03/D-029) — l'annuaire n'en liste pas d'autres. */
   verified: boolean;
   /** Note formatée « 4,8 » ou null (→ « Nouveau »). */
@@ -75,6 +82,27 @@ function formatRating(avg: number | null): string | null {
   return avg === null ? null : avg.toFixed(1).replace('.', ',');
 }
 
+/**
+ * « il y a 5 min », « il y a 2 jours », « il y a plus d'une semaine ».
+ *
+ * `null` quand le soignant est en ligne : la pastille verte le dit déjà, et dater une présence en
+ * cours n'apprend rien. Le plafond d'une semaine vient du SERVEUR — ici on se contente de le lire :
+ * si la valeur atteint le plafond, on cesse de compter et on dit « plus d'une semaine ».
+ */
+const SEMAINE_S = 7 * 24 * 3600;
+
+export function formatDerniereVue(secondes: number | null): string | null {
+  if (secondes === null) return null;
+  if (secondes >= SEMAINE_S) return 'Vu il y a plus d’une semaine';
+  if (secondes < 60) return 'Vu à l’instant';
+  const min = Math.floor(secondes / 60);
+  if (min < 60) return `Vu il y a ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Vu il y a ${h} h`;
+  const j = Math.floor(h / 24);
+  return `Vu il y a ${j} jour${j > 1 ? 's' : ''}`;
+}
+
 /** Délai moyen de confirmation (s) → « ~3 min » ; null si inconnu. */
 function formatResp(delayS: number | null): string | null {
   if (delayS === null) {
@@ -87,7 +115,7 @@ function formatResp(delayS: number | null): string | null {
 }
 
 export function toDoctorVM(item: DirectoryItem): DoctorVM {
-  const meta: CategoryMeta = CATEGORY_META[item.category] ?? {label: item.category, chip: 'autre', icon: 'stethoscope'};
+const meta: CategoryMeta = CATEGORY_META[item.category] ?? {label: item.category, chip: 'autre', icon: 'stethoscope'};
   return {
     id: item.professionalId,
     name: item.displayName,
@@ -96,6 +124,7 @@ export function toDoctorVM(item: DirectoryItem): DoctorVM {
     spec: item.specialty ?? meta.label,
     zone: item.district ?? '—',
     online: item.availableNow,
+    lastSeen: formatDerniereVue(item.lastSeenSeconds ?? null),
     verified: item.badgeVerified,
     ratingLabel: formatRating(item.rating.avg),
     reviews: item.rating.count,
