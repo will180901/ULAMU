@@ -57,7 +57,17 @@ services:
       # VRAI médecin et confirmait à sa place en 3 s. Une demande traversait donc « en attente »,
       # « confirmée » et « payée » en sept secondes, sans qu'on puisse rien observer.
       #
-      # RETIRÉ : HANDSHAKE_AUTOCONFIRM_MS — c'est le médecin qui confirme, depuis C3 (EF-06-02).
+      # RETIRÉ DU FICHIER : HANDSHAKE_AUTOCONFIRM_MS — c'est le médecin qui confirme, depuis C3
+      # (EF-06-02).
+      #
+      # ⚠️ **MAIS RETIRER LA LIGNE ICI NE SUFFIT PAS.** Constaté le 28/08 : Render ne supprime pas
+      # une variable déjà posée sur un service quand elle disparaît du blueprint — la synchronisation
+      # ajoute et met à jour, elle n'efface pas. Le déploiement suivant a donc gardé la variable, et
+      # les poignées de main ont continué de se confirmer toutes seules alors que le fichier disait
+      # le contraire.
+      #
+      # Pour la retirer VRAIMENT : tableau de bord Render → service `ulamu-api` → onglet Environment
+      # → supprimer la ligne → Save changes. Vaut pour toute variable qu'on croit avoir enlevée.
       #
       # ⚠️ **MOMO_AUTOCONFIRM_MS RESTE, et ce n'est pas un oubli.** La passerelle Mobile Money est une
       # implémentation de développement, en mémoire : aucun agrégateur réel n'est encore choisi

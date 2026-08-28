@@ -773,10 +773,11 @@ const makeStyles = (colors: Palette) =>
   docCard: {backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.card, overflow: 'hidden'},
   docBanner: {height: 64, overflow: 'hidden'},
   docWatermark: {position: 'absolute', right: -8, top: -14},
-  docStatus: {position: 'absolute', top: 10, left: 14},
+  // En LIGNE, pas empilé : la pastille et la date se lisent d'un seul coup d'œil, comme une phrase.
+  // « Hors ligne · vu il y a 5 min » se comprend mieux que deux mentions superposées.
+  docStatus: {position: 'absolute', top: 10, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6},
   // Volontairement effacé : une mention de service, pas une information de premier plan.
   docLastSeen: {
-    marginTop: 4,
     fontSize: 10.5,
     color: colors.textTertiary,
     letterSpacing: 0.1,
