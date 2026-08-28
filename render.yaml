@@ -46,10 +46,24 @@ services:
                                # Le laisser à "true" en production exposait le mot de passe de n'importe
                                # quel compte (demande de code publique + réinitialisation par ce seul code).
                                # Le code refuse de toute façon l'écho quand NODE_ENV=production (garde-fou dur).
-      # MODE VITRINE (démo sans vrais soignants ni vrai paiement) : le soignant « accepte » et le paiement
-      # « se confirme » automatiquement, pour que les testeurs déroulent tout le parcours. ⚠️ À RETIRER au lancement réel.
-      - key: HANDSHAKE_AUTOCONFIRM_MS
-        value: "3000"          # le soignant virtuel accepte la consultation après 3 s
+      # MODE VITRINE — **MOITIÉ RETIRÉE le 28/08/2026.**
+      #
+      # Il datait de l'époque où aucune interface web n'existait : personne ne pouvait confirmer une
+      # poignée de main, donc le serveur le faisait à la place du soignant. Le web se reconstruit
+      # désormais écran par écran et le porteur teste en direct — l'auto-confirmation ne simule plus
+      # une absence, elle EMPÊCHE le test.
+      #
+      # ⚠️ `scheduleDevAutoConfirm` n'était pas un « soignant virtuel » : il usurpait l'identité du
+      # VRAI médecin et confirmait à sa place en 3 s. Une demande traversait donc « en attente »,
+      # « confirmée » et « payée » en sept secondes, sans qu'on puisse rien observer.
+      #
+      # RETIRÉ : HANDSHAKE_AUTOCONFIRM_MS — c'est le médecin qui confirme, depuis C3 (EF-06-02).
+      #
+      # ⚠️ **MOMO_AUTOCONFIRM_MS RESTE, et ce n'est pas un oubli.** La passerelle Mobile Money est une
+      # implémentation de développement, en mémoire : aucun agrégateur réel n'est encore choisi
+      # (ADR-09, ouvert). Sans elle, une demande de paiement reste en attente à jamais, aucune session
+      # ne démarre, et le parcours de soin s'arrête net. À retirer le jour où un vrai agrégateur
+      # répondra — pas avant.
       - key: MOMO_AUTOCONFIRM_MS
         value: "4000"          # le paiement Mobile Money se valide tout seul après 4 s (aucun argent réel)
       - key: ADMIN_REQUIRE_TOTP
