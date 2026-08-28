@@ -10,7 +10,24 @@ buildscript {
         // À revenir sur 26.1.10909125 dès que le téléchargement redevient possible : c'est la seule
         // version testée par React Native pour cette release, et un écart de NDK se paie sur la
         // compilation C++ de la nouvelle architecture.
-        ndkVersion = "30.0.15729638"
+        // ⚠️ **NE PAS remonter sans vérifier folly.** Ramené de 30.0.15729638 à 27.1.12297006 le
+        // 28/08/2026 : le NDK 30 embarque une libc++ récente (LLVM 19) qui a SUPPRIMÉ la
+        // spécialisation non standard `std::char_traits<unsigned char>`. Or le folly livré avec
+        // React Native 0.76.5 s'en sert encore (`folly/Range.h`, via `basic_string_view<unsigned
+        // char>`) : chaque fichier C++ du projet échouait à la compilation, y compris `OnLoad.cpp`.
+        //
+        // **27.1.12297006 est la version épinglée par React Native 0.76** : sa libc++ (LLVM 18)
+        // possède encore la spécialisation. C'est la cible, pas 26 ni 30.
+        //
+        // Historique : le projet déclarait 26.1.10909125 jusqu'au 05/08, où il est passé à 30 dans
+        // le même commit que le garde-fou FLAG_SECURE. La compilation Android est restée CASSÉE
+        // depuis, sans que personne le voie : le travail portait sur le web, et le téléphone
+        // tournait sur l'APK de juillet servi par Metro. À la livraison, l'installateur n'aurait
+        // pas pu être fabriqué.
+        //
+        // ⚠️ Le dossier `ndk/26.1.10909125` du SDK ne contient qu'un `.installer` vide — une
+        // installation avortée du 04/08. Ne pas s'y fier.
+        ndkVersion = "27.1.12297006"
         kotlinVersion = "1.9.24"
     }
     repositories {
