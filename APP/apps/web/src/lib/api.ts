@@ -341,6 +341,42 @@ export interface DirectoryProfile extends DirectoryItem {
   latestComments: Array<{ score: number; comment: string; createdAt: string }>
 }
 
+/** Fiche synthèse du Carnet, lue en session (EF-06-06). Les trois faits qui changent une conduite. */
+export interface HealthSummary {
+  bloodType: string | null
+  activeAllergies: string[]
+  chronicDiseases: string[]
+}
+
+export type RecordEntryType =
+  | 'CONSULTATION_REPORT'
+  | 'PRESCRIPTION'
+  | 'LAB_RESULTS'
+  | 'VITALS'
+  | 'ALLERGY'
+  | 'MEDICAL_HISTORY'
+  | 'VACCINATION'
+  | 'PERSONAL_NOTE'
+
+export interface RecordEntry {
+  id: string
+  type: RecordEntryType
+  /** RM-07-03 : une déclaration du patient n'est JAMAIS présentée comme un diagnostic. */
+  provenance: string
+  authorId: string | null
+  sourceRef: string | null
+  payload: Record<string, unknown>
+  supersedesId: string | null
+  createdAt: string
+  superseded?: boolean
+}
+
+export interface RecordPage {
+  recordId: string | null
+  items: RecordEntry[]
+  nextCursor: string | null
+}
+
 export interface Presence {
   state: PresenceState
   since: string
@@ -541,6 +577,14 @@ export interface CareSession {
   professionalDelaySec: number
   /** D-021 : le compte-rendu est OBLIGATOIRE. Tant que c'est `null`, la consultation reste inachevée. */
   reportDepositedAt: string | null
+  /**
+   * Échéance de dépôt du compte-rendu — servie par le serveur (`endedAt` + PM-30), `null` tant
+   * que la session n'est pas close.
+   *
+   * Au-delà, le dépôt est **REFUSÉ** et les gains gelés : l'écran doit décompter, pas écrire
+   * « 24 heures » en dur — ce qu'il faisait, et qui aurait menti au premier changement de PM-30.
+   */
+  reportDueAt: string | null
   preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null
   rated: boolean
   otherPartyTyping: boolean
@@ -564,6 +608,14 @@ export interface SessionListItem {
   endedAt: string | null
   remainingSeconds: number
   reportDepositedAt: string | null
+  /**
+   * Échéance de dépôt du compte-rendu — servie par le serveur (`endedAt` + PM-30), `null` tant
+   * que la session n'est pas close.
+   *
+   * Au-delà, le dépôt est **REFUSÉ** et les gains gelés : l'écran doit décompter, pas écrire
+   * « 24 heures » en dur — ce qu'il faisait, et qui aurait menti au premier changement de PM-30.
+   */
+  reportDueAt: string | null
 }
 
 export interface SessionMessage {
@@ -1118,14 +1170,46 @@ export const api = {
   sessionMessages: (id: string) =>
     request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),
   /** `clientMsgId` est une clé d'idempotence (ADR-12) : un rejeu réseau ne crée pas un doublon. */
-  sendMessage: (id: string, dto: { clientMsgId: string; kind: 'TEXT' | 'PHOTO'; body?: string; fileKey?: string }) =>
-    request<SessionMessage>('POST', `/v1/care-sessions/${id}/messages`, dto, true),
+  sendMessage: (
+    id: string,
+    dto: { clientMsgId: string; kind: 'TEXT' | 'PHOTO'; body?: string; fileKey?: string; replyToId?: string },
+  ) => request<SessionMessage>('POST', `/v1/care-sessions/${id}/messages`, dto, true),
   /** Téléverse d'abord, envoie ensuite : le message ne porte que la CLÉ, jamais les octets. */
   uploadSessionMedia: (id: string, dto: { fileBase64: string; mime: string }) =>
     request<{ fileKey: string }>('POST', `/v1/care-sessions/${id}/media`, dto, true),
-  deleteSessionMessage: (sessionId: string, messageId: string) =>
-    request<SessionMessage>('POST', `/v1/care-sessions/${sessionId}/messages/${messageId}/delete`, undefined, true),
+  /**
+   * Suppression d'un message. `forEveryone` n'est PAS optionnel côté serveur (`DeleteMessageDto`,
+   * `@IsBoolean()`) : cet appel partait sans corps et se faisait refuser en 400 — le bouton
+   * « supprimer » de C5 n'a donc jamais fonctionné. Corrigé le 28/08/2026.
+   *
+   * • `true`  → pour tout le monde (auteur, ≤ 15 min) : la bulle devient « Message supprimé ».
+   * • `false` → pour moi seul (toujours possible) : la bulle disparaît de MON fil, pas de l'autre.
+   */
+  deleteSessionMessage: (sessionId: string, messageId: string, forEveryone: boolean) =>
+    request<{ ok: true }>('POST', `/v1/care-sessions/${sessionId}/messages/${messageId}/delete`, { forEveryone }, true),
+  /** Édition d'un message texte — auteur seulement, ≤ 15 min (le serveur tranche). */
+  editSessionMessage: (sessionId: string, messageId: string, body: string) =>
+    request<SessionMessage>('PATCH', `/v1/care-sessions/${sessionId}/messages/${messageId}`, { body }, true),
+  /** Bascule une réaction emoji — une par participant et par message. */
+  reactToSessionMessage: (sessionId: string, messageId: string, emoji: string) =>
+    request<SessionMessage>('POST', `/v1/care-sessions/${sessionId}/messages/${messageId}/reactions`, { emoji }, true),
   typing: (id: string) => request<void>('POST', `/v1/care-sessions/${id}/typing`, undefined, true),
+
+  /**
+   * Le Carnet du patient, LU EN SESSION (EF-06-06, RM-06-05).
+   *
+   * ⚠️ Le serveur **referme l'accès dès que le décompteur tombe à zéro**, et chaque lecture est
+   * tracée au journal d'audit. Ce n'est pas un dossier qu'on consulte quand on veut : c'est une
+   * ouverture bornée à la durée payée.
+   */
+  sessionRecordSummary: (id: string) =>
+    request<HealthSummary>('GET', `/v1/care-sessions/${id}/record/summary`, undefined, true),
+  sessionRecord: (id: string, q: { type?: RecordEntryType; cursor?: string } = {}) => {
+    const p = new URLSearchParams()
+    if (q.type) p.set('type', q.type)
+    if (q.cursor) p.set('cursor', q.cursor)
+    return request<RecordPage>('GET', `/v1/care-sessions/${id}/record${p.toString() ? `?${p}` : ''}`, undefined, true)
+  },
   extendSession: (id: string, minutes: number) =>
     request<CareSession>('POST', `/v1/care-sessions/${id}/extend`, { minutes }, true),
   /** D-021 : compte-rendu obligatoire. Sans lui, la consultation n'est pas close pour le patient. */

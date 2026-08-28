@@ -78,6 +78,7 @@ function session(status: SessionListItem['status'], id: string): SessionListItem
     endedAt: null,
     remainingSeconds: 0,
     reportDepositedAt: null,
+    reportDueAt: null,
   }
 }
 

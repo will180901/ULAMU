@@ -65,6 +65,20 @@ export interface SessionView {
   /** Retard cumulé du soignant (s) au-delà de la tolérance de 30 s entre messages (D-032). */
   professionalDelaySec: number;
   reportDepositedAt: string | null;
+  /**
+   * Échéance de dépôt du compte-rendu — `endedAt` + PM-30. `null` tant que la session n'est pas
+   * terminée : le délai ne court qu'à partir de la clôture.
+   *
+   * ⚠️ **Pourquoi cette date sort du serveur.** Au-delà de PM-30, le dépôt n'est pas toléré : il
+   * est **REFUSÉ**, et les gains sont gelés (CU-06-03) — or RM-06-04 ne crédite qu'au dépôt. Le
+   * médecin a donc travaillé pour rien.
+   *
+   * L'écran ne pouvait pas la calculer : il reçoit `endedAt`, mais **PM-30 ne lui est pas
+   * accessible** (la lecture des paramètres est réservée aux administrateurs). Il ne lui restait
+   * qu'à écrire un délai en dur — ce qui a produit le « 48 h » des maquettes, deux fois le délai
+   * réel, et un « 24 heures » en dur dans C5 qui mentirait au premier changement de PM-30.
+   */
+  reportDueAt: string | null;
   preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null;
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère, TTL ~6s). */
@@ -83,6 +97,20 @@ export interface SessionListItem {
   endedAt: string | null;
   remainingSeconds: number;
   reportDepositedAt: string | null;
+  /**
+   * Échéance de dépôt du compte-rendu — `endedAt` + PM-30. `null` tant que la session n'est pas
+   * terminée : le délai ne court qu'à partir de la clôture.
+   *
+   * ⚠️ **Pourquoi cette date sort du serveur.** Au-delà de PM-30, le dépôt n'est pas toléré : il
+   * est **REFUSÉ**, et les gains sont gelés (CU-06-03) — or RM-06-04 ne crédite qu'au dépôt. Le
+   * médecin a donc travaillé pour rien.
+   *
+   * L'écran ne pouvait pas la calculer : il reçoit `endedAt`, mais **PM-30 ne lui est pas
+   * accessible** (la lecture des paramètres est réservée aux administrateurs). Il ne lui restait
+   * qu'à écrire un délai en dur — ce qui a produit le « 48 h » des maquettes, deux fois le délai
+   * réel, et un « 24 heures » en dur dans C5 qui mentirait au premier changement de PM-30.
+   */
+  reportDueAt: string | null;
 }
 
 export interface MessageReplyPreview {
@@ -568,7 +596,7 @@ export class SessionService {
   async getSession(actor: AuthenticatedActor, sessionId: string): Promise<SessionView> {
     const session = await this.loadForParticipant(actor, sessionId);
     const settled = await this.settle(session);
-    const pm28S = await this.params.getInt("PM-28");
+    const [pm28S, pm30S] = await Promise.all([this.params.getInt("PM-28"), this.params.getInt("PM-30")]);
     const [preConsultation, rating, msgs] = await Promise.all([
       this.prisma.preConsultation.findUnique({ where: { sessionId } }),
       this.prisma.sessionRating.findUnique({ where: { sessionId }, select: { sessionId: true } }),
@@ -600,6 +628,7 @@ export class SessionService {
       extensionTotalSec: settled.extensionTotalSec,
       professionalDelaySec,
       reportDepositedAt: settled.reportDepositedAt ? settled.reportDepositedAt.toISOString() : null,
+      reportDueAt: this.reportDueAt(settled.endedAt, pm30S),
       preConsultation: preConsultation
         ? {
             symptoms: preConsultation.symptoms,
@@ -615,7 +644,7 @@ export class SessionService {
 
   /** Sessions de l'acteur (patient ou professionnel), plus récentes d'abord. */
   async listMine(actor: AuthenticatedActor): Promise<{ items: SessionListItem[] }> {
-    const pm28S = await this.params.getInt("PM-28");
+    const [pm28S, pm30S] = await Promise.all([this.params.getInt("PM-28"), this.params.getInt("PM-30")]);
     const nowMs = Date.now();
     const rows = await this.prisma.careSession.findMany({
       where: { OR: [{ patientAccountId: actor.accountId }, { professionalId: actor.accountId }] },
@@ -642,6 +671,7 @@ export class SessionService {
         endedAt: session.endedAt ? session.endedAt.toISOString() : null,
         remainingSeconds: session.status === CareSessionStatus.ACTIVE ? sessionRemainingSeconds(session.endsAt, Date.now()) : 0,
         reportDepositedAt: session.reportDepositedAt ? session.reportDepositedAt.toISOString() : null,
+        reportDueAt: this.reportDueAt(session.endedAt, pm30S),
       });
     }
     return { items };
@@ -869,6 +899,11 @@ export class SessionService {
   }
 
   // ── Aides internes ───────────────────────────────────────────────────────────
+
+  /** `endedAt` + PM-30 — voir `SessionView.reportDueAt`. `null` tant que la session n'est pas close. */
+  private reportDueAt(endedAt: Date | null, pm30S: number): string | null {
+    return endedAt === null ? null : new Date(endedAt.getTime() + pm30S * 1000).toISOString();
+  }
 
   private statusLabel(status: CareSessionStatus): string {
     switch (status) {

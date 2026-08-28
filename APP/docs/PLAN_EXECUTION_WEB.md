@@ -404,6 +404,57 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **3** | **C3 — Demandes** — codé le 27/08. **Serveur : aucun.** Web : trois **onglets** comptés à la place des trois cartes empilées, **anneau** de décompte avec ses seuils (ambre 2 min, rouge 1 min), bloc « Ce qui se passe ensuite », heure de réception restaurée, antécédents et référence retirés. **API 480 ✓ · web 187 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **4** | **C5 — La consultation** — codé le 28/08. Serveur : **S1**, `reportDueAt` (`endedAt` + PM-30) sur la vue de séance ET sur les lignes du registre (~10 l. + 4 tests). Web : **Carnet du patient** au rail, fil porté au niveau du mobile (répondre, réagir, modifier, supprimer pour moi / pour tous, séparateurs de jour, regroupement, saut au message cité), décompte réel du compte-rendu, avertissement de remboursement **avant** la perte, « Terminer » → « Prolonger », composeur en pilule. **Un bug corrigé au passage : `deleteSessionMessage` partait sans corps** et se faisait refuser en 400 — le bouton « supprimer » n'avait jamais rien supprimé. **API 484 ✓ · web 203 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de C5
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête : avatar patient, motif « Palpitations nocturnes », pilule d'état, référence `CSL-2026-04120 · PAT-8821-BZV`, minuteur | Tuile stéthoscope, « Consultation », « Échange chiffré · N minutes », pilule d'état, minuteur serveur | **écart assumé** — le motif est le champ `symptoms`, déjà au rail : le répéter en titre n'ajoute rien. La référence `CSL-…` **n'existe pas au modèle** : les identifiants sont des UUID opaques, et afficher `PAT-8821-BZV` serait inventer un format |
+| Bandeau « 2 messages retenus pour le compte-rendu » | retiré | famille 3, groupe F — validé le 25/08 |
+| Fil : séparateur de jour, ligne d'ouverture, bulles, citation, pièce jointe, heures | idem, plus le **regroupement** des messages consécutifs et les **accusés de lecture** | conforme, et au-delà |
+| Étiquette « RETENU POUR LE COMPTE-RENDU » sur certaines bulles | retiré | même arbitrage |
+| « en train d'écrire… » avec trois points animés | idem, trois points animés | conforme |
+| Composeur : champ en pilule (rayon 18, hauteur 36), bouton d'envoi rond, bandeau de citation annulable | idem | conforme — la note de style de la maquette est suivie à la lettre |
+| Rail de **300 px** | rail de **320 px** | **écart de 20 px, assumé** — les maquettes ne s'accordent pas entre elles (C2 dit 320, C1/C5/D3 disent 300). 320 est la mesure des cinq écrans déjà reconstruits ; faire de C5 le seul écran à 300 coûterait plus qu'il ne rapporte |
+| Rail 1 « Contexte patient » : Âge, Sexe, **Antécédents**, **Allergies**, **Traitement en cours**, Honoraires — sous-titré « transmis avec la demande » | Contexte patient : Symptômes, Depuis, pièces jointes | **écart de fait** — la pré-consultation ne porte que `symptoms`, `sinceWhen`, `attachments` (EF-06-04). Antécédents, allergies et traitement sont des données du **Carnet** : elles ont leur propre règle d'accès, leur propre traçabilité, et elles sont dans le bloc suivant. Les honoraires ne sont pas dans la vue de séance — C6 les porte |
+| *(absent de la maquette)* | Rail 2 « **Carnet du patient** » — groupe sanguin, allergies actives en rouge, chroniques, chronologie filtrable | **ajout** — famille 4, point 2. Un médecin qui décide sans dossier décide à l'aveugle |
+| Rail 2 « Livrables » : Ordonnance + Compte-rendu | Rail 3 « Compte-rendu ». **L'ordonnance ouvrira C7 depuis ici — chantier 5** | moitié tenue, moitié annoncée |
+| Rail 3 « Terminer la consultation » + modale de clôture + récapitulatif | Rail 4 « **Prolonger** » | famille 4, point 1 — le professionnel ne peut pas clore (EF-06-10) |
+| « **48 heures** pour signer le compte-rendu » — écrit **trois fois** (bloc, modale, notification) | **aucun délai écrit** : décompte de `reportDueAt`, plus la date absolue | famille 2, point 1 |
+
+### Ce que le chantier 4 (C5 — La consultation) a appris
+
+**Corriger un chiffre faux par un chiffre juste, c'est ne payer que la moitié de la dette.** Le
+« 48 heures » de la maquette avait été remplacé par « 24 heures » en dur, avec un commentaire qui
+expliquait pourquoi 24 était le bon chiffre. Il l'était — jusqu'au jour où un super-administrateur
+change PM-30 dans E3, et alors l'écran ment de nouveau, avec un commentaire qui jure du contraire.
+**Un chiffre juste écrit en dur est un chiffre faux en sursis.**
+
+**Le fil web était en retard de tout ce que le serveur savait déjà faire.** Réponses citées,
+réactions, édition, suppression pour tous ou pour moi : `MessageView` les servait, le mobile les
+utilisait toutes, le web n'en montrait aucune. Ce n'était pas un choix — c'était un oubli, jamais
+relevé parce que personne n'avait comparé les deux applications côte à côte. **À vérifier sur
+chaque écran restant : ce que le serveur sert et que l'écran ignore.**
+
+**Un bouton peut ne jamais avoir fonctionné sans que personne ne s'en aperçoive.**
+`deleteSessionMessage` partait sans corps alors que `forEveryone` est obligatoire côté serveur :
+400 à chaque clic, depuis le premier jour. Le bouton existait, le test n'existait pas. C'est
+exactement ce que le porteur a signalé — « modifier le message ne passe pas bien » — et la moitié de
+la réponse était là, dans une méthode de quatre lignes.
+
+**Un avertissement au passé ne sert à rien.** « Cette consultation a été remboursée » informe d'une
+perte déjà subie. Le même fait, dit pendant la séance — « vous n'avez encore écrit aucun message » —
+coûte un message à annuler. **Chaque avertissement de l'application doit être relu à cette
+question : arrive-t-il avant ou après la perte ?**
+
+**Une doublure de test peut en écraser une autre.** `monter()` posait un Carnet vide par défaut ; les
+tests qui définissaient leur propre Carnet avant de l'appeler se le faisaient effacer, et échouaient
+sur un contenu absent qu'ils avaient pourtant fourni. Corrigé par une garde `vi.isMockFunction`. À
+connaître : c'est silencieux, et ça ressemble à un bug de l'écran.
+
 ### Ce que le chantier 3 (C3 — Demandes) a appris
 
 **L'étape 6 a servi dès son premier usage.** Le comparatif bloc à bloc a trouvé **deux défauts que

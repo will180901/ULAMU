@@ -3,9 +3,11 @@
  *
  * Trois choses coûteraient cher ici, et ce sont elles qui sont verrouillées :
  *
- *  1. **Annoncer 48 h pour le compte-rendu.** PM-30 vaut 86 400 s, et EF-06-08 dit « jusqu'à PM-30
- *     (24 h) ». Un médecin qui croit disposer du double voit ses gains gelés à la 24ᵉ heure, sans
- *     comprendre pourquoi. C'était l'erreur de la maquette.
+ *  1. **Écrire un délai de dépôt dans la page.** La maquette annonçait 48 h là où PM-30 en vaut 24 :
+ *     un médecin qui croit disposer du double voit ses gains gelés à la 24ᵉ heure. Corriger le chiffre
+ *     ne suffisait pas — « 24 heures » en dur mentirait au premier changement de PM-30 dans E3. Ce
+ *     qui est verrouillé ici, c'est donc l'absence de TOUT délai écrit : l'écran décompte
+ *     `reportDueAt`, servi par le serveur, et rien d'autre.
  *  2. **Laisser le professionnel clore la séance.** `cancel` est réservé au patient (EF-06-10). Le
  *     patient a payé N minutes : les lui couper serait lui reprendre ce qu'il a acheté.
  *  3. **Écrire dans une séance qui n'est plus active.** RM-06-03 : « aucun message hors d'une
@@ -63,6 +65,9 @@ function seance(over: Partial<CareSession> = {}): CareSession {
     extensionTotalSec: 0,
     professionalDelaySec: 0,
     reportDepositedAt: null,
+    // Échéance servie par le serveur depuis le 28/08 (`endedAt` + PM-30) : l'écran décompte
+    // au lieu d'écrire « 24 heures » en dur. `null` par défaut — chaque test la pose s'il en a besoin.
+    reportDueAt: null,
     preConsultation: {
       symptoms: 'Palpitations nocturnes depuis trois nuits.',
       sinceWhen: '3 jours',
@@ -98,6 +103,17 @@ function message(over: Partial<SessionMessage> = {}): SessionMessage {
 async function monter(s: CareSession, items: SessionMessage[] = []) {
   vi.spyOn(api, 'session').mockResolvedValue(s)
   vi.spyOn(api, 'sessionMessages').mockResolvedValue({ items, nextCursor: null })
+  // Le Carnet est lu dès que la séance est active (EF-06-06). Sans ces deux doublures, chaque test
+  // partirait pour de vrai sur le réseau.
+  //
+  // `vi.spyOn` sur une méthode DÉJÀ doublée en écraserait la réponse : un test qui pose son propre
+  // Carnet avant d'appeler `monter` se retrouverait avec un Carnet vide. D'où la garde.
+  if (!vi.isMockFunction(api.sessionRecordSummary)) {
+    vi.spyOn(api, 'sessionRecordSummary').mockResolvedValue({ bloodType: null, activeAllergies: [], chronicDiseases: [] })
+  }
+  if (!vi.isMockFunction(api.sessionRecord)) {
+    vi.spyOn(api, 'sessionRecord').mockResolvedValue({ recordId: null, items: [], nextCursor: null })
+  }
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
@@ -120,11 +136,53 @@ beforeEach(() => {
 })
 
 describe('C5 — le compte-rendu', () => {
-  it('annonce 24 heures, jamais 48 (PM-30 = 86 400 s)', async () => {
-    await monter(seance())
-    // L'erreur la plus coûteuse de la maquette : le médecin croit avoir le double du délai réel.
-    expect(await screen.findByText(/24 heures/)).toBeInTheDocument()
+  /** Une séance close, dont l'échéance de dépôt tombe dans `heures` heures. */
+  const close = (heures: number) =>
+    seance({
+      status: 'ENDED' as CareSessionStatus,
+      endedAt: '2026-08-24T08:32:00.000Z',
+      remainingSeconds: 0,
+      // +90 s : sans cette marge, le calcul retomberait sur « 2 h 59 min » au moindre délai de rendu.
+      reportDueAt: new Date(Date.now() + heures * 3_600_000 + 90_000).toISOString(),
+    })
+
+  it("n'écrit aucun délai : il décompte l'échéance servie par le serveur", async () => {
+    await monter(close(3))
+
+    expect(await screen.findByText(/3 h \d\d min pour déposer/)).toBeInTheDocument()
+    // Ni le chiffre de la maquette, ni celui qui le « corrigeait » : aucun des deux n'a sa place.
     expect(document.body.textContent).not.toContain('48 heures')
+    expect(document.body.textContent).not.toContain('24 heures')
+  })
+
+  it("suit PM-30 si le super-administrateur le change dans E3", async () => {
+    await monter(close(6))
+
+    // Même écran, même code, autre échéance : c'est le serveur qui décide, pas ce fichier.
+    expect(await screen.findByText(/6 h \d\d min pour déposer/)).toBeInTheDocument()
+  })
+
+  it("tant que la séance dure, aucun décompte : le délai ne court qu'à la clôture", async () => {
+    await monter(seance({ reportDueAt: null }))
+
+    await screen.findByRole('button', { name: /Déposer le compte-rendu/ })
+    expect(document.body.textContent).not.toContain('pour déposer')
+  })
+
+  /**
+   * Le point le plus coûteux du bloc. L'échéance est comparée à l'horloge du POSTE, qui peut être
+   * fausse — sur un ordinateur partagé de CSI, de plusieurs heures. Si l'écran désactivait le bouton
+   * sur ce calcul, une machine en avance ferait perdre des honoraires bien réels. C'est le serveur
+   * qui refuse (409), et lui seul.
+   */
+  it("dépassé, il avertit mais ne bloque JAMAIS le dépôt : le serveur tranche", async () => {
+    const utilisateur = userEvent.setup()
+    await monter(close(-2))
+
+    expect(await screen.findByText(/délai de dépôt est dépassé/)).toBeInTheDocument()
+    await utilisateur.type(screen.getByLabelText('Diagnostic'), 'Tachycardie bénigne')
+    await utilisateur.type(screen.getByLabelText('Recommandations'), 'Repos')
+    await waitFor(() => expect(screen.getByRole('button', { name: /Déposer le compte-rendu/ })).toBeEnabled())
   })
 
   it('reste impossible à déposer tant qu’un des deux champs est vide (D-021)', async () => {
@@ -292,5 +350,179 @@ describe('C5 — le contexte patient', () => {
   it('dit son absence au lieu d’afficher un cadre vide', async () => {
     await monter(seance({ status: 'PREPARING', preConsultation: null }))
     expect(await screen.findByText(/n'a pas encore transmis sa pré-consultation/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le fil, mis au niveau du mobile. Le serveur servait déjà tout cela (`MessageView` porte les
+ * réponses citées, les réactions, l'édition et la double suppression) ; le web n'en montrait rien.
+ */
+describe('C5 — les gestes sur un message', () => {
+  /** Un message à MOI, tout juste écrit : la fenêtre de quinze minutes est ouverte. */
+  const aMoiRecent = () => message({ senderId: 'pro-1', createdAt: new Date().toISOString() })
+
+  it('supprimer envoie `forEveryone` — sans lui le serveur refuse en 400', async () => {
+    const utilisateur = userEvent.setup()
+    const supprimer = vi.spyOn(api, 'deleteSessionMessage').mockResolvedValue({ ok: true })
+    await monter(seance(), [aMoiRecent()])
+
+    await utilisateur.click(await fil().findByLabelText('Autres actions sur ce message'))
+    await utilisateur.click(await screen.findByText('Supprimer pour tout le monde'))
+
+    await waitFor(() => expect(supprimer).toHaveBeenCalledWith('s1', 'm1', true))
+  })
+
+  it('retirer de mon fil ne supprime pas chez l’autre', async () => {
+    const utilisateur = userEvent.setup()
+    const supprimer = vi.spyOn(api, 'deleteSessionMessage').mockResolvedValue({ ok: true })
+    await monter(seance(), [aMoiRecent()])
+
+    await utilisateur.click(await fil().findByLabelText('Autres actions sur ce message'))
+    await utilisateur.click(await screen.findByText('Retirer de mon fil'))
+
+    await waitFor(() => expect(supprimer).toHaveBeenCalledWith('s1', 'm1', false))
+  })
+
+  it('répondre cite le message, et l’envoi porte `replyToId`', async () => {
+    const utilisateur = userEvent.setup()
+    const envoyer = vi.spyOn(api, 'sendMessage').mockResolvedValue(message())
+    await monter(seance(), [message({ body: 'Depuis trois nuits.' })])
+
+    await utilisateur.click(await fil().findByLabelText('Répondre à ce message'))
+    await utilisateur.type(screen.getByLabelText('Votre message'), 'Depuis quand exactement ?')
+    await utilisateur.click(screen.getByRole('button', { name: 'Envoyer' }))
+
+    await waitFor(() => expect(envoyer).toHaveBeenCalled())
+    expect(envoyer.mock.calls[0][1]).toMatchObject({ replyToId: 'm1', kind: 'TEXT' })
+  })
+
+  it('modifier remplit le champ et appelle l’édition, pas un nouvel envoi', async () => {
+    const utilisateur = userEvent.setup()
+    const modifier = vi.spyOn(api, 'editSessionMessage').mockResolvedValue(message())
+    const envoyer = vi.spyOn(api, 'sendMessage').mockResolvedValue(message())
+    await monter(seance(), [message({ senderId: 'pro-1', body: 'Bonour', createdAt: new Date().toISOString() })])
+
+    await utilisateur.click(await fil().findByLabelText('Modifier ce message'))
+    // Le texte existant est déjà là : on corrige, on ne réécrit pas.
+    const champ = screen.getByLabelText('Modifier votre message')
+    expect(champ).toHaveValue('Bonour')
+
+    await utilisateur.clear(champ)
+    await utilisateur.type(champ, 'Bonjour')
+    await utilisateur.click(screen.getByRole('button', { name: 'Enregistrer la modification' }))
+
+    await waitFor(() => expect(modifier).toHaveBeenCalledWith('s1', 'm1', 'Bonjour'))
+    expect(envoyer).not.toHaveBeenCalled()
+  })
+
+  /**
+   * La fenêtre de quinze minutes est celle du SERVEUR (`EDIT_DELETE_WINDOW_MS`). L'écran ne
+   * l'applique pas — il évite seulement de proposer un geste qui reviendrait en 409.
+   */
+  it('passé un quart d’heure, « modifier » n’est plus proposé', async () => {
+    const vieux = new Date(Date.now() - 20 * 60_000).toISOString()
+    await monter(seance(), [message({ senderId: 'pro-1', createdAt: vieux })])
+
+    await fil().findByText('Bonjour docteur')
+    expect(fil().queryByLabelText('Modifier ce message')).not.toBeInTheDocument()
+  })
+
+  it('réagir bascule l’emoji — la même palette que le mobile', async () => {
+    const utilisateur = userEvent.setup()
+    const reagir = vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
+    await monter(seance(), [message()])
+
+    await utilisateur.click(await fil().findByLabelText('Réagir à ce message'))
+    await utilisateur.click(await screen.findByLabelText('Réagir avec 👍'))
+
+    await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '👍'))
+  })
+
+  it('une séance close n’offre plus aucun geste : le fil est archivé', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
+
+    await fil().findByText('Bonjour docteur')
+    expect(fil().queryByLabelText('Répondre à ce message')).not.toBeInTheDocument()
+    expect(fil().queryByLabelText('Autres actions sur ce message')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * D-008, invariant n°9. L'avertissement ne valait rien au passé — « cette consultation a été
+ * remboursée » ne rattrape pas des honoraires perdus. Au présent, un message le fait disparaître.
+ */
+describe('C5 — l’avertissement de remboursement', () => {
+  it('prévient tant que le professionnel n’a rien écrit', async () => {
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+
+    expect(await screen.findByText(/vous ne percevrez rien/)).toBeInTheDocument()
+  })
+
+  it('disparaît dès le premier message du professionnel', async () => {
+    await monter(seance(), [message({ senderId: 'pat-1' }), message({ id: 'm2', senderId: 'pro-1', body: 'Bonjour.' })])
+
+    await fil().findByText('Bonjour.')
+    expect(document.body.textContent).not.toContain('vous ne percevrez rien')
+  })
+})
+
+/**
+ * Le Carnet en session (EF-06-06, RM-06-05). Trois mentions sont imposées par l'alignement, et
+ * aucune n'est décorative : la lecture seule, la traçabilité de l'accès, et sa fermeture à la
+ * clôture — le compte-rendu rédigé à la 23ᵉ heure n'aura plus le Carnet sous les yeux.
+ */
+describe('C5 — le Carnet du patient', () => {
+  it('montre le groupe sanguin, les allergies actives et les chroniques', async () => {
+    vi.spyOn(api, 'sessionRecordSummary').mockResolvedValue({
+      bloodType: 'O+',
+      activeAllergies: ['Pénicilline'],
+      chronicDiseases: ['Hypertension'],
+    })
+    await monter(seance())
+
+    expect(await screen.findByText('O+')).toBeInTheDocument()
+    // L'allergie est la seule information de cet écran qui peut tuer : elle est en tête.
+    expect(screen.getByText('Pénicilline')).toBeInTheDocument()
+    expect(screen.getByText('Hypertension')).toBeInTheDocument()
+  })
+
+  it('annonce la lecture seule et la traçabilité AVANT qu’on lise', async () => {
+    await monter(seance())
+
+    expect(await screen.findByText(/Lecture seule · votre consultation est enregistrée/)).toBeInTheDocument()
+  })
+
+  it('la séance close, l’accès est refermé — et l’écran ne demande plus rien au serveur', async () => {
+    const lire = vi.spyOn(api, 'sessionRecordSummary')
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }))
+
+    expect(await screen.findByText(/L'accès s'est refermé avec la consultation/)).toBeInTheDocument()
+    expect(lire).not.toHaveBeenCalled()
+  })
+
+  it('n’efface pas une entrée remplacée : elle reste visible, corrigée (EF-07-04)', async () => {
+    vi.spyOn(api, 'sessionRecord').mockResolvedValue({
+      recordId: 'r1',
+      items: [
+        {
+          id: 'e1',
+          type: 'ALLERGY',
+          provenance: 'DECLARED_BY_PATIENT',
+          authorId: null,
+          sourceRef: null,
+          payload: { label: 'Arachide' },
+          supersedesId: null,
+          createdAt: '2026-06-01T10:00:00.000Z',
+          superseded: true,
+        },
+      ],
+      nextCursor: null,
+    })
+    await monter(seance())
+
+    const entree = await screen.findByText('Arachide')
+    expect(entree.className).toContain('line-through')
+    // RM-07-03 : une déclaration du patient n'est JAMAIS présentée comme un diagnostic.
+    expect(screen.getByText(/déclaré par le patient/)).toBeInTheDocument()
   })
 })

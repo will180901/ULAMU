@@ -53,6 +53,9 @@ function seance(over: Partial<SessionListItem> = {}): SessionListItem {
     endedAt: ilYA(29),
     remainingSeconds: 0,
     reportDepositedAt: null,
+    // Échéance servie par le serveur depuis le 28/08 (`endedAt` + PM-30) : l'écran décompte
+    // au lieu d'écrire « 24 heures » en dur. `null` par défaut — chaque test la pose s'il en a besoin.
+    reportDueAt: null,
     ...over,
   }
 }
