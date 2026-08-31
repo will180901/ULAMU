@@ -414,6 +414,55 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **8** | **C1 — Ma vérification, le contrat, l'avenant** — codé le 28/08. Serveur : **S4**, `lastSigned` dans `GET /v1/verification/me` (~15 l. + 7 tests) — la dernière version réellement signée, pour montrer l'ancien taux à côté du nouveau. Web : **parcours de re-signature** (bandeau de conséquence, ancien → nouveau taux côte à côte, texte relu, bouton qui dit ce qu'on regagne), taux lu du contrat, versement mensuel retiré, **promesse de réponse « sous 24 h ouvrées » retirée**. **API 496 ✓ · web 249 ✓ · builds propres.** ⚠️ Le parcours d'avenant ne se déclenche qu'avec **E3** (chantier 14). | ⏸ en attente | ⏸ |
 
+| **9** | **B2 — Tableau de bord** — codé le 01/09. **Serveur : aucun.** Web : deux des quatre tendances de la maquette **sont devenues calculables** depuis `lastSixMonths` (consultations et gains, d'un mois sur l'autre) et sont affichées ; les deux autres restent absentes, faute de série. Ajouté : « N expirent dans moins de 2 h », le compte à rebours servi par le serveur, la fiche anonymisée (prénom + âge) dans la file, et le bloc « ce que deviennent vos demandes » à la place d'une répartition par mode qui n'existe pas. **API 496 ✓ · web 262 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de B2
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Tableau de bord · Lundi 10 août 2026 · **4 demandes attendent une réponse** » | idem, le compte venant des poignées réelles — et **rien** quand il n'y en a pas | conforme. La maquette a raison de le mettre là : c'est la seule chose de l'écran qui appelle un geste dans l'heure |
+| Tuile « **DEMANDES EN ATTENTE** 4 · *2 expirent dans moins de 2 h* · **+1 depuis hier** » | idem pour les deux premières lignes | **la tendance part** — aucune série quotidienne n'existe, et `myHandshakes` ne sert que les cent dernières : une comparaison à hier serait fausse dès la 101ᵉ |
+| Tuile « **CONSULTATIONS DU JOUR** 6 · *2 en téléconsultation* · **+2 vs hier** » | « Consultations du **mois** » + *« +4 par rapport au mois dernier »* | **deux écarts** — le serveur compte au mois ; « en téléconsultation » suppose un autre mode, il n'y en a pas. **Mais la tendance, elle, est devenue vraie** : `lastSixMonths` la porte |
+| Tuile « **GAINS DU MOIS** 486 500 · *XAF · **versés le 5 septembre*** · **+12 % vs juillet** » | « Gains du mois » + *« XAF · N retirables · +N XAF vs le mois dernier »* | **la date de versement part** (famille 1, point 2 : aucun versement mensuel n'existe) ; **la tendance devient vraie**, en valeur absolue plutôt qu'en pourcentage — un pourcentage sur un mois à zéro ne veut rien dire |
+| Tuile « **TAUX DE RÉPONSE** 92 % · *Sur les 30 derniers jours* · **−3 pts** » | « Taux de confirmation » + *« Note N/5 · visible des patients »* | **deux écarts de fait** — ce taux est un cumul depuis l'ouverture du compte, pas une fenêtre de 30 jours ; et aucune série n'existe pour la variation. Ce qui est ajouté à la place est ce qui compte : **les patients le voient** |
+| Graphique « Consultations honorées · Mars – août » | idem, six barres, plus un tableau lisible aux lecteurs d'écran | conforme |
+| Bloc « **Répartition du mois** : Téléconsultations 38 · En cabinet 41 · Refusées 6 · Expirées 7 » | « **Ce que deviennent vos demandes** » : menées jusqu'à la consultation · refusées avec motif · expirées sans réponse | **écart de fait** — les deux premières lignes n'ont aucun référent ; les deux dernières sont vraies et gardées |
+| Phrase « Une demande refusée avec motif n'entre pas dans le calcul des gains » | « Une demande laissée expirer compte comme une non-réponse dans le taux affiché aux patients. Un refus motivé, non. » | conforme sur le fond, **plus utile** : la maquette dit ce qui ne se passe pas, l'écran dit ce que ça coûte (famille 3, groupe E) |
+| Tableau « Demandes en attente · **compte à rebours de 12 h** » | idem, **sans aucun délai écrit** : le reste vient de `windowRemainingSeconds` | famille 2 — même règle que C3 |
+| Colonne **PATIENT** « PB · Patient · PAT-8821-BZV » | Prénom et âge — la fiche anonymisée | **écart de fait** — `PAT-8821-BZV` n'existe pas ; EF-06-01 autorise prénom et âge, « pas plus avant paiement » |
+| Colonne **MOTIF** « Palpitations nocturnes » | L'**offre demandée** (libellé + durée) | **donnée interdite, pas donnée manquante** — le motif vit dans la pré-consultation, qui se remplit APRÈS le paiement (EF-06-04) |
+| Colonnes **STATUT** et **EXPIRE DANS** | idem, le temps restant passant en rouge sous deux heures | conforme |
+| Bouton d'export | absent | famille 3, groupe D |
+
+### Ce que le chantier 9 (B2 — Tableau de bord) a appris
+
+**Une donnée qui manquait hier peut exister aujourd'hui.** L'en-tête de cet écran portait, depuis le
+20/08, un avertissement : « l'API ne calcule RIEN de tout cela, aucune comparaison historique
+n'existe nulle part ». C'était vrai le 20 — et faux depuis le 24, date à laquelle `lastSixMonths` a
+été ajouté pour le graphique. **Deux des quatre tendances étaient calculables depuis une semaine, et
+l'écran continuait de dire qu'aucune ne l'était.** Personne ne relit un commentaire qui explique une
+absence : on le croit sur parole. *À faire pour chaque écran restant : relire ses renoncements, pas
+seulement son code — un renoncement documenté vieillit aussi mal qu'un chiffre en dur.*
+
+**Une tendance se dit en valeur, pas en pourcentage.** La maquette écrit « +12 % vs juillet ». Sur un
+mois à zéro — le cas de tout soignant qui démarre — un pourcentage n'existe pas, et « +100 % » depuis
+une consultation serait grotesque. L'écran affiche donc « +4 » et « +12 500 XAF », qui restent
+justes dans tous les cas, y compris le premier mois où ils ne s'affichent simplement pas.
+
+**Le contraire d'une donnée interdite, c'est une donnée utile — pas rien.** La colonne « MOTIF »
+affichait « Palpitations nocturnes » avant tout paiement : le motif n'existe pas encore, la
+pré-consultation se remplit après (EF-06-04). Mais la remplacer par du vide aurait appauvri la
+décision. Elle porte désormais **l'offre demandée** — durée et intitulé — qui est exactement ce sur
+quoi le professionnel décide. *Même mouvement qu'en C3 : « donnée interdite, pas donnée manquante ».*
+
+**Un commentaire de test peut mentir aussi.** Le fabricant de poignées de main disait « le tableau de
+bord ne l'affiche PAS, il ne fait que compter » à propos de la fiche anonymisée — vrai à l'écriture,
+faux depuis que le serveur sert prénom et âge. Le test qui verrouillait « aucune identité » a été
+réécrit pour verrouiller la vraie règle : **prénom et âge, et rien de plus.** Ce n'est pas la même
+chose, et la différence est exactement ce qu'EF-06-01 autorise.
+
 ### Étape 6 — le comparatif bloc à bloc de C1
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

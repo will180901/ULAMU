@@ -68,7 +68,8 @@ const demande = (id: string, status: Handshake['status']): Handshake => ({
   windowExpiresAt: null,
   windowRemainingSeconds: 0,
   sessionId: null,
-  // Fiche anonymisée (EF-06-01) — le tableau de bord ne l'affiche PAS, il ne fait que compter.
+  // Fiche anonymisée (EF-06-01) — prénom et âge, « pas plus avant paiement ». Depuis le 01/09 le
+  // tableau de bord l'affiche, comme C3 : décider sans savoir s'il s'agit d'un enfant n'a pas de sens.
   patientFirstName: 'Mireille',
   patientAge: 32,
   offerLabel: 'Consultation',
@@ -112,10 +113,11 @@ describe('B2 — soignant', () => {
   it("l'écran s'affiche quand les demandes arrivent sous forme d'objet `{ items }`", async () => {
     await monter([demande('h1', 'INITIATED'), demande('h2', 'INITIATED'), demande('h3', 'CONFIRMED')])
 
-    // Le compte ne retient que les poignées de main OUVERTES : une confirmée n'attend plus rien.
+    // Une confirmée attend encore le PAIEMENT : elle mobilise une place et son compte à rebours
+    // court toujours. Les trois sont donc « en attente ».
     // Avant le correctif, cette ligne ne s'exécutait jamais : l'écran plantait au rendu.
-    expect(await screen.findByText('2 poignée(s) de main ouverte(s)')).toBeInTheDocument()
-    expect(screen.getByText('486 500')).toBeInTheDocument()
+    expect(await screen.findByText('3 en attente de votre réponse ou du paiement')).toBeInTheDocument()
+    expect(screen.getByText(/3 demandes attendent une réponse/)).toBeInTheDocument()
   })
 
   it('aucune demande : la liste propose une sortie plutôt qu’un vide muet (CG-08 §06)', async () => {
@@ -124,21 +126,41 @@ describe('B2 — soignant', () => {
     expect(screen.getByRole('link', { name: /Compléter ma vitrine/ })).toBeInTheDocument()
   })
 
-  it('sans note reçue, on écrit « Aucune note reçue » — jamais « null / 5 »', async () => {
+  it('sans note reçue, aucun « null / 5 »', async () => {
     await monter([], null)
-    expect(screen.getByText('Aucune note reçue')).toBeInTheDocument()
+    expect(screen.getByText(/Depuis l’ouverture/)).toBeInTheDocument()
     expect(screen.queryByText(/null/)).not.toBeInTheDocument()
   })
 
   it('avec une note, elle est affichée telle quelle', async () => {
     await monter([], 4.8)
-    expect(screen.getByText(/Note moyenne 4.8 \/ 5/)).toBeInTheDocument()
+    expect(screen.getByText(/Note 4.8 \/ 5/)).toBeInTheDocument()
   })
 
-  it("aucune identité de patient n'apparaît dans la file — une poignée de main n'a rien ouvert (C1)", async () => {
+  /**
+   * Le taux de confirmation est un cumul DEPUIS TOUJOURS (`ProfessionalStats`), pas une fenêtre
+   * glissante. « Sur les 30 derniers jours », comme l'écrit la maquette, serait faux — et ce taux
+   * est public : les patients le lisent avant de choisir.
+   */
+  it('ne prétend pas que le taux porte sur 30 jours — il porte sur tout', async () => {
+    await monter([], 4.8)
+
+    expect(document.body.textContent).not.toContain('30 derniers jours')
+    expect(screen.getByText(/visible des patients/)).toBeInTheDocument()
+  })
+
+  /**
+   * EF-06-01 : « prénom, âge — pas plus avant paiement ». Ce qui est verrouillé, ce n'est plus
+   * l'absence de toute identité (la fiche anonymisée est servie depuis le 24/08) mais sa BORNE.
+   */
+  it('montre le prénom et l’âge, et rien de plus', async () => {
     await monter([demande('h1', 'INITIATED')])
+
+    expect(screen.getByText('Mireille · 32 ans')).toBeInTheDocument()
     const principal = document.querySelector('main')?.textContent ?? ''
+    // Ni identifiant de compte, ni motif de consultation — celui-ci n'existe qu'après paiement.
     expect(principal).not.toContain('pat')
+    expect(principal).not.toContain('Palpitations')
   })
 })
 
@@ -176,5 +198,127 @@ describe('B2 — les six derniers mois', () => {
     // Un tableau de secours : une barre sans chiffre ne se lit pas au lecteur d'écran.
     const tableau = screen.getByRole('table', { name: /Consultations et gains par mois/ })
     expect(within(tableau).getByText('30 000 XAF')).toBeInTheDocument()
+  })
+})
+
+/**
+ * Ce que la maquette voulait, et que le serveur permet enfin en partie.
+ *
+ * Deux des quatre tendances sont devenues calculables depuis que `lastSixMonths` existe. Les deux
+ * autres ne le sont toujours pas, et ce qui est verrouillé ici c'est qu'elles n'apparaissent pas :
+ * un tableau de bord qui invente une tendance est pire qu'un tableau de bord sans tendance, parce
+ * qu'on y prend des décisions.
+ */
+describe('B2 — les tendances, seulement quand elles existent', () => {
+  const serie = (...sessions: number[]) =>
+    sessions.map((n, i) => ({ month: `2026-0${i + 3}`, sessions: n, earnedXaf: n * 10_000 }))
+
+  it('compare le mois en cours au précédent, pour les consultations', async () => {
+    await monter([], null, serie(4, 4, 4, 4, 2, 6))
+
+    // 6 ce mois-ci contre 2 le mois dernier.
+    expect(await screen.findByText('+4 par rapport au mois dernier')).toBeInTheDocument()
+  })
+
+  it('sait dire une BAISSE — la tendance n’est pas décorative', async () => {
+    await monter([], null, serie(4, 4, 4, 4, 9, 6))
+
+    expect(await screen.findByText('−3 par rapport au mois dernier')).toBeInTheDocument()
+  })
+
+  it('ne compare rien sur un premier mois : il n’y a pas de « avant »', async () => {
+    await monter([], null, serie(5))
+
+    expect(await screen.findByText('Depuis le 1er du mois')).toBeInTheDocument()
+  })
+
+  it('n’invente aucune tendance quotidienne : aucune série ne l’autorise', async () => {
+    await monter([demande('h1', 'INITIATED')], null, serie(4, 6))
+
+    expect(document.body.textContent).not.toMatch(/depuis hier|vs hier/i)
+  })
+
+  it('n’annonce aucune date de versement : le mensuel n’existe pas', async () => {
+    await monter([], null, serie(4, 6))
+
+    expect(await screen.findByText(/retirables/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/vers[ée]s? le \d|le 5 de chaque mois/i)
+  })
+})
+
+/**
+ * La tuile qui fait agir. Ce n'est pas le nombre de demandes qui compte — c'est combien vont
+ * tomber. Une poignée de main expirée fait baisser un taux que les patients voient.
+ */
+describe('B2 — les demandes qui pressent', () => {
+  const dansUneHeure = (id: string, status: 'INITIATED' | 'CONFIRMED' = 'INITIATED') => ({
+    ...demande(id, status),
+    windowRemainingSeconds: 3600,
+  })
+  const dansSixHeures = (id: string) => ({ ...demande(id, 'INITIATED'), windowRemainingSeconds: 6 * 3600 })
+
+  it('met en avant celles qui expirent dans moins de deux heures', async () => {
+    await monter([dansUneHeure('h1'), dansUneHeure('h2'), dansSixHeures('h3')])
+
+    expect(await screen.findByText('2 expirent dans moins de 2 h')).toBeInTheDocument()
+  })
+
+  it('accorde le verbe au singulier quand il n’y en a qu’une', async () => {
+    await monter([dansUneHeure('h1'), dansSixHeures('h2')])
+
+    expect(await screen.findByText('1 expire dans moins de 2 h')).toBeInTheDocument()
+  })
+
+  it('ne dit rien d’urgent quand rien ne l’est', async () => {
+    await monter([dansSixHeures('h1')])
+
+    expect(await screen.findByText('Poignées de main à confirmer')).toBeInTheDocument()
+  })
+
+  it('affiche le temps restant servi par le serveur, jamais un délai écrit', async () => {
+    await monter([dansUneHeure('h1')])
+
+    expect(await screen.findByText('1 h 00')).toBeInTheDocument()
+    // La maquette écrit « compte à rebours de 12 h ». Aucun délai n'a sa place ici.
+    expect(document.body.textContent).not.toContain('12 h')
+  })
+})
+
+/**
+ * Famille 3, groupe B et groupe E : « téléconsultations / en cabinet » n'a aucun référent, et
+ * « trois expirations consécutives suspendent » n'existe pas non plus — cette règle ne vise que les
+ * pharmacies. La vraie conséquence est un taux public qui baisse.
+ */
+describe('B2 — ce que deviennent les demandes', () => {
+  it('compte les issues réelles, pas un mode de consultation qui n’existe pas', async () => {
+    await monter([
+      demande('h1', 'PAID'),
+      demande('h2', 'PAID'),
+      demande('h3', 'REFUSED'),
+      demande('h4', 'EXPIRED'),
+      demande('h5', 'EXPIRED'),
+      demande('h6', 'EXPIRED'),
+    ])
+
+    const bloc = (await screen.findByText('Ce que deviennent vos demandes')).closest('section') as HTMLElement
+    expect(within(bloc).getByText('Menées jusqu’à la consultation')).toBeInTheDocument()
+    expect(within(bloc).getByText('Refusées avec motif')).toBeInTheDocument()
+    expect(within(bloc).getByText('Expirées sans réponse')).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('Téléconsultation')
+    expect(document.body.textContent).not.toContain('En cabinet')
+  })
+
+  it('dit la vraie conséquence d’une expiration : le taux public baisse', async () => {
+    await monter([demande('h1', 'EXPIRED')])
+
+    expect(await screen.findByText(/compte comme une non-réponse dans le taux affiché aux patients/)).toBeInTheDocument()
+    // Aucune suspension : cette sanction ne vise que les pharmacies (EF-12-07).
+    expect(document.body.textContent).not.toMatch(/suspend/i)
+  })
+
+  it('avoue que le compte porte sur les cent dernières, sans le laisser croire complet', async () => {
+    await monter([demande('h1', 'PAID')])
+
+    expect(await screen.findByText('Sur les cent dernières')).toBeInTheDocument()
   })
 })

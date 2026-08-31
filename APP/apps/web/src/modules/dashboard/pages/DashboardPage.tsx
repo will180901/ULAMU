@@ -12,8 +12,34 @@
  *
  * Décision du 20/08/2026 : **construire avec le réel**. Chaque chiffre affiché ici est vrai. Pas de
  * tendance inventée, pas de courbe décorative — un tableau de bord qui ment est pire qu'un tableau de
- * bord incomplet, parce qu'on y prend des décisions. Le manque est inscrit au §9 du plan, à combler
- * quand M16 saura produire ces séries.
+ * bord incomplet, parce qu'on y prend des décisions.
+ *
+ * ── Ce qui a changé le 01/09/2026 (chantier 9) ─────────────────────────────────────────────────
+ *
+ * Depuis le 24/08, `lastSixMonths` existe. **Deux des quatre tendances de la maquette sont donc
+ * devenues calculables** — les consultations et les gains, d'un mois sur l'autre — et elles sont
+ * affichées. Les deux autres ne le sont toujours pas et restent absentes :
+ *
+ * • **« +1 demande depuis hier »** — aucune série quotidienne n'existe, et `myHandshakes` ne sert
+ *   que les cent dernières poignées : une comparaison à hier serait fausse dès le 101ᵉ.
+ * • **« −3 pts de taux de réponse »** — `confirmationRatePct` est un cumul DEPUIS TOUJOURS
+ *   (`ProfessionalStats`), pas une fenêtre glissante. Le sous-titre de la maquette, « sur les
+ *   30 derniers jours », est donc faux lui aussi : il est corrigé, pas seulement dépouillé.
+ *
+ * ── Les écarts à la maquette ──────────────────────────────────────────────────────────────────
+ *
+ * 1. **« Consultations du jour · 2 en téléconsultation »** → « du mois ». Le serveur compte au mois
+ *    (`sessionsThisMonth`), et « en téléconsultation » suppose un autre mode : il n'y en a pas — la
+ *    messagerie est le seul portail (famille 3, groupe B).
+ * 2. **« Gains du mois · versés le 5 septembre »** → le versement mensuel n'existe pas (famille 1,
+ *    point 2) : ni tâche planifiée, ni route. Les gains sont retirables à tout moment.
+ * 3. **« Répartition du mois : téléconsultations / en cabinet »** → remplacée par ce qui existe
+ *    vraiment : ce que sont DEVENUES les demandes — confirmées, refusées, expirées sans réponse.
+ * 4. **« compte à rebours de 12 h »** → aucun délai n'est écrit : il vient du serveur
+ *    (`windowRemainingSeconds`), comme dans C3.
+ * 5. **Colonne « MOTIF » du tableau retirée** — le motif de consultation n'existe pas avant
+ *    paiement : la pré-consultation se remplit APRÈS (EF-06-04). Remplacée par l'offre demandée,
+ *    qui est ce sur quoi le professionnel décide réellement.
  */
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -106,7 +132,7 @@ function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
 }
 
 /** En-tête de page — le motif commun à tous les écrans de la coquille. */
-function EnTete({ titre, sousTitre }: { titre: string; sousTitre: string }) {
+function EnTete({ titre, sousTitre, complement }: { titre: string; sousTitre: string; complement?: string }) {
   return (
     <div className="mb-4 flex items-center gap-3">
       <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--ap-50)] text-[var(--ap-600)]">
@@ -114,7 +140,15 @@ function EnTete({ titre, sousTitre }: { titre: string; sousTitre: string }) {
       </span>
       <span className="min-w-0 flex-1">
         <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">{titre}</h1>
-        <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">{sousTitre}</p>
+        <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
+          {sousTitre}
+          {/*
+            La maquette met le nombre de demandes en attente DANS l'en-tête, et elle a raison : c'est
+            la seule chose de cet écran qui appelle un geste dans l'heure. Il n'apparaît que pour le
+            soignant, et que s'il y en a — une ligne « 0 demande » ne dit rien à personne.
+          */}
+          {complement ? <span className="font-medium text-foreground"> · {complement}</span> : null}
+        </p>
       </span>
     </div>
   )
@@ -171,36 +205,171 @@ function Vide({ texte, action }: { texte: string; action?: React.ReactNode }) {
   )
 }
 
+/**
+ * Une variation d'un mois sur l'autre, quand elle est calculable — et rien sinon.
+ *
+ * `lastSixMonths` est servi du plus ancien au plus récent, un mois sans activité valant zéro et
+ * gardant sa place. La comparaison est donc toujours entre deux mois consécutifs réels.
+ *
+ * `null` quand il n'y a pas de mois précédent : le premier mois d'un soignant n'a pas de « avant »,
+ * et « +100 % » sur un départ de zéro ne veut rien dire.
+ */
+function variation(serie: ProfessionalDashboard['lastSixMonths'], champ: 'sessions' | 'earnedXaf'): number | null {
+  if (serie.length < 2) return null
+  const courant = serie[serie.length - 1][champ]
+  const precedent = serie[serie.length - 2][champ]
+  if (precedent === 0 && courant === 0) return null
+  return courant - precedent
+}
+
+/** « +3 » / « −2 » / « = » — une variation dite sans détour, avec le bon signe. */
+const signe = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '=')
+
+/** Le prénom et l'âge, seuls (EF-06-01 : « pas plus avant paiement »). */
+function ficheAnonyme(h: { patientFirstName: string | null; patientAge: number | null }): string {
+  const parts = [h.patientFirstName, h.patientAge !== null ? `${h.patientAge} ans` : null].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : 'Patient'
+}
+
+/** « 1 h 42 », « 08 min » — ce qui reste avant expiration, tel que le serveur le compte. */
+function resteFr(secondes: number): string {
+  const s = Math.max(0, secondes)
+  const h = Math.floor(s / 3600)
+  const min = Math.floor((s % 3600) / 60)
+  return h >= 1 ? `${h} h ${String(min).padStart(2, '0')}` : `${min} min`
+}
+
+/** Seuil d'urgence du tableau de bord : deux heures, comme la maquette le met en avant. */
+const BIENTOT_S = 2 * 3600
+
+const ETATS_DEMANDE: Record<string, { libelle: string; classe: string }> = {
+  INITIATED: { libelle: 'À confirmer', classe: 'bg-[var(--alerte-fond)] text-[var(--alerte-texte)]' },
+  CONFIRMED: { libelle: 'Paiement attendu', classe: 'bg-[var(--ap-50)] text-[var(--ap-700)]' },
+  PAID: { libelle: 'Payée', classe: 'bg-[var(--succes-fond)] text-[var(--succes-texte)]' },
+}
+
 // ── Soignant ──────────────────────────────────────────────────────────────────────────────────
 function TableauSoignant() {
   const bord = useQuery({ queryKey: ['dashboard', 'pro'], queryFn: () => api.professionalDashboard(), retry: false })
   const demandes = useQuery({ queryKey: ['handshakes', 'mine'], queryFn: () => api.myHandshakes(), retry: false })
 
+  const toutes = demandes.data?.items ?? []
+  // Ce qui attend une réponse OU un paiement : les deux mobilisent une place sur les trois
+  // simultanées, et les deux ont un compte à rebours qui court.
+  const enAttente = toutes.filter((h) => h.status === 'INITIATED' || h.status === 'CONFIRMED')
+  const pressantes = enAttente.filter((h) => h.windowRemainingSeconds > 0 && h.windowRemainingSeconds < BIENTOT_S)
+
   if (bord.isPending) return <Chargement />
   if (bord.isError) return <Echec onRetry={() => void bord.refetch()} />
 
-  const enAttente = (demandes.data?.items ?? []).filter((h) => h.status === 'INITIATED')
+  const serie = bord.data.lastSixMonths
+  const moisCourant = serie.at(-1)
+  const dSessions = variation(serie, 'sessions')
+  const dGains = variation(serie, 'earnedXaf')
+
+  /**
+   * Ce que sont DEVENUES les demandes, à la place de la répartition par mode de la maquette.
+   *
+   * « Téléconsultations / en cabinet » n'a aucun référent. Ce qui existe, et qui apprend quelque
+   * chose au médecin, c'est le sort de ses poignées de main — surtout les expirées, qui font
+   * baisser un taux de confirmation public que les patients voient (famille 4, point 7).
+   */
+  const sorts = [
+    { cle: 'PAID', label: 'Menées jusqu’à la consultation', n: toutes.filter((h) => h.status === 'PAID').length },
+    { cle: 'REFUSED', label: 'Refusées avec motif', n: toutes.filter((h) => h.status === 'REFUSED').length },
+    { cle: 'EXPIRED', label: 'Expirées sans réponse', n: toutes.filter((h) => h.status === 'EXPIRED').length },
+  ]
 
   return (
     <>
       <Grille>
-        <CarteKpi icone={Hourglass} ton="ambre" label="Demandes en attente" valeur={String(enAttente.length)} aide="Poignées de main à confirmer" />
-        <CarteKpi icone={Activity} ton="accent" label="Consultations du mois" valeur={String(bord.data.sessionsThisMonth)} aide="Sessions honorées depuis le 1er" />
-        <CarteKpi icone={TrendingUp} ton="emeraude" label="Gains disponibles" valeur={xaf(bord.data.earnings.availableXaf)} aide={`XAF · ${xaf(bord.data.earnings.pendingXaf)} en attente`} />
+        <CarteKpi
+          icone={Hourglass}
+          ton="ambre"
+          label="Demandes en attente"
+          valeur={String(enAttente.length)}
+          /* Le chiffre qui fait agir : pas combien il y en a, mais combien vont tomber. */
+          aide={
+            pressantes.length > 0
+              ? `${pressantes.length} expire${pressantes.length > 1 ? 'nt' : ''} dans moins de 2 h`
+              : 'Poignées de main à confirmer'
+          }
+        />
+        <CarteKpi
+          icone={Activity}
+          ton="accent"
+          label="Consultations du mois"
+          valeur={String(bord.data.sessionsThisMonth)}
+          aide={dSessions === null ? 'Depuis le 1er du mois' : `${signe(dSessions)} par rapport au mois dernier`}
+        />
+        <CarteKpi
+          icone={TrendingUp}
+          ton="emeraude"
+          label="Gains du mois"
+          valeur={xaf(moisCourant?.earnedXaf ?? 0)}
+          /* Aucune date de versement : les gains sont retirables à tout moment (famille 1, pt 2). */
+          aide={`XAF · ${xaf(bord.data.earnings.availableXaf)} retirables${
+            dGains === null ? '' : ` · ${signe(dGains)} XAF vs le mois dernier`
+          }`}
+        />
         <CarteKpi
           icone={CheckCircle2}
           label="Taux de confirmation"
           valeur={`${bord.data.confirmationRatePct} %`}
-          aide={bord.data.averageRating === null ? 'Aucune note reçue' : `Note moyenne ${bord.data.averageRating} / 5`}
+          /*
+            « Sur les 30 derniers jours » serait faux : ce taux est un cumul depuis l'ouverture du
+            compte. Et c'est celui que les patients voient dans l'annuaire — le dire change ce qu'on
+            en fait.
+          */
+          aide={
+            bord.data.averageRating === null
+              ? 'Depuis l’ouverture · visible des patients'
+              : `Note ${bord.data.averageRating} / 5 · visible des patients`
+          }
         />
       </Grille>
 
-      <SixMois mois={bord.data.lastSixMonths} />
+      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <SixMois mois={serie} />
+
+        <Panneau icone={ClipboardList} titre="Ce que deviennent vos demandes" sousTitre="Sur les cent dernières">
+          {toutes.length === 0 ? (
+            <Vide texte="Aucune demande reçue pour l’instant." />
+          ) : (
+            <>
+              <ul className="m-0 list-none p-0">
+                {sorts.map((s) => (
+                  <Ligne
+                    key={s.cle}
+                    principal={s.label}
+                    secondaire={
+                      s.cle === 'EXPIRED' && s.n > 0 ? 'Fait baisser votre taux de confirmation' : ' '
+                    }
+                    droite={
+                      <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">{s.n}</span>
+                    }
+                  />
+                ))}
+              </ul>
+              {/*
+                La conséquence réelle d'une expiration, tranchée en famille 3 (groupe E) : ce n'est
+                pas une suspension — cette règle ne vise que les pharmacies — c'est un taux public
+                qui baisse, et que les patients lisent avant de choisir.
+              */}
+              <p className="px-4 pb-3 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                Une demande laissée expirer compte comme une non-réponse dans le taux affiché aux
+                patients. Un refus motivé, non.
+              </p>
+            </>
+          )}
+        </Panneau>
+      </div>
 
       <Panneau
         icone={Handshake}
         titre="Demandes en attente"
-        sousTitre={enAttente.length > 0 ? `${enAttente.length} poignée(s) de main ouverte(s)` : undefined}
+        /* Aucun délai écrit : la fenêtre vient du serveur, comme dans C3. */
+        sousTitre={enAttente.length > 0 ? `${enAttente.length} en attente de votre réponse ou du paiement` : undefined}
         action={
           <Button variant="outline" size="sm" asChild>
             <Link to="/demandes">Tout voir</Link>
@@ -222,20 +391,43 @@ function TableauSoignant() {
           />
         ) : (
           <ul className="m-0 list-none p-0">
-            {enAttente.slice(0, 5).map((h) => (
-              <Ligne
-                key={h.id}
-                /* Aucune identité de patient : le contrat C1 tient dans les deux sens, et une
-                   poignée de main non confirmée n'a encore rien ouvert. */
-                principal="Demande de consultation"
-                secondaire={`Initiée le ${new Date(h.initiatedAt).toLocaleDateString('fr-FR')}`}
-                droite={
-                  <span className="rounded-full bg-[var(--alerte-fond)] px-2 py-0.5 text-[11px] font-semibold text-[var(--alerte-texte)]">
-                    {h.confirmExpiresAt ? 'À confirmer' : 'Ouverte'}
-                  </span>
-                }
-              />
-            ))}
+            {enAttente.slice(0, 5).map((h) => {
+              const etat = ETATS_DEMANDE[h.status] ?? { libelle: h.status, classe: 'bg-secondary text-muted-foreground' }
+              const presse = h.windowRemainingSeconds > 0 && h.windowRemainingSeconds < BIENTOT_S
+              return (
+                <Ligne
+                  key={h.id}
+                  /*
+                    Prénom et âge, rien de plus : EF-06-01 dit « pas plus avant paiement ». Le motif
+                    de consultation, que la maquette affiche ici, n'existe pas encore — la
+                    pré-consultation se remplit APRÈS le paiement (EF-06-04).
+                  */
+                  principal={ficheAnonyme(h)}
+                  secondaire={
+                    h.offerLabel
+                      ? `${h.offerLabel}${h.offerDurationMin ? ` · ${h.offerDurationMin} min` : ''}`
+                      : `Reçue le ${new Date(h.initiatedAt).toLocaleDateString('fr-FR')}`
+                  }
+                  droite={
+                    <span className="flex items-center gap-2">
+                      {h.windowRemainingSeconds > 0 ? (
+                        <span
+                          className={
+                            'font-mono text-[11px] tabular-nums ' +
+                            (presse ? 'font-semibold text-[var(--erreur-texte)]' : 'text-[var(--texte-tertiaire)]')
+                          }
+                        >
+                          {resteFr(h.windowRemainingSeconds)}
+                        </span>
+                      ) : null}
+                      <span className={'rounded-full px-2 py-0.5 text-[11px] font-semibold ' + etat.classe}>
+                        {etat.libelle}
+                      </span>
+                    </span>
+                  }
+                />
+              )
+            })}
           </ul>
         )}
       </Panneau>
@@ -376,6 +568,17 @@ function TableauAdmin() {
 
 export function DashboardPage() {
   const me = useSessionStore((s) => s.me)
+  const soignant = me?.accountType !== 'ADMIN' && me?.accountType !== 'FACILITY_MEMBER'
+
+  // La même requête que `TableauSoignant` : React Query la sert depuis son cache, elle ne part
+  // qu'une fois. Activée pour le seul rôle que la question concerne.
+  const demandes = useQuery({
+    queryKey: ['handshakes', 'mine'],
+    queryFn: () => api.myHandshakes(),
+    enabled: soignant,
+    retry: false,
+  })
+  const enAttente = (demandes.data?.items ?? []).filter((h) => h.status === 'INITIATED' || h.status === 'CONFIRMED').length
 
   const aujourdhui = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const titre =
@@ -383,7 +586,15 @@ export function DashboardPage() {
 
   return (
     <div className="ulamu-step-fade">
-      <EnTete titre={titre} sousTitre={aujourdhui.charAt(0).toUpperCase() + aujourdhui.slice(1)} />
+      <EnTete
+        titre={titre}
+        sousTitre={aujourdhui.charAt(0).toUpperCase() + aujourdhui.slice(1)}
+        complement={
+          soignant && enAttente > 0
+            ? `${enAttente} demande${enAttente > 1 ? 's' : ''} attend${enAttente > 1 ? 'ent' : ''} une réponse`
+            : undefined
+        }
+      />
       {me?.accountType === 'ADMIN' ? <TableauAdmin /> : me?.accountType === 'FACILITY_MEMBER' ? <TableauOfficine /> : <TableauSoignant />}
     </div>
   )
