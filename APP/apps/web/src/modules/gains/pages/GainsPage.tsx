@@ -544,7 +544,7 @@ export function GainsPage() {
                   {visibles.map((e) => {
                     const t = MOUVEMENTS[e.type] ?? { libelle: e.type, ton: 'neutre' as TonPilule }
                     return (
-                      <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
+                      <li key={e.id} className="ul-ligne-dense flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
                         <Pilule ton={t.ton}>{t.libelle}</Pilule>
                         <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--texte-tertiaire)]">{dateFr(e.createdAt)}</span>
                         <span className="shrink-0 text-right">
@@ -588,7 +588,7 @@ export function GainsPage() {
                 {g.withdrawals.map((w) => {
                   const t = ETATS_RETRAIT[w.status] ?? { libelle: w.status, ton: 'neutre' as TonPilule }
                   return (
-                    <li key={w.id} className="flex flex-col gap-1 rounded-md border border-border bg-card px-3 py-2">
+                    <li key={w.id} className="ul-ligne-dense flex flex-col gap-1 rounded-md border border-border bg-card px-3 py-2">
                       <span className="flex flex-wrap items-center gap-2">
                         <Pilule ton={t.ton}>{t.libelle}</Pilule>
                         <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--texte-tertiaire)]">

@@ -25,6 +25,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { useSessionStore } from '@/state/session.store'
 import { api, type MeResponse } from '@/lib/api'
+import { usePreferencesStore } from '@/state/preferences.store'
 
 const BASE_MOI: MeResponse = {
   accountId: 'p1',
@@ -303,5 +304,80 @@ describe('B3 — la preuve de consentement', () => {
   it('affiche la version ET la date, lues en base', async () => {
     monter('legal')
     expect(await screen.findAllByText(/Version 1.0 · acceptée le 12 mars 2026/)).toHaveLength(2)
+  })
+})
+
+/**
+ * La densité, ajoutée le 01/09.
+ *
+ * Ce qui est verrouillé n'est pas le réglage, c'est sa CONDITION D'EXISTENCE : il ne figure ici que
+ * parce qu'il fait réellement quelque chose. Le sélecteur de langue de la maquette a été retiré pour
+ * la raison inverse — aucune traduction derrière. Un interrupteur qui ne change rien est pire qu'un
+ * interrupteur absent, parce qu'on lui fait confiance.
+ */
+describe('B3 — la densité d’affichage', () => {
+  beforeEach(() => {
+    // Le magasin est global : sans remise à zéro, un test hérite du choix du précédent.
+    usePreferencesStore.setState({ densite: 'confort' })
+    document.documentElement.removeAttribute('data-densite')
+  })
+
+  it('pose réellement l’attribut que la feuille de style attend', async () => {
+    const utilisateur = userEvent.setup()
+    monter('preferences')
+
+    await utilisateur.click(await screen.findByRole('button', { name: 'Compact' }))
+
+    // C'est CET attribut que `globals.css` cible pour resserrer tableaux et listes.
+    expect(document.documentElement.getAttribute('data-densite')).toBe('compact')
+  })
+
+  it('revient au confort, et le dit à la feuille de style aussi', async () => {
+    const utilisateur = userEvent.setup()
+    monter('preferences')
+
+    await utilisateur.click(await screen.findByRole('button', { name: 'Compact' }))
+    await utilisateur.click(screen.getByRole('button', { name: 'Confort' }))
+
+    expect(document.documentElement.getAttribute('data-densite')).toBe('confort')
+  })
+
+  it('annonce ce qu’il fait, sans promettre plus', async () => {
+    monter('preferences')
+
+    // « Rapproche les lignes des tableaux et des listes » — et rien d'autre : ni taille de texte,
+    // ni marges de page, que la règle CSS ne touche pas.
+    expect(await screen.findByText(/rapproche les lignes des tableaux et des listes/)).toBeInTheDocument()
+  })
+
+  it('vit sur l’appareil, comme le thème — et l’écran ne prétend pas l’inverse', async () => {
+    monter('preferences')
+
+    const bloc = (await screen.findByText('Densité')).closest('section') as HTMLElement
+    expect(within(bloc).getByText(/restent sur cet appareil/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le bloc « À propos ». La maquette y écrit un identifiant `USR-2026-00312` qui n'existe pas, et
+ * elle ne distingue nulle part le pays DESSERVI du pays d'HÉBERGEMENT — c'est ce raccourci qui a
+ * produit la phrase fausse corrigée le 24/08.
+ */
+describe('B3 — à propos du compte', () => {
+  it('distingue le pays desservi du pays où vivent les données', async () => {
+    monter('legal')
+
+    expect(await screen.findByText('Pays de service')).toBeInTheDocument()
+    expect(screen.getByText('Hébergement des données')).toBeInTheDocument()
+    expect(screen.getByText('Francfort, Allemagne')).toBeInTheDocument()
+  })
+
+  it('affiche un identifiant RÉEL, pas un format inventé', async () => {
+    monter('legal')
+
+    // La maquette écrit « USR-2026-00312 ». Les identifiants sont des UUID : on en montre le début,
+    // qui suffit à retrouver un compte auprès de l'administration.
+    expect(await screen.findByText('Identifiant du compte')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/USR-\d{4}-\d+/)
   })
 })

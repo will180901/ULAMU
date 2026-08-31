@@ -27,6 +27,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Globe, Info, Lock, ScrollText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Avis, Carte } from '@/components/ulamu/parts'
+import { EMAIL_SUPPORT, PAYS_DE_SERVICE } from '@/config/contact.config'
+import { useSessionStore } from '@/state/session.store'
 
 /** Textes de la maquette — ils sont le contenu produit, pas de l'habillage. */
 const CGU = [
@@ -72,6 +74,8 @@ function Document({ paragraphes }: { paragraphes: string[] }) {
 }
 
 export function SectionLegal() {
+  const moi = useSessionStore((s) => s.me)
+
   return (
     <div className="flex flex-col gap-4">
       <Carte icone={Globe} titre="Langue de l'interface" sousTitre="Les documents médicaux restent rédigés dans leur langue d'origine">
@@ -100,12 +104,32 @@ export function SectionLegal() {
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-[var(--texte-tertiaire)]">Pays de service</dt>
-            <dd className="text-foreground">Congo-Brazzaville</dd>
+            <dd className="text-foreground">{PAYS_DE_SERVICE}</dd>
+          </div>
+          {/*
+            Les données sont hébergées AILLEURS que le pays desservi. Les deux lignes se suivent
+            exprès : séparées, on croit que « pays de service » répond à la question de
+            l'hébergement — c'est précisément le raccourci que faisait la maquette.
+          */}
+          <div className="flex justify-between gap-4">
+            <dt className="text-[var(--texte-tertiaire)]">Hébergement des données</dt>
+            <dd className="text-foreground">Francfort, Allemagne</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-[var(--texte-tertiaire)]">Support</dt>
-            <dd className="text-foreground">support@ulamu.cg</dd>
+            <dd className="text-foreground">{EMAIL_SUPPORT}</dd>
           </div>
+          {/*
+            L'identifiant du compte, que la maquette écrit « USR-2026-00312 ». Ce format n'existe
+            pas : les identifiants sont des UUID. Les huit premiers caractères suffisent à
+            identifier un compte auprès de l'administration, et c'est à cela qu'il sert ici.
+          */}
+          {moi?.accountId ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-[var(--texte-tertiaire)]">Identifiant du compte</dt>
+              <dd className="font-mono text-foreground">{moi.accountId.slice(0, 8).toUpperCase()}</dd>
+            </div>
+          ) : null}
         </dl>
       </Carte>
     </div>

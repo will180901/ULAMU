@@ -1053,3 +1053,26 @@ textarea:-webkit-autofill {
 @media (prefers-reduced-motion: reduce) {
   .ulamu-step-fade { animation: none !important; }
 }
+/* ── Densité d'affichage (B3) ──────────────────────────────────────────────────────────────────
+ *
+ * « Compact rapproche les lignes des tableaux et des listes », dit la maquette. C'est exactement ce
+ * que fait cette règle — et rien d'autre. Un réglage qui ne changerait rien serait pire que pas de
+ * réglage : c'est la raison pour laquelle le sélecteur de langue a été retiré.
+ *
+ * L'attribut est posé sur `<html>`, comme le thème, pour que tout écran en hérite sans le savoir.
+ * On ne touche qu'au rembourrage VERTICAL : réduire l'horizontal collerait le texte aux bordures,
+ * et réduire la taille du texte rendrait l'application moins lisible, pas plus dense.
+ */
+html[data-densite='compact'] td,
+html[data-densite='compact'] th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Les listes de la coquille (tableau de bord, gains, demandes) : le rembourrage y est posé par
+   utilitaire, d'où le `!important` — seul endroit du fichier où il est justifié, parce qu'on
+   surcharge délibérément une classe utilitaire à la demande de l'utilisateur. */
+html[data-densite='compact'] .ul-ligne-dense {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}

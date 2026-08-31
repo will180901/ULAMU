@@ -69,6 +69,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
+import { EMAIL_SUPPORT } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
@@ -860,7 +861,7 @@ export function VerificationPage() {
             <div>
               <Button asChild size="sm" variant="outline">
                 <a
-                  href={`mailto:support@ulamu.cg?subject=${encodeURIComponent(
+                  href={`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(
                     `Dossier de vérification ${d.caseId.slice(0, 8).toUpperCase()}`,
                   )}`}
                 >

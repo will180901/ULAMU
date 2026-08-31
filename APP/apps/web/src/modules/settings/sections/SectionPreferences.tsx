@@ -18,7 +18,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Reglage, Segments } from '@/components/ulamu/parts'
 import { api, type NotificationCategory } from '@/lib/api'
 import { useThemeStore, type ThemeChoice } from '@/state/theme.store'
-import { usePreferencesStore } from '@/state/preferences.store'
+import { usePreferencesStore, type Densite } from '@/state/preferences.store'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useCapabilities } from '@/hooks/useCapabilities'
 
@@ -38,6 +38,8 @@ export function SectionPreferences() {
   const setPageAccueil = usePreferencesStore((s) => s.setPageAccueil)
   const sons = usePreferencesStore((s) => s.sons)
   const setSons = usePreferencesStore((s) => s.setSons)
+  const densite = usePreferencesStore((s) => s.densite)
+  const setDensite = usePreferencesStore((s) => s.setDensite)
   const capacites = useCapabilities()
   const qc = useQueryClient()
 
@@ -81,6 +83,25 @@ export function SectionPreferences() {
               </option>
             ))}
           </NativeSelect>
+        </Reglage>
+
+        {/*
+          La densité, ajoutée le 01/09. Elle n'a été ajoutée qu'à une condition : qu'elle fasse
+          réellement quelque chose. « Compact » resserre les lignes des tableaux et des listes —
+          exactement ce que la maquette promet, et rien de plus. Un interrupteur qui ne changerait
+          rien serait pire qu'un interrupteur absent : c'est la raison pour laquelle le sélecteur de
+          langue, lui, a été retiré.
+        */}
+        <Reglage titre="Densité" aide="« Compact » rapproche les lignes des tableaux et des listes">
+          <Segments
+            label="Densité d'affichage"
+            valeur={densite}
+            onChange={setDensite}
+            options={[
+              { cle: 'confort' as Densite, label: 'Confort' },
+              { cle: 'compact' as Densite, label: 'Compact' },
+            ]}
+          />
         </Reglage>
 
         <Reglage titre="Sons de l'interface" aide="Signal discret à l'arrivée d'une demande">

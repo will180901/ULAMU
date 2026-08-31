@@ -378,6 +378,7 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | 7 | **Hébergement hors du Congo** — la phrase sera corrigée dans B3 (§ palier E). Ce qui reste ouvert n'est pas du ressort du code : héberger des données de santé congolaises hors du Congo peut exiger une base légale de transfert. | 🟡 partiel |
 | 8 | **Tests d'intégration API hors service** — il manque une branche Neon de test et son `TEST_DATABASE_URL`. Le seul garde-fou automatique du backend est donc à l'arrêt. | 🔴 ouvert |
 | 8bis | **La spécialité reste modifiable côté serveur** — C2 l'affiche en lecture seule (arbitrage du 27/08 : le Badge Vérifié atteste d'une qualification contrôlée par pièces), mais `PATCH /v1/me/professional-profile` accepte toujours le champ `specialty`. **Un écran ne ferme pas une porte.** Le fermer demanderait un chemin administratif pour les corrections légitimes. | ⏸ à trancher |
+| 8bis | **`support@ulamu.cg` n'existe pas** — le domaine n'appartient pas au projet (l'application vit sur `onrender.com`). L'adresse est affichée dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. Même famille d'erreur que le « hébergées au Congo-Brazzaville ». Centralisée le 01/09 dans `src/config/contact.config.ts` : **une ligne à changer**. Deux issues — acquérir un domaine et y relever une boîte (coût réel), ou afficher l'adresse déjà relevée qui sert d'expéditeur aux courriels (coût nul). **Décision porteur.** | ⏸ à trancher |
 | 9 | **Aucun lint sur le dépôt** — `eslint` absent partout. À installer, ou à retirer des scripts pour ne pas laisser croire qu'il tourne. | 🔴 ouvert |
 | 10 | **3 alertes `npm audit` élevées** sur `react-router` — concernent le mode RSC, non utilisé (SPA statique). À re-vérifier avant livraison. | 🟡 à revérifier |
 
@@ -415,6 +416,58 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | **8** | **C1 — Ma vérification, le contrat, l'avenant** — codé le 28/08. Serveur : **S4**, `lastSigned` dans `GET /v1/verification/me` (~15 l. + 7 tests) — la dernière version réellement signée, pour montrer l'ancien taux à côté du nouveau. Web : **parcours de re-signature** (bandeau de conséquence, ancien → nouveau taux côte à côte, texte relu, bouton qui dit ce qu'on regagne), taux lu du contrat, versement mensuel retiré, **promesse de réponse « sous 24 h ouvrées » retirée**. **API 496 ✓ · web 249 ✓ · builds propres.** ⚠️ Le parcours d'avenant ne se déclenche qu'avec **E3** (chantier 14). | ⏸ en attente | ⏸ |
 
 | **9** | **B2 — Tableau de bord** — codé le 01/09. **Serveur : aucun.** Web : deux des quatre tendances de la maquette **sont devenues calculables** depuis `lastSixMonths` (consultations et gains, d'un mois sur l'autre) et sont affichées ; les deux autres restent absentes, faute de série. Ajouté : « N expirent dans moins de 2 h », le compte à rebours servi par le serveur, la fiche anonymisée (prénom + âge) dans la file, et le bloc « ce que deviennent vos demandes » à la place d'une répartition par mode qui n'existe pas. **API 496 ✓ · web 262 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+| **10** | **B3 — Mes paramètres** — codé le 01/09. **Serveur : aucun.** La phrase d'hébergement, que le plan annonçait comme le piège de ce chantier, **était déjà corrigée** — B3 n'a pas été reconstruit depuis la maquette, il a été relu. Ajouté : la **densité d'affichage**, qui manquait et qui fait réellement quelque chose ; le pays d'hébergement distingué du pays desservi ; l'identifiant réel du compte. L'adresse de support est **centralisée en un point**, avec sa dette écrite. **API 496 ✓ · web 268 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de B3
+
+*Maquette servie sur `http://localhost:8123`, quatre onglets relus contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| Quatre onglets : Préférences · Sécurité du compte · Sessions & appareils · Langue & mentions légales | idem, même ordre, mêmes intitulés | conforme |
+| « Ces réglages **suivent votre compte, quel que soit le poste utilisé** » | Deux cartes séparées : « restent sur cet appareil » pour l'affichage, « suivent votre compte » pour les notifications | **écart de fait** — le thème, la page d'accueil, les sons et la densité n'ont aucune table serveur. Sur un poste d'officine partagé, promettre le contraire trompe |
+| Réglage **Thème** (Clair / Sombre / Système) | idem | conforme |
+| Réglage **Densité** (Confort / Compact) — *« Compact rapproche les lignes des tableaux et des listes »* | idem, **et il le fait vraiment** : `html[data-densite="compact"]` resserre les cellules de tableau et les lignes de liste | **manquait, ajouté** |
+| Réglage **Page d'accueil** (Automatique / …) | idem, limité aux pages réellement accessibles au rôle | conforme, et corrigé : proposer « Mes gains » à une officine mènerait à une redirection |
+| Réglage **Sons de l'interface** | idem | conforme |
+| Réglage **Notifications par email** — *« Résumé quotidien des demandes reçues et des versements »* | Les **cinq catégories** de M14, dont « Alertes vitales » qui ne se coupe pas (RM-14-02) | **écart de fait** — aucun résumé quotidien n'existe ; ce que le serveur sait faire, c'est couper par catégorie |
+| Bouton « **Enregistrer** » | absent : tout s'applique immédiatement | conforme au fonctionnement réel — l'aperçu EST le résultat |
+| **Langue de l'interface** : Français / **English** | Français seul, et la raison écrite | famille 3, groupe B — aucune chaîne n'est externalisée : le bouton « English » n'aurait rien traduit |
+| **Mentions légales** : CGU et confidentialité, *« Version 1.0 · acceptée le 12 mars 2026 »* | idem, la version et la date **lues en base** (`ConsentRecord`) | conforme — un texte figé dirait la version d'aujourd'hui, pas celle acceptée |
+| Texte de confidentialité : *« hébergées au **Congo-Brazzaville** »* | « hébergées sur des serveurs situés en **Allemagne** (Francfort, Union européenne) » | **corrigé le 24/08, vérifié aujourd'hui** — voir ci-dessous |
+| **À propos** : Application · Dernière synchronisation · Identifiant `USR-2026-00312` | Application · **Pays de service** · **Hébergement des données** · Support · Identifiant réel (8 caractères) | **écarts** — « dernière synchronisation » n'a aucun référent (rien ne se synchronise, tout est interrogé à la demande) ; `USR-2026-…` n'existe pas, les identifiants sont des UUID |
+
+### Ce que le chantier 10 (B3 — Mes paramètres) a appris
+
+**Le piège annoncé n'a pas eu lieu, et c'est la méthode qui l'a évité.** Le plan avertissait en gras :
+*« B3 porte la phrase d'hébergement. Elle reviendra toute seule si B3 est reconstruit depuis la
+maquette. »* Elle n'est pas revenue — parce que B3 n'a pas été reconstruit, il a été **relu**. La
+différence est tout le chantier : sur C4 et C6, la forme était si loin de la maquette qu'il fallait
+réécrire ; ici elle était juste, et réécrire aurait ramené le mensonge avec le reste. *Un chantier ne
+consiste pas à retaper un écran — il consiste à le comparer.*
+
+**Un réglage n'entre que s'il fait quelque chose.** La densité manquait depuis toujours. Elle a été
+ajoutée avec sa règle CSS réelle — l'attribut sur `<html>`, comme le thème, et deux règles qui
+resserrent les cellules de tableau et les lignes de liste. Rien de plus : ni taille de texte, ni
+marges. **C'est la règle inverse de celle qui a fait retirer le sélecteur de langue**, et c'est la
+même règle : un interrupteur qui ne change rien est pire qu'un interrupteur absent, parce qu'on lui
+fait confiance. Le test ne vérifie pas l'apparence, il vérifie que l'attribut est posé — c'est-à-dire
+que la promesse a un effet.
+
+**Deux lignes voisines valent mieux qu'une longue phrase.** « Pays de service : Congo-Brazzaville »
+seul laissait croire que l'hébergement suivait. La ligne « Hébergement des données : Francfort,
+Allemagne » est posée **juste en dessous**, exprès : c'est le raccourci mental de la maquette, pas
+une négligence de rédaction, et il se corrige par la mise en page autant que par les mots.
+
+**⚠️ Dette écrite, décision au porteur : `support@ulamu.cg` n'existe pas.** Le domaine n'appartient
+pas au projet — l'application vit sur `onrender.com`, et les courriels partent d'une adresse
+d'expéditeur vérifiée chez Brevo. Une adresse morte sur des mentions légales acceptées à
+l'inscription expose autant qu'un fait faux : **c'est la même famille d'erreur que le
+« hébergées au Congo-Brazzaville »**. Elle est désormais à UN seul endroit
+(`src/config/contact.config.ts`), lue par C1 et B3, avec les deux issues écrites : acquérir un
+domaine et y relever une boîte, ou afficher l'adresse réellement relevée. **Une ligne à changer le
+jour où c'est tranché.**
 
 ### Étape 6 — le comparatif bloc à bloc de B2
 

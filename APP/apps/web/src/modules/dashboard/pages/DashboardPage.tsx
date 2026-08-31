@@ -186,7 +186,7 @@ function Echec({ onRetry }: { onRetry: () => void }) {
 /** Ligne de liste — deux colonnes de texte et une pastille, sans identité de patient. */
 function Ligne({ principal, secondaire, droite }: { principal: string; secondaire: string; droite: React.ReactNode }) {
   return (
-    <li className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
+    <li className="ul-ligne-dense flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
       <span className="min-w-0 flex-1">
         <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium text-foreground">{principal}</span>
         <span className="block text-[11px] text-[var(--texte-tertiaire)]">{secondaire}</span>
