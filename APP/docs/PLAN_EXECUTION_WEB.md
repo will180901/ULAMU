@@ -221,7 +221,7 @@ pas déranger » → le mot change et tient au rechargement. ③ laisser l'ongle
 | **3** | **C3 — Demandes** (la poignée de main) | aucun | F2 pt 2 · F3-A · F3-C · F3-E |
 | **4** | **C5 — La consultation** | **S1** | F2 pt 1 · F4 pt 1, pt 2, pt 9 · F3-F |
 | **5** | **C7 — Ordonnance** *(écran neuf)* + garde-fou allergies | référentiel 6 → ~60 | F4 pt 3, pt 4, pt 4bis |
-| **6** | **C4 — Consultations** (le registre) | aucun | F2 pt 1 · F4 pt 7, pt 8, pt 9 · F3-C · F3-D |
+| **6** | **C4 — Consultations** (le registre) | ~~aucun~~ → **S9** (2 l.) | F2 pt 1 · F4 pt 7, pt 8, pt 9 · F3-C · F3-D |
 
 **C2 avant C3** : sans offre publiée, aucun patient ne peut initier. C'est la porte d'entrée du
 parcours.
@@ -407,6 +407,56 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | **4** | **C5 — La consultation** — codé le 28/08. Serveur : **S1**, `reportDueAt` (`endedAt` + PM-30) sur la vue de séance ET sur les lignes du registre (~10 l. + 4 tests). Web : **Carnet du patient** au rail, fil porté au niveau du mobile (répondre, réagir, modifier, supprimer pour moi / pour tous, séparateurs de jour, regroupement, saut au message cité), décompte réel du compte-rendu, avertissement de remboursement **avant** la perte, « Terminer » → « Prolonger », composeur en pilule. **Un bug corrigé au passage : `deleteSessionMessage` partait sans corps** et se faisait refuser en 400 — le bouton « supprimer » n'avait jamais rien supprimé. **API 484 ✓ · web 203 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
 | **5** | **C7 — Ordonnance** *(écran neuf)* + garde-fou allergies — codé le 28/08. Serveur : **aucun code**, mais **la seule écriture en base de toute la reconstruction** — référentiel porté de **6 à 64 médicaments**, par un script dédié (`scripts/referentiel-medicaments.ts`), **appliqué en base le 28/08**. Web : panneau C7 ouvert depuis le rail de C5, recherche au référentiel, repli texte libre marqué « non vérifié », garde-fou allergies avec ses deux issues, avertissement d'immuabilité avant le bouton, QR + échéance après scellement, annulation motivée. **Trois corrections dans `api.ts` :** `PrescriptionLineInput` n'avait ni `qtyPrescribed` (obligatoire au serveur) ni `durationDays`, `createPrescription` était typée `{ id }` au lieu de l'ordonnance complète, et `cancelPrescription` n'existait pas. **API 484 ✓ · web 217 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+| **6** | **C4 — Consultations** (le registre) — codé le 28/08. Serveur : **S9**, `orderRef` sur les lignes du registre (**2 lignes**) — la clé qui relie une consultation à son mouvement au journal des gains. Web : écran **refait sur la forme mesurée** — trois tuiles, trois onglets comptés, **un tableau** à la place des cartes empilées. Honoraires **lus au journal**, jamais calculés. Plus aucun délai écrit. Colonnes « mode » et « patient » retirées, statut d'ordonnance à la place de « suivi en officine », proposition de suivi annoncée. **API 484 ✓ · web 226 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de C4
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Consultations · 6 consultations · 3 comptes-rendus signés » | idem, compté sur les vraies données | conforme |
+| Tuile « **CE MOIS-CI** 24 · *18 en téléconsultation* » | « Ce mois-ci » + *N terminées* | **écart de fait** — « en téléconsultation » suppose un autre mode. Il n'y en a pas : la messagerie est le seul portail (groupe B), et un médecin n'est rattachable à aucun cabinet (groupe A) |
+| Tuile « **À SIGNER** 2 · *Délai réglementaire de 48 h* » | « À signer » + *« Le plus urgent : 4 h 29 min »*, calculé sur l'échéance la plus proche | **écart de fait** — PM-30 vaut 24 h, et surtout aucun délai n'est écrit : la tuile lit `reportDueAt` |
+| Tuile « **HONORAIRES DU MOIS** 486 500 · *XAF net après commission* » | idem, **somme des mouvements `CREDIT` du journal des gains** pour les séances du mois | conforme, et exact — c'est le montant réellement crédité, pas un produit prix × séances |
+| Onglets comptés « Toutes 6 · À rédiger 2 · Signées 3 » | « Toutes · À signer · Signées », comptés | conforme (« à rédiger » → « à signer », le mot du cahier) |
+| Tableau, colonne **DATE** (jour + heure) | idem | conforme |
+| Tableau, colonne **PATIENT** : initiales, motif, référence `CSL-2026-04120` | Colonne « **Consultation** » : référence réelle (8 caractères), « pour un proche » si `subProfileId`, pastille d'état | **écart de fait** — le registre ne charge aucune identité et n'a pas à en réclamer une ; le motif vit dans la pré-consultation, que seule la séance ouverte porte ; `CSL-2026-…` n'existe pas au modèle |
+| Tableau, colonne **MODE** : « Téléconsultation » / « En cabinet · Bacongo » | Colonne « **Durée** » : `durationMin` | **remplacement** — voir la tuile 1. La durée existe, le mode non |
+| Tableau, colonne **COMPTE-RENDU** : « signé » / « à rédiger » / « annulée » | idem, plus le **décompte** quand il manque, et « Sans objet » sur une séance remboursée | conforme, et au-delà |
+| Tableau, colonne **ORDONNANCE** : `ORD-2026-00412` ou `—` | **État** de l'ordonnance (active / expirée / annulée) + nombre de lignes | **écart de fait** — ce format de référence n'existe pas ; l'état, lui, est ce que le médecin peut savoir (groupe C) |
+| Tableau, colonne **HONORAIRES** : `12 500 XAF` | Le montant **crédité**, ou « Au dépôt du compte-rendu », ou « Remboursé au patient » | conforme, et plus honnête : sans compte-rendu il n'y a pas d'argent, et l'écran ne montre pas zéro |
+| Action de fin de ligne « Ouvrir » / « Rédiger » | « Ouvrir » / « Déposer » | conforme |
+| Pied « 1–6 sur 6 consultations » | « N consultations », ou « N sur M » quand un filtre est actif — plus, **à cent lignes**, l'aveu que le serveur n'en renvoie pas davantage | conforme, et une limite dite |
+| *(absent de la maquette)* | Une phrase sur la **proposition de suivi** automatique | **ajout** — famille 4, point 8 |
+| Boutons « Exporter » / « Télécharger le PDF » | retirés | famille 3, groupe D |
+
+### Ce que le chantier 6 (C4 — le registre) a appris
+
+**La forme d'un registre n'est pas décorative.** L'écran empilait des cartes ; la maquette montre un
+tableau. La différence n'est pas esthétique : dans un tableau on compare des lignes du regard — la
+consultation qui n'a pas rapporté à côté de celle qui a rapporté, celle dont le délai court à côté
+de celle qui est signée. En cartes empilées, chaque consultation est un objet isolé et la
+comparaison n'existe plus. *C'est la troisième fois qu'un écart de forme s'avère être un écart de
+fond : les onglets de C3, la colonne de C2, le tableau de C4.*
+
+**Un neuvième ajout serveur, et le plan l'avait prédit.** `orderRef` manquait aux lignes du registre.
+Sans lui, la colonne « honoraires » n'avait que deux issues, toutes deux mauvaises : écrire un prix
+dans la page, ou n'afficher aucun montant. **Deux lignes.** C'est le même motif que S7 (PM-27
+servi au seul patient) et S8 (les bornes d'offre vérifiées mais jamais renvoyées) : *le serveur sait,
+l'écran ne peut pas demander.* Il en reste sûrement.
+
+**Pas de test pour S9, et c'est délibéré.** S1, S7 et S8 en ont reçu parce qu'ils portaient une
+RÈGLE — une addition de dates, un plafond, des bornes. `orderRef` est une recopie de champ : un test
+qui vérifie qu'un champ est copié ne teste que lui-même. Ce qui est testé, en revanche, c'est ce que
+l'écran en fait — la jointure au journal, le remboursement qui annule son crédit, le retrait qui ne
+compte pas comme une consultation.
+
+**« Zéro » et « pas encore » ne sont pas la même chose.** Une consultation sans compte-rendu n'a
+aucun mouvement au journal. Afficher `0 XAF` aurait été faux : l'argent n'est pas perdu, il n'est pas
+encore gagné — la capture attend le dépôt (RM-06-04). L'écran écrit donc « Au dépôt du compte-rendu »,
+ce qui est à la fois le montant manquant et sa raison.
 
 ### Étape 6 — C7 n'a pas de maquette : le comparatif se fait contre le cahier
 

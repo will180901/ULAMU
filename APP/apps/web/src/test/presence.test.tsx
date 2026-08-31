@@ -79,6 +79,8 @@ function session(status: SessionListItem['status'], id: string): SessionListItem
     remainingSeconds: 0,
     reportDepositedAt: null,
     reportDueAt: null,
+    // S9 : la clé qui relie la consultation à son mouvement au journal des gains.
+    orderRef: 'ord-ref-1',
   }
 }
 

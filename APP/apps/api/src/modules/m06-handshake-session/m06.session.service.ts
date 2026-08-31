@@ -111,6 +111,19 @@ export interface SessionListItem {
    * réel, et un « 24 heures » en dur dans C5 qui mentirait au premier changement de PM-30.
    */
   reportDueAt: string | null;
+  /**
+   * La référence de commande de la séance — la CLÉ qui relie une consultation à l'argent qu'elle a
+   * rapporté (S9, 28/08/2026).
+   *
+   * Le journal des gains (`GET /v1/earnings/me`) porte un mouvement `CREDIT` par consultation
+   * capturée, référencé par ce même `orderRef` — la capture a lieu au dépôt du compte-rendu
+   * (RM-06-04). Sans ce champ, le registre C4 ne pouvait pas dire ce qu'une consultation a
+   * réellement rapporté : il aurait fallu écrire un prix dans la page, ou n'en montrer aucun.
+   *
+   * Aucun pouvoir attaché : le webhook de paiement exige un secret partagé et une RÉFÉRENCE
+   * D'AGRÉGATEUR, pas celle-ci. Et la vue n'est servie qu'aux deux participants de la séance.
+   */
+  orderRef: string;
 }
 
 export interface MessageReplyPreview {
@@ -672,6 +685,7 @@ export class SessionService {
         remainingSeconds: session.status === CareSessionStatus.ACTIVE ? sessionRemainingSeconds(session.endsAt, Date.now()) : 0,
         reportDepositedAt: session.reportDepositedAt ? session.reportDepositedAt.toISOString() : null,
         reportDueAt: this.reportDueAt(session.endedAt, pm30S),
+        orderRef: session.orderRef,
       });
     }
     return { items };

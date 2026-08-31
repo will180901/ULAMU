@@ -616,6 +616,14 @@ export interface SessionListItem {
    * « 24 heures » en dur — ce qu'il faisait, et qui aurait menti au premier changement de PM-30.
    */
   reportDueAt: string | null
+  /**
+   * La référence de commande — la clé qui relie une consultation à l'argent qu'elle a rapporté.
+   *
+   * Le journal des gains porte un mouvement `CREDIT` par consultation capturée, référencé par cette
+   * même chaîne. La capture a lieu au DÉPÔT DU COMPTE-RENDU (RM-06-04) : tant qu'il manque, aucun
+   * mouvement n'existe — et c'est précisément ce que le registre doit montrer.
+   */
+  orderRef: string
 }
 
 export interface SessionMessage {
