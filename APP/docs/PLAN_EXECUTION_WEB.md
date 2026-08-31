@@ -412,6 +412,59 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **7** | **C6 — Mes gains** — codé le 28/08. Serveur : **S2** (brut + commission joints depuis la part de paiement, ~35 l. + 5 tests) et **S3** (délai PM-36 dans le récapitulatif de retrait, 3 l.). Web : détail brut/commission/taux **déduit** sur chaque mouvement, décompte du mois, histogramme des six mois, trois onglets comptés, avertissement D-008 près du solde en attente, délai annoncé avant confirmation. **Et une brèche du harnais de tests fermée : la suite web appelait la vraie API de production.** **API 489 ✓ · web 239 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **8** | **C1 — Ma vérification, le contrat, l'avenant** — codé le 28/08. Serveur : **S4**, `lastSigned` dans `GET /v1/verification/me` (~15 l. + 7 tests) — la dernière version réellement signée, pour montrer l'ancien taux à côté du nouveau. Web : **parcours de re-signature** (bandeau de conséquence, ancien → nouveau taux côte à côte, texte relu, bouton qui dit ce qu'on regagne), taux lu du contrat, versement mensuel retiré, **promesse de réponse « sous 24 h ouvrées » retirée**. **API 496 ✓ · web 249 ✓ · builds propres.** ⚠️ Le parcours d'avenant ne se déclenche qu'avec **E3** (chantier 14). | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de C1
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Ma vérification · Complétez votre dossier pour accéder aux consultations » | idem, l'aide variant selon les sept états réels du dossier | conforme |
+| Frise « Étape 1 sur 4 » : Dossier constitué · Vérification · Contrat signé · Vitrine active | Frise à quatre étapes, position calculée depuis l'état du dossier | conforme |
+| Bloc « Pièces justificatives · 2 / 4 » avec état PAR PIÈCE (« Validée », « À corriger ») | Un état par pièce limité à ce qui est vrai — **déposée** ou **attendue** — et le motif de l'administration dans son propre bloc | **écart de fait, déjà tranché** — `VerificationDecision` n'a aucun lien vers une pièce : le serveur ne connaît que la décision au niveau du dossier |
+| Pièce « **Assurance responsabilité civile** », facultative | absente | **écart de fait** — aucun type de pièce correspondant n'existe au modèle |
+| *(absente de la maquette)* | La **photo d'identité**, que le serveur exige pour déposer | **ajout** — sans elle le dépôt serait refusé sans que l'écran sache dire pourquoi |
+| Bloc « Contrat de partenariat · **Commission de 12 %** · **versement le 5 de chaque mois** » | « Commission de {taux du contrat} % · vos gains sont retirables à tout moment, sans montant minimum » | **deux écarts de fait** — le taux vient du contrat signé de ce soignant-là (RM-13-07), pas d'un paramètre global ; et aucun versement mensuel n'existe (famille 1, points 1 et 2) |
+| « Lire le contrat » | idem, et le texte servi est celui que le serveur **régénère puis recompare à son sceau** : s'ils divergent, il n'est pas affiché | conforme, et au-delà |
+| Signature : le nom saisi suffit | Nom **+ mot de passe + code reçu** (EF-03-06) | **écart de fait** — ce contrat engage juridiquement ; un nom que n'importe qui saurait taper ne prouve rien |
+| *(absent de la maquette)* | Le **parcours d'avenant** : bandeau de conséquence, ancien taux barré face au nouveau, bouton « Re-signer et reprendre mon activité » | **ajout** — famille 4, point 11. C'est la situation où un soignant perd son droit d'exercer sans avoir rien fait |
+| Bloc « Délai de traitement — dossier non déposé » | idem, la valeur venant de PM-11 | conforme |
+| Chronologie « Pièce déposée · Diplôme déposé · Compte créé » | Les décisions réelles du dossier, les trois plus récentes | **écart** — le serveur n'horodate pas « compte créé » dans cette vue ; ce qu'il porte, ce sont les décisions |
+| Bloc « Ce que la vérification autorise » (4 lignes) | idem, reformulé sur ce que le serveur autorise vraiment | conforme |
+| Bloc « **Une question sur votre dossier ? · Réponse sous 24 heures ouvrées, du lundi au vendredi** » | « **Ce qui se passe maintenant · Rien n'est attendu de vous** » : la file est traitée du plus ancien au plus récent, notification à la décision, et l'aveu qu'ULAMU n'a pas de messagerie interne | **trois faussetés en une phrase** — voir ci-dessous |
+| Bouton « Écrire à l'administration » | conservé (courriel) | conforme |
+
+### Ce que le chantier 8 (C1 — Ma vérification) a appris
+
+**Une phrase de quinze mots portait trois faussetés.** « L'administration ULAMU répond sous 24 heures
+ouvrées, du lundi au vendredi. » (a) Aucune messagerie support n'existe — ni module, ni route, ni
+écran : elle promettait un délai de réponse **sans qu'aucun bouton ne permette de poser la
+question**. (b) « Ouvrées » n'existe nulle part : le serveur compte des heures pleines, et un dossier
+déposé vendredi soir est en retard **le lundi**, pas le mercredi. (c) Le délai lui-même n'est pas
+24 h mais PM-11 — affiché juste au-dessus, lu du serveur, et qui vaut 72. *Une phrase rassurante est
+la plus difficile à retirer, parce que la retirer donne l'impression d'enlever quelque chose. Ce
+qu'elle enlevait, c'était la confiance à la première question sans réponse.*
+
+**Mon propre test a trouvé un trou dans mon implémentation.** J'avais écrit que `lastSigned` doit
+valoir `null` quand la version courante est signée — puis codé une règle qui ne l'excluait pas. Le
+test l'a attrapé au premier passage : un contrat parfaitement en règle aurait affiché « ce que vous
+aviez signé : 10 % » face à « ce qu'on vous propose : 12 % », c'est-à-dire une signature attendue
+alors que tout allait bien. **J'ai corrigé le serveur, pas le test.** *Écrire le contrat en toutes
+lettres AVANT de coder la règle est ce qui a rendu l'écart visible.*
+
+**Un écran peut annoncer une perte de droit que personne n'a provoquée.** Quand l'administration
+change le taux, le soignant ne peut plus exercer — il n'apparaît plus dans l'annuaire et ne reçoit
+plus aucune demande — sans avoir rien fait ni rien reçu d'autre qu'une notification. Le bandeau dit
+donc la **conséquence** avant la cause : « votre contrat a été modifié » ne signifie rien à qui ne
+connaît pas la règle. *Troisième fois dans ce plan qu'un message doit être retourné pour dire d'abord
+ce que ça coûte : l'avertissement de remboursement en C5, l'argent gelé en C4, la perte d'exercice ici.*
+
+**Une dette repérée en passant, non traitée :** `support@ulamu.cg` est affiché comme adresse de
+contact (ici et dans B3), sur un domaine que le projet ne possède pas — l'application vit sur
+`onrender.com`. Ce n'est pas du ressort de ce chantier : **à trancher avec B3 (chantier 10)**, soit
+en acquérant le domaine, soit en affichant une adresse qui existe.
+
 ### Étape 6 — le comparatif bloc à bloc de C6
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

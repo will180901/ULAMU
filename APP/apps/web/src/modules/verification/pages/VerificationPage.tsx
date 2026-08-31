@@ -22,6 +22,28 @@
  *    correspondant n'existe (`ID`, `DIPLOMA`, `LICENSE`, `PHOTO`, `ADDRESS_PROOF`). Omise.
  * 3. Elle ne montre PAS la photo d'identité, que le serveur exige pourtant pour déposer. Sans elle,
  *    le dépôt serait refusé sans que l'écran sache dire pourquoi. Ajoutée.
+ * 4. **« Commission de 12 % »** — le taux n'est pas écrit : il vient du contrat, et c'est le contrat
+ *    SIGNÉ de ce soignant-là qui s'applique à ses paiements (RM-13-07), pas un paramètre global.
+ * 5. **« Versement le 5 de chaque mois » retiré** (famille 1, point 2) — aucun versement mensuel
+ *    n'existe : ni tâche planifiée, ni route. Le retrait se demande, à tout moment.
+ * 6. **« L'administration répond sous 24 heures ouvrées » retiré** (famille 2, point 3). Aucune
+ *    messagerie support n'existe — ni module, ni route, ni écran : la phrase promettait un délai de
+ *    réponse sans qu'aucun bouton ne permette de poser la question. Et **« ouvrées »** est faux de
+ *    toute façon : le serveur compte des heures pleines, un dossier déposé vendredi soir est en
+ *    retard lundi, pas mercredi.
+ *
+ * ── L'avenant, quand le taux change (S4) ───────────────────────────────────────────────────────
+ *
+ * Un super-administrateur qui change PM-01 dans E3 déclenche la **ré-édition automatique** de tous
+ * les contrats signés (EF-03-07, RM-03-05). La version ré-éditée est **non signée** : `canPractice`
+ * tombe à `false`, et le soignant **ne peut plus exercer** jusqu'à sa re-signature. Il peut donc
+ * perdre son droit d'exercer du jour au lendemain, sans avoir rien fait.
+ *
+ * Le serveur ne servait que la version COURANTE : l'écran aurait demandé de signer à l'aveugle. S4
+ * ajoute la dernière version réellement signée, pour montrer l'ancien taux à côté du nouveau.
+ *
+ * ⚠️ **Ce parcours ne se teste entièrement qu'avec E3** (chantier 14) : c'est là que le changement
+ * de taux se déclenche. Les deux écrans forment une seule fonctionnalité.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -32,7 +54,6 @@ import {
   FileText,
   GraduationCap,
   IdCard,
-  Mail,
   MessageSquareWarning,
   ScrollText,
   ShieldCheck,
@@ -406,15 +427,77 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
 
   const nomCorrespond = nom.trim().toLocaleLowerCase('fr') === nomComplet.trim().toLocaleLowerCase('fr')
 
+  /**
+   * Un AVENANT : ce soignant avait un contrat signé, et la version courante ne l'est plus. C'est que
+   * l'administration a changé le taux et que le serveur a ré-édité (EF-03-07). Ce n'est donc pas une
+   * première signature, et l'écran ne doit surtout pas la présenter comme telle.
+   */
+  const avenant = a.signedAt === null && dossier.lastSigned !== null ? dossier.lastSigned : null
+
   return (
-    <Carte icone={ScrollText} titre="Contrat de partenariat" sousTitre={`Contrat soignant ULAMU · version ${a.version}`}>
-      <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-        Commission de {a.commissionPct} % sur les honoraires · versement selon le calendrier de la plateforme.
-      </p>
+    <Carte
+      icone={ScrollText}
+      ton={avenant ? 'danger' : 'accent'}
+      titre="Contrat de partenariat"
+      sousTitre={`Contrat soignant ULAMU · version ${a.version}`}
+    >
+      {avenant ? (
+        <>
+          {/*
+            Le fait le plus coûteux de tout l'écran : il ne peut plus exercer, et il n'y est pour
+            rien. Dit avant tout le reste, avec sa conséquence — pas seulement sa cause.
+          */}
+          <Avis ton="erreur">
+            Votre contrat a été modifié par l'administration. Tant que vous ne l'avez pas re-signé,
+            vous n'apparaissez plus dans l'annuaire et ne pouvez recevoir aucune demande.
+          </Avis>
+
+          {/*
+            L'ancien taux à côté du nouveau (S4). Signer sans voir ce qui change reviendrait à signer
+            à l'aveugle — et c'est précisément sur ce chiffre que porte le changement.
+          */}
+          <dl className="flex flex-wrap items-stretch gap-2">
+            <div className="min-w-0 flex-1 basis-36 rounded-md border border-border bg-secondary p-2.5">
+              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                Ce que vous aviez signé
+              </dt>
+              <dd className="mt-0.5 text-[19px] font-semibold leading-none text-[var(--texte-tertiaire)] line-through">
+                {avenant.commissionPct} %
+              </dd>
+              <dd className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
+                Version {avenant.version} · signée le {dateFr(avenant.signedAt)}
+              </dd>
+            </div>
+            <div className="min-w-0 flex-1 basis-36 rounded-md border border-[var(--alerte-bordure)] bg-[var(--alerte-fond)] p-2.5">
+              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--alerte-texte)]">
+                Ce qu'on vous propose
+              </dt>
+              <dd className="mt-0.5 text-[19px] font-semibold leading-none text-[var(--alerte-texte)]">
+                {a.commissionPct} %
+              </dd>
+              <dd className="mt-1 text-[11px] text-[var(--texte-secondaire)]">Version {a.version} · non signée</dd>
+            </div>
+          </dl>
+
+          <p className="text-[11px] leading-[1.5] text-[var(--texte-secondaire)]">
+            Le taux de votre contrat signé est celui qui s'applique à vos consultations — celles déjà
+            payées gardent le leur.
+          </p>
+        </>
+      ) : (
+        <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+          {/*
+            Le taux n'est pas écrit : il vient du contrat. Et il n'y a pas de calendrier de versement
+            — le retrait se demande, à tout moment (famille 1, points 1 et 2).
+          */}
+          Commission de {a.commissionPct} % sur les honoraires · vos gains sont retirables à tout
+          moment, sans montant minimum.
+        </p>
+      )}
 
       <div>
         <Button type="button" size="sm" variant="outline" onClick={() => setOuvert((v) => !v)}>
-          {ouvert ? 'Masquer le contrat' : 'Lire le contrat'}
+          {ouvert ? 'Masquer le contrat' : avenant ? 'Lire le nouveau contrat' : 'Lire le contrat'}
         </Button>
       </div>
       {ouvert ? (
@@ -489,7 +572,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
                   onClick={() => signer.mutate()}
                   disabled={signer.isPending || !nomCorrespond || motDePasse.length === 0 || otp.trim().length !== 6}
                 >
-                  {signer.isPending ? 'Signature…' : 'Signer le contrat'}
+                  {signer.isPending ? 'Signature…' : avenant ? 'Re-signer et reprendre mon activité' : 'Signer le contrat'}
                 </Button>
               </div>
             </>
@@ -753,13 +836,27 @@ export function VerificationPage() {
             </ul>
           </Carte>
 
-          <Carte icone={Mail} titre="Une question sur votre dossier ?" sousTitre="Réponse sous 24 heures ouvrées, du lundi au vendredi">
-            {/*
-              La maquette montre un bouton « Écrire à l'administration ». Aucun module de messagerie
-              support n'existe côté serveur — un bouton qui n'envoie rien serait pire que pas de
-              bouton. On ouvre donc le client mail du poste, avec la référence du dossier déjà
-              remplie pour que l'administration sache de quoi on parle.
-            */}
+          {/*
+            La maquette promet « une réponse sous 24 heures ouvrées, du lundi au vendredi ».
+
+            Trois choses fausses en une phrase. Aucune messagerie support n'existe — ni module, ni
+            route, ni écran : elle annonçait un délai de réponse sans qu'aucun bouton ne permette de
+            poser la question. « Ouvrées » n'existe pas non plus : le serveur compte des heures
+            pleines, un dossier déposé vendredi soir est en retard le lundi, pas le mercredi. Et le
+            délai lui-même n'est pas 24 h, c'est PM-11 — affiché juste au-dessus, lu du serveur.
+
+            Reste ce qui est vrai, et qui répond à la vraie inquiétude : rien n'est attendu de vous.
+          */}
+          <Carte icone={Clock} titre="Ce qui se passe maintenant" sousTitre="Rien n'est attendu de vous">
+            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+              Les dossiers sont examinés du plus ancien au plus récent : le vôtre avance à chaque
+              dossier traité. Vous serez prévenu par notification dès qu'une décision est prise — il
+              n'y a rien à relancer.
+            </p>
+            <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+              ULAMU n'a pas de messagerie interne : les échanges n'existent que pendant une
+              consultation. Pour joindre l'administration, écrivez-lui par courriel.
+            </p>
             <div>
               <Button asChild size="sm" variant="outline">
                 <a

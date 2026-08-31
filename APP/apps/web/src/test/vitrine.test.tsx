@@ -115,6 +115,8 @@ const DOSSIER_OK: Partial<VerificationCase> = {
 }
 
 const BASE_DOSSIER: VerificationCase = {
+  // S4 : la dernière version réellement signée. `null` = aucun avenant en cours.
+  lastSigned: null,
   caseId: 'c1',
   subjectKind: 'PROFESSIONAL',
   status: 'DRAFT',

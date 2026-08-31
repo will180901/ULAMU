@@ -62,6 +62,8 @@ const TOUTES = (['ID', 'DIPLOMA', 'LICENSE', 'PHOTO'] as const).map((kind, i) =>
 }))
 
 const BASE: VerificationCase = {
+  // S4 : la dernière version réellement signée. `null` = aucun avenant en cours.
+  lastSigned: null,
   caseId: 'ab12cd34-0000-0000-0000-000000000000',
   subjectKind: 'PROFESSIONAL',
   status: 'DRAFT',
@@ -384,5 +386,156 @@ describe('C1 — une décision qui ne vise aucune pièce', () => {
     })
     expect(await screen.findByText(/Dossier incomplet/)).toBeInTheDocument()
     expect(screen.queryByText('Pièce concernée')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * L'avenant (EF-03-07, RM-03-05, S4).
+ *
+ * Un super-administrateur change PM-01 dans E3 → le serveur ré-édite tous les contrats signés → la
+ * nouvelle version est NON signée → `canPractice` tombe à `false`. **Un soignant perd son droit
+ * d'exercer du jour au lendemain, sans avoir rien fait.**
+ *
+ * Ce qui est verrouillé ici : qu'on ne lui demande jamais de signer à l'aveugle, et qu'on lui dise
+ * la conséquence — pas seulement la cause.
+ */
+describe('C1 — l’avenant au contrat', () => {
+  /** Un contrat ré-édité : version courante non signée, une version signée derrière. */
+  const reedite = (ancienTaux: number, nouveauTaux: number) => ({
+    status: 'VERIFIED' as const,
+    canPractice: false,
+    agreement: {
+      version: 3,
+      commissionPct: nouveauTaux,
+      bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+      body: 'CONTRAT SOIGNANT ULAMU',
+      integrity: true,
+      signedAt: null,
+      effectiveAt: null,
+    },
+    lastSigned: { version: 2, commissionPct: ancienTaux, signedAt: '2026-07-01T10:00:00.000Z' },
+  })
+
+  it('dit la CONSÉQUENCE, pas seulement que le contrat a changé', async () => {
+    await monter(reedite(10, 12))
+
+    // « Votre contrat a été modifié » ne dit rien à qui ne connaît pas la règle. Ce qui compte,
+    // c'est qu'il ne reçoit plus aucune demande tant qu'il n'a pas re-signé.
+    expect(await screen.findByText(/vous n'apparaissez plus dans l'annuaire/)).toBeInTheDocument()
+  })
+
+  it('montre l’ancien taux À CÔTÉ du nouveau — jamais une signature à l’aveugle', async () => {
+    await monter(reedite(10, 12))
+
+    expect(await screen.findByText('Ce que vous aviez signé')).toBeInTheDocument()
+    expect(screen.getByText('10 %')).toBeInTheDocument()
+    expect(screen.getByText("Ce qu'on vous propose")).toBeInTheDocument()
+    expect(screen.getByText('12 %')).toBeInTheDocument()
+  })
+
+  it('le bouton dit ce qu’on regagne en signant', async () => {
+    await monter(reedite(10, 12))
+
+    // Le nom saisi ouvre le parcours ; le libellé du bouton final est le point vérifié.
+    expect(await screen.findByRole('button', { name: 'Lire le nouveau contrat' })).toBeInTheDocument()
+  })
+
+  it('une baisse de taux est un avenant comme un autre — l’écran ne suppose pas le sens', async () => {
+    await monter(reedite(15, 10))
+
+    expect(await screen.findByText('15 %')).toBeInTheDocument()
+    expect(screen.getByText('10 %')).toBeInTheDocument()
+  })
+
+  it('aucune comparaison sur une PREMIÈRE signature : il n’y a rien à comparer', async () => {
+    await monter({
+      status: 'VERIFIED',
+      canPractice: false,
+      agreement: {
+        version: 1,
+        commissionPct: 10,
+        bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+        body: 'CONTRAT SOIGNANT ULAMU',
+        integrity: true,
+        signedAt: null,
+        effectiveAt: null,
+      },
+      lastSigned: null,
+    })
+
+    await screen.findByRole('button', { name: 'Lire le contrat' })
+    expect(screen.queryByText('Ce que vous aviez signé')).not.toBeInTheDocument()
+    expect(screen.queryByText(/vous n'apparaissez plus dans l'annuaire/)).not.toBeInTheDocument()
+  })
+
+  it('rien non plus quand la version courante est déjà signée', async () => {
+    await monter({
+      status: 'VERIFIED',
+      canPractice: true,
+      agreement: {
+        version: 3,
+        commissionPct: 12,
+        bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+        body: 'CONTRAT SOIGNANT ULAMU',
+        integrity: true,
+        signedAt: '2026-08-22T16:42:00.000Z',
+        effectiveAt: '2026-08-22T16:42:00.000Z',
+      },
+      lastSigned: { version: 2, commissionPct: 10, signedAt: '2026-07-01T10:00:00.000Z' },
+    })
+
+    expect(await screen.findByText(/Contrat signé le/)).toBeInTheDocument()
+    expect(screen.queryByText('Ce que vous aviez signé')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Famille 1 (points 1 et 2) et famille 2 (point 3) : trois phrases de la maquette que le serveur
+ * n'aurait jamais tenues.
+ */
+describe('C1 — ce que la maquette promettait et qui n’existe pas', () => {
+  const signe = {
+    status: 'VERIFIED' as const,
+    canPractice: true,
+    agreement: {
+      version: 2,
+      commissionPct: 10,
+      bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+      body: 'CONTRAT SOIGNANT ULAMU',
+      integrity: true,
+      signedAt: '2026-08-22T16:42:00.000Z',
+      effectiveAt: '2026-08-22T16:42:00.000Z',
+    },
+  }
+
+  it('n’annonce aucun délai de réponse de l’administration', async () => {
+    await monter(signe)
+
+    // La phrase promettait une réponse « sous 24 heures ouvrées » alors qu'aucune messagerie
+    // support n'existe : aucun bouton ne permettait même de poser la question.
+    expect(await screen.findByText(/Ce qui se passe maintenant/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('24 heures')
+    expect(document.body.textContent).not.toContain('ouvrées')
+  })
+
+  it('dit ce qui est vrai à la place : rien n’est attendu du soignant', async () => {
+    await monter(signe)
+
+    expect(await screen.findByText(/du plus ancien au plus récent/)).toBeInTheDocument()
+    expect(screen.getByText(/il n'y a rien à relancer/)).toBeInTheDocument()
+  })
+
+  it('ne parle d’aucun versement mensuel : le retrait se demande', async () => {
+    await monter(signe)
+
+    expect(await screen.findByText(/retirables à tout moment/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/le 5 de chaque mois|versement mensuel/i)
+  })
+
+  it('affiche le taux du CONTRAT, pas un taux écrit dans la page', async () => {
+    // Deux soignants peuvent avoir deux taux (RM-13-07) : l'écran lit celui de son contrat.
+    await monter({ ...signe, agreement: { ...signe.agreement, commissionPct: 15 } })
+
+    expect(await screen.findByText(/Commission de 15 %/)).toBeInTheDocument()
   })
 })

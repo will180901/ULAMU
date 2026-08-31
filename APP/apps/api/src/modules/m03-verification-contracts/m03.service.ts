@@ -380,6 +380,20 @@ export class M03Service {
       signedAt: Date | null;
       effectiveAt: Date | null;
     } | null;
+    /**
+     * S4 — la dernière version que le soignant a RÉELLEMENT SIGNÉE (famille 4, point 11).
+     *
+     * Quand un super-administrateur change PM-01 dans E3, le serveur ré-édite les contrats signés
+     * (`m16.parameters.service.ts`). La nouvelle version est **non signée**, donc `canPractice`
+     * tombe à `false` : le soignant ne peut plus exercer tant qu'il n'a pas re-signé.
+     *
+     * `agreement` ne porte que la version COURANTE. L'écran C1 ne pouvait donc pas montrer ce qui
+     * change — il aurait affiché « nouveau taux : 12 % » sans dire de quoi on vient, ce qui revient
+     * à demander une signature à l'aveugle. Ce champ sert l'ancien taux à côté du nouveau.
+     *
+     * `null` s'il n'a jamais rien signé : c'est alors une première signature, pas un avenant.
+     */
+    lastSigned: { version: number; commissionPct: number; signedAt: Date } | null;
   }> {
     const c = await this.resolveOwnCase(accountId, facilityId);
     const subject = this.subjectOf(c);
@@ -424,6 +438,7 @@ export class M03Service {
       canSubmit: manquantes.length === 0 && canTransition(c.status, "SUBMITTED"),
       documentsEditable: canAddDocuments(c.status),
       announcedDelayHours,
+      lastSigned: this.lastSignedVersion(c, latest),
       // La `fileKey` n'est plus servie : c'est une clé de stockage interne, et une clé qui traîne dans
       // un journal ou un cache de navigateur est une pièce d'identité qui traîne. Les pièces se lisent
       // désormais par leur identifiant, à travers une route qui vérifie qui demande.
@@ -804,6 +819,29 @@ export class M03Service {
   private latestVersion(c: CaseFull): AgreementVersionRow | null {
     if (!c.agreement) return null;
     return [...c.agreement.versions].sort((a, b) => b.version - a.version).at(0) ?? null;
+  }
+
+  /**
+   * La dernière version SIGNÉE, hors version courante (S4).
+   *
+   * On exclut explicitement la version courante : si elle est signée, il n'y a pas d'avenant en
+   * cours et l'écran n'a rien à comparer. Ce champ ne dit qu'une chose — « voici ce que vous aviez
+   * accepté avant » — et il ne doit pas répondre quand la question ne se pose pas.
+   */
+  private lastSignedVersion(
+    c: CaseFull,
+    latest: AgreementVersionRow | null,
+  ): { version: number; commissionPct: number; signedAt: Date } | null {
+    if (!c.agreement || !latest) return null;
+    // La version courante est SIGNÉE : aucun avenant en cours, donc rien à comparer. Sans cette
+    // sortie, un contrat en règle renverrait la version précédente et l'écran laisserait croire
+    // qu'une signature est attendue. Trouvé par le test, pas à la relecture.
+    if (latest.signedAt !== null) return null;
+    const signee = [...c.agreement.versions]
+      .filter((v) => v.signedAt !== null && v.version !== latest.version)
+      .sort((a, b) => b.version - a.version)
+      .at(0);
+    return signee ? { version: signee.version, commissionPct: signee.commissionPct, signedAt: signee.signedAt! } : null;
   }
 
   /** Le contrat est signable : dossier VERIFIED + version courante non signée (EF-03-06). */

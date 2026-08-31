@@ -979,6 +979,19 @@ export interface VerificationCase {
     signedAt: string | null
     effectiveAt: string | null
   } | null
+  /**
+   * La dernière version que le soignant a RÉELLEMENT signée, hors version courante (S4, 28/08/2026).
+   *
+   * Quand un super-administrateur change PM-01 dans E3, le serveur ré-édite les contrats signés. La
+   * nouvelle version est **non signée** : `canPractice` tombe à `false`, et le soignant ne peut plus
+   * exercer tant qu'il n'a pas re-signé.
+   *
+   * `agreement` ne porte que la version courante. Sans ce champ, C1 aurait demandé une signature à
+   * l'aveugle — « nouveau taux : 12 % », sans dire d'où l'on vient.
+   *
+   * `null` quand aucun avenant n'est en cours : première signature, ou version courante déjà signée.
+   */
+  lastSigned: { version: number; commissionPct: number; signedAt: string } | null
 }
 
 export interface UploadDocumentRequest {
