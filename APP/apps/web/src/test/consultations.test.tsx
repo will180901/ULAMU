@@ -123,6 +123,10 @@ const credit = (reference: string, amountXaf: number, quand = ilYA(1)) => ({
   amountXaf,
   reference,
   createdAt: quand,
+  // S2 : le brut et la commission, joints par le serveur. C4 ne s'en sert pas — il n'affiche que le
+  // net crédité — mais le contrat les porte, et un fabricant de test ne doit pas mentir sur le contrat.
+  grossXaf: Math.round(amountXaf / 0.9),
+  commissionXaf: Math.round(amountXaf / 0.9) - amountXaf,
 })
 
 async function monter(

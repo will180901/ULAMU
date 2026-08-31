@@ -410,6 +410,65 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **6** | **C4 — Consultations** (le registre) — codé le 28/08. Serveur : **S9**, `orderRef` sur les lignes du registre (**2 lignes**) — la clé qui relie une consultation à son mouvement au journal des gains. Web : écran **refait sur la forme mesurée** — trois tuiles, trois onglets comptés, **un tableau** à la place des cartes empilées. Honoraires **lus au journal**, jamais calculés. Plus aucun délai écrit. Colonnes « mode » et « patient » retirées, statut d'ordonnance à la place de « suivi en officine », proposition de suivi annoncée. **API 484 ✓ · web 226 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **7** | **C6 — Mes gains** — codé le 28/08. Serveur : **S2** (brut + commission joints depuis la part de paiement, ~35 l. + 5 tests) et **S3** (délai PM-36 dans le récapitulatif de retrait, 3 l.). Web : détail brut/commission/taux **déduit** sur chaque mouvement, décompte du mois, histogramme des six mois, trois onglets comptés, avertissement D-008 près du solde en attente, délai annoncé avant confirmation. **Et une brèche du harnais de tests fermée : la suite web appelait la vraie API de production.** **API 489 ✓ · web 239 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de C6
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| Sous-titre « **Prochain versement le 5 septembre 2026** · commission ULAMU de **12 %** » | « Retirables à tout moment · la commission est déjà déduite de chaque montant » | **deux écarts de fait** — aucune tâche planifiée n'existe côté serveur (ni cron, ni lot) : le versement mensuel n'était qu'un décor. Et le taux dépend du contrat signé de chacun (RM-13-07) : il ne peut pas être écrit |
+| Tuile « **DISPONIBLE AU RETRAIT** · Retirable à tout moment · **500 XAF de frais opérateur** » | idem, sous-titre « À tout moment, sans minimum » | **écart de fait** — les frais ULAMU valent PM-02 (0 %) et sont annoncés dans le récapitulatif ; les frais de l'opérateur seront ceux de l'agrégateur retenu, qui n'est pas choisi (ADR-09). Écrire 500 XAF serait inventer un barème |
+| Tuile « **ENCAISSÉ CE MOIS** · 38 consultations honorées · **+12 % vs juillet** » | « Ce mois-ci » + le nombre de consultations créditées | **écart** — la comparaison au mois précédent suppose un historique complet ; le journal en sert cinquante lignes |
+| Tuile « **EN ATTENTE DE CLÔTURE** · 1 compte-rendu à signer · Débloqué à la signature » | idem, le compte venant des séances réelles, **plus l'avertissement D-008** | conforme, et au-delà (famille 4, point 9) |
+| Graphique « Honoraires nets encaissés · Mars – août » avec bascule Semaine / Mois | Histogramme des six derniers mois, barres en CSS | conforme — **la bascule « Semaine » est retirée** : le journal ne sert que cinquante mouvements, un découpage hebdomadaire sur six mois serait faux la plupart du temps. La limite est dite quand elle est atteinte |
+| Bloc « **Décompte du mois** » : bruts, commission **12 %**, frais opérateur, net | idem, **sans aucun taux écrit** : le brut et la commission sont additionnés depuis ce que le serveur a réellement prélevé | conforme sur la forme, corrigé sur le fond. La ligne « frais opérateur » disparaît — voir la tuile 1 |
+| Onglets « Tous · Honoraires · Versements » | « Tous · Honoraires · Retraits », comptés | conforme (« versement » → « retrait », le mot du cahier) |
+| Tableau, colonne **DATE** | idem | conforme |
+| Tableau, colonne **MOUVEMENT** (type + référence `CSL-2026-04120`) | Type en français ; **pas de référence** | **écart** — ce format n'existe pas au modèle, et une référence opaque n'apprendrait rien |
+| Tableau, colonne **CANAL** : « Téléconsultation » / « Cabinet · Bacongo » | retirée | **écart de fait** — la messagerie est le seul portail, et un médecin n'est rattachable à aucun cabinet. Elle ne disait quelque chose que pour un retrait : l'opérateur, affiché dans le bloc des retraits |
+| Tableau, colonne **STATUT** | Pastille par type de mouvement, et l'état réel pour les retraits | conforme |
+| Tableau, colonne **MONTANT NET** + « brut 12 500 » | idem, **plus la commission et son pourcentage déduit** | conforme, et au-delà — c'est S2 |
+| Ligne « **Versement mensuel** VER-2026-0884 » | n'existe pas | voir le sous-titre |
+| Bloc « **Compte de versement** · Vérifié · Changer de compte » | « Où part l'argent » : le numéro du compte ULAMU, et le renvoi vers Mes paramètres | **écart de fait** — aucun modèle de compte de versement n'existe ; le retrait part sur le téléphone du compte. Le plus trompeur des six écarts de la famille 1 : croire à un compte séparé, c'est ignorer que son numéro personnel est engagé |
+| Bouton « Confirmer le retrait » (un temps) | Récapitulatif — montant, frais, **délai** — puis mot de passe **et** code reçu | EF-13-07 : deux temps, pas un |
+| Bouton « Relevé » (export) | retiré | famille 3, groupe D |
+
+### Ce que le chantier 7 (C6 — Mes gains) a appris
+
+**La suite de tests appelait la vraie API de production.** `VITE_API_URL` pointe sur
+`https://ulamu-api.onrender.com` — il n'y a pas d'API locale, par choix assumé. Conséquence jamais
+vue jusqu'ici : **toute méthode d'`api` qu'un test oubliait de doubler partait pour de bon**. Un test
+de C6 le faisait ; l'appel revenait en 401, `onUnauthorized` déconnectait la session, et comme la
+réponse mettait deux secondes à revenir, c'est le test SUIVANT qui se retrouvait déconnecté en plein
+milieu, bloqué sur un écran de chargement. Le message d'échec accusait un bouton parfaitement
+correct — j'ai cherché trois fois au mauvais endroit avant de journaliser l'état du magasin de session.
+
+**La seconde raison de fermer cette porte est plus grave que la première :** des tests qui appellent
+la production peuvent aussi y **écrire**. Un `POST` oublié aurait suffi. `fetch` est désormais coupé
+dans `src/test/setup.ts`, avec un message qui nomme l'URL manquante. Les 239 tests passent sans
+réseau — preuve qu'aucun n'en dépendait, et que le risque était pur.
+
+*C'est probablement l'explication de la dette du §10 : « la suite web est instable sur cette
+machine, deux exécutions sur cinq s'arrêtent ». Le réseau y était pour quelque chose.*
+
+**Un pourcentage ne s'écrit pas, il se déduit.** Le « 12 % » des maquettes n'était pas seulement
+faux (PM-01 vaut 10) : le principe l'était. Le taux appliqué à un paiement est celui du contrat
+signé de CE bénéficiaire-là (RM-13-07) — deux médecins peuvent avoir deux taux le même jour, et un
+même médecin deux taux à deux mois d'écart si son contrat a été ré-édité. L'écran affiche donc un
+pourcentage **calculé sur les deux montants servis**, ligne par ligne. Il est juste par construction,
+quelle que soit la valeur du paramètre.
+
+**`null` et `0` ne disent pas la même chose.** Un mouvement sans part de paiement retrouvée n'a pas
+une commission nulle : on ne sait rien de lui. `0` aurait affiché « commission 0 (0 %) », ce qui est
+une affirmation. Et quand une ligne du mois manque de son détail, le décompte l'avoue au lieu de
+sous-estimer le brut en silence.
+
+**Deux écrans de suite, la même leçon sur les totaux.** C4 refuse d'afficher « 0 XAF » pour une
+consultation pas encore capturée ; C6 refuse d'afficher « 0 » pour un détail introuvable. *Un zéro
+est une mesure, pas un remplissage.*
+
 ### Étape 6 — le comparatif bloc à bloc de C4
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
@@ -619,7 +678,7 @@ groupe G). La règle n°1 a payé dès son premier usage.
 dossiers qui n'existent pas encore n'a pas de sens) et le **tiroir de notifications** (M14 est une
 fonctionnalité à part entière, pas un morceau de coquille).
 
-**⚠️ Dette repérée : la suite web est instable sur cette machine.** Deux exécutions sur cinq se
+**⚠️ Dette repérée : la suite web est instable sur cette machine.** *(28/08 : une cause trouvée — les tests appelaient la vraie API de production dès qu'une méthode n'était pas doublée. `fetch` est désormais coupé dans le harnais. À revérifier sur plusieurs exécutions.)* Deux exécutions sur cinq se
 sont arrêtées sur un « Timeout waiting for worker to respond » — y compris **avant** tout
 changement de ce chantier. Les reprises passent intégralement. La suite dure ~105 s ; le délai
 d'attente des workers est probablement trop court pour cette machine. À corriger avant de s'y

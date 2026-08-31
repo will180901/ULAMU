@@ -64,7 +64,15 @@ export class EarningsService {
     holderId: string;
     availableXaf: number;
     pendingXaf: number;
-    entries: Array<{ id: string; type: string; amountXaf: number; reference: string; createdAt: Date }>;
+    entries: Array<{
+      id: string;
+      type: string;
+      amountXaf: number;
+      reference: string;
+      createdAt: Date;
+      grossXaf: number | null;
+      commissionXaf: number | null;
+    }>;
     withdrawals: Array<{ id: string; amountXaf: number; operator: string; status: WithdrawalStatus; failReason: string | null; requestedAt: Date; executedAt: Date | null }>;
   }> {
     const holderType = query.holderType as EarningsHolderType;
@@ -84,6 +92,7 @@ export class EarningsService {
 
     return {
       ...earnings,
+      entries: await this.withSplitDetail(holderType, query.holderId, earnings.entries),
       withdrawals: withdrawals.map((w) => ({
         id: w.id,
         amountXaf: w.amountXaf,
@@ -94,6 +103,60 @@ export class EarningsService {
         executedAt: w.executedAt,
       })),
     };
+  }
+
+  /**
+   * S2 — le brut et la commission, à côté du net (famille 1, point 1).
+   *
+   * ── Pourquoi cette jointure ────────────────────────────────────────────────────────────────────
+   *
+   * `EarningsEntry.amountXaf` ne porte que le **net**. Le brut et la commission existent bel et
+   * bien, mais dans `PaymentSplit`, que la vue du portefeuille ne joignait pas. Un médecin voyait
+   * donc « + 11 000 XAF » sans jamais savoir ce que le patient avait payé ni ce qui avait été
+   * prélevé — et les maquettes comblaient ce silence en écrivant « 12 % » dans la page.
+   *
+   * Or **le taux n'est pas PM-01** : c'est celui du contrat signé de CE bénéficiaire-là (RM-13-07).
+   * Deux médecins peuvent avoir deux taux le même jour. Aucun écran ne peut donc calculer une
+   * commission ; il ne peut que lire celle qui a été appliquée. C'est ce que sert cette jointure.
+   *
+   * Lecture seule, sur des données déjà écrites. Le lien se fait par `reference` = `orderRef` du
+   * paiement — la même clé que le registre C4 utilise (S9).
+   *
+   * `null` sur les lignes qui n'ont pas de part de paiement : un retrait, ou un mouvement dont le
+   * paiement a disparu. `null` et non `0` — l'absence de détail n'est pas une commission nulle.
+   */
+  private async withSplitDetail(
+    holderType: EarningsHolderType,
+    holderId: string,
+    entries: Array<{ id: string; type: string; amountXaf: number; reference: string; createdAt: Date }>,
+  ): Promise<
+    Array<{
+      id: string;
+      type: string;
+      amountXaf: number;
+      reference: string;
+      createdAt: Date;
+      grossXaf: number | null;
+      commissionXaf: number | null;
+    }>
+  > {
+    // Les références de retrait (`withdrawal:<id>`) ne désignent aucun paiement : inutile de les
+    // chercher en base.
+    const orderRefs = [...new Set(entries.filter((e) => !e.reference.startsWith("withdrawal:")).map((e) => e.reference))];
+    if (orderRefs.length === 0) {
+      return entries.map((e) => ({ ...e, grossXaf: null, commissionXaf: null }));
+    }
+
+    const splits = await this.prisma.paymentSplit.findMany({
+      where: { holderType, holderId, payment: { orderRef: { in: orderRefs } } },
+      select: { grossXaf: true, commissionXaf: true, payment: { select: { orderRef: true } } },
+    });
+    const parRef = new Map(splits.map((s) => [s.payment.orderRef, s]));
+
+    return entries.map((e) => {
+      const s = parRef.get(e.reference);
+      return { ...e, grossXaf: s?.grossXaf ?? null, commissionXaf: s?.commissionXaf ?? null };
+    });
   }
 
   // ── EF-13-07 : retrait en deux temps (CU-13-04) ─────────────────────────────
@@ -110,6 +173,15 @@ export class EarningsService {
     netToReceiveXaf: number;
     operator: string;
     otpExpiresInSeconds: number;
+    /**
+     * S3 — le délai d'exécution annoncé AVANT de confirmer (famille 1, point 2).
+     *
+     * EF-13-07 exige que les frais ET le délai soient connus avant l'engagement. Les frais y étaient
+     * déjà ; le délai, lui, n'était nulle part — alors l'écran aurait écrit « sous 24 h » en dur,
+     * la même dette que le « 48 h » du compte-rendu. PM-36 vaut 86 400 s aujourd'hui ; il se change
+     * dans E3, et le récapitulatif suivra tout seul.
+     */
+    payoutDelaySeconds: number;
   }> {
     const holderType = dto.holderType as EarningsHolderType;
     await this.assertHolderAccess(actor, holderType, dto.holderId);
@@ -124,7 +196,7 @@ export class EarningsService {
     // PM-02 : 0 % ULAMU sur les retraits — lu en base, jamais codé en dur.
     // ⚠️ Les frais OPÉRATEUR réels (EF-13-07) seront fournis par l'agrégateur retenu (ADR-09) —
     // l'implémentation dev n'expose pas de barème : seul le « net hors frais opérateur » est annoncé.
-    const pm02 = await this.params.getInt("PM-02");
+    const [pm02, pm36S] = await Promise.all([this.params.getInt("PM-02"), this.params.getInt("PM-36")]);
     const fee = withdrawalFee(dto.amountXaf, pm02);
 
     // Le MoMo de destination est celui du compte de l'acteur autorisé : le professionnel
@@ -162,6 +234,7 @@ export class EarningsService {
       netToReceiveXaf: dto.amountXaf - fee,
       operator: dto.operator,
       otpExpiresInSeconds: otp.expiresInSeconds,
+      payoutDelaySeconds: pm36S,
     };
   }
 

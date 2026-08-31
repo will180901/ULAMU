@@ -749,8 +749,27 @@ export interface Earnings {
    * chose la plus utile que cet écran puisse dire à un médecin.
    */
   pendingXaf: number
-  /** `CREDIT` (part d'une consultation), `WITHDRAWAL` (retrait), `REVERSAL` (remboursement). */
-  entries: Array<{ id: string; type: string; amountXaf: number; reference: string; createdAt: string }>
+  /**
+   * `CREDIT` (part d'une consultation), `WITHDRAWAL` (retrait), `REVERSAL` (remboursement).
+   *
+   * `amountXaf` est le **net**. `grossXaf` et `commissionXaf` viennent de la part de paiement, jointe
+   * par le serveur depuis le 28/08 (S2) : sans eux, un médecin voyait « + 11 000 XAF » sans savoir
+   * ce que le patient avait payé ni ce qui avait été prélevé — et la maquette comblait ce silence en
+   * écrivant « 12 % » dans la page. **Le taux n'est pas un paramètre global** : c'est celui du
+   * contrat signé de ce bénéficiaire-là (RM-13-07). Un écran ne peut donc que le LIRE.
+   *
+   * `null` sur un mouvement sans part de paiement — un retrait, typiquement. `null` et non `0` :
+   * l'absence de détail n'est pas une commission nulle.
+   */
+  entries: Array<{
+    id: string
+    type: string
+    amountXaf: number
+    reference: string
+    createdAt: string
+    grossXaf: number | null
+    commissionXaf: number | null
+  }>
   /**
    * Les cinquante derniers retraits — le serveur les renvoie et ce type les OMETTAIT (constaté le
    * 24/08/2026 en comparant à `getMine`). Sans eux, un médecin ne pouvait pas savoir où en était
@@ -775,6 +794,13 @@ export interface WithdrawalQuote {
   netToReceiveXaf: number
   operator: string
   otpExpiresInSeconds: number
+  /**
+   * Le délai d'exécution, servi par le serveur (PM-36) depuis le 28/08 (S3).
+   *
+   * EF-13-07 exige que les frais ET le délai soient connus avant l'engagement. Sans ce champ,
+   * l'écran aurait écrit « sous 24 h » en dur — la même dette que le « 48 h » du compte-rendu.
+   */
+  payoutDelaySeconds: number
 }
 
 // ── M02 / M11 — Espace structure (CU-02-01/02/03, CU-11-01) ────────────────

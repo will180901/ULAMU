@@ -4,44 +4,82 @@
  * L'argent : ce qui est retirable, ce qui attend, ce qui a bougé, et comment le faire venir sur son
  * Mobile Money.
  *
- * ── L'écart majeur : le « compte de versement » n'existe pas ───────────────────────────────────
+ * ── Ce que le serveur a dû apprendre à dire (S2 et S3) ─────────────────────────────────────────
  *
- * La maquette montre un compte enregistré — « Mobile Money · MTN Congo · Vérifié · +242 06 •• •• 03 »
- * — avec un bouton « Changer de compte » et une confirmation par code. **Rien de tout cela n'existe.**
- * Aucun modèle de compte de versement en base ; `startWithdrawal` lit `actorAccount.phone`, c'est-à-dire
- * le TÉLÉPHONE DU COMPTE ULAMU lui-même.
+ * **S2 — le brut et la commission.** Le journal ne portait que le NET. Le brut et la commission
+ * existaient, mais dans la part de paiement, que la vue ne joignait pas : un médecin lisait
+ * « + 11 000 XAF » sans savoir ce que le patient avait payé ni ce qui avait été prélevé. C'est ce
+ * silence que les maquettes comblaient en écrivant « 12 % » — quatre fois dans cet écran.
  *
- * Conséquence, et elle est importante à dire : changer de numéro de versement, c'est changer le
- * téléphone de son compte — dans Mes paramètres, avec la double preuve qu'exige EF-01-07. L'écran
- * l'explique et y renvoie, au lieu d'afficher un réglage qui n'existe pas.
+ * Et **12 % n'était pas seulement faux, le principe l'était** : le taux appliqué à un paiement est
+ * celui du contrat signé de CE bénéficiaire-là (RM-13-07), pas un paramètre global. Deux médecins
+ * peuvent avoir deux taux le même jour. Aucun écran ne peut calculer une commission ; il ne peut que
+ * lire celle qui a été appliquée. **Le taux n'est donc écrit nulle part ici — il est déduit, ligne
+ * par ligne, de ce que le serveur a réellement prélevé.**
  *
- * L'opérateur, lui, se choisit à CHAQUE retrait : il n'est mémorisé nulle part.
+ * **S3 — le délai d'exécution.** EF-13-07 veut que les frais ET le délai soient connus avant
+ * l'engagement. Les frais y étaient ; le délai vient de PM-36, servi dans le récapitulatif.
  *
- * ── Trois autres écarts ───────────────────────────────────────────────────────────────────────
+ * ── Les écarts à la maquette ──────────────────────────────────────────────────────────────────
  *
- * • **Le retrait se fait en DEUX temps**, pas un. EF-13-07 : les frais sont annoncés AVANT
- *   confirmation. `start` chiffre et envoie un code, `confirm` exige mot de passe ET code. La
- *   maquette n'affichait qu'un bouton « Confirmer le retrait ».
- * • **« Relevé » (export) retiré** : aucun endpoint ne produit un relevé de gains.
- * • **« Décompte du mois »** : aucun découpage mensuel côté serveur, mais chaque mouvement porte sa
- *   date. L'agrégation est faite ici, sur des données réelles — c'est un calcul, pas une invention.
+ * 1. **« Prochain versement le 5 septembre » : le versement mensuel n'existe pas.** Le cahier décrit
+ *    un retrait à la demande (EF-13-07), et **aucune tâche planifiée n'existe côté serveur** — ni
+ *    cron, ni lot. Le mensuel n'était qu'un décor : le garder aurait voulu dire le construire.
+ * 2. **« Commission ULAMU de 12 % » retiré**, ainsi que les trois autres occurrences — voir S2.
+ * 3. **« 5 000 XAF minimum » retiré.** Aucun minimum n'existe : le serveur accepte tout entier
+ *    positif. Le prix plancher d'une offre est de 500 XAF ; un minimum à 5 000 aurait imposé douze
+ *    consultations avant le premier retrait.
+ * 4. **« Compte de versement · Vérifié · Changer de compte » retiré.** Rien de tel n'existe : le
+ *    retrait part sur le TÉLÉPHONE DU COMPTE ULAMU. Changer de numéro de versement, c'est changer
+ *    son téléphone, avec la double preuve d'EF-01-07. L'écran le dit et y renvoie.
+ * 5. **« 500 XAF de frais opérateur » retiré.** Les frais ULAMU valent PM-02 (0 %) et sont annoncés
+ *    dans le récapitulatif ; les frais de l'opérateur seront ceux de l'agrégateur retenu, qui n'est
+ *    pas choisi (ADR-09). Écrire un montant serait inventer un barème.
+ * 6. **Colonne « CANAL » (Téléconsultation / Cabinet) retirée** — la messagerie est le seul portail,
+ *    et un médecin n'est rattachable à aucun cabinet. Elle ne dit quelque chose que pour un retrait :
+ *    l'opérateur. C'est ce qu'elle affiche désormais, et rien pour les autres lignes.
+ * 7. **« + 12 % vs juillet » retiré** — la comparaison au mois précédent supposerait un historique
+ *    complet ; le journal en sert cinquante lignes.
+ * 8. **« Relevé » (export) retiré** — aucun endpoint ne produit de relevé de gains.
+ *
+ * ── Le retrait se fait en DEUX temps, pas un ───────────────────────────────────────────────────
+ *
+ * EF-13-07 : le récapitulatif d'abord — montant, frais, délai — puis mot de passe ET code reçu. La
+ * maquette n'affichait qu'un bouton « Confirmer le retrait ».
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowDownToLine, Banknote, History, Hourglass, Smartphone, Wallet } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowDownToLine,
+  Banknote,
+  History,
+  Hourglass,
+  Smartphone,
+  Wallet,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
-import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+const moisFr = (d: Date) => d.toLocaleDateString('fr-FR', { month: 'short' })
+
+/** « moins d'une heure », « 24 h », « 3 jours » — un délai servi par le serveur, dit en clair. */
+function delaiFr(secondes: number): string {
+  if (secondes < 3600) return "moins d'une heure"
+  const h = Math.round(secondes / 3600)
+  if (h < 48) return `${h} h`
+  return `${Math.round(h / 24)} jours`
+}
 
 const OPERATEURS: Array<{ code: MomoOperator; label: string }> = [
   { code: 'MTN_MOMO', label: 'MTN Mobile Money' },
@@ -63,6 +101,8 @@ const ETATS_RETRAIT: Record<string, { libelle: string; ton: TonPilule }> = {
 
 /** Le numéro du compte, masqué : assez pour se reconnaître, pas assez pour être lu par-dessus l'épaule. */
 const masquer = (tel: string) => (tel.length > 4 ? `${tel.slice(0, 8)} •• •• ${tel.slice(-2)}` : tel)
+
+type OngletMouvements = 'tous' | 'honoraires' | 'retraits'
 
 // ── Le retrait, en deux temps ──────────────────────────────────────────────
 
@@ -106,13 +146,14 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
       <Carte icone={ArrowDownToLine} titre="Retirer mes gains" sousTitre="Rien à retirer pour l'instant">
         <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
           Vos honoraires deviennent retirables une fois le compte-rendu de la consultation déposé.
+          Il n'y a ni date de versement, ni montant minimum : dès qu'il y a de l'argent, il est à vous.
         </p>
       </Carte>
     )
   }
 
   return (
-    <Carte icone={ArrowDownToLine} titre="Retirer mes gains" sousTitre="Vers votre Mobile Money, en deux étapes">
+    <Carte icone={ArrowDownToLine} titre="Retirer mes gains" sousTitre="Disponible au retrait, à tout moment">
       {!devis ? (
         <>
           <div className="flex flex-wrap items-end gap-3">
@@ -142,6 +183,10 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
               </NativeSelect>
             </div>
           </div>
+          {/*
+            Aucun minimum n'est annoncé, parce qu'il n'y en a pas : le serveur accepte tout entier
+            strictement positif. Le seul garde-fou est le solde, revérifié au moment du débit.
+          */}
           <p className="text-[11px] text-[var(--texte-tertiaire)]">
             Disponible : {xaf(gains.availableXaf)} F · versé sur {masquer(telephone)}, le numéro de votre compte ULAMU.
           </p>
@@ -158,7 +203,7 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
         </>
       ) : (
         <>
-          {/* EF-13-07 : les frais sont annoncés AVANT confirmation. C'est le sens des deux temps. */}
+          {/* EF-13-07 : les frais ET le délai sont annoncés AVANT confirmation. Les deux temps sont là pour ça. */}
           <dl className="flex flex-col gap-2 rounded-md border border-border bg-secondary p-3">
             <div className="flex justify-between gap-4 text-[13px]">
               <dt className="text-muted-foreground">Montant demandé</dt>
@@ -173,6 +218,11 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
               <dd className="font-[family-name:var(--font-display)] text-[19px] font-bold text-foreground">
                 {xaf(devis.netToReceiveXaf)} F
               </dd>
+            </div>
+            {/* Le délai vient de PM-36 (S3) : aucune durée n'est écrite dans ce fichier. */}
+            <div className="flex justify-between gap-4 text-[12px]">
+              <dt className="text-muted-foreground">Versé sous</dt>
+              <dd className="text-foreground">{delaiFr(devis.payoutDelaySeconds)}</dd>
             </div>
           </dl>
           <Avis ton="info">
@@ -218,12 +268,49 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
   )
 }
 
+// ── L'histogramme des mois ─────────────────────────────────────────────────
+
+/**
+ * Les honoraires nets, mois par mois. Barres en CSS : une bibliothèque de graphiques pour six
+ * rectangles serait plus lourde que l'application elle-même.
+ *
+ * Le journal ne sert que ses cinquante derniers mouvements. Cet histogramme ne montre donc que ce
+ * qu'il contient — et quand la limite est atteinte, il le dit, au lieu de laisser croire à un
+ * historique complet.
+ */
+function Histogramme({ mois, tronque }: { mois: Array<{ cle: string; label: string; net: number }>; tronque: boolean }) {
+  const max = Math.max(1, ...mois.map((m) => m.net))
+  return (
+    <Carte icone={History} titre="Honoraires nets par mois" sousTitre="Nets de commission, tels que le journal les porte">
+      <div className="flex h-40 items-end gap-2" role="img" aria-label="Honoraires nets par mois">
+        {mois.map((m) => (
+          <span key={m.cle} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
+            <span className="text-[10px] tabular-nums text-[var(--texte-tertiaire)]">{m.net > 0 ? xaf(m.net) : ''}</span>
+            <span
+              className="w-full rounded-t-[3px] bg-[var(--ap-400)]"
+              style={{ height: `${Math.max(2, (m.net / max) * 100)}%` }}
+            />
+            <span className="text-[10px] text-[var(--texte-tertiaire)]">{m.label}</span>
+          </span>
+        ))}
+      </div>
+      {tronque ? (
+        <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+          Le journal sert ses cinquante derniers mouvements : les mois plus anciens peuvent être
+          incomplets.
+        </p>
+      ) : null}
+    </Carte>
+  )
+}
+
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 export function GainsPage() {
   const qc = useQueryClient()
   const moi = useSessionStore((s) => s.me)
   const id = moi?.accountId ?? ''
+  const [onglet, setOnglet] = useState<OngletMouvements>('tous')
 
   const gains = useQuery({
     queryKey: ['earnings', id],
@@ -233,22 +320,62 @@ export function GainsPage() {
   })
 
   /**
-   * Le décompte du mois en cours.
+   * Les séances, pour dire COMBIEN de comptes-rendus retiennent l'argent en attente. Le montant
+   * seul (`pendingXaf`) laisse un médecin devant une somme bloquée sans savoir ce qui la débloque.
+   */
+  const seances = useQuery({ queryKey: ['sessions', 'mine'], queryFn: () => api.mySessions(), retry: false })
+  const aSigner = (seances.data?.items ?? []).filter((s) => s.status === 'ENDED' && !s.reportDepositedAt).length
+
+  const entries = useMemo(() => gains.data?.entries ?? [], [gains.data])
+
+  /**
+   * Le décompte du mois en cours — brut, commission, net.
    *
-   * Le serveur ne découpe rien par mois — mais chaque mouvement porte sa date. L'agrégation est
-   * donc un CALCUL sur des données réelles, pas une estimation : on additionne ce qui existe.
+   * Le serveur ne découpe rien par mois, mais chaque mouvement porte sa date ET, depuis S2, son
+   * brut et sa commission. L'agrégation est donc une ADDITION de valeurs servies, pas une
+   * estimation : aucun taux n'est appliqué ici.
    */
   const moisEnCours = useMemo(() => {
-    const entries = gains.data?.entries ?? []
     const debut = new Date()
     debut.setDate(1)
     debut.setHours(0, 0, 0, 0)
-    const duMois = entries.filter((e) => new Date(e.createdAt) >= debut)
+    const credits = entries.filter((e) => e.type === 'CREDIT' && new Date(e.createdAt) >= debut)
     return {
-      credits: duMois.filter((e) => e.type === 'CREDIT').reduce((t, e) => t + e.amountXaf, 0),
-      nombre: duMois.filter((e) => e.type === 'CREDIT').length,
+      nombre: credits.length,
+      brut: credits.reduce((t, e) => t + (e.grossXaf ?? 0), 0),
+      commission: credits.reduce((t, e) => t + (e.commissionXaf ?? 0), 0),
+      net: credits.reduce((t, e) => t + e.amountXaf, 0),
+      /** Vrai si au moins une ligne n'a pas son détail : le total brut serait alors sous-estimé. */
+      detailIncomplet: credits.some((e) => e.grossXaf === null),
     }
-  }, [gains.data?.entries])
+  }, [entries])
+
+  /** Les six derniers mois, du plus ancien au plus récent — nets crédités uniquement. */
+  const parMois = useMemo(() => {
+    const cases: Array<{ cle: string; label: string; net: number }> = []
+    const curseur = new Date()
+    curseur.setDate(1)
+    curseur.setHours(0, 0, 0, 0)
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(curseur)
+      d.setMonth(d.getMonth() - i)
+      cases.push({ cle: `${d.getFullYear()}-${d.getMonth()}`, label: moisFr(d), net: 0 })
+    }
+    const parCle = new Map(cases.map((c) => [c.cle, c]))
+    for (const e of entries) {
+      if (e.type !== 'CREDIT') continue
+      const d = new Date(e.createdAt)
+      const c = parCle.get(`${d.getFullYear()}-${d.getMonth()}`)
+      if (c) c.net += e.amountXaf
+    }
+    return cases
+  }, [entries])
+
+  const visibles = useMemo(() => {
+    if (onglet === 'honoraires') return entries.filter((e) => e.type === 'CREDIT' || e.type === 'REVERSAL')
+    if (onglet === 'retraits') return entries.filter((e) => e.type === 'WITHDRAWAL')
+    return entries
+  }, [entries, onglet])
 
   if (gains.isPending) {
     return (
@@ -277,6 +404,8 @@ export function GainsPage() {
 
   const g = gains.data
   const rafraichir = () => qc.invalidateQueries({ queryKey: ['earnings', id] })
+  const nbHonoraires = entries.filter((e) => e.type === 'CREDIT' || e.type === 'REVERSAL').length
+  const nbRetraits = entries.filter((e) => e.type === 'WITHDRAWAL').length
 
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col">
@@ -289,14 +418,18 @@ export function GainsPage() {
         </span>
         <span className="min-w-0 flex-1">
           <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Mes gains</h1>
+          {/*
+            Ni date de versement, ni taux. Le versement mensuel n'existe pas côté serveur, et le taux
+            appliqué dépend du contrat signé de chacun — il se lit ligne par ligne, plus bas.
+          */}
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
-            Honoraires nets, après la commission ULAMU déjà déduite
+            Retirables à tout moment · la commission est déjà déduite de chaque montant
           </p>
         </span>
       </div>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Carte icone={Banknote} titre="Disponible au retrait" sousTitre="Retirable maintenant">
+        <Carte icone={Banknote} titre="Disponible au retrait" sousTitre="À tout moment, sans minimum">
           <p className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
             {xaf(g.availableXaf)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
           </p>
@@ -313,15 +446,27 @@ export function GainsPage() {
           */}
           {g.pendingXaf > 0 ? (
             <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
-              Cet argent vous attend. Il devient retirable dès que vous déposez le compte-rendu de la
-              consultation correspondante.
+              {aSigner > 0
+                ? `${aSigner} compte${aSigner > 1 ? 's' : ''}-rendu${aSigner > 1 ? 's' : ''} à déposer. Cet argent devient retirable dès leur dépôt.`
+                : 'Cet argent devient retirable dès le dépôt du compte-rendu de la consultation correspondante.'}
+            </p>
+          ) : null}
+          {/*
+            D-008, invariant n°9. Ce n'est pas la même chose que le compte-rendu manquant : là, la
+            somme attend ; ici, elle peut disparaître entièrement. Dit près du montant en attente,
+            parce que c'est cet argent-là qui est en jeu.
+          */}
+          {g.pendingXaf > 0 ? (
+            <p className="text-[11px] leading-[1.5] text-[var(--alerte-texte)]">
+              Une consultation terminée sans un seul message de votre part est intégralement
+              remboursée au patient : elle ne sera jamais créditée.
             </p>
           ) : null}
         </Carte>
 
         <Carte icone={History} titre="Ce mois-ci" sousTitre="Depuis le 1er du mois">
           <p className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
-            {xaf(moisEnCours.credits)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
+            {xaf(moisEnCours.net)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
           </p>
           <p className="text-[11px] text-[var(--texte-tertiaire)]">
             {moisEnCours.nombre} consultation{moisEnCours.nombre > 1 ? 's' : ''} créditée{moisEnCours.nombre > 1 ? 's' : ''}
@@ -330,33 +475,110 @@ export function GainsPage() {
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        <section aria-label="Mouvements" className="flex min-w-0 flex-1 flex-col gap-4">
+        <section aria-label="Journal des gains" className="flex min-w-0 flex-1 flex-col gap-4">
+          <Histogramme mois={parMois} tronque={entries.length >= 50} />
+
+          {/*
+            Le « Décompte du mois » de la maquette, avec ses vrais chiffres. La ligne de commission
+            ne porte AUCUN taux écrit : elle en déduit un de ce qui a été prélevé — et si les contrats
+            diffèrent d'un mois à l'autre, le pourcentage affiché suit, parce qu'il est calculé sur
+            les montants et non posé d'avance.
+          */}
+          {moisEnCours.nombre > 0 ? (
+            <Carte icone={Banknote} titre="Décompte du mois" sousTitre="En cours — brut, commission, net">
+              <dl className="flex flex-col gap-2">
+                <div className="flex justify-between gap-4 text-[13px]">
+                  <dt className="text-muted-foreground">
+                    Honoraires bruts
+                    <span className="block text-[11px] text-[var(--texte-tertiaire)]">
+                      {moisEnCours.nombre} consultation{moisEnCours.nombre > 1 ? 's' : ''} honorée
+                      {moisEnCours.nombre > 1 ? 's' : ''}
+                    </span>
+                  </dt>
+                  <dd className="font-medium tabular-nums text-foreground">{xaf(moisEnCours.brut)} F</dd>
+                </div>
+                <div className="flex justify-between gap-4 text-[13px]">
+                  <dt className="text-muted-foreground">
+                    Commission ULAMU
+                    <span className="block text-[11px] text-[var(--texte-tertiaire)]">
+                      Prélevée à la clôture, au taux de votre contrat signé
+                    </span>
+                  </dt>
+                  <dd className="font-medium tabular-nums text-[var(--erreur-texte)]">− {xaf(moisEnCours.commission)} F</dd>
+                </div>
+                <div className="flex justify-between gap-4 border-t border-border pt-2">
+                  <dt className="text-[13px] font-medium text-foreground">Net encaissé</dt>
+                  <dd className="font-[family-name:var(--font-display)] text-[19px] font-bold tabular-nums text-foreground">
+                    {xaf(moisEnCours.net)} F
+                  </dd>
+                </div>
+              </dl>
+              {moisEnCours.detailIncomplet ? (
+                <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                  Le détail d'au moins un mouvement n'a pas pu être retrouvé : le brut et la commission
+                  affichés sont donc incomplets. Le net, lui, est exact — c'est le journal qui le porte.
+                </p>
+              ) : null}
+            </Carte>
+          ) : null}
+
           <Carte icone={History} titre="Mouvements" sousTitre="Le journal fait foi (EF-13-06)">
-            {g.entries.length === 0 ? (
+            {entries.length === 0 ? (
               <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
                 Aucun mouvement pour le moment. Votre première consultation créditée apparaîtra ici.
+                Une demande refusée ou expirée n'en produit aucun.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
-                {g.entries.map((e) => {
-                  const t = MOUVEMENTS[e.type] ?? { libelle: e.type, ton: 'neutre' as TonPilule }
-                  return (
-                    <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
-                      <Pilule ton={t.ton}>{t.libelle}</Pilule>
-                      <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--texte-tertiaire)]">{dateFr(e.createdAt)}</span>
-                      <span
-                        className={
-                          'shrink-0 font-mono text-[13px] font-semibold tabular-nums ' +
-                          (e.amountXaf < 0 ? 'text-[var(--erreur-texte)]' : 'text-foreground')
-                        }
-                      >
-                        {e.amountXaf > 0 ? '+' : ''}
-                        {xaf(e.amountXaf)} F
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
+              <>
+                <Segments
+                  label="Filtrer les mouvements"
+                  valeur={onglet}
+                  onChange={setOnglet}
+                  options={[
+                    { cle: 'tous', label: `Tous ${entries.length}` },
+                    { cle: 'honoraires', label: `Honoraires ${nbHonoraires}` },
+                    { cle: 'retraits', label: `Retraits ${nbRetraits}` },
+                  ]}
+                />
+                <ul aria-label="Mouvements" className="flex flex-col gap-1.5">
+                  {visibles.map((e) => {
+                    const t = MOUVEMENTS[e.type] ?? { libelle: e.type, ton: 'neutre' as TonPilule }
+                    return (
+                      <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
+                        <Pilule ton={t.ton}>{t.libelle}</Pilule>
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--texte-tertiaire)]">{dateFr(e.createdAt)}</span>
+                        <span className="shrink-0 text-right">
+                          <span
+                            className={
+                              'block font-mono text-[13px] font-semibold tabular-nums ' +
+                              (e.amountXaf < 0 ? 'text-[var(--erreur-texte)]' : 'text-foreground')
+                            }
+                          >
+                            {e.amountXaf > 0 ? '+' : ''}
+                            {xaf(e.amountXaf)} F
+                          </span>
+                          {/*
+                            S2 : le brut et la commission, à côté du net. Le pourcentage est DÉDUIT
+                            des deux montants — il n'est écrit nulle part, et il diffère légitimement
+                            d'un médecin à l'autre (RM-13-07).
+                          */}
+                          {e.grossXaf !== null && e.commissionXaf !== null ? (
+                            <span className="block text-[10px] text-[var(--texte-tertiaire)]">
+                              brut {xaf(e.grossXaf)} · commission {xaf(e.commissionXaf)} (
+                              {Math.round((e.commissionXaf / Math.max(1, e.grossXaf)) * 100)} %)
+                            </span>
+                          ) : null}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {visibles.length === 0 ? (
+                  <p className="py-3 text-center text-[12px] text-[var(--texte-tertiaire)]">
+                    Aucun mouvement de ce type.
+                  </p>
+                ) : null}
+              </>
             )}
           </Carte>
 

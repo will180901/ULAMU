@@ -26,6 +26,30 @@ import { cleanup, configure } from '@testing-library/react'
  */
 configure({ asyncUtilTimeout: 2_500 })
 
+/**
+ * **Le réseau est coupé pendant les tests.** Découvert le 28/08/2026, et ce n'était pas théorique.
+ *
+ * `VITE_API_URL` vaut `https://ulamu-api.onrender.com` : il n'y a pas d'API locale, par choix.
+ * Conséquence — toute méthode de `api` qu'un test oublie de doubler partait **pour de vrai vers la
+ * production**. Un test de C6 le faisait : l'appel revenait en 401 (le jeton d'essai est fictif),
+ * `onUnauthorized` déconnectait la session, et comme la réponse mettait deux secondes à revenir,
+ * c'est le test SUIVANT qui se retrouvait déconnecté en plein milieu, bloqué sur un écran de
+ * chargement. Le message d'échec accusait alors un bouton parfaitement correct.
+ *
+ * Deux raisons de fermer la porte, et la seconde est la vraie : des tests qui appellent la
+ * production peuvent aussi y ÉCRIRE. Un `POST` oublié suffirait.
+ *
+ * Un test qui a besoin du réseau doit doubler la méthode d'`api` qui l'utilise — c'est ce que fait
+ * chacun d'eux. Le message ci-dessous nomme l'URL manquante, pour qu'on sache quoi doubler.
+ */
+globalThis.fetch = (async (input: RequestInfo | URL) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  throw new Error(
+    `Appel réseau interdit en test : ${url}\n` +
+      "Doublez la méthode d'`api` correspondante avec vi.spyOn — les tests ne parlent jamais à la vraie API.",
+  )
+}) as typeof fetch
+
 if (!window.matchMedia) {
   window.matchMedia = ((query: string) => ({
     matches: false,
