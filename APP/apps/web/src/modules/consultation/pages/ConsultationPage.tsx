@@ -111,6 +111,7 @@ import {
   type RecordEntryType,
   type SessionMessage,
 } from '@/lib/api'
+import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 
@@ -1271,6 +1272,15 @@ export function ConsultationPage() {
 
           {/* Le Carnet n'a de sens qu'une fois la séance ouverte : avant, le serveur refuse (409). */}
           {s.status !== 'REFUNDED' ? <CarnetPatient sessionId={s.id} active={!!active} /> : null}
+
+          {/*
+            Le bloc « Livrables » de la maquette, désormais tenu des deux côtés : l'ordonnance ouvre
+            C7 en panneau (le médecin ne quitte pas le fil), le compte-rendu se rédige juste en
+            dessous. La maquette les groupait sous un même titre parce que les deux n'étaient que
+            des boutons vers ailleurs ; ici le compte-rendu est un éditeur à part entière, et les
+            réunir sous un titre commun ferait une carte à deux corps.
+          */}
+          {s.status !== 'REFUNDED' ? <PanneauOrdonnance sessionId={s.id} active={!!active} /> : null}
 
           {s.status !== 'REFUNDED' ? <CompteRendu session={s} onDepose={rafraichir} /> : null}
 

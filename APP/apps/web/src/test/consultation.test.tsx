@@ -114,6 +114,12 @@ async function monter(s: CareSession, items: SessionMessage[] = []) {
   if (!vi.isMockFunction(api.sessionRecord)) {
     vi.spyOn(api, 'sessionRecord').mockResolvedValue({ recordId: null, items: [], nextCursor: null })
   }
+  // Le rail porte aussi le panneau d'ordonnance (C7) depuis le 28/08, qui lit les ordonnances déjà
+  // prescrites. Sans cette doublure, chaque test de C5 partait pour de vrai sur le réseau et
+  // s'arrêtait sur l'épuisement de son propre délai — avec un message qui accusait le menu du fil.
+  if (!vi.isMockFunction(api.myPrescribed)) {
+    vi.spyOn(api, 'myPrescribed').mockResolvedValue({ items: [] })
+  }
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
@@ -133,6 +139,12 @@ const fil = () => within(screen.getByRole('region', { name: 'Fil de la consultat
 beforeEach(() => {
   vi.restoreAllMocks()
   localStorage.clear()
+  // Radix pose `pointer-events: none` et `data-scroll-locked` sur le <body> tant qu'un menu ou un
+  // panneau est ouvert, et les LAISSE en place si le composant est démonté dans cet état. Le test
+  // suivant ne peut alors plus cliquer nulle part — `userEvent` respecte `pointer-events`. Symptôme
+  // trompeur : un test qui passe seul et échoue dans la suite complète, sur un élément bien présent.
+  document.body.style.pointerEvents = ''
+  document.body.removeAttribute('data-scroll-locked')
 })
 
 describe('C5 — le compte-rendu', () => {

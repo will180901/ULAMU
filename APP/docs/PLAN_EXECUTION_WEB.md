@@ -406,6 +406,64 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **4** | **C5 — La consultation** — codé le 28/08. Serveur : **S1**, `reportDueAt` (`endedAt` + PM-30) sur la vue de séance ET sur les lignes du registre (~10 l. + 4 tests). Web : **Carnet du patient** au rail, fil porté au niveau du mobile (répondre, réagir, modifier, supprimer pour moi / pour tous, séparateurs de jour, regroupement, saut au message cité), décompte réel du compte-rendu, avertissement de remboursement **avant** la perte, « Terminer » → « Prolonger », composeur en pilule. **Un bug corrigé au passage : `deleteSessionMessage` partait sans corps** et se faisait refuser en 400 — le bouton « supprimer » n'avait jamais rien supprimé. **API 484 ✓ · web 203 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **5** | **C7 — Ordonnance** *(écran neuf)* + garde-fou allergies — codé le 28/08. Serveur : **aucun code**, mais **la seule écriture en base de toute la reconstruction** — référentiel porté de **6 à 64 médicaments**, par un script dédié (`scripts/referentiel-medicaments.ts`), **appliqué en base le 28/08**. Web : panneau C7 ouvert depuis le rail de C5, recherche au référentiel, repli texte libre marqué « non vérifié », garde-fou allergies avec ses deux issues, avertissement d'immuabilité avant le bouton, QR + échéance après scellement, annulation motivée. **Trois corrections dans `api.ts` :** `PrescriptionLineInput` n'avait ni `qtyPrescribed` (obligatoire au serveur) ni `durationDays`, `createPrescription` était typée `{ id }` au lieu de l'ordonnance complète, et `cancelPrescription` n'existait pas. **API 484 ✓ · web 217 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — C7 n'a pas de maquette : le comparatif se fait contre le cahier
+
+*Aucun `.dc.html` n'existe pour cet écran. Le comparatif porte donc sur les exigences M09, une par
+une, et sur l'écran mobile `OrdonnanceScreen.tsx`, qui montre le même objet côté patient.*
+
+| Exigence | Ce qui est construit | Verdict |
+|---|---|---|
+| **EF-09-01 / RM-09-01 / D-014** — on ne prescrit que depuis une séance ACTIVE | Le panneau s'ouvre depuis le rail de C5. Séance close : la rédaction disparaît, l'ordonnance déjà scellée reste consultable | conforme |
+| **EF-09-02** — ligne référentielle **ou** texte libre, exclusives | Recherche au référentiel (2 caractères minimum, dit à l'écran) ; « Prescrire hors référentiel » bascule la ligne | conforme |
+| **EF-09-02** — le texte libre n'a **aucun** garde-fou | Mention rouge **sur la ligne elle-même**, pas seulement en tête de panneau : c'est là que le médecin décide | conforme |
+| **EF-09-03** — alerte **bloquante**, passage outre **motivé** | Le 409 devient une étape : le médicament et l'allergie sont nommés, deux issues offertes (retirer / motiver). Le scellement reste hors service tant qu'un conflit n'est pas tranché | conforme |
+| **EF-09-03** — chaque passage outre est **tracé** | L'écran le dit sous le champ de motif : « enregistré au journal, avec le nom du médicament et celui de l'allergie » | conforme |
+| **EF-09-04 / RM-09-05** — le scellement est **définitif** | Avertissement placé **avant** le bouton, vérifié par un test qui compare leur position dans le document | conforme |
+| **CU-09-04** — annulation par le seul prescripteur, motif obligatoire | Bouton d'annulation, motif exigé, QR rendu inerte — et l'écran dit que c'est la seule issue après une erreur | conforme |
+| **PM-10** — durée de validité | `expiresAt` affiché tel que le serveur l'envoie. **Aucune durée écrite dans le fichier** | conforme |
+| **RM-09-02** — le QR n'est présenté qu'au patient | Le QR est affiché au médecin *pour vérification*, et l'écran précise qu'il n'a rien à transmettre : le patient l'a dans son application | **écart mineur, assumé** — sans lui, le médecin ne peut pas constater que l'ordonnance est bien scellée. Le jeton n'est pas transmissible depuis cet écran |
+| **EF-09-05** — hachage du contenu | Calculé et scellé côté serveur, invisible ici | hors écran, à dessein |
+| Parité mobile (`OrdonnanceScreen.tsx`) | Le mobile montre l'ordonnance **reçue** ; C7 la **rédige**. Les deux affichent le même QR, la même échéance, les mêmes lignes | cohérent |
+
+### Ce que le chantier 5 (C7 — Ordonnance) a appris
+
+**« Poussé » ne veut pas dire « en base ».** Render exécute `prisma migrate deploy && node …` — jamais
+le seed. Les 58 médicaments manquants auraient été poussés sur GitHub, déployés, et le référentiel
+serait resté à six entrées : l'écran aurait cherché dans le vide et paru cassé. Et le seed ne pouvait
+pas être relancé non plus : **il recrée les comptes de démonstration que le porteur a supprimés le
+28/08**. D'où un script dédié, qui ne touche que la table des médicaments. *À retenir pour tout
+chantier qui a besoin de données : vérifier par quel chemin elles arrivent réellement en base.*
+
+**Le garde-fou allergies était aveugle à son propre cas d'école.** La comparaison se fait par
+ressemblance de noms entre l'allergie déclarée et les libellés du médicament. Or l'allergie la plus
+courante se déclare « pénicilline » — un nom de **classe** que ne porte aucune DCI : ni Amoxicilline,
+ni Cloxacilline, ni Augmentin ne contiennent ce mot. Une allergie à la pénicilline ne déclenchait
+donc **rien** sur l'Amoxicilline. Le modèle n'a pas de champ « classe thérapeutique » et en ajouter un
+serait une migration ; l'étiquette est donc logée dans `commercialNames`, seul champ que la
+comparaison regarde, et le script l'ajoute aux entrées déjà en base sans jamais rien retirer.
+*Trouvé en construisant l'écran, pas en lisant le cahier — le cahier décrivait la règle, pas ce
+qu'elle attrape.*
+
+**Un type incomplet ment sans conséquence tant que personne ne l'appelle.**
+`PrescriptionLineInput` n'avait pas `qtyPrescribed`, que le serveur exige avec un minimum de 1. Aucun
+écran ne créait d'ordonnance : le mensonge dormait. Le premier appel aurait échoué en 400, avant même
+d'atteindre le garde-fou. *C'est exactement la façon dont ces dettes survivent — et il en reste
+sûrement d'autres dans `api.ts`, du côté des routes qu'aucun écran n'appelle encore.*
+
+**Un test qui échoue peut accuser le mauvais coupable.** Deux tests du fil de C5 se sont mis à
+échouer sur « menu introuvable » — alors que le menu allait très bien. La vraie cause : le rail de C5
+monte désormais le panneau d'ordonnance, qui lit les ordonnances prescrites ; l'appel n'était pas
+doublé, il partait pour de vrai sur le réseau, et le test épuisait son propre budget de cinq
+secondes. *Quand un écran gagne un composant, les tests des écrans qui l'hébergent gagnent une
+dépendance.*
+
+**Le délai d'attente de `findBy*` passe à 2,5 s** (`src/test/setup.ts`). Une seconde ne suffit pas à
+cette machine pour monter un portail Radix, et le message d'échec accusait alors un élément
+parfaitement correct. Pas 5 s : c'est le budget d'un test entier, et à égalité c'est le test qui
+expire le premier — en perdant l'information de QUEL élément manquait.
+
 ### Étape 6 — le comparatif bloc à bloc de C5
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

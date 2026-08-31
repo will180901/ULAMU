@@ -679,12 +679,25 @@ export interface Prescription {
   }>
 }
 
+/**
+ * Une ligne à prescrire.
+ *
+ * ⚠️ `qtyPrescribed` et `durationDays` manquaient à ce type (constaté le 28/08/2026 en comparant à
+ * `PrescriptionLineDto`). `qtyPrescribed` est **obligatoire** côté serveur, avec un minimum de 1 :
+ * un appel construit sur l'ancien type se serait fait refuser en 400 avant même d'atteindre le
+ * garde-fou allergies. Aucun écran ne l'appelait encore — le type mentait sans conséquence, ce qui
+ * est exactement la façon dont ces dettes survivent.
+ */
 export interface PrescriptionLineInput {
   /** Exclusif avec `freeText`. Seule une ligne RÉFÉRENTIELLE déclenche le garde-fou allergies. */
   medicamentId?: string
   /** Ligne hors référentiel — acceptée, mais **sans garde-fou automatique** (EF-09-02). */
   freeText?: string
   posology: string
+  /** Durée en jours. Facultative : une ligne peut être « jusqu'à épuisement ». */
+  durationDays?: number
+  /** Quantité prescrite — entier strictement positif, exigé par le serveur. */
+  qtyPrescribed: number
 }
 
 /** Un médicament prescrit qui heurte une allergie active du Carnet (EF-09-03). */
@@ -1220,10 +1233,23 @@ export const api = {
   /** Référentiel médicaments — 2 caractères minimum côté serveur, en dessous il renvoie une liste vide. */
   searchMedicaments: (q: string, limit = 12) =>
     request<{ items: Medicament[] }>('GET', `/v1/medicaments?q=${encodeURIComponent(q)}&limit=${limit}`, undefined, true),
+  /**
+   * Crée et SCELLE l'ordonnance (EF-09-04). Le serveur renvoie l'ordonnance complète — jeton QR et
+   * échéance compris — et non un simple identifiant comme ce type le prétendait.
+   *
+   * Un 409 `ALLERGY_GUARD` porte les conflits dans `details` : voir `estAlerteAllergie`.
+   */
   createPrescription: (
     sessionId: string,
     dto: { lines: PrescriptionLineInput[]; overrides?: Array<{ medicamentId: string; reason: string }> },
-  ) => request<{ id: string }>('POST', `/v1/prescriptions/sessions/${sessionId}`, dto, true),
+  ) => request<Prescription>('POST', `/v1/prescriptions/sessions/${sessionId}`, dto, true),
+  /**
+   * Annule une ordonnance non entièrement délivrée — SEUL le prescripteur, motif obligatoire
+   * (CU-09-04). Le QR devient inerte et ne se réactive jamais (RM-09-05) : la seule issue après une
+   * erreur est d'annuler puis d'en rédiger une nouvelle.
+   */
+  cancelPrescription: (id: string, reason: string) =>
+    request<Prescription>('POST', `/v1/prescriptions/${id}/cancel`, { reason }, true),
 
   // M13 — gains et retraits
   earnings: (holderType: EarningsHolderType, holderId: string) =>

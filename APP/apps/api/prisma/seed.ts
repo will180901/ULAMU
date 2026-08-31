@@ -6,6 +6,7 @@
 import { PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
 import { buildAgreementText } from "../src/modules/m03-verification-contracts/m03.policies";
+import { REFERENTIEL_MEDICAMENTS } from "./referentiel-medicaments";
 
 const prisma = new PrismaClient();
 
@@ -142,14 +143,14 @@ const DEMO_PROS: DemoPro[] = [
 ];
 
 /** Référentiel médicaments de démo (M11). */
-const DEMO_MEDS: Array<{ dci: string; commercialNames: string[]; form: string; dosage: string }> = [
-  { dci: "Amlodipine", commercialNames: ["Amlor"], form: "comprimé", dosage: "5 mg" },
-  { dci: "Ramipril", commercialNames: ["Triatec"], form: "comprimé", dosage: "10 mg" },
-  { dci: "Paracétamol", commercialNames: ["Doliprane", "Efferalgan"], form: "comprimé", dosage: "500 mg" },
-  { dci: "Amoxicilline", commercialNames: ["Clamoxyl"], form: "gélule", dosage: "500 mg" },
-  { dci: "Métronidazole", commercialNames: ["Flagyl"], form: "comprimé", dosage: "250 mg" },
-  { dci: "Ibuprofène", commercialNames: ["Advil", "Nurofen"], form: "comprimé", dosage: "400 mg" },
-];
+/**
+ * Référentiel médicaments — la liste vit désormais dans `referentiel-medicaments.ts`.
+ *
+ * Elle en a été sortie le 28/08/2026 : le seed complet CRÉE des comptes de démonstration, et le
+ * porteur a fait le ménage pour n'en garder que deux. On ne peut donc plus le relancer pour la
+ * seule raison d'ajouter des médicaments — `scripts/referentiel-medicaments.ts` fait cela seul.
+ */
+const DEMO_MEDS = REFERENTIEL_MEDICAMENTS;
 
 /** Pharmacies vérifiées de démo (M02/M11) — stock = liste de DCI couvertes, prix indicatif. */
 const DEMO_PHARMACIES: Array<{ phone: string; name: string; district: string; quarter: string; lat: number; lng: number; stock: Array<{ dci: string; priceXaf: number; quantity: number }> }> = [

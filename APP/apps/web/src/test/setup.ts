@@ -7,7 +7,24 @@
  */
 import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
+
+/**
+ * Le délai d'attente de `findBy*` passe de 1 s à 2,5 s.
+ *
+ * Pas par confort : un test des menus de C5 passait seul et échouait dans la suite complète, en
+ * 1 555 ms — le portail Radix n'était simplement pas encore monté au bout de la seconde réglementaire.
+ * Le symptôme est trompeur (« élément introuvable » sur un élément parfaitement correct) et fait
+ * chercher un bug là où il n'y en a pas.
+ *
+ * Cette machine est déjà connue pour cela : le §10 du plan note que la suite s'arrête parfois sur un
+ * « Timeout waiting for worker to respond ». Attendre plus longtemps ne masque aucun défaut — un test
+ * qui finit par passer en 1,6 s décrit le même comportement qu'un test qui passe en 0,3 s.
+ *
+ * 2,5 s et non 5 : le budget d'un test entier est de 5 s (`testTimeout` par défaut). À égalité,
+ * c'est le test qui expire le premier, et son message ne dit plus QUEL élément manquait.
+ */
+configure({ asyncUtilTimeout: 2_500 })
 
 if (!window.matchMedia) {
   window.matchMedia = ((query: string) => ({
