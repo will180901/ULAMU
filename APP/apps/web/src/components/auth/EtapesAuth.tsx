@@ -25,8 +25,24 @@ export function EtapesAuth<T extends string>({
   courant: number
   aller: (cle: T) => void
 }) {
+  const courante = etapes[courant]
+
   return (
     <div className="mb-4">
+      {/*
+        Le résumé, repris de `components/ulamu/Stepper.tsx` avant sa suppression (01/09/2026).
+
+        Chaque pastille s'annonçait déjà — « Étape 2 — Identité » — mais **jamais « sur 5 »** : un
+        lecteur d'écran entendait des étapes sans savoir combien il en restait. Sur une inscription
+        professionnelle qui en compte cinq, c'est la différence entre avancer et avancer à l'aveugle.
+        `Stepper` portait cette phrase et ne servait nulle part ; elle vit maintenant là où elle est
+        lue.
+      */}
+      <p className="sr-only" role="status">
+        Étape {courant + 1} sur {etapes.length}
+        {courante ? ` : ${courante.libelle}` : ''}
+      </p>
+
       <div className="flex items-center">
         {etapes.map((e, k) => {
           const atteinte = k <= courant
@@ -37,7 +53,7 @@ export function EtapesAuth<T extends string>({
                 onClick={() => atteinte && aller(e.cle)}
                 disabled={!atteinte}
                 aria-current={k === courant ? 'step' : undefined}
-                aria-label={`Étape ${k + 1} — ${e.libelle}`}
+                aria-label={`Étape ${k + 1} sur ${etapes.length} — ${e.libelle}`}
                 className={
                   'flex size-[26px] shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors ' +
                   (atteinte
