@@ -432,6 +432,61 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **16** | **E5 — Pilotage** *(écran neuf)* — codé le 01/09. Serveur : **S6**, `GET /admin/coverage` (~40 l. + 9 tests) — les effectifs par arrondissement, **comptés** et non écrits. Web : les sept critères du pilote avec leur cible, l'intégrité du journal, la couverture triée du mieux au moins couvert, et le tableau des délais réduit à ses **deux lignes vraies**. **API 511 ✓ · web 349 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **17** | **E6 — Signalements** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : file triée comme le serveur la trie, détail sans identité du signaleur **et l'écran le dit**, les quatre issues réelles avec ce que chacune fait — dont deux qui **transmettent** au lieu de trancher. La chronologie inventée, les antécédents comptés et les sanctions directes sont retirés. **API 511 ✓ · web 367 ✓ · builds propres.** **Le palier F est terminé : les 17 écrans du plan sont construits.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E6
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « 4 ouverts, dont 1 hors délai · **délai réglementaire de 48 h** » | « N ouverts, dont N hors délai · les plus graves d'abord » | **écart de fait** — le seuil vit dans PM-23, que cette route ne sert pas, et auquel un modérateur n'a **pas accès** (les paramètres sont réservés au super-administrateur). Le serveur envoie un drapeau ; c'est lui qu'on affiche |
+| Bandeau « ces signalements **passent avant tout autre dossier de la file** » | « La file reste triée par gravité puis par ancienneté : un signalement en retard ne passe pas devant un plus grave » | **la promesse était fausse** — voir ci-dessous |
+| Liste : `SIG-2026-00218`, motif, **« Dr Firmin Loubaki »**, « reste 40 min » | Motif en français, extrait du texte, date de dépôt, pastille « hors délai » | **trois écarts de fait** — ce format de référence n'existe pas ; le **nom** du mis en cause n'est pas servi (seul son identifiant l'est) ; et le temps restant demanderait le seuil, qui n'est pas servi non plus |
+| Étiquette « **3ᵉ SIGNALEMENT** » sur une ligne | retirée | **écart de fait** — aucune route ne compte les signalements visant une même personne. Le calculer sur la file affichée donnerait un chiffre **partiel présenté comme un antécédent**, sur un écran qui décide de sanctions |
+| Détail « **CE QUI EST REPROCHÉ** » | idem — `reasonText`, tel quel | conforme |
+| Détail « **PARTIES** » : plaignant (initiales, référence, « 1er signalement déposé ») **et** mis en cause | Le mis en cause seul, et **une phrase qui explique l'absence de l'autre** | **l'écart le plus lourd** — le serveur RETIRE l'identité du signaleur avant de servir (RM-04-04). Ce n'est pas une donnée manquante : c'est la condition pour qu'on ose signaler |
+| Détail « **CHRONOLOGIE** » : dépôt · demande d'explication envoyée · relance automatique | La date de dépôt seule | **entièrement inventée** — aucun échange avec le mis en cause n'existe, aucune relance non plus |
+| Issue « Classer sans suite » | idem | conforme |
+| Issue « Avertir le praticien » | « Avertir » — avec ce que cela ne fait pas : aucune restriction d'accès | conforme, et précisé |
+| Issue « **Suspendre 15 jours** » | remplacée par « Transmettre à l'administration des comptes » | **deux écarts** — ce n'est pas une décision d'ici (c'est une **transmission**), et **aucune durée n'existe** au modèle (même absence qu'en E7) |
+| Issue « **Bannir définitivement** » | même transmission, et l'écran rappelle qu'un bannissement demande un second administrateur | **écart de fait** — un modérateur qui croit avoir banni ne rouvrira rien ailleurs |
+| *(absente de la maquette)* | Issue « Transmettre à la vérification » | **ajout** — c'est la quatrième issue du serveur, et le bon chemin quand ce sont les pièces ou le droit d'exercer qui sont en cause |
+| Motif « **20 caractères minimum** » | Motif obligatoire, sans minimum de longueur | **écart assumé** — le serveur exige un motif non vide, pas vingt caractères. Imposer un seuil que le serveur ignore, c'est l'écran qui légifère |
+| *(absente de la maquette)* | « Cette décision est définitive : ce signalement ne pourra plus être rejugé » | **ajout** — le serveur refuse de rejuger un signalement tranché, et il vaut mieux le savoir avant |
+| Bouton d'export | absent | famille 3, groupe D |
+
+### Ce que le chantier 17 (E6 — Signalements) a appris
+
+**Une donnée absente peut être la fonctionnalité.** La maquette montre le plaignant à côté du mis en
+cause, comme dans n'importe quel dossier contradictoire. Le serveur, lui, **retire l'identité du
+signaleur avant de servir** — et ce n'est pas une lacune : c'est ce qui permet de signaler un
+praticien dont on dépend, dans une ville où l'on retournera le voir. Un modérateur qui verrait qui
+accuse pourrait, sciemment ou non, en tenir compte.
+
+L'écran ne laisse donc pas un vide — un vide se remplit un jour. **Il écrit pourquoi la donnée
+n'est pas là**, deux fois : en tête d'écran, et dans le dossier ouvert. *C'est le troisième cas de
+ce plan où le bon geste est d'expliquer une absence : le rapport de rapprochement non conservé en E2,
+la liste de comptes qui n'existe pas en E7, l'identité du signaleur ici.*
+
+**Un tri annoncé faux fait chercher au mauvais endroit.** « Ces signalements passent avant tout autre
+dossier de la file » : le serveur trie par **gravité d'abord, ancienneté ensuite** (CU-04-04). Un
+spam en retard reste derrière un harcèlement déposé le matin même — et c'est le bon ordre. Un
+modérateur qui croit la maquette chercherait en tête une ligne qui n'y est pas, puis conclurait à un
+défaut d'affichage.
+
+**Deux des quatre issues ne tranchent pas : elles transmettent.** « Suspendre 15 jours » et « Bannir
+définitivement » n'existent pas ici. Le serveur propose de **transmettre** — à l'administration des
+comptes, où la sanction se décide avec son propre motif et, pour un bannissement, un second
+administrateur. Nommer un bouton par l'effet espéré plutôt que par ce qu'il fait est la même erreur
+qu'en E7 avec « Bannir » ; ici elle serait pire, parce que le modérateur croirait le dossier clos.
+
+**Le minimum de vingt caractères n'a pas été repris.** Le serveur exige un motif non vide, rien de
+plus. Imposer un seuil de longueur que le serveur ignore, c'est l'écran qui légifère — et cela
+bloquerait un motif court mais juste. *Symétrique exact de la leçon du chantier 10 : un réglage
+n'entre que s'il fait quelque chose ; une contrainte n'entre que si elle vient d'ailleurs que de
+l'écran.*
+
 ### Étape 6 — le comparatif bloc à bloc de E5
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

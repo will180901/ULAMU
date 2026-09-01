@@ -103,7 +103,15 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/admin/finance',
         capabilities: ['admin:finance', 'admin:super'],
       },
-      { key: 'admin-signalements', label: 'Signalements', icon: Flag, href: '/admin/signalements', capabilities: ['admin:super'] },
+      /* Le serveur ouvre les signalements à ADMIN_VERIFICATION (EF-04-05/06) : réserver l'entrée
+         au super-admin cacherait un écran auquel il a droit. */
+      {
+        key: 'admin-signalements',
+        label: 'Signalements',
+        icon: Flag,
+        href: '/admin/signalements',
+        capabilities: ['admin:verification', 'admin:super'],
+      },
       /* Les routes comptes du serveur acceptent ADMIN_VERIFICATION et ADMIN_MAP (EF-16-03/07) :
          réserver l'entrée au super-admin cacherait un écran auquel ils ont droit. */
       {
