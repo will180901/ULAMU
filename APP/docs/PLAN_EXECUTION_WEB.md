@@ -423,6 +423,58 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **12** | **E7 — Comptes + procédures support** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : recherche de comptes, suspension / réactivation / **demande** de bannissement, chacune motivée ; **procédures support** (exigence MVP jamais construite) avec leurs étapes à cocher. **Deux corrections dans `api.ts` :** `AdminAccount` décrivait `{ id, username }` là où le serveur renvoie `accountId` et `displayName`, et `searchAccounts` promettait `{ items }` pour un tableau nu. **API 496 ✓ · web 287 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **13** | **E2 — Supervision financière** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : file des remboursements à trancher avec la garde d'auto-validation dite sur la ligne, historique, et le **rapprochement** lancé à la demande avec son rapport. Le seuil de double validation est **lu de PM-35**, jamais écrit. Les trois faussetés de « écart non instruit sous 7 jours » corrigées. **API 496 ✓ · web 303 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E2
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Supervision financière · 5 demandes à trancher · 685 000 XAF en jeu · *connecté comme Sylvie Ngouabi* » | idem, sans la mention de l'administrateur connecté | conforme. Le nom est déjà dans la barre du haut — le répéter ici prend la place du chiffre qui compte |
+| Tuile « **À TRANCHER** 5 · 5 patients attendent une réponse » | portée par l'en-tête | conforme |
+| Tuile « **MONTANT EN JEU** 685 k » | idem, additionné sur les demandes **ouvertes** | conforme — c'est ce que l'écran a réellement sous les yeux |
+| Tuile « **REMBOURSÉ EN AOÛT** 1,82 M · 24 décisions favorables » | **absente**, et l'absence est expliquée | **écart de fait** — la file sert les 200 dernières demandes, sans découpage mensuel : additionner ce qu'elle renvoie donnerait un total plafonné à 200 sans le dire. **Un montant financier faux est pire qu'un montant absent** |
+| Tuile « **ÉCARTS NON INSTRUITS** 3 · −92 250 XAF au total » | **absente** | **écart de fait** — la notion d'écart « instruit » n'existe pas : ni table, ni statut, ni cycle de vie. Il n'y a donc rien à compter |
+| Onglets « À trancher · Historique · Réconciliation » | idem, comptés | conforme (« réconciliation » → « rapprochement », le mot français) |
+| Bandeau « Un remboursement de plus de **100 000 XAF** exige l'accord de deux administrateurs différents » | idem, le seuil **lu de PM-35** | **la règle était juste, le nombre faux** (PM-35 vaut 50 000). Et l'écran ne décide pas : le serveur pose `PENDING_SECOND_APPROVAL` au dépôt |
+| Ligne de demande : référence `RMB-2026-00218`, motif, date, **initiée par Patrick Okemba**, montant, `CSL-2026-04061` | Motif, date, « initiée par vous » / « par un autre administrateur », montant, état | **écarts de fait** — ces deux formats de référence n'existent pas ; et la file ne sert que des **identifiants** d'administrateurs, pas leurs noms. Ce qui change une décision, c'est « est-ce la mienne » — et cela, l'écran le sait |
+| Encart « ACCORDS · P. Okemba · il manque 1 accord » | L'état (« Attend un second accord ») | même cause : les noms ne sont pas servis |
+| Boutons « Refuser » / « Contresigner » / « Valider » / « Verser » | « Refuser » / « Contresigner » | **simplifié** — le serveur n'a que `approve` et `reject` ; « valider », « contresigner » et « verser » désignaient trois étapes d'un même appel |
+| Phrase « Vous avez initié cette demande : un autre administrateur doit la trancher » | **reprise, et les boutons disparaissent** | conforme, et au-delà : la maquette laissait les boutons visibles sous la phrase |
+| Onglet **Réconciliation** — « un écart non instruit sous 7 jours est signalé au porteur » | Bouton « Lancer un rapprochement » + son rapport (manquant en base / chez l'agrégateur / montants divergents) | famille 2, point 4 — **trois faussetés en une phrase**, voir ci-dessous |
+
+### Ce que le chantier 13 (E2 — Supervision financière) a appris
+
+**Une phrase peut être juste sur la règle et fausse sur le nombre — et c'est le nombre qu'il ne
+fallait pas écrire.** « Plus de 100 000 XAF exige l'accord de deux administrateurs différents » : la
+règle est exactement RM-13-06, et la maquette la formule mieux que le cahier. Seul le seuil était
+faux. **Mais l'écran n'a aucune raison de le connaître** — c'est le serveur qui pose
+`PENDING_SECOND_APPROVAL` au dépôt de la demande, et l'écran ne fait que lire ce statut. Le seuil
+n'apparaît donc que dans la phrase d'explication, lue de `GET /admin/parameters`. *Corollaire testé :
+sans le paramètre, la phrase perd le nombre et garde la règle. C'est le nombre qui est accessoire.*
+
+**Trois faussetés dans une phrase de treize mots.** « Un écart non instruit sous 7 jours est signalé
+au porteur. » (a) Le rapprochement est **quotidien** et l'alerte part **immédiatement**, dans la même
+transaction que l'audit : sept jours est ~40 fois plus lent que la réalité, et donne une image molle
+d'un mécanisme strict. (b) **La notion d'écart « instruit » n'existe pas** — ni table, ni statut, ni
+cycle de vie : rien ne reste à cocher. (c) « Le porteur » n'est destinataire de rien : l'alerte va aux
+**administrateurs Finance**, c'est-à-dire à la personne qui lit l'écran. *Une phrase rassurante sur un
+mécanisme de contrôle est la plus dangereuse : elle fait croire qu'on a le temps.*
+
+**Une limite technique dite à l'écran plutôt que masquée.** `POST /finance/reconcile` **déclenche** un
+rapprochement, il ne relit pas le dernier rapport — aucune table ne le conserve. Le résultat
+n'apparaît donc qu'après le clic, et l'écran l'écrit noir sur blanc : *« un écran vide ne veut pas
+dire aucun écart »*. Sans cette phrase, un administrateur ouvrant l'onglet un lundi matin conclurait
+que tout va bien. *C'est la troisième fois dans ce plan qu'un vide doit être qualifié — « au dépôt du
+compte-rendu » en C4, « pas encore gagné » en C6, « aucun rapport conservé » ici.*
+
+**Deux boutons au lieu de quatre.** La maquette propose « Valider », « Contresigner » et « Verser »
+selon l'état d'avancement. Le serveur n'a que `approve` et `reject` : les trois verbes décrivaient
+des étapes d'un même appel, et donner trois boutons pour une action laisse croire à trois pouvoirs
+distincts. **L'écran nomme le geste par ce qu'il fait — contresigner — et écrit ce qu'il déclenche
+juste en dessous.**
+
 ### Étape 6 — le comparatif bloc à bloc de E7
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
