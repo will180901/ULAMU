@@ -36,8 +36,10 @@ export class AdminGuard implements CanActivate {
        délibéré. Un drapeau qu'on oublie de repositionner doit laisser le système fermé, jamais
        ouvert : supprimer la règle du code obligerait quelqu'un à *penser* à la réécrire avant la
        livraison, et personne n'y pense.
-       ⚠️ ADMIN_REQUIRE_TOTP=false est posé sur Render pendant la refonte web. À retirer au lancement
-       réel, avec le reste du MODE VITRINE (cf. render.yaml). */
+       ✅ 01/09/2026 : la variable a été RETIRÉE de Render et de `render.yaml`. L'exigence est donc
+       active en production. Le drapeau reste lisible ici pour le développement local — et il est
+       délibérément gardé plutôt que supprimé : le jour où quelqu'un le repose, ce commentaire dit
+       ce qu'il lève. */
     if (process.env.ADMIN_REQUIRE_TOTP !== "false") {
       const totp = await this.prisma.totpSecret.findUnique({ where: { accountId: actor.accountId } });
       if (!totp?.enabled) throw new ForbiddenException("TOTP obligatoire pour les actions admin (RM-01-06)");

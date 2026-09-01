@@ -76,12 +76,18 @@ services:
       # répondra — pas avant.
       - key: MOMO_AUTOCONFIRM_MS
         value: "4000"          # le paiement Mobile Money se valide tout seul après 4 s (aucun argent réel)
-      - key: ADMIN_REQUIRE_TOTP
-        value: "false"         # ⚠️ Lève RM-01-06 (TOTP obligatoire pour les actions admin) le temps de la
-                               # refonte web. Le code vaut "true" PAR DÉFAUT : retirer cette ligne suffit
-                               # à rétablir l'exigence — un oubli laisse donc le système fermé, pas ouvert.
-                               # Posé le 20/08/2026 après qu'un secret TOTP scellé en local se soit révélé
-                               # illisible par l'API déployée, enfermant le compte administrateur dehors.
+      # RETIRÉ DU FICHIER le 01/09/2026 : ADMIN_REQUIRE_TOTP — RM-01-06 (TOTP obligatoire pour toute
+      # action d'administration) est rétablie. Le code vaut "true" PAR DÉFAUT : l'absence de ligne
+      # SUFFIT, et un oubli laisse donc le système fermé, jamais ouvert.
+      #
+      # Elle avait été posée à "false" le 20/08 après qu'un secret TOTP scellé en local se soit
+      # révélé illisible par l'API déployée, enfermant le compte administrateur dehors. La cause est
+      # corrigée depuis : le seed ne scelle plus aucun secret, le compte active son TOTP depuis
+      # l'application, avec la clé du serveur qui le relira.
+      #
+      # ⚠️ Elle est retirée d'ICI et pas seulement du tableau de bord : si ce service est un
+      # Blueprint, Render ré-applique ce fichier à chaque déploiement — la variable serait revenue
+      # toute seule, et la 2FA serait retombée sans que personne ne le voie.
       - key: CORS_ORIGINS     # origines autorisées à appeler l'API depuis un navigateur (app web pro/structure/admin)
         value: "https://ulamu-web.onrender.com,http://localhost:5173"
 
