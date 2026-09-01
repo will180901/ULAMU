@@ -19,20 +19,27 @@ import { SectionPreferences } from '../sections/SectionPreferences'
 import { SectionSecurite } from '../sections/SectionSecurite'
 import { SectionAide } from '../sections/SectionAide'
 import { SectionSessions } from '../sections/SectionSessions'
+import { Segments } from '@/components/ulamu/parts'
+import { useEtroit } from '@/hooks/use-mobile'
 import { useSessionStore } from '@/state/session.store'
 import type { MeResponse } from '@/lib/api'
 
 const SECTIONS = [
-  { cle: 'preferences', label: 'Préférences', aide: 'Thème, page d’accueil, notifications', icone: SlidersHorizontal },
-  { cle: 'securite', label: 'Sécurité du compte', aide: 'Adresse, mot de passe, 2FA, photo', icone: KeyRound },
-  { cle: 'sessions', label: 'Sessions & appareils', aide: 'Postes connectés, clôture', icone: MonitorSmartphone },
-  { cle: 'legal', label: 'Langue & mentions légales', aide: 'CGU, confidentialité, version', icone: Scale },
+  /*
+    `court` sert à la forme en segments, sous 1024 px. Les libellés complets y demandent 659 px pour
+    365 disponibles à 375 px — mesuré le 01/09/2026. Ils restent entiers dans le rail vertical, où
+    la place ne manque pas, et où l'aide s'affiche en plus.
+  */
+  { cle: 'preferences', label: 'Préférences', court: 'Réglages', aide: 'Thème, page d’accueil, notifications', icone: SlidersHorizontal },
+  { cle: 'securite', label: 'Sécurité du compte', court: 'Sécurité', aide: 'Adresse, mot de passe, 2FA, photo', icone: KeyRound },
+  { cle: 'sessions', label: 'Sessions & appareils', court: 'Appareils', aide: 'Postes connectés, clôture', icone: MonitorSmartphone },
+  { cle: 'legal', label: 'Langue & mentions légales', court: 'Légal', aide: 'CGU, confidentialité, version', icone: Scale },
   /*
     Ajouté le 01/09/2026 (dette 8quater). Il remplace `support@ulamu.cg`, une adresse dont le
     domaine n'appartient pas au projet et que personne ne relevait. Les mentions légales et C1
     pointent ici : une seule page porte la demande ET la réponse.
   */
-  { cle: 'aide', label: 'Aide', aide: 'Écrire à l’administration, lire sa réponse', icone: LifeBuoy },
+  { cle: 'aide', label: 'Aide', court: 'Aide', aide: 'Écrire à l’administration, lire sa réponse', icone: LifeBuoy },
 ] as const
 
 type CleSection = (typeof SECTIONS)[number]['cle']
@@ -41,6 +48,9 @@ export function SettingsPage() {
   const [params, setParams] = useSearchParams()
   const me = useSessionStore((s) => s.me)
   const setMe = useSessionStore((s) => s.setMe)
+
+  // 1024 px : la même largeur qu'ailleurs dans l'application (tableaux en cartes, chantier 21).
+  const etroit = useEtroit(1024)
 
   const demandee = params.get('section')
   const active: CleSection = SECTIONS.some((s) => s.cle === demandee) ? (demandee as CleSection) : 'preferences'
@@ -70,14 +80,28 @@ export function SettingsPage() {
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
         {/*
-          Rail : colonne à gauche sur grand écran, onglets qui PASSENT À LA LIGNE en dessous.
+          Deux formes pour une seule navigation, et le seuil est 1024 px.
 
-          C'était une barre défilante horizontalement, et la mesure a tranché contre : à 375 px elle
-          faisait 812 px de large pour 341 visibles — **trois onglets sur cinq hors écran**, sans le
-          moindre indice qu'il fallait balayer. Un onglet qu'on ne voit pas n'existe pas. Le repli à
-          la ligne coûte quelques dizaines de pixels de hauteur ; c'est le prix d'une navigation
-          entière plutôt que d'un tiers. (Chantier 21, 01/09/2026.)
+          • **Au-dessus** : le rail vertical, une colonne à gauche. Chaque section y montre son
+            libellé complet ET son aide — la place ne manque pas, autant s'en servir.
+          • **En dessous** : le même choix en `Segments`, la forme retenue par le porteur pour tous
+            les onglets de l'application (01/09/2026). Libellés courts : les complets demandent
+            659 px pour 365 disponibles à 375 px.
+
+          Ce fut d'abord une barre défilante horizontalement — trois onglets sur cinq hors écran,
+          sans le moindre indice qu'il fallait balayer (corrigé au chantier 21). Un onglet qu'on ne
+          voit pas n'existe pas.
         */}
+        {etroit ? (
+          <div className="shrink-0">
+            <Segments
+              label="Sections des paramètres"
+              valeur={active}
+              onChange={(c) => aller(c as CleSection)}
+              options={SECTIONS.map((s) => ({ cle: s.cle, label: s.court }))}
+            />
+          </div>
+        ) : (
         <nav
           aria-label="Sections des paramètres"
           className="flex shrink-0 flex-wrap gap-1.5 lg:w-60 lg:flex-col lg:flex-nowrap"
@@ -110,6 +134,7 @@ export function SettingsPage() {
             )
           })}
         </nav>
+        )}
 
         <div className="min-w-0 flex-1">
           {active === 'preferences' ? <SectionPreferences /> : null}

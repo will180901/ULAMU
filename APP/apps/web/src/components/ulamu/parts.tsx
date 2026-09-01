@@ -79,7 +79,18 @@ export function Segments<T extends string>({
   label: string
 }) {
   return (
-    <span role="group" aria-label={label} className="inline-flex gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
+    /*
+      `flex-wrap` : sans lui, un groupe trop large pour son écran se contenterait de déborder — et
+      un onglet hors écran n'existe pas (chantier 21). Les cinq sections de « Mes paramètres »
+      demandent 659 px de libellés pour 365 disponibles à 375 px : aucun jeu de mots plus courts
+      n'y change quoi que ce soit. Le groupe passe donc à la ligne, et le cadre l'entoure sur deux
+      rangées. Pour les groupes de deux à quatre segments, qui tiennent tous, rien ne change.
+    */
+    <span
+      role="group"
+      aria-label={label}
+      className="inline-flex flex-wrap gap-0.5 rounded-lg border border-border bg-secondary p-0.5"
+    >
       {options.map((o) => {
         const actif = o.cle === valeur
         return (
