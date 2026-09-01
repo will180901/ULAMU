@@ -900,6 +900,24 @@ export interface PilotKpi {
 }
 
 /** Vérification de la chaîne sha256 du journal d'audit (EF-04-03). */
+/**
+ * Une entrée du journal d'audit (EF-04-04). Insertion seule, chaînée par hachage.
+ *
+ * Le champ `action` est une chaîne pointée — `m02.admin.role_assigned`, `m16.parameter.changed`.
+ * Le filtre serveur est un égal EXACT, pas un préfixe : demander plusieurs actions demande
+ * plusieurs appels.
+ */
+export interface AuditEntry {
+  seq: string
+  actorId: string | null
+  actorType: string | null
+  action: string
+  resource: string | null
+  context: unknown
+  hash: string
+  createdAt: string
+}
+
 export interface AuditIntegrity {
   ok: boolean
   checked: number
@@ -1479,6 +1497,26 @@ export const api = {
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
   /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
   auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),
+  /**
+   * Consultation filtrée du journal (EF-04-04). **La consultation est elle-même auditée** (RM-04-02) :
+   * chaque appel laisse une trace, ce qui interdit d'en faire une interrogation de fond.
+   *
+   * Le filtre `action` est un égal EXACT côté serveur. Et le périmètre dépend du sous-rôle : un
+   * administrateur ne voit que les domaines de sa matrice — demander en dehors renvoie 403.
+   */
+  auditLog: (q: { action?: string; actorId?: string; resource?: string; limit?: number } = {}) => {
+    const p = new URLSearchParams()
+    if (q.action) p.set('action', q.action)
+    if (q.actorId) p.set('actorId', q.actorId)
+    if (q.resource) p.set('resource', q.resource)
+    if (q.limit) p.set('limit', String(q.limit))
+    return request<{ items: AuditEntry[]; nextCursor: string | null }>(
+      'GET',
+      `/v1/admin/audit${p.toString() ? `?${p}` : ''}`,
+      undefined,
+      true,
+    )
+  },
 
   // Administration — signalements (M04) et comptes (M16)
   reports: (status?: string) =>
