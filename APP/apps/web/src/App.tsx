@@ -24,6 +24,7 @@ import { GainsPage } from '@/modules/gains/pages/GainsPage'
 import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { FinancePage } from '@/modules/admin/pages/FinancePage'
 import { AdministrateursPage } from '@/modules/admin/pages/AdministrateursPage'
+import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
 import { ParametresMetierPage } from '@/modules/admin/pages/ParametresMetierPage'
 import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
@@ -35,7 +36,7 @@ import { useSessionStore } from '@/state/session.store'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 
 /** Les écrans déjà refaits : ils ont leur propre route et sortent de la boucle `EcranAVenir`. */
-const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine', '/demandes', '/gains', '/admin/verification', '/admin/comptes', '/admin/finance', '/admin/parametres', '/admin/administrateurs', '/consultations']
+const ECRANS_FAITS = ['/dashboard', '/parametres', '/verification', '/vitrine', '/demandes', '/gains', '/admin/verification', '/admin/comptes', '/admin/finance', '/admin/parametres', '/admin/administrateurs', '/admin/pilotage', '/consultations']
 
 /**
  * Repli des routes inconnues. Il honore la préférence « page d'accueil » de B3 — sans quoi le réglage
@@ -88,6 +89,7 @@ export function App() {
                 <Route path="/admin/finance" element={<FinancePage />} />
                 <Route path="/admin/parametres" element={<ParametresMetierPage />} />
                 <Route path="/admin/administrateurs" element={<AdministrateursPage />} />
+                <Route path="/admin/pilotage" element={<PilotagePage />} />
                 <Route path="/consultations" element={<ConsultationsPage />} />
                 {/* La séance elle-même : atteinte depuis « Consultations », jamais listée seule. */}
                 <Route path="/consultations/:sessionId" element={<ConsultationPage />} />

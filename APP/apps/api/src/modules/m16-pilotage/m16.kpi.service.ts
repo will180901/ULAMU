@@ -64,6 +64,67 @@ export class PilotKpiService {
     ];
   }
 
+  /**
+   * S6 — la couverture par arrondissement (famille 3, groupe E).
+   *
+   * ── Ce que ce compte remplace ──────────────────────────────────────────────────────────────────
+   *
+   * La maquette E5 écrit six arrondissements avec leurs effectifs **en dur** — « Bacongo 78
+   * soignants · 21 officines » — et conclut : « moins d'un soignant vérifié pour 8 000 habitants ».
+   *
+   * Les effectifs, eux, sont **calculables** : chaque fiche professionnelle et chaque structure
+   * portent leur `district`. La population ne l'est pas — aucune donnée de recensement n'existe, et
+   * ULAMU n'a aucune raison d'en détenir. La phrase sur les habitants disparaît donc ; le tableau,
+   * lui, devient vrai.
+   *
+   * ── Ce qui est compté, exactement ──────────────────────────────────────────────────────────────
+   *
+   * • **Soignants** : les mêmes que le KPI « professionnels vérifiés et actifs » — dossier
+   *   `VERIFIED` **et** contrat signé (D-029). Compter les vérifiés non signés gonflerait la
+   *   couverture d'exerçants qui n'exercent pas.
+   * • **Officines** : structures `PHARMACY` au statut `ACTIVE`. Une pharmacie suspendue ne couvre
+   *   personne.
+   *
+   * Un arrondissement sans profil renseigné (`district: null`) n'apparaît pas : on ne fabrique pas
+   * une ligne « non renseigné » qui ressemblerait à un territoire.
+   *
+   * Agrégats seuls, aucune donnée individuelle (RM-16-05).
+   */
+  async couvertureParArrondissement(): Promise<Array<{ district: string; professionals: number; facilities: number }>> {
+    const [soignants, officines] = await Promise.all([
+      this.prisma.professionalProfile.groupBy({
+        by: ["district"],
+        where: {
+          district: { not: null },
+          // La relation est un à un (`VerificationCase.professionalId` est unique) : `is`, pas `some`.
+          verificationCase: { is: { status: "VERIFIED", agreement: { versions: { some: { signedAt: { not: null } } } } } },
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.facility.groupBy({
+        by: ["district"],
+        where: { type: "PHARMACY", status: "ACTIVE" },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const parDistrict = new Map<string, { district: string; professionals: number; facilities: number }>();
+    for (const l of soignants) {
+      const d = l.district as string;
+      parDistrict.set(d, { district: d, professionals: l._count._all, facilities: 0 });
+    }
+    for (const l of officines) {
+      const existant = parDistrict.get(l.district);
+      if (existant) existant.facilities = l._count._all;
+      else parDistrict.set(l.district, { district: l.district, professionals: 0, facilities: l._count._all });
+    }
+
+    // Du mieux couvert au moins couvert : c'est la fin de la liste qui intéresse le pilotage.
+    return [...parDistrict.values()].sort(
+      (a, b) => b.professionals + b.facilities - (a.professionals + a.facilities),
+    );
+  }
+
   /** Assemble un KPI à partir de sa cible de spec et de sa valeur agrégée. */
   private kpi(name: keyof typeof KPI_TARGETS, label: string, value: number, unit: "count" | "%"): PilotKpi {
     const t = KPI_TARGETS[name];

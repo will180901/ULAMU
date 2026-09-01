@@ -430,6 +430,55 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **15** | **E4 — Administrateurs** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : les quatre sous-rôles réels comptés, un tableau **à une pastille par ligne** (et non une matrice de cases), changement de rôle motivé, révocation avec la protection du compte courant, **journal des habilitations** lu du journal d'audit, et la création reléguée au second plan avec sa phrase honnête sur le mot de passe. Ajouté à `api.ts` : la lecture du journal d'audit, qu'aucun écran n'utilisait. **API 502 ✓ · web 333 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **16** | **E5 — Pilotage** *(écran neuf)* — codé le 01/09. Serveur : **S6**, `GET /admin/coverage` (~40 l. + 9 tests) — les effectifs par arrondissement, **comptés** et non écrits. Web : les sept critères du pilote avec leur cible, l'intégrité du journal, la couverture triée du mieux au moins couvert, et le tableau des délais réduit à ses **deux lignes vraies**. **API 511 ✓ · web 349 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E5
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Pilotage · Août 2026 · **arrêté au 13 août, 07:00** » | « N critères sur M atteints · calculé à l'instant, HH:MM » | **écart de fait** — rien n'est arrêté à une heure : tout est calculé au moment de la lecture. Annoncer un instantané ferait attendre une actualisation qui n'existe pas |
+| Huit tuiles : comptes actifs · soignants vérifiés · officines actives · consultations honorées · ordonnances servies · **volume encaissé** · délai médian de vérification · **taux de réclamation** | Les **sept critères du pilote**, servis avec leur cible et leur état | **écart de fait** — `getPilotKpis` sert exactement les sept critères de succès du plan de sortie. Volume encaissé, taux de réclamation et délai médian ne sont mesurés **nulle part** |
+| Tendances « **+37 vs juillet** », « +14 % », « −6 h » sur chaque tuile | absentes | **écart de fait** — aucune série historique n'existe pour ces agrégats : ils sont calculés à la lecture. Même renoncement qu'en B2, pour la même raison |
+| Graphique « Consultations honorées · semaines 27 à 32 » | absent | **écart de fait** — rien ne découpe ces agrégats par semaine |
+| Bloc « **Intégrité du journal** · Chaîne intacte · dernière vérification » | idem, avec ce que le chaînage signifie | conforme |
+| « Entrées scellées 48 912 · Ruptures 0 » | idem — `checked` et `ok` | conforme |
+| « **Actions sans motif** 0 · **Suppressions tentées** 0 » | absents | **écart de fait** — ni l'un ni l'autre n'est compté. Et « suppressions tentées » supposerait qu'on enregistre des tentatives qui n'ont **aucun chemin** pour se produire : le journal est en insertion seule |
+| Tableau « Respect des délais réglementaires » : 3 processus × 4 colonnes (limite · médian · hors délai · tenue) | **Deux lignes vraies** : les dossiers en retard *en ce moment*, et le taux de remboursement automatique | famille 3, groupe E — sur douze cases, deux seulement étaient mesurables |
+| Ligne « Décision de remboursement · limite **15 j** · médiane 6 j · tenue 100 % » | retirée, et remplacée par la phrase vraie | famille 1, point 5 — **trois défauts en une ligne** : le remboursement automatique est immédiat, la ligne parlait en fait du manuel dont aucune échéance n'existe au cahier, et médiane comme tenue ne sont mesurées nulle part. Un chiffre **inventé**, pas erroné |
+| Bloc « **Couverture par arrondissement** » — six lignes écrites en dur | idem, **compté** par `GET /admin/coverage` (S6), trié du mieux au moins couvert | **le seul coût serveur de la famille 3**, et il est justifié : c'est la seule dimension territoriale du produit |
+| « Makélékélé et Talangaï restent sous-couverts : moins d'un soignant vérifié pour **8 000 habitants** » | La définition de ce que « soignant » recouvre, et le classement | **écart de fait** — aucune donnée de recensement n'existe, et ULAMU n'a **aucune raison** d'en détenir. Le classement dit déjà où la couverture manque |
+| *(absent de la maquette)* | « Aucune donnée individuelle ne sort de cet écran : que des compteurs et des taux » | **ajout** — RM-16-05 |
+
+### Ce que le chantier 16 (E5 — Pilotage) a appris
+
+**Un tableau de douze cases dont deux sont mesurables n'est pas un tableau à compléter.** « Respect
+des délais réglementaires » croisait trois processus et quatre colonnes. Ni la médiane, ni le
+hors-délai historique, ni le taux de tenue ne sont calculés par quoi que ce soit — le serveur expose
+sept indicateurs, aucun ne mesure un délai de traitement. Garder la forme en la remplissant de tirets
+aurait suggéré un chantier en cours ; la remplacer par **deux lignes vraies** dit ce qu'on sait.
+*Et il fallait résister deux fois : la seconde ligne (les dossiers en retard en ce moment) existait
+déjà dans la file de vérification, il suffisait de la lire au bon endroit.*
+
+**« Sous-couvert » demande une population, pas seulement des effectifs.** La phrase de la maquette —
+« moins d'un soignant pour 8 000 habitants » — mélangeait deux choses : un compte qu'on peut faire,
+et un recensement qu'on n'a pas. C'est le seul endroit du plan où **l'absence de donnée est une bonne
+nouvelle** : ULAMU n'a aucune raison de détenir des données de population. Le classement du mieux au
+moins couvert dit déjà où la couverture manque, et il ne prétend rien sur les gens qui y vivent.
+
+**Compter « soignant » est un choix, pas une évidence.** Un dossier vérifié dont le contrat n'est pas
+signé ne peut pas exercer (D-029). L'inclure dans la couverture aurait gonflé le territoire de
+praticiens qu'aucun patient ne peut joindre — sur un indicateur d'accès aux soins, l'erreur est du
+mauvais côté. Le filtre est donc **exactement celui du KPI « professionnels vérifiés et actifs »**, et
+un test le verrouille. Même règle pour les officines : une pharmacie suspendue ne couvre personne.
+
+**Un test peut interdire un mot qu'il fallait écrire.** Mon assertion refusait « médian » et « taux
+de tenue » n'importe où dans l'écran — alors que ces mots figurent dans la phrase qui explique
+pourquoi ils ne sont PAS mesurés. Le test a échoué sur ma propre honnêteté. Corrigé pour verrouiller
+le fait — *aucun tableau, aucune valeur de délai* — plutôt que le vocabulaire. *Un test qui interdit
+des mots finit par interdire les explications.*
+
 ### Étape 6 — le comparatif bloc à bloc de E4
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

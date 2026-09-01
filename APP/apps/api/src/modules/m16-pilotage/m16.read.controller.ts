@@ -45,4 +45,18 @@ export class M16ReadController {
   pilotKpis() {
     return this.kpis.getPilotKpis();
   }
+
+  /**
+   * S6 — la couverture par arrondissement (EF-16-05, famille 3 groupe E).
+   *
+   * Remplace six lignes écrites en dur dans la maquette E5. Agrégats seuls : un compte de soignants
+   * exerçants et un compte d'officines actives par arrondissement, aucune donnée individuelle
+   * (RM-16-05).
+   */
+  @UseGuards(AdminGuard)
+  @AdminOnly()
+  @Get("admin/coverage")
+  coverage() {
+    return this.kpis.couvertureParArrondissement();
+  }
 }

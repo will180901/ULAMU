@@ -1495,6 +1495,22 @@ export const api = {
   facilityDashboard: (facilityId: string) =>
     request<FacilityDashboard>('GET', `/v1/me/facility/${facilityId}/dashboard`, undefined, true),
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
+  /**
+   * S6 — la couverture par arrondissement (01/09/2026).
+   *
+   * Remplace six lignes écrites en dur dans la maquette E5. Les effectifs sont calculables ; la
+   * population ne l'est pas — aucune donnée de recensement n'existe, et la phrase « moins d'un
+   * soignant pour 8 000 habitants » a donc disparu avec elle.
+   *
+   * « Soignants » = dossier vérifié **et** contrat signé : ceux qui peuvent réellement exercer.
+   */
+  coverage: () =>
+    request<Array<{ district: string; professionals: number; facilities: number }>>(
+      'GET',
+      '/v1/admin/coverage',
+      undefined,
+      true,
+    ),
   /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
   auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),
   /**
