@@ -379,15 +379,17 @@ export function ConsultationsPage() {
           </div>
         </Carte>
       ) : (
-        /* Un registre se lit en colonnes. Le tableau déborde horizontalement sur petit écran plutôt
-           que de comprimer ses colonnes jusqu'à l'illisible — la page, elle, ne défile jamais. */
-        <div className="overflow-x-auto rounded-[10px] border border-border">
-          <table className="w-full min-w-[880px] border-collapse text-left">
+        /* Un registre se lit en colonnes — au-dessus de 1024 px. En dessous, chaque ligne devient
+           une carte (`ul-tableau-cartes`, globals.css) : les sept colonnes faisaient 880 px, dont
+           549 hors écran sur un téléphone, et rien n'indiquait qu'il fallait tirer latéralement. */
+        <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
+          <table role="table" className="ul-tableau-cartes w-full min-w-[880px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+              <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
                 {['Date', 'Consultation', 'Durée', 'Compte-rendu', 'Ordonnance', 'Honoraires', ''].map((t, i) => (
                   <th
                     key={t || `action-${i}`}
+                    role="columnheader"
                     scope="col"
                     className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
                   >
@@ -406,12 +408,12 @@ export function ConsultationsPage() {
 
                 return (
                   <tr key={s.id} className="border-b border-border last:border-b-0 align-top">
-                    <td className="px-3 py-3 whitespace-nowrap">
+                    <td role="cell" data-libelle="Date" className="px-3 py-3 whitespace-nowrap">
                       <span className="block text-[13px] font-medium text-foreground">{dateFr(s.paidAt)}</span>
                       <span className="block text-[11px] text-[var(--texte-tertiaire)]">{heureFr(s.paidAt)}</span>
                     </td>
 
-                    <td className="px-3 py-3">
+                    <td role="cell" data-libelle="Consultation" className="px-3 py-3">
                       <span className="block font-mono text-[12px] text-foreground">{s.id.slice(0, 8).toUpperCase()}</span>
                       {/* D-033 : une séance peut avoir été prise pour une personne à charge. */}
                       {s.subProfileId ? (
@@ -422,11 +424,11 @@ export function ConsultationsPage() {
                       </span>
                     </td>
 
-                    <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                    <td role="cell" data-libelle="Durée" className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
                       {s.durationMin} min
                     </td>
 
-                    <td className="px-3 py-3">
+                    <td role="cell" data-libelle="Compte-rendu" className="px-3 py-3">
                       {s.reportDepositedAt ? (
                         <span className="flex items-center gap-1.5 text-[12px] text-[var(--succes-texte)]">
                           <Check size={13} strokeWidth={2} aria-hidden="true" />
@@ -451,7 +453,7 @@ export function ConsultationsPage() {
                       )}
                     </td>
 
-                    <td className="px-3 py-3">
+                    <td role="cell" data-libelle="Ordonnance" className="px-3 py-3">
                       {ordo.length === 0 ? (
                         <span className="text-[12px] text-[var(--texte-tertiaire)]">—</span>
                       ) : (
@@ -470,7 +472,7 @@ export function ConsultationsPage() {
                       )}
                     </td>
 
-                    <td className="px-3 py-3 whitespace-nowrap">
+                    <td role="cell" data-libelle="Honoraires" className="px-3 py-3 whitespace-nowrap">
                       {/*
                         Aucun prix n'est calculé ici. Ou le journal des gains porte un mouvement pour
                         cette commande, et on l'affiche ; ou il n'en porte pas, et c'est que la
@@ -488,7 +490,7 @@ export function ConsultationsPage() {
                       )}
                     </td>
 
-                    <td className="px-3 py-3 whitespace-nowrap text-right">
+                    <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
                       <Button asChild size="sm" variant={manque ? 'default' : 'outline'}>
                         <Link to={`/consultations/${s.id}`}>{manque ? 'Déposer' : 'Ouvrir'}</Link>
                       </Button>

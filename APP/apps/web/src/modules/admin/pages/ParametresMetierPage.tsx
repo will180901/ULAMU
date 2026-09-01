@@ -337,13 +337,14 @@ export function ParametresMetierPage() {
             </Carte>
           </div>
 
-          <div className="overflow-x-auto rounded-[10px] border border-border">
-            <table className="w-full min-w-[760px] border-collapse text-left">
+          <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
+            <table role="table" className="ul-tableau-cartes w-full min-w-[760px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+                <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
                   {['Paramètre', 'Effet', 'Valeur', 'Dernière modification', ''].map((t, i) => (
                     <th
                       key={t || `action-${i}`}
+                      role="columnheader"
                       scope="col"
                       className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
                     >
@@ -354,8 +355,8 @@ export function ParametresMetierPage() {
               </thead>
               <tbody>
                 {liste.map((p) => (
-                  <tr key={p.key} className="border-b border-border align-top last:border-b-0">
-                    <td className="px-3 py-3 whitespace-nowrap">
+                  <tr role="row" key={p.key} className="border-b border-border align-top last:border-b-0">
+                    <td role="cell" data-libelle="Paramètre" className="px-3 py-3 whitespace-nowrap">
                       <span className="font-mono text-[13px] font-medium text-foreground">{p.key}</span>
                     </td>
                     {/*
@@ -363,14 +364,14 @@ export function ParametresMetierPage() {
                       (`COMMISSION_SOIGNANT_PCT`) qui n'existent pas : les recopier ici créerait une
                       seconde vérité, à diverger au premier paramètre ajouté.
                     */}
-                    <td className="px-3 py-3 text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">{p.description}</td>
-                    <td className="px-3 py-3 whitespace-nowrap">
+                    <td role="cell" data-libelle="Effet" className="px-3 py-3 text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">{p.description}</td>
+                    <td role="cell" data-libelle="Valeur" className="px-3 py-3 whitespace-nowrap">
                       <span className="font-mono text-[13px] font-semibold text-foreground">{p.value}</span>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-[12px] text-[var(--texte-tertiaire)]">
+                    <td role="cell" data-libelle="Dernière modification" className="px-3 py-3 whitespace-nowrap text-[12px] text-[var(--texte-tertiaire)]">
                       {dateHeureFr(p.updatedAt)}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right">
+                    <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
                       <span className="flex flex-wrap justify-end gap-1.5">
                         <Button
                           type="button"

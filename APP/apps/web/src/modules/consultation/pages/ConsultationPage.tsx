@@ -254,10 +254,18 @@ function GestesBulle({
 }) {
   return (
     <span
+      /*
+        Placement : À CÔTÉ de la bulle sur grand écran, DANS le coin de la ligne en dessous.
+
+        `left-full` posait la barre juste après la bulle — parfait tant qu'il reste de la place à
+        droite. Sur un téléphone la bulle occupe presque toute la largeur : la barre sortait de
+        73 px, et le fil se laissait tirer latéralement de 34 px. Mesuré à 375 px le 01/09/2026
+        (chantier 21). En dessous de 1024 px elle se cale donc à droite de la LIGNE, à l'intérieur.
+      */
       className={
         'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
-        'shadow-[0_1px_3px_rgba(15,23,42,.10)] ' +
-        (aMoi ? 'right-full mr-1' : 'left-full ml-1')
+        'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 ' +
+        (aMoi ? 'lg:right-full lg:mr-1' : 'lg:right-auto lg:left-full lg:ml-1')
       }
     >
       <DropdownMenu>

@@ -449,6 +449,83 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **20** | **NestJS 10 → 11** — 01/09. Les 14 alertes de sécurité de production **tombent toutes**, et l'audit passe à **0, dev compris** (on partait de 17). `npm audit` réclamait NestJS 12 : **11 suffisait**, et 12 est de toute façon **inatteignable** — `@nestjs/throttler`, dans sa dernière version publiée, ne déclare la compatibilité que jusqu'à 11, et c'est lui qui limite les tentatives sur la route OTP. Le saut emporte **Express 4 → Express 5** (`path-to-regexp` v0.1 → v8), qui réinterprète tous les chemins : les **192 routes ont été relevées avant et après, elles sont identiques au caractère près**. Ajouté : `app.boot.spec.ts`, qui **démarre réellement l'application** — ce qu'aucun des 541 autres tests ne faisait. **API 554 ✓ · lint propre · build propre.** ⚠️ **NestJS 11 exige Node ≥ 20** : vérifier `NODE_VERSION` sur Render avant de pousser. | ⏸ en attente | ⏸ |
 
+| **21** | **Le responsive de toute la plateforme** — 01/09. **Serveur : aucun.** Le chantier 18 mesurait les DÉFAUTS (débordement, rognage, recouvrement) et ignorait délibérément ce qui vit dans un conteneur à défilement : les **tableaux** passaient donc au travers. Mesuré ici : à 375 px, C4 cachait **549 px** hors écran, E1 529, E3 429, E4 389 — et la barre d'onglets de B3 en cachait **471**, soit trois onglets sur cinq. À 768 px, C4 en cachait encore 214 : le point de bascule n'est pas `md`, c'est **1024 px**. Correction en **CSS seule** : les cinq tableaux deviennent des cartes, chaque cellule affichant le nom de sa colonne. Le balisage ne change pas — **les 422 tests passent sans une modification**. **web 442 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 21 (le responsive) a appris
+
+*Mené le 01/09/2026, à la demande du porteur, après la mise en ligne des chantiers 18 à 20.*
+
+#### Un audit ne trouve que ce qu'il cherche
+
+Le chantier 18 avait conclu que les seize écrans étaient propres à 375, 768 et 1440 px. C'était
+vrai — pour les critères qu'il mesurait : débordement horizontal de la page, texte rogné par sa
+boîte, recouvrement, texte de la couleur de son fond.
+
+Et son auditeur **ignorait explicitement** tout ce qui vit dans un conteneur à défilement, pour ne
+pas signaler des faux positifs. Or c'est exactement là qu'étaient les tableaux. Un tableau de sept
+colonnes tenu par un `min-width: 880px` dans un conteneur `overflow-x-auto` ne déborde de rien : il
+est simplement **invisible aux deux tiers**, et rien à l'écran ne dit qu'il faut le tirer.
+
+La leçon n'est pas « l'audit était mauvais ». Elle est : **un audit mesure ce qu'on lui a dit de
+mesurer, et son silence ne prouve rien au-delà.** Un second auditeur a donc été écrit, qui ne
+cherche plus les défauts mais juge l'adaptation — conteneurs à défilement et leur ampleur, tableaux
+et leur largeur réelle, colonnes restées côte à côte, grilles restées à plusieurs colonnes.
+
+#### Ce qu'il a trouvé
+
+| Écran | Ce qui défilait | Caché à 375 px | Caché à 768 px |
+|---|---|---|---|
+| **C4 · Consultations** | tableau, 7 colonnes, 880 px | **549 px** | 214 px |
+| **E1 · File de vérification** | tableau, 7 colonnes, 860 px | **529 px** | — |
+| **B3 · Mes paramètres** | **la barre d'onglets**, 812 px | **471 px** | 136 px |
+| **E3 · Paramètres métier** | tableau, 5 colonnes, 760 px | **429 px** | — |
+| **E4 · Administrateurs** | tableau, 4 colonnes, 720 px | **389 px** | — |
+| **E7 · Comptes** | tableau, 4 colonnes (après recherche) | 389 px | — |
+| **C5 · Consultation** | la barre d'actions d'un message | 34 px | — |
+
+Le cas de **B3** est le plus grave, et ce n'est pas un tableau : **trois onglets sur cinq étaient
+hors écran**. Un onglet qu'on ne voit pas n'existe pas — c'est de la navigation perdue, pas une
+donnée qu'on peut aller chercher. Le commentaire du code disait « barre défilante en dessous de
+1024 px » : c'était un choix assumé, que la mesure a contredit.
+
+**Le point de bascule est 1024 px, pas 768.** À 768 — une tablette — C4 cachait encore 214 px et
+B3 136. Traiter le sujet à `md` aurait laissé les tablettes derrière.
+
+#### Pourquoi la correction est en CSS, et ce que ça a évité
+
+Un composant « tableau adaptatif » aurait imposé de réécrire cinq écrans et le rendu de chaque
+cellule. Deux autres approches — deux balisages en parallèle, ou un choix par `useIsMobile` —
+auraient l'une dupliqué le contenu (et cassé tous les tests, qui trouveraient deux fois le même
+texte), l'autre déplacé une décision de mise en page dans le JavaScript.
+
+La règle CSS ne touche pas au balisage : on ajoute une classe au tableau, et à chaque cellule le nom
+de sa colonne (`data-libelle`). Sous 1024 px, chaque ligne devient une carte et chaque valeur porte
+son intitulé. **Conséquence directe : les 422 tests existants passent sans une seule modification**,
+puisque jsdom n'applique aucune feuille de style et continue de voir le tableau qu'il a toujours vu.
+
+#### Le point d'accessibilité, qui n'était pas gratuit
+
+Passer `tr` et `td` en `display: block` fait **perdre au navigateur la sémantique de tableau** : un
+lecteur d'écran cesserait d'annoncer « colonne Statut, ligne 3 ». C'est un effet de bord réel de
+cette technique, souvent passé sous silence.
+
+Les cinq tableaux portent donc des `role` explicites — `table`, `row`, `columnheader`, `cell` —
+redondants sur grand écran, indispensables en dessous. Et l'en-tête n'est pas masqué en
+`display: none` mais retiré du seul flux **visuel** (`clip-path`), comme `sr-only` : il reste lu par
+les technologies d'assistance.
+
+#### Deux détails qui se voyaient à l'œil, pas à la mesure
+
+- Une cellule à **deux enfants** — un nom puis un numéro de téléphone — voyait le second repartir à
+  la ligne *dans la colonne des intitulés* : le téléphone s'alignait sous « ADMINISTRATEUR ». Une
+  règle force tout ce qui suit l'intitulé dans la colonne de droite.
+- Les **pastilles s'étiraient en bandeaux** sur toute la largeur : un élément de grille est étiré
+  par défaut. `width: fit-content` avec `max-width: 100%` leur rend leur taille sans leur retirer
+  le repli à la ligne.
+
+C'est pour cela qu'une relecture ne peut pas être entièrement automatique : la mesure trouve ce qui
+est caché, l'œil trouve ce qui est laid.
+
 ### Ce que le chantier 20 (NestJS 10 → 11) a appris
 
 *Mené le 01/09/2026, après la mise en ligne des chantiers 18 et 19.*

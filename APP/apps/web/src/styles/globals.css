@@ -1076,3 +1076,117 @@ html[data-densite='compact'] .ul-ligne-dense {
   padding-top: 5px !important;
   padding-bottom: 5px !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════════
+   Les tableaux deviennent des CARTES sous 1024 px — chantier 21, 01/09/2026.
+
+   ── Ce qu'on corrige ───────────────────────────────────────────────────────────────────────────
+
+   Cinq écrans portent un tableau large, tenu par un `min-width` et posé dans un conteneur à
+   défilement horizontal. Mesuré à 375 px : C4 « Consultations » cachait **549 px** hors écran,
+   E1 « File de vérification » 529, E3 429, E4 389. Et pas seulement sur téléphone — à 768 px,
+   C4 en cachait encore 214. Rien ne « débordait » au sens strict : le contenu était simplement
+   invisible tant qu'on ne le tirait pas latéralement, geste que personne ne devine.
+
+   ── Pourquoi en CSS plutôt qu'en composant ─────────────────────────────────────────────────────
+
+   Un composant « tableau adaptatif » aurait imposé de réécrire les cinq écrans et le rendu de
+   chaque cellule. Ici le balisage ne bouge pas : on ajoute une classe, et le nom de la colonne à
+   chaque cellule. Conséquence directe — **aucun test ne change**, puisque jsdom n'applique aucune
+   feuille de style : les tests continuent de voir le tableau qu'ils ont toujours vu.
+
+   ── Le point d'accessibilité, qui n'est pas gratuit ────────────────────────────────────────────
+
+   Passer `tr` et `td` en `display: block` fait perdre au navigateur la sémantique de tableau : un
+   lecteur d'écran n'annoncerait plus « colonne Statut, ligne 3 ». C'est pourquoi les cinq tableaux
+   portent des `role` explicites (`table`, `row`, `columnheader`, `cell`) — redondants sur grand
+   écran, indispensables ici. L'en-tête n'est pas masqué en `display: none` mais retiré du flux
+   visuel : il reste lisible par les technologies d'assistance.
+
+   1023 px et non 767 : c'est la largeur mesurée à laquelle les cinq tableaux tiennent enfin.
+   ════════════════════════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  /* Le `min-width` du tableau est ce qui forçait le défilement — il n'a plus lieu d'être. */
+  .ul-tableau-cartes {
+    min-width: 0 !important;
+    display: block;
+  }
+
+  /* Retiré du flux VISUEL, pas de l'arbre d'accessibilité (même recette que `sr-only`). */
+  .ul-tableau-cartes thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ul-tableau-cartes tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ul-tableau-cartes tbody tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--card);
+  }
+
+  /* Une cellule devient une ligne « intitulé · valeur ». La colonne d'intitulés est bornée :
+     au-delà, un libellé long mangerait la valeur — le défaut qu'on vient justement de corriger
+     ailleurs. */
+  .ul-tableau-cartes tbody td {
+    display: grid;
+    grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+    align-items: baseline;
+    gap: 10px;
+    padding: 4px 0 !important;
+    border: 0;
+  }
+
+  /* Une cellule peut porter PLUSIEURS enfants — un nom puis un numéro, par exemple. Sans cette
+     règle, le second repart à la ligne DANS la colonne des intitulés : le téléphone s'alignait sous
+     « ADMINISTRATEUR ». Tout ce qui suit l'intitulé appartient à la colonne de droite. */
+  .ul-tableau-cartes tbody td > * {
+    grid-column: 2;
+    /* `fit-content` : une pastille épouse son texte au lieu de s'étirer en bandeau sur toute la
+       colonne — un élément de grille est étiré par défaut. `max-width: 100%` garde le repli à la
+       ligne pour les textes longs, qui sinon déborderaient de la carte. */
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .ul-tableau-cartes tbody td::before {
+    content: attr(data-libelle);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    line-height: 1.5;
+    color: var(--texte-tertiaire);
+  }
+
+  /* La colonne d'actions n'a pas d'intitulé : elle prend toute la largeur, et ses boutons
+     s'alignent à gauche comme le reste de la carte plutôt qu'à droite d'un tableau absent. */
+  .ul-tableau-cartes tbody td[data-libelle=''] {
+    display: block;
+    padding-top: 8px !important;
+    text-align: left !important;
+  }
+  .ul-tableau-cartes tbody td[data-libelle=''] > * {
+    justify-content: flex-start !important;
+  }
+
+  /* Le conteneur n'a plus rien à faire défiler ; on lui retire sa bordure pour ne pas dessiner un
+     cadre autour de cartes qui en ont déjà une. */
+  .ul-tableau-defilant {
+    overflow-x: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+}

@@ -549,14 +549,17 @@ export function FileVerificationPage() {
               </p>
             </Carte>
           ) : (
-            /* Une file se lit en colonnes : on y compare des délais, on n'y fait pas défiler des fiches. */
-            <div className="overflow-x-auto rounded-[10px] border border-border">
-              <table className="w-full min-w-[860px] border-collapse text-left">
+            /* Une file se lit en colonnes : on y compare des délais, on n'y fait pas défiler des
+               fiches. Sous 1024 px la comparaison n'est plus possible de toute façon — chaque ligne
+               devient une carte (`ul-tableau-cartes`, globals.css), au lieu de cacher 529 px. */
+            <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
+              <table role="table" className="ul-tableau-cartes w-full min-w-[860px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+                  <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
                     {['Dossier', 'Demandeur', 'Type', 'Pièces', 'Statut', 'Délai', ''].map((t, i) => (
                       <th
                         key={t || `action-${i}`}
+                        role="columnheader"
                         scope="col"
                         className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
                       >
@@ -571,8 +574,8 @@ export function FileVerificationPage() {
                     const delai = delaiRestant(it.waitingSince, cible)
                     const clos = it.status === 'VERIFIED' || it.status === 'REJECTED' || it.status === 'REVOKED'
                     return (
-                      <tr key={it.caseId} className="border-b border-border align-top last:border-b-0">
-                        <td className="px-3 py-3 whitespace-nowrap">
+                      <tr role="row" key={it.caseId} className="border-b border-border align-top last:border-b-0">
+                        <td role="cell" data-libelle="Dossier" className="px-3 py-3 whitespace-nowrap">
                           {/*
                             « DOS-2026-00341 » n'existe pas : les identifiants sont des UUID. On en
                             montre le début, qui suffit à désigner un dossier sans l'inventer.
@@ -583,16 +586,16 @@ export function FileVerificationPage() {
                           <span className="block text-[11px] text-[var(--texte-tertiaire)]">{depuis(it.waitingSince)}</span>
                         </td>
 
-                        <td className="px-3 py-3">
+                        <td role="cell" data-libelle="Demandeur" className="px-3 py-3">
                           <span className="block text-[13px] font-medium text-foreground">{it.subjectName}</span>
                           <span className="block font-mono text-[11px] text-[var(--texte-tertiaire)]">{it.subject}</span>
                         </td>
 
-                        <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                        <td role="cell" data-libelle="Type" className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
                           {it.subjectKind === 'PROFESSIONAL' ? 'Soignant' : 'Structure'}
                         </td>
 
-                        <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                        <td role="cell" data-libelle="Pièces" className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
                           {/*
                             La maquette écrit « 4 / 4 ». Le total exigé dépend du type de sujet et
                             n'est PAS servi par la file — l'inventer ici serait recopier une règle
@@ -601,7 +604,7 @@ export function FileVerificationPage() {
                           {it.documentCount} pièce{it.documentCount > 1 ? 's' : ''}
                         </td>
 
-                        <td className="px-3 py-3">
+                        <td role="cell" data-libelle="Statut" className="px-3 py-3">
                           {/* Deux seuils distincts (EF-03-03) : cible dépassée, puis escalade. */}
                           {it.overdue ? (
                             <Pilule ton="erreur">Hors délai</Pilule>
@@ -612,7 +615,7 @@ export function FileVerificationPage() {
                           )}
                         </td>
 
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td role="cell" data-libelle="Délai" className="px-3 py-3 whitespace-nowrap">
                           {clos ? (
                             <span className="text-[12px] text-[var(--texte-tertiaire)]">—</span>
                           ) : (
@@ -632,7 +635,7 @@ export function FileVerificationPage() {
                           )}
                         </td>
 
-                        <td className="px-3 py-3 whitespace-nowrap text-right">
+                        <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
                           <Button
                             type="button"
                             size="sm"

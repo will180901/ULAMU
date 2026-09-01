@@ -469,13 +469,14 @@ export function AdministrateursPage() {
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-[10px] border border-border">
-            <table className="w-full min-w-[720px] border-collapse text-left">
+          <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
+            <table role="table" className="ul-tableau-cartes w-full min-w-[720px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+                <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
                   {['Administrateur', 'Sous-rôle', 'Attribué le', ''].map((t, i) => (
                     <th
                       key={t || `action-${i}`}
+                      role="columnheader"
                       scope="col"
                       className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
                     >
@@ -498,15 +499,15 @@ export function AdministrateursPage() {
                   */
                   const dernierDeSonRole = a.role !== null && liste.filter((x) => x.role === a.role).length === 1
                   return (
-                    <tr key={a.accountId} className="border-b border-border align-top last:border-b-0">
-                      <td className="px-3 py-3">
+                    <tr role="row" key={a.accountId} className="border-b border-border align-top last:border-b-0">
+                      <td role="cell" data-libelle="Administrateur" className="px-3 py-3">
                         <span className="flex flex-wrap items-center gap-2">
                           <span className="text-[13px] font-medium text-foreground">{nomDe(a)}</span>
                           {cestMoi ? <Pilule ton="info">Vous</Pilule> : null}
                         </span>
                         <span className="block font-mono text-[11px] text-[var(--texte-tertiaire)]">{a.phone}</span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td role="cell" data-libelle="Sous-rôle" className="px-3 py-3">
                         {r ? (
                           <Pilule ton={r.ton}>{r.label}</Pilule>
                         ) : (
@@ -515,10 +516,10 @@ export function AdministrateursPage() {
                           <span className="text-[12px] text-[var(--alerte-texte)]">Aucun — n'accède à rien</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-[12px] text-[var(--texte-tertiaire)]">
+                      <td role="cell" data-libelle="Attribué le" className="px-3 py-3 whitespace-nowrap text-[12px] text-[var(--texte-tertiaire)]">
                         {a.assignedAt ? dateHeureFr(a.assignedAt) : '—'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-right">
+                      <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
                         <span className="flex flex-wrap justify-end gap-1.5">
                           <Button
                             type="button"

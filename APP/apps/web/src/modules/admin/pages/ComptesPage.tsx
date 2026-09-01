@@ -616,13 +616,14 @@ export function ComptesPage() {
               </p>
             </Carte>
           ) : (
-            <div className="overflow-x-auto rounded-[10px] border border-border">
-              <table className="w-full min-w-[720px] border-collapse text-left">
+            <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
+              <table role="table" className="ul-tableau-cartes w-full min-w-[720px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+                  <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
                     {['Titulaire', 'Type', 'Statut', ''].map((t, i) => (
                       <th
                         key={t || `action-${i}`}
+                        role="columnheader"
                         scope="col"
                         className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
                       >
@@ -636,19 +637,19 @@ export function ComptesPage() {
                     const etat = ETATS_COMPTE[c.status] ?? { libelle: c.status, ton: 'neutre' as TonPilule }
                     const definitif = c.status === 'BANNED' || c.status === 'CLOSED'
                     return (
-                      <tr key={c.accountId} className="border-b border-border align-top last:border-b-0">
-                        <td className="px-3 py-3">
+                      <tr role="row" key={c.accountId} className="border-b border-border align-top last:border-b-0">
+                        <td role="cell" data-libelle="Titulaire" className="px-3 py-3">
                           <span className="block text-[13px] font-medium text-foreground">{c.displayName}</span>
                           {/* Le téléphone est ce qui identifie sans ambiguïté — pas un « USR-2026-… » inventé. */}
                           <span className="block font-mono text-[11px] text-[var(--texte-tertiaire)]">{c.phone}</span>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                        <td role="cell" data-libelle="Type" className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
                           {TYPES_COMPTE[c.type] ?? c.type}
                         </td>
-                        <td className="px-3 py-3">
+                        <td role="cell" data-libelle="Statut" className="px-3 py-3">
                           <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-right">
+                        <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
                           {definitif ? (
                             <span className="text-[12px] text-[var(--texte-tertiaire)]">Définitif</span>
                           ) : (

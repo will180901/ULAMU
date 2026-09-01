@@ -69,10 +69,18 @@ export function SettingsPage() {
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        {/* Rail : colonne à gauche sur grand écran, barre défilante en dessous de 1024 px. */}
+        {/*
+          Rail : colonne à gauche sur grand écran, onglets qui PASSENT À LA LIGNE en dessous.
+
+          C'était une barre défilante horizontalement, et la mesure a tranché contre : à 375 px elle
+          faisait 812 px de large pour 341 visibles — **trois onglets sur cinq hors écran**, sans le
+          moindre indice qu'il fallait balayer. Un onglet qu'on ne voit pas n'existe pas. Le repli à
+          la ligne coûte quelques dizaines de pixels de hauteur ; c'est le prix d'une navigation
+          entière plutôt que d'un tiers. (Chantier 21, 01/09/2026.)
+        */}
         <nav
           aria-label="Sections des paramètres"
-          className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:w-60 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0"
+          className="flex shrink-0 flex-wrap gap-1.5 lg:w-60 lg:flex-col lg:flex-nowrap"
         >
           {SECTIONS.map((s) => {
             const actif = s.cle === active
