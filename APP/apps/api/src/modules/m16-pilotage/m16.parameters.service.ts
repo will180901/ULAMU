@@ -52,6 +52,32 @@ export class ParametersService {
   }
 
   /**
+   * S5 — **ce que coûterait le changement, AVANT de le faire** (famille 4, point 11).
+   *
+   * Changer PM-01 ré-édite tous les contrats signés (D-022). La version ré-éditée est **non
+   * signée** : chacun de ces soignants **cesse immédiatement de pouvoir exercer** — il disparaît de
+   * l'annuaire et ne reçoit plus aucune demande — jusqu'à sa re-signature (C1).
+   *
+   * L'écran ne pouvait pas connaître ce nombre : `updateParameter` le renvoie APRÈS coup, dans
+   * `reissuedCount`. Le super-administrateur validait donc à l'aveugle, et la maquette comblait ce
+   * vide par une case morale — « je comprends les conséquences » — sans jamais dire lesquelles.
+   *
+   * Cette lecture ne change rien : elle compte, exactement comme `reissueSignedAgreements`
+   * sélectionne. Les deux requêtes doivent rester identiques — un compte qui diverge de l'action
+   * serait pire qu'aucun compte.
+   *
+   * `affectedByRateChange` vaut 0 pour tout paramètre qui n'est pas un taux contractuel : le seul
+   * qui le soit est PM-01 (M03 ne lit que lui). Rien ne se casse en changeant un délai.
+   */
+  async impactOf(key: string): Promise<{ key: string; isRateParameter: boolean; signedAgreements: number }> {
+    if (!isRateParameter(key)) return { key, isRateParameter: false, signedAgreements: 0 };
+    const signedAgreements = await this.prisma.verificationCase.count({
+      where: { status: "VERIFIED", agreement: { versions: { some: { signedAt: { not: null } } } } },
+    });
+    return { key, isRateParameter: true, signedAgreements };
+  }
+
+  /**
    * CU-16-02 : change un PM-xx avec date d'effet + motif. 404 si le paramètre n'existe pas.
    * Transaction : historique (ParameterChange) + mise à jour (PlatformParameter) + audit.
    * APRÈS commit : invalidation du cache ParamsService, puis — si c'est un taux contractuel —

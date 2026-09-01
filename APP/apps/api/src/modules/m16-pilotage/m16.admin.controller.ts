@@ -116,6 +116,18 @@ export class M16AdminController {
     return this.parameters.list();
   }
 
+  /**
+   * S5 — ce que coûterait le changement de ce paramètre, AVANT de le faire (famille 4, point 11).
+   *
+   * Déclarée avant `parameters/:key/history` pour la même raison que `parameters` : Nest apparie
+   * dans l'ordre de déclaration.
+   */
+  @AdminOnly(AdminRole.SUPER_ADMIN)
+  @Get("parameters/:key/impact")
+  parameterImpact(@Param("key") key: string) {
+    return this.parameters.impactOf(key);
+  }
+
   /** Historique d'un paramètre plateforme. */
   @AdminOnly(AdminRole.SUPER_ADMIN)
   @Get("parameters/:key/history")

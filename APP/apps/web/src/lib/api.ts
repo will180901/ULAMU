@@ -1219,9 +1219,37 @@ export const api = {
   parameters: () => request<PlatformParameter[]>('GET', '/v1/admin/parameters', undefined, true),
   parameterHistory: (key: string) =>
     request<ParameterChange[]>('GET', `/v1/admin/parameters/${key}/history`, undefined, true),
-  /** Le motif est OBLIGATOIRE (RM-16-03) : un seuil qui change sans explication est ingérable. */
+  /**
+   * S5 — ce que le changement coûterait, AVANT de le faire (28/08 → 01/09/2026).
+   *
+   * Changer PM-01 ré-édite tous les contrats signés : chacun de ces soignants **cesse de pouvoir
+   * exercer** jusqu'à sa re-signature. `updateParameter` renvoie bien le compte, mais APRÈS coup.
+   */
+  parameterImpact: (key: string) =>
+    request<{ key: string; isRateParameter: boolean; signedAgreements: number }>(
+      'GET',
+      `/v1/admin/parameters/${key}/impact`,
+      undefined,
+      true,
+    ),
+  /**
+   * Le motif est OBLIGATOIRE (RM-16-03) : un seuil qui change sans explication est ingérable.
+   *
+   * Le serveur renvoie `reissuedCount` — le nombre de contrats réellement ré-édités. Ce type
+   * prétendait ne rien savoir de la réponse, alors que c'est le seul moyen de confirmer à
+   * l'administrateur ce que son geste vient de faire.
+   *
+   * ⚠️ `effectiveAt` doit être IMMÉDIATE : le serveur **refuse** une date future — « différé non
+   * géré au MVP ». Le « préavis de 30 jours » de la maquette proposait donc un geste que le
+   * serveur rejette par une erreur (famille 2, point 5).
+   */
   updateParameter: (key: string, dto: { value: string; effectiveAt: string; reason: string }) =>
-    request<unknown>('PUT', `/v1/admin/parameters/${key}`, dto, true),
+    request<{ key: string; newValue: string; effectiveAt: string; reissuedCount: number }>(
+      'PUT',
+      `/v1/admin/parameters/${key}`,
+      dto,
+      true,
+    ),
 
   // M13 — administration Finance
   adminRefunds: (status?: RefundStatus) =>

@@ -425,6 +425,59 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **13** | **E2 — Supervision financière** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : file des remboursements à trancher avec la garde d'auto-validation dite sur la ligne, historique, et le **rapprochement** lancé à la demande avec son rapport. Le seuil de double validation est **lu de PM-35**, jamais écrit. Les trois faussetés de « écart non instruit sous 7 jours » corrigées. **API 496 ✓ · web 303 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **14** | **E3 — Paramètres métier** *(écran neuf)* — codé le 01/09. Serveur : **S5**, `GET /admin/parameters/:key/impact` (~12 l. + 6 tests) — le nombre de contrats signés qu'un changement de taux ré-éditerait, **lu avant de le faire**. Web : tableau des paramètres servis, historique par clé, formulaire de changement motivé, et la **case morale remplacée par les conséquences chiffrées**. Le préavis de 30 jours retiré. **API 502 ✓ · web 316 ✓ · builds propres.** ⚠️ **Avec le chantier 8, cette fonctionnalité est complète** : E3 déclenche l'avenant, C1 le re-signe. | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E3
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Paramètres métier · **40 paramètres en 6 familles** · 5 engagent les contrats signés » | « N paramètres · toute modification part au journal d'audit », N compté sur ce que le serveur renvoie | **écart de fait** — il n'y a ni familles ni total figé : les paramètres sont ce que la base contient. Et **un seul** engage les contrats (PM-01), pas cinq |
+| Regroupement en six familles (Commissions · Consultations · Vérification · Pharmacie · Sécurité · Plateforme) | Un tableau à plat, trié par clé | **écart de fait** — aucun champ « famille » n'existe. En inventer un côté écran créerait une seconde vérité, à diverger au premier paramètre ajouté |
+| Colonne **PARAMÈTRE** : intitulé + `COMMISSION_SOIGNANT_PCT` | La clé réelle (`PM-01`) | **écart de fait** — ces noms n'existent pas |
+| Colonne **EFFET** : une phrase d'explication | La **description portée en base** | conforme, et corrigé : elle vient du serveur, pas d'une copie |
+| Colonne **VALEUR** | idem | conforme |
+| Colonne **DERNIÈRE MODIFICATION** : date + *nom de l'administrateur* | Date seule | **écart** — `PlatformParameter` porte `updatedAt`, pas l'auteur. L'auteur est dans l'**historique**, où l'écran le montre |
+| Action **Modifier** | idem, avec valeur, motif obligatoire et impact | conforme |
+| *(absent de la maquette)* | **Historique par paramètre** : ancienne → nouvelle valeur, date, motif | **ajout** — la route existait, aucun écran ne la lisait |
+| Case « **je comprends les conséquences** » (implicite dans « confirmation supplémentaire ») | **Le nombre réel de contrats signés**, ce qui arrive à leurs titulaires, puis une case qui confirme ce fait chiffré | **S5** — famille 4, point 11 |
+| « Un **préavis de 30 jours** leur est légalement dû avant toute application » | « Le changement prend effet **immédiatement** : les effets différés ne sont pas gérés, et le serveur refuse une date future » | famille 2, point 5 — le différé n'est pas absent, il est **activement rejeté** |
+| Phrase de bas de page sur le motif et le journal d'audit | **Remontée en tête**, parce qu'elle conditionne tout ce qui suit | conforme sur le fond |
+
+### Ce que le chantier 14 (E3 — Paramètres métier) a appris
+
+**Une case à cocher n'est pas une information.** « Je comprends les conséquences » demande d'assumer
+sans jamais dire quoi. Le serveur, lui, savait : `updateParameter` renvoie `reissuedCount` — mais
+**après** l'avoir fait. Douze lignes de lecture suffisaient à le savoir avant. L'écran annonce
+maintenant : *« Ce taux figure dans 12 contrats signés. Chacun de ces soignants ne pourra plus
+exercer tant qu'il n'aura pas re-signé. »* La case reste — mais elle confirme un **fait chiffré**, et
+son libellé le reprend : *« Je confirme suspendre l'exercice de 12 soignants. »* *La différence ne
+tient pas à la case, elle tient au texte qui la précède.*
+
+**Le défaut symétrique existe aussi, et il est testé.** Faire hésiter devant un geste sans
+conséquence coûte autant que laisser valider à l'aveugle. Un seul paramètre est porté par le contrat
+(M03 ne lit que PM-01) : changer un délai, un plafond ou un seuil de double validation ne ré-édite
+rien. L'écran le dit — *« ce paramètre n'apparaît pas dans les contrats : le changer ne ré-édite rien
+et ne suspend personne »* — et un test vérifie que la case de confirmation **n'apparaît pas**.
+
+**Le compte doit sélectionner exactement ce que l'action ré-édite.** `impactOf` et
+`reissueSignedAgreements` filtrent tous deux sur `status: VERIFIED` **et** au moins une version
+signée. Un compte plus large annoncerait un dégât supérieur au dégât réel et ferait renoncer à un
+changement légitime ; plus étroit, il ferait valider à l'aveugle. Les deux requêtes sont voisines
+dans le même fichier, et le test copie la règle pour que l'écart se voie.
+
+**Un différé n'est pas absent — il est activement rejeté, et le code dit pourquoi.** Le serveur
+refuse une date d'effet future : *« différé non géré au MVP… pour ne pas mentir sur le contrat »*.
+La maquette promettait « un préavis de 30 jours légalement dû » ; offrir un sélecteur de date aurait
+donc produit une erreur à chaque usage. **Ce n'est pas une limite qu'on contourne, c'est une décision
+qu'on affiche.**
+
+**Deux chantiers, une fonctionnalité.** E3 déclenche l'avenant, C1 le re-signe (chantier 8). Le plan
+l'avait prévu et demandait de les enchaîner — c'est fait. Aucun des deux ne se teste seul : il faut
+changer PM-01 ici, puis constater dans C1 qu'un soignant vérifié ne peut plus exercer et voit
+l'ancien taux à côté du nouveau.
+
 ### Étape 6 — le comparatif bloc à bloc de E2
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
