@@ -388,7 +388,7 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 8ter | **Le dernier titulaire d'un sous-rôle est protégé (01/09).** Rien ne l'empêchait : retirer le dernier administrateur Vérification ou Finance laissait le domaine sans personne. **Et la révocation n'était pas le seul chemin** — `assignAdminRole` fait un *upsert*, donc « Changer le rôle » vidait le sous-rôle tout aussi sûrement ; pire, un SUPER_ADMIN unique pouvait s'attribuer à lui-même un rôle moindre, et comme seul un SUPER_ADMIN attribue des rôles, **plus personne n'aurait jamais pu en attribuer** — administration irréparable sans écrire en base. La garde couvre les deux routes et les quatre rôles ; E4 le dit maintenant AVANT le clic, comme la maquette le prévoyait. 9 tests API + 3 tests web. | ✅ **soldée le 01/09** |
 | 8quater | **L'adresse morte est remplacée par un formulaire (01/09).** `support@ulamu.cg` — domaine ni acheté ni relevé — figurait dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. **Ni acheter un domaine, ni afficher une adresse personnelle** : une table `SupportRequest`, deux routes utilisateur, deux routes d'administration, un onglet « Aide » dans B3 et une file dans E7. **La réponse revient dans l'application** — c'est ce qui distingue un formulaire d'un trou noir, et un trou noir aurait été pire que l'adresse qu'il remplace. `SupportProcedure` trace ce qu'un administrateur a FAIT ; il manquait ce qu'un utilisateur DEMANDE. **8 tests API + 17 tests web.** *(Cette dette portait le même numéro « 8bis » que la précédente ; renumérotée pour lever l'ambiguïté.)* | ✅ **soldée le 01/09** |
 | 9 | **Le lint — soldé le 01/09.** Le constat était faux : `eslint` **tournait** sur mobile et `oxlint` sur le web. C'est l'**API** qui déclarait un script `eslint` sans qu'eslint soit ni installé ni déclaré ni configuré — il n'avait jamais tourné. Passée à `oxlint`, comme le web : **5 avertissements, tous soldés**. Mobile : **13 erreurs, toutes soldées**. Et le script racine, qui prétendait tout couvrir, n'atteignait en fait que l'API — web et mobile sont hors du workspace pnpm par choix ; `lint`, `test` et `build` les appellent désormais explicitement. | ✅ **soldée le 01/09** |
-| 10 | **Alertes `npm audit` — le web est à zéro (01/09), l'API ne l'est pas.** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : **14 alertes de production** (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — et **toutes exigent NestJS 12** alors que le projet est en **NestJS 10**. Deux versions majeures sur une API de 500 fichiers : ce n'est pas un nettoyage, c'est une migration. Une montée dans le majeur courant (10.4.15 → 10.4.22) a été essayée : **elle n'en résout aucune**, elle a donc été annulée. | 🟡 **web soldé · API : à planifier hors chantier** |
+| 10 | **Alertes `npm audit` — TOUT est à zéro (01/09).** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : les 14 alertes de production (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — **sont toutes tombées avec la montée en NestJS 11** (chantier 20). `npm audit` disait « exige NestJS 12 » ; c'était l'avis du résolveur, pas la vérité : **11 suffit**, et 12 s'avère de toute façon inatteignable (voir chantier 20). Les 2 dernières alertes, de développement seulement, sont tombées avec `npm audit fix`. **17 alertes → 0, dev compris.** | ✅ **soldée le 01/09** |
 
 ### Trois dérives documentaires jamais arbitrées
 
@@ -446,6 +446,72 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **18** | **Relecture visuelle des 16 écrans** — 01/09. **Serveur : aucun.** Seize écrans passés en revue à trois largeurs et deux thèmes, dans les quatre états. **Sept défauts trouvés, sept corrigés**, dont deux qu'aucun test n'aurait vus : le **tiroir mobile ne quittait jamais l'écran** (il recouvrait les deux tiers de la page, `inert`, donc muet, sur les seize écrans à la fois) et **aucune limite d'erreur React** n'existait — deux écrans sur seize ont fait page blanche pendant la revue. Ajouté : `GardeFou`, le suivi réel du thème système, un titre et un repère de page sur les quatre écrans d'entrée, et la fin des **comptes affichés à zéro pendant une panne**. **web 402 ✓ · types et lint propres.** | ⏸ en attente | ⏸ |
 
 | **19** | **Les dettes du §9** — 01/09. Treize dettes relues **dans le code**, pas sur parole : trois étaient mal décrites. **Sept soldées.** Le **soignant virtuel** retiré pour de bon (il usurpait l'identité du médecin ; seul `render.yaml` avait bougé le 28/08, le code était intact) · la **protection du dernier titulaire d'un sous-rôle** sur les deux routes qui pouvaient la vider, dont un cas d'administration **irréparable** que la dette ne décrivait pas · le **lint** qui n'avait jamais tourné sur l'API · les **alertes npm du web à zéro** · le **refus de démarrer sans clé de chiffrement valide** · la **spécialité fermée côté serveur** · et `support@ulamu.cg`, adresse morte, **remplacée par un formulaire** — la première migration de schéma de la reconstruction. Reste : cinq gestes du porteur (Render, Neon) et **14 alertes de production sur l'API qui exigent NestJS 12** — constat nouveau. **API 541 ✓ · web 422 ✓ · mobile 7 ✓ · lint racine vert · builds propres.** | ⏸ en attente | ⏸ |
+
+| **20** | **NestJS 10 → 11** — 01/09. Les 14 alertes de sécurité de production **tombent toutes**, et l'audit passe à **0, dev compris** (on partait de 17). `npm audit` réclamait NestJS 12 : **11 suffisait**, et 12 est de toute façon **inatteignable** — `@nestjs/throttler`, dans sa dernière version publiée, ne déclare la compatibilité que jusqu'à 11, et c'est lui qui limite les tentatives sur la route OTP. Le saut emporte **Express 4 → Express 5** (`path-to-regexp` v0.1 → v8), qui réinterprète tous les chemins : les **192 routes ont été relevées avant et après, elles sont identiques au caractère près**. Ajouté : `app.boot.spec.ts`, qui **démarre réellement l'application** — ce qu'aucun des 541 autres tests ne faisait. **API 554 ✓ · lint propre · build propre.** ⚠️ **NestJS 11 exige Node ≥ 20** : vérifier `NODE_VERSION` sur Render avant de pousser. | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 20 (NestJS 10 → 11) a appris
+
+*Mené le 01/09/2026, après la mise en ligne des chantiers 18 et 19.*
+
+#### L'avis de l'outil n'était pas la vérité
+
+`npm audit` annonçait, pour chacune des 14 alertes de production : *« Will install @nestjs/core@12.0.1,
+which is a breaking change »*. On en a conclu — moi le premier — qu'il fallait sauter **deux majeures**
+sur une API de 500 fichiers.
+
+C'était l'avis du résolveur, pas un fait. **NestJS 11 suffit** : les 14 alertes tombent toutes, parce
+qu'elles viennent d'`express`, `qs`, `body-parser`, `path-to-regexp` et `file-type` — des dépendances
+transitives que la 11 avait déjà renouvelées. `npm audit` proposait simplement la dernière version
+disponible, pas la plus petite qui règle le problème.
+
+**Et NestJS 12 est de toute façon hors d'atteinte aujourd'hui.** `@nestjs/throttler`, dans sa
+**dernière version publiée** (6.5.0), déclare `@nestjs/common: ^7 || ^8 || ^9 || ^10 || ^11`. Il n'y
+a pas de throttler pour la 12. Ce n'est pas un détail de compatibilité : c'est lui qui plafonne
+**la route OTP à 5 tentatives par minute**, et il est étendu par une garde maison
+(`UserThrottlerGuard`) qui limite par compte plutôt que par adresse IP. Le forcer avec
+`--legacy-peer-deps` aurait pu casser cette limite **en silence**, sur une API ouverte sur internet.
+On s'arrête donc à la 11 — qui atteint l'objectif entier.
+
+#### Le vrai risque n'était pas Nest, c'était Express
+
+La 11 fait passer `platform-express` d'**Express 4 à Express 5**, donc `path-to-regexp` de la v0.1 à
+la **v8** : la bibliothèque qui interprète `/v1/care-sessions/:sessionId`. Ses jokers ont changé de
+syntaxe (`*` → `*splat`), les paramètres optionnels (`:id?`) ont disparu, et une route mal
+réinterprétée ne casse **aucun test unitaire** — elle rend 404 en production.
+
+Vérification faite avant de toucher quoi que ce soit : **aucun joker, aucun paramètre optionnel,
+aucun middleware personnalisé** dans tout le code. Le seul point sensible était
+`ServeStaticModule` (qui pose un joker interne), monté avec `@nestjs/serve-static` en version
+correspondante.
+
+#### Le filet qu'il a fallu construire d'abord
+
+Les 541 tests existants **ne démarrent jamais Nest** : ils éprouvent des services avec un faux
+Prisma. Aucun n'aurait vu un module mal câblé ou un chemin réinterprété. Il fallait donc autre chose.
+
+`scripts/relever-routes.ts` monte l'arbre Nest avec un **Prisma bouchonné** et imprime la table des
+routes. Pas de vraie base : `DATABASE_URL` désigne la production, et `SchedulerService` porte un
+`@Cron(EVERY_MINUTE)` qui écrit — démarrer l'API pour de vrai ici, c'est la famille d'accident du
+23/08. **192 routes relevées avant, 192 après, identiques au caractère près.**
+
+Le script a d'ailleurs détecté la migration tout seul : Express 4 rangeait la pile de routage dans
+`_router`, Express 5 dans `router`.
+
+Ce relevé est devenu un test permanent — `src/app.boot.spec.ts`. Il **démarre l'application** et
+vérifie que dix routes témoins gardent leur forme exacte, choisies pour ce qu'elles ont de risqué :
+un paramètre simple, un paramètre suivi d'un segment fixe, deux paramètres, un jeton dans l'URL, et
+`/v1/care-sessions/mine` — un segment fixe **en concurrence** avec `:sessionId` au même niveau, qui
+serait avalé si l'ordre d'enregistrement s'inversait.
+
+Il n'exige pas « exactement 192 routes » : un test qu'il faut modifier à chaque route ajoutée finit
+par être modifié sans être lu.
+
+#### Ce qu'il faut savoir avant de pousser
+
+**NestJS 11 exige Node ≥ 20** (`@nestjs/core` le déclare). C'est désormais écrit dans le
+`package.json` de l'API (`engines`), mais npm n'en fait qu'un avertissement : **il faut vérifier
+`NODE_VERSION` dans la console Render**. Si le service est épinglé sur Node 18, le déploiement
+échouera — et, comme pour la clé de chiffrement, l'instance précédente restera en ligne.
 
 ### Ce que le chantier 19 (les dettes) a appris
 
