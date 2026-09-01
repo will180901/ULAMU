@@ -71,6 +71,9 @@ const procedure = (over: Partial<SupportProcedure> = {}): SupportProcedure => ({
 function monter(comptes: AdminAccount[] = [], procedures: SupportProcedure[] = []) {
   vi.spyOn(api, 'searchAccounts').mockResolvedValue(comptes)
   vi.spyOn(api, 'supportProcedures').mockResolvedValue(procedures)
+  // Ajoutée le 01/09 : sans ce double, l'écran part vers une API que le harnais a coupée, et
+  // l'échec accuse un bouton parfaitement correct.
+  if (!vi.isMockFunction(api.adminSupportRequests)) vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([])
   useSessionStore.setState({ token: 'jeton', me: ADMIN, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
@@ -211,6 +214,82 @@ describe('E7 — suspendre, réactiver, bannir', () => {
  * produire, et il est coûteux : un administrateur qui croirait avoir changé un numéro en ouvrant une
  * procédure laisserait la personne sans accès.
  */
+/**
+ * La file des demandes de support (01/09/2026, dette 8quater).
+ *
+ * Elle est la moitié qui manquait : `SupportProcedure` trace ce qu'un ADMINISTRATEUR a fait,
+ * `SupportRequest` porte ce qu'un utilisateur DEMANDE. Sans la seconde, l'application affichait une
+ * adresse de courriel — `support@ulamu.cg` — dont le domaine n'appartient pas au projet.
+ */
+describe('E7 — les demandes de support', () => {
+  const demande = (o: Record<string, unknown> = {}) => ({
+    id: 'req-1',
+    subject: 'PHONE_CHANGE' as const,
+    body: 'J’ai perdu mon téléphone et je ne reçois plus le code.',
+    status: 'OPEN' as const,
+    createdAt: '2026-09-01T08:00:00.000Z',
+    answer: null,
+    answeredAt: null,
+    requesterId: 'p1',
+    requesterName: 'Mireille Bantsimba',
+    requesterPhone: '+242055512470',
+    ...o,
+  })
+
+  it('montre QUI demande : sans le nom ni le numéro, on ne peut pas traiter', async () => {
+    vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([demande()] as never)
+    monter()
+
+    expect(await screen.findByText(/Mireille Bantsimba/)).toBeInTheDocument()
+    // Le numéro surtout : c'est souvent LUI le sujet de la demande.
+    expect(screen.getByText(/\+242055512470/)).toBeInTheDocument()
+  })
+
+  it('répond, et prévient AVANT que la réponse soit définitive', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([demande()] as never)
+    const repondre = vi.spyOn(api, 'answerSupportRequest').mockResolvedValue({ id: 'req-1', status: 'ANSWERED' })
+    monter()
+
+    await utilisateur.click(await screen.findByRole('button', { name: 'Répondre' }))
+
+    // Une réponse ne se réécrit pas : le dire après l'envoi ne servirait plus à rien.
+    expect(screen.getByText(/ne peut plus être modifiée/)).toBeInTheDocument()
+
+    await utilisateur.type(screen.getByLabelText('Votre réponse'), 'Présentez-vous au guichet avec votre CNI.')
+    await utilisateur.click(screen.getByRole('button', { name: 'Envoyer la réponse' }))
+
+    await waitFor(() =>
+      expect(repondre).toHaveBeenCalledWith('req-1', 'Présentez-vous au guichet avec votre CNI.'),
+    )
+  })
+
+  it('n’offre plus de répondre à une demande déjà répondue', async () => {
+    vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([
+      demande({ status: 'ANSWERED', answer: 'C’est réglé.', answeredAt: '2026-09-02T09:00:00.000Z' }),
+    ] as never)
+    monter()
+
+    expect(await screen.findByText('C’est réglé.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Répondre' })).not.toBeInTheDocument()
+  })
+
+  it('file vide : on dit ce qui y arrivera, pas un cadre muet', async () => {
+    vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([])
+    monter()
+
+    expect(await screen.findByText(/Aucune demande en attente/)).toBeInTheDocument()
+  })
+
+  it('lecture en panne : on ne fait pas croire à une file vide', async () => {
+    vi.spyOn(api, 'adminSupportRequests').mockRejectedValue(new Error('boum'))
+    monter()
+
+    // Même règle que partout ailleurs depuis le chantier 18 : une lecture qui échoue n'est pas zéro.
+    expect(await screen.findByText(/Aucune n'est perdue/)).toBeInTheDocument()
+  })
+})
+
 describe('E7 — les procédures support', () => {
   it('dit en permanence qu’elle n’exécute rien', async () => {
     monter()

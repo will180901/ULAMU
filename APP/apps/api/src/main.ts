@@ -2,8 +2,14 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
+import { garderLaCleDeChiffrement } from "./common/crypto/garde-secretbox";
 
 async function bootstrap(): Promise<void> {
+  // AVANT tout le reste : sans clé de chiffrement valide, l'API scellerait pièces, messages et
+  // secrets 2FA avec une clé publique écrite dans les sources, sans un mot. Elle ne démarre pas.
+  // Voir `common/crypto/garde-secretbox.ts` — §8.1 de la procédure, appliqué le 01/09/2026.
+  garderLaCleDeChiffrement();
+
   // bodyParser:false + useBodyParser(...) explicite : Nest enregistre sinon ses propres parsers
   // JSON/urlencoded par défaut (limite Express standard = 100 Ko) AVANT qu'on puisse les reconfigurer —
   // un app.use(json({limit})) posé après create() n'aurait plus la main (le premier parser a déjà

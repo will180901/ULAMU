@@ -12,11 +12,12 @@
  * Cet écran est le seul du lot dont la moitié des blocs n'existaient pas côté serveur le 23/08/2026.
  * Chaque section porte en tête le détail de ce qui a été ajouté et de ce qui reste absent.
  */
-import { KeyRound, MonitorSmartphone, Scale, Settings2, SlidersHorizontal } from 'lucide-react'
+import { KeyRound, LifeBuoy, MonitorSmartphone, Scale, Settings2, SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { SectionLegal } from '../sections/SectionLegal'
 import { SectionPreferences } from '../sections/SectionPreferences'
 import { SectionSecurite } from '../sections/SectionSecurite'
+import { SectionAide } from '../sections/SectionAide'
 import { SectionSessions } from '../sections/SectionSessions'
 import { useSessionStore } from '@/state/session.store'
 import type { MeResponse } from '@/lib/api'
@@ -26,6 +27,12 @@ const SECTIONS = [
   { cle: 'securite', label: 'Sécurité du compte', aide: 'Adresse, mot de passe, 2FA, photo', icone: KeyRound },
   { cle: 'sessions', label: 'Sessions & appareils', aide: 'Postes connectés, clôture', icone: MonitorSmartphone },
   { cle: 'legal', label: 'Langue & mentions légales', aide: 'CGU, confidentialité, version', icone: Scale },
+  /*
+    Ajouté le 01/09/2026 (dette 8quater). Il remplace `support@ulamu.cg`, une adresse dont le
+    domaine n'appartient pas au projet et que personne ne relevait. Les mentions légales et C1
+    pointent ici : une seule page porte la demande ET la réponse.
+  */
+  { cle: 'aide', label: 'Aide', aide: 'Écrire à l’administration, lire sa réponse', icone: LifeBuoy },
 ] as const
 
 type CleSection = (typeof SECTIONS)[number]['cle']
@@ -101,6 +108,7 @@ export function SettingsPage() {
           {active === 'securite' && me ? <SectionSecurite me={me} rafraichir={(m: MeResponse) => setMe(m)} /> : null}
           {active === 'sessions' ? <SectionSessions /> : null}
           {active === 'legal' ? <SectionLegal /> : null}
+          {active === 'aide' ? <SectionAide /> : null}
         </div>
       </div>
     </div>

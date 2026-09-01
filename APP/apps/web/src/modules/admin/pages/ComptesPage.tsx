@@ -44,7 +44,7 @@
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Ban, ClipboardCheck, Plus, Search, ShieldOff, UserCheck, Users } from 'lucide-react'
+import { AlertTriangle, Ban, ClipboardCheck, LifeBuoy, Plus, Search, ShieldOff, UserCheck, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -355,6 +355,170 @@ function NouvelleProcedure({ onFini }: { onFini: () => void }) {
 
 // ── Écran ──────────────────────────────────────────────────────────────────
 
+/**
+ * La file des demandes de support (01/09/2026, dette 8quater).
+ *
+ * ── Pourquoi elle vit ICI ──────────────────────────────────────────────────────────────────────
+ *
+ * Juste à côté des procédures support, et ce n'est pas un rangement de commodité : ce sont les deux
+ * moitiés du même geste. Une demande dit ce qu'un utilisateur veut ; une procédure trace ce qu'un
+ * administrateur a fait. Elles partagent jusqu'aux mêmes catégories — d'où le fait qu'une demande
+ * « j'ai perdu mon numéro » désigne directement la procédure `PHONE_CHANGE` d'en face.
+ *
+ * ── Ce que répondre fait, et ne fait pas ───────────────────────────────────────────────────────
+ *
+ * Répondre n'agit sur rien : ni un numéro, ni un dossier, ni un compte. C'est une parole rendue.
+ * L'effet réel passe par la procédure du module propriétaire (RM-16-01) — celle d'à côté. Un
+ * administrateur qui répond « c'est fait » sans l'avoir fait laisse les deux traces contradictoires,
+ * et c'est exactement ce qu'un journal d'audit sert à montrer.
+ */
+function DemandesDeSupport() {
+  const [onglet, setOnglet] = useState<'OPEN' | 'ANSWERED'>('OPEN')
+  const [ouverte, setOuverte] = useState<string | null>(null)
+  const [reponse, setReponse] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const qc = useQueryClient()
+
+  const demandes = useQuery({
+    queryKey: ['admin-support-requests', onglet],
+    queryFn: () => api.adminSupportRequests(onglet),
+    retry: false,
+  })
+
+  const repondre = useMutation({
+    mutationFn: (id: string) => api.answerSupportRequest(id, reponse.trim()),
+    onSuccess: () => {
+      setOuverte(null)
+      setReponse('')
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-support-requests'] })
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  const liste = demandes.data ?? []
+
+  return (
+    <Carte
+      icone={LifeBuoy}
+      titre="Demandes de support"
+      sousTitre="Ce que les utilisateurs écrivent — la réponse leur revient dans l'application"
+      action={
+        <Segments
+          label="Filtrer les demandes"
+          valeur={onglet}
+          onChange={setOnglet}
+          options={[
+            { cle: 'OPEN' as const, label: 'À traiter' },
+            { cle: 'ANSWERED' as const, label: 'Répondues' },
+          ]}
+        />
+      }
+    >
+      {demandes.isPending ? (
+        <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
+          <Spinner className="size-3.5" /> Lecture…
+        </p>
+      ) : demandes.isError ? (
+        <Avis ton="erreur">
+          Les demandes n'ont pas pu être lues. Aucune n'est perdue : elles attendent côté serveur.
+        </Avis>
+      ) : liste.length === 0 ? (
+        <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
+          {onglet === 'OPEN'
+            ? "Aucune demande en attente. Celles qui arrivent apparaissent ici."
+            : 'Aucune demande répondue pour l’instant.'}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {liste.map((d) => (
+            <li key={d.id} className="rounded-md border border-border p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-medium text-foreground">
+                    {PROCEDURES[d.subject]?.titre ?? d.subject}
+                  </span>
+                  {/*
+                    Le nom ET le numéro : sans eux, impossible de rappeler quelqu'un dont c'est
+                    justement le numéro qui pose problème.
+                  */}
+                  <span className="block font-mono text-[11px] text-[var(--texte-tertiaire)]">
+                    {d.requesterName ?? 'Compte sans profil'} · {d.requesterPhone ?? '—'}
+                  </span>
+                </span>
+                <Pilule ton={d.status === 'ANSWERED' ? 'succes' : 'alerte'}>
+                  {d.status === 'ANSWERED' ? 'Répondue' : 'À traiter'}
+                </Pilule>
+              </div>
+
+              <p className="mt-2 text-[12px] leading-[1.6] whitespace-pre-wrap text-[var(--texte-secondaire)]">
+                {d.body}
+              </p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                {dateFr(d.createdAt)}
+              </p>
+
+              {d.answer ? (
+                <div className="mt-2.5 rounded-md border-l-2 border-[var(--ap-400)] bg-secondary p-2.5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                    Réponse envoyée · {d.answeredAt ? dateFr(d.answeredAt) : '—'}
+                  </p>
+                  <p className="mt-1 text-[12px] leading-[1.6] whitespace-pre-wrap text-foreground">{d.answer}</p>
+                </div>
+              ) : ouverte === d.id ? (
+                <div className="mt-2.5 flex flex-col gap-2">
+                  <Label htmlFor={`reponse-${d.id}`}>Votre réponse</Label>
+                  <Textarea
+                    id={`reponse-${d.id}`}
+                    rows={4}
+                    value={reponse}
+                    maxLength={4000}
+                    onChange={(e) => setReponse(e.target.value)}
+                    placeholder="Elle s'affichera telle quelle dans l'application du demandeur."
+                  />
+                  {/* Une réponse ne se réécrit pas : elle aura été lue. Le dire AVANT l'envoi. */}
+                  <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                    Une fois envoyée, la réponse clôt la demande et ne peut plus être modifiée.
+                  </p>
+                  {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+                  <span className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => repondre.mutate(d.id)}
+                      disabled={reponse.trim().length < 3 || repondre.isPending}
+                    >
+                      {repondre.isPending ? 'Envoi…' : 'Envoyer la réponse'}
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setOuverte(null)}>
+                      Annuler
+                    </Button>
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setOuverte(d.id)
+                      setReponse('')
+                      setErreur(null)
+                    }}
+                  >
+                    Répondre
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Carte>
+  )
+}
+
 export function ComptesPage() {
   const [terme, setTerme] = useState('')
   const [recherche, setRecherche] = useState('')
@@ -555,6 +719,10 @@ export function ComptesPage() {
             exige un motif, inscrit au journal d'audit et notifié au titulaire.
           </p>
         </Carte>
+      </div>
+
+      <div className="mt-4">
+        <DemandesDeSupport />
       </div>
 
       <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">

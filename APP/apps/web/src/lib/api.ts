@@ -980,6 +980,34 @@ export interface SupportProcedure {
   completedAt: string | null
 }
 
+/**
+ * Demande d'aide écrite par un utilisateur (01/09/2026).
+ *
+ * Elle remplace `support@ulamu.cg`, une adresse dont le domaine n'appartient pas au projet et que
+ * personne ne relevait. Le `subject` reprend les catégories des procédures support : une demande
+ * « j'ai perdu mon numéro » désigne directement la procédure guidée qui la traitera.
+ *
+ * ⚠️ À ne pas confondre avec `SupportProcedure` : celle-là est ce qu'un ADMINISTRATEUR a fait,
+ * celle-ci est ce qu'un utilisateur DEMANDE.
+ */
+export interface SupportRequest {
+  id: string
+  subject: SupportProcedureType
+  body: string
+  status: 'OPEN' | 'ANSWERED'
+  createdAt: string
+  /** La réponse se lit ICI — pas dans un courriel. C'est toute la raison d'être de cet objet. */
+  answer: string | null
+  answeredAt: string | null
+}
+
+/** La même, vue de l'administration : sans le nom ni le numéro, on ne peut pas traiter. */
+export interface AdminSupportRequest extends SupportRequest {
+  requesterId: string
+  requesterName: string | null
+  requesterPhone: string | null
+}
+
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
 
 /** Machine d'états du dossier, côté serveur (m03.policies). */
@@ -1175,7 +1203,12 @@ export const api = {
     request<{ category: string; enabled: boolean }>('PUT', '/v1/notifications/me/preferences', dto, true),
 
   // M05 — vitrine, offres, présence
-  updateMyProfessionalProfile: (dto: { specialty?: string; biography?: string; district?: string }) =>
+  /**
+   * ⚠️ Plus de `specialty` (01/09/2026) : le serveur la REFUSE désormais en 400 — elle est établie
+   * par le contrôle des pièces, pas déclarée par son titulaire (dette 8bis). La laisser dans ce
+   * type inviterait à l'envoyer, et l'appel entier échouerait pour ce seul champ.
+   */
+  updateMyProfessionalProfile: (dto: { biography?: string; district?: string }) =>
     request<MeResponse>('PATCH', '/v1/me/professional-profile', dto, true),
   myOffers: () => request<Offer[]>('GET', '/v1/offers', undefined, true),
   /** Bornes PM-09/PM-06/PM-25 — annoncées AVANT la saisie, jamais écrites dans la page. */
@@ -1565,6 +1598,24 @@ export const api = {
    * ⚠️ RM-16-01 : M16 **guide et journalise, il n'agit pas**. Ouvrir une procédure n'exécute
    * rien — elle trace ce qu'un administrateur a fait par ailleurs. L'écran doit le dire.
    */
+  /** Écrire à l'administration — tout compte authentifié, sans condition (dette 8quater). */
+  createSupportRequest: (dto: { subject: SupportProcedureType; body: string }) =>
+    request<{ requestId: string }>('POST', '/v1/support-requests', dto, true),
+  /** Mes demandes et leurs réponses. */
+  mySupportRequests: () => request<SupportRequest[]>('GET', '/v1/support-requests/mine', undefined, true),
+
+  /** La file d'administration — ouvertes d'abord, plus anciennes en tête. */
+  adminSupportRequests: (status?: 'OPEN' | 'ANSWERED') =>
+    request<AdminSupportRequest[]>(
+      'GET',
+      `/v1/admin/support-requests${status ? `?status=${status}` : ''}`,
+      undefined,
+      true,
+    ),
+  /** Répondre clôt la demande : il n'y a pas d'aller-retour au MVP. */
+  answerSupportRequest: (id: string, answer: string) =>
+    request<{ id: string; status: 'ANSWERED' }>('POST', `/v1/admin/support-requests/${id}/answer`, { answer }, true),
+
   supportProcedures: (q: { type?: SupportProcedureType; status?: SupportProcedureStatus } = {}) => {
     const p = new URLSearchParams()
     if (q.type) p.set('type', q.type)

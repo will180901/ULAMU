@@ -69,7 +69,8 @@ import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
-import { EMAIL_SUPPORT } from '@/config/contact.config'
+import { Link } from 'react-router-dom'
+import { routeAide } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
@@ -854,19 +855,19 @@ export function VerificationPage() {
               dossier traité. Vous serez prévenu par notification dès qu'une décision est prise — il
               n'y a rien à relancer.
             </p>
+            {/*
+              Le bouton ouvrait un `mailto:` vers `support@ulamu.cg` — un domaine qui n'appartient
+              pas au projet, donc une adresse que personne ne relevait. Il mène désormais au
+              formulaire de B3, où la RÉPONSE s'affiche aussi. Corrigé le 01/09/2026 (dette 8quater).
+            */}
             <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
               ULAMU n'a pas de messagerie interne : les échanges n'existent que pendant une
-              consultation. Pour joindre l'administration, écrivez-lui par courriel.
+              consultation. Pour joindre l'administration, écrivez-lui depuis vos paramètres — la
+              réponse s'affichera au même endroit.
             </p>
             <div>
               <Button asChild size="sm" variant="outline">
-                <a
-                  href={`mailto:${EMAIL_SUPPORT}?subject=${encodeURIComponent(
-                    `Dossier de vérification ${d.caseId.slice(0, 8).toUpperCase()}`,
-                  )}`}
-                >
-                  Écrire à l'administration
-                </a>
+                <Link to={routeAide('OTHER')}>Écrire à l'administration</Link>
               </Button>
             </div>
           </Carte>

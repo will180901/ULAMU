@@ -27,7 +27,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Globe, Info, Lock, ScrollText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Avis, Carte } from '@/components/ulamu/parts'
-import { EMAIL_SUPPORT, PAYS_DE_SERVICE } from '@/config/contact.config'
+import { Link } from 'react-router-dom'
+import { ROUTE_AIDE, PAYS_DE_SERVICE } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 
 /** Textes de la maquette — ils sont le contenu produit, pas de l'habillage. */
@@ -115,9 +116,18 @@ export function SectionLegal() {
             <dt className="text-[var(--texte-tertiaire)]">Hébergement des données</dt>
             <dd className="text-foreground">Francfort, Allemagne</dd>
           </div>
+          {/*
+            Ici figurait `support@ulamu.cg` — une adresse dont le domaine n'appartient pas au projet,
+            que personne ne relevait, sur un texte accepté à l'inscription et valant donc preuve.
+            Un lien vers le formulaire est la seule ligne qui soit vraie sans rien acheter.
+          */}
           <div className="flex justify-between gap-4">
             <dt className="text-[var(--texte-tertiaire)]">Support</dt>
-            <dd className="text-foreground">{EMAIL_SUPPORT}</dd>
+            <dd className="text-foreground">
+              <Link to={ROUTE_AIDE} className="underline underline-offset-2">
+                Écrire à l’administration
+              </Link>
+            </dd>
           </div>
           {/*
             L'identifiant du compte, que la maquette écrit « USR-2026-00312 ». Ce format n'existe

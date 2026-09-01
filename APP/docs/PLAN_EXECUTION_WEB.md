@@ -381,12 +381,12 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 3 | **Comptes de démonstration** — `dr.nouveau`, `dr.armel`, `dr.solange`, `dr.firmin`, `patient.demo`, `pharma.demo`, tous en `demo1234`, dans `prisma/seed.ts`. `SEED_DEMO=false` empêche de les recréer ; ceux **déjà en base** ne partent pas tout seuls. | 🔴 **geste porteur** : les supprimer ou les bannir depuis E7 |
 | 4 | **`ADMIN_REQUIRE_TOTP=false` sur Render** — RM-01-06 levée sur une API exposée. Le code vaut `true` par défaut : **retirer la ligne suffit**. | 🔴 **geste porteur** (une ligne dans la console Render) |
 | 5 | **`SECRETBOX_KEY` sans sauvegarde** — perdue = pièces justificatives, messages et secrets 2FA définitivement illisibles. Procédure écrite le 25/08 (`procedure_sauvegarde_SECRETBOX_KEY.md`), et le code ne ment plus. **Les copies hors ligne restent à faire.** | 🟡 **geste porteur**, outillé |
-| 6 | **Garde-fou de démarrage sur `SECRETBOX_KEY`** — §8.1 de la procédure, volontairement non appliqué : il changerait une dégradation invisible en indisponibilité totale. | ⏸ **à trancher** |
+| 6 | **Garde-fou de démarrage sur `SECRETBOX_KEY` — APPLIQUÉ le 01/09.** Sans clé valide, l'API scellait pièces, messages et secrets 2FA avec `sha256("ulamu-dev-secretbox")`, **une valeur écrite en clair dans les sources**, sans un mot : ce qui était scellé avec la vraie clé devenait illisible, et ce qui l'était ensuite ne protégeait plus rien. L'objection — « une panne partielle vaut mieux qu'une panne totale » — ne tenait pas : l'hébergeur **garde l'instance précédente** quand un démarrage échoue, donc un mauvais déploiement ne remplace rien ; et sans la clé, ULAMU n'est de toute façon pas utilisable (la connexion admin exige le TOTP, dont le secret est scellé). Le garde-fou ne s'applique qu'en production et dit quoi faire. **12 tests.** ⚠️ **Vérifiez la variable sur Render AVANT de pousser** : c'est le seul changement de ce chantier qui peut empêcher un déploiement de démarrer. | ✅ **soldée le 01/09** |
 | 7 | **Hébergement hors du Congo** — la phrase est corrigée dans B3 (le pays desservi est distingué du pays d'hébergement). Ce qui reste n'est pas du ressort du code : héberger des données de santé congolaises hors du Congo peut exiger une base légale de transfert. | 🟡 hors code |
 | 8 | **Tests d'intégration API à l'arrêt** — il manque une **branche Neon de test** et son `TEST_DATABASE_URL`. Tout le reste est prêt : le garde-fou `test/garde-base-de-test.ts` refuse de démarrer sans elle (et refuse aussi qu'on y recopie l'URL de production — le geste exact qui a effacé la base le 23/08), et `.env.example` porte la ligne à remplir. Deux clics dans la console Neon, gratuits. `npm run test:unit` reste disponible entre-temps : les 520 tests unitaires ne touchent aucune base. | 🔴 **geste porteur**, entièrement préparé |
-| 8bis | **La spécialité reste modifiable côté serveur** — C2 l'affiche en lecture seule (arbitrage du 27/08 : le Badge Vérifié atteste d'une qualification contrôlée par pièces), mais `PATCH /v1/me/professional-profile` accepte toujours le champ `specialty`. **Un écran ne ferme pas une porte.** La fermer demande un chemin administratif pour les corrections légitimes — qui n'existe pas encore. | ⏸ **à trancher** |
+| 8bis | **La spécialité ne se déclare plus (01/09).** Le Badge Vérifié atteste d'une qualification **contrôlée sur pièces** ; tant que son titulaire pouvait réécrire sa spécialité, il n'attestait de rien — il suffisait d'être vérifié « généraliste » puis de se déclarer cardiologue. C2 l'affichait en lecture seule depuis le 27/08, mais **un écran ne ferme pas une porte** : la route restait ouverte à qui l'appelait directement. Le champ est retiré du DTO — le pipe global répond **400**, l'appel est refusé et non ignoré en silence — et retiré aussi du service, pour qu'aucun appel interne futur ne le réintroduise. Fermer ne prive personne : l'écran ne le proposait déjà plus. | ✅ **soldée le 01/09** · 📌 **dette née en échange** : une correction LÉGITIME n'a plus de chemin. Elle en demande un, administratif et journalisé, dans E7 |
 | 8ter | **Le dernier titulaire d'un sous-rôle est protégé (01/09).** Rien ne l'empêchait : retirer le dernier administrateur Vérification ou Finance laissait le domaine sans personne. **Et la révocation n'était pas le seul chemin** — `assignAdminRole` fait un *upsert*, donc « Changer le rôle » vidait le sous-rôle tout aussi sûrement ; pire, un SUPER_ADMIN unique pouvait s'attribuer à lui-même un rôle moindre, et comme seul un SUPER_ADMIN attribue des rôles, **plus personne n'aurait jamais pu en attribuer** — administration irréparable sans écrire en base. La garde couvre les deux routes et les quatre rôles ; E4 le dit maintenant AVANT le clic, comme la maquette le prévoyait. 9 tests API + 3 tests web. | ✅ **soldée le 01/09** |
-| 8quater | **`support@ulamu.cg` n'existe pas** — le domaine n'appartient pas au projet (l'application vit sur `onrender.com`). L'adresse est affichée dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. Même famille d'erreur que le « hébergées au Congo-Brazzaville ». Centralisée dans `src/config/contact.config.ts` : **une ligne à changer**. *(Cette dette portait le même numéro « 8bis » que la précédente ; renumérotée ici pour lever l'ambiguïté.)* | ⏸ **à trancher** |
+| 8quater | **L'adresse morte est remplacée par un formulaire (01/09).** `support@ulamu.cg` — domaine ni acheté ni relevé — figurait dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. **Ni acheter un domaine, ni afficher une adresse personnelle** : une table `SupportRequest`, deux routes utilisateur, deux routes d'administration, un onglet « Aide » dans B3 et une file dans E7. **La réponse revient dans l'application** — c'est ce qui distingue un formulaire d'un trou noir, et un trou noir aurait été pire que l'adresse qu'il remplace. `SupportProcedure` trace ce qu'un administrateur a FAIT ; il manquait ce qu'un utilisateur DEMANDE. **8 tests API + 17 tests web.** *(Cette dette portait le même numéro « 8bis » que la précédente ; renumérotée pour lever l'ambiguïté.)* | ✅ **soldée le 01/09** |
 | 9 | **Le lint — soldé le 01/09.** Le constat était faux : `eslint` **tournait** sur mobile et `oxlint` sur le web. C'est l'**API** qui déclarait un script `eslint` sans qu'eslint soit ni installé ni déclaré ni configuré — il n'avait jamais tourné. Passée à `oxlint`, comme le web : **5 avertissements, tous soldés**. Mobile : **13 erreurs, toutes soldées**. Et le script racine, qui prétendait tout couvrir, n'atteignait en fait que l'API — web et mobile sont hors du workspace pnpm par choix ; `lint`, `test` et `build` les appellent désormais explicitement. | ✅ **soldée le 01/09** |
 | 10 | **Alertes `npm audit` — le web est à zéro (01/09), l'API ne l'est pas.** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : **14 alertes de production** (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — et **toutes exigent NestJS 12** alors que le projet est en **NestJS 10**. Deux versions majeures sur une API de 500 fichiers : ce n'est pas un nettoyage, c'est une migration. Une montée dans le majeur courant (10.4.15 → 10.4.22) a été essayée : **elle n'en résout aucune**, elle a donc été annulée. | 🟡 **web soldé · API : à planifier hors chantier** |
 
@@ -445,7 +445,7 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **18** | **Relecture visuelle des 16 écrans** — 01/09. **Serveur : aucun.** Seize écrans passés en revue à trois largeurs et deux thèmes, dans les quatre états. **Sept défauts trouvés, sept corrigés**, dont deux qu'aucun test n'aurait vus : le **tiroir mobile ne quittait jamais l'écran** (il recouvrait les deux tiers de la page, `inert`, donc muet, sur les seize écrans à la fois) et **aucune limite d'erreur React** n'existait — deux écrans sur seize ont fait page blanche pendant la revue. Ajouté : `GardeFou`, le suivi réel du thème système, un titre et un repère de page sur les quatre écrans d'entrée, et la fin des **comptes affichés à zéro pendant une panne**. **web 402 ✓ · types et lint propres.** | ⏸ en attente | ⏸ |
 
-| **19** | **Les dettes du §9** — 01/09. Treize dettes relues **dans le code**, pas sur parole : trois étaient mal décrites. Soldé : le **soignant virtuel** retiré pour de bon (il usurpait l'identité du médecin ; seul `render.yaml` avait bougé le 28/08, le code était intact), la **protection du dernier titulaire d'un sous-rôle** sur les deux routes qui pouvaient la vider — dont un cas d'administration **irréparable** que la dette ne décrivait pas —, le **lint** qui n'avait jamais tourné sur l'API, et les **alertes npm du web ramenées à zéro** par une montée de patch. Reste : cinq gestes du porteur (Render, Neon), trois arbitrages, et **14 alertes de production sur l'API qui exigent NestJS 12** — constat nouveau. **API 520 ✓ · web 405 ✓ · mobile 7 ✓ · lint racine vert · builds propres.** | ⏸ en attente | ⏸ |
+| **19** | **Les dettes du §9** — 01/09. Treize dettes relues **dans le code**, pas sur parole : trois étaient mal décrites. **Sept soldées.** Le **soignant virtuel** retiré pour de bon (il usurpait l'identité du médecin ; seul `render.yaml` avait bougé le 28/08, le code était intact) · la **protection du dernier titulaire d'un sous-rôle** sur les deux routes qui pouvaient la vider, dont un cas d'administration **irréparable** que la dette ne décrivait pas · le **lint** qui n'avait jamais tourné sur l'API · les **alertes npm du web à zéro** · le **refus de démarrer sans clé de chiffrement valide** · la **spécialité fermée côté serveur** · et `support@ulamu.cg`, adresse morte, **remplacée par un formulaire** — la première migration de schéma de la reconstruction. Reste : cinq gestes du porteur (Render, Neon) et **14 alertes de production sur l'API qui exigent NestJS 12** — constat nouveau. **API 541 ✓ · web 422 ✓ · mobile 7 ✓ · lint racine vert · builds propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 19 (les dettes) a appris
 
@@ -482,7 +482,9 @@ fichier.** Le §9 porte désormais la date de sa dernière vérification.
 #### Ce qui reste, et à qui
 
 **Cinq gestes qui n'appartiennent qu'au porteur** — ils touchent la console Render, la console Neon
-ou la base en ligne, et aucun code ne peut les faire à sa place :
+ou la base en ligne, et aucun code ne peut les faire à sa place. ⚠️ **Le premier déploiement après
+ce chantier refusera de démarrer si `SECRETBOX_KEY` n'est pas valide sur Render** : c'est le
+garde-fou demandé, mais vérifiez la variable avant de pousser.
 
 1. **Changer le mot de passe du super-administrateur en ligne** et activer son TOTP (dette 1).
 2. **Retirer `ADMIN_REQUIRE_TOTP=false`** de Render — une ligne (dette 4).
@@ -493,8 +495,50 @@ ou la base en ligne, et aucun code ne peut les faire à sa place :
    prêt autour : le garde-fou refuse de démarrer sans elle, et refuse aussi qu'on y recopie l'URL de
    production — le geste exact qui a effacé la base le 23/08.
 
-**Trois arbitrages** (dettes 6, 8bis, 8quater), posés au porteur avec leur coût réel et une
-recommandation argumentée.
+#### Les trois arbitrages, tranchés le jour même
+
+| Dette | Décision du porteur | Ce que ça a coûté |
+|---|---|---|
+| **6** — garde-fou `SECRETBOX_KEY` | **Refuser de démarrer** sans clé valide | `common/crypto/garde-secretbox.ts` + un appel en tête de `bootstrap()`, 12 tests. ⚠️ **Vérifier la variable sur Render avant de pousser** : c'est le seul changement de ce chantier capable d'empêcher un déploiement de démarrer. C'est précisément ce qu'on lui demande — mais autant le savoir avant. |
+| **8bis** — spécialité | **Fermer la porte côté serveur** | 3 lignes de moins dans le DTO et le service. Le pipe global (`forbidNonWhitelisted`) répond 400 : l'appel est refusé, pas ignoré. Une correction légitime n'a plus de chemin — dette assumée et inscrite. |
+| **8quater** — `support@ulamu.cg` | **Un formulaire dans l'application** | La plus grosse pièce du chantier, et de loin. Voir ci-dessous. |
+
+#### La dette qui s'est révélée être un chantier
+
+L'option retenue pour `support@ulamu.cg` était décrite comme « ~1 écran + 1 route ». En ouvrant le
+code, elle en valait davantage — et l'énoncé que j'avais proposé était inexact sur un point qui
+comptait : **« un formulaire qui crée un signalement traité en E6 » ne tient pas.** Un signalement
+vise QUELQU'UN (`targetType`, `targetId`) et se solde par une décision de modération : rejeter,
+avertir, transmettre. « J'ai perdu mon numéro » n'est aucune de ces choses, et la file d'E6 est
+triée par **gravité d'un manquement**. Y verser des demandes d'aide aurait abîmé les deux.
+
+Ce qui manquait était ailleurs, et plus simple à voir une fois nommé : `SupportProcedure` existait
+déjà, mais c'est la trace de ce qu'un **administrateur a fait** — `executedBy` y est obligatoire.
+Rien ne portait ce qu'un **utilisateur demande**. Les deux moitiés d'un même geste, et la première
+n'existait pas. D'où :
+
+- **Une table `SupportRequest`** et sa migration — **la première migration de schéma depuis le début
+  de la reconstruction**. Purement additive, écrite à la main : `prisma migrate dev` aurait visé la
+  base Neon de production, exactement le chemin qui l'a effacée le 23/08. Render joue
+  `migrate deploy` au déploiement.
+- **Son sujet réutilise `SupportProcedureType`** : une demande « j'ai perdu mon numéro »
+  (`PHONE_CHANGE`) désigne directement la procédure guidée qui la traitera. Les deux moitiés parlent
+  la même langue.
+- **Quatre routes** : deux pour l'utilisateur (déposer, relire ses demandes ET les réponses), deux
+  pour l'administration (la file, répondre). Aucun sous-rôle pour écrire : c'est précisément quand
+  plus rien d'autre ne marche qu'on a besoin d'écrire.
+- **Un onglet « Aide » dans B3**, où les mentions légales et C1 mènent désormais. **La réponse s'y
+  affiche** — sans ce chemin de retour, le formulaire vaudrait moins que l'adresse morte qu'il
+  remplace : avec une adresse, on sait au moins qu'on n'a pas eu de réponse.
+- **Une file dans E7**, à côté des procédures support, avec le nom ET le numéro du demandeur — sans
+  eux on ne peut pas rappeler quelqu'un dont c'est justement le numéro qui pose problème.
+
+Ni le corps de la demande ni le texte de la réponse ne partent au journal d'audit, seulement le
+sujet — même règle que pour les signalements (RM-04-03). Une demande de support raconte souvent ce
+qui va mal chez quelqu'un, et le journal est en insertion seule : ce qui y entre n'en sort plus.
+
+Et une chose que répondre ne fait **pas** : agir. Ni sur un numéro, ni sur un dossier, ni sur un
+compte. L'effet réel passe par la procédure du module propriétaire (RM-16-01) — celle d'à côté.
 
 **Un constat nouveau, hors chantier** : les **14 alertes de production de l'API** exigent NestJS 12
 alors que le projet est en NestJS 10. Deux majeures sur une API de 500 fichiers — c'est une

@@ -101,10 +101,17 @@ export class OffersService {
 
   // ── EF-05-01 : profil public (bio/spécialité/arrondissement) ────────────────
 
-  /** Modifie mon profil public — M01 (updateMyProfile/setAvatar) est réservé aux comptes patients. */
+  /**
+   * Modifie mon profil public — M01 (updateMyProfile/setAvatar) est réservé aux comptes patients.
+   *
+   * La **spécialité n'en fait plus partie** (01/09/2026, dette 8bis) : elle est établie par le
+   * contrôle des pièces, pas déclarée par son titulaire. Le DTO la refuse déjà à l'entrée ; elle
+   * est retirée d'ici aussi, pour qu'aucun appel interne futur ne la réintroduise par mégarde.
+   * La valeur reste LUE et rendue — c'est l'écriture qui est fermée, pas la lecture.
+   */
   async updateMyProfile(
     actor: AuthenticatedActor,
-    dto: { specialty?: string; biography?: string; district?: string },
+    dto: { biography?: string; district?: string },
   ): Promise<{ specialty: string | null; biography: string | null; district: string | null }> {
     if (actor.accountType !== "PROFESSIONAL") {
       throw new ForbiddenException("Action réservée aux professionnels de santé (EF-05-01)");
@@ -112,7 +119,6 @@ export class OffersService {
     const updated = await this.prisma.professionalProfile.update({
       where: { accountId: actor.accountId },
       data: {
-        ...(dto.specialty !== undefined ? { specialty: dto.specialty } : {}),
         ...(dto.biography !== undefined ? { biography: dto.biography } : {}),
         ...(dto.district !== undefined ? { district: dto.district } : {}),
       },

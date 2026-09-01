@@ -57,6 +57,28 @@ export class CompleteSupportProcedureDto {
   @IsArray() @Type(() => SupportStepDto) steps!: SupportStepDto[];
 }
 
+/**
+ * Écrire à l'administration (01/09/2026, dette 8quater).
+ *
+ * `subject` reprend les catégories de `SupportProcedureType` : la demande désigne ainsi directement
+ * la procédure guidée qui la traitera. 2000 caractères, comme les motifs d'administration — au-delà
+ * personne ne lit, et une demande qu'on ne lit pas ne sert à rien.
+ */
+export class CreateSupportRequestDto {
+  @IsIn(SUPPORT_PROCEDURE_TYPES) subject!: SupportProcedureTypeCode;
+  @IsString() @IsNotEmpty({ message: "Décrivez votre demande" }) @MinLength(10, { message: "Décrivez votre demande en quelques mots (10 caractères minimum)" }) @MaxLength(2000) body!: string;
+}
+
+/** La réponse de l'administration — elle se lit dans l'application, jamais dans un courriel. */
+export class AnswerSupportRequestDto {
+  @IsString() @IsNotEmpty({ message: "Une réponse vide n'en est pas une" }) @MinLength(3) @MaxLength(4000) answer!: string;
+}
+
+/** Filtre de la file des demandes de support. */
+export class ListSupportRequestsQueryDto {
+  @IsOptional() @IsIn(["OPEN", "ANSWERED"] as const) status?: "OPEN" | "ANSWERED";
+}
+
 /** Annulation motivée d'une procédure support. */
 export class CancelSupportProcedureDto {
   @IsString() @IsNotEmpty({ message: "Motif obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) reason!: string;

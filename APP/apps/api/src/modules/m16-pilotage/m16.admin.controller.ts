@@ -13,9 +13,11 @@ import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { AdminService } from "./m16.admin.service";
 import {
+  AnswerSupportRequestDto,
   CancelSupportProcedureDto,
   CompleteSupportProcedureDto,
   ListSupportProceduresQueryDto,
+  ListSupportRequestsQueryDto,
   MotiveDto,
   OpenSupportProcedureDto,
   ResolveStrikeDto,
@@ -23,6 +25,7 @@ import {
   UpdateParameterDto,
 } from "./m16.dto";
 import { ParametersService } from "./m16.parameters.service";
+import { SupportRequestService } from "./m16.support-requests.service";
 import { SupportProcedureService } from "./m16.support.service";
 
 @Controller("v1/admin")
@@ -32,6 +35,7 @@ export class M16AdminController {
     private readonly admin: AdminService,
     private readonly parameters: ParametersService,
     private readonly support: SupportProcedureService,
+    private readonly supportRequests: SupportRequestService,
   ) {}
 
   // ── Comptes & sanctions (EF-16-03/07) ────────────────────────────────────────
@@ -162,6 +166,30 @@ export class M16AdminController {
 
   /** Liste filtrée des procédures support. */
   @AdminOnly(AdminRole.ADMIN_VERIFICATION)
+  /*
+    ── Les demandes de support (01/09/2026, dette 8quater) ───────────────────────────────────────
+
+    Mêmes habilitations que les procédures support : ce sont deux moitiés du même geste — l'une est
+    ce qu'on demande, l'autre ce qu'un administrateur fait. Répondre n'exerce aucun pouvoir sur un
+    compte : l'effet réel passe toujours par la procédure du module propriétaire (RM-16-01).
+  */
+  @AdminOnly(AdminRole.SUPER_ADMIN, AdminRole.ADMIN_VERIFICATION)
+  @Get("support-requests")
+  listSupportRequests(@Query() q: ListSupportRequestsQueryDto) {
+    return this.supportRequests.list(q.status);
+  }
+
+  @AdminOnly(AdminRole.SUPER_ADMIN, AdminRole.ADMIN_VERIFICATION)
+  @Post("support-requests/:id/answer")
+  @HttpCode(200)
+  answerSupportRequest(
+    @Actor() actor: AuthenticatedActor,
+    @Param("id") id: string,
+    @Body() dto: AnswerSupportRequestDto,
+  ) {
+    return this.supportRequests.answer(actor.accountId, id, dto.answer);
+  }
+
   @Get("support-procedures")
   listProcedures(@Query() query: ListSupportProceduresQueryDto) {
     return this.support.listProcedures(query);

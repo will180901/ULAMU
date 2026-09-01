@@ -3,19 +3,46 @@
  * AuthGuard global : tout est authentifié. Les tableaux de bord personnels vérifient l'accès
  * serveur (chacun ne voit que le sien). Les KPIs du pilote sont réservés à l'Équipe ULAMU.
  */
-import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { DashboardService } from "./m16.dashboard.service";
+import { CreateSupportRequestDto } from "./m16.dto";
 import { PilotKpiService } from "./m16.kpi.service";
+import { SupportRequestService } from "./m16.support-requests.service";
 
 @Controller("v1")
 export class M16ReadController {
   constructor(
     private readonly dashboards: DashboardService,
     private readonly kpis: PilotKpiService,
+    private readonly supportRequests: SupportRequestService,
   ) {}
+
+  /*
+    ── Écrire à l'administration (01/09/2026, dette 8quater) ─────────────────────────────────────
+
+    Ces deux routes remplacent une adresse de courriel — `support@ulamu.cg` — dont le domaine
+    n'appartient pas au projet. Elle figurait dans les mentions légales, acceptées à l'inscription
+    et valant donc preuve : on promettait une voie de contact qui ne menait nulle part.
+
+    Aucun sous-rôle, aucune condition : **tout compte authentifié écrit**. C'est précisément quand
+    plus rien d'autre ne marche qu'on a besoin d'écrire — un dossier bloqué, un numéro perdu.
+  */
+
+  /** Déposer une demande. Renvoie son identifiant : l'accusé de réception est immédiat. */
+  @Post("support-requests")
+  @HttpCode(201)
+  createSupportRequest(@Actor() actor: AuthenticatedActor, @Body() dto: CreateSupportRequestDto) {
+    return this.supportRequests.create(actor, dto);
+  }
+
+  /** Mes demandes ET leurs réponses — la réponse se lit ici, c'est tout l'intérêt. */
+  @Get("support-requests/mine")
+  mySupportRequests(@Actor() actor: AuthenticatedActor) {
+    return this.supportRequests.mine(actor);
+  }
 
   /** EF-16-01 : tableau de bord du professionnel connecté. */
   @Get("me/dashboard")

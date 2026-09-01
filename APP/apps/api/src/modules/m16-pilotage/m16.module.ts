@@ -12,6 +12,7 @@ import { PilotKpiService } from "./m16.kpi.service";
 import { ParametersService } from "./m16.parameters.service";
 import { M16ReadController } from "./m16.read.controller";
 import { SchedulerService } from "./m16.scheduler.service";
+import { SupportRequestService } from "./m16.support-requests.service";
 import { SupportProcedureService } from "./m16.support.service";
 
 /**
@@ -56,6 +57,7 @@ import { SupportProcedureService } from "./m16.support.service";
     AdminService,
     ParametersService,
     SupportProcedureService,
+    SupportRequestService,
     SchedulerService,
   ],
 })

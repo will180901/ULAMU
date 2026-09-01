@@ -80,13 +80,24 @@ export class UpdateOfferDto {
   active?: boolean;
 }
 
-/** Profil public du professionnel (EF-05-01) — champs non couverts par M01 (réservé aux patients). */
+/**
+ * Profil public du professionnel (EF-05-01) — champs non couverts par M01 (réservé aux patients).
+ *
+ * ⚠️ **`specialty` n'est plus acceptée ici (01/09/2026, dette 8bis).**
+ *
+ * Le Badge Vérifié atteste d'une qualification **contrôlée sur pièces** par l'administration
+ * (arbitrage du 27/08). Tant que son titulaire pouvait réécrire sa spécialité lui-même, le badge
+ * n'attestait de rien : il suffisait d'être vérifié « médecin généraliste » puis de se déclarer
+ * cardiologue. C2 l'affichait déjà en lecture seule — mais **un écran ne ferme pas une porte** :
+ * la route restait ouverte à qui l'appelait directement.
+ *
+ * Le champ étant retiré du DTO, le pipe global (`forbidNonWhitelisted`) répond 400 : l'appel est
+ * refusé, pas silencieusement ignoré.
+ *
+ * 📌 Dette assumée en échange : une correction LÉGITIME n'a plus de chemin. Elle en demande un,
+ * administratif et journalisé, à construire dans E7 « Comptes » — inscrit au §9 du plan.
+ */
 export class UpdateMyProfileDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(120, { message: "Spécialité : 120 caractères maximum" })
-  specialty?: string;
-
   @IsOptional()
   @IsString()
   @MaxLength(2000, { message: "Biographie : 2000 caractères maximum" })

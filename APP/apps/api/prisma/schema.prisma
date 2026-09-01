@@ -81,23 +81,23 @@ enum AdminRole {
 }
 
 model Account {
-  id           String        @id @default(uuid())
+  id                    String        @id @default(uuid())
   /// Identifiant racine (règle 1 du dictionnaire) — format E.164, ex. +242061234567
-  phone        String        @unique
+  phone                 String        @unique
   /// Identifiant de connexion alternatif (D-049) — stocké en minuscules. Le téléphone reste la racine.
-  username     String?       @unique
-  passwordHash String
-  type         AccountType
-  status       AccountStatus @default(ACTIVE)
+  username              String?       @unique
+  passwordHash          String
+  type                  AccountType
+  status                AccountStatus @default(ACTIVE)
   /// Connexion possible par username OU email (2026-07) ; canal d'envoi de l'OTP inscription/reset.
-  email        String?       @unique
+  email                 String?       @unique
   /// Double authentification par code email (2026-07) — c'est LA 2FA du mobile, où le TOTP n'existe
   /// pas (il reste réservé au web). Quand elle est active, la connexion exige un code envoyé par email
   /// en plus du mot de passe. Exclusive du TOTP en pratique : un compte n'utilise que l'un des deux.
-  emailTwoFactorEnabled Boolean @default(false)
-  closedAt     DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  emailTwoFactorEnabled Boolean       @default(false)
+  closedAt              DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   patientProfile        PatientProfile?
   professionalProfile   ProfessionalProfile?
@@ -387,11 +387,11 @@ model SupportingDocument {
 
 /// Décision motivée — insertion seule (RM-03-02).
 model VerificationDecision {
-  id        String           @id @default(uuid())
-  caseId    String
-  case      VerificationCase @relation(fields: [caseId], references: [id])
-  decision  String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED"
-  reasons   String
+  id         String           @id @default(uuid())
+  caseId     String
+  case       VerificationCase @relation(fields: [caseId], references: [id])
+  decision   String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED"
+  reasons    String
   /// Pièce VISÉE par la décision, quand il y en a une (2026-08).
   ///
   /// Le motif était un texte libre attaché au DOSSIER : « copie non certifiée conforme » laissait
@@ -404,8 +404,8 @@ model VerificationDecision {
   /// elle. On garde donc l'identifiant seul, et l'écran affiche « pièce remplacée depuis » quand il
   /// ne la retrouve plus.
   documentId String?
-  adminId   String
-  createdAt DateTime         @default(now())
+  adminId    String
+  createdAt  DateTime         @default(now())
 }
 
 /// Contrat numérique (D-011) — chaque version signée est conservée à vie (RM-03-05).
@@ -622,22 +622,22 @@ enum CareSessionStatus {
 
 /// La Session (D-006) : messagerie chronométrée — l'horloge du SERVEUR fait foi (RM-06-02).
 model CareSession {
-  id                String            @id @default(uuid())
-  handshakeId       String            @unique
-  handshake         Handshake         @relation(fields: [handshakeId], references: [id])
-  patientAccountId  String
-  professionalId    String
-  subProfileId      String?
-  status            CareSessionStatus @default(PREPARING)
-  durationMin       Int
+  id                     String            @id @default(uuid())
+  handshakeId            String            @unique
+  handshake              Handshake         @relation(fields: [handshakeId], references: [id])
+  patientAccountId       String
+  professionalId         String
+  subProfileId           String?
+  status                 CareSessionStatus @default(PREPARING)
+  durationMin            Int
   /// orderRef du paiement C1 : "handshake:<id>" — référence OPAQUE côté M13 (RM-13-01).
-  orderRef          String            @unique
-  paidAt            DateTime          @default(now())
-  startedAt         DateTime?
-  endsAt            DateTime?
-  endedAt           DateTime?
-  extensionTotalSec Int               @default(0)
-  reportDepositedAt DateTime?
+  orderRef               String            @unique
+  paidAt                 DateTime          @default(now())
+  startedAt              DateTime?
+  endsAt                 DateTime?
+  endedAt                DateTime?
+  extensionTotalSec      Int               @default(0)
+  reportDepositedAt      DateTime?
   /// Curseurs de lecture pour les accusés 3 états (façon messagerie) — mis à jour à l'ouverture du fil.
   patientLastReadAt      DateTime?
   professionalLastReadAt DateTime?
@@ -661,23 +661,23 @@ enum SessionMessageKind {
 /// Message de session — n'existe QUE dans une session active (RM-06-03).
 /// clientMsgId = clé d'idempotence de la file offline (ADR-12) : un rejeu ne duplique jamais.
 model SessionMessage {
-  id          String             @id @default(uuid())
+  id          String                   @id @default(uuid())
   sessionId   String
-  session     CareSession        @relation(fields: [sessionId], references: [id])
+  session     CareSession              @relation(fields: [sessionId], references: [id])
   senderId    String
   kind        SessionMessageKind
   body        String? // texte / légende / durée vocale — JAMAIS dans l'audit ni les notifications (RM-06-06)
   fileKey     String? // vocal/document (clé unique)
-  mediaKeys   String[]           @default([]) // album de photos (plusieurs clés en une bulle)
+  mediaKeys   String[]                 @default([]) // album de photos (plusieurs clés en une bulle)
   clientMsgId String
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime                 @default(now())
   deliveredAt DateTime?
   readAt      DateTime?
   editedAt    DateTime? // édition ≤ 15 min par l'auteur
   deletedAt   DateTime? // suppression « pour tout le monde » (soft delete), ≤ 15 min par l'auteur
   replyToId   String? // citation/réponse à un message de la même session
-  replyTo     SessionMessage?    @relation("reply", fields: [replyToId], references: [id])
-  replies     SessionMessage[]   @relation("reply")
+  replyTo     SessionMessage?          @relation("reply", fields: [replyToId], references: [id])
+  replies     SessionMessage[]         @relation("reply")
   hiddenFor   SessionMessageHidden[]
   reactions   SessionMessageReaction[]
 
@@ -693,7 +693,7 @@ model SessionMessageReaction {
   message   SessionMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   accountId String
   emoji     String
-  createdAt DateTime  @default(now())
+  createdAt DateTime       @default(now())
   deletedAt DateTime?
 
   @@id([messageId, accountId])
@@ -1413,6 +1413,40 @@ model SupportProcedure {
   completedAt   DateTime?
 
   @@index([type, status])
+}
+
+enum SupportRequestStatus {
+  OPEN
+  ANSWERED
+}
+
+/// Demande d'aide ÉCRITE PAR UN UTILISATEUR (01/09/2026).
+///
+/// Elle existe parce que l'application affichait une adresse de courriel, `support@ulamu.cg`, dont
+/// le domaine n'appartient pas au projet. L'adresse figurait dans les mentions légales — acceptées
+/// à l'inscription, donc valant preuve — et derrière « Écrire à l'administration ». Une promesse
+/// de contact qui ne mène nulle part est pire que pas de contact du tout.
+///
+/// Ne pas confondre avec `SupportProcedure`, qui est la trace de ce qu'un ADMINISTRATEUR a FAIT.
+/// Celle-ci est ce qu'un utilisateur DEMANDE : les deux moitiés d'un même geste, et la première
+/// manquait. `subject` reprend volontairement les catégories de `SupportProcedureType`, pour qu'une
+/// demande « j'ai perdu mon numéro » désigne directement la procédure guidée qui la traite.
+///
+/// La réponse vit ici, et non dans un courriel : c'est tout l'intérêt: elle se lit dans
+/// l'application, sans domaine à acheter ni boîte à relever.
+model SupportRequest {
+  id          String               @id @default(uuid())
+  requesterId String
+  subject     SupportProcedureType
+  body        String
+  status      SupportRequestStatus @default(OPEN)
+  createdAt   DateTime             @default(now())
+  answer      String?
+  answeredAt  DateTime?
+  answeredBy  String?
+
+  @@index([status, createdAt])
+  @@index([requesterId, createdAt])
 }
 
 /// Fichier stocké — pièces justificatives, photos de profil, médias de consultation.
