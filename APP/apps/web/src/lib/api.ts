@@ -922,12 +922,44 @@ export interface UserReport {
 export type ReportDecision = 'DISMISSED' | 'WARNING' | 'ESCALATED_M16' | 'ESCALATED_M03'
 
 /** Compte trouvé par la recherche du back-office (M16). */
+/**
+ * Un compte trouvé par la recherche d'administration (RM-16-02 : données minimales).
+ *
+ * ⚠️ Ce type décrivait `{ id, username }` — le serveur renvoie `accountId` et `displayName`, et
+ * jamais le nom d'utilisateur (constaté le 01/09/2026 en comparant à `AccountSearchHit`). Aucun
+ * écran ne l'appelait encore : le mensonge dormait, comme celui de `PrescriptionLineInput`.
+ */
 export interface AdminAccount {
-  id: string
-  username: string | null
+  accountId: string
   phone: string
   type: string
   status: string
+  /** « Prénom Nom », ou « (compte sans profil) » — jamais une adresse, jamais un identifiant. */
+  displayName: string
+}
+
+/** Les quatre procédures support prévues par le serveur (EF-16-03, CU-16-04). */
+export type SupportProcedureType = 'PHONE_CHANGE' | 'OWNER_UNREACHABLE' | 'RECORD_TRANSFER' | 'OTHER'
+export type SupportProcedureStatus = 'OPEN' | 'COMPLETED' | 'CANCELLED'
+
+/** Une étape franchie : horodatée et signée par le serveur, jamais par l'écran. */
+export interface SupportStep {
+  label: string
+  note?: string
+  at: string
+  by: string
+}
+
+export interface SupportProcedure {
+  id: string
+  type: SupportProcedureType
+  accountId: string | null
+  steps: SupportStep[]
+  justification: string
+  executedBy: string
+  status: SupportProcedureStatus
+  createdAt: string
+  completedAt: string | null
 }
 
 // ── M03 — Vérification & contrat (CU-03-01/02/03) ──────────────────────────
@@ -1426,12 +1458,47 @@ export const api = {
   /** CU-04-04 : toute décision est motivée, y compris un rejet. */
   decideReport: (id: string, dto: { decision: ReportDecision; reasons: string }) =>
     request<void>('POST', `/v1/admin/reports/${id}/decide`, dto, true),
+  /**
+   * Recherche de comptes. **Il n'existe aucune route qui les liste tous** : un administrateur
+   * cherche un compte précis, il ne parcourt pas l'annuaire des inscrits (RM-16-02). Le serveur
+   * renvoie un TABLEAU, pas un objet `{ items }` — ce client prétendait le contraire.
+   */
   searchAccounts: (query: string) =>
-    request<{ items: AdminAccount[] }>('GET', `/v1/admin/accounts?query=${encodeURIComponent(query)}`, undefined, true),
+    request<AdminAccount[]>('GET', `/v1/admin/accounts?query=${encodeURIComponent(query)}`, undefined, true),
   suspendAccount: (id: string, reason: string) =>
     request<void>('POST', `/v1/admin/accounts/${id}/suspend`, { reason }, true),
   reactivateAccount: (id: string, reason: string) =>
     request<void>('POST', `/v1/admin/accounts/${id}/reactivate`, { reason }, true),
+  /**
+   * EF-16-07 : le bannissement n'est pas appliqué, il est DEMANDÉ. Un second administrateur,
+   * distinct du demandeur, doit l'approuver — c'est le serveur qui refuse l'auto-approbation.
+   */
+  requestBan: (id: string, reason: string) =>
+    request<{ sanctionId: string }>('POST', `/v1/admin/accounts/${id}/ban`, { reason }, true),
+  approveBan: (sanctionId: string) => request<void>('POST', `/v1/admin/sanctions/${sanctionId}/approve`, undefined, true),
+  rejectBan: (sanctionId: string) => request<void>('POST', `/v1/admin/sanctions/${sanctionId}/reject`, undefined, true),
+
+  // M16 — procédures support (EF-16-03, CU-16-04)
+  /**
+   * ⚠️ RM-16-01 : M16 **guide et journalise, il n'agit pas**. Ouvrir une procédure n'exécute
+   * rien — elle trace ce qu'un administrateur a fait par ailleurs. L'écran doit le dire.
+   */
+  supportProcedures: (q: { type?: SupportProcedureType; status?: SupportProcedureStatus } = {}) => {
+    const p = new URLSearchParams()
+    if (q.type) p.set('type', q.type)
+    if (q.status) p.set('status', q.status)
+    return request<SupportProcedure[]>('GET', `/v1/admin/support-procedures${p.toString() ? `?${p}` : ''}`, undefined, true)
+  },
+  openSupportProcedure: (dto: {
+    type: SupportProcedureType
+    accountId?: string
+    justification: string
+    steps: Array<{ label: string; note?: string }>
+  }) => request<{ id: string }>('POST', '/v1/admin/support-procedures', dto, true),
+  completeSupportProcedure: (id: string, steps: Array<{ label: string; note?: string }>) =>
+    request<{ id: string; status: SupportProcedureStatus }>('POST', `/v1/admin/support-procedures/${id}/complete`, { steps }, true),
+  cancelSupportProcedure: (id: string, reason: string) =>
+    request<{ id: string; status: SupportProcedureStatus }>('POST', `/v1/admin/support-procedures/${id}/cancel`, { reason }, true),
 
   // M03 — dossier de vérification du déposant
   /** Versions acceptées à l'inscription, et quand (EF-01-08 — la preuve légale, enfin lisible). */

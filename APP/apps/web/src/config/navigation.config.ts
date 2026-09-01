@@ -104,7 +104,15 @@ export const NAV_GROUPS: NavGroup[] = [
         capabilities: ['admin:finance', 'admin:super'],
       },
       { key: 'admin-signalements', label: 'Signalements', icon: Flag, href: '/admin/signalements', capabilities: ['admin:super'] },
-      { key: 'admin-comptes', label: 'Comptes', icon: UserCog, href: '/admin/comptes', capabilities: ['admin:super'] },
+      /* Les routes comptes du serveur acceptent ADMIN_VERIFICATION et ADMIN_MAP (EF-16-03/07) :
+         réserver l'entrée au super-admin cacherait un écran auquel ils ont droit. */
+      {
+        key: 'admin-comptes',
+        label: 'Comptes',
+        icon: UserCog,
+        href: '/admin/comptes',
+        capabilities: ['admin:verification', 'admin:map', 'admin:super'],
+      },
       { key: 'admin-pilotage', label: 'Pilotage', icon: Activity, href: '/admin/pilotage', capabilities: ['admin:super'] },
       /* EF-02-08 : sans cet écran, attribuer un sous-rôle imposait de rejouer le seed. */
       {

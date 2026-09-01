@@ -421,6 +421,63 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **11** | **E1 — File de vérification** — codé le 01/09. **Serveur : aucun.** Web : coquille refaite sur la forme mesurée — quatre tuiles, quatre onglets comptés, **un tableau** à la place d'une colonne de 320 px, et l'examen en panneau. Onglet « Tranchés » ajouté (deux appels, la route ne filtrant que sur un statut). « 72 heures **ouvrées** » corrigé. Le composant d'examen, lui, **n'a pas été touché** : il était juste. **API 496 ✓ · web 271 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **12** | **E7 — Comptes + procédures support** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : recherche de comptes, suspension / réactivation / **demande** de bannissement, chacune motivée ; **procédures support** (exigence MVP jamais construite) avec leurs étapes à cocher. **Deux corrections dans `api.ts` :** `AdminAccount` décrivait `{ id, username }` là où le serveur renvoie `accountId` et `displayName`, et `searchAccounts` promettait `{ items }` pour un tableau nu. **API 496 ✓ · web 287 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E7
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « Comptes · **1 284 comptes · 2 suspendus, 1 banni** » | « Recherchez le compte concerné · suspension, réactivation, bannissement » | **écart de fait, et il commande tout l'écran** — voir ci-dessous |
+| Quatre tuiles : **COMPTES ACTIFS 6 sur 1 284** · SUSPENDUS 2 · BANNIS 1 · CLÔTURÉS 1 | absentes | **écart de fait** — elles supposent un décompte par statut sur toute la table, c'est-à-dire la route que la règle refuse |
+| Onglets « Tous · Actifs · Suspendus · Fermés » | absents | même cause : il n'y a pas de liste à filtrer, il y a une recherche |
+| *(absent de la maquette)* | Un **champ de recherche**, et la phrase qui dit pourquoi c'est la seule entrée | **ajout** — sans elle, on chercherait indéfiniment l'écran qui liste |
+| Tableau, colonne **TITULAIRE** (initiales, nom, `USR-2026-00312`) | Nom + **téléphone** | **écart de fait** — ce format d'identifiant n'existe pas ; le téléphone, lui, identifie sans ambiguïté et le serveur le sert |
+| Tableau, colonne **TYPE** | idem, en français | conforme |
+| Tableau, colonne **ARRONDISSEMENT** | retirée | **écart de fait** — la recherche ne le sert pas (RM-16-02, données minimales) ; le réclamer ferait une requête par ligne |
+| Tableau, colonne **STATUT** + *le motif de la sanction en dessous* | Le statut seul | **écart de fait** — le motif vit dans `AccountSanction`, qu'aucune route ne lit pour un compte donné |
+| Tableau, colonne **DERNIÈRE ACTIVITÉ** | retirée | même cause |
+| Actions « Suspendre » / « Bannir » / « Réactiver » | idem, **chacune avec son motif obligatoire** et ce qu'elle fait réellement | conforme, et au-delà |
+| *(implicite dans la maquette)* « 15 jours · jusqu'au 20/08 » | « La suspension dure **jusqu'à réactivation** » | famille 3, groupe D — `AccountSanction` n'a **aucun champ de durée** |
+| « Bannir » présenté comme une action immédiate | « Ceci n'applique pas le bannissement : cela le **demande** » | EF-16-07 — un second administrateur, distinct, doit approuver |
+| Pied « 10 comptes affichés · **1 284 au total** » + pagination | absent | il n'y a pas de total à afficher |
+| Phrase de bas de page sur ce qu'une sanction laisse intact | **reprise mot pour mot** | conforme — c'est la seule phrase de la maquette qui apprend quelque chose qu'aucun autre écran ne dit |
+| *(absentes de la maquette)* | Les **procédures support** : quatre situations en langage clair, étapes à cocher, justification obligatoire, ouvertes en tête | **ajout** — famille 4, point 10 |
+
+### Ce que le chantier 12 (E7 — Comptes) a appris
+
+**Une route qui refuse de répondre est une décision, pas un manque.** `GET /admin/accounts` exige un
+terme de recherche : sans lui, il ne renvoie rien. J'ai d'abord lu ça comme une lacune à contourner —
+c'est l'inverse. **RM-16-02, « données minimales » :** un administrateur cherche un compte parce
+qu'on l'a appelé à son sujet ; il ne feuillette pas l'annuaire des 1 284 inscrits d'une plateforme de
+santé. Construire les quatre tuiles aurait demandé un décompte sur toute la table — c'est-à-dire
+écrire côté serveur exactement ce que la règle interdit.
+
+L'écran dit donc la règle à voix haute : *« Les comptes ne se parcourent pas : on en cherche un,
+parce qu'on a une raison de le chercher. C'est une règle de la plateforme, pas une limite de cet
+écran. »* Sans cette phrase, quelqu'un passerait un jour à la « compléter ».
+
+**Un bouton peut nommer autre chose que ce qu'il fait.** « Bannir » ne bannit pas : il **demande** un
+bannissement, qu'un second administrateur distinct doit approuver (EF-16-07). Le libellé de la
+maquette est celui du geste attendu, pas de l'effet obtenu — et l'écart se paie cher, parce qu'un
+administrateur qui croit avoir banni ne relance personne. L'avertissement est donc **avant** le
+champ de motif, pas après la validation.
+
+**Troisième type incomplet trouvé dans `api.ts`, même signature.** `AdminAccount` décrivait
+`{ id, username }` quand le serveur renvoie `accountId` et `displayName` — et `searchAccounts`
+promettait `{ items }` pour un tableau nu. Comme `PrescriptionLineInput` en C7 et `Earnings.entries`
+en C6 : **aucun écran ne les appelait, donc le mensonge dormait.** *Il en reste sûrement d'autres du
+côté des routes qu'aucun écran n'a encore ouvertes — E2, E4, E5 et E6 en ouvriront.*
+
+**Le moins spectaculaire des onze points de la famille 4 était le seul jamais construit.** Les
+procédures support sont une exigence MVP écrite (EF-16-03, CU-16-04), avec quatre routes prêtes
+depuis toujours et **aucun écran pour les appeler**. Elles portent une contrainte qu'il fallait dire
+en toutes lettres : **M16 guide et journalise, il n'agit pas** (RM-16-01). Ouvrir une procédure
+« changement de numéro » ne change aucun numéro — un administrateur qui croirait le contraire
+laisserait la personne sans accès, persuadé de l'avoir aidée. La phrase est affichée en permanence,
+pas une fois au premier usage.
+
 ### Étape 6 — le comparatif bloc à bloc de E1
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
