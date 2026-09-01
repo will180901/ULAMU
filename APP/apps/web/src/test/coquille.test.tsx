@@ -209,6 +209,26 @@ describe('B1 — le format mobile', () => {
     expect(enveloppe?.hasAttribute('inert')).toBe(true)
   })
 
+  /*
+    Le tiroir mobile ne quittait PAS l'écran (constaté le 01/09/2026, chantier 18).
+
+    `-translate-x-full` déplace de −100 % de la largeur de l'élément. L'enveloppe n'en déclarait
+    aucune : son unique enfant, la barre, est lui-même en `absolute`, donc hors flux. La largeur
+    valait 0, la translation valait 0 px — le tiroir restait collé à gauche, recouvrant les deux
+    tiers de la page. Et comme il est `inert` quand il est fermé, il ne répondait ni à ses liens ni
+    à sa croix : un panneau mort par-dessus l'écran, sur les seize écrans à la fois.
+
+    jsdom ne calcule aucune mise en page : impossible de mesurer la translation ici. On verrouille
+    donc la CAUSE — la largeur déclarée — plutôt que son effet. C'est ce qui manquait.
+  */
+  it('le tiroir déclare une largeur : sans elle, `-translate-x-full` ne déplace rien', () => {
+    monter('/dashboard', {}, 375)
+    const enveloppe = document.querySelector('aside')?.parentElement as HTMLElement
+
+    expect(enveloppe.className).toContain('-translate-x-full')
+    expect(enveloppe.className).toContain('w-[var(--sidebar-width)]')
+  })
+
   it('sur grand écran, la barre n’est jamais inerte', () => {
     monter('/dashboard', {}, 1280)
     const enveloppe = document.querySelector('aside')?.parentElement

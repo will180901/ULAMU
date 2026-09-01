@@ -187,6 +187,51 @@ describe('C2 — « Êtes-vous visible ? »', () => {
   })
 })
 
+/**
+ * Ce que l'écran dit quand le dossier n'a pas pu être lu (01/09/2026).
+ *
+ * Constaté pendant la relecture visuelle du chantier 18, en servant des 500 : `canPractice` vaut
+ * `false` par défaut, et l'écran annonçait donc « Votre fiche n'est pas encore visible des
+ * patients », avec la carte « Êtes-vous visible ? » passée au ROUGE et ses trois conditions
+ * marquées non remplies. À un médecin parfaitement en règle, sur une simple panne réseau.
+ *
+ * Une absence de réponse n'est pas un « non ». C'est un « on ne sait pas », et l'écran doit le dire.
+ */
+describe('C2 — un dossier illisible n’est pas un dossier refusé', () => {
+  async function monterEnPanne() {
+    vi.spyOn(api, 'verificationMine').mockRejectedValue(new Error('Erreur interne du serveur'))
+    vi.spyOn(api, 'myOffers').mockResolvedValue([])
+    vi.spyOn(api, 'offerLimits').mockRejectedValue(new Error('Erreur interne du serveur'))
+    vi.spyOn(api, 'directoryProfile').mockRejectedValue(new Error('Erreur interne du serveur'))
+
+    useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <VitrinePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByRole('heading', { name: 'Ma vitrine' })
+  }
+
+  it('n’annonce pas au médecin qu’il est invisible : il dit qu’il ne sait pas', async () => {
+    await monterEnPanne()
+
+    expect(await screen.findByText(/Visibilité inconnue/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/n’est pas encore visible des patients/)
+  })
+
+  it('ne rend pas un verdict qu’il n’a pas : la carte reste neutre et le dit', async () => {
+    await monterEnPanne()
+
+    expect(await screen.findByText(/ces trois conditions restent inconnues/)).toBeInTheDocument()
+    // L'alerte du refus — « votre fiche n'apparaît pas dans l'annuaire » — est un verdict.
+    expect(document.body.textContent).not.toMatch(/votre fiche n’apparaît pas dans l’annuaire/)
+  })
+})
+
 describe('C2 — aucun chiffre métier écrit dans la page', () => {
   it('le net vient de la commission DU CONTRAT, pas d’un taux en dur', async () => {
     // La maquette affichait 12 %. Le contrat de démonstration dit 10 %. C'est le contrat qui paie.

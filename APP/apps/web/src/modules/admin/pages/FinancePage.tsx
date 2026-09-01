@@ -323,8 +323,20 @@ export function FinancePage() {
             Supervision financière
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
-            {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} à trancher
-            {montantEnJeu > 0 ? ` · ${xaf(montantEnJeu)} XAF en jeu` : ''}
+            {/*
+              Le sous-titre ne compte QUE si le serveur a répondu. Tant qu'il n'a pas répondu — ou
+              qu'il a échoué — il n'y a pas « 0 » : il n'y a pas de nombre. Écrire 0 en cas de panne
+              disait « rien à traiter » à un administrateur dont la file était peut-être pleine.
+              Constaté le 01/09/2026 pendant la relecture visuelle, en servant des 500 à l'écran.
+            */}
+            {attente.isSuccess ? (
+              <>
+                {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} à trancher
+                {montantEnJeu > 0 ? ` · ${xaf(montantEnJeu)} XAF en jeu` : ''}
+              </>
+            ) : (
+              <>Remboursements manuels et rapprochement</>
+            )}
           </p>
         </span>
       </div>
@@ -351,9 +363,11 @@ export function FinancePage() {
           label="Vue de la supervision"
           valeur={onglet}
           onChange={setOnglet}
+          /* Même règle que le sous-titre : un onglet ne porte un compte que si le compte est connu.
+             « À trancher 0 » pendant une panne annonce une file vide qu'on n'a pas pu lire. */
           options={[
-            { cle: 'a-trancher', label: `À trancher ${enAttente.length}` },
-            { cle: 'historique', label: `Historique ${historique.length}` },
+            { cle: 'a-trancher', label: attente.isSuccess ? `À trancher ${enAttente.length}` : 'À trancher' },
+            { cle: 'historique', label: toutes.isSuccess ? `Historique ${historique.length}` : 'Historique' },
             { cle: 'rapprochement', label: 'Rapprochement' },
           ]}
         />
@@ -368,7 +382,23 @@ export function FinancePage() {
               <Spinner className="size-3.5" /> Lecture de la file…
             </p>
           ) : attente.isError ? (
-            <Avis ton="erreur">{messageDe(attente.error)}</Avis>
+            /*
+              La phrase du serveur seule — « Erreur interne du serveur » — ne répond à aucune des
+              deux questions qu'on se pose ici : qu'est-ce que je risque, et que puis-je faire ? Les
+              six autres écrans d'administration y répondaient déjà ; celui-ci, non. Corrigé le
+              01/09/2026 pendant la relecture visuelle.
+            */
+            <div className="flex flex-col gap-2 py-2">
+              <Avis ton="erreur">
+                La file n'a pas pu être lue. Aucune demande n'a été tranchée, et aucun montant n'a
+                bougé : cet écran ne fait que lire. ({messageDe(attente.error)})
+              </Avis>
+              <div>
+                <Button type="button" onClick={() => attente.refetch()}>
+                  Réessayer
+                </Button>
+              </div>
+            </div>
           ) : enAttente.length === 0 ? (
             <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
               Aucune demande n'attend de second accord. Celles qui en demandent un apparaissent ici dès

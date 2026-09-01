@@ -128,7 +128,7 @@ export function ForgotPasswordPage() {
 
   if (done) {
     return (
-      <AuthLayout subtitle="Réinitialisez votre mot de passe ULAMU à l'aide de votre application d'authentification.">
+      <AuthLayout titre="Mot de passe oublié" subtitle="Réinitialisez votre mot de passe ULAMU à l'aide de votre application d'authentification.">
         <div role="status" className="ulamu-step-fade flex flex-col items-center gap-3 py-6 text-center">
           <span className="flex size-12 items-center justify-center rounded-lg border border-[var(--succes-bordure)] bg-[var(--succes-fond)] text-[var(--succes-accent)]">
             <CheckCircle2 size={24} strokeWidth={1.5} aria-hidden="true" />
@@ -168,7 +168,7 @@ export function ForgotPasswordPage() {
   )
 
   return (
-    <AuthLayout subtitle={etape === 'compte' ? "Réinitialisez votre mot de passe ULAMU à l'aide de votre application d'authentification." : undefined}>
+    <AuthLayout titre="Mot de passe oublié" subtitle={etape === 'compte' ? "Réinitialisez votre mot de passe ULAMU à l'aide de votre application d'authentification." : undefined}>
       <EtapesAuth etapes={ETAPES} courant={index} aller={setEtape} />
 
       <div key={etape} className="ulamu-step-fade">

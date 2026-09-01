@@ -16,6 +16,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { GardeFou } from '@/components/layout/GardeFou'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { VoileRideau } from '@/components/layout/RideauConfidentialite'
@@ -63,12 +64,20 @@ export function AppShell() {
     <div className="relative h-screen overflow-hidden bg-[var(--fond-page)] saris-grain">
       {/* Sur mobile, la barre sort du flux : translatée hors écran tant qu'on ne l'appelle pas.
           `inert` quand elle est fermée — sans lui, ses liens restent TABULABLES bien qu'invisibles :
-          le focus disparaîtrait de l'écran pendant neuf tabulations, sans que rien ne l'explique. */}
+          le focus disparaîtrait de l'écran pendant neuf tabulations, sans que rien ne l'explique.
+
+          ⚠️ `w-[var(--sidebar-width)]` n'est pas décoratif, c'est ce qui fait FONCTIONNER la
+          fermeture. `-translate-x-full` déplace de −100 % de la largeur de l'élément — or cette
+          enveloppe n'en avait aucune : son unique enfant, la barre, est lui-même en `absolute` et
+          donc hors flux. La largeur valait 0, la translation valait 0 px, et le tiroir restait
+          collé à l'écran, recouvrant les deux tiers de la page, `inert` et donc muet : ni ses
+          liens ni sa croix ne répondaient. Constaté le 01/09/2026 pendant la relecture visuelle,
+          sur les neuf écrans à 375 px. */}
       <div
         inert={estMobile && !navMobile}
         className={
           estMobile
-            ? 'absolute inset-y-0 left-0 z-50 transition-transform duration-[var(--dur-base)] ' +
+            ? 'absolute inset-y-0 left-0 z-50 w-[var(--sidebar-width)] transition-transform duration-[var(--dur-base)] ' +
               (navMobile ? 'translate-x-0' : '-translate-x-full')
             : 'contents'
         }
@@ -105,7 +114,14 @@ export function AppShell() {
               haut, sinon le bouton qui l'a posé deviendrait inatteignable. */}
           <div inert={rideau} className="h-full overflow-y-auto">
             <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4">
-              <Outlet />
+              {/*
+                `key={pathname}` remonte la limite à chaque changement d'écran : sans elle, une fois
+                l'erreur affichée, elle resterait affichée sur TOUS les écrans suivants — la
+                navigation ne changerait plus rien, ce qui ressemblerait à une application gelée.
+              */}
+              <GardeFou key={pathname} portee="zone">
+                <Outlet />
+              </GardeFou>
             </div>
           </div>
           {rideau ? <VoileRideau surLever={() => setRideau(false)} /> : null}

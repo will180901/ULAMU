@@ -96,7 +96,7 @@ export function LoginPage() {
   const occupe = login.isPending || loadMe.isPending
 
   return (
-    <AuthLayout subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
+    <AuthLayout titre="Connexion à ULAMU" subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
       {/* Se retrouver déconnecté sans un mot donne l'impression d'un bogue, alors que l'application
           vient précisément de protéger le compte. On nomme la raison, et surtout la DURÉE : sans
           elle, l'utilisateur ne peut pas anticiper la prochaine fois. */}

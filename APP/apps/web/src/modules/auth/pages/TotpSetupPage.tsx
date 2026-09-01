@@ -182,8 +182,11 @@ export function TotpSetupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--fond-page)] p-5 saris-grain-strong">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--fond-page)] p-5 saris-grain-strong">
       <div className="w-[460px] max-w-full">
+        {/* Titre masqué et repère de page : comme les trois autres écrans d'entrée, celui-ci
+            n'annonçait rien à un lecteur d'écran. Rien de visible ne change. */}
+        <h1 className="sr-only">Activation de la double authentification</h1>
         <div className="mb-4 flex justify-center">
           <Logo size={30} />
         </div>
@@ -417,6 +420,6 @@ export function TotpSetupPage() {
           </p>
         ) : null}
       </div>
-    </div>
+    </main>
   )
 }

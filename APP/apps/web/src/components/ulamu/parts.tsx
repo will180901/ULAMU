@@ -23,7 +23,10 @@ export function Carte({
   titre: string
   sousTitre?: string
   ton?: 'accent' | 'danger'
-  /** Coin droit du bandeau — état d'enregistrement, bouton secondaire. Reste sur une seule ligne. */
+  /**
+   * Coin droit du bandeau — état d'enregistrement, bouton secondaire, groupe de segments.
+   * Il ne se comprime jamais ; s'il ne tient pas, c'est le bandeau qui passe à la ligne.
+   */
   action?: React.ReactNode
   children: React.ReactNode
 }) {
@@ -33,7 +36,14 @@ export function Carte({
       : 'bg-[var(--ap-50)] text-[var(--ap-600)]'
   return (
     <section className="ul-grain-fine overflow-hidden rounded-[10px] border border-border bg-card">
-      <div className="flex items-center gap-2 border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)] px-4 py-3">
+      {/*
+        `flex-wrap` + `basis-40` : à 375 px, un `action` large — les trois segments
+        « Ouvertes / Closes / Annulées » d'E7 font 239 px — prenait toute la place et laissait
+        **18 px** au titre, qui affichait donc « P… ». Le titre réclame maintenant 160 px avant que
+        quoi que ce soit d'autre soit servi ; en dessous, l'action descend d'une ligne. Sur grand
+        écran rien ne change : tout tient toujours sur une seule ligne.
+      */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)] px-4 py-3">
         <span aria-hidden="true" className={'flex size-[26px] shrink-0 items-center justify-center rounded-md ' + tuile}>
           <Icone size={14} strokeWidth={1.5} />
         </span>
@@ -43,13 +53,13 @@ export function Carte({
           entière au clavier pour trouver la carte qu'il cherchait. Le `h1` reste celui de l'écran,
           la hiérarchie est donc juste.
         */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-40">
           <h2 className="font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
             {titre}
           </h2>
           {sousTitre ? <p className="mt-0.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{sousTitre}</p> : null}
         </div>
-        {action ? <span className="shrink-0">{action}</span> : null}
+        {action ? <span className="ml-auto shrink-0">{action}</span> : null}
       </div>
       <div className="flex flex-col gap-3 p-4">{children}</div>
     </section>

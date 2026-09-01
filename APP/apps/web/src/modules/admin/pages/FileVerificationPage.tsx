@@ -450,8 +450,20 @@ export function FileVerificationPage() {
             File de vérification
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
-            {actifs.length} dossier{actifs.length > 1 ? 's' : ''} ouvert{actifs.length > 1 ? 's' : ''}
-            {horsDelai.length > 0 ? ` · ${horsDelai.length} hors délai` : ''} · les plus anciens en tête
+            {/*
+              Le sous-titre ne compte QUE si le serveur a répondu. Tant qu'il n'a pas répondu — ou
+              qu'il a échoué — il n'y a pas « 0 » : il n'y a pas de nombre. Écrire 0 en cas de panne
+              disait « rien à traiter » à un administrateur dont la file était peut-être pleine.
+              Constaté le 01/09/2026 pendant la relecture visuelle, en servant des 500 à l'écran.
+            */}
+            {file.isSuccess ? (
+              <>
+                {actifs.length} dossier{actifs.length > 1 ? 's' : ''} ouvert{actifs.length > 1 ? 's' : ''}
+                {horsDelai.length > 0 ? ` · ${horsDelai.length} hors délai` : ''} · les plus anciens en tête
+              </>
+            ) : (
+              <>Les plus anciens en tête</>
+            )}
           </p>
         </span>
       </div>

@@ -173,7 +173,7 @@ export function RegisterPage() {
   const confirmationDivergente = confirmPassword.length > 0 && password !== confirmPassword
 
   return (
-    <AuthLayout subtitle={step === 'contact' ? 'Créez votre compte ULAMU — professionnels de santé.' : undefined}>
+    <AuthLayout titre="Création d'un compte soignant" subtitle={step === 'contact' ? 'Créez votre compte ULAMU — professionnels de santé.' : undefined}>
       <EtapesAuth etapes={steps.map((c) => ({ cle: c, libelle: LIBELLES[c] }))} courant={currentIndex} aller={setStep} />
 
       <div key={step} className="ulamu-step-fade">

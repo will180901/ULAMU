@@ -207,6 +207,47 @@ describe('E2 — ce que l’écran refuse de totaliser', () => {
   })
 })
 
+/**
+ * Ce que l'écran dit quand le serveur ne répond pas (01/09/2026).
+ *
+ * Constaté pendant la relecture visuelle du chantier 18, en servant des 500 : la file échouait, et
+ * l'écran affichait « 0 demande à trancher » et « À trancher 0 ». Un administrateur y lisait une
+ * file vide alors qu'elle était seulement illisible — la pire des deux erreurs, puisqu'elle
+ * n'invite à rien faire. C'est exactement ce que le projet s'interdit : on lit un chiffre du
+ * serveur, ou on ne l'affiche pas.
+ */
+describe('E2 — un serveur muet ne vaut pas « zéro »', () => {
+  function monterEnPanne() {
+    vi.spyOn(api, 'adminRefunds').mockRejectedValue(new Error('Erreur interne du serveur'))
+    vi.spyOn(api, 'parameters').mockRejectedValue(new Error('Erreur interne du serveur'))
+    useSessionStore.setState({ token: 'jeton', me: ADMIN, isAuthenticated: true, hasHydrated: true })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    return render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <FinancePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  it('n’annonce aucun compte tant que la file n’a pas été lue', async () => {
+    monterEnPanne()
+
+    await screen.findByText(/n'a pas pu être lue|n’a pas pu être lue/)
+    expect(document.body.textContent).not.toMatch(/0 demande à trancher/)
+    expect(document.body.textContent).not.toMatch(/À trancher 0/)
+  })
+
+  it('dit ce qui a échoué, et que rien n’a bougé', async () => {
+    monterEnPanne()
+
+    // Les deux seules questions qu'on se pose : qu'est-ce que je risque, que puis-je faire ?
+    expect(await screen.findByText(/aucun montant n'a\s+bougé|aucun montant n’a\s+bougé/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument()
+  })
+})
+
 describe('E2 — le rapprochement', () => {
   it('corrige les trois faussetés de la phrase « non instruit sous 7 jours »', async () => {
     const utilisateur = userEvent.setup()

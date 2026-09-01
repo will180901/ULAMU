@@ -270,9 +270,19 @@ export function SignalementsPage() {
             serveur envoie un drapeau ; c'est lui qu'on affiche.
           */}
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
-            {ouverts.length} ouvert{ouverts.length > 1 ? 's' : ''}
-            {horsDelai.length > 0 ? `, dont ${horsDelai.length} hors délai` : ''} · les plus graves
-            d'abord
+            {/*
+              Le sous-titre ne compte QUE si le serveur a répondu. Tant qu'il n'a pas répondu — ou
+              qu'il a échoué — il n'y a pas « 0 » : il n'y a pas de nombre. Écrire 0 en cas de panne
+              disait « rien à traiter » à un administrateur dont la file était peut-être pleine.
+              Constaté le 01/09/2026 pendant la relecture visuelle, en servant des 500 à l'écran.
+            */}
+            {tous.isSuccess ? (
+              <>
+                {ouverts.length} ouvert{ouverts.length > 1 ? 's' : ''}
+                {horsDelai.length > 0 ? `, dont ${horsDelai.length} hors délai` : ''} ·{' '}
+              </>
+            ) : null}
+            les plus graves d'abord
           </p>
         </span>
       </div>

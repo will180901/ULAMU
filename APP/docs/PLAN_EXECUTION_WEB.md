@@ -434,6 +434,76 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **17** | **E6 — Signalements** *(écran neuf)* — codé le 01/09. **Serveur : aucun.** Web : file triée comme le serveur la trie, détail sans identité du signaleur **et l'écran le dit**, les quatre issues réelles avec ce que chacune fait — dont deux qui **transmettent** au lieu de trancher. La chronologie inventée, les antécédents comptés et les sanctions directes sont retirés. **API 511 ✓ · web 367 ✓ · builds propres.** **Le palier F est terminé : les 17 écrans du plan sont construits.** | ⏸ en attente | ⏸ |
 
+| **17bis** | **Les listes déroulantes** — codé le 01/09. **Serveur : aucun.** Les dix listes natives des huit écrans concernés remplacées par `components/ulamu/Liste.tsx`, bâtie sur Radix : le menu ouvert suivait jusque-là le thème du **système** — fond blanc en thème sombre, surlignage bleu, coins carrés — et une option ne pouvait porter qu'une ligne, si bien que l'explication d'un choix vivait SOUS le champ et ne décrivait que l'option déjà sélectionnée. **web 377 ✓.** | ⏸ en attente | ⏸ |
+
+| **18** | **Relecture visuelle des 16 écrans** — 01/09. **Serveur : aucun.** Seize écrans passés en revue à trois largeurs et deux thèmes, dans les quatre états. **Sept défauts trouvés, sept corrigés**, dont deux qu'aucun test n'aurait vus : le **tiroir mobile ne quittait jamais l'écran** (il recouvrait les deux tiers de la page, `inert`, donc muet, sur les seize écrans à la fois) et **aucune limite d'erreur React** n'existait — deux écrans sur seize ont fait page blanche pendant la revue. Ajouté : `GardeFou`, le suivi réel du thème système, un titre et un repère de page sur les quatre écrans d'entrée, et la fin des **comptes affichés à zéro pendant une panne**. **web 402 ✓ · types et lint propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 18 (la relecture visuelle) a appris
+
+*Relecture menée le 01/09/2026, après les 17 écrans et le remplacement des listes natives.*
+
+#### Comment elle a été menée — et ce que cela ne prouve pas
+
+Le chantier demandait de relire les écrans « côte à côte avec leur maquette, dans les 4 états, les
+3 tailles et les 2 thèmes ». Deux obstacles, et ce qu'on en a fait :
+
+1. **Il est interdit de saisir un mot de passe.** Impossible donc de se connecter pour atteindre les
+   écrans protégés. Contournement : une **fausse API locale** jetable (hors du dépôt, port 5174),
+   une session fabriquée écrite dans `sessionStorage`, et `VITE_API_URL` détourné le temps de la
+   revue par un `.env.local` que `.gitignore` couvre déjà (`*.local`). **Rien de tout cela n'est
+   dans le dépôt, et rien n'a touché la production.**
+2. **Les captures d'écran ne sont pas fiables au-delà de 1024 px** : le volet du navigateur mesure
+   689 px et réduit tout ce qui est plus large — une capture d'un 1440 px arrive en 383 px utiles,
+   illisible. Elles ont donc servi à juger la **composition**, jamais à mesurer.
+
+La mesure, elle, a été faite **par le programme** : un auditeur injecté dans la page relève, sur
+chaque écran, le débordement horizontal, ce qui dépasse le bord droit, le texte rogné par sa propre
+boîte, le recouvrement barre/contenu, le texte de la couleur de son fond, les tailles sous 11 px et
+les cibles tactiles sous 32 px. C'est plus sûr qu'un œil : `18 px` de large pour un titre qui en
+demande 78 ne se voit pas, il se mesure.
+
+**Ce que cette revue prouve — et ce qu'elle ne prouve pas.** Elle prouve la mise en page, les
+thèmes, la composition et les textes des quatre états. Elle ne prouve **aucun comportement
+serveur** : les données venaient d'une fausse API. Et **le site déployé reste en arrière** des
+commits locaux.
+
+#### Les sept défauts trouvés, et ce qui a été fait
+
+| # | Écran(s) | Le défaut | La correction |
+|---|---|---|---|
+| **1** | **les 16, à 375 px** | **Le tiroir de navigation ne quittait jamais l'écran.** `-translate-x-full` déplace de −100 % de la largeur de l'élément ; l'enveloppe n'en déclarait aucune (son unique enfant est en `absolute`, donc hors flux). La translation valait **0 px**. Le tiroir restait collé à gauche, recouvrant 264 des 375 px — et comme il est `inert` quand il est fermé, ni ses liens ni sa croix ne répondaient. **Un panneau mort par-dessus tous les écrans mobiles.** | `w-[var(--sidebar-width)]` sur l'enveloppe (`AppShell.tsx`). Ouverture, voile et fermeture vérifiés au clic. Test : `coquille.test.tsx` verrouille la **cause** — jsdom ne calcule aucune mise en page, on ne peut pas mesurer la translation, mais on peut exiger la largeur. |
+| **2** | **toute l'application** | **Aucune limite d'erreur React nulle part.** Une erreur de rendu démonte l'arbre entier : page blanche, aucun message, aucun retour sans recharger. **Deux écrans sur seize** l'ont fait pendant la revue, sur une cause banale — une réponse 200 dont la forme n'était pas celle attendue, lue sans précaution (`data.preferences.find(…)`). | `components/layout/GardeFou.tsx`, à deux niveaux : autour de l'écran de la route (la coquille survit, donc le moyen de partir ailleurs) et autour de l'application (dernier recours, hors coquille). `key={pathname}` pour que changer d'écran efface l'erreur. 7 tests. |
+| **3** | **toute l'application** | **`watchSystemTheme` n'était appelée par personne.** La fonction existait depuis la création du magasin, sa documentation annonçait « appelé une fois au démarrage » — aucun fichier ne l'appelait. Le thème n'était donc lu qu'au chargement : sur un poste qui bascule en sombre le soir, ULAMU restait clair jusqu'au rechargement. Or `system` est le **défaut**. | `useEffect(() => watchSystemTheme(), [])` dans `App.tsx`. Vérifié à l'écran : la bascule suit désormais sans recharger. 4 tests, dont un qui lit la racine — le défaut était une **absence**, invisible à tout test de composant. |
+| **4** | **A1, A2, A3, A4** | **Les quatre écrans d'entrée n'avaient ni titre ni repère de page** : zéro `h1`, zéro `main`. Un lecteur d'écran liste les titres pour se déplacer et annonce le repère à l'arrivée ; sur `/login` il n'annonçait rien — sur la première page de l'application. | `<main>` et un `h1` en `sr-only` dans `AuthLayout`, et en propre dans `TotpSetupPage` (qui n'utilise pas la coquille d'entrée). **Rien ne change à l'écran** : la maquette ne montre que le logo, et ce qui manquait n'était pas visible. 5 tests. |
+| **5** | **E7, à 375 px** | Le titre « Procédures support » s'affichait dans **18 px** — une lettre. Son voisin, le groupe de segments (239 px), était `shrink-0` ; le titre, `flex-1 min-w-0`, cédait donc tout. | `flex-wrap` sur le bandeau et `basis-40` sur le bloc de titre, dans `Carte` (`parts.tsx`). Sur grand écran, rien ne change. 4 tests. |
+| **6** | **E1, E2, E3, E4, E6** | **Un compte affiché à zéro pendant une panne.** « 0 demande à trancher », « 0 dossier ouvert », « À trancher 0 » : tous dérivés de `data ?? []`, donc affichés **identiques** que la liste soit vide ou illisible. C'est la pire des deux erreurs, puisqu'elle n'invite à rien faire. Et c'est exactement ce que le projet s'interdit : *on lit un chiffre du serveur, ou on ne l'affiche pas*. | Le sous-titre (et les onglets d'E2) ne portent un compte que si `isSuccess`. E2 recevait en plus la seule phrase brute du serveur, sans dire ce qu'on risque ni offrir de réessayer : elle est remplacée. 2 tests. |
+| **7** | **C2** | Dossier illisible → `canPractice` valait `false` par défaut → l'écran annonçait **« Votre fiche n'est pas encore visible des patients »**, avec la carte « Êtes-vous visible ? » passée au **rouge** et ses trois conditions marquées non remplies. À un médecin parfaitement en règle, sur une panne réseau. | Trois états au lieu de deux : « visibilité inconnue » tant que la lecture n'a pas abouti, carte neutre, verdict retenu. 2 tests. |
+
+#### Deux constats vérifiés qui n'étaient PAS des défauts
+
+Les nommer compte autant : une revue qui ne trouve que des fautes finit par en inventer.
+
+- **Les intitulés en 10 px** (`font-mono`, majuscules) reviennent sur presque tous les écrans, et
+  l'auditeur les signale à chaque passage. Or la maquette elle-même les pose en **10 px** — et
+  descend même à **9 px** en trois endroits d'E5. C'est donc **conforme**, pas fautif. Reste une
+  question de confort à trancher par le porteur : 10 px en capitales monospace, sur un téléphone à
+  bout de bras, est à la limite. Le corriger coûte trois lignes ; s'en écarter coûte un écart
+  assumé de plus avec la maquette. **Recommandation : ne rien changer** — ces intitulés sont des
+  étiquettes, pas du texte à lire, et la valeur qu'ils coiffent est en 22 px juste dessous.
+- **Des clés React en double** dans le journal d'E4. Vérification faite : le journal fusionne
+  **trois lectures filtrées sur trois actions distinctes**, et une entrée ne porte qu'une action —
+  un doublon est donc impossible côté serveur. Il venait de la fausse API, qui servait la même
+  réponse aux trois appels. **Rien à corriger.**
+
+#### Ce qui n'a pas pu être relu
+
+- **Les états où l'on n'entre qu'en agissant** : formulaires en cours de saisie, panneaux ouverts
+  après un clic (l'examen d'un dossier en E1, l'ordonnance de C7), messages d'erreur de mutation.
+  Ils sont couverts par les tests, pas par cette relecture.
+- **Le comportement réel du serveur** : la revue parlait à une fausse API.
+- **Le site déployé.** `https://ulamu-web.onrender.com` ne porte encore **aucun** de ces chantiers :
+  les commits sont locaux, la poussée appartient au porteur.
+
 ### Étape 6 — le comparatif bloc à bloc de E6
 
 *Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*

@@ -34,6 +34,7 @@ import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
 import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useSessionStore } from '@/state/session.store'
+import { watchSystemTheme } from '@/state/theme.store'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 
 /** Les écrans déjà refaits : ils ont leur propre route et sortent de la boucle `EcranAVenir`. */
@@ -63,6 +64,18 @@ export function App() {
   useEffect(() => {
     if (!hasHydrated) useSessionStore.getState().setHasHydrated(true)
   }, [hasHydrated])
+
+  /*
+    Suivi de la préférence système, en mode « Automatique ».
+
+    `watchSystemTheme` existait depuis la création du store, sa documentation annonçait « appelé une
+    fois au démarrage » — et **personne ne l'appelait**. Le thème n'était donc lu qu'au chargement de
+    la page. Sur un poste réglé pour basculer en sombre le soir, ULAMU restait clair jusqu'au
+    prochain rechargement : le réglage « Automatique », qui est le DÉFAUT, ne suivait rien.
+    Constaté le 01/09/2026 pendant la relecture visuelle. La fonction renvoie son désabonnement,
+    d'où le retour direct.
+  */
+  useEffect(() => watchSystemTheme(), [])
 
   if (!hasHydrated) return <LoadingScreen />
 

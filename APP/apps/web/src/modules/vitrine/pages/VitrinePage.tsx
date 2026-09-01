@@ -423,7 +423,16 @@ export function VitrinePage() {
             Ma vitrine
           </h1>
           <p className="mt-1 text-[13px] text-[var(--texte-secondaire)]">
-            {peutExercer ? (
+            {/*
+              Trois états, pas deux. « Pas encore visible » est une AFFIRMATION : elle ne peut se
+              dire que si le serveur a répondu. Quand la lecture échoue, `canPractice` valait
+              `false` par défaut et l'écran annonçait à un médecin en règle qu'il était invisible
+              des patients — un mensonge produit par une panne réseau. Constaté le 01/09/2026
+              pendant la relecture visuelle, en servant des 500 à l'écran.
+            */}
+            {!verif.isSuccess ? (
+              'Visibilité inconnue tant que votre dossier n’a pas pu être lu'
+            ) : peutExercer ? (
               <>
                 Visible dans l’annuaire{me?.district ? ` de ${me.district}` : ''} · {offresActives.length} offre
                 {offresActives.length > 1 ? 's' : ''} active{offresActives.length > 1 ? 's' : ''}
@@ -656,13 +665,28 @@ export function VitrinePage() {
             professionnels vérifiés ET sous contrat signé apparaissent. On peut soigner chaque mot
             de cet écran et n'être visible nulle part.
           */}
-          <Carte icone={ShieldCheck} titre="Êtes-vous visible ?" ton={peutExercer ? 'accent' : 'danger'}>
+          {/*
+            Le ton rouge est un VERDICT. Sans réponse du serveur, il n'y a pas de verdict : la carte
+            reste neutre et dit ce qu'elle sait — c'est-à-dire rien. Trois croix rouges affichées
+            sur une panne réseau feraient croire à un dossier refusé.
+          */}
+          <Carte
+            icone={ShieldCheck}
+            titre="Êtes-vous visible ?"
+            ton={!verif.isSuccess ? 'accent' : peutExercer ? 'accent' : 'danger'}
+          >
             <div className="grid gap-2">
+              {!verif.isSuccess ? (
+                <Avis ton="info">
+                  Votre dossier n’a pas pu être lu : ces trois conditions restent inconnues. Rien n’a
+                  changé côté serveur — seul cet affichage manque.
+                </Avis>
+              ) : null}
               <Critere ok={verif.data?.status === 'VERIFIED'} label="Dossier vérifié par l’administration" />
               <Critere ok={!!verif.data?.agreement?.signedAt} label="Contrat de partenariat signé" />
               <Critere ok={offresActives.length > 0} label="Au moins une offre active" />
 
-              {!peutExercer ? (
+              {!verif.isSuccess ? null : !peutExercer ? (
                 <Avis ton="alerte">
                   Tant que ces conditions ne sont pas réunies, votre fiche n’apparaît pas dans l’annuaire — quel que
                   soit le soin apporté à cette page.{' '}

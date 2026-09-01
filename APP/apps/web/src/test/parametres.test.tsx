@@ -26,6 +26,9 @@ import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { useSessionStore } from '@/state/session.store'
 import { api, type MeResponse } from '@/lib/api'
 import { usePreferencesStore } from '@/state/preferences.store'
+import { useThemeStore, watchSystemTheme } from '@/state/theme.store'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const BASE_MOI: MeResponse = {
   accountId: 'p1',
@@ -355,6 +358,101 @@ describe('B3 — la densité d’affichage', () => {
 
     const bloc = (await screen.findByText('Densité')).closest('section') as HTMLElement
     expect(within(bloc).getByText(/restent sur cet appareil/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le thème « Automatique », et ce qu'il promettait sans le tenir (01/09/2026).
+ *
+ * `system` est le DÉFAUT du magasin de thème : tant que l'utilisateur n'a pas tranché, ULAMU suit
+ * son système. `watchSystemTheme` existait pour cela depuis la création du magasin, et sa
+ * documentation annonçait « appelé une fois au démarrage » — mais **aucun fichier ne l'appelait**.
+ * Le thème n'était donc lu qu'au chargement de la page : sur un poste réglé pour basculer en sombre
+ * le soir, ULAMU restait clair jusqu'au prochain rechargement.
+ *
+ * Constaté pendant la relecture visuelle du chantier 18, en changeant la préférence système du
+ * navigateur : `matchMedia` répondait « sombre », la classe `dark` n'arrivait jamais.
+ */
+describe('B3 — le thème « Automatique » suit vraiment le système', () => {
+  /** Un faux `matchMedia` dont on peut déclencher le changement à la main. */
+  function fausseMedia(sombreAuDepart: boolean) {
+    const auditeurs: Array<() => void> = []
+    let sombre = sombreAuDepart
+    window.matchMedia = ((requete: string) => ({
+      get matches() {
+        return sombre
+      },
+      media: requete,
+      onchange: null,
+      addEventListener: (_: string, f: () => void) => auditeurs.push(f),
+      removeEventListener: (_: string, f: () => void) => {
+        const i = auditeurs.indexOf(f)
+        if (i >= 0) auditeurs.splice(i, 1)
+      },
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia
+    return {
+      basculer(v: boolean) {
+        sombre = v
+        auditeurs.forEach((f) => f())
+      },
+      get nbAuditeurs() {
+        return auditeurs.length
+      },
+    }
+  }
+
+  beforeEach(() => {
+    useThemeStore.setState({ choice: 'system' })
+    document.documentElement.classList.remove('dark')
+  })
+
+  it('bascule en sombre quand le système bascule, sans recharger la page', () => {
+    const media = fausseMedia(false)
+    const arreter = watchSystemTheme()
+
+    media.basculer(true)
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+
+    media.basculer(false)
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+
+    arreter()
+  })
+
+  it('ne touche à rien quand l’utilisateur a tranché lui-même', () => {
+    const media = fausseMedia(false)
+    useThemeStore.setState({ choice: 'light' })
+    const arreter = watchSystemTheme()
+
+    media.basculer(true)
+    // Un choix explicite l'emporte : suivre le système ici reviendrait à défaire son réglage.
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+
+    arreter()
+  })
+
+  it('se désabonne quand on l’arrête — sinon chaque montage empilerait un auditeur', () => {
+    const media = fausseMedia(false)
+    const arreter = watchSystemTheme()
+    expect(media.nbAuditeurs).toBe(1)
+
+    arreter()
+    expect(media.nbAuditeurs).toBe(0)
+  })
+
+  /*
+    Les trois tests ci-dessus prouvent que la fonction MARCHE. Elle marchait déjà. Ce qui manquait,
+    c'est que quelqu'un l'appelle : le défaut était une absence, invisible à tout test de composant.
+    On lit donc la racine, comme `charte.test.tsx` lit la feuille de style.
+  */
+  it('la racine l’appelle vraiment — c’est l’appel qui manquait, pas la fonction', () => {
+    const source = readFileSync(resolve(__dirname, '../App.tsx'), 'utf8')
+
+    expect(source).toContain('watchSystemTheme')
+    expect(source).toMatch(/useEffect\(\s*\(\)\s*=>\s*watchSystemTheme\(\)/)
   })
 })
 

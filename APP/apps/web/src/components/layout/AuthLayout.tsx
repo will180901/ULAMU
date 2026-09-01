@@ -25,7 +25,26 @@ import { Logo } from '@/components/ulamu/Logo'
  *
  * Le texte reste donc affiché là où il oriente — la PREMIÈRE étape — et s'efface ensuite.
  */
-export function AuthLayout({ subtitle, children }: { subtitle?: string; children: ReactNode }) {
+export function AuthLayout({
+  titre,
+  subtitle,
+  children,
+}: {
+  /**
+   * Nom de l'écran, posé en `h1` **invisible**.
+   *
+   * Les trois pages d'entrée n'avaient aucun titre ni aucun repère de page : ni `h1`, ni `main`.
+   * Un lecteur d'écran liste les titres pour se déplacer et annonce le repère principal à
+   * l'arrivée ; sur `/login`, il n'annonçait donc rien — la toute première page de l'application.
+   * Constaté le 01/09/2026 pendant la relecture visuelle.
+   *
+   * Le titre est masqué et non affiché : la maquette ne montre que le logo, et rien de ce qui se
+   * voit ne doit changer. Ce qui manquait n'était pas visible, c'était structurel.
+   */
+  titre: string
+  subtitle?: string
+  children: ReactNode
+}) {
   return (
     <div className="ul-auth saris-grain-strong">
       <div className="ul-auth__card">
@@ -35,11 +54,12 @@ export function AuthLayout({ subtitle, children }: { subtitle?: string; children
           <AuthCarousel />
         </div>
 
-        <div className="ul-auth__panel">
+        <main className="ul-auth__panel">
+          <h1 className="sr-only">{titre}</h1>
           <Logo size={34} />
           {subtitle ? <p className="ul-auth__sub">{subtitle}</p> : <div className="h-6" />}
           {children}
-        </div>
+        </main>
       </div>
     </div>
   )
