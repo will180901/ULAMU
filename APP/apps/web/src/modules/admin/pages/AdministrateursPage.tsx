@@ -46,9 +46,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type AdminRole, type AuditEntry, type PlatformAdmin } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 
@@ -121,16 +121,16 @@ function ChangerRole({ admin, onFini, onAnnuler }: { admin: PlatformAdmin; onFin
         <Label htmlFor="role-admin" className="mb-1.5 block text-[13px]">
           Sous-rôle
         </Label>
-        <NativeSelect id="role-admin" value={role} onChange={(e) => setRole(e.target.value as AdminRole)}>
-          {ROLES.map((r) => (
-            <option key={r.cle} value={r.cle}>
-              {r.label}
-            </option>
-          ))}
-        </NativeSelect>
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
-          {ROLE_PAR_CLE.get(role)?.aide}
-        </p>
+        {/*
+          Ce que chaque rôle ouvre est désormais DANS l'option, pas sous le champ : on lisait
+          l'explication du rôle déjà choisi, il fallait donc choisir pour savoir ce qu'on choisissait.
+        */}
+        <Liste
+          id="role-admin"
+          valeur={role}
+          onChange={setRole}
+          options={ROLES.map((r) => ({ cle: r.cle, label: r.label, aide: r.aide }))}
+        />
       </div>
 
       <div className="mt-2.5">
@@ -271,13 +271,12 @@ function CreerAdmin({ onFini }: { onFini: () => void }) {
           <Label htmlFor="admin-role" className="mb-1.5 block text-[13px]">
             Sous-rôle
           </Label>
-          <NativeSelect id="admin-role" value={role} onChange={(e) => setRole(e.target.value as AdminRole)}>
-            {ROLES.map((r) => (
-              <option key={r.cle} value={r.cle}>
-                {r.label}
-              </option>
-            ))}
-          </NativeSelect>
+          <Liste
+            id="admin-role"
+            valeur={role}
+            onChange={setRole}
+            options={ROLES.map((r) => ({ cle: r.cle, label: r.label, aide: r.aide }))}
+          />
         </div>
       </div>
 

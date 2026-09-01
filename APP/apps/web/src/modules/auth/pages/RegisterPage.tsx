@@ -24,7 +24,7 @@ import { EtapesAuth } from '@/components/auth/EtapesAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Liste } from '@/components/ulamu/Liste'
 import { Spinner } from '@/components/ui/spinner'
 import { api, ApiError, type ProfessionalCategory } from '@/lib/api'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
@@ -244,16 +244,19 @@ export function RegisterPage() {
               setStep('security')
             }}
           >
-            <label className="flex flex-col gap-1">
+            {/*
+              `<label>` n'enveloppe plus le champ : une liste Radix est un bouton, et un `<label>`
+              qui l'entoure ne le nomme pas. Le nom accessible passe donc par `label=`.
+            */}
+            <div className="flex flex-col gap-1">
               <Libelle>Catégorie</Libelle>
-              <NativeSelect value={category} onChange={(e) => setCategory(e.target.value as ProfessionalCategory)} required>
-                {CATEGORIES.map((c) => (
-                  <NativeSelectOption key={c.value} value={c.value}>
-                    {c.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </label>
+              <Liste
+                label="Catégorie"
+                valeur={category}
+                onChange={setCategory}
+                options={CATEGORIES.map((c) => ({ cle: c.value, label: c.label }))}
+              />
+            </div>
             <label className="flex flex-col gap-1">
               <Libelle>Spécialité (optionnel)</Libelle>
               <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Cardiologie" autoFocus />

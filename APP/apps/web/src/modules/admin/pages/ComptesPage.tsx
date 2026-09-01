@@ -49,9 +49,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
   ApiError,
@@ -285,21 +285,23 @@ function NouvelleProcedure({ onFini }: { onFini: () => void }) {
         <Label htmlFor="type-procedure" className="mb-1.5 block text-[13px]">
           Type de situation
         </Label>
-        <NativeSelect
+        {/*
+          La situation de chaque procédure est désormais DANS l'option : on lisait la description de
+          celle déjà sélectionnée, il fallait donc choisir pour savoir laquelle choisir.
+        */}
+        <Liste
           id="type-procedure"
-          value={type}
-          onChange={(e) => {
-            setType(e.target.value as SupportProcedureType)
+          valeur={type}
+          onChange={(v) => {
+            setType(v)
             setFranchies(new Set())
           }}
-        >
-          {(Object.keys(PROCEDURES) as SupportProcedureType[]).map((t) => (
-            <option key={t} value={t}>
-              {PROCEDURES[t].titre}
-            </option>
-          ))}
-        </NativeSelect>
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{modele.aide}</p>
+          options={(Object.keys(PROCEDURES) as SupportProcedureType[]).map((t) => ({
+            cle: t,
+            label: PROCEDURES[t].titre,
+            aide: PROCEDURES[t].aide,
+          }))}
+        />
       </div>
 
       <div>

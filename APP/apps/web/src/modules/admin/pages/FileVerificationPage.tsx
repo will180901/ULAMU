@@ -31,11 +31,11 @@ import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldCheck, UserRound } 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type DocumentKind, type VerificationStatus } from '@/lib/api'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
@@ -241,11 +241,16 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               <Label htmlFor="decision" className="mb-1.5 block text-[13px]">
                 Décision
               </Label>
-              <NativeSelect id="decision" value={decision} onChange={(e) => setDecision(e.target.value as typeof decision)}>
-                <option value="VERIFIED">Vérifier — le soignant pourra exercer</option>
-                <option value="NEEDS_INFO">Demander un complément</option>
-                <option value="REJECTED">Refuser</option>
-              </NativeSelect>
+              <Liste
+                id="decision"
+                valeur={decision}
+                onChange={setDecision}
+                options={[
+                  { cle: 'VERIFIED' as const, label: 'Vérifier', aide: 'Le soignant pourra exercer dès son contrat signé' },
+                  { cle: 'NEEDS_INFO' as const, label: 'Demander un complément', aide: 'Le dossier revient au déposant, qui peut le corriger' },
+                  { cle: 'REJECTED' as const, label: 'Refuser', aide: 'Le motif lui est transmis : il dit exactement quoi corriger' },
+                ]}
+              />
             </div>
             {decision !== 'VERIFIED' ? (
               <div className="min-w-0 flex-1 basis-48">
@@ -256,14 +261,15 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
                   Nommer la pièce transforme un refus en consigne. Sans elle, « copie non certifiée
                   conforme » laisse le soignant deviner laquelle de ses quatre pièces reprendre.
                 */}
-                <NativeSelect id="piece-visee" value={pieceVisee} onChange={(e) => setPieceVisee(e.target.value)}>
-                  <option value="">Le dossier dans son ensemble</option>
-                  {d.documents.map((doc) => (
-                    <option key={doc.id} value={doc.id}>
-                      {PIECES[doc.kind]}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Liste
+                  id="piece-visee"
+                  valeur={pieceVisee}
+                  onChange={setPieceVisee}
+                  options={[
+                    { cle: '', label: 'Le dossier dans son ensemble' },
+                    ...d.documents.map((doc) => ({ cle: doc.id, label: PIECES[doc.kind] })),
+                  ]}
+                />
               </div>
             ) : null}
           </div>

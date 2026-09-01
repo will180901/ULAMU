@@ -144,7 +144,9 @@ describe('E4 — un compte, un sous-rôle', () => {
     monter()
 
     await utilisateur.click(within(await ligne('Patrick Okemba')).getByRole('button', { name: /Changer le rôle/ }))
-    await utilisateur.selectOptions(await screen.findByLabelText('Sous-rôle'), 'ADMIN_FINANCE')
+    // Depuis le 01/09 les listes ne sont plus natives : on ouvre le champ, puis on désigne l'option.
+    await utilisateur.click(await screen.findByLabelText('Sous-rôle'))
+    await utilisateur.click(await screen.findByRole('option', { name: /Finance/ }))
     await utilisateur.type(screen.getByLabelText('Motif'), 'Renfort sur les remboursements')
     await utilisateur.click(screen.getByRole('button', { name: /Attribuer ce sous-rôle/ }))
 

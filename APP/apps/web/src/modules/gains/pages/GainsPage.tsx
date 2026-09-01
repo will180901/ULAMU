@@ -62,9 +62,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 
@@ -174,13 +174,12 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
                 Opérateur
               </Label>
               {/* Choisi à CHAQUE retrait : le serveur ne le mémorise nulle part. */}
-              <NativeSelect id="operateur" value={operateur} onChange={(e) => setOperateur(e.target.value as MomoOperator)}>
-                {OPERATEURS.map((o) => (
-                  <option key={o.code} value={o.code}>
-                    {o.label}
-                  </option>
-                ))}
-              </NativeSelect>
+              <Liste
+                id="operateur"
+                valeur={operateur}
+                onChange={setOperateur}
+                options={OPERATEURS.map((o) => ({ cle: o.code, label: o.label }))}
+              />
             </div>
           </div>
           {/*

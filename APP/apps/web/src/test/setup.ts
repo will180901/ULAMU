@@ -82,6 +82,20 @@ if (typeof window.ResizeObserver === 'undefined') {
   } as unknown as typeof ResizeObserver
 }
 
+/*
+  jsdom n'implémente pas la capture de pointeur. Radix s'en sert pour savoir si un geste commencé sur
+  un élément s'y termine — c'est ce qui distingue un clic d'un glissement. Sans ces trois fonctions,
+  toute liste déroulante lève `target.hasPointerCapture is not a function` à l'ouverture, et l'erreur
+  ne dit rien de l'écran testé.
+
+  Ajouté le 01/09/2026, quand les listes natives ont été remplacées : `<select>` n'en avait pas besoin.
+*/
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false
+  Element.prototype.setPointerCapture = () => {}
+  Element.prototype.releasePointerCapture = () => {}
+}
+
 // Même motif : `input-otp` appelle `elementFromPoint` dans un minuteur pour savoir si le pointeur
 // survole une case. Le minuteur se déclenche APRÈS la fin du test, d'où une exception non rattrapée
 // qui échappe à `try/catch` et fait échouer la suite entière sans rapport avec ce qui est vérifié.

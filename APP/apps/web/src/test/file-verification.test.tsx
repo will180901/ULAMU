@@ -235,10 +235,12 @@ describe('E1 — la décision', () => {
     vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
     await monter()
 
-    await utilisateur.selectOptions(await screen.findByLabelText('Décision'), 'REJECTED')
+    await utilisateur.click(await screen.findByLabelText('Décision'))
+    await utilisateur.click(await screen.findByRole('option', { name: /Refuser/ }))
     // Le sélecteur de pièce n'apparaît QUE pour un refus ou un complément : sur une vérification,
     // il n'y a rien à corriger.
-    await utilisateur.selectOptions(screen.getByLabelText('Pièce concernée'), 'd2')
+    await utilisateur.click(await screen.findByLabelText('Pièce concernée'))
+    await utilisateur.click(await screen.findByRole('option', { name: 'Diplôme' }))
     await utilisateur.type(screen.getByLabelText('Motif transmis au demandeur'), 'Copie non certifiée conforme.')
     await utilisateur.click(screen.getByRole('button', { name: /Enregistrer la décision/ }))
 

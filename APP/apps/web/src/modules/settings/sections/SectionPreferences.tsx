@@ -13,9 +13,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, Monitor } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Reglage, Segments } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import { api, type NotificationCategory } from '@/lib/api'
 import { useThemeStore, type ThemeChoice } from '@/state/theme.store'
 import { usePreferencesStore, type Densite } from '@/state/preferences.store'
@@ -70,19 +70,16 @@ export function SectionPreferences() {
         </Reglage>
 
         <Reglage titre="Page d'accueil" aide="« Automatique » ouvre sur le poste de travail de votre fonction">
-          <NativeSelect
-            aria-label="Page d'accueil après connexion"
+          <Liste
+            label="Page d'accueil après connexion"
             className="w-56"
-            value={pageAccueil}
-            onChange={(e) => setPageAccueil(e.target.value)}
-          >
-            <option value="auto">Automatique</option>
-            {pages.map((p) => (
-              <option key={p.key} value={p.href}>
-                {p.label}
-              </option>
-            ))}
-          </NativeSelect>
+            valeur={pageAccueil}
+            onChange={setPageAccueil}
+            options={[
+              { cle: 'auto', label: 'Automatique' },
+              ...pages.map((p) => ({ cle: p.href, label: p.label })),
+            ]}
+          />
         </Reglage>
 
         {/*

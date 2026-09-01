@@ -259,7 +259,9 @@ describe('E7 — les procédures support', () => {
     const utilisateur = userEvent.setup()
     monter()
 
-    await utilisateur.selectOptions(await screen.findByLabelText('Type de situation'), 'OWNER_UNREACHABLE')
+    // Les listes ne sont plus natives : on ouvre le champ, puis on désigne l'option.
+    await utilisateur.click(await screen.findByLabelText('Type de situation'))
+    await utilisateur.click(await screen.findByRole('option', { name: /Titulaire de structure injoignable/ }))
 
     expect(await screen.findByLabelText('Transfert de titularité effectué')).toBeInTheDocument()
     expect(screen.queryByLabelText('Ancien numéro confirmé injoignable')).not.toBeInTheDocument()

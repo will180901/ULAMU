@@ -97,10 +97,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
   ApiError,
@@ -576,19 +576,16 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
         <Label htmlFor="carnet-type" className="mb-1.5 block text-[12px]">
           Chronologie
         </Label>
-        <NativeSelect
+        <Liste
           id="carnet-type"
-          size="sm"
-          value={type}
-          onChange={(e) => setType(e.target.value as RecordEntryType | 'TOUT')}
-        >
-          <NativeSelectOption value="TOUT">Tout le Carnet</NativeSelectOption>
-          {(Object.keys(LIBELLE_TYPE) as RecordEntryType[]).map((t) => (
-            <NativeSelectOption key={t} value={t}>
-              {LIBELLE_TYPE[t]}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          taille="sm"
+          valeur={type}
+          onChange={setType}
+          options={[
+            { cle: 'TOUT' as const, label: 'Tout le Carnet' },
+            ...(Object.keys(LIBELLE_TYPE) as RecordEntryType[]).map((t) => ({ cle: t, label: LIBELLE_TYPE[t] })),
+          ]}
+        />
       </div>
 
       {chronologie.isPending ? (
