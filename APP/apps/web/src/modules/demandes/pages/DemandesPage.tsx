@@ -40,6 +40,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type Handshake, type HandshakeStatus } from '@/lib/api'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -502,9 +503,7 @@ export function DemandesPage() {
 
   if (demandes.isPending) {
     return (
-      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-4" /> Lecture de vos demandes…
-      </p>
+      <SqueletteCartes nombre={3} hauteur={128} libelle="Lecture de vos demandes…" />
     )
   }
 

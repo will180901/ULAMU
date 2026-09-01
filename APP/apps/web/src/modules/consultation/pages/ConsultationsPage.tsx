@@ -60,10 +60,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, type CareSessionStatus, type Prescription, type SessionListItem } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteTableau } from '@/components/ulamu/Squelette'
 
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 const heureFr = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -225,9 +225,7 @@ export function ConsultationsPage() {
 
   if (seances.isPending) {
     return (
-      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-4" /> Chargement du registre…
-      </p>
+      <SqueletteTableau colonnes={7} lignes={4} libelle="Chargement du registre…" />
     )
   }
 

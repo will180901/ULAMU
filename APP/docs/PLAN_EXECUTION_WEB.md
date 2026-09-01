@@ -453,6 +453,71 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **21 bis** | **Les trois trous du responsive** — 01/09, après une question directe du porteur. Le chantier 21 n'avait mesuré que l'état par défaut de 17 écrans, à 375 et 768 px. Ajoutés : les **écrans d'entrée**, tout ce qui **s'ouvre au clic**, et la largeur **320 px**. Trois défauts trouvés, dont deux qu'aucune émulation ne montre : la coquille en `h-screen` (= 100vh) mettait le **composeur de messages sous la barre du navigateur**, sans moyen d'y accéder ; **tous les panneaux latéraux faisaient 384 px au lieu de 672** parce qu'un sélecteur `data-[side=…]` battait la classe demandée par l'écran ; et l'**activation 2FA pouvait tomber en entier** sur une réponse inattendue, sur un écran devenu obligatoire. **web 447 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
 
+| **22** | **Les squelettes de chargement** — 01/09. **Serveur : aucun.** La charte l'exigeait déjà (`.ul-shimmer`, « CG-08 §06 »), **deux écrans sur vingt-quatre** l'appliquaient. Les **22 attentes de DONNÉES** passent du rond qui tourne à une forme qui dit ce qui arrive et **réserve la place** ; les **23 ronds de boutons ne bougent pas** — une action qu'on déclenche n'a aucune forme à annoncer. Six formes dans `components/ulamu/Squelette.tsx`, dont le tableau qui suit la bascule en cartes de 1024 px. Le piège était l'accessibilité : un squelette est muet, chacun garde donc sa phrase en `sr-only` sous `role="status"` — c'est ce qui a permis aux **447 tests de passer sans une modification**. Trouvé en chemin : le squelette du tableau de bord n'annonçait **rien du tout**. **web 482 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 22 (les squelettes) a appris
+
+*Mené le 01/09/2026, à la demande du porteur : « je veux les skeleton partout ».*
+
+#### La charte le demandait déjà
+
+`globals.css` porte une classe `.ul-shimmer` depuis la reconstruction, avec ce commentaire :
+*« CG-08 §06 impose de reproduire fidèlement la structure du contenu final : un squelette dit CE QUI
+arrive, là où un rond qui tourne dit seulement qu'on attend. »*
+
+**Deux écrans l'appliquaient. Vingt-deux ne l'appliquaient pas.** La demande du porteur n'était donc
+pas un changement de goût : c'était une règle du projet restée lettre morte sur 92 % des cas.
+
+⚠️ Une réserve d'honnêteté : **le texte de CG-08 §06 n'est pas dans le dépôt.** Le README de la
+charte ne liste que les intitulés de sections. On s'appuie sur la décision déjà inscrite dans le
+code, pas sur une source qu'on pourrait relire.
+
+#### La distinction qui commande tout
+
+Sur 45 ronds qui tournent, **23 étaient au bon endroit** :
+
+| Ce qu'on attend | Le bon signal | Pourquoi |
+|---|---|---|
+| Des **données qui vont remplir un espace** | un squelette | il dit CE QUI arrive, et il **réserve la place** : rien ne saute quand le contenu se pose |
+| Une **action qu'on vient de déclencher** | un rond, dans le bouton | il n'y a aucune forme à annoncer, et le bouton ne doit pas changer de taille sous le doigt |
+
+Les 23 ronds de boutons — « Envoi… », « Enregistrement… » — n'ont pas bougé, et c'est délibéré.
+Un squelette dans un bouton n'annoncerait rien et déplacerait la cible au moment précis où on la
+vise.
+
+#### Le piège, qui est d'accessibilité
+
+**Un squelette est muet.** Remplacer « Lecture des habilitations… » par des rectangles gris
+retirerait l'information à qui ne les voit pas — un recul déguisé en progrès.
+
+Chaque squelette est donc enveloppé dans une zone `role="status" aria-busy="true"` qui **garde la
+phrase en `sr-only`**. Un lecteur d'écran entend exactement ce qu'il entendait avant ; l'œil gagne
+la forme. Les rectangles, eux, sont `aria-hidden` : trois « groupe, groupe, groupe » seraient du
+bruit.
+
+Effet secondaire mesurable : **les 447 tests existants sont passés sans une seule modification**.
+Ceux qui cherchaient « Lecture des habilitations… » le trouvent toujours — parce que la phrase n'a
+pas été supprimée, seulement rendue invisible.
+
+#### Et un défaut trouvé en chemin
+
+Le squelette du **tableau de bord**, antérieur aux autres, portait un `aria-busy` **sans un mot**.
+Un lecteur d'écran n'annonçait donc rien du tout pendant son attente — moins bien que les écrans à
+rond qui tourne, qui disaient au moins « Lecture… ». Passé au composant commun.
+
+#### Six formes, parce qu'une seule ne dirait rien
+
+`components/ulamu/Squelette.tsx` : tableau (qui **suit la bascule en cartes de 1024 px**, sans quoi
+il annoncerait sur téléphone une forme que le contenu ne prendra pas), cartes, tuiles, lignes de
+texte, fil de discussion (bulles **alternées et de largeurs inégales** — des bulles identiques du
+même côté ne ressembleraient à aucune conversation), et réglages.
+
+Une seule forme générique aurait ramené le problème du rond : quelque chose qui dit qu'on attend,
+sans dire quoi.
+
+L'ondulation s'arrête sous `prefers-reduced-motion` — c'était déjà dans `.ul-shimmer`, et un test
+interdit désormais aux squelettes d'introduire une animation à eux, qui échapperait à la règle.
+
 ### Ce que le chantier 21 bis (les trous du responsive) a appris
 
 *Mené le 01/09/2026, après que le porteur a demandé si le responsive était VRAIMENT traité partout.*

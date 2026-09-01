@@ -114,6 +114,7 @@ import {
 import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
+import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -597,9 +598,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
       </div>
 
       {chronologie.isPending ? (
-        <p className="flex items-center gap-2 text-[12px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-3.5" /> Lecture…
-        </p>
+        <SqueletteLignes nombre={3} libelle="Lecture du Carnet…" />
       ) : entrees.length === 0 ? (
         <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
           {type === 'TOUT' ? 'Ce Carnet est encore vide.' : 'Aucune entrée de ce type.'}
@@ -1066,9 +1065,7 @@ export function ConsultationPage() {
 
           <Carte icone={UserRound} titre="Échange" sousTitre={active ? 'Chiffré de bout en bout au repos' : "L'échange est clos et archivé"}>
             {messages.isPending ? (
-              <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
-                <Spinner className="size-3.5" /> Chargement du fil…
-              </p>
+              <SqueletteFil nombre={4} libelle="Chargement du fil…" />
             ) : (
               <div className="max-h-[46dvh] overflow-y-auto">
                 <ul className="flex flex-col gap-3">

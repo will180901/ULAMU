@@ -50,6 +50,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { SqueletteLignes } from '@/components/ulamu/Squelette'
 import {
   api,
   ApiError,
@@ -165,9 +166,7 @@ function ChoixMedicament({
       ) : null}
 
       {resultats.isFetching ? (
-        <p className="mt-1.5 flex items-center gap-2 text-[11px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-3" /> Recherche…
-        </p>
+        <SqueletteLignes nombre={3} libelle="Recherche au référentiel…" className="mt-1.5" />
       ) : null}
 
       {resultats.data && resultats.data.items.length > 0 ? (

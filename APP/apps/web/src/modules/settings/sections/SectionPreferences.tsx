@@ -13,7 +13,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, Monitor } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Reglage, Segments } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import { api, type NotificationCategory } from '@/lib/api'
@@ -21,6 +20,7 @@ import { useThemeStore, type ThemeChoice } from '@/state/theme.store'
 import { usePreferencesStore, type Densite } from '@/state/preferences.store'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useCapabilities } from '@/hooks/useCapabilities'
+import { SqueletteReglages } from '@/components/ulamu/Squelette'
 
 /** Intitulés des cinq catégories de M14. `critical` figure mais ne se coupe pas (RM-14-02). */
 const CATEGORIES: Array<{ cle: NotificationCategory; label: string; aide: string }> = [
@@ -108,9 +108,7 @@ export function SectionPreferences() {
 
       <Carte icone={Bell} titre="Notifications" sousTitre="Celles-ci suivent votre compte, sur tous vos appareils">
         {prefs.isPending ? (
-          <p className="flex items-center gap-2 py-2 text-[12px] text-[var(--texte-tertiaire)]">
-            <Spinner className="size-3.5" /> Lecture de vos préférences…
-          </p>
+          <SqueletteReglages nombre={5} libelle="Lecture de vos préférences…" />
         ) : prefs.isError ? (
           <Avis ton="erreur">
             Vos préférences de notification n'ont pas pu être lues. Rien n'a été modifié — réessayez dans un moment.

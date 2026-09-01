@@ -43,6 +43,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { api, ApiError, type PlatformParameter } from '@/lib/api'
+import { SqueletteLignes, SqueletteTableau } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -223,9 +224,7 @@ function Historique({ cle }: { cle: string }) {
 
   if (histoire.isPending) {
     return (
-      <p className="flex items-center gap-2 py-2 text-[11px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-3" /> Lecture de l'historique…
-      </p>
+      <SqueletteLignes nombre={2} libelle="Lecture de l'historique…" />
     )
   }
   if (histoire.isError) return <Avis ton="erreur">{messageDe(histoire.error)}</Avis>
@@ -307,9 +306,7 @@ export function ParametresMetierPage() {
       ) : null}
 
       {parametres.isPending ? (
-        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-4" /> Lecture des paramètres…
-        </p>
+        <SqueletteTableau colonnes={5} lignes={4} libelle="Lecture des paramètres…" />
       ) : parametres.isError ? (
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les paramètres n'ont pas pu être lus" sousTitre="Rien n'a été modifié">

@@ -37,6 +37,7 @@ import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle }
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type DocumentKind, type VerificationStatus } from '@/lib/api'
+import { SqueletteTableau } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -469,9 +470,7 @@ export function FileVerificationPage() {
       </div>
 
       {file.isPending ? (
-        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-4" /> Chargement de la file…
-        </p>
+        <SqueletteTableau colonnes={7} lignes={4} libelle="Chargement de la file…" />
       ) : file.isError ? (
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="La file n'a pas pu être chargée" sousTitre="Aucune décision n'est enregistrable hors ligne">

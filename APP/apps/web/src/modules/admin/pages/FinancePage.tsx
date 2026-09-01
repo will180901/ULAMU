@@ -50,6 +50,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type RefundRequest, type RefundStatus } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -378,9 +379,7 @@ export function FinancePage() {
       ) : onglet === 'a-trancher' ? (
         <Carte icone={Scale} titre="Remboursements à trancher" sousTitre="Les plus anciens en premier — un patient attend">
           {attente.isPending ? (
-            <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
-              <Spinner className="size-3.5" /> Lecture de la file…
-            </p>
+            <SqueletteCartes nombre={3} hauteur={104} libelle="Lecture de la file…" />
           ) : attente.isError ? (
             /*
               La phrase du serveur seule — « Erreur interne du serveur » — ne répond à aucune des
@@ -415,9 +414,7 @@ export function FinancePage() {
       ) : (
         <Carte icone={UserRound} titre="Décisions passées" sousTitre="Approuvées, rejetées, versées">
           {toutes.isPending ? (
-            <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
-              <Spinner className="size-3.5" /> Lecture…
-            </p>
+            <SqueletteCartes nombre={2} hauteur={88} libelle="Lecture des décisions passées…" />
           ) : historique.length === 0 ? (
             <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
               Aucune décision enregistrée pour l'instant.

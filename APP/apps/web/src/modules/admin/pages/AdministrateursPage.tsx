@@ -46,11 +46,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type AdminRole, type AuditEntry, type PlatformAdmin } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteLignes, SqueletteTableau } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -323,9 +323,7 @@ function JournalHabilitations() {
       </p>
 
       {enCours ? (
-        <p className="flex items-center gap-2 py-2 text-[12px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-3.5" /> Lecture du journal…
-        </p>
+        <SqueletteLignes nombre={3} libelle="Lecture du journal…" />
       ) : echec ? (
         <Avis ton="erreur">{messageDe(echec.error)}</Avis>
       ) : entrees.length === 0 ? (
@@ -413,9 +411,7 @@ export function AdministrateursPage() {
       </div>
 
       {admins.isPending ? (
-        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-4" /> Lecture des habilitations…
-        </p>
+        <SqueletteTableau colonnes={4} lignes={4} libelle="Lecture des habilitations…" />
       ) : admins.isError ? (
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les administrateurs n'ont pas pu être lus" sousTitre="Rien n'a été modifié">

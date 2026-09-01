@@ -49,9 +49,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
+import { SqueletteCartes, SqueletteTableau } from '@/components/ulamu/Squelette'
 import {
   api,
   ApiError,
@@ -416,9 +416,7 @@ function DemandesDeSupport() {
       }
     >
       {demandes.isPending ? (
-        <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-3.5" /> Lecture…
-        </p>
+        <SqueletteCartes nombre={2} hauteur={116} libelle="Lecture des demandes de support…" />
       ) : demandes.isError ? (
         <Avis ton="erreur">
           Les demandes n'ont pas pu être lues. Aucune n'est perdue : elles attendent côté serveur.
@@ -603,9 +601,7 @@ export function ComptesPage() {
       {recherche.trim().length > 0 ? (
         <div className="mt-4">
           {comptes.isPending ? (
-            <p className="flex items-center gap-2 py-6 text-[13px] text-[var(--texte-tertiaire)]">
-              <Spinner className="size-4" /> Recherche…
-            </p>
+            <SqueletteTableau colonnes={4} lignes={3} libelle="Recherche des comptes…" />
           ) : comptes.isError ? (
             <Avis ton="erreur">{messageDe(comptes.error)}</Avis>
           ) : resultats.length === 0 ? (
@@ -746,9 +742,7 @@ export function ComptesPage() {
             }
           >
             {procedures.isPending ? (
-              <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
-                <Spinner className="size-3.5" /> Lecture…
-              </p>
+              <SqueletteCartes nombre={2} hauteur={104} libelle="Lecture des procédures support…" />
             ) : procedures.isError ? (
               <Avis ton="erreur">{messageDe(procedures.error)}</Avis>
             ) : (procedures.data ?? []).length === 0 ? (

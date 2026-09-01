@@ -30,6 +30,7 @@ import {
 import { Avis, Carte, Critere } from '@/components/ulamu/parts'
 import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -267,9 +268,7 @@ export function SectionSessions() {
         sousTitre="Une session inactive plus de 30 minutes est fermée automatiquement"
       >
         {sessions.isPending ? (
-          <p className="flex items-center gap-2 text-[12px] text-[var(--texte-tertiaire)]">
-            <Spinner className="size-3.5" /> Lecture des appareils…
-          </p>
+          <SqueletteCartes nombre={2} hauteur={72} libelle="Lecture des appareils…" />
         ) : sessions.isError ? (
           <>
             <Avis ton="erreur">

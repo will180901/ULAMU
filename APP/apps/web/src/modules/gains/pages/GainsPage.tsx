@@ -62,11 +62,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
@@ -378,9 +378,7 @@ export function GainsPage() {
 
   if (gains.isPending) {
     return (
-      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-4" /> Lecture de vos gains…
-      </p>
+      <SqueletteCartes nombre={3} hauteur={104} libelle="Lecture de vos gains…" />
     )
   }
 

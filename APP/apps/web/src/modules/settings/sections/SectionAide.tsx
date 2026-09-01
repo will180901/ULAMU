@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import { api, ApiError, type SupportProcedureType } from '@/lib/api'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) =>
   e instanceof ApiError ? e.message : "Votre demande n'a pas pu être envoyée. Réessayez dans un moment."
@@ -131,9 +132,7 @@ export function SectionAide() {
 
       <Carte icone={MessagesSquare} titre="Mes demandes" sousTitre="Ce que vous avez écrit, et ce qu’on vous a répondu">
         {miennes.isPending ? (
-          <p className="flex items-center gap-2 py-2 text-[12px] text-[var(--texte-tertiaire)]">
-            <Spinner className="size-3.5" /> Lecture de vos demandes…
-          </p>
+          <SqueletteCartes nombre={2} hauteur={116} libelle="Lecture de vos demandes…" />
         ) : miennes.isError ? (
           <Avis ton="erreur">
             Vos demandes n’ont pas pu être lues. Celles que vous avez envoyées sont conservées côté

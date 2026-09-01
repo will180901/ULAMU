@@ -65,13 +65,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
 import { Link } from 'react-router-dom'
 import { routeAide } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -653,9 +653,7 @@ export function VerificationPage() {
 
   if (dossier.isPending) {
     return (
-      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-4" /> Chargement de votre dossier…
-      </p>
+      <SqueletteCartes nombre={3} hauteur={120} libelle="Chargement de votre dossier…" />
     )
   }
 

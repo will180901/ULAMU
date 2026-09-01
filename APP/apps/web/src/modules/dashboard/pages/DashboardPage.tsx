@@ -61,6 +61,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { api, type ProfessionalDashboard } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { SqueletteTuiles } from '@/components/ulamu/Squelette'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -158,14 +159,14 @@ function Grille({ children }: { children: React.ReactNode }) {
   return <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
 }
 
+/*
+  Ce squelette existait avant les autres — et il était **muet** : `aria-busy` sans un mot. Un
+  lecteur d'écran n'annonçait donc rien du tout pendant l'attente, là où les écrans à rond qui
+  tourne disaient au moins « Lecture… ». Le composant commun porte la phrase en `sr-only`
+  (01/09/2026, chantier 22).
+*/
 function Chargement() {
-  return (
-    <div aria-busy="true" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="ul-shimmer h-[104px] rounded-[10px]" />
-      ))}
-    </div>
-  )
+  return <SqueletteTuiles nombre={4} libelle="Lecture de votre tableau de bord…" />
 }
 
 function Echec({ onRetry }: { onRetry: () => void }) {

@@ -41,9 +41,9 @@ import { AlertTriangle, Flag, Gavel, ShieldQuestion, UserX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type ReportDecision, type UserReport } from '@/lib/api'
+import { SqueletteCartes } from '@/components/ulamu/Squelette'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
@@ -288,9 +288,7 @@ export function SignalementsPage() {
       </div>
 
       {tous.isPending ? (
-        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-4" /> Lecture des signalements…
-        </p>
+        <SqueletteCartes nombre={3} hauteur={96} libelle="Lecture des signalements…" />
       ) : tous.isError ? (
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les signalements n'ont pas pu être lus" sousTitre="Aucune décision n'est perdue">

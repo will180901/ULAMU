@@ -42,6 +42,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { api, type PilotKpi } from '@/lib/api'
+import { SqueletteTuiles } from '@/components/ulamu/Squelette'
 
 const nombre = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -137,9 +138,7 @@ export function PilotagePage() {
       </div>
 
       {kpis.isPending ? (
-        <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-4" /> Calcul des indicateurs…
-        </p>
+        <SqueletteTuiles nombre={4} libelle="Calcul des indicateurs…" />
       ) : kpis.isError ? (
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les indicateurs n'ont pas pu être calculés" sousTitre="Rien n'est perdu">
