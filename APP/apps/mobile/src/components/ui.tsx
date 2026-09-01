@@ -21,7 +21,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import Svg, {Circle, G, Path, Rect, SvgUri} from 'react-native-svg';
+import Svg, {G, Path, Rect, SvgUri} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {fonts, Palette, radius, shadow, ToneName, toneForName} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';

@@ -178,7 +178,9 @@ describe('E4 — la continuité d’administration', () => {
   it('révoque celui d’un autre', async () => {
     const utilisateur = userEvent.setup()
     const revoquer = vi.spyOn(api, 'revokeAdminRole').mockResolvedValue(undefined)
-    monter()
+    // Deux titulaires Vérification : retirer Patrick ne vide pas le sous-rôle. Avec un seul, le
+    // bouton n'existe plus — c'est l'objet du bloc suivant.
+    monter([MOI_ADMIN, admin(), admin({ accountId: 'adm-3', firstName: 'Gisèle', lastName: 'Ndinga' })])
 
     await utilisateur.click(within(await ligne('Patrick Okemba')).getByRole('button', { name: 'Révoquer' }))
 
@@ -189,6 +191,42 @@ describe('E4 — la continuité d’administration', () => {
     monter()
 
     expect(await screen.findByText(/Vous ne pouvez pas\s+révoquer votre propre rôle/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le dernier titulaire d'un sous-rôle (dette 8ter, soldée le 01/09/2026).
+ *
+ * La maquette annonçait « une case grisée signale le dernier porteur d'un sous-rôle ». La phrase
+ * avait dû être retirée de l'écran : **rien ne l'empêchait côté serveur**, et un écran ne ferme pas
+ * une porte. Le serveur refuse désormais — sur la révocation ET sur le changement de rôle, qui vide
+ * le sous-rôle tout aussi sûrement. L'écran peut donc le dire AVANT le clic.
+ */
+describe('E4 — le dernier titulaire d’un sous-rôle', () => {
+  it('ne propose pas de révoquer le seul administrateur Vérification, et dit pourquoi', async () => {
+    monter()
+
+    const sienne = await ligne('Patrick Okemba')
+    // Un bouton grisé sans raison se lit comme une panne : on met la raison à sa place.
+    expect(within(sienne).queryByRole('button', { name: 'Révoquer' })).not.toBeInTheDocument()
+    expect(within(sienne).getByText(/Dernier Vérification/)).toBeInTheDocument()
+    expect(within(sienne).getByText(/nommez un remplaçant d'abord/)).toBeInTheDocument()
+  })
+
+  it('rend le bouton dès qu’un second titulaire couvre le sous-rôle', async () => {
+    monter([MOI_ADMIN, admin(), admin({ accountId: 'adm-3', firstName: 'Gisèle', lastName: 'Ndinga' })])
+
+    expect(within(await ligne('Patrick Okemba')).getByRole('button', { name: 'Révoquer' })).toBeInTheDocument()
+    expect(within(await ligne('Gisèle Ndinga')).getByRole('button', { name: 'Révoquer' })).toBeInTheDocument()
+  })
+
+  it('ne confond pas « sans rôle » avec « dernier de son rôle »', async () => {
+    monter([MOI_ADMIN, admin(), admin({ accountId: 'adm-4', firstName: 'Chancelle', lastName: 'Koumba', role: null, assignedBy: null, assignedAt: null })])
+
+    // Un compte sans sous-rôle n'en garde aucun : rien à protéger, et la ligne le dit déjà autrement.
+    const sansRole = await ligne('Chancelle Koumba')
+    expect(within(sansRole).queryByText(/Dernier /)).not.toBeInTheDocument()
+    expect(within(sansRole).getByText(/n'accède à rien/)).toBeInTheDocument()
   })
 })
 

@@ -18,7 +18,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {alertAvailability, DoctorProfileVM, fetchDoctorProfile, formatXaf} from '../services/directory';
-import {fonts, Palette, radius, shadow} from '../theme';
+import {fonts, Palette} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
 type Status = 'loading' | 'ready' | 'error';

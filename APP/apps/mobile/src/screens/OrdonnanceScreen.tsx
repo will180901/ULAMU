@@ -7,7 +7,7 @@
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import QRCode from 'react-native-qrcode-svg';
 import React, {useCallback, useEffect, useState} from 'react';
-import {Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Badge, Banner, Card, IconButton} from '../components/ui';
 import {Grain} from '../components/Grain';
 import {ErrorState, LoadingState} from '../components/ScreenState';

@@ -13,13 +13,13 @@ import {Banner, Card, IconButton, PrimaryButton} from '../components/ui';
 import {Grain} from '../components/Grain';
 import {useDialog} from '../components/Dialog';
 import {EmptyState} from '../components/ScreenState';
-import {Icon, IconName} from '../components/Icon';
+import {Icon} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {CatalogItem, DisclosureView, MomoOperator, SearchItem} from '../lib/contracts';
 import {formatXaf} from '../services/directory';
-import {fonts, Palette, radius, shadow} from '../theme';
+import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
 const OPERATORS: {code: MomoOperator; label: string}[] = [

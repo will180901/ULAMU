@@ -1,6 +1,6 @@
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import {AuthMeshBackground} from '../components/AuthCarouselDrawer';
 import {CarnetScreen} from '../screens/CarnetScreen';

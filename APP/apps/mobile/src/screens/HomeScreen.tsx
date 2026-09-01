@@ -281,7 +281,7 @@ export function HomeScreen({navigation}: Props) {
     } finally {
       setMarkBusy(false);
     }
-  }, []);
+  }, [alert]);
 
   const greetName = me ? (me.firstName ?? '').trim() : ''; // prénom seul (demande utilisateur)
   const filtered = doctors.filter(d => (cat === 'tous' || d.chip === cat) && (!availableNow || d.online) && deepMatch(d, q));

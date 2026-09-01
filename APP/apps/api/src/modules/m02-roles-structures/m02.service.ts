@@ -15,9 +15,9 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { FacilityMember, InvitationStatus } from "@prisma/client";
+import { AdminRole, FacilityMember, InvitationStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
-import { OutboxService } from "../../common/outbox.service";
+import { OutboxService, type TxClient } from "../../common/outbox.service";
 import { isAcceptableUsername, normalizeUsername } from "../m01-accounts/m01.policies";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
@@ -558,6 +558,8 @@ export class M02Service {
     const target = await this.prisma.account.findUnique({ where: { id: targetAccountId } });
     if (!target || target.type !== "ADMIN") throw new NotFoundException("Compte admin introuvable");
     await this.prisma.$transaction(async (tx) => {
+      // Changer de rôle, c'est aussi QUITTER l'ancien : la garde vaut ici autant qu'à la révocation.
+      await this.assertLaisseUnTitulaire(tx, targetAccountId, role);
       await tx.adminRoleAssignment.upsert({
         where: { accountId: targetAccountId },
         update: { role, assignedBy: actorId, assignedAt: new Date() },
@@ -581,6 +583,7 @@ export class M02Service {
     const assignment = await this.prisma.adminRoleAssignment.findUnique({ where: { accountId: targetAccountId } });
     if (!assignment) throw new NotFoundException("Aucun sous-rôle attribué à ce compte");
     await this.prisma.$transaction(async (tx) => {
+      await this.assertLaisseUnTitulaire(tx, targetAccountId, null);
       await tx.adminRoleAssignment.delete({ where: { accountId: targetAccountId } });
       // Les sessions de l'admin révoqué tombent immédiatement (effet < 1 min).
       await tx.loginSession.updateMany({ where: { accountId: targetAccountId, revokedAt: null }, data: { revokedAt: new Date() } });
@@ -594,6 +597,71 @@ export class M02Service {
   }
 
   // ── Aides internes ─────────────────────────────────────────────────────────
+
+  /** Intitulés d'écran des quatre sous-rôles — un message d'erreur doit parler la langue de E4. */
+  private static readonly INTITULE_ROLE: Record<AdminRole, string> = {
+    SUPER_ADMIN: "super-administrateur",
+    ADMIN_VERIFICATION: "administrateur Vérification",
+    ADMIN_FINANCE: "administrateur Finance",
+    ADMIN_MAP: "administrateur Couverture territoriale",
+  };
+
+  /**
+   * Un sous-rôle ne perd jamais son DERNIER titulaire (dette 8ter, soldée le 01/09/2026).
+   *
+   * ── Ce qui manquait ─────────────────────────────────────────────────────────────────────────
+   *
+   * Le serveur refusait déjà qu'un SUPER_ADMIN se révoque lui-même, mais rien n'empêchait de
+   * retirer le **dernier** administrateur Vérification ou Finance : le domaine se retrouvait sans
+   * personne, et seul un SUPER_ADMIN pouvait le réparer. La maquette E4 annonçait ce garde-fou
+   * (« une case grisée signale le dernier porteur d'un sous-rôle ») ; la phrase avait été retirée
+   * de l'écran faute de mécanisme derrière.
+   *
+   * ── Et un cas plus grave, trouvé en l'écrivant ──────────────────────────────────────────────
+   *
+   * La révocation n'était pas le seul chemin. `assignAdminRole` fait un **upsert** : donner un
+   * autre rôle au dernier titulaire le fait quitter le sien tout aussi sûrement — et c'est
+   * exactement ce que propose le bouton « Changer le rôle » de E4. Pire, un SUPER_ADMIN unique
+   * pouvait s'attribuer à LUI-MÊME un rôle moindre : la garde d'auto-révocation ne voyait rien
+   * passer, et comme seul un SUPER_ADMIN peut attribuer des rôles, plus personne n'aurait jamais
+   * pu en attribuer. L'administration de la plateforme devenait irréparable sans écrire
+   * directement en base.
+   *
+   * La garde couvre donc les deux routes et les quatre rôles.
+   *
+   * ⚠️ Limite connue : deux révocations simultanées des deux derniers titulaires d'un même rôle
+   * pourraient chacune voir un survivant. Le cas demande deux SUPER_ADMIN agissant à la même
+   * seconde sur le même rôle ; il n'est pas traité ici, qui coûterait un verrou sérialisable sur
+   * une table de quatre lignes.
+   *
+   * @param nouveauRole le rôle qu'on s'apprête à poser, ou `null` pour une révocation.
+   */
+  private async assertLaisseUnTitulaire(
+    tx: TxClient,
+    targetAccountId: string,
+    nouveauRole: AdminRole | null,
+  ): Promise<void> {
+    const actuel = await tx.adminRoleAssignment.findUnique({
+      where: { accountId: targetAccountId },
+      select: { role: true },
+    });
+    // Aucun rôle actuel : rien à perdre. Même rôle : on ne quitte rien.
+    if (!actuel || actuel.role === nouveauRole) return;
+
+    const autres = await tx.adminRoleAssignment.count({
+      where: { role: actuel.role, accountId: { not: targetAccountId } },
+    });
+    if (autres > 0) return;
+
+    const intitule = M02Service.INTITULE_ROLE[actuel.role];
+    const consequence =
+      actuel.role === "SUPER_ADMIN"
+        ? " Sans lui, plus personne ne pourrait attribuer de rôle : l'administration deviendrait irréparable."
+        : "";
+    throw new ConflictException(
+      `Ce compte est le dernier ${intitule}.${consequence} Nommez d'abord quelqu'un d'autre à ce sous-rôle, puis revenez retirer celui-ci.`,
+    );
+  }
 
   /** Titulaire ACTIF de la structure, sinon refus explicite (EF-02-05, CU-02-06). */
   private async requireOwner(accountId: string, facilityId: string): Promise<FacilityMember> {

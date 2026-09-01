@@ -365,23 +365,30 @@ boucler l'avenant.
 
 ## 9. Dettes à solder avant toute livraison
 
-Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour le 27/08.
+Aucune ne doit atteindre le client. **Toutes relues une à une le 01/09/2026 (chantier 19)** — chaque
+ligne a été vérifiée dans le code, pas reprise de confiance. Trois l'ont été à tort par le passé :
+la n°2 était notée à moitié soldée alors que le code n'avait pas bougé, la n°9 accusait un lint
+absent partout alors qu'il tournait sur deux applications sur trois, et la n°10 ne comptait que les
+alertes du web.
+
+**Ce qui reste ne se corrige plus dans le code** : cinq gestes appartiennent au porteur (console
+Render, console Neon), trois attendent un arbitrage, une seule est hors de portée du projet.
 
 | # | Sujet | État |
 |---|---|---|
-| 1 | **Identifiants du super-administrateur** — mot de passe `admin123`, secret 2FA `JBSWY3DPEHPK3PXP`, qui est **l'exemple public de la norme RFC**, connu de tous. Sur une API exposée à internet. | 🔴 ouvert |
-| 2 | **MODE VITRINE — moitié retirée le 28/08.** `HANDSHAKE_AUTOCONFIRM_MS` **est parti** : il datait de l'époque sans interface web, et `scheduleDevAutoConfirm` n'était pas un « soignant virtuel » — il **usurpait l'identité du vrai médecin** et confirmait à sa place en 3 s. Une demande traversait donc « en attente », « confirmée » et « payée » en sept secondes : intestable. **`MOMO_AUTOCONFIRM_MS` reste, et ce n'est pas un oubli** — la passerelle Mobile Money est une implémentation en mémoire, aucun agrégateur réel n'est choisi (ADR-09 ouvert). Sans elle, un paiement reste en attente à jamais et aucune session ne démarre. À retirer le jour où un vrai agrégateur répondra. | 🟡 moitié soldée |
-| 3 | **Comptes de démonstration en production** — `dr.nouveau`, `dr.armel`, `dr.solange`, `dr.firmin`, `patient.demo`, `pharma.demo`, tous en `demo1234`. | 🔴 ouvert |
-| 4 | **`ADMIN_REQUIRE_TOTP=false` sur Render** — RM-01-06 est levée sur une API exposée. Le code vaut `true` par défaut : retirer la ligne suffit. | 🔴 ouvert |
-| 5 | **`SECRETBOX_KEY` sans sauvegarde** — perdue = pièces justificatives, messages et secrets 2FA définitivement illisibles. **Procédure écrite le 25/08** : `procedure_sauvegarde_SECRETBOX_KEY.md`. Le code ne ment plus (il journalise et lève au lieu de servir du chiffré en HTTP 200). **Les copies hors ligne restent à faire — geste du porteur.** | 🟡 outillé, non soldé |
-| 6 | **Garde-fou de démarrage sur `SECRETBOX_KEY`** — §8.1 de la procédure, volontairement non appliqué : il changerait une dégradation invisible en indisponibilité totale. **Décision à prendre.** | ⏸ à trancher |
-| 7 | **Hébergement hors du Congo** — la phrase sera corrigée dans B3 (§ palier E). Ce qui reste ouvert n'est pas du ressort du code : héberger des données de santé congolaises hors du Congo peut exiger une base légale de transfert. | 🟡 partiel |
-| 8 | **Tests d'intégration API hors service** — il manque une branche Neon de test et son `TEST_DATABASE_URL`. Le seul garde-fou automatique du backend est donc à l'arrêt. | 🔴 ouvert |
-| 8bis | **La spécialité reste modifiable côté serveur** — C2 l'affiche en lecture seule (arbitrage du 27/08 : le Badge Vérifié atteste d'une qualification contrôlée par pièces), mais `PATCH /v1/me/professional-profile` accepte toujours le champ `specialty`. **Un écran ne ferme pas une porte.** Le fermer demanderait un chemin administratif pour les corrections légitimes. | ⏸ à trancher |
-| 8bis | **`support@ulamu.cg` n'existe pas** — le domaine n'appartient pas au projet (l'application vit sur `onrender.com`). L'adresse est affichée dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. Même famille d'erreur que le « hébergées au Congo-Brazzaville ». Centralisée le 01/09 dans `src/config/contact.config.ts` : **une ligne à changer**. Deux issues — acquérir un domaine et y relever une boîte (coût réel), ou afficher l'adresse déjà relevée qui sert d'expéditeur aux courriels (coût nul). **Décision porteur.** | ⏸ à trancher |
-| 8ter | **Rien ne protège le dernier porteur d'un sous-rôle** (trouvé le 01/09, chantier 15). Le serveur refuse l'auto-révocation, mais rien n'empêche de retirer le **dernier** administrateur Vérification ou Finance : le domaine se retrouve alors sans personne, et seul un SUPER_ADMIN peut le réparer. La maquette E4 annonçait ce garde-fou (« une case grisée signale… le dernier porteur d'un sous-rôle ») — la phrase a été retirée faute de mécanisme. **Coût estimé : ~10 lignes** dans `revokeAdminRole` (compter les porteurs avant de retirer) + 2 tests. | ouvert |
-| 9 | **Aucun lint sur le dépôt** — `eslint` absent partout. À installer, ou à retirer des scripts pour ne pas laisser croire qu'il tourne. | 🔴 ouvert |
-| 10 | **3 alertes `npm audit` élevées** sur `react-router` — concernent le mode RSC, non utilisé (SPA statique). À re-vérifier avant livraison. | 🟡 à revérifier |
+| 1 | **Identifiants du super-administrateur** — **révisé le 01/09.** Le secret 2FA `JBSWY3DPEHPK3PXP` (l'exemple public de la norme RFC) **n'existe plus** : le seed ne scelle plus aucun secret depuis le 20/08. Reste le mot de passe par défaut du seed, `Admin123!`, surchargeable par `SEED_ADMIN_PASSWORD`. ⚠️ **Render ne joue jamais le seed** — le compte en ligne a été créé à la main, et porte le mot de passe employé ce jour-là. | 🔴 **geste porteur** : le changer depuis « Mes paramètres », puis activer son TOTP |
+| 2 | **MODE VITRINE — le « soignant virtuel » est RETIRÉ pour de bon (01/09).** Le journal du 28/08 le donnait pour parti ; en réalité **seule la ligne de `render.yaml` avait été retirée**, le code était intact : la production restait à une variable d'environnement de reprendre. `scheduleDevAutoConfirm` fabriquait un acteur portant l'`accountId` **du vrai médecin** et confirmait à sa place — une usurpation d'identité inscrite au journal d'audit sous son nom, sur une décision de soin qu'il n'avait pas prise. Sa raison d'être avait disparu depuis que C3 « Demandes » existe. **`MOMO_AUTOCONFIRM_MS` reste, et ce n'est pas un oubli** : la passerelle Mobile Money est une implémentation en mémoire, aucun agrégateur réel n'est choisi (ADR-09 ouvert) ; sans elle un paiement reste en attente à jamais. Elle simule le **payeur**, pas un professionnel : elle n'usurpe l'identité de personne. | ✅ **soldée le 01/09** pour le volet dangereux |
+| 3 | **Comptes de démonstration** — `dr.nouveau`, `dr.armel`, `dr.solange`, `dr.firmin`, `patient.demo`, `pharma.demo`, tous en `demo1234`, dans `prisma/seed.ts`. `SEED_DEMO=false` empêche de les recréer ; ceux **déjà en base** ne partent pas tout seuls. | 🔴 **geste porteur** : les supprimer ou les bannir depuis E7 |
+| 4 | **`ADMIN_REQUIRE_TOTP=false` sur Render** — RM-01-06 levée sur une API exposée. Le code vaut `true` par défaut : **retirer la ligne suffit**. | 🔴 **geste porteur** (une ligne dans la console Render) |
+| 5 | **`SECRETBOX_KEY` sans sauvegarde** — perdue = pièces justificatives, messages et secrets 2FA définitivement illisibles. Procédure écrite le 25/08 (`procedure_sauvegarde_SECRETBOX_KEY.md`), et le code ne ment plus. **Les copies hors ligne restent à faire.** | 🟡 **geste porteur**, outillé |
+| 6 | **Garde-fou de démarrage sur `SECRETBOX_KEY`** — §8.1 de la procédure, volontairement non appliqué : il changerait une dégradation invisible en indisponibilité totale. | ⏸ **à trancher** |
+| 7 | **Hébergement hors du Congo** — la phrase est corrigée dans B3 (le pays desservi est distingué du pays d'hébergement). Ce qui reste n'est pas du ressort du code : héberger des données de santé congolaises hors du Congo peut exiger une base légale de transfert. | 🟡 hors code |
+| 8 | **Tests d'intégration API à l'arrêt** — il manque une **branche Neon de test** et son `TEST_DATABASE_URL`. Tout le reste est prêt : le garde-fou `test/garde-base-de-test.ts` refuse de démarrer sans elle (et refuse aussi qu'on y recopie l'URL de production — le geste exact qui a effacé la base le 23/08), et `.env.example` porte la ligne à remplir. Deux clics dans la console Neon, gratuits. `npm run test:unit` reste disponible entre-temps : les 520 tests unitaires ne touchent aucune base. | 🔴 **geste porteur**, entièrement préparé |
+| 8bis | **La spécialité reste modifiable côté serveur** — C2 l'affiche en lecture seule (arbitrage du 27/08 : le Badge Vérifié atteste d'une qualification contrôlée par pièces), mais `PATCH /v1/me/professional-profile` accepte toujours le champ `specialty`. **Un écran ne ferme pas une porte.** La fermer demande un chemin administratif pour les corrections légitimes — qui n'existe pas encore. | ⏸ **à trancher** |
+| 8ter | **Le dernier titulaire d'un sous-rôle est protégé (01/09).** Rien ne l'empêchait : retirer le dernier administrateur Vérification ou Finance laissait le domaine sans personne. **Et la révocation n'était pas le seul chemin** — `assignAdminRole` fait un *upsert*, donc « Changer le rôle » vidait le sous-rôle tout aussi sûrement ; pire, un SUPER_ADMIN unique pouvait s'attribuer à lui-même un rôle moindre, et comme seul un SUPER_ADMIN attribue des rôles, **plus personne n'aurait jamais pu en attribuer** — administration irréparable sans écrire en base. La garde couvre les deux routes et les quatre rôles ; E4 le dit maintenant AVANT le clic, comme la maquette le prévoyait. 9 tests API + 3 tests web. | ✅ **soldée le 01/09** |
+| 8quater | **`support@ulamu.cg` n'existe pas** — le domaine n'appartient pas au projet (l'application vit sur `onrender.com`). L'adresse est affichée dans les mentions légales, **acceptées à l'inscription donc valant preuve**, et derrière « Écrire à l'administration » en C1. Même famille d'erreur que le « hébergées au Congo-Brazzaville ». Centralisée dans `src/config/contact.config.ts` : **une ligne à changer**. *(Cette dette portait le même numéro « 8bis » que la précédente ; renumérotée ici pour lever l'ambiguïté.)* | ⏸ **à trancher** |
+| 9 | **Le lint — soldé le 01/09.** Le constat était faux : `eslint` **tournait** sur mobile et `oxlint` sur le web. C'est l'**API** qui déclarait un script `eslint` sans qu'eslint soit ni installé ni déclaré ni configuré — il n'avait jamais tourné. Passée à `oxlint`, comme le web : **5 avertissements, tous soldés**. Mobile : **13 erreurs, toutes soldées**. Et le script racine, qui prétendait tout couvrir, n'atteignait en fait que l'API — web et mobile sont hors du workspace pnpm par choix ; `lint`, `test` et `build` les appellent désormais explicitement. | ✅ **soldée le 01/09** |
+| 10 | **Alertes `npm audit` — le web est à zéro (01/09), l'API ne l'est pas.** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : **14 alertes de production** (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — et **toutes exigent NestJS 12** alors que le projet est en **NestJS 10**. Deux versions majeures sur une API de 500 fichiers : ce n'est pas un nettoyage, c'est une migration. Une montée dans le majeur courant (10.4.15 → 10.4.22) a été essayée : **elle n'en résout aucune**, elle a donc été annulée. | 🟡 **web soldé · API : à planifier hors chantier** |
 
 ### Trois dérives documentaires jamais arbitrées
 
@@ -437,6 +444,62 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 | **17bis** | **Les listes déroulantes** — codé le 01/09. **Serveur : aucun.** Les dix listes natives des huit écrans concernés remplacées par `components/ulamu/Liste.tsx`, bâtie sur Radix : le menu ouvert suivait jusque-là le thème du **système** — fond blanc en thème sombre, surlignage bleu, coins carrés — et une option ne pouvait porter qu'une ligne, si bien que l'explication d'un choix vivait SOUS le champ et ne décrivait que l'option déjà sélectionnée. **web 377 ✓.** | ⏸ en attente | ⏸ |
 
 | **18** | **Relecture visuelle des 16 écrans** — 01/09. **Serveur : aucun.** Seize écrans passés en revue à trois largeurs et deux thèmes, dans les quatre états. **Sept défauts trouvés, sept corrigés**, dont deux qu'aucun test n'aurait vus : le **tiroir mobile ne quittait jamais l'écran** (il recouvrait les deux tiers de la page, `inert`, donc muet, sur les seize écrans à la fois) et **aucune limite d'erreur React** n'existait — deux écrans sur seize ont fait page blanche pendant la revue. Ajouté : `GardeFou`, le suivi réel du thème système, un titre et un repère de page sur les quatre écrans d'entrée, et la fin des **comptes affichés à zéro pendant une panne**. **web 402 ✓ · types et lint propres.** | ⏸ en attente | ⏸ |
+
+| **19** | **Les dettes du §9** — 01/09. Treize dettes relues **dans le code**, pas sur parole : trois étaient mal décrites. Soldé : le **soignant virtuel** retiré pour de bon (il usurpait l'identité du médecin ; seul `render.yaml` avait bougé le 28/08, le code était intact), la **protection du dernier titulaire d'un sous-rôle** sur les deux routes qui pouvaient la vider — dont un cas d'administration **irréparable** que la dette ne décrivait pas —, le **lint** qui n'avait jamais tourné sur l'API, et les **alertes npm du web ramenées à zéro** par une montée de patch. Reste : cinq gestes du porteur (Render, Neon), trois arbitrages, et **14 alertes de production sur l'API qui exigent NestJS 12** — constat nouveau. **API 520 ✓ · web 405 ✓ · mobile 7 ✓ · lint racine vert · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 19 (les dettes) a appris
+
+*Relecture du §9 menée le 01/09/2026, après la relecture visuelle.*
+
+#### La leçon du chantier : une dette se vérifie, elle ne se relit pas
+
+Treize lignes, treize vérifications dans le code. **Trois étaient fausses**, et toutes les trois
+dans le même sens — la dette était décrite comme moins grave qu'elle ne l'était :
+
+- **La n°2** disait « `HANDSHAKE_AUTOCONFIRM_MS` **est parti** », 🟡 moitié soldée. `git log -S` sur
+  la fonction ne montre qu'un seul commit : celui de l'import initial. **Elle n'était jamais
+  partie.** Ce qui avait été retiré le 28/08, c'est la ligne de `render.yaml` — la configuration,
+  pas le mécanisme. Le journal avait enregistré une intention comme un fait.
+- **La n°9** disait « eslint absent partout ». En réalité mobile lintait (eslint, 13 erreurs) et le
+  web aussi (oxlint). Seule l'API déclarait un script pointant sur un binaire absent.
+- **La n°10** ne comptait que le web, et concluait « à re-vérifier » sur un argument — « concerne
+  le mode RSC, non utilisé » — qui dispensait de regarder. En regardant : le correctif était publié
+  depuis la version suivante, et l'API traînait **14 alertes de production** que personne n'avait
+  comptées.
+
+D'où la règle qu'on retient : **une ligne de dette est une hypothèse jusqu'à ce qu'on ait rouvert le
+fichier.** Le §9 porte désormais la date de sa dernière vérification.
+
+#### Ce qui a été soldé
+
+| # | Ce qui a été fait | Le détail qui comptait |
+|---|---|---|
+| **2** | Le « soignant virtuel » **retiré du code**, pas seulement de la configuration. | `scheduleDevAutoConfirm` fabriquait un acteur portant l'`accountId` **du vrai médecin** et appelait `confirm()` à sa place. Ce n'était pas un figurant de démonstration : c'était une **usurpation d'identité côté serveur**, inscrite au journal d'audit sous le nom du médecin, sur une décision de soin qu'il n'avait pas prise. Sa raison d'être — permettre à un patient seul de dérouler le parcours — a disparu le jour où C3 « Demandes » a existé. **`MOMO_AUTOCONFIRM_MS` reste** : elle simule le *payeur*, pas un soignant, et sans elle aucune séance ne démarre tant qu'aucun agrégateur n'est choisi. |
+| **8ter** | Le dernier titulaire d'un sous-rôle est protégé, **sur les deux routes**. | La dette ne parlait que de la révocation. Mais `assignAdminRole` fait un **upsert** : « Changer le rôle » vide le sous-rôle tout aussi sûrement, et c'est le bouton que E4 propose. **Et un cas que personne n'avait vu** : un SUPER_ADMIN unique pouvait s'attribuer à lui-même un rôle moindre. La garde d'auto-révocation ne voyait rien passer — et comme seul un SUPER_ADMIN attribue des rôles, **plus personne n'aurait jamais pu en attribuer**. L'administration devenait irréparable sans écrire directement en base. E4 le dit maintenant avant le clic, comme la maquette l'annonçait. **9 tests API, 3 tests web.** |
+| **9** | Le lint tourne, partout, et il est vert. | L'API est passée à **oxlint**, comme le web : un binaire, aucune configuration, et il connaît TypeScript. Installer `eslint` + `typescript-eslint` aurait coûté une centaine de paquets et une configuration à écrire, pour le même service. **5 avertissements sur l'API, tous soldés** — dont un piège : `const session = await this.loadForParticipant(...)` était signalé « variable jamais lue » dans `deleteMessage`. Supprimer la ligne aurait **ouvert la suppression de messages à n'importe quel compte authentifié** : l'appel est le contrôle d'accès, seule la liaison était inutile. **13 erreurs sur mobile, toutes soldées**, dont une dépendance manquante dans un `useCallback` qui ne marchait que parce qu'un autre fichier pensait à mémoriser son API. Enfin, le script racine prétendait tout couvrir : web et mobile étant hors du workspace pnpm, il n'atteignait que l'API. `lint`, `test` et `build` les appellent maintenant explicitement. |
+| **10** | Le web passe à **zéro alerte**. | Les 3 alertes `react-router` n'étaient pas « un mode RSC non utilisé qu'on peut ignorer » : le correctif était publié en **7.18.2**, et le projet était en **7.18.1**. Une montée de patch, dans la plage `^` déjà déclarée. Plus une alerte `nanoid` transitive, réglée par `npm audit fix`. |
+
+#### Ce qui reste, et à qui
+
+**Cinq gestes qui n'appartiennent qu'au porteur** — ils touchent la console Render, la console Neon
+ou la base en ligne, et aucun code ne peut les faire à sa place :
+
+1. **Changer le mot de passe du super-administrateur en ligne** et activer son TOTP (dette 1).
+2. **Retirer `ADMIN_REQUIRE_TOTP=false`** de Render — une ligne (dette 4).
+3. **Supprimer ou bannir les six comptes de démonstration** depuis E7 (dette 3).
+4. **Mettre `SECRETBOX_KEY` à l'abri hors ligne** (dette 5) — sans elle, pièces, messages et secrets
+   2FA sont définitivement illisibles.
+5. **Créer une branche Neon de test** et coller son URL dans `TEST_DATABASE_URL` (dette 8). Tout est
+   prêt autour : le garde-fou refuse de démarrer sans elle, et refuse aussi qu'on y recopie l'URL de
+   production — le geste exact qui a effacé la base le 23/08.
+
+**Trois arbitrages** (dettes 6, 8bis, 8quater), posés au porteur avec leur coût réel et une
+recommandation argumentée.
+
+**Un constat nouveau, hors chantier** : les **14 alertes de production de l'API** exigent NestJS 12
+alors que le projet est en NestJS 10. Deux majeures sur une API de 500 fichiers — c'est une
+migration à planifier, pas un nettoyage. Une montée dans le majeur courant (10.4.15 → 10.4.22) a été
+essayée et **n'en résout aucune** ; elle a donc été annulée plutôt que laissée en place pour rien.
 
 ### Ce que le chantier 18 (la relecture visuelle) a appris
 

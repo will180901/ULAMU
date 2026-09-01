@@ -10,8 +10,8 @@
   "scripts": {
     "dev:api": "pnpm --filter @ulamu/api dev",
     "dev:mobile": "pnpm --filter @ulamu/mobile start",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "lint": "pnpm -r lint && npm run lint --prefix apps/web && npm run lint --prefix apps/mobile",
+    "test": "pnpm -r test && npm test --prefix apps/web && npm test --prefix apps/mobile",
+    "build": "pnpm -r build && npm run build --prefix apps/web"
   }
 }

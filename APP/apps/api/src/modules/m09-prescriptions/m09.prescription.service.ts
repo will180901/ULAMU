@@ -24,7 +24,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { CareSessionStatus, Medicament, Prisma, PrescriptionStatus, RecordEntryType, RecordProvenance } from "@prisma/client";
+import { CareSessionStatus, Medicament, PrescriptionStatus, RecordEntryType, RecordProvenance } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { OutboxService } from "../../common/outbox.service";

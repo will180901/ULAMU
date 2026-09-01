@@ -5,7 +5,7 @@
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useState} from 'react';
-import {Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Card, IconButton} from '../components/ui';
 import {EmptyState, ErrorState, LoadingState} from '../components/ScreenState';
 import {Grain} from '../components/Grain';

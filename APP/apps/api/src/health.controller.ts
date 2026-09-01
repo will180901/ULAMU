@@ -38,7 +38,7 @@ export class HealthController {
     service: string;
     startedAt: string;
     uptimeSeconds: number;
-    demo: { handshakeAutoConfirm: boolean; paymentAutoConfirm: boolean };
+    demo: { paymentAutoConfirm: boolean };
   } {
     const positif = (v: string | undefined): boolean => {
       const n = Number(v);
@@ -49,8 +49,10 @@ export class HealthController {
       service: "ulamu-api",
       startedAt: DEMARRE_A.toISOString(),
       uptimeSeconds: Math.floor((Date.now() - DEMARRE_A.getTime()) / 1000),
+      /* Une seule simulation subsiste, et la sonde la déclare : c'est ainsi qu'on vérifie d'un
+         coup d'œil qu'une instance n'est pas en mode démonstration sans le dire. Le soignant
+         virtuel, lui, n'existe plus du tout — il n'y a donc plus rien à annoncer à son sujet. */
       demo: {
-        handshakeAutoConfirm: positif(process.env.HANDSHAKE_AUTOCONFIRM_MS),
         paymentAutoConfirm: positif(process.env.MOMO_AUTOCONFIRM_MS),
       },
     };

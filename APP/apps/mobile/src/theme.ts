@@ -7,7 +7,7 @@
  *   → Tant que les .ttf ne sont pas embarquées, on retombe sur les polices système
  *     (un seul endroit à changer : `fonts`). La structure/les couleurs sont déjà fidèles.
  */
-import {Platform, TextStyle} from 'react-native';
+import {TextStyle} from 'react-native';
 
 /**
  * Palettes CLAIRE et SOMBRE (tokens Maquettes_ULAMU/tokens/colors.css).

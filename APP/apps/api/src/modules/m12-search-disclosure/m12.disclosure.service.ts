@@ -43,7 +43,7 @@ import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { StockAvailabilityService } from "../m11-stocks/m11.availability.service";
 import { STRIKE_WINDOW_DAYS } from "../m11-stocks/m11.policies";
-import { PaymentsService, PaymentState } from "../m13-payments/m13.payments.service";
+import { PaymentsService } from "../m13-payments/m13.payments.service";
 import { RequestDisclosureDto } from "./m12.dto";
 import {
   disclosureExpired,
@@ -622,7 +622,7 @@ export class DisclosureService {
   }
 
   /** Libère la réservation ACTIVE d'un dévoilement → EXPIRED (quantités republiées, RM-12-03). */
-  private async releaseReservation(tx: TxClient, disclosureId: string, now: Date): Promise<void> {
+  private async releaseReservation(tx: TxClient, disclosureId: string, _now: Date): Promise<void> {
     await tx.reservation.updateMany({
       where: { disclosureId, status: ReservationStatus.ACTIVE },
       data: { status: ReservationStatus.EXPIRED, servedAt: null },

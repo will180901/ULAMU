@@ -507,7 +507,10 @@ export class SessionService {
 
   /** Suppression : « pour moi » (masquage, toujours possible) ou « pour tout le monde » (auteur, ≤ 15 min). */
   async deleteMessage(actor: AuthenticatedActor, sessionId: string, messageId: string, forEveryone: boolean): Promise<{ ok: true }> {
-    const session = await this.loadForParticipant(actor, sessionId);
+    // Appelé pour son EFFET, pas pour sa valeur : `loadForParticipant` lève si l'appelant n'est pas
+    // partie à la séance. C'est le contrôle d'accès de cette route — le retirer sous prétexte que la
+    // variable ne servait à rien ouvrirait la suppression à n'importe quel compte authentifié.
+    await this.loadForParticipant(actor, sessionId);
     const msg = await this.prisma.sessionMessage.findFirst({ where: { id: messageId, sessionId } });
     if (!msg) throw new NotFoundException("Message introuvable");
     if (forEveryone) {

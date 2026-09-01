@@ -15,7 +15,6 @@
  *   Serializable (anti-TOCTOU, D-046).
  */
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -237,36 +236,34 @@ export class HandshakeService {
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
-      // DEV/DÉMO uniquement : simule le « Je suis prêt » du professionnel après un court délai,
-      // pour qu'un patient seul (sans app pro) puisse dérouler tout le parcours sur son téléphone.
-      this.scheduleDevAutoConfirm(view.id, offer.professionalId);
       return view;
     } catch (err) {
       throw this.translateSerializationConflict(err);
     }
   }
 
-  /**
-   * Simulation DEV (env `HANDSHAKE_AUTOCONFIRM_MS`, jamais en test) : un professionnel virtuel
-   * confirme la poignée après le délai donné. Strictement hors-production — en PROD c'est le vrai
-   * professionnel qui confirme depuis son app (EF-06-02). Le faux acteur ne sert qu'à appeler confirm().
-   */
-  private scheduleDevAutoConfirm(handshakeId: string, professionalId: string): void {
-    if (process.env.NODE_ENV === "test") return;
-    const ms = Number(process.env.HANDSHAKE_AUTOCONFIRM_MS);
-    if (!Number.isFinite(ms) || ms <= 0) return;
-    const actor: AuthenticatedActor = {
-      accountId: professionalId,
-      accountType: "PROFESSIONAL",
-      sessionId: "dev-autoconfirm",
-      client: "system",
-    };
-    setTimeout(() => {
-      this.confirm(actor, handshakeId).catch((err) =>
-        this.logger.warn(`[DEV] auto-confirmation de la poignée ${handshakeId} échouée : ${(err as Error).message}`),
-      );
-    }, ms);
-  }
+  /*
+    ── Le « soignant virtuel » a été retiré le 01/09/2026 (dette n°2 du plan) ────────────────────
+
+    `scheduleDevAutoConfirm` vivait ici : si `HANDSHAKE_AUTOCONFIRM_MS` valait un nombre positif,
+    le serveur fabriquait un acteur portant l'`accountId` DU VRAI MÉDECIN et appelait `confirm()`
+    à sa place quelques secondes après la demande. Ce n'était pas un acteur de démonstration :
+    c'était une **usurpation d'identité côté serveur**, inscrite au journal d'audit sous le nom du
+    médecin, sur une décision de soin qu'il n'avait pas prise.
+
+    Il datait de l'époque où aucune interface professionnelle n'existait — un patient seul ne
+    pouvait sinon pas dérouler le parcours. Cette raison a disparu : **C3 « Demandes » existe**, un
+    médecin confirme depuis le web (EF-06-02).
+
+    Le 28/08 la variable avait été retirée de `render.yaml`, et le journal l'a noté comme soldée.
+    Le CODE, lui, était resté : la production était donc à une variable d'environnement de
+    reprendre. Retiré ici pour de bon — ce qui n'existe plus ne se rallume pas.
+
+    ⚠️ `MOMO_AUTOCONFIRM_MS` RESTE, et ce n'est pas un oubli : la passerelle Mobile Money est une
+    implémentation en mémoire, aucun agrégateur réel n'est choisi (ADR-09 ouvert). Sans elle, un
+    paiement reste en attente à jamais et aucune séance ne démarre. Elle simule le payeur, pas un
+    professionnel : elle n'usurpe l'identité de personne.
+  */
 
   // ── EF-06-02 : « Je suis prêt à recevoir » / refus motivé ────────────────────
 

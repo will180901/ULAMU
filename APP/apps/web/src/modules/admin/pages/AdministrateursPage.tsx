@@ -488,6 +488,15 @@ export function AdministrateursPage() {
                 {liste.map((a) => {
                   const r = a.role ? ROLE_PAR_CLE.get(a.role) : null
                   const cestMoi = a.accountId === monId
+                  /*
+                    Le dernier titulaire de son sous-rôle. La maquette prévoyait « une case grisée
+                    signale le dernier porteur d'un sous-rôle » ; la phrase avait été retirée le
+                    01/09 faute de mécanisme derrière. Le serveur refuse désormais (dette 8ter) —
+                    l'écran peut donc le dire AVANT le clic, au lieu de laisser découvrir un refus.
+
+                    Le compte est lu de la liste déjà chargée : aucune route de plus.
+                  */
+                  const dernierDeSonRole = a.role !== null && liste.filter((x) => x.role === a.role).length === 1
                   return (
                     <tr key={a.accountId} className="border-b border-border align-top last:border-b-0">
                       <td className="px-3 py-3">
@@ -528,6 +537,10 @@ export function AdministrateursPage() {
                                pourquoi : un bouton grisé sans raison se lit comme une panne. */
                             <span className="self-center text-[11px] text-[var(--texte-tertiaire)]">
                               Votre compte est protégé
+                            </span>
+                          ) : dernierDeSonRole ? (
+                            <span className="self-center text-right text-[11px] text-[var(--texte-tertiaire)]">
+                              Dernier {r?.label ?? 'titulaire'} — nommez un remplaçant d'abord
                             </span>
                           ) : (
                             <Button

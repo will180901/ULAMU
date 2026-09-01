@@ -162,7 +162,6 @@ export function ConsultationsScreen({navigation}: Props) {
 }
 
 function SessionRow({item, onPress}: {item: CareSessionListItem; onPress: () => void}) {
-  const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const meta = SESSION_META[item.status];
   const live = !!meta.live;
@@ -180,7 +179,6 @@ function SessionRow({item, onPress}: {item: CareSessionListItem; onPress: () => 
 }
 
 function PrescriptionRow({presc, onPress}: {presc: PrescriptionView; onPress: () => void}) {
-  const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const meta = PRESC_META[presc.status];
   const names = presc.lines.map(l => l.freeText).filter(Boolean) as string[];
