@@ -35,7 +35,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
+import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type DocumentKind, type VerificationStatus } from '@/lib/api'
 
 const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
@@ -325,16 +325,110 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
   )
 }
 
+// ── Les quatre tuiles de tête ──────────────────────────────────────────────
+
+function Tuile({
+  icone: Icone,
+  intitule,
+  valeur,
+  detail,
+  ton = 'neutre',
+}: {
+  icone: typeof Inbox
+  intitule: string
+  valeur: number
+  detail: string
+  ton?: 'neutre' | 'erreur'
+}) {
+  return (
+    <div className="min-w-0 flex-1 basis-48 rounded-[10px] border border-border bg-card p-3.5">
+      <p className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+        <Icone size={12} strokeWidth={1.9} aria-hidden="true" />
+        {intitule}
+      </p>
+      <p
+        className={
+          'mt-1 font-[family-name:var(--font-display)] text-[26px] font-bold leading-none ' +
+          (ton === 'erreur' && valeur > 0 ? 'text-[var(--erreur-texte)]' : 'text-foreground')
+        }
+      >
+        {valeur}
+      </p>
+      <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{detail}</p>
+    </div>
+  )
+}
+
+/** « il y a 26 h » de retard, ou « 4 h » de marge — le délai restant, sur la cible du serveur. */
+function delaiRestant(waitingSince: string, targetHours: number): { texte: string; depasse: boolean } {
+  const ecouleH = (Date.now() - new Date(waitingSince).getTime()) / 3_600_000
+  const resteH = targetHours - ecouleH
+  const abs = Math.abs(resteH)
+  const dit = abs >= 24 ? `${Math.floor(abs / 24)} j ${Math.round(abs % 24)} h` : `${Math.max(1, Math.round(abs))} h`
+  return resteH < 0 ? { texte: `− ${dit}`, depasse: true } : { texte: dit, depasse: false }
+}
+
+type OngletFile = 'a-traiter' | 'hors-delai' | 'tranches' | 'tous'
+
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 export function FileVerificationPage() {
   const [params, setParams] = useSearchParams()
   const choisi = params.get('dossier')
+  const [onglet, setOnglet] = useState<OngletFile>('a-traiter')
   const qc = useQueryClient()
 
+  /** La charge de travail : déposés et pris en charge. C'est le défaut du serveur. */
   const file = useQuery({ queryKey: ['verification-queue'], queryFn: () => api.verificationQueue(), retry: false })
 
-  const rafraichir = () => void qc.invalidateQueries({ queryKey: ['verification-queue'] })
+  /**
+   * Les dossiers déjà tranchés — deux appels, parce que la route ne filtre que sur UN statut.
+   *
+   * Ils ne servent qu'à l'onglet « Tranchés » et à sa tuile : c'est ce qui permet à un
+   * administrateur de vérifier son propre travail de la semaine, ce que la file active ne montre
+   * jamais.
+   */
+  const verifies = useQuery({
+    queryKey: ['verification-queue', 'VERIFIED'],
+    queryFn: () => api.verificationQueue('VERIFIED'),
+    retry: false,
+  })
+  const refuses = useQuery({
+    queryKey: ['verification-queue', 'REJECTED'],
+    queryFn: () => api.verificationQueue('REJECTED'),
+    retry: false,
+  })
+
+  const rafraichir = () => {
+    void qc.invalidateQueries({ queryKey: ['verification-queue'] })
+  }
+
+  const actifs = file.data?.items ?? []
+  const tranches = [...(verifies.data?.items ?? []), ...(refuses.data?.items ?? [])]
+  const cible = file.data?.targetHours ?? 72
+
+  const enAttente = actifs.filter((it) => it.status === 'SUBMITTED')
+  const prisEnCharge = actifs.filter((it) => it.status === 'IN_REVIEW')
+  const horsDelai = actifs.filter((it) => it.overdue)
+
+  /**
+   * Tranchés « cette semaine ».
+   *
+   * `waitingSince` est la date de dernière mise à jour du dossier ; pour un dossier décidé, c'est
+   * la décision qui l'a écrite en dernier. L'approximation est assumée et bornée : elle ne sert
+   * qu'à un compte indicatif, jamais à une décision.
+   */
+  const SEMAINE_MS = 7 * 24 * 3_600_000
+  const tranchesRecents = tranches.filter((it) => Date.now() - new Date(it.waitingSince).getTime() < SEMAINE_MS)
+
+  const visibles =
+    onglet === 'a-traiter'
+      ? actifs
+      : onglet === 'hors-delai'
+        ? horsDelai
+        : onglet === 'tranches'
+          ? tranches
+          : [...actifs, ...tranches]
 
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col">
@@ -350,12 +444,8 @@ export function FileVerificationPage() {
             File de vérification
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
-            {/*
-              « 72 heures », pas « 72 heures ouvrées » : `m03.policies` dit sans détour que le MVP
-              compte des heures PLEINES, et que les heures ouvrées « seront affinées avec le modèle
-              opérationnel ». Annoncer « ouvrées » promettrait un calcul que personne ne fait.
-            */}
-            Délai cible : {file.data?.targetHours ?? 72} heures à compter du dépôt · au-delà, le dossier remonte en tête
+            {actifs.length} dossier{actifs.length > 1 ? 's' : ''} ouvert{actifs.length > 1 ? 's' : ''}
+            {horsDelai.length > 0 ? ` · ${horsDelai.length} hors délai` : ''} · les plus anciens en tête
           </p>
         </span>
       </div>
@@ -379,70 +469,190 @@ export function FileVerificationPage() {
           </Carte>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-          <section aria-label="File d'attente" className="w-full shrink-0 lg:w-80">
-            <Carte icone={Inbox} titre="Dossiers en attente" sousTitre={`${file.data.items.length} à traiter`}>
-              {file.data.items.length === 0 ? (
-                <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
-                  Aucun dossier en attente. La file est à jour.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {file.data.items.map((it) => {
-                    const actif = it.caseId === choisi
+        <>
+          <div className="mb-4 flex flex-wrap gap-3">
+            <Tuile icone={Inbox} intitule="En attente" valeur={enAttente.length} detail="Aucun administrateur assigné" />
+            <Tuile
+              icone={AlertTriangle}
+              intitule="Hors délai"
+              valeur={horsDelai.length}
+              ton="erreur"
+              /* Le seuil vient du serveur (PM-11) : aucun nombre d'heures n'est écrit ici. */
+              detail={`Au-delà de ${cible} h · remontés en tête`}
+            />
+            <Tuile
+              icone={ShieldCheck}
+              intitule="Pris en charge"
+              valeur={prisEnCharge.length}
+              detail="Verrouillés par leur examinateur"
+            />
+            <Tuile
+              icone={Gavel}
+              intitule="Tranchés"
+              valeur={tranchesRecents.length}
+              detail="Sur sept jours · inscrits au journal"
+            />
+          </div>
+
+          {horsDelai.length > 0 ? (
+            <div className="mb-4">
+              {/*
+                « 72 heures OUVRÉES », dit la maquette. Le mot est faux : `m03.policies` compte des
+                heures pleines et note lui-même que les heures ouvrées « seront affinées avec le
+                modèle opérationnel ». Un dossier déposé vendredi soir est en retard le lundi, pas
+                le mercredi — et l'annoncer autrement ferait attendre l'administration pour rien.
+              */}
+              <Avis ton="erreur">
+                {`${horsDelai.length} dossier${horsDelai.length > 1 ? 's ont' : ' a'} dépassé le délai de ${cible} heures. Ils remontent en tête de file : la file est traitée du plus ancien au plus récent.`}
+              </Avis>
+            </div>
+          ) : null}
+
+          <div className="mb-4">
+            <Segments
+              label="Filtrer la file"
+              valeur={onglet}
+              onChange={setOnglet}
+              options={[
+                { cle: 'a-traiter', label: `À traiter ${actifs.length}` },
+                { cle: 'hors-delai', label: `Hors délai ${horsDelai.length}` },
+                { cle: 'tranches', label: `Tranchés ${tranches.length}` },
+                { cle: 'tous', label: `Tous ${actifs.length + tranches.length}` },
+              ]}
+            />
+          </div>
+
+          {visibles.length === 0 ? (
+            <Carte icone={Inbox} titre="Aucun dossier" sousTitre={onglet === 'a-traiter' ? 'La file est à jour' : 'Rien dans cette vue'}>
+              <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                {onglet === 'a-traiter'
+                  ? 'Tous les dossiers déposés ont été traités. Les nouveaux arrivent ici dès leur dépôt.'
+                  : 'Changez de vue pour retrouver les autres dossiers.'}
+              </p>
+            </Carte>
+          ) : (
+            /* Une file se lit en colonnes : on y compare des délais, on n'y fait pas défiler des fiches. */
+            <div className="overflow-x-auto rounded-[10px] border border-border">
+              <table className="w-full min-w-[860px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
+                    {['Dossier', 'Demandeur', 'Type', 'Pièces', 'Statut', 'Délai', ''].map((t, i) => (
+                      <th
+                        key={t || `action-${i}`}
+                        scope="col"
+                        className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
+                      >
+                        {t}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibles.map((it) => {
                     const etat = ETATS[it.status]
+                    const delai = delaiRestant(it.waitingSince, cible)
+                    const clos = it.status === 'VERIFIED' || it.status === 'REJECTED' || it.status === 'REVOKED'
                     return (
-                      <li key={it.caseId}>
-                        <button
-                          type="button"
-                          aria-current={actif ? 'true' : undefined}
-                          onClick={() => setParams({ dossier: it.caseId }, { replace: true })}
-                          className={
-                            'w-full rounded-md border px-3 py-2 text-left transition-colors ' +
-                            'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
-                            (actif ? 'border-[var(--ap-200)] bg-[var(--ap-50)]' : 'border-border bg-card hover:bg-secondary')
-                          }
-                        >
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{it.subjectName}</span>
-                            {/* Deux seuils distincts (EF-03-03) : cible dépassée, puis escalade. */}
-                            {it.overdue ? (
-                              <Pilule ton="erreur">Hors délai</Pilule>
-                            ) : it.overdueTarget ? (
-                              <Pilule ton="alerte">En retard</Pilule>
-                            ) : (
-                              <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
-                            )}
+                      <tr key={it.caseId} className="border-b border-border align-top last:border-b-0">
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {/*
+                            « DOS-2026-00341 » n'existe pas : les identifiants sont des UUID. On en
+                            montre le début, qui suffit à désigner un dossier sans l'inventer.
+                          */}
+                          <span className="block font-mono text-[12px] text-foreground">
+                            {it.caseId.slice(0, 8).toUpperCase()}
                           </span>
-                          <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">
-                            {depuis(it.waitingSince)} · {it.documentCount} pièce{it.documentCount > 1 ? 's' : ''}
-                          </span>
-                        </button>
-                      </li>
+                          <span className="block text-[11px] text-[var(--texte-tertiaire)]">{depuis(it.waitingSince)}</span>
+                        </td>
+
+                        <td className="px-3 py-3">
+                          <span className="block text-[13px] font-medium text-foreground">{it.subjectName}</span>
+                          <span className="block font-mono text-[11px] text-[var(--texte-tertiaire)]">{it.subject}</span>
+                        </td>
+
+                        <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                          {it.subjectKind === 'PROFESSIONAL' ? 'Soignant' : 'Structure'}
+                        </td>
+
+                        <td className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                          {/*
+                            La maquette écrit « 4 / 4 ». Le total exigé dépend du type de sujet et
+                            n'est PAS servi par la file — l'inventer ici serait recopier une règle
+                            que le serveur seul applique. On dit ce qu'on sait : combien il y en a.
+                          */}
+                          {it.documentCount} pièce{it.documentCount > 1 ? 's' : ''}
+                        </td>
+
+                        <td className="px-3 py-3">
+                          {/* Deux seuils distincts (EF-03-03) : cible dépassée, puis escalade. */}
+                          {it.overdue ? (
+                            <Pilule ton="erreur">Hors délai</Pilule>
+                          ) : it.overdueTarget ? (
+                            <Pilule ton="alerte">En retard</Pilule>
+                          ) : (
+                            <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {clos ? (
+                            <span className="text-[12px] text-[var(--texte-tertiaire)]">—</span>
+                          ) : (
+                            <>
+                              <span
+                                className={
+                                  'block text-[13px] font-medium tabular-nums ' +
+                                  (delai.depasse ? 'text-[var(--erreur-texte)]' : 'text-foreground')
+                                }
+                              >
+                                {delai.texte}
+                              </span>
+                              <span className="block text-[11px] text-[var(--texte-tertiaire)]">
+                                {delai.depasse ? 'hors délai' : `sur ${cible} h`}
+                              </span>
+                            </>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-3 whitespace-nowrap text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={it.overdue ? 'default' : 'outline'}
+                            onClick={() => setParams({ dossier: it.caseId }, { replace: true })}
+                          >
+                            {it.status === 'IN_REVIEW' ? 'Poursuivre' : clos ? 'Revoir' : 'Examiner'}
+                          </Button>
+                        </td>
+                      </tr>
                     )
                   })}
-                </ul>
-              )}
-            </Carte>
-          </section>
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          <div className="min-w-0 flex-1">
-            {choisi ? (
-              <Dossier
-                caseId={choisi}
-                onDecide={rafraichir}
-              />
-            ) : (
-              <Carte icone={ShieldCheck} titre="Sélectionnez un dossier" sousTitre="Le détail, les pièces et la décision s'affichent ici">
-                <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-                  Les dossiers hors délai remontent en tête de file. Prenez-en un en charge avant de
-                  décider : cela le verrouille pour les autres administrateurs.
-                </p>
-              </Carte>
-            )}
-          </div>
-        </div>
+          <p className="mt-3 text-[11px] text-[var(--texte-tertiaire)]">
+            {visibles.length} dossier{visibles.length > 1 ? 's' : ''} affiché{visibles.length > 1 ? 's' : ''} · triés du
+            plus ancien au plus récent
+          </p>
+        </>
       )}
+
+      {/*
+        Le dossier s'ouvre en panneau, pas en colonne : l'examen demande de la place — pièces à
+        ouvrir, motif à écrire — et la file doit rester derrière, pour qu'on sache ce qui attend.
+      */}
+      <Sheet open={!!choisi} onOpenChange={(o) => !o && setParams({}, { replace: true })}>
+        <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 sm:max-w-xl">
+          <SheetHeader className="border-b border-border">
+            <SheetTitle>Examen du dossier</SheetTitle>
+          </SheetHeader>
+          <div className="p-4">
+            {choisi ? <Dossier caseId={choisi} onDecide={rafraichir} /> : null}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

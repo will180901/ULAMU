@@ -92,7 +92,11 @@ function dossier(over: Partial<Awaited<ReturnType<typeof api.adminCase>>> = {}) 
 }
 
 async function monter(sansDossier = false) {
-  vi.spyOn(api, 'verificationQueue').mockResolvedValue(FILE)
+  // La route ne filtre que sur UN statut : l'écran l'appelle trois fois — la charge active par
+  // défaut, puis les vérifiés et les refusés pour l'onglet « Tranchés ». La doublure distingue.
+  vi.spyOn(api, 'verificationQueue').mockImplementation(async (status?: string) =>
+    status ? { ...FILE, items: [] } : FILE,
+  )
   useSessionStore.setState({ token: 'jeton', me: ADMIN, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
@@ -102,9 +106,14 @@ async function monter(sansDossier = false) {
       </MemoryRouter>
     </QueryClientProvider>,
   )
-  // On attend la CARTE de la file : le titre de page, lui, s'affiche déjà pendant le chargement,
-  // et l'attendre laisserait les assertions tomber sur l'écran d'attente.
-  await screen.findByText('Dossiers en attente')
+  /*
+    Le titre de page s'affiche déjà pendant le chargement : l'attendre laisserait les assertions
+    tomber sur l'écran d'attente. On attend donc ce qui n'existe QUE chargé — et cela dépend du
+    point d'entrée : avec un dossier dans l'URL, le panneau d'examen s'ouvre et Radix masque le
+    reste de la page aux requêtes de rôle (`aria-hidden`), tableau compris.
+  */
+  if (sansDossier) await screen.findByRole('columnheader', { name: 'Demandeur' })
+  else await screen.findByRole('dialog')
 }
 
 beforeEach(() => {
@@ -116,25 +125,60 @@ describe('E1 — la file', () => {
     vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
     await monter(true)
 
-    const liste = within(screen.getByRole('region', { name: "File d'attente" }))
+    const tableau = within(screen.getByRole('table'))
     // Deux seuils distincts : le délai cible dépassé, puis l'escalade. Les confondre ferait perdre
     // la hiérarchie d'urgence sur laquelle l'administration travaille.
-    expect(await liste.findByText('Hors délai')).toBeInTheDocument()
-    expect(liste.getByText('À prendre')).toBeInTheDocument()
+    expect(await tableau.findByText('Hors délai')).toBeInTheDocument()
+    expect(tableau.getByText('À prendre')).toBeInTheDocument()
   })
 
   it('annonce 72 heures — pas « heures ouvrées », que personne ne calcule', async () => {
     vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
     await monter(true)
-    expect(screen.getByText(/72 heures à compter du dépôt/)).toBeInTheDocument()
+    // Un dossier de la file a plus de 200 h : le bandeau annonce le dépassement, avec la cible
+    // servie par le serveur (PM-11) et jamais le mot « ouvrées », que personne ne calcule.
+    expect(screen.getByText(/dépassé le délai de 72 heures/)).toBeInTheDocument()
+    expect(screen.getByText(/Au-delà de 72 h/)).toBeInTheDocument()
     expect(document.body.textContent).not.toContain('ouvrées')
   })
 
-  it('sans dossier choisi, invite à en prendre un — pas de cadre vide', async () => {
+  it('sans dossier choisi, la file entière est lisible — aucun panneau ne la masque', async () => {
     vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
     await monter(true)
-    expect(screen.getByText('Sélectionnez un dossier')).toBeInTheDocument()
-    expect(screen.getByText(/verrouille pour les autres administrateurs/)).toBeInTheDocument()
+
+    // Le panneau d'examen ne s'ouvre qu'à la demande : tant qu'aucun dossier n'est choisi, c'est
+    // la file qui occupe l'écran, et chaque ligne porte son propre bouton.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /Examiner/ }).length).toBeGreaterThan(0)
+  })
+
+  it('compte les quatre tuiles sur les vrais statuts', async () => {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
+    await monter(true)
+
+    // Deux déposés, dont un hors délai ; aucun pris en charge.
+    const enAttente = (await screen.findByText('En attente')).closest('div') as HTMLElement
+    expect(within(enAttente).getByText('2')).toBeInTheDocument()
+    const horsDelai = screen.getByText('Hors délai', { selector: 'p' }).closest('div') as HTMLElement
+    expect(within(horsDelai).getByText('1')).toBeInTheDocument()
+  })
+
+  it("n'invente pas le total de pièces exigées — il dit ce qu'il sait", async () => {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
+    await monter(true)
+
+    // La maquette écrit « 4 / 4 ». Le total dépend du type de sujet et n'est pas servi par la
+    // file : le recopier ici serait dupliquer une règle que le serveur seul applique.
+    const tableau = within(screen.getByRole('table'))
+    expect(tableau.getAllByText('4 pièces').length).toBeGreaterThan(0)
+    expect(document.body.textContent).not.toContain('4 / 4')
+  })
+
+  it("n'invente aucune référence de dossier : les identifiants sont des UUID", async () => {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
+    await monter(true)
+
+    expect(document.body.textContent).not.toMatch(/DOS-\d{4}-\d+/)
   })
 
   it('une panne dit pourquoi rien ne se décide hors ligne (RM-03-02)', async () => {

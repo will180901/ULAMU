@@ -419,6 +419,63 @@ Aucune ne doit atteindre le client. Reprises du plan précédent, mises à jour 
 
 | **10** | **B3 — Mes paramètres** — codé le 01/09. **Serveur : aucun.** La phrase d'hébergement, que le plan annonçait comme le piège de ce chantier, **était déjà corrigée** — B3 n'a pas été reconstruit depuis la maquette, il a été relu. Ajouté : la **densité d'affichage**, qui manquait et qui fait réellement quelque chose ; le pays d'hébergement distingué du pays desservi ; l'identifiant réel du compte. L'adresse de support est **centralisée en un point**, avec sa dette écrite. **API 496 ✓ · web 268 ✓ · builds propres.** | ⏸ en attente | ⏸ |
 
+| **11** | **E1 — File de vérification** — codé le 01/09. **Serveur : aucun.** Web : coquille refaite sur la forme mesurée — quatre tuiles, quatre onglets comptés, **un tableau** à la place d'une colonne de 320 px, et l'examen en panneau. Onglet « Tranchés » ajouté (deux appels, la route ne filtrant que sur un statut). « 72 heures **ouvrées** » corrigé. Le composant d'examen, lui, **n'a pas été touché** : il était juste. **API 496 ✓ · web 271 ✓ · builds propres.** | ⏸ en attente | ⏸ |
+
+### Étape 6 — le comparatif bloc à bloc de E1
+
+*Maquette servie sur `http://localhost:8123`, relue bloc par bloc contre l'écran construit.*
+
+| Bloc de la maquette | Ce qui est construit | Verdict |
+|---|---|---|
+| En-tête « File de vérification · **5 dossiers ouverts · 1 hors délai · tri par urgence** » | idem, les comptes venant de la file réelle · « les plus anciens en tête » | conforme. **« Tri par urgence » précisé** : le serveur trie par ancienneté dans le statut courant, et les dépassements remontent parce qu'ils sont les plus vieux — pas par une règle d'urgence séparée |
+| Tuile « **EN ATTENTE** 4 · *Aucun administrateur assigné* » | idem, compté sur `SUBMITTED` | conforme |
+| Tuile « **HORS DÉLAI** 1 · *> 72 h · Remontés en tête de file* » | idem, le seuil venant de `targetHours` (PM-11) | conforme — **aucun nombre d'heures n'est écrit dans le fichier** |
+| Tuile « **PRIS EN CHARGE** 1 · *Verrouillés par leur examinateur* » | idem, compté sur `IN_REVIEW` | conforme |
+| Tuile « **TRANCHÉS** 2 cette semaine · *Décisions inscrites au journal* » | idem, sur sept jours | conforme, **avec une approximation dite** : la date utilisée est celle de dernière mise à jour du dossier, qui pour un dossier décidé est la décision. Indicatif, jamais décisionnel |
+| Bandeau « 1 dossier a dépassé le délai de **72 heures ouvrées** » | idem, **sans « ouvrées »** | famille 2, point 3 — `m03.policies` compte des heures pleines et le dit : « les heures ouvrées seront affinées ». Un dossier déposé vendredi soir est en retard **le lundi**, pas le mercredi |
+| Onglets « À traiter · Hors délai · Tranchés · Tous » | idem, comptés | conforme. « Tranchés » demande **deux appels** — la route ne filtre que sur un statut |
+| Tableau, colonne **DOSSIER** « DOS-2026-00341 · Déposé le 06/08 » | Les huit premiers caractères de l'identifiant + l'ancienneté | **écart de fait** — `DOS-2026-…` n'existe pas : les identifiants sont des UUID |
+| Tableau, colonne **DEMANDEUR** (initiales, nom, *métier · quartier*) | Nom + référence du sujet | **écart** — la file ne sert ni le métier ni le quartier ; les réclamer pour décorer un tableau ferait une requête par ligne |
+| Tableau, colonne **TYPE** (Soignant / Structure) | idem, depuis `subjectKind` | conforme |
+| Tableau, colonne **PIÈCES** « 4 / 4 » | « 4 pièces » | **écart de fait** — le total exigé dépend du type de sujet et **n'est pas servi par la file**. Le recopier ici dupliquerait une règle que le serveur seul applique — exactement la dette corrigée en C1 le 23/08 |
+| Tableau, colonne **STATUT** | idem, avec les **deux seuils** distincts (EF-03-03) : cible dépassée, puis escalade | conforme, et au-delà |
+| Tableau, colonne **DÉLAI** « − 26 h *hors délai* » / « 4 h *sur 72 h* » | idem, calculé sur `waitingSince` et `targetHours` | conforme |
+| Action « Examiner » / « Poursuivre » | idem, plus « Revoir » sur un dossier déjà tranché | conforme |
+| Pied « 5 dossiers sur 7 · tri par délai restant » + pagination | « N dossiers affichés · triés du plus ancien au plus récent » | **écart** — la file n'est pas paginée côté serveur, et annoncer « sur 7 » supposerait un total qu'elle ne donne pas |
+| *(la maquette ouvre l'examen ailleurs)* | Le dossier s'ouvre **en panneau**, la file restant derrière | conforme à l'usage : l'examen demande de la place, la file doit rester visible |
+
+### Ce que le chantier 11 (E1 — File de vérification) a appris
+
+**Deuxième fois qu'une colonne étroite tenait la place d'un tableau.** Comme C4, cet écran empilait
+des fiches dans un rail de 320 px là où la maquette montre un tableau pleine largeur. Et comme en C4,
+la différence n'est pas esthétique : une file de vérification se travaille en **comparant des
+délais**. « − 26 h » à côté de « 2 j 21 h » se lit d'un coup d'œil dans un tableau ; empilé dans une
+colonne, chaque dossier redevient un cas isolé et la hiérarchie d'urgence disparaît — celle-là même
+que les quatre tuiles annoncent en haut.
+
+**Ce qui était juste n'a pas été touché.** Le composant d'examen — pièces ouvrables, checklist
+locale, décision motivée, journal — était conforme et bien argumenté. Seule la coquille a été
+refaite. *Troisième chantier de suite où la question n'est pas « que réécrire » mais « que
+comparer » : B3 n'a rien eu à changer sur son texte le plus dangereux, E1 n'a rien à changer sur son
+cœur.*
+
+**Un total qu'on ne sert pas ne s'invente pas.** La maquette écrit « 4 / 4 » pièces. Le
+dénominateur dépend du type de sujet, et la file ne le renvoie pas — le recopier côté client aurait
+recréé exactement la dette corrigée en C1 le 23/08, où la liste des pièces obligatoires était
+dupliquée dans l'écran. **Deux vérités pour une même règle finissent toujours par diverger, et c'est
+l'écran qui ment.** L'écran dit donc « 4 pièces », qui est vrai sans dénominateur.
+
+**Une approximation dite vaut mieux qu'un chiffre absent.** « Tranchés cette semaine » repose sur la
+date de dernière mise à jour du dossier, qui pour un dossier décidé est celle de la décision — sauf
+si autre chose l'a touché depuis. Le compte est donc indicatif, et le commentaire le dit. Il sert à
+un administrateur qui veut voir son travail de la semaine, jamais à une décision. *Le renoncement
+n'était pas la seule option : entre inventer et se taire, il y a mesurer et prévenir.*
+
+**Un panneau ouvert masque la page aux tests.** Radix pose `aria-hidden` sur tout ce qui n'est pas le
+panneau : neuf tests ont cessé de trouver le tableau alors qu'il était bien là. Le monteur attend
+désormais le panneau quand l'URL en désigne un, et le tableau sinon. *Même famille de piège que le
+`pointer-events: none` du chantier 4 — un symptôme qui accuse le code, alors qu'il décrit le harnais.*
+
 ### Étape 6 — le comparatif bloc à bloc de B3
 
 *Maquette servie sur `http://localhost:8123`, quatre onglets relus contre l'écran construit.*
