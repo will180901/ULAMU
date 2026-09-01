@@ -74,7 +74,7 @@ export class GardeFou extends Component<Props, State> {
         role="alert"
         className={
           page
-            ? 'flex min-h-screen items-center justify-center bg-[var(--fond-page)] p-5'
+            ? 'flex min-h-dvh items-center justify-center bg-[var(--fond-page)] p-5'
             : 'flex items-start justify-center p-4'
         }
       >

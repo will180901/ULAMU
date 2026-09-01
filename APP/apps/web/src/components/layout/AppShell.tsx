@@ -60,8 +60,19 @@ export function AppShell() {
 
   const ouverte = estMobile ? true : survol
 
+  /*
+    `h-dvh` et non `h-screen` (= 100vh) — corrigé le 01/09/2026.
+
+    Sur un navigateur mobile, `100vh` vaut la hauteur de l'écran **barre d'adresse escamotée**, pas
+    la hauteur réellement visible. Combiné à `overflow-hidden`, qui interdit à la coquille de
+    défiler, le bas de l'application se retrouvait sous la barre du navigateur, **sans aucun moyen
+    d'y accéder** : en consultation, c'est le composeur de messages qui disparaissait.
+
+    Le volet de développement n'a pas de barre d'adresse : aucune émulation ne montre ce défaut. Il
+    ne se voit que sur un vrai téléphone — ou en lisant l'unité employée.
+  */
   return (
-    <div className="relative h-screen overflow-hidden bg-[var(--fond-page)] saris-grain">
+    <div className="relative h-dvh overflow-hidden bg-[var(--fond-page)] saris-grain">
       {/* Sur mobile, la barre sort du flux : translatée hors écran tant qu'on ne l'appelle pas.
           `inert` quand elle est fermée — sans lui, ses liens restent TABULABLES bien qu'invisibles :
           le focus disparaîtrait de l'écran pendant neuf tabulations, sans que rien ne l'explique.

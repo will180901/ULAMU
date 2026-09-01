@@ -107,15 +107,50 @@ export function TotpSetupPage() {
     void setup.refetch()
   }
 
-  // Le QR est fabriqué dès que le secret arrive — opération asynchrone, d'où l'effet séparé.
+  /*
+    Le QR est fabriqué dès que le secret arrive — opération asynchrone, d'où l'effet séparé.
+
+    ⚠️ Le repli sur la saisie manuelle n'est pas une précaution de style (01/09/2026). Cet appel
+    n'avait ni garde ni `.catch` : une adresse de provisionnement absente — une réponse 200 dont la
+    forme n'est pas celle attendue — faisait lever `qrcode` avec « Cannot read properties of
+    undefined (reading 'getContext') », et l'écran ENTIER tombait.
+
+    Ce serait grave n'importe où ; ici, c'est bloquant. Depuis que RM-01-06 est rétablie, aucune
+    action d'administration n'est possible sans TOTP : un compte dont l'activation plante n'a plus
+    aucun chemin vers l'administration.
+
+    Or l'écran propose DÉJÀ la saisie manuelle du secret, juste à côté. En cas d'échec on y bascule
+    donc, au lieu de tout perdre : le QR est un confort, le secret est la vraie donnée.
+  */
   useEffect(() => {
     if (!setup.data) return
     let annule = false
-    void QRCode.toDataURL(setup.data.provisioningUri, { margin: 1, width: 176 }).then((url) => {
+
+    /** Sans QR possible : on déplie directement le secret, qui est la vraie donnée. */
+    const replierSurLeSecret = () => {
       if (annule) return
-      setQrDataUrl(url)
+      if (!setup.data?.secret) {
+        // Ni adresse ni secret : il n'y a plus rien à activer, autant le dire.
+        setStep('error')
+        return
+      }
+      setSecretVisible(true)
       setStep((s) => (s === 'loading' ? 'scan' : s))
-    })
+    }
+
+    if (!setup.data.provisioningUri) {
+      replierSurLeSecret()
+      return
+    }
+
+    void QRCode.toDataURL(setup.data.provisioningUri, { margin: 1, width: 176 })
+      .then((url) => {
+        if (annule) return
+        setQrDataUrl(url)
+        setStep((s) => (s === 'loading' ? 'scan' : s))
+      })
+      .catch(replierSurLeSecret)
+
     return () => {
       annule = true
     }
@@ -182,7 +217,7 @@ export function TotpSetupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--fond-page)] p-5 saris-grain-strong">
+    <main className="flex min-h-dvh items-center justify-center bg-[var(--fond-page)] p-5 saris-grain-strong">
       <div className="w-[460px] max-w-full">
         {/* Titre masqué et repère de page : comme les trois autres écrans d'entrée, celui-ci
             n'annonçait rien à un lecteur d'écran. Rien de visible ne change. */}
@@ -251,8 +286,12 @@ export function TotpSetupPage() {
                 }}
                 className="ulamu-step-fade flex flex-col gap-4"
               >
+                {/* Sans QR fabriqué, « scannez ce code » désignerait quelque chose qui n'est pas
+                    là. La consigne suit ce qui est réellement affiché. */}
                 <p className="m-0 text-[13px] leading-[1.55] text-muted-foreground">
-                  Scannez ce code avec Google Authenticator, Authy ou équivalent.
+                  {qrDataUrl
+                    ? 'Scannez ce code avec Google Authenticator, Authy ou équivalent.'
+                    : 'Ajoutez ce compte dans Google Authenticator, Authy ou équivalent, en recopiant le code ci-dessous.'}
                 </p>
 
                 {/* Le QR et le code manuel sont deux ALTERNATIVES, pas un empilement : qui ne peut
@@ -282,13 +321,17 @@ export function TotpSetupPage() {
                     <div className="ulamu-step-fade">
                       <p className="m-0 mb-1 flex items-center justify-between gap-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
                         <span>Saisissez ce code dans votre application :</span>
-                        <button
-                          type="button"
-                          onClick={() => setSecretVisible(false)}
-                          className="border-0 bg-transparent p-0 font-semibold text-primary hover:underline"
-                        >
-                          Revenir au QR code
-                        </button>
+                        {/* Sans QR fabriqué, ce bouton mènerait à un cadre vide — un cul-de-sac
+                            sur un écran dont on ne peut pas sortir autrement. */}
+                        {qrDataUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setSecretVisible(false)}
+                            className="border-0 bg-transparent p-0 font-semibold text-primary hover:underline"
+                          >
+                            Revenir au QR code
+                          </button>
+                        ) : null}
                       </p>
                       <div className="flex items-center gap-2">
                         <code className="min-w-0 flex-1 break-all rounded-md bg-secondary px-2.5 py-1.5 font-mono text-[13px] leading-[1.6] text-foreground">

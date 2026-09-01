@@ -451,6 +451,89 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **21** | **Le responsive de toute la plateforme** — 01/09. **Serveur : aucun.** Le chantier 18 mesurait les DÉFAUTS (débordement, rognage, recouvrement) et ignorait délibérément ce qui vit dans un conteneur à défilement : les **tableaux** passaient donc au travers. Mesuré ici : à 375 px, C4 cachait **549 px** hors écran, E1 529, E3 429, E4 389 — et la barre d'onglets de B3 en cachait **471**, soit trois onglets sur cinq. À 768 px, C4 en cachait encore 214 : le point de bascule n'est pas `md`, c'est **1024 px**. Correction en **CSS seule** : les cinq tableaux deviennent des cartes, chaque cellule affichant le nom de sa colonne. Le balisage ne change pas — **les 422 tests passent sans une modification**. **web 442 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
 
+| **21 bis** | **Les trois trous du responsive** — 01/09, après une question directe du porteur. Le chantier 21 n'avait mesuré que l'état par défaut de 17 écrans, à 375 et 768 px. Ajoutés : les **écrans d'entrée**, tout ce qui **s'ouvre au clic**, et la largeur **320 px**. Trois défauts trouvés, dont deux qu'aucune émulation ne montre : la coquille en `h-screen` (= 100vh) mettait le **composeur de messages sous la barre du navigateur**, sans moyen d'y accéder ; **tous les panneaux latéraux faisaient 384 px au lieu de 672** parce qu'un sélecteur `data-[side=…]` battait la classe demandée par l'écran ; et l'**activation 2FA pouvait tomber en entier** sur une réponse inattendue, sur un écran devenu obligatoire. **web 447 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 21 bis (les trous du responsive) a appris
+
+*Mené le 01/09/2026, après que le porteur a demandé si le responsive était VRAIMENT traité partout.*
+
+#### La question qui a tout déclenché
+
+« Tu es honnête, tu as géré tout le responsive correctement de toutes les pages ? »
+
+La réponse était **non**, et il fallait le dire. Le chantier 21 avait corrigé ce qu'il avait mesuré,
+et sa mesure portait sur **l'état par défaut de 17 écrans, à 375 et 768 px**. Restaient hors champ :
+les quatre écrans d'entrée, tout ce qui s'ouvre en cliquant, la largeur 320 px — courante sur les
+téléphones vendus à Brazzaville —, et l'idée même qu'une émulation n'est pas un téléphone.
+
+Trois défauts s'y cachaient, dont deux qu'aucune émulation ne pouvait montrer.
+
+#### 1. `100vh` n'est pas la hauteur visible — et la coquille ne défile pas
+
+`AppShell` était en `h-screen`, c'est-à-dire `height: 100vh`. Sur un navigateur mobile, `100vh` vaut
+la hauteur de l'écran **barre d'adresse escamotée**, pas la hauteur réellement disponible. Comme la
+coquille est aussi en `overflow-hidden` — par conception, elle ne défile jamais — ce qui dépassait
+passait **sous la barre du navigateur, sans aucun moyen d'y accéder**.
+
+En consultation, c'est le **composeur de messages** qui se retrouvait là.
+
+Ce défaut ne se voit dans aucune émulation : le volet de développement n'a pas de barre d'adresse.
+Il ne se trouve qu'en lisant l'unité employée. Sept endroits corrigés en `dvh`, avec repli `vh` pour
+les navigateurs qui ne connaissent pas l'unité.
+
+#### 2. Tous les panneaux latéraux faisaient la moitié de leur largeur
+
+`sheet.tsx` portait sa largeur dans `data-[side=right]:w-3/4` et `data-[side=right]:sm:max-w-sm`. Un
+sélecteur d'attribut a une **spécificité plus forte** qu'une classe simple : le `w-full` et le
+`sm:max-w-2xl` que les écrans passaient en `className` étaient donc **systématiquement perdants**.
+Et `tailwind-merge` n'y pouvait rien — il ne fusionne que des classes de même famille, or
+`data-[side=right]:w-3/4` et `w-full` n'en sont pas.
+
+Mesuré : **384 px au lieu de 672 sur grand écran, 75 % de l'écran au lieu de 100 % sur téléphone**,
+pour les quatre panneaux de l'application. Celui d'examen d'un dossier de vérification — là où un
+administrateur lit des pièces et décide de l'exercice d'un soignant — travaillait sur la moitié de
+la place que l'écran lui demandait, depuis toujours, sans que personne ne l'ait choisi.
+
+La largeur est désormais calculée depuis la propriété `side`, en classes simples : ce que l'écran
+demande gagne.
+
+#### 3. L'écran d'activation 2FA pouvait tomber en entier
+
+`QRCode.toDataURL(setup.data.provisioningUri, …)` n'avait **ni garde ni `.catch`**. Une réponse 200
+dont la forme n'est pas celle attendue faisait lever `qrcode` — « Cannot read properties of undefined
+(reading 'getContext') » — et l'écran entier tombait.
+
+Grave n'importe où ; ici, **bloquant** : depuis que RM-01-06 est rétablie (01/09), aucune action
+d'administration n'est possible sans TOTP. Un compte dont l'activation plante n'a plus **aucun**
+chemin vers l'administration.
+
+Or l'écran propose déjà la saisie manuelle du secret, juste à côté. En cas d'échec on y bascule
+donc : le QR est un confort, le secret est la vraie donnée. Et le bouton « Revenir au QR code »
+disparaît quand il n'y a pas de QR — sinon il mènerait à un cadre vide, sur un écran dont on ne peut
+pas sortir autrement.
+
+*(Trouvé parce que ma fausse API ne couvrait pas la route. Le garde-fou du chantier 18 a fait son
+travail : un message au lieu d'une page blanche.)*
+
+#### Et deux défauts que la largeur 320 px a révélés
+
+- Les dates portaient `whitespace-nowrap` — utile dans une colonne de tableau alignée, **nuisible**
+  dans une carte, où il ne fait plus que rogner la valeur. Neutralisé en mode carte.
+- Le titre de l'écran de consultation tombait à 74 px pour 108 nécessaires : `flex-1` sans largeur
+  de base cède tout à la pastille d'état et au chronomètre. Même correction que pour le bandeau des
+  cartes — un plancher, et c'est la pastille qui passe à la ligne.
+
+#### Ce qui reste hors de portée, et le restera
+
+**Un vrai téléphone.** L'émulation ne reproduit ni la barre d'adresse qui se rétracte, ni le clavier
+virtuel qui recouvre un champ, ni le rendu de Safari mobile. Le défaut n°1 ci-dessus en est la
+preuve : il a été trouvé en LISANT le code, pas en le regardant.
+
+Et **les étapes 4 et 5 de l'inscription** (mot de passe, code de vérification) n'ont pas été
+mesurées : les dérouler demanderait de saisir un mot de passe et un code, ce que je ne fais pas.
+Les étapes 1 à 3 sont propres à 320 px, et le composant d'étapes est entièrement en `flex-1` — il ne
+peut pas déborder, seulement se comprimer.
+
 ### Ce que le chantier 21 (le responsive) a appris
 
 *Mené le 01/09/2026, à la demande du porteur, après la mise en ligne des chantiers 18 à 20.*

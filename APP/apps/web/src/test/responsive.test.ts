@@ -107,3 +107,72 @@ describe('La barre d’onglets de B3 ne cache plus rien', () => {
     expect(classes).not.toContain('overflow-x-auto')
   })
 })
+
+/**
+ * La hauteur de la coquille — `dvh` et non `vh` (01/09/2026).
+ *
+ * Sur un navigateur mobile, `100vh` vaut la hauteur de l'écran **barre d'adresse escamotée**, pas
+ * la hauteur réellement visible. `AppShell` étant aussi en `overflow-hidden`, la coquille ne défile
+ * jamais : ce qui dépassait passait sous la barre du navigateur, **sans aucun moyen d'y accéder**.
+ * En consultation, c'est le composeur de messages qui disparaissait.
+ *
+ * Aucune émulation ne montre ce défaut — le volet de développement n'a pas de barre d'adresse. Il
+ * ne se voit que sur un vrai téléphone, ou en lisant l'unité employée. D'où ce test.
+ */
+describe('La hauteur suit le viewport RÉEL, pas l’écran', () => {
+  it('la coquille est en `h-dvh`, jamais en `h-screen`', () => {
+    const s = source('components/layout/AppShell.tsx')
+    expect(s).toContain('h-dvh')
+    expect(s, '`h-screen` (= 100vh) est revenu').not.toMatch(/className="[^"]*h-screen/)
+  })
+
+  it('les écrans pleine page aussi', () => {
+    expect(source('components/layout/GardeFou.tsx')).toContain('min-h-dvh')
+    expect(source('modules/auth/pages/TotpSetupPage.tsx')).toContain('min-h-dvh')
+  })
+
+  it('les deux règles CSS gardent un repli pour les navigateurs sans `dvh`', () => {
+    const css = readFileSync(resolve(__dirname, '../styles/globals.css'), 'utf8')
+    for (const classe of ['.ul-auth', '.ul-totp']) {
+      const regle = css.slice(css.indexOf(`${classe} {`))
+      // L'ordre compte : `100vh` d'abord, `100dvh` ensuite. Un navigateur qui ignore la seconde
+      // déclaration garde la première.
+      expect(regle.slice(0, 90)).toMatch(/min-height: 100vh; min-height: 100dvh/)
+    }
+  })
+})
+
+/**
+ * La largeur des panneaux latéraux (01/09/2026).
+ *
+ * `sheet.tsx` portait sa largeur dans des sélecteurs `data-[side=right]:w-3/4` et
+ * `data-[side=right]:sm:max-w-sm`. Un sélecteur d'attribut a une **spécificité plus forte** qu'une
+ * classe simple : le `w-full` et le `sm:max-w-2xl` que les écrans passaient étaient donc
+ * systématiquement perdants, et `tailwind-merge` ne pouvait rien y faire — il ne fusionne que des
+ * classes de même famille.
+ *
+ * Résultat : **tous les panneaux faisaient 75 % de l'écran sur téléphone et 384 px sur grand
+ * écran**, quoi que demande l'écran. Le panneau d'examen d'un dossier de vérification travaillait
+ * sur la moitié de la place prévue.
+ */
+describe('Un panneau latéral obéit à l’écran qui l’ouvre', () => {
+  /*
+    On lit le fichier SANS ses commentaires : celui qui explique ce bug cite forcément la forme
+    fautive, et un test qui interdit des mots finirait par interdire les explications. On cherche
+    la classe telle qu'elle serait APPLIQUÉE, pas telle qu'elle est racontée.
+  */
+  const sheet = () => source('components/ui/sheet.tsx').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+
+  it('la largeur n’est plus enfermée dans un sélecteur d’attribut', () => {
+    expect(sheet(), 'la largeur est redevenue prioritaire sur celle de l’écran').not.toMatch(
+      /data-\[side=(left|right)\]:w-3\/4/,
+    )
+    expect(sheet()).not.toMatch(/data-\[side=(left|right)\]:sm:max-w-sm/)
+  })
+
+  it('le défaut existe toujours, mais en classes simples que l’écran peut couvrir', () => {
+    // Sans défaut du tout, un panneau ouvert sans classe explicite n'aurait aucune largeur.
+    expect(sheet()).toMatch(/w-3\/4 sm:max-w-sm/)
+  })
+})
+

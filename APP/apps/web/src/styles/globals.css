@@ -721,7 +721,13 @@
    Carte unique centrée : carrousel à gauche (repris à l'identique du mobile), formulaire à droite.
    Sous 860px la colonne d'illustration disparaît — sur un écran étroit, elle volerait au formulaire
    la place dont il a besoin, et l'inscription professionnelle compte cinq étapes.             */
-.ul-auth { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
+/* `dvh` et non `vh` : sur un navigateur mobile, `100vh` vaut la hauteur de l'écran **barre
+   d'adresse escamotée**, pas la hauteur réellement visible. Le bas de la page passe donc sous la
+   barre du navigateur. `dvh` (*dynamic viewport height*) suit la hauteur réelle, barre comprise, et
+   se recalcule quand elle se rétracte.
+   La ligne `100vh` reste en repli : un navigateur qui ne connaît pas `dvh` ignore la
+   seconde déclaration et garde la première. */
+.ul-auth { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
 .ul-auth__card {
   display: flex;
   width: 880px;
@@ -801,7 +807,13 @@
 .ul-auth__row > * { flex: 1; min-width: 0; }
 
 /* ── Configuration TOTP (écran bloquant après la première connexion) ────────────────────────── */
-.ul-totp { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
+/* `dvh` et non `vh` : sur un navigateur mobile, `100vh` vaut la hauteur de l'écran **barre
+   d'adresse escamotée**, pas la hauteur réellement visible. Le bas de la page passe donc sous la
+   barre du navigateur. `dvh` (*dynamic viewport height*) suit la hauteur réelle, barre comprise, et
+   se recalcule quand elle se rétracte.
+   La ligne `100vh` reste en repli : un navigateur qui ne connaît pas `dvh` ignore la
+   seconde déclaration et garde la première. */
+.ul-totp { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: var(--fond-page); padding: var(--espace-5); }
 .ul-totp__inner { width: 460px; max-width: 100%; }
 .ul-totp__logo { display: flex; justify-content: center; margin-bottom: var(--espace-6); }
 .ul-totp__body { display: flex; flex-direction: column; gap: var(--espace-4); }
@@ -1151,6 +1163,14 @@ html[data-densite='compact'] .ul-ligne-dense {
   /* Une cellule peut porter PLUSIEURS enfants — un nom puis un numéro, par exemple. Sans cette
      règle, le second repart à la ligne DANS la colonne des intitulés : le téléphone s'alignait sous
      « ADMINISTRATEUR ». Tout ce qui suit l'intitulé appartient à la colonne de droite. */
+  /* Un `whitespace-nowrap` empêche de couper une colonne de tableau — c'est ce qui garde une date
+     sur une ligne dans une grille alignée. Dans une carte, il n'y a plus de colonne à aligner : il
+     ne fait plus que ROGNER la valeur. Constaté à 320 px sur « Attribué le » d'E4. */
+  .ul-tableau-cartes tbody td,
+  .ul-tableau-cartes tbody td > * {
+    white-space: normal;
+  }
+
   .ul-tableau-cartes tbody td > * {
     grid-column: 2;
     /* `fit-content` : une pastille épouse son texte au lieu de s'étirer en bandeau sur toute la

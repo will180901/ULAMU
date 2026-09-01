@@ -1012,7 +1012,10 @@ export function ConsultationPage() {
         >
           <Stethoscope size={18} strokeWidth={1.5} />
         </span>
-        <span className="min-w-0 flex-1">
+        {/* `basis-44` : sans largeur de base, `flex-1` cède tout à la pastille d'état et au
+            chronomètre. À 320 px le titre tombait à 74 px pour 108 nécessaires — « Consultati ».
+            Avec un plancher, c'est la pastille qui passe à la ligne, et le titre reste entier. */}
+        <span className="min-w-0 flex-1 basis-44">
           <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Consultation</h1>
           <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[var(--texte-tertiaire)]">
             <Lock size={12} strokeWidth={1.8} aria-hidden="true" />
@@ -1067,7 +1070,7 @@ export function ConsultationPage() {
                 <Spinner className="size-3.5" /> Chargement du fil…
               </p>
             ) : (
-              <div className="max-h-[46vh] overflow-y-auto">
+              <div className="max-h-[46dvh] overflow-y-auto">
                 <ul className="flex flex-col gap-3">
                   {items.length === 0 ? (
                     <li className="py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
