@@ -480,31 +480,88 @@ describe('B3 — à propos du compte', () => {
   })
 })
 
-// ── Ce que B3 dit de la double authentification (chantier 24, 02/09/2026) ───────────────────────
+// ── Ce que B3 dit de la double authentification (chantiers 24 puis 31, 02/09/2026) ─────────────
 
 /*
-  L'écran annonçait à TOUT LE MONDE : « Obligatoire sur ULAMU — elle ne peut pas être désactivée ».
+  L'écran a dit trois choses successives, et l'histoire compte parce qu'elle explique la forme de
+  ces tests.
 
-  C'est ce que le serveur applique à un administrateur (`disableTotp` répond 403 sur
-  `account.type === "ADMIN"`, RM-01-06). Pour un soignant, les deux moitiés sont fausses : la
-  désactivation est acceptée, le cahier la donne pour optionnelle, et rien dans le web ne l'impose.
+  1. Il annonçait à TOUT LE MONDE « Obligatoire sur ULAMU — elle ne peut pas être désactivée ».
+     Vrai pour un administrateur (`disableTotp` répondait 403), faux pour un soignant.
+  2. Le chantier 24 a coupé la phrase en deux, une par type de compte.
+  3. **Le chantier 31 supprime la distinction : décision du porteur (D-053), le TOTP est optionnel
+     pour TOUS les types de compte, désactivé par défaut, activable et désactivable à volonté.**
+     Les deux gardes serveur sont retirées.
 
-  On verrouille donc le FAIT — qui est tenu par l'obligation, et qui ne l'est pas — et non une
-  tournure : la leçon du chantier 16, où un test qui interdisait des mots avait fini par interdire
-  l'explication qui les employait.
+  On verrouille donc le FAIT — plus aucune obligation annoncée à personne, et un chemin de
+  désactivation réellement offert — et non une tournure. C'est la leçon du chantier 16, où un test
+  qui interdisait des mots avait fini par interdire l'explication qui les employait.
 */
-describe('B3 — la double authentification dit à chacun ce qui le concerne', () => {
-  it('un administrateur lit une obligation, parce que le serveur la lui applique', async () => {
+describe('B3 — la double authentification n’est imposée à personne (D-053)', () => {
+  it('un administrateur ne lit plus aucune obligation', async () => {
     monter('securite', { accountType: 'ADMIN', adminRole: 'SUPER_ADMIN' })
 
-    expect(await screen.findByText(/Obligatoire pour l.administration/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Fortement recommandée/i)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Obligatoire/i)
   })
 
-  it('un soignant ne lit plus une obligation que personne ne fait respecter', async () => {
+  it('un soignant lit la même phrase — la distinction par rôle a disparu', async () => {
     monter('securite')
 
     expect(await screen.findByText(/Fortement recommandée/i)).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/Obligatoire sur ULAMU/)
+  })
+
+  /*
+    Le fond de la décision : le chemin doit EXISTER, pas seulement la phrase. La route
+    `POST /accounts/me/totp/disable` vivait au serveur depuis toujours sans qu'aucun écran ne
+    l'appelle — une permission qu'on ne peut pas exercer n'en est pas une.
+  */
+  it('offre réellement de désactiver, à qui l’a activée', async () => {
+    monter('securite', { totpEnabled: true })
+
+    expect(await screen.findByRole('button', { name: /^Désactiver$/ })).toBeInTheDocument()
+  })
+
+  it('ne propose pas de désactiver ce qui n’est pas activé', async () => {
+    monter('securite', { totpEnabled: false })
+
+    await screen.findByText(/Fortement recommandée/i)
+    expect(screen.queryByRole('button', { name: /Reconfigurer/ })).toBeNull()
+  })
+})
+
+/*
+  ── La 2FA par email, injoignable depuis le web jusqu'au chantier 31 ─────────────────────────
+
+  Trois routes existaient au serveur, aucune n'était déclarée dans le client. Le réglage était donc
+  absent de cet écran — et la connexion web ne savait pas davantage reconnaître ce facteur, ce qui
+  enfermait dehors, en silence, tout compte l'ayant activé depuis le mobile.
+*/
+describe('B3 — la 2FA par email est enfin réglable', () => {
+  it('propose de l’activer quand le compte a une adresse', async () => {
+    monter('securite', { emailTwoFactorEnabled: false, email: 'dr@exemple.cg' })
+
+    expect(await screen.findByText(/Code par email à la connexion/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Activer$/ })).toBeEnabled()
+  })
+
+  /*
+    Un bouton inerte sans explication ressemble à une panne. Sans adresse au compte, le réglage ne
+    peut rien faire : l'écran dit pourquoi et où l'ajouter.
+  */
+  it('explique pourquoi elle est hors d’atteinte sans adresse', async () => {
+    monter('securite', { emailTwoFactorEnabled: false, email: null })
+
+    expect(await screen.findByText(/demande une adresse email au compte/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Activer$/ })).toBeDisabled()
+  })
+
+  it('propose de la désactiver quand elle est active', async () => {
+    monter('securite', { emailTwoFactorEnabled: true, email: 'dr@exemple.cg' })
+
+    await screen.findByText(/Code par email à la connexion/i)
+    expect(screen.getAllByRole('button', { name: /^Désactiver$/ }).length).toBeGreaterThan(0)
   })
 })
 

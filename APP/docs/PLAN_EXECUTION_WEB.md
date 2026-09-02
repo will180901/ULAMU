@@ -404,7 +404,7 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 9 | **Le lint — soldé le 01/09.** Le constat était faux : `eslint` **tournait** sur mobile et `oxlint` sur le web. C'est l'**API** qui déclarait un script `eslint` sans qu'eslint soit ni installé ni déclaré ni configuré — il n'avait jamais tourné. Passée à `oxlint`, comme le web : **5 avertissements, tous soldés**. Mobile : **13 erreurs, toutes soldées**. Et le script racine, qui prétendait tout couvrir, n'atteignait en fait que l'API — web et mobile sont hors du workspace pnpm par choix ; `lint`, `test` et `build` les appellent désormais explicitement. | ✅ **soldée le 01/09** |
 | 10 | **Alertes `npm audit` — TOUT est à zéro (01/09).** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : les 14 alertes de production (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — **sont toutes tombées avec la montée en NestJS 11** (chantier 20). `npm audit` disait « exige NestJS 12 » ; c'était l'avis du résolveur, pas la vérité : **11 suffit**, et 12 s'avère de toute façon inatteignable (voir chantier 20). Les 2 dernières alertes, de développement seulement, sont tombées avec `npm audit fix`. **17 alertes → 0, dev compris.** | ✅ **soldée le 01/09** |
 
-| 11 | **La désactivation du TOTP n'a aucun chemin sur le web (née le 02/09, chantier 24).** Le serveur l'accepte pour un non-administrateur — `POST /v1/accounts/me/totp/disable`, mot de passe **et** code exigés — et le cahier donne le second facteur pour optionnel aux professionnels. B3 ne l'offre nulle part : une fois activé, un soignant ne peut plus revenir en arrière depuis l'application. Ce n'est plus un **mensonge** depuis que la phrase a été corrigée (l'écran ne prétend plus que c'est impossible), c'est une **route sans client** — la cinquième trouvée depuis le début du palier. ⚠️ **Ce n'est pas un oubli à réparer d'office** : ouvrir ce chemin, c'est offrir de baisser la protection d'un compte qui donne accès à des dossiers de santé. Le coût est faible (un bloc dans `SectionSecurite`, formulaire mot de passe + code déjà écrit deux fois dans le même fichier, ~1 h avec tests). **Recommandation : ne rien faire pour l'instant.** Personne ne l'a demandé, aucun soignant n'est bloqué par une obligation réelle, et le jour où quelqu'un le demande, la vraie question sera « pourquoi » — pas « comment ». | 🟡 **arbitrage porteur**, non urgent |
+| ~~11~~ | ✅ **SOLDÉE le 02/09/2026 (chantier 31).** La désactivation est offerte dans B3 — mot de passe **et** code, comme le serveur l'exige. La recommandation d'alors était « ne rien faire pour l'instant, et le jour où quelqu'un le demande la vraie question sera *pourquoi* » : le porteur l'a demandé, et le pourquoi est venu avec — **D-053**, le TOTP n'est obligatoire pour aucun type de compte. *Cette dette a failli faire échouer la décision : sans ce chemin, « optionnel » n'aurait été qu'un mot.* | ✅ soldée |
 
 | 12 | ✅ **TRANCHÉE le 02/09 (chantier 26) — le porteur retient l'issue (a) : la recherche payée de médicaments est RETIRÉE**, avec M11, M12 et la délivrance de M09. Les dettes 14, 15 et 16 ci-dessous en sont les conséquences. *Énoncé d'origine :* **Plus personne n'alimente le stock des pharmacies (née le 02/09, chantier 25).** En retirant `FACILITY_MEMBER` (D-051), on retire l'acteur qui tenait l'inventaire — `POST /v1/stocks/:facilityId/entries` et ses voisines n'ont plus d'opérateur. **Ce n'est pas une dette de code, c'est une dette de produit**, et elle touche le patient : son parcours « je cherche un médicament → je paie un dévoilement (PM-03, 500 XAF) → j'ai une réservation de 24 h » lit ce stock. Les données existantes ne disparaissent pas, elles **vieillissent** — et le patient paie pour une information qui se dégrade sans que rien ne le dise. Trois issues : (a) **retirer aussi la recherche payée de médicaments** du parcours patient — cohérent, mais c'est amputer M12 d'une fonctionnalité facturée ; (b) **la garder en disant son âge** — afficher la date de dernière confirmation de fraîcheur (`FacilityStockState.lastFreshAt` existe déjà, RM-11-05) et refuser le dévoilement au-delà d'un seuil : ~1 j, et l'écran cesse de mentir ; (c) **rendre un acteur au stock** sous une autre forme (l'administration saisit ? un import ?) — c'est un chantier, pas une correction. | 🔴 **arbitrage porteur** · **recommandation : (b)**, la seule qui protège le patient sans rien amputer |
 | 13 | **La fermeture complète de `FACILITY_MEMBER` demande un ménage en base (née le 02/09, chantier 25).** La valeur reste dans l'énumération Prisma, ses six règles dans la matrice M02, et les quatre `auditActorType` gardent leur cas. **Chacun pour une raison vérifiée** : retirer la valeur exige une migration sur la base de **production** (celle effacée le 23/08) et échouerait si une ligne la porte ; retirer les règles sans retirer `assertFacilityRight` donnerait deux vérités pour une même règle ; retirer le cas d'audit ferait inscrire l'action d'un humain comme `"system"` dans un journal **en insertion seule**, donc à jamais. L'ordre est donc contraint : **d'abord inventorier les comptes et adhésions en base** (`scripts/menage-comptes-demo.ts` a un mode inventaire qui n'écrit rien), **puis** décider. | 🟡 **geste porteur**, non urgent — rien ne fuit, la porte est déjà fermée |
@@ -418,13 +418,15 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 18 | **Les intitulés des catégories de notification sont écrits DEUX fois (née le 02/09, chantier 30).** `NOTIFICATION_CATEGORIES` vit sur le serveur ; ses cinq intitulés en français sont recopiés à la main dans `SectionPreferences.tsx` (web) **et** `NotificationsScreen.tsx` (mobile), sans qu'aucune ligne ne soit partagée. C'est ce qui a fait qu'une même phrase fausse — « réservations qui expirent » — a demandé deux chantiers pour partir : le 29 pour le web, le 30 pour le mobile. **Deux vérités pour une même règle**, la dette que le chantier 11 nomme. Trois issues : (a) **le serveur sert les intitulés** dans `GET /v1/notifications/me/preferences` — le plus juste, mais il faudrait décider où vit le texte d'une interface ; (b) **un fichier partagé** dans `packages/contracts` — sauf que ni le web ni le mobile n'importent ce paquet aujourd'hui, par choix assumé (clients vendorés) ; (c) **un test qui compare les deux listes** et échoue si elles divergent — ne supprime pas la duplication mais la rend bruyante. **Recommandation : (c)**, ~20 lignes, aucune architecture à changer. | 🟡 **à planifier** |
 | 19 | **`HeaderArt` est mort et appelle un site tiers (née le 02/09, chantier 30).** Le composant n'est monté par aucun écran, et il charge ses illustrations depuis `illustrations.popsy.co` — une dépendance réseau externe. Il ne porte **aucune promesse fausse** : il n'entrait donc pas dans le chantier 30, qui traitait les phrases. Son voisin `StepCarousel` a été retiré parce qu'il en portait une. **Coût : 8 lignes.** ⚠️ Vérifier d'abord qu'aucun écran à venir ne le prévoit — c'est un composant d'illustration, pas de la logique. | 🟢 **trivial**, à grouper avec un prochain passage |
 
+| 20 | **L'administration n'est plus protégée que par un mot de passe, pour qui n'active pas le second facteur (née le 02/09, chantier 31).** D-053 rend le TOTP optionnel pour tous, comptes d'administration compris. Ce qui tient encore : l'authentification, le type de compte, l'existence d'un sous-rôle, la matrice M02, et la limitation des tentatives sur la route OTP. Ce qui ne tient plus : l'exigence d'un second facteur sur une console **ouverte sur internet**, qui donne accès aux dossiers de vérification, aux remboursements et aux paramètres métier. **Ce n'est pas une dette de code — le code fait exactement ce qui a été décidé.** C'est un risque à surveiller. Trois façons de le réduire **sans revenir sur la décision** : (a) **afficher dans E4** quels administrateurs ont un second facteur actif — l'information existe déjà (`totpEnabled`), il suffit de la servir dans `listAdmins` : ~15 lignes, et le super-administrateur voit l'état de son équipe ; (b) **un rappel non bloquant** à la connexion d'un compte d'administration sans TOTP — une phrase, pas une garde ; (c) **journaliser** les connexions d'administration sans second facteur, pour qu'un abus laisse une trace lisible. **Recommandation : (a) puis (c)** — la première rend le risque visible, la seconde le rend traçable, et aucune ne contredit D-053. | 🟡 **surveillance**, décision au porteur |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
 |---|---|
 | OTP par **SMS** (EF-01-01) | par **email** (Brevo) |
 | Connexion par **téléphone** (EF-01-03) | nom d'utilisateur **ou** email |
-| ~~TOTP **optionnel** pour les pros (RM-01-06)~~ | ✅ **soldée le 02/09 (chantier 24).** Le cahier et le serveur disaient déjà la même chose — c'est l'ÉCRAN qui divergeait, en montrant à tous une phrase vraie pour les seuls administrateurs. B3 dit maintenant « Obligatoire pour l'administration » à un administrateur, « Fortement recommandée » à un soignant |
+| ~~TOTP **optionnel** pour les pros (RM-01-06)~~ | ✅ **soldée une seconde fois le 02/09 (chantier 31).** Le chantier 24 avait aligné l'ÉCRAN sur la règle d'alors — « obligatoire pour l'administration », « recommandée » pour un soignant. **D-053 change la règle elle-même** : le TOTP n'est obligatoire pour personne, et B3 dit la même phrase à tout le monde. La distinction par rôle a disparu du produit. |
 
 ---
 
@@ -498,6 +500,77 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **29** | **Deux réglages qui ne réglaient rien, et un test qui s'était désarmé** — 02/09, trouvés par un balayage **systématique du bundle déployé** au lieu d'un contrôle de ce qu'on venait de corriger. B3 « Aide » offrait encore le sujet « **Ma structure · Titulaire injoignable** » — une demande qu'aucun administrateur ne saurait traiter, la procédure ayant été retirée d'E7 le même jour. B3 « Préférences » proposait de couper les « Rappels — échéances de vérification, **réservations qui expirent** » : les réservations sont sorties avec D-052, **et la catégorie `reminder` ne porte aucun modèle de notification** — compté dans `m14.templates.ts` : care 19, system 12, critical 10, money 7, reminder **zéro**. Et C7 disait d'une ordonnance annulée que « son code a été rendu inerte », **incohérence introduite par le chantier 27** qui venait de redéfinir ce code comme un sceau ne servant pas à la délivrance. **Le plus instructif est un test** : `ordonnance.test.tsx` cherchait l'absence du texte alternatif « Code à scanner en pharmacie » — que le chantier 27 avait renommé. L'assertion restait verte pour la mauvaise raison. **web 506 ✓ (504 + 2) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
 
 | **30** | **Le mobile n'avait jamais été balayé** — 02/09. Quatre chantiers de vérification s'étaient tous appuyés sur le **bundle web déployé** : l'application mobile n'est pas servie par Render, **aucun de ces contrôles ne la couvrait**. Trois promesses fausses y vivaient encore. `ui.tsx` portait un **SECOND carrousel**, `StepCarousel`, distinct de `AuthCarouselDrawer` et annonçant lui aussi « Réservez vos médicaments tout près » — **du code mort que personne ne montait**, et qui chargeait ses illustrations depuis un site tiers. `NotificationsScreen` décrivait la catégorie « Rappels » par « Médicaments, **réservations**, expirations » — la ligne jumelle de celle retirée de B3 au chantier 29, et pour la même raison : **zéro modèle de notification** ne porte cette catégorie. `PaymentsScreen` promettait « vos reçus de consultation **et de dévoilement** » — un reçu qui n'arrivera jamais. **Vérifié au passage, contre une erreur qu'on allait faire** : les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, 401 en ligne) existent toujours et n'ont rien à voir — le service n'importe que Prisma, il n'émet aucune notification. **mobile 7 ✓ · lint 108 → 104 · web 506 ✓ · API 485 ✓ · types propres.** | ⏸ en attente | ⏸ |
+
+| **31** | **Le TOTP devient optionnel, et le 2FA du web devient opérationnel** — 02/09. Décision du porteur, **D-053** : le TOTP n'est obligatoire pour **aucun** type de compte, désactivé par défaut, chacun l'active et le désactive. Serveur : les **deux** gardes retirées — celle d'`AdminGuard` (403 sur toute route d'administration) et le refus de `disableTotp` pour les comptes ADMIN ; `ADMIN_REQUIRE_TOTP` n'est plus lue. **Mais appliquer la décision a révélé que le 2FA du web n'était pas opérationnel.** Trois défauts, trouvés en cartographiant les 12 routes 2FA du serveur contre le client : (1) `POST /totp/disable` existait depuis toujours, **aucun écran ne l'appelait** — c'était la dette n°11, soldée ici ; (2) les **trois routes de la 2FA par email** n'étaient pas déclarées dans le client ; (3) le plus grave — `LoginResponse` ne déclarait pas `otpRequired`, et sur `{ totpRequired: false, otpRequired: true }` **les deux branches de l'écran tombaient à côté : il ne se passait RIEN**. Un compte ayant activé la 2FA par email depuis le mobile était **enfermé dehors du web, en silence**, sans pouvoir atteindre le réglage qui le bloquait. Ajoutés : la désactivation dans B3, une carte « Code par email à la connexion », l'étape email à la connexion avec son libellé propre, et **`admin.guard.spec.ts` — la garde d'administration n'avait JAMAIS eu de test.** Retirés : le bandeau et le bouton conditionnel du chantier 24, devenus faux. **API 491 ✓ (485 + 6) · web 502 ✓ · types propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 31 (le 2FA optionnel, et opérationnel) a appris
+
+*Mené le 02/09/2026, sur décision du porteur.*
+
+#### Une permission qu'on ne peut pas exercer n'en est pas une
+
+La consigne tenait en une phrase : le TOTP devient optionnel. Deux `if` à retirer côté serveur.
+
+Sauf que **la route de désactivation n'était appelée par aucun écran** — c'était la dette n°11,
+écrite au chantier 24 avec la recommandation « ne rien faire pour l'instant ». Retirer les gardes
+serveur aurait rendu le TOTP « optionnel » sans donner à personne le moyen de le désactiver : une
+permission sur le papier, inexploitable dans l'application.
+
+*La recommandation d'alors n'était pas mauvaise — elle disait « le jour où quelqu'un le demande, la
+vraie question sera pourquoi ». Le porteur l'a demandé, et le pourquoi est venu avec.*
+
+#### Cartographier les DEUX côtés, pas seulement celui qu'on modifie
+
+Le réflexe était de chercher « où le TOTP est-il imposé ». La bonne question était : **quelles routes
+2FA le serveur expose-t-il, et lesquelles le client atteint-il ?**
+
+Douze routes relevées, **quatre injoignables** : la désactivation du TOTP, et les trois de la 2FA par
+email. Aucune n'aurait été trouvée en suivant la consigne à la lettre.
+
+#### Le défaut le plus grave ne se voyait pas du tout
+
+`LoginResponse` déclarait `totpRequired` et pas `otpRequired`. L'écran faisait :
+
+```
+if (res.totpRequired) { … return }
+if (res.sessionToken) { … }
+```
+
+Sur `{ totpRequired: false, otpRequired: true }` — la réponse d'un compte protégé par un code email —
+**aucune des deux branches ne s'exécutait**. Pas d'erreur, pas d'étape suivante : le bouton
+s'arrêtait simplement de tourner.
+
+Un compte ayant activé ce facteur depuis le mobile était donc **enfermé dehors du web, en silence** —
+et ne pouvait pas davantage désactiver le réglage fautif, puisqu'il faut être connecté pour
+l'atteindre. Une impasse parfaite, que rien à l'écran ne nommait.
+
+*L'écran a désormais un troisième cas : une réponse 200 sans jeton et sans facteur annoncé affiche un
+message. Elle ne devrait pas exister — mais **un message vaut mieux qu'un bouton qui s'arrête de
+tourner**, parce qu'au moins on sait qu'il faut appeler.*
+
+#### Une garde d'accès sans test est le pire endroit où avoir confiance
+
+`AdminGuard` protège les sept écrans d'administration. **Aucun test ne l'a jamais couverte.** On s'en
+est aperçu en lui retirant l'exigence de TOTP : les 485 tests sont restés verts, ce qui ne prouvait
+rien.
+
+Une garde échoue en silence dans le bon sens — tout le monde passe — et son défaut ne se voit qu'au
+premier abus. `admin.guard.spec.ts` verrouille les deux moitiés : ce qui doit être refusé l'est, et
+**un administrateur sans TOTP passe**. Sans cette seconde assertion, rien n'empêcherait de remettre
+l'exigence par mégarde.
+
+*Le faux Prisma du test n'expose volontairement aucun `totpSecret` : si quelqu'un remet la
+vérification, la garde lèvera et trois tests tomberont. Vérifié en la remettant.*
+
+#### Le chantier 24 a été défait, et c'est normal
+
+Le bandeau « Activez votre double authentification », le bouton qui remplaçait « Réessayer », le
+hook, ses six branchements et ses tests : tout est retiré. Ils étaient justes sous l'ancienne règle,
+ils deviennent faux sous la nouvelle.
+
+*Rien de ce travail n'était perdu : c'est lui qui avait établi, écran par écran, où le TOTP se
+manifestait — ce qui a rendu son retrait sûr. **Une correction qu'une décision annule n'était pas une
+erreur ; c'est le prix normal d'un produit qui se décide en marchant.***
 
 ### Ce que le chantier 30 (le mobile jamais balayé) a appris
 

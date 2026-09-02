@@ -29,7 +29,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -480,7 +479,9 @@ export function FileVerificationPage() {
               administrateur nommé (RM-03-02). Rien ne se décide donc sans le serveur.
             </p>
             <div>
-              <ActionApresEchec surReessayer={() => file.refetch()} />
+              <Button type="button" onClick={() => file.refetch()}>
+                Réessayer
+              </Button>
             </div>
           </Carte>
         </div>

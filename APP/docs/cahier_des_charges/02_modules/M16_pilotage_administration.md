@@ -28,7 +28,7 @@ Donner à chacun **sa** vue (tableaux de bord) et à l'Équipe ULAMU les **outil
 | EF-16-03 | **Back-office Équipe ULAMU** : recherche de comptes, **suspension / réactivation motivée**, files M03 et M04, supervision financière (M13), arbitrage des strikes (M12), exécution des **procédures support** définies par les modules (changement de numéro CU-01-05, titulaire injoignable CU-02-05, transfert de Carnet CU-07-05). |
 | EF-16-04 | **Paramètres de la plateforme** : les PM-xx ([[../01_architecture_fonctionnelle/parametres_metier|référentiel]]) modifiables par le **Super Admin seul**, avec date d'effet et historique ; un changement de taux déclenche la mécanique d'avenant (M03/D-022). |
 | EF-16-05 | **KPIs du pilote** en temps réel : exactement les 7 critères de succès du [[../01_architecture_fonctionnelle/plan_releases|plan de releases]] §3 — pas un de plus au MVP. |
-| EF-16-06 | Toute action d'admin : **TOTP obligatoire** (RM-01-06), motif obligatoire, audit (C5) ; chaque sous-rôle ne voit que son domaine (matrice M02). |
+| EF-16-06 | Toute action d'admin : **motif obligatoire, audit (C5)** ; chaque sous-rôle ne voit que son domaine (matrice M02). ⚠️ **La clause « TOTP obligatoire » est retirée le 02/09/2026** ([[../00_cadrage/registre_decisions#D-053 — Le TOTP est optionnel pour tous les types de compte|D-053]]) — le reste de l'exigence est inchangé. |
 | EF-16-07 | **Bannissement définitif** d'un compte : double validation par deux admins distincts (même esprit que PM-35). |
 
 ## 3. Cas d'utilisation (clés)

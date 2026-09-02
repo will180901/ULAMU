@@ -14,7 +14,7 @@
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { AtSign, Camera, KeyRound, Lock, ShieldCheck } from 'lucide-react'
+import { AtSign, Camera, KeyRound, Lock, MailCheck, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -369,7 +369,7 @@ function BlocMotDePasse() {
  * quand le téléphone est perdu qu'on répare.
  */
 function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeResponse) => void }) {
-  const [ouvert, setOuvert] = useState<'aucun' | 'reset' | 'codes'>('aucun')
+  const [ouvert, setOuvert] = useState<'aucun' | 'reset' | 'codes' | 'desactiver'>('aucun')
   const [motDePasse, setMotDePasse] = useState('')
   const [code, setCode] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
@@ -383,6 +383,24 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
     setCode('')
     setErreur(null)
   }
+
+  /**
+   * Désactiver le second facteur (D-053, 02/09/2026).
+   *
+   * Le serveur exposait cette route depuis toujours ; **aucun écran ne l'appelait**. Un utilisateur
+   * qui avait activé sa double authentification ne pouvait plus la retirer depuis l'application.
+   *
+   * Mot de passe ET code : désactiver un second facteur est exactement le geste qu'un voleur de
+   * session voudrait faire. C'est le serveur qui l'exige, l'écran ne fait que le refléter.
+   */
+  const desactiver = useMutation({
+    mutationFn: () => api.disableTotp({ password: motDePasse, code: code.trim() }),
+    onSuccess: async () => {
+      fermer()
+      rafraichir(await api.me())
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
 
   const regenerer = useMutation({
     mutationFn: () => api.regenerateBackupCodes({ password: motDePasse, code: code.trim() }),
@@ -411,42 +429,34 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
     onError: (e) => setErreur(messageDe(e)),
   })
 
-  const enCours = regenerer.isPending || reassocier.isPending
+  const enCours = regenerer.isPending || reassocier.isPending || desactiver.isPending
   const restants = me.backupCodesRemaining
   const bas = me.totpEnabled && restants <= 3
 
   return (
     <>
       {/*
-        ── La phrase n'était pas mal écrite, elle était montrée à tout le monde (chantier 24, 02/09/2026) ─
+        ── Ce que cette carte a dit, et pourquoi elle le dit autrement (24 puis 31, 02/09/2026) ──
 
-        Elle disait à chacun : « Obligatoire sur ULAMU — elle ne peut pas être désactivée ». C'est
-        exactement ce que le serveur applique à un ADMINISTRATEUR : `disableTotp` répond 403 sur
-        `account.type === "ADMIN"` (RM-01-06), et la garde d'administration refuse toute lecture
-        sans second facteur.
+        Elle annonçait à tout le monde « Obligatoire sur ULAMU — elle ne peut pas être désactivée ».
+        C'était faux pour un soignant (le serveur acceptait la désactivation, le cahier la donnait
+        pour optionnelle) et vrai pour un administrateur (`disableTotp` répondait 403, et la garde
+        d'administration refusait toute lecture sans second facteur).
 
-        Pour un SOIGNANT, les deux moitiés sont fausses. Le serveur accepte la désactivation (mot de
-        passe + code), le cahier la donne pour optionnelle (RM-01-06), et **rien dans le web ne
-        l'impose** : ni garde de route, ni redirection — seulement un bouton « Configurer » qu'on
-        peut ignorer indéfiniment. L'écran annonçait donc une obligation que personne ne faisait
-        respecter : c'est l'écran qui légifère, le défaut que le chantier 17 a refusé en E6 sur le
-        minimum de vingt caractères.
+        Le chantier 24 avait donc coupé la phrase en deux, une par type de compte.
 
-        Une obligation annoncée et jamais appliquée est pire qu'une recommandation : le jour où un
-        soignant découvre qu'il exerçait sans, il apprend surtout que les phrases de cet écran ne
-        valent rien.
+        **Le chantier 31 supprime la distinction, sur décision du porteur (D-053) : le TOTP est
+        optionnel pour TOUS les types de compte, désactivé par défaut, et chacun l'active ou le
+        désactive comme il l'entend.** Les deux gardes serveur sont retirées.
 
-        ⚠️ Ce que ce chantier NE fait pas : exposer la désactivation aux soignants. Le serveur
-        l'autorise, le web ne l'offre pas — écart inscrit au §9, décision au porteur.
+        Reste une phrase unique, et elle ne prescrit rien : elle dit ce que le second facteur
+        APPORTE. C'est la seule forme qui ne peut pas devenir fausse — une recommandation n'engage
+        que celui qui l'écrit, une obligation engage un serveur qui doit la faire respecter.
       */}
       <Carte
         icone={ShieldCheck}
         titre="Double authentification"
-        sousTitre={
-          me.accountType === 'ADMIN'
-            ? "Obligatoire pour l'administration — elle ne peut pas être désactivée"
-            : 'Fortement recommandée — le mot de passe seul ne protège pas un dossier de santé'
-        }
+        sousTitre="Fortement recommandée — le mot de passe seul ne protège pas un dossier de santé"
       >
         <Reglage
           titre={me.totpEnabled ? 'Active' : 'Non configurée'}
@@ -457,15 +467,40 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
           }
         >
           {me.totpEnabled ? (
-            <Button type="button" size="sm" variant="outline" onClick={() => setOuvert(ouvert === 'reset' ? 'aucun' : 'reset')}>
-              Reconfigurer l'appareil
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setOuvert(ouvert === 'reset' ? 'aucun' : 'reset')}>
+                Reconfigurer l'appareil
+              </Button>
+              {/*
+                « Désactiver » est en `ghost` et à droite : il est offert sans être proposé. Le
+                geste est légitime (D-053) et doit exister — mais il retire une protection, et rien
+                ne justifie de l'inviter du regard.
+              */}
+              <Button type="button" size="sm" variant="ghost" onClick={() => setOuvert(ouvert === 'desactiver' ? 'aucun' : 'desactiver')}>
+                Désactiver
+              </Button>
+            </div>
           ) : (
             <Button type="button" size="sm" onClick={() => navigate('/configuration-totp')}>
               Configurer
             </Button>
           )}
         </Reglage>
+
+        {ouvert === 'desactiver' ? (
+          <Formulaire
+            titre="Désactiver la double authentification"
+            explication="Votre compte ne sera plus protégé que par son mot de passe, et vos codes de secours seront détruits. Vous pourrez la réactiver à tout moment."
+            motDePasse={motDePasse}
+            setMotDePasse={setMotDePasse}
+            code={code}
+            setCode={setCode}
+            enCours={enCours}
+            libelle="Désactiver"
+            onValider={() => desactiver.mutate()}
+            onAnnuler={fermer}
+          />
+        ) : null}
 
         {ouvert === 'reset' ? (
           <Formulaire
@@ -611,6 +646,155 @@ function Formulaire({
   )
 }
 
+
+/**
+ * La 2FA par EMAIL — injoignable depuis le web jusqu'au 02/09/2026 (chantier 31).
+ *
+ * ── Ce qui manquait, et ce que ça coûtait ─────────────────────────────────────────────────────
+ *
+ * Trois routes existaient au serveur — demander un code, activer, désactiver — et **aucune n'était
+ * déclarée dans le client web**. Le réglage était donc invisible et inatteignable ici.
+ *
+ * Le pire n'était pas l'absence du réglage : c'est que la CONNEXION web ne savait pas non plus
+ * reconnaître ce facteur. Un compte qui l'activait depuis le mobile puis revenait sur le web voyait
+ * son bouton s'arrêter de tourner, sans un mot, sans étape suivante — et sans aucun moyen de
+ * désactiver le réglage qui le bloquait, puisqu'il fallait être connecté pour l'atteindre.
+ *
+ * ── Pourquoi deux facteurs coexistent, et pourquoi on ne les oppose pas ───────────────────────
+ *
+ * Le TOTP ne dépend d'aucun réseau : il marche même sans couverture. L'email ne demande aucune
+ * application à installer. Sur un téléphone d'entrée de gamme partagé, le second est souvent le
+ * seul praticable — et à Brazzaville ce n'est pas un cas d'école.
+ *
+ * L'écran ne pousse donc ni l'un ni l'autre. Il dit ce que chacun apporte, et laisse choisir.
+ */
+function BlocDeuxFacteursEmail({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeResponse) => void }) {
+  const [etape, setEtape] = useState<'aucune' | 'code' | 'desactiver'>('aucune')
+  const [code, setCode] = useState('')
+  const [motDePasse, setMotDePasse] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const fermer = () => {
+    setEtape('aucune')
+    setCode('')
+    setMotDePasse('')
+    setErreur(null)
+  }
+
+  const demander = useMutation({
+    mutationFn: () => api.requestEmailTwoFactorOtp(),
+    onSuccess: () => {
+      setErreur(null)
+      setEtape('code')
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  const activer = useMutation({
+    mutationFn: () => api.enableEmailTwoFactor(code.trim()),
+    onSuccess: async () => {
+      fermer()
+      rafraichir(await api.me())
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  /* La désactivation ne demande QUE le mot de passe : c'est le serveur qui en décide ainsi, et la
+     raison tient — exiger le code du facteur qu'on retire enfermerait dehors qui n'y accède plus,
+     ce qui est précisément la situation où l'on veut le retirer. */
+  const desactiver = useMutation({
+    mutationFn: () => api.disableEmailTwoFactor(motDePasse),
+    onSuccess: async () => {
+      fermer()
+      rafraichir(await api.me())
+    },
+    onError: (e) => setErreur(messageDe(e)),
+  })
+
+  const enCours = demander.isPending || activer.isPending || desactiver.isPending
+  const actif = me.emailTwoFactorEnabled
+
+  return (
+    <Carte
+      icone={MailCheck}
+      titre="Code par email à la connexion"
+      sousTitre="Une seconde façon de protéger le compte, sans application à installer"
+    >
+      <Reglage
+        titre={actif ? 'Actif' : 'Inactif'}
+        aide={
+          actif
+            ? `Un code part à ${me.email ?? 'l’adresse du compte'} à chaque connexion`
+            : "Aucun code n'est demandé — le mot de passe seul ouvre le compte"
+        }
+      >
+        {actif ? (
+          <Button type="button" size="sm" variant="ghost" onClick={() => setEtape(etape === 'desactiver' ? 'aucune' : 'desactiver')}>
+            Désactiver
+          </Button>
+        ) : (
+          <Button type="button" size="sm" onClick={() => demander.mutate()} disabled={enCours || !me.email}>
+            {demander.isPending ? 'Envoi…' : 'Activer'}
+          </Button>
+        )}
+      </Reglage>
+
+      {/* Sans adresse au compte, le bouton ne peut rien faire — on le dit plutôt que de le laisser
+          inerte : un bouton désactivé sans explication ressemble à une panne. */}
+      {!actif && !me.email ? (
+        <Avis ton="alerte">
+          Ce réglage demande une adresse email au compte. Ajoutez-la dans « Adresse email », juste
+          au-dessus.
+        </Avis>
+      ) : null}
+
+      {etape === 'code' ? (
+        <div className="flex flex-col gap-2 rounded-md border border-border bg-secondary p-3">
+          <p className="m-0 text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">
+            Un code à 6 chiffres vient de partir à {me.email}. Saisissez-le pour confirmer.
+          </p>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">Code reçu</span>
+            <Input value={code} onChange={(e) => setCode(e.target.value.trim())} maxLength={6} inputMode="numeric" autoComplete="one-time-code" autoFocus />
+          </label>
+          {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={() => activer.mutate()} disabled={enCours || code.trim().length < 6}>
+              {activer.isPending ? 'Vérification…' : 'Confirmer'}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={fermer} disabled={enCours}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {etape === 'desactiver' ? (
+        <div className="flex flex-col gap-2 rounded-md border border-border bg-secondary p-3">
+          <p className="m-0 text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">
+            Plus aucun code ne sera demandé à la connexion. Vous pourrez le réactiver à tout moment.
+          </p>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">Mot de passe</span>
+            <Input type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoComplete="current-password" autoFocus />
+          </label>
+          {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={() => desactiver.mutate()} disabled={enCours || motDePasse.length === 0}>
+              {desactiver.isPending ? 'Désactivation…' : 'Désactiver'}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={fermer} disabled={enCours}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {etape === 'aucune' && erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+    </Carte>
+  )
+}
+
 // ── Section ─────────────────────────────────────────────────────────────────
 
 export function SectionSecurite({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeResponse) => void }) {
@@ -619,6 +803,7 @@ export function SectionSecurite({ me, rafraichir }: { me: MeResponse; rafraichir
       <BlocEmail me={me} rafraichir={rafraichir} />
       <BlocMotDePasse />
       <BlocDeuxFacteurs me={me} rafraichir={rafraichir} />
+      <BlocDeuxFacteursEmail me={me} rafraichir={rafraichir} />
       <BlocPhoto me={me} rafraichir={rafraichir} />
     </div>
   )

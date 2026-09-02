@@ -172,8 +172,12 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
    * l'exception remontait au client en **500**. L'utilisateur lisait « Internal server error ».
    *
    * Plus grave que le message : le code de secours n'était jamais atteint. Or il n'existe QUE pour
-   * ce cas. Le compte devenait définitivement inaccessible, y compris pour un administrateur, que
-   * `disableTotp` refuse par ailleurs de dépanner (RM-01-06).
+   * ce cas. Le compte devenait définitivement inaccessible.
+   *
+   * ⚠️ 02/09/2026 (D-053) — cette phrase ajoutait « y compris pour un administrateur, que
+   * `disableTotp` refuse par ailleurs de dépanner (RM-01-06) ». Ce n'est plus vrai : le TOTP est
+   * optionnel pour tous les types de compte, et un administrateur peut désormais le désactiver
+   * comme les autres. Le défaut décrit ci-dessus, lui, reste corrigé — et ce test le garde.
    */
   it("CU-01-08 — secret TOTP illisible : rejet propre, et le code de secours fonctionne encore", async () => {
     const phone = "+242061000012";

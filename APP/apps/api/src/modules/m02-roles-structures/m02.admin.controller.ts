@@ -1,5 +1,6 @@
 /**
- * M02 — administration des sous-rôles (EF-02-08) : réservé au SUPER_ADMIN, sous TOTP (RM-01-06).
+ * M02 — administration des sous-rôles (EF-02-08) : réservé au SUPER_ADMIN.
+ * (EF-02-08 exigeait aussi le TOTP ; il n'est plus imposé depuis D-053, 02/09/2026.)
  * Le premier SUPER_ADMIN est créé par le seed (bootstrap) — il active son TOTP puis opère ici.
  */
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";

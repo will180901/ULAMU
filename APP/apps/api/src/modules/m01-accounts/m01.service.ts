@@ -845,7 +845,7 @@ export class M01Service {
     });
   }
 
-  // ── TOTP (EF-01-10 ; CU-01-08 ; RM-01-06) ──────────────────────────────────
+  // ── TOTP (EF-01-10 ; CU-01-08) — OPTIONNEL pour tous les types de compte depuis D-053 ──────────────
 
   async setupTotp(accountId: string): Promise<{ secret: string; provisioningUri: string }> {
     const account = await this.requireAccount(accountId);
@@ -886,7 +886,14 @@ export class M01Service {
 
   async disableTotp(accountId: string, password: string, code: string): Promise<void> {
     const account = await this.requireAccount(accountId);
-    if (account.type === "ADMIN") throw new ForbiddenException("TOTP obligatoire pour les admins (RM-01-06)");
+    /* 02/09/2026 (D-053) — un `if (account.type === "ADMIN") throw` vivait ici : RM-01-06 interdisait
+       à un administrateur de désactiver son TOTP. Le porteur a tranché l'inverse le 02/09 — le TOTP
+       est optionnel pour TOUS les types de compte, et chacun le désactive comme il l'entend.
+
+       Ce qui reste exigé ne change pas, et c'est l'essentiel : le mot de passe ET un code valide
+       (application d'authentification ou code de secours). Désactiver un second facteur est
+       précisément le geste qu'un voleur de session voudrait faire — il demande donc de prouver deux
+       fois qu'on est bien le titulaire. */
     if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
     const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
     if (!row?.enabled) throw new BadRequestException("TOTP non activé");

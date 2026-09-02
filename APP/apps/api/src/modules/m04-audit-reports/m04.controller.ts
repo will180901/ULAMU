@@ -1,7 +1,7 @@
 /**
  * M04 — routes audit & signalements.
  * POST /v1/reports : tout acteur authentifié (AuthGuard global, RM-02-03).
- * /v1/admin/* : AdminGuard — TOTP obligatoire (RM-01-06) ; journal = tout admin,
+ * /v1/admin/* : AdminGuard — type ADMIN + sous-rôle (le TOTP n'est plus exigé, D-053) ; journal = tout admin,
  * file de modération = ADMIN_VERIFICATION (EF-04-06) ; SUPER_ADMIN passe partout.
  */
 import { Body, Controller, Get, Header, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";

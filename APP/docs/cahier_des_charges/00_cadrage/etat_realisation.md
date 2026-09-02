@@ -111,7 +111,7 @@ se tromperait.**
 |---|---|---|
 | OTP par **SMS** (`EF-01-01`, `EF-01-04`, `RM-01-03`) | par **email** (Brevo) | juillet 2026 |
 | Connexion par **téléphone** (`EF-01-03`) | nom d'utilisateur **ou** email | juillet 2026 |
-| TOTP **optionnel** pour les pros (`RM-01-06`) | déclaré **obligatoire** sur le web | non daté |
+| ~~TOTP **optionnel** pour les pros (`RM-01-06`)~~ | ~~déclaré **obligatoire** sur le web~~ | ✅ **soldée le 02/09/2026** — [[registre_decisions#D-053 — Le TOTP est optionnel pour tous les types de compte|D-053]] : optionnel pour TOUS, et le web l'annonce ainsi |
 
 À trancher : corriger la spécification, ou corriger le code.
 

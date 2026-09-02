@@ -110,9 +110,27 @@ export interface LoginRequest {
   client: 'web'
   deviceLabel?: string
   totpCode?: string
+  /** Code reçu par email quand la 2FA email est active — cf. `otpRequired` dans la réponse. */
+  otpCode?: string
 }
+/**
+ * Ce que la connexion renvoie — et le second facteur qui manquait ici (chantier 31, 02/09/2026).
+ *
+ * Le serveur signale un second facteur par un **200 sans jeton**, jamais par une exception. Il en a
+ * DEUX : `totpRequired` (application d'authentification) et `otpRequired` (code envoyé par email).
+ *
+ * ⚠️ `otpRequired` n'était pas déclaré ici, et `LoginPage` ne le lisait pas. Conséquence pour un
+ * compte ayant activé la 2FA par email : le serveur répondait `{ totpRequired: false,
+ * otpRequired: true }` sans jeton, les deux branches de l'écran tombaient à côté, **et il ne se
+ * passait RIEN** — pas de message, pas d'étape suivante, le bouton s'arrêtait de tourner. Le compte
+ * était enfermé dehors du web, en silence.
+ *
+ * Les deux facteurs sont exclusifs dans le temps : le serveur vérifie le TOTP d'abord, puis l'email.
+ */
 export interface LoginResponse {
   totpRequired: boolean
+  /** Un code a été envoyé à l'adresse du compte : le rejouer dans `login` avec `otpCode`. */
+  otpRequired?: boolean
   sessionToken?: string
   accountId?: string
   accountType?: 'PATIENT' | 'PROFESSIONAL' | 'ADMIN'
@@ -1076,6 +1094,35 @@ export const api = {
   /** Nouveau lot de codes de secours — l'ancien est détruit, ceux-ci ne s'affichent qu'une fois. */
   regenerateBackupCodes: (dto: { password: string; code: string }) =>
     request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/backup-codes', dto, true),
+  /**
+   * Désactive le second facteur — mot de passe ET code (application ou code de secours).
+   *
+   * ⚠️ Absente du client jusqu'au 02/09/2026 : la route existait au serveur depuis toujours, aucun
+   * écran ne l'appelait. Un utilisateur qui avait activé sa double authentification ne pouvait plus
+   * la retirer depuis l'application — il fallait passer par le support. Décision D-053 : le TOTP est
+   * optionnel pour TOUS les types de compte, chacun l'active et le désactive comme il l'entend.
+   */
+  disableTotp: (dto: { password: string; code: string }) =>
+    request<void>('POST', '/v1/accounts/me/totp/disable', dto, true),
+
+  /*
+    ── La 2FA par EMAIL, injoignable depuis le web jusqu'au 02/09/2026 ─────────────────────────
+
+    Trois routes existaient au serveur, aucune n'était déclarée ici. Le web ne pouvait donc ni
+    l'activer, ni la désactiver — et sa connexion ne savait même pas la reconnaître (voir
+    `LoginResponse`). Un compte qui l'activait depuis le mobile se retrouvait bloqué sur le web,
+    sans message et sans recours dans l'application.
+  */
+  /** Envoie un code à l'adresse du compte, première étape de l'activation. */
+  requestEmailTwoFactorOtp: () =>
+    request<{ sent: true; debugCode?: string }>('POST', '/v1/accounts/me/2fa/email/request', undefined, true),
+  /** Confirme le code reçu et arme la 2FA par email. */
+  enableEmailTwoFactor: (otpCode: string) =>
+    request<void>('POST', '/v1/accounts/me/2fa/email/enable', { otpCode }, true),
+  /** La désactivation ne demande que le mot de passe : le second facteur qu'on retire ne se prouve pas lui-même. */
+  disableEmailTwoFactor: (password: string) =>
+    request<void>('POST', '/v1/accounts/me/2fa/email/disable', { password }, true),
+
   /** Ré-association de l'appareil : renvoie un secret à scanner, puis on enchaîne sur `confirmTotp`. */
   resetTotp: (dto: { password: string; code: string }) =>
     request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/reset', dto, true),

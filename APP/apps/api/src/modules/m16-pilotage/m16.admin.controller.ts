@@ -1,6 +1,6 @@
 /**
  * M16 — routes Back-office Équipe ULAMU (EF-16-03/04/06/07).
- * AdminGuard : TOTP obligatoire (RM-01-06) ; sous-rôles au plus juste (matrice M02) :
+ * AdminGuard : type ADMIN + sous-rôle (le TOTP n'est plus exigé, D-053) ; sous-rôles au plus juste (matrice M02) :
  * - paramètres = SUPER_ADMIN seul (EF-16-04) ;
  * - sanctions de compte & arbitrage des strikes = SUPER_ADMIN / ADMIN_VERIFICATION / ADMIN_MAP ;
  * - procédures support = SUPER_ADMIN / ADMIN_VERIFICATION (interventions sensibles).

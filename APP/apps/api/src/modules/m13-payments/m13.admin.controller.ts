@@ -1,6 +1,6 @@
 /**
  * M13 — routes Admin Finance (EF-13-09/10).
- * AdminGuard : TOTP obligatoire (RM-01-06) ; ADMIN_FINANCE requis (SUPER_ADMIN passe partout).
+ * AdminGuard : type ADMIN + sous-rôle (le TOTP n'est plus exigé, D-053) ; ADMIN_FINANCE requis (SUPER_ADMIN passe partout).
  */
 import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { AdminRole } from "@prisma/client";

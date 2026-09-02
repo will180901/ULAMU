@@ -6,7 +6,8 @@
  *
  * L'écran ne proposait que le TOTP, ce qui tenait tant que le second facteur était imposé à tous.
  * Il est devenu volontaire le 20/08/2026, et un compte sans authentificateur n'avait alors plus
- * aucun recours — `disableTotp` refusant par ailleurs de dépanner un administrateur (RM-01-06). Le
+ * aucun recours. *(02/09/2026, D-053 : `disableTotp` accepte désormais tous les types de compte —
+ * le défaut décrit ici reste réparé, ce test le garde.)* Le
  * jour où quelqu'un « simplifiera » cet écran en retirant la voie email, ce test doit tomber.
  *
  * Le parcours compte trois étapes depuis le 20/08/2026 : compte → code → nouveau mot de passe. Tout

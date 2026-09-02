@@ -97,6 +97,39 @@ Le professionnel doit rédiger un compte-rendu court (diagnostic, recommandation
 ### D-022 — Taux de commission : 10 % unique (close Q-001)
 Commission ULAMU de **10 %** sur consultations, suivis et missions de triage terrain (le professionnel garde 90 %). **0 %** sur les retraits de gains (seuls les frais réels de l'opérateur MoMo s'appliquent). Inscription, contrats et espaces structures **gratuits**. Tout changement de taux = avenant au contrat signé, notifié à l'avance. Détail : [[modele_economique]].
 
+### D-053 — Le TOTP est optionnel pour tous les types de compte
+**Décision du porteur, 02/09/2026.** Sur la plateforme web, la double authentification par
+application (TOTP) **n'est obligatoire pour aucun type d'utilisateur**. Elle est **désactivée par
+défaut**, et chacun l'active ou la désactive comme il l'entend.
+
+**Ce que cela remplace.** Trois exigences écrites : **RM-01-06** (« obligatoire pour les comptes
+Équipe ULAMU »), **EF-02-08** (attribution des sous-rôles « sous TOTP ») et **EF-16-06** (« toute
+action d'admin : TOTP obligatoire »). Leur moitié « administrateur » tombe ; **tout le reste de ces
+exigences demeure** — motif obligatoire, audit, matrice des sous-rôles.
+
+**Ce que la décision aligne.** Pour les patients et les professionnels, RM-01-06 disait déjà
+« optionnel » et le web déclarait « obligatoire ». C'était l'une des **trois dérives documentaires
+jamais arbitrées** du §9 du plan d'exécution web : elle est soldée.
+
+**Ce que la décision retire côté serveur.** Deux gardes, pas une : la vérification du TOTP dans
+`AdminGuard` (qui répondait 403 sur toute route d'administration) et le refus de `disableTotp` pour
+les comptes ADMIN. La variable `ADMIN_REQUIRE_TOTP` n'est plus lue nulle part.
+
+**Ce qui ne change pas, et qui protège encore.** L'accès à l'administration reste tenu par
+l'authentification, le type de compte, l'existence d'un sous-rôle et la matrice M02. La
+désactivation du TOTP, elle, exige toujours **le mot de passe ET un code valide** — c'est
+précisément le geste qu'un voleur de session voudrait faire.
+
+**Ce que cela coûte, écrit plutôt que tu.** La console d'administration d'une plateforme de santé,
+ouverte sur internet, n'est plus protégée que par un mot de passe pour qui n'active pas le second
+facteur. Le risque et sa recommandation sont inscrits au §9 du plan d'exécution web.
+
+**Un chantier plus large que la décision.** L'appliquer a révélé que le 2FA du web n'était pas
+opérationnel : la route de désactivation n'était **appelée par aucun écran**, les trois routes de la
+2FA par email n'étaient **pas déclarées dans le client**, et la connexion web **ne reconnaissait pas**
+le second facteur par email — un compte l'ayant activé depuis le mobile était enfermé dehors, sans
+message. Voir le chantier 31 au §10 du plan.
+
 ### D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)
 **Décision du porteur, 02/09/2026.** ULAMU garde **uniquement les modules qui couvrent son périmètre : patient, médecin, administration.** La recherche de médicaments en pharmacie et sa délivrance n'en font pas partie.
 

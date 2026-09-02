@@ -60,7 +60,7 @@ Répondre à la question « **qui a le droit de faire quoi ?** » : rôles globa
 | EF-02-05 | Droits internes par membre, définis par le titulaire : gérer le stock (M11), traiter les délivrances (M09), consulter les statistiques. **Réservés au titulaire** : membres, contrat, retraits des gains (M13). |
 | EF-02-06 | Transfert de titularité avec vérification renforcée (OTP des deux parties + revalidation M03). |
 | EF-02-07 | Suspension ou retrait d'un membre par le titulaire — effet en moins d'une minute. |
-| EF-02-08 | Sous-rôles admin attribués et révoqués uniquement par le Super Admin, sous TOTP (RM-01-06). |
+| EF-02-08 | Sous-rôles admin attribués et révoqués uniquement par le Super Admin. ⚠️ **La clause « sous TOTP » est retirée le 02/09/2026** ([[../00_cadrage/registre_decisions#D-053 — Le TOTP est optionnel pour tous les types de compte|D-053]]) : le second facteur n'est imposé à personne. La réserve au Super Admin, elle, demeure. |
 
 ## 4. Cas d'utilisation
 

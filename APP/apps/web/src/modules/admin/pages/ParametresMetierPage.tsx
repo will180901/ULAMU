@@ -37,7 +37,6 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, History, Save, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -312,7 +311,9 @@ export function ParametresMetierPage() {
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les paramètres n'ont pas pu être lus" sousTitre="Rien n'a été modifié">
             <div>
-              <ActionApresEchec surReessayer={() => parametres.refetch()} />
+              <Button type="button" onClick={() => parametres.refetch()}>
+                Réessayer
+              </Button>
             </div>
           </Carte>
         </div>

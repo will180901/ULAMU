@@ -1,6 +1,6 @@
 /**
  * M03 — côté Admin Vérification (EF-03-03/04/08, CU-03-02/05).
- * Réservé au sous-rôle ADMIN_VERIFICATION (matrice M02 §5) — TOTP exigé par AdminGuard (RM-01-06).
+ * Réservé au sous-rôle ADMIN_VERIFICATION (matrice M02 §5). Le TOTP n'est plus exigé (D-053).
  */
 import { Body, Controller, Get, HttpCode, Param, Post, Query, StreamableFile, UseGuards } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";

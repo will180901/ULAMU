@@ -64,7 +64,8 @@ export class M16ReadController {
 
   /**
    * EF-16-05 / CU-16-03 : les 7 KPIs du pilote. Réservé à l'Équipe ULAMU (tout sous-rôle).
-   * AdminGuard impose le TOTP (RM-01-06) ; @AdminOnly() sans argument = n'importe quel admin.
+   * @AdminOnly() sans argument = n'importe quel admin. (AdminGuard imposait aussi le TOTP
+   * jusqu'au 02/09/2026 ; D-053 l'a rendu optionnel pour tous les types de compte.)
    */
   @UseGuards(AdminGuard)
   @AdminOnly()

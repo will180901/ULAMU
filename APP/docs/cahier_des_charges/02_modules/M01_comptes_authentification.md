@@ -103,7 +103,7 @@ Savoir qui est qui : créer les comptes, authentifier les utilisateurs, protége
 | RM-01-03 | L'envoi d'OTP passe par une **passerelle SMS directe**, pas par M14 — M14 notifie des utilisateurs existants, l'OTP précède l'existence du compte. *(Évite tout cycle M01 ↔ M14.)* |
 | RM-01-04 | Tout événement sensible (création, blocage, changement de numéro, clôture) émet un événement d'audit (C5). |
 | RM-01-05 | Un compte suspendu par l'Équipe ULAMU ne peut ni se connecter ni être clôturé par son titulaire (préservation de preuves). |
-| RM-01-06 | TOTP **optionnel** pour patients, professionnels et structures ; **obligatoire** pour les comptes Équipe ULAMU (admins). |
+| RM-01-06 | TOTP **optionnel pour TOUS les types de compte**, désactivé par défaut, activable et désactivable par son titulaire. ⚠️ **Révisée le 02/09/2026** par [[../00_cadrage/registre_decisions#D-053 — Le TOTP est optionnel pour tous les types de compte|D-053]] : la clause « **obligatoire** pour les comptes Équipe ULAMU » est retirée. |
 
 ## 7. Interfaces
 

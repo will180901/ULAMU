@@ -46,7 +46,6 @@ import {
   UserRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, ApiError, type RefundRequest, type RefundStatus } from '@/lib/api'
@@ -394,7 +393,9 @@ export function FinancePage() {
                 bougé : cet écran ne fait que lire. ({messageDe(attente.error)})
               </Avis>
               <div>
-                <ActionApresEchec surReessayer={() => attente.refetch()} />
+                <Button type="button" onClick={() => attente.refetch()}>
+                Réessayer
+              </Button>
               </div>
             </div>
           ) : enAttente.length === 0 ? (

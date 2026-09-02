@@ -53,7 +53,24 @@ export function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
-  const [totpRequired, setTotpRequired] = useState(false)
+  /*
+    ── Le second facteur a DEUX formes, l'écran n'en connaissait qu'une (chantier 31, 02/09/2026) ─
+
+    Le serveur signale un second facteur par un 200 SANS jeton : `totpRequired` pour l'application
+    d'authentification, `otpRequired` pour un code envoyé par email. Seule la première était lue.
+
+    Sur `{ totpRequired: false, otpRequired: true }`, les deux branches tombaient à côté et **il ne
+    se passait rien** : pas de message, pas d'étape suivante, le bouton s'arrêtait simplement de
+    tourner. Un compte ayant activé la 2FA par email était enfermé dehors du web, en silence — et
+    rien à l'écran ne permettait d'en sortir ni même de comprendre.
+
+    Un seul état à trois valeurs plutôt que deux booléens : les deux facteurs sont exclusifs dans le
+    temps (le serveur vérifie le TOTP d'abord, l'email ensuite), et deux booléens auraient autorisé
+    un quatrième état impossible.
+  */
+  const [facteur, setFacteur] = useState<'aucun' | 'totp' | 'email'>('aucun')
+  /** Un second facteur est demandé — quelle qu'en soit la forme. C'est LUI qui commande l'écran. */
+  const secondFacteur = facteur !== 'aucun'
   /** Bascule vers le code de secours : dix caractères libres au lieu des six cases. */
   const [modeSecours, setModeSecours] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,13 +93,27 @@ export function LoginPage() {
         password,
         client: 'web',
         deviceLabel: 'ULAMU Web',
-        totpCode: totpRequired ? totpCode : undefined,
+        totpCode: facteur === 'totp' ? totpCode : undefined,
+        otpCode: facteur === 'email' ? totpCode : undefined,
       })
       if (res.totpRequired) {
-        setTotpRequired(true)
+        setFacteur('totp')
         return
       }
-      if (res.sessionToken) await loadMe.mutateAsync(res.sessionToken)
+      if (res.otpRequired) {
+        setFacteur('email')
+        return
+      }
+      if (res.sessionToken) {
+        await loadMe.mutateAsync(res.sessionToken)
+        return
+      }
+      /*
+        Le cas qui a coûté ce chantier : une réponse 200 sans jeton et sans second facteur annoncé.
+        Elle ne devrait pas exister — mais quand elle existait, l'écran ne DISAIT rien. Un message
+        vaut mieux qu'un bouton qui s'arrête de tourner : au moins on sait qu'il faut appeler.
+      */
+      setError("La connexion n'a pas abouti et le serveur n'a pas dit pourquoi. Réessayez, puis signalez-le si cela persiste.")
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Connexion impossible — réessayez.')
     }
@@ -123,8 +154,8 @@ export function LoginPage() {
       ) : null}
 
       {/* `key` sur l'étape : remonter le bloc rejoue l'animation d'entrée à chaque changement. */}
-      <form onSubmit={soumettre} key={totpRequired ? "totp" : "identifiants"} className="ulamu-step-fade flex flex-col gap-3">
-        {!totpRequired ? (
+      <form onSubmit={soumettre} key={facteur} className="ulamu-step-fade flex flex-col gap-3">
+        {!secondFacteur ? (
           <>
             <label className="flex flex-col gap-1">
               <Libelle>Nom d'utilisateur ou email</Libelle>
@@ -158,12 +189,42 @@ export function LoginPage() {
           </>
         ) : (
           <>
+            {/*
+              Dire OÙ chercher le code, pas seulement qu'il en faut un. Les deux facteurs se
+              ressemblent — six chiffres dans les deux cas — et rien ne les distingue à l'écran :
+              quelqu'un qui a reçu un email chercherait dans son application d'authentification, et
+              conclurait qu'elle est déréglée.
+            */}
             <p className="m-0 flex items-center gap-1.5 text-[13px] leading-[1.55] text-muted-foreground">
               <ShieldCheck size={16} strokeWidth={1.5} aria-hidden="true" />
-              Code de votre application d'authentification
+              {facteur === 'email'
+                ? 'Code envoyé à l’adresse email de votre compte'
+                : "Code de votre application d'authentification"}
             </p>
 
-            {!modeSecours ? (
+            {facteur === 'email' ? (
+              <div>
+                <Libelle>Code reçu par email (6 chiffres)</Libelle>
+                <div className="mt-1.5">
+                  <InputOTP maxLength={6} value={totpCode} onChange={setTotpCode} onComplete={() => void lancer()} autoFocus>
+                    <InputOTPGroup>
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <InputOTPSlot key={i} index={i} />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                {/*
+                  Aucun code de secours ici, et ce n'est pas un oubli : les codes de secours sont
+                  ceux du TOTP. Le recours de la 2FA par email, c'est l'email lui-même — proposer un
+                  code de secours mènerait à un refus du serveur.
+                */}
+                <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  Le code expire au bout de quelques minutes. Sans email, revenez en arrière et
+                  réessayez : un nouveau code part à chaque tentative.
+                </p>
+              </div>
+            ) : !modeSecours ? (
               <div>
                 <Libelle>Code TOTP (6 chiffres)</Libelle>
                 <div className="mt-1.5">
@@ -238,15 +299,15 @@ export function LoginPage() {
 
         <Button type="submit" size="lg" disabled={occupe} className="w-full">
           {occupe ? <Spinner /> : null}
-          {totpRequired ? 'Vérifier' : 'Se connecter'}
+          {secondFacteur ? 'Vérifier' : 'Se connecter'}
         </Button>
 
-        {totpRequired ? (
+        {secondFacteur ? (
           <Button
             type="button"
             variant="ghost"
             onClick={() => {
-              setTotpRequired(false)
+              setFacteur('aucun')
               setModeSecours(false)
               setTotpCode('')
               setError(null)
@@ -257,7 +318,7 @@ export function LoginPage() {
         ) : null}
       </form>
 
-      {!totpRequired ? (
+      {!secondFacteur ? (
         <p className="mt-4 text-center text-[11px] text-[var(--texte-tertiaire)]">
           Pas encore de compte ?{' '}
           <Link to="/inscription" className="font-semibold text-primary hover:underline">

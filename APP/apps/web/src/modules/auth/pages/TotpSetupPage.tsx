@@ -115,8 +115,10 @@ export function TotpSetupPage() {
     forme n'est pas celle attendue — faisait lever `qrcode` avec « Cannot read properties of
     undefined (reading 'getContext') », et l'écran ENTIER tombait.
 
-    Ce serait grave n'importe où ; ici, c'est bloquant. Depuis que RM-01-06 est rétablie, aucune
-    action d'administration n'est possible sans TOTP : un compte dont l'activation plante n'a plus
+    Ce serait grave n'importe où. ⚠️ 02/09/2026 (D-053) : ce commentaire ajoutait que c'était
+    « bloquant », RM-01-06 rendant alors le TOTP obligatoire pour l'administration. Ce n'est plus
+    le cas — il est optionnel pour tous. Le garde-fou reste : un écran d'activation qui tombe
+    priverait quand même de la protection qu'on venait chercher.
     aucun chemin vers l'administration.
 
     Or l'écran propose DÉJÀ la saisie manuelle du secret, juste à côté. En cas d'échec on y bascule
