@@ -35,11 +35,28 @@ const MESH_BASE = '#091849';
 
 /** Diapositives du carrousel — illustrations Storyset embarquées localement (plus de dépendance CDN).
  * Ordre/texte proposés pour suivre le parcours patient ULAMU — à ajuster si besoin. */
+/*
+  ── Deux promesses retirées le 02/09/2026 (chantier 27) ────────────────────────────────────────
+
+  Le carrousel annonçait « Réservez vos médicaments tout près » et « Retirez-les en pharmacie en
+  toute confiance ». La chaîne du médicament est sortie du produit le même jour (D-052) : aucune
+  pharmacie n'est reliée à ULAMU, rien ne se réserve, rien ne se retire.
+
+  Ces deux phrases étaient les plus dangereuses de l'application. Non par leur contenu, mais par
+  leur PLACE : c'est le premier écran, celui qui décide si quelqu'un crée un compte. Promettre là ce
+  qu'on ne fait pas, ce n'est pas une coquille — c'est ce sur quoi la personne s'est engagée.
+
+  Elles ne sont pas REMPLACÉES, seulement retirées. Écrire de nouvelles promesses est un arbitrage
+  du porteur, pas une correction : les trois qui restent sont vraies, et trois vraies valent mieux
+  que cinq dont deux mentent. Le carrousel est entièrement dérivé de `SLIDES.length` — animation,
+  points, minuteur : rien d'autre à changer.
+
+  ⚠️ Les deux illustrations (`slide-medicine`, `slide-pharmacist`) restent dans les ressources : le
+  jour où la chaîne du médicament revient, elles reviennent avec.
+*/
 const SLIDES = [
   {image: require('../../assets/images/slide-online-doctor.png'), t: 'Trouvez un soignant vérifié'},
   {image: require('../../assets/images/slide-prescription.png'), t: 'Recevez votre ordonnance signée'},
-  {image: require('../../assets/images/slide-medicine.png'), t: 'Réservez vos médicaments tout près'},
-  {image: require('../../assets/images/slide-pharmacist.png'), t: 'Retirez-les en pharmacie en toute confiance'},
   {image: require('../../assets/images/slide-insurance.png'), t: 'Payez en toute transparence'},
 ];
 // Séquence par diapositive : l'image apparaît en fondu, PUIS (une fois posée) le texte entier apparaît

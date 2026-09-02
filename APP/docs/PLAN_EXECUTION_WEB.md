@@ -488,6 +488,77 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **26** | **La chaîne du médicament sort du produit** — 02/09. **Décision du porteur, inscrite au cahier sous D-052** : ULAMU ne garde que les modules de son périmètre — patient, médecin, administration. Suite directe de la dette n°12 ouverte au chantier 25 ; le porteur retient son issue (a). Retirés : **M11 Stocks** (7 fichiers, 1 330 l.) · **M12 Recherche & dévoilement** (7 fichiers, 1 843 l.) · la **délivrance de M09** (scan + dispense + son service) · l'écran mobile « Médicaments » (376 l.), sa route, sa tuile, 6 méthodes d'API et 11 types · l'arbitrage des strikes et son balayage dans M16 · **2 des 7 KPI du pilote** et le compte des officines dans la couverture · **12 modèles de notification** sans émetteur · les pharmacies de démonstration du seed. **Ce qui NE part pas : le référentiel médicaments.** `GET /v1/medicaments` **change de module (M12 → M09) sans changer d'adresse** — son exigence était EF-09-02 depuis toujours, et sans lui le médecin ne peut plus prescrire qu'en texte libre, donc **sans garde-fou allergies**. **API 484 ✓ · web 498 ✓ · mobile 7 ✓ · types, lint et builds propres.** | ⏸ en attente | ⏸ |
 
+| **27** | **Six promesses que le nettoyage avait manquées** — 02/09, **après vérification en ligne**. Le chantier 26 était poussé, déployé, les routes retirées répondaient 404 et les trois suites étaient vertes. **Six phrases avaient survécu, et elles étaient en production.** Le carrousel des écrans d'entrée annonçait « Réservez vos médicaments tout près » et « Retirez-les en pharmacie en toute confiance » — sur le PREMIER écran, celui qui décide si quelqu'un s'inscrit. Le QR de l'ordonnance disait, côté médecin, « Le patient présente ce code en pharmacie », et côté patient « Le pharmacien scanne ce code : il voit les lignes et quantités restantes ». **Aucun test ne pouvait les attraper : ce n'est pas du code, ce sont des promesses.** Corrigé : deux diapositives retirées (web et mobile — les carrousels sont dérivés de `SLIDES.length`, rien d'autre à toucher), le QR redit pour ce qu'il EST (un sceau d'intégrité) et non pour ce qu'il n'est plus (un ticket de retrait), et `promesses.test.ts` verrouille les faits — jamais le vocabulaire. **web 501 ✓ (498 + 3) · API 485 ✓ · mobile 7 ✓ · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 27 (les promesses manquées) a appris
+
+*Mené le 02/09/2026, immédiatement après la vérification EN LIGNE du chantier 26.*
+
+#### Le nettoyage était complet, et le produit mentait quand même
+
+Le chantier 26 avait tout ce qu'on demande à un chantier : les modules retirés, les trois suites au
+vert, les types propres, et une vérification en ligne route par route — 404 sur les huit routes
+supprimées, 401 sur celles qui restent. **Tout était vrai, et il manquait l'essentiel.**
+
+Six phrases annonçaient encore la chaîne du médicament. Elles ont survécu parce qu'un nettoyage
+suit les **importations** : on part d'un module, on remonte ses appelants, on coupe. Une promesse
+n'importe rien. Elle est dans une chaîne de caractères, à côté d'une image, dans un composant que
+rien ne relie au module supprimé.
+
+*La règle qu'on retient : **le compilateur trouve le code mort, il ne trouve pas les promesses
+mortes.** Après tout retrait de fonctionnalité, il faut chercher ce que le produit en DIT — et le
+chercher ailleurs que là où on vient de couper.*
+
+#### Les deux endroits où une phrase fausse coûte le plus cher
+
+Ce n'est pas leur contenu qui rendait ces six phrases graves, c'est leur **place**.
+
+Le carrousel est le **premier écran**. Il ne décrit pas une fonctionnalité, il décide si quelqu'un
+crée un compte. « Réservez vos médicaments tout près » n'était pas une coquille : c'était ce sur
+quoi la personne s'était engagée en s'inscrivant. *Même famille que `support@ulamu.cg` dans les
+mentions légales — une phrase fausse à l'endroit où l'on donne son consentement.*
+
+Le QR de l'ordonnance arrive **au moment du soin**. Un patient qui croit son téléphone suffisant se
+présente au comptoir sans ordonnance lisible, s'entend dire qu'on ne scanne pas ça, et en conclut
+que son ordonnance ne vaut rien. Et le médecin, de son côté, croyait avoir transmis quelque chose.
+*C'est la question du chantier 4, reposée : un avertissement arrive-t-il avant ou après la perte ?
+Ici il n'arrivait pas du tout.*
+
+#### Retirer sans remplacer est une décision, pas une paresse
+
+Le carrousel passe de cinq diapositives à trois. Rien n'est venu remplacer les deux qui partent, et
+c'est délibéré : **écrire de nouvelles promesses est un arbitrage du porteur, pas une correction.**
+Trois phrases vraies valent mieux que cinq dont deux mentent, et un écran qui promet moins n'a
+jamais fait fuir personne — un écran qui promet faux, si.
+
+*Les deux illustrations restent dans les ressources : le jour où la chaîne du médicament revient,
+elles reviennent avec.*
+
+#### Dire ce que la chose EST, pas seulement ce qu'elle n'est plus
+
+Le QR n'a pas été supprimé. Il aurait été plus simple de le retirer — mais il **scelle** encore
+l'ordonnance : il prouve qu'elle n'a pas été modifiée depuis la signature, ce qui reste vrai et
+utile. Ce qui était faux, c'était son usage annoncé.
+
+Les deux écrans disent donc maintenant les deux moitiés : ce que le code prouve, et ce qu'il ne
+permet pas. *Quatrième fois dans ce plan qu'expliquer une absence vaut mieux que la laisser
+deviner — après le rapport de rapprochement d'E2, la liste de comptes d'E7 et l'identité du
+signaleur d'E6.*
+
+#### Un test qui interdit des mots interdirait aussi les explications
+
+`promesses.test.ts` lit la source et refuse « Réservez vos médicaments », « présente ce code en
+pharmacie », « à scanner en pharmacie ». Il **n'interdit pas le mot « pharmacie »** : l'ordonnance
+dit désormais « montrez-la à votre pharmacien », et c'est exactement ce qu'il faut dire.
+
+La distinction n'est pas théorique — elle a déjà coûté au chantier 16, où une assertion refusant le
+mot « médian » avait échoué sur la phrase qui expliquait pourquoi la médiane n'était pas mesurée.
+Le test dépouille donc les commentaires avant de chercher, puisque ce sont eux qui CITENT les
+phrases retirées pour expliquer pourquoi elles le sont.
+
+Et il vérifie une chose que le rendu ne dirait pas : **le carrousel compte exactement trois
+diapositives**. Sans ce compte, une quatrième ajoutée demain passerait inaperçue.
+
 ### Ce que le chantier 26 (la chaîne du médicament) a appris
 
 *Mené le 02/09/2026, sur décision du porteur : « retire tout ce qui concerne pharmacie, recherche

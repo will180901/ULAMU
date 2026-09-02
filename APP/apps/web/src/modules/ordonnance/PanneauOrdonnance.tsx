@@ -416,7 +416,7 @@ function CodeQR({ jeton }: { jeton: string }) {
   return (
     <img
       src={url}
-      alt="Code à scanner en pharmacie"
+      alt="Sceau de l’ordonnance"
       className="size-44 rounded-md border border-border bg-white p-1"
     />
   )
@@ -449,8 +449,21 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
         <div className="flex flex-col items-center gap-2 rounded-lg border border-border bg-secondary/40 p-4">
           <CodeQR jeton={ordonnance.qrToken} />
           <p className="text-center text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">
-            Le patient présente ce code en pharmacie. Il le retrouve dans son application — vous
-            n'avez rien à lui transmettre.
+            {/*
+              02/09/2026 (chantier 27) — cette phrase disait « Le patient présente ce code en
+              pharmacie ». Elle est devenue fausse le jour même : la chaîne du médicament est sortie
+              du produit (D-052), aucune officine n'est reliée à ULAMU, et plus rien ne lit ce code.
+
+              L'y laisser aurait envoyé un patient tendre son téléphone à un comptoir où on lui
+              aurait répondu qu'on ne scanne pas ça — et il aurait cru son ordonnance invalide. Le
+              médecin, lui, aurait cru avoir transmis quelque chose.
+
+              Ce que le code EST encore : le sceau qui prouve que l'ordonnance n'a pas été modifiée
+              depuis sa signature. Ce qu'il n'est plus : un moyen de retirer des médicaments.
+            */}
+            Ce code scelle l'ordonnance : il prouve qu'elle n'a pas été modifiée depuis votre
+            signature. Il ne sert pas à la délivrance — ULAMU n'est relié à aucune officine. Le
+            patient la retrouve dans son application et la présente comme une ordonnance papier.
           </p>
           {/* L'échéance vient du serveur (PM-10) : aucun nombre de jours n'est écrit ici. */}
           <p className="text-[12px] font-medium text-foreground">

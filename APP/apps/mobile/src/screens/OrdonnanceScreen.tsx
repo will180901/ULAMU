@@ -78,7 +78,7 @@ export function OrdonnanceScreen({route, navigation}: NativeStackScreenProps<App
                   <QRCode value={presc.qrToken} size={184} backgroundColor="#FFFFFF" color="#111112" />
                 </View>
                 <Text style={styles.qrRef}>{shortRef(presc.id)}</Text>
-                <Text style={styles.qrHint}>À présenter en pharmacie · luminosité au maximum</Text>
+                <Text style={styles.qrHint}>Sceau d'intégrité · ne sert pas à la délivrance</Text>
               </>
             ) : (
               <View style={styles.qrInactive}>
@@ -127,7 +127,16 @@ export function OrdonnanceScreen({route, navigation}: NativeStackScreenProps<App
             </View>
           </Card>
 
-          <Text style={styles.footNote}>Le pharmacien scanne ce code : il voit les lignes et quantités restantes — jamais votre dossier (RM-09-04).</Text>
+          {/*
+            02/09/2026 (chantier 27) — disait « Le pharmacien scanne ce code : il voit les lignes et
+            quantités restantes ». Faux depuis le même jour : la chaîne du médicament est sortie du
+            produit (D-052), aucune officine n'est reliée à ULAMU.
+
+            C'est la phrase la plus coûteuse des six retirées ce jour-là, parce qu'elle arrive au
+            moment du soin : un patient qui compte dessus se présente au comptoir avec un téléphone
+            au lieu d'une ordonnance lisible.
+          */}
+          <Text style={styles.footNote}>Montrez cette ordonnance à votre pharmacien : il y lit les médicaments, les doses et la durée. Le code n'est qu'un sceau — il prouve qu'elle n'a pas été modifiée, il ne se scanne pas.</Text>
         </ScrollView>
       )}
     </SafeAreaView>

@@ -21,8 +21,6 @@ import blob5 from '@/assets/auth/mesh-blob-5.png'
 import frostGrain from '@/assets/auth/frost-grain.png'
 import slideDoctor from '@/assets/auth/slide-online-doctor.png'
 import slidePrescription from '@/assets/auth/slide-prescription.png'
-import slideMedicine from '@/assets/auth/slide-medicine.png'
-import slidePharmacist from '@/assets/auth/slide-pharmacist.png'
 import slideInsurance from '@/assets/auth/slide-insurance.png'
 
 /** Teinte la plus sombre du mesh (accent900) — le fond sous les formes. */
@@ -41,11 +39,28 @@ const MESH_BLOBS: MeshBlob[] = [
 ]
 
 /** Mêmes diapositives et mêmes textes que le mobile — le parcours patient ULAMU. */
+/*
+  ── Deux promesses retirées le 02/09/2026 (chantier 27) ────────────────────────────────────────
+
+  Le carrousel annonçait « Réservez vos médicaments tout près » et « Retirez-les en pharmacie en
+  toute confiance ». La chaîne du médicament est sortie du produit le même jour (D-052) : aucune
+  pharmacie n'est reliée à ULAMU, rien ne se réserve, rien ne se retire.
+
+  Ces deux phrases étaient les plus dangereuses de l'application. Non par leur contenu, mais par
+  leur PLACE : c'est le premier écran, celui qui décide si quelqu'un crée un compte. Promettre là ce
+  qu'on ne fait pas, ce n'est pas une coquille — c'est ce sur quoi la personne s'est engagée.
+
+  Elles ne sont pas REMPLACÉES, seulement retirées. Écrire de nouvelles promesses est un arbitrage
+  du porteur, pas une correction : les trois qui restent sont vraies, et trois vraies valent mieux
+  que cinq dont deux mentent. Le carrousel est entièrement dérivé de `SLIDES.length` — animation,
+  points, minuteur : rien d'autre à changer.
+
+  ⚠️ Les deux illustrations (`slide-medicine`, `slide-pharmacist`) restent dans les ressources : le
+  jour où la chaîne du médicament revient, elles reviennent avec.
+*/
 const SLIDES = [
   { image: slideDoctor, text: 'Trouvez un soignant vérifié' },
   { image: slidePrescription, text: 'Recevez votre ordonnance signée' },
-  { image: slideMedicine, text: 'Réservez vos médicaments tout près' },
-  { image: slidePharmacist, text: 'Retirez-les en pharmacie en toute confiance' },
   { image: slideInsurance, text: 'Payez en toute transparence' },
 ]
 
