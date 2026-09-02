@@ -472,8 +472,18 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
         </div>
       ) : (
         <Avis ton="alerte">
-          Cette ordonnance n'est plus délivrable : son code a été rendu inerte
-          {ordonnance.cancelReason ? ` (${ordonnance.cancelReason})` : ''}.
+          {/*
+            02/09/2026 (chantier 29) — disait « son code a été rendu inerte ». C'était MON
+            incohérence : le chantier 27, deux panneaux plus haut, venait de redéfinir ce code comme
+            un SCEAU qui ne sert pas à la délivrance. Annoncer sa mise hors service comme la
+            conséquence d'une annulation le redonnait pour un ticket.
+
+            Ce qui compte pour un médecin qui annule : l'ordonnance ne doit plus être suivie, et
+            c'est au patient de le savoir.
+          */}
+          Cette ordonnance est annulée : elle ne doit plus être suivie
+          {ordonnance.cancelReason ? ` (${ordonnance.cancelReason})` : ''}. Le patient en est
+          informé — prévenez-le aussi de vive voix s'il a déjà pu la présenter.
         </Avis>
       )}
 

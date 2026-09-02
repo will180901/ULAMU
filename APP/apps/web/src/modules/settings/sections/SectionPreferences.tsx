@@ -26,7 +26,24 @@ import { SqueletteReglages } from '@/components/ulamu/Squelette'
 const CATEGORIES: Array<{ cle: NotificationCategory; label: string; aide: string }> = [
   { cle: 'care', label: 'Consultations', aide: 'Demandes reçues, séances qui démarrent, comptes-rendus attendus' },
   { cle: 'money', label: 'Paiements et gains', aide: 'Encaissements, retraits, remboursements' },
-  { cle: 'reminder', label: 'Rappels', aide: 'Échéances de vérification, réservations qui expirent' },
+  /*
+    02/09/2026 (chantier 29) — la catégorie « Rappels » est retirée, pour DEUX raisons dont une
+    seule vient de nous.
+
+    La nôtre : son intitulé annonçait « réservations qui expirent ». Les réservations sont sorties
+    du produit avec la chaîne du médicament (D-052) — la phrase était fausse depuis ce jour-là.
+
+    L'autre, trouvée en la vérifiant : **aucun modèle de notification n'a jamais porté cette
+    catégorie.** Compté dans `m14.templates.ts` — care 19, system 12, critical 10, money 7,
+    reminder ZÉRO. L'interrupteur ne coupait donc rien, et ne l'a jamais fait.
+
+    C'est exactement la règle du chantier 10, qui avait fait retirer le sélecteur de langue :
+    **un interrupteur qui ne change rien est pire qu'un interrupteur absent, parce qu'on lui fait
+    confiance.** Ici on lui confiait le silence de rappels qui n'existent pas.
+
+    ⚠️ `reminder` reste dans `NOTIFICATION_CATEGORIES` côté serveur : le jour où un rappel sera
+    écrit, la ligne revient ici. Ce n'est pas le contrat qu'on retire, c'est la promesse.
+  */
   { cle: 'system', label: 'Service', aide: 'Maintenances, changements de conditions' },
   { cle: 'critical', label: 'Alertes vitales', aide: 'Toujours actives — elles ne peuvent pas être coupées' },
 ]

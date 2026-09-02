@@ -492,6 +492,78 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **28** | **Une phrase visible avait survécu à trois chantiers** — 02/09, trouvée en vérifiant en ligne le chantier 27. L'écran de connexion annonçait encore, **en toutes lettres**, « Connectez-vous à votre compte ULAMU — professionnels, **structures** et administration ». Le chantier 25 avait pourtant ouvert ce fichier : il en avait corrigé le **commentaire d'en-tête** et laissé la phrase **affichée**, trois lignes plus bas. Corrigé aussi : E6 illustrait l'anonymat du signaleur par « un praticien, une officine » — on ne peut plus signaler une officine ; et trois commentaires devenus trompeurs (le « poste d'officine » de A3, la règle « qui ne vise que les pharmacies » de B2). **Et un ajout qui va dans l'autre sens** : E1 garde « Structure » pour nommer un dossier hérité, avec un test qui l'exige — retirer la branche afficherait un vide sur un dossier que la base contient encore. `promesses.test.ts` gagne un second bloc qui lit ce que les écrans **disent** du périmètre, plus seulement ce qu'ils importent. **web 504 ✓ (501 + 3) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
 
+| **29** | **Deux réglages qui ne réglaient rien, et un test qui s'était désarmé** — 02/09, trouvés par un balayage **systématique du bundle déployé** au lieu d'un contrôle de ce qu'on venait de corriger. B3 « Aide » offrait encore le sujet « **Ma structure · Titulaire injoignable** » — une demande qu'aucun administrateur ne saurait traiter, la procédure ayant été retirée d'E7 le même jour. B3 « Préférences » proposait de couper les « Rappels — échéances de vérification, **réservations qui expirent** » : les réservations sont sorties avec D-052, **et la catégorie `reminder` ne porte aucun modèle de notification** — compté dans `m14.templates.ts` : care 19, system 12, critical 10, money 7, reminder **zéro**. Et C7 disait d'une ordonnance annulée que « son code a été rendu inerte », **incohérence introduite par le chantier 27** qui venait de redéfinir ce code comme un sceau ne servant pas à la délivrance. **Le plus instructif est un test** : `ordonnance.test.tsx` cherchait l'absence du texte alternatif « Code à scanner en pharmacie » — que le chantier 27 avait renommé. L'assertion restait verte pour la mauvaise raison. **web 506 ✓ (504 + 2) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 29 (les réglages vides) a appris
+
+*Trouvé le 02/09/2026 en balayant SYSTÉMATIQUEMENT le bundle déployé, après trois chantiers de
+correction où chaque vérification en ligne avait trouvé quelque chose.*
+
+#### Contrôler sa correction ne vaut pas balayer le résultat
+
+Les chantiers 27 et 28 se sont vérifiés de la même façon : on cherche dans le bundle en ligne les
+phrases qu'on vient de retirer, on constate qu'elles ont disparu, on conclut. **C'est une
+vérification qui ne peut trouver que ce qu'on a déjà trouvé.**
+
+Le balayage de ce chantier a fait l'inverse : chercher **tout le vocabulaire du périmètre retiré**
+— officine, pharmacie, structure, médicament, stock, dévoilement, réservation, délivrance — et lire
+chaque occurrence en contexte. Vingt-huit occurrences, dont **vingt-cinq justifiées** :
+
+- « Attestation **délivrée** par l'Ordre » — un autre sens du verbe ;
+- « Quantité à **délivrer** » — un champ d'ordonnance, ce que le médecin prescrit ;
+- « orienter vers une **structure** adaptée » — un hôpital, dans l'avertissement médical ;
+- `PARTIALLY_DISPENSED` / `DISPENSED`, « Structure » dans E1, `ADDRESS_PROOF` — des dictionnaires
+  qui nomment ce que la base contient encore.
+
+*La leçon n'est pas « il fallait chercher plus large ». Elle est : **un balayage ne vaut que si on
+lit ce qu'il trouve.** Vingt-cinq de ces occurrences étaient justes ; les supprimer par réflexe
+aurait fait plus de dégâts que les trois qui restaient.*
+
+#### Un réglage qui ne règle rien se cache mieux qu'une promesse fausse
+
+« Rappels — échéances de vérification, réservations qui expirent » avait deux défauts empilés, et
+un seul venait de nous.
+
+Le nôtre : « réservations » est faux depuis D-052. Facile à voir une fois qu'on cherche le mot.
+
+L'autre, découvert en vérifiant le premier : **aucun modèle de notification n'a jamais porté la
+catégorie `reminder`.** L'interrupteur ne coupait rien, et ne l'a jamais fait. Personne ne s'en
+était aperçu parce qu'un réglage silencieux n'a pas de symptôme : on le coupe, et rien ne change —
+ce qui est exactement ce qu'on attendait.
+
+*C'est la règle du chantier 10, retrouvée par un autre chemin : un interrupteur qui ne change rien
+est pire qu'un interrupteur absent, parce qu'on lui fait confiance. Là, on lui confiait le silence
+de rappels qui n'existent pas.*
+
+#### Une case qui mène à une file morte
+
+« Ma structure · Titulaire injoignable » restait proposé à un soignant dans B3 « Aide », alors que
+la procédure correspondante avait été retirée des choix d'E7 le matin même.
+
+Les deux moitiés avaient été traitées séparément, et une seule l'avait été. **Un formulaire qui
+accepte une demande que personne ne peut traiter est pire qu'un formulaire qui la refuse** : il
+promet une réponse, et le silence qui suit ressemble à de l'abandon. *Même raisonnement que pour
+`support@ulamu.cg` au chantier 19 : un trou noir aurait été pire que l'adresse morte qu'il
+remplaçait.*
+
+#### Le plus grave : une assertion négative peut mourir sans bruit
+
+`ordonnance.test.tsx` vérifiait qu'une ordonnance annulée n'affiche pas
+`altText('Code à scanner en pharmacie')`.
+
+Le chantier 27 a renommé ce texte alternatif en « Sceau de l'ordonnance ». L'assertion est restée
+**verte** — non plus parce que le QR est absent d'une ordonnance annulée, mais parce que la chaîne
+qu'elle cherchait n'existait plus **nulle part**. Elle ne surveillait plus rien.
+
+Elle n'a été découverte que parce que l'autre assertion du même test a échoué, sur la phrase
+d'annulation changée le même jour. **Sans cette échec voisin, le test serait encore là, vert et
+vide.**
+
+*C'est la deuxième fois en quatre chantiers : au 26, un témoin d'`app.boot.spec.ts` visait une route
+supprimée et aurait cessé de surveiller la forme qu'il gardait. La règle : **quand on renomme une
+cible, il faut relire les assertions NÉGATIVES qui la nommaient** — une assertion positive tombe
+d'elle-même, une négative devient vraie pour rien.*
+
 ### Ce que le chantier 28 (la phrase survivante) a appris
 
 *Trouvée le 02/09/2026 en regardant l'écran de connexion EN LIGNE, après le chantier 27.*

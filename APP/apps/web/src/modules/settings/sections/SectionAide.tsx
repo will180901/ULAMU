@@ -45,7 +45,19 @@ const messageDe = (e: unknown) =>
 const SUJETS: ReadonlyArray<{ cle: SupportProcedureType; label: string; aide: string }> = [
   { cle: 'PHONE_CHANGE', label: 'J’ai perdu mon numéro', aide: 'Le code de connexion arrive sur une ligne que je n’ai plus' },
   { cle: 'RECORD_TRANSFER', label: 'Mon carnet de santé', aide: 'Transfert, correction ou accès à mon dossier' },
-  { cle: 'OWNER_UNREACHABLE', label: 'Ma structure', aide: 'Titulaire injoignable, changement de responsable' },
+  /*
+    02/09/2026 (chantier 29) — « Ma structure · Titulaire injoignable » est retiré des sujets
+    proposés. ULAMU a trois acteurs depuis D-051 : personne n'administre plus de structure, donc
+    personne ne peut avoir ce problème.
+
+    Le laisser aurait été pire qu'inutile : un soignant qui le choisit dépose une demande qu'aucun
+    administrateur ne saura traiter — la procédure guidée correspondante a elle aussi été retirée
+    des choix d'E7 le même jour. Une case qui mène à une file morte est une promesse de réponse
+    qu'on ne tiendra pas.
+
+    ⚠️ Le sujet reste connu du serveur (`SupportProcedureType`), et E7 sait encore l'AFFICHER :
+    des demandes déposées avant cette date le portent. On cesse de l'offrir, on ne l'efface pas.
+  */
   { cle: 'OTHER', label: 'Autre demande', aide: 'Tout ce qui n’entre dans aucune des trois' },
 ]
 

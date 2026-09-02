@@ -255,13 +255,32 @@ describe('C7 — une ordonnance déjà scellée', () => {
     await waitFor(() => expect(annuler).toHaveBeenCalledWith('ord-1', 'Erreur de dosage'))
   })
 
-  it('une ordonnance annulée n’a plus de code à scanner (RM-09-05)', async () => {
+  /*
+    ── Ce test s'était SILENCIEUSEMENT désarmé (02/09/2026, chantier 29) ────────────────────────
+
+    Il portait deux assertions, et le chantier 27 en avait vidé une sans la faire tomber :
+    `queryByAltText('Code à scanner en pharmacie')` cherchait un texte alternatif que ce même
+    chantier venait de renommer en « Sceau de l'ordonnance ». L'assertion « ce texte n'est pas là »
+    est restée verte pour la mauvaise raison — il n'existait plus nulle part, ordonnance annulée ou
+    non. Elle ne surveillait plus le QR, elle surveillait une chaîne morte.
+
+    C'est la même famille que le témoin d'`app.boot.spec.ts` au chantier 26 : **une assertion
+    négative dont la cible a été renommée cesse de tester sans jamais échouer.** Elle vise donc
+    désormais le texte alternatif RÉEL.
+
+    La première assertion, elle, a bien échoué — la phrase d'annulation a changé le même jour, et
+    c'est ainsi qu'on a découvert la seconde.
+  */
+  it('une ordonnance annulée ne montre plus aucun sceau (RM-09-05)', async () => {
     const utilisateur = userEvent.setup()
     await monter(true, [ordonnance({ status: 'CANCELLED', qrToken: null, cancelReason: 'Erreur de dosage' })])
     await utilisateur.click(screen.getByRole('button', { name: /Rédiger l'ordonnance/ }))
 
-    expect(await screen.findByText(/son code a été rendu inerte/)).toBeInTheDocument()
-    expect(screen.queryByAltText('Code à scanner en pharmacie')).not.toBeInTheDocument()
+    expect(await screen.findByText(/elle ne doit plus être suivie/)).toBeInTheDocument()
+    // Le motif saisi par le prescripteur est rendu à côté, entre parenthèses.
+    expect(screen.getByText(/Erreur de dosage/)).toBeInTheDocument()
+    // Le texte alternatif RÉEL du sceau — celui que porte une ordonnance active.
+    expect(screen.queryByAltText('Sceau de l’ordonnance')).not.toBeInTheDocument()
   })
 })
 

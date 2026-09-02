@@ -125,3 +125,44 @@ describe('Les écrans disent le bon périmètre : soignant et administration', (
     expect(s).toMatch(/subjectKind === 'PROFESSIONAL' \? 'Soignant' : 'Structure'/)
   })
 })
+
+/**
+ * Les RÉGLAGES qui ne règlent rien — chantier 29, 02/09/2026.
+ *
+ * Deux cases de « Mes paramètres » proposaient encore quelque chose d'impossible. Elles avaient
+ * survécu aux chantiers 25 à 28 pour la même raison que le sous-titre de la connexion : ce sont des
+ * chaînes de caractères en français, dans un tableau d'options, que nulle recherche d'identifiant
+ * ne trouve.
+ *
+ * La règle qu'elles enfreignaient est celle du chantier 10, qui avait fait retirer le sélecteur de
+ * langue : **un interrupteur qui ne change rien est pire qu'un interrupteur absent, parce qu'on lui
+ * fait confiance.**
+ */
+describe('Les réglages ne proposent que ce qui existe', () => {
+  /*
+    B3 « Aide » offrait le sujet « Ma structure · Titulaire injoignable ». Depuis D-051, personne
+    n'administre de structure — et la procédure qui l'aurait traitée est elle aussi retirée des
+    choix d'E7. Une case qui mène à une file morte promet une réponse qu'on ne tiendra pas.
+  */
+  it('B3 n’offre plus de déposer une demande « Ma structure »', () => {
+    const s = sansCommentaires(source('modules/settings/sections/SectionAide.tsx'))
+
+    expect(s).not.toMatch(/OWNER_UNREACHABLE/)
+    expect(s).not.toMatch(/Ma structure/)
+    // Les trois sujets qui restent sont réels — le compte les verrouille.
+    expect((s.match(/\{ cle: '/g) ?? []).length).toBe(3)
+  })
+
+  /*
+    B3 « Préférences » proposait de couper les « Rappels — échéances de vérification, réservations
+    qui expirent ». Les réservations sont sorties avec D-052 ; et la catégorie `reminder` ne porte
+    AUCUN modèle de notification — vérifié dans `m14.templates.ts` : care 19, system 12, critical 10,
+    money 7, reminder zéro. L'interrupteur ne coupait rien, et ne l'a jamais fait.
+  */
+  it('B3 ne propose plus de couper une catégorie de notification vide', () => {
+    const s = sansCommentaires(source('modules/settings/sections/SectionPreferences.tsx'))
+
+    expect(s).not.toMatch(/cle: 'reminder'/)
+    expect(s).not.toMatch(/réservations qui expirent/)
+  })
+})
