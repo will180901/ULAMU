@@ -417,7 +417,37 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
 
   return (
     <>
-      <Carte icone={ShieldCheck} titre="Double authentification" sousTitre="Obligatoire sur ULAMU — elle ne peut pas être désactivée">
+      {/*
+        ── La phrase n'était pas mal écrite, elle était montrée à tout le monde (chantier 24, 02/09/2026) ─
+
+        Elle disait à chacun : « Obligatoire sur ULAMU — elle ne peut pas être désactivée ». C'est
+        exactement ce que le serveur applique à un ADMINISTRATEUR : `disableTotp` répond 403 sur
+        `account.type === "ADMIN"` (RM-01-06), et la garde d'administration refuse toute lecture
+        sans second facteur.
+
+        Pour un SOIGNANT, les deux moitiés sont fausses. Le serveur accepte la désactivation (mot de
+        passe + code), le cahier la donne pour optionnelle (RM-01-06), et **rien dans le web ne
+        l'impose** : ni garde de route, ni redirection — seulement un bouton « Configurer » qu'on
+        peut ignorer indéfiniment. L'écran annonçait donc une obligation que personne ne faisait
+        respecter : c'est l'écran qui légifère, le défaut que le chantier 17 a refusé en E6 sur le
+        minimum de vingt caractères.
+
+        Une obligation annoncée et jamais appliquée est pire qu'une recommandation : le jour où un
+        soignant découvre qu'il exerçait sans, il apprend surtout que les phrases de cet écran ne
+        valent rien.
+
+        ⚠️ Ce que ce chantier NE fait pas : exposer la désactivation aux soignants. Le serveur
+        l'autorise, le web ne l'offre pas — écart inscrit au §9, décision au porteur.
+      */}
+      <Carte
+        icone={ShieldCheck}
+        titre="Double authentification"
+        sousTitre={
+          me.accountType === 'ADMIN'
+            ? "Obligatoire pour l'administration — elle ne peut pas être désactivée"
+            : 'Fortement recommandée — le mot de passe seul ne protège pas un dossier de santé'
+        }
+      >
         <Reglage
           titre={me.totpEnabled ? 'Active' : 'Non configurée'}
           aide={

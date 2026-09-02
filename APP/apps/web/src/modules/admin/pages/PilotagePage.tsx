@@ -39,6 +39,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Activity, AlertTriangle, CheckCircle2, Inbox, MapPin, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { api, type PilotKpi } from '@/lib/api'
@@ -143,9 +144,7 @@ export function PilotagePage() {
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les indicateurs n'ont pas pu être calculés" sousTitre="Rien n'est perdu">
             <div>
-              <Button type="button" onClick={() => kpis.refetch()}>
-                Réessayer
-              </Button>
+              <ActionApresEchec surReessayer={() => kpis.refetch()} />
             </div>
           </Carte>
         </div>

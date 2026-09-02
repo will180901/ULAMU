@@ -43,6 +43,7 @@ import { useState } from 'react'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, History, KeyRound, ShieldCheck, UserPlus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -416,9 +417,7 @@ export function AdministrateursPage() {
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les administrateurs n'ont pas pu être lus" sousTitre="Rien n'a été modifié">
             <div>
-              <Button type="button" onClick={() => admins.refetch()}>
-                Réessayer
-              </Button>
+              <ActionApresEchec surReessayer={() => admins.refetch()} />
             </div>
           </Carte>
         </div>

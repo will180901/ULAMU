@@ -77,4 +77,28 @@ describe('Écrans d’entrée — la structure de la page', () => {
     expect(totp).toContain('<main')
     expect(totp).toMatch(/<h1 className="sr-only">/)
   })
+
+  /*
+    ── La page se déclarait en anglais (chantier 24, 02/09/2026) ────────────────────────────────
+
+    `index.html` portait `<html lang="en">` — la valeur que Vite écrit par défaut, jamais relue.
+    Vérifié sur le site EN LIGNE avant correction : `document.documentElement.lang` valait bien
+    `en`.
+
+    Ce n'est pas une étiquette décorative. C'est elle qui choisit la voix d'un lecteur d'écran :
+    du français lu par une synthèse anglaise ne s'entend pas comme du français mal prononcé, il
+    s'entend comme rien du tout. Et l'application est en français SEUL — le chantier 10 a retiré
+    le sélecteur de langue en écrivant pourquoi (aucune chaîne n'est externalisée). L'attribut
+    mentait donc sur le seul fait qu'il avait à dire.
+
+    Même famille que les quatre écrans sans titre ci-dessus : invisible à l'œil, décisif à
+    l'oreille, et introuvable par un test de rendu — jsdom monte des composants, il ne charge
+    jamais `index.html`. D'où la lecture du fichier.
+  */
+  it('la page se déclare en français, comme la seule langue qu’elle sert', () => {
+    const html = readFileSync(resolve(__dirname, '../../index.html'), 'utf8')
+
+    expect(html).toMatch(/<html\s[^>]*lang="fr"/)
+    expect(html).not.toContain('lang="en"')
+  })
 })

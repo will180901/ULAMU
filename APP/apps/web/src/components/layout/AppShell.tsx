@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { GardeFou } from '@/components/layout/GardeFou'
+import { RappelTotpAdmin } from '@/components/layout/RappelTotpAdmin'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { VoileRideau } from '@/components/layout/RideauConfidentialite'
@@ -130,6 +131,12 @@ export function AppShell() {
                 l'erreur affichée, elle resterait affichée sur TOUS les écrans suivants — la
                 navigation ne changerait plus rien, ce qui ressemblerait à une application gelée.
               */}
+              {/*
+                Hors de `GardeFou`, et c'est délibéré : si l'écran tombe, la limite d'erreur
+                remplace son contenu — le rappel, lui, doit survivre. C'est même là qu'il compte
+                le plus, puisqu'une page en panne est exactement ce qu'un compte sans TOTP voit.
+              */}
+              <RappelTotpAdmin />
               <GardeFou key={pathname} portee="zone">
                 <Outlet />
               </GardeFou>

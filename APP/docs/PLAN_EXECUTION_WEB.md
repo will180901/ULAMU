@@ -348,7 +348,7 @@ boucler l'avenant.
 | `npm run test:unit` (API) | ✅ **oui** | Le projet Jest `unit` n'a **ni `globalSetup` ni Prisma** — il n'ouvre aucune base. 472 tests, 16 suites. |
 | `npm test` (API) | ⛔ **non** | Lance aussi l'intégration, qui **vide 24 tables**. Le garde-fou `test/garde-base-de-test.ts` l'arrête sans `TEST_DATABASE_URL` distincte. **Ne jamais le contourner.** |
 | `npm run build` (API/web) | ✅ oui | `tsc` seul. |
-| `npm run lint` | ⛔ **inopérant** | **`eslint` n'est installé nulle part** — ni API, ni web, ni racine, aucun binaire. Vérifié le 27/08. **Aucun lint ne tourne sur ce dépôt.** |
+| `npm run lint` | ✅ **oui** — *corrigé le 02/09* | La ligne d'origine (« aucun lint ne tourne sur ce dépôt », 27/08) est **fausse depuis le chantier 19** : `oxlint` tourne sur l'API et le web, `eslint` sur mobile, et le script racine les appelle explicitement — web et mobile étant hors du workspace pnpm, il n'atteignait avant que l'API. Base actuelle du web : **20 avertissements préexistants**, aucune erreur. |
 
 **Une seule base Neon sert le local ET le site en ligne.** C'est ce qui a effacé la production le
 23/08.
@@ -390,13 +390,15 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 9 | **Le lint — soldé le 01/09.** Le constat était faux : `eslint` **tournait** sur mobile et `oxlint` sur le web. C'est l'**API** qui déclarait un script `eslint` sans qu'eslint soit ni installé ni déclaré ni configuré — il n'avait jamais tourné. Passée à `oxlint`, comme le web : **5 avertissements, tous soldés**. Mobile : **13 erreurs, toutes soldées**. Et le script racine, qui prétendait tout couvrir, n'atteignait en fait que l'API — web et mobile sont hors du workspace pnpm par choix ; `lint`, `test` et `build` les appellent désormais explicitement. | ✅ **soldée le 01/09** |
 | 10 | **Alertes `npm audit` — TOUT est à zéro (01/09).** Web : les 3 alertes `react-router` sont corrigées par une simple montée de patch (7.18.1 → 7.18.3, le correctif est publié en 7.18.2), plus une alerte `nanoid` transitive. **Rien n'est un mode RSC à ignorer : c'était réparable en une commande.** API : les 14 alertes de production (5 hautes) — `path-to-regexp`, `qs`, `body-parser`, `file-type` — **sont toutes tombées avec la montée en NestJS 11** (chantier 20). `npm audit` disait « exige NestJS 12 » ; c'était l'avis du résolveur, pas la vérité : **11 suffit**, et 12 s'avère de toute façon inatteignable (voir chantier 20). Les 2 dernières alertes, de développement seulement, sont tombées avec `npm audit fix`. **17 alertes → 0, dev compris.** | ✅ **soldée le 01/09** |
 
+| 11 | **La désactivation du TOTP n'a aucun chemin sur le web (née le 02/09, chantier 24).** Le serveur l'accepte pour un non-administrateur — `POST /v1/accounts/me/totp/disable`, mot de passe **et** code exigés — et le cahier donne le second facteur pour optionnel aux professionnels. B3 ne l'offre nulle part : une fois activé, un soignant ne peut plus revenir en arrière depuis l'application. Ce n'est plus un **mensonge** depuis que la phrase a été corrigée (l'écran ne prétend plus que c'est impossible), c'est une **route sans client** — la cinquième trouvée depuis le début du palier. ⚠️ **Ce n'est pas un oubli à réparer d'office** : ouvrir ce chemin, c'est offrir de baisser la protection d'un compte qui donne accès à des dossiers de santé. Le coût est faible (un bloc dans `SectionSecurite`, formulaire mot de passe + code déjà écrit deux fois dans le même fichier, ~1 h avec tests). **Recommandation : ne rien faire pour l'instant.** Personne ne l'a demandé, aucun soignant n'est bloqué par une obligation réelle, et le jour où quelqu'un le demande, la vraie question sera « pourquoi » — pas « comment ». | 🟡 **arbitrage porteur**, non urgent |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
 |---|---|
 | OTP par **SMS** (EF-01-01) | par **email** (Brevo) |
 | Connexion par **téléphone** (EF-01-03) | nom d'utilisateur **ou** email |
-| TOTP **optionnel** pour les pros (RM-01-06) | déclaré **obligatoire** sur le web |
+| ~~TOTP **optionnel** pour les pros (RM-01-06)~~ | ✅ **soldée le 02/09 (chantier 24).** Le cahier et le serveur disaient déjà la même chose — c'est l'ÉCRAN qui divergeait, en montrant à tous une phrase vraie pour les seuls administrateurs. B3 dit maintenant « Obligatoire pour l'administration » à un administrateur, « Fortement recommandée » à un soignant |
 
 ---
 
@@ -454,6 +456,93 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **21 bis** | **Les trois trous du responsive** — 01/09, après une question directe du porteur. Le chantier 21 n'avait mesuré que l'état par défaut de 17 écrans, à 375 et 768 px. Ajoutés : les **écrans d'entrée**, tout ce qui **s'ouvre au clic**, et la largeur **320 px**. Trois défauts trouvés, dont deux qu'aucune émulation ne montre : la coquille en `h-screen` (= 100vh) mettait le **composeur de messages sous la barre du navigateur**, sans moyen d'y accéder ; **tous les panneaux latéraux faisaient 384 px au lieu de 672** parce qu'un sélecteur `data-[side=…]` battait la classe demandée par l'écran ; et l'**activation 2FA pouvait tomber en entier** sur une réponse inattendue, sur un écran devenu obligatoire. **web 447 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
 
 | **22** | **Les squelettes de chargement** — 01/09. **Serveur : aucun.** La charte l'exigeait déjà (`.ul-shimmer`, « CG-08 §06 »), **deux écrans sur vingt-quatre** l'appliquaient. Les **22 attentes de DONNÉES** passent du rond qui tourne à une forme qui dit ce qui arrive et **réserve la place** ; les **23 ronds de boutons ne bougent pas** — une action qu'on déclenche n'a aucune forme à annoncer. Six formes dans `components/ulamu/Squelette.tsx`, dont le tableau qui suit la bascule en cartes de 1024 px. Le piège était l'accessibilité : un squelette est muet, chacun garde donc sa phrase en `sr-only` sous `role="status"` — c'est ce qui a permis aux **447 tests de passer sans une modification**. Trouvé en chemin : le squelette du tableau de bord n'annonçait **rien du tout**. **web 482 ✓ · lint propre · build propre.** | ⏸ en attente | ⏸ |
+
+| **23** | **Le code mort** — 01/09. **Serveur : aucun.** *(Ligne écrite le 02/09 : ce chantier avait été poussé sans être inscrit ici — le §7 le demande « en même temps que le code, jamais après », et c'est la règle qui a sauté, pas le chantier.)* « Supprimer le code mort » visait deux fichiers ; un parcours réel des importations depuis `main.tsx` et `App.tsx` en a trouvé **56, pour 6 923 lignes**. Huit sont partis — ceux que le projet avait écrits lui-même — avec la CSS devenue orpheline (`.ul-btn*`, `.ul-state*`, `.ul-steps*`, `@keyframes ul-spin`). **Une chose a été sauvée avant la suppression** : `Stepper.tsx` portait un résumé accessible — « Étape 3 sur 5 » — qu'`EtapesAuth` n'avait pas ; ses pastilles s'annonçaient une à une sans jamais dire combien il en restait. `Field.tsx` n'a **pas** été touché : mort dans l'application, entretenu par son test — décision au porteur. **web 485 ✓ · lint propre · build propre.** | 01/09 (`59dcb81`) | ⏸ |
+
+| **24** | **Ce que les écrans disent de la double authentification** — 02/09. **Serveur : aucun.** Trois faussetés, dont deux **vérifiées sur le site en ligne avant correction**. (1) `index.html` déclarait `lang="en"` sur une application servie **en français seul** — une synthèse vocale lisait donc du français avec une voix anglaise. (2) Les **six branches d'échec** de l'administration offraient « Réessayer », geste qui ne peut pas aboutir sous RM-01-06, et **ne nommaient jamais la sortie** — `/configuration-totp`, qui existe et n'est pas gardée. (3) B3 annonçait à **tout le monde** « Obligatoire sur ULAMU — elle ne peut pas être désactivée » : vrai pour un administrateur (`disableTotp` répond 403 sur `type === "ADMIN"`), **faux sur ses deux moitiés pour un soignant**. Ajouté : `RappelTotpAdmin` (bandeau posé **hors** de la limite d'erreur, pour survivre à un écran qui tombe), le hook `useTotpAdminManquant`, et `ActionApresEchec`. **Une étape a été abandonnée en cours de route** — voir ci-dessous. **web 497 ✓ (485 + 12) · types propres · lint à sa base (20 avertissements préexistants, aucun nouveau).** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 24 (la double authentification) a appris
+
+*Mené le 02/09/2026, après la relecture de la passation et la vérification du site en ligne.*
+
+#### Une phrase peut être vraie, et fausse selon qui la lit
+
+B3 annonçait : « Double authentification — **Obligatoire sur ULAMU, elle ne peut pas être
+désactivée** ». J'ai d'abord noté ça comme une fausseté simple, le cahier donnant le TOTP pour
+optionnel aux professionnels. En ouvrant `m01.service.ts`, c'était plus fin :
+
+```
+disableTotp() : if (account.type === "ADMIN") throw new ForbiddenException(…RM-01-06)
+```
+
+Le serveur refuse la désactivation **aux seuls administrateurs**. Pour eux, la phrase est
+exacte au mot près. Pour un soignant, ses deux moitiés sont fausses : la désactivation est
+acceptée (mot de passe + code), et **rien dans le web n'impose quoi que ce soit** — ni garde de
+route, ni redirection, seulement un bouton « Configurer » qu'on peut ignorer indéfiniment.
+
+Le défaut n'était donc pas une rédaction : c'était **une phrase juste montrée à la mauvaise
+moitié des gens**. Un écran qui n'a qu'un texte pour deux publics finit toujours par mentir à
+l'un des deux. *C'est la même famille que le « 12 % » du chantier 7 — un taux vrai pour un
+contrat, faux pour le voisin — sauf qu'ici la variable n'était pas un nombre, c'était le lecteur.*
+
+Et l'énoncé était **inapplicable** au surplus : annoncer une obligation que personne ne fait
+respecter est pire qu'une recommandation. Le jour où un soignant découvre qu'il exerçait sans,
+il apprend surtout que les phrases de cet écran ne valent rien.
+
+#### Un bouton qui ne peut pas aboutir occupe la place de celui qui le pourrait
+
+Les six branches d'échec de l'administration offraient « Réessayer ». Sous RM-01-06, le dixième
+essai est refusé comme le premier — et la sortie, `/configuration-totp`, n'était nommée nulle
+part. **L'écran décrivait un symptôme et proposait un geste sans effet.**
+
+C'est la faute du « Bannir » d'E7 (chantier 12), aggravée : là-bas le bouton nommait un autre
+effet que le sien ; ici il n'en a aucun, et il tient la place.
+
+#### Ne jamais reconnaître un refus à son texte
+
+La tentation était forte : le serveur répond 403 avec « TOTP obligatoire pour les actions admin
+(RM-01-06) », et `ApiError` porte ce texte jusqu'à l'écran. Une expression régulière suffisait.
+
+C'est un piège. **Un message d'erreur est de la prose** : il se reformule un jour sans que
+personne n'y voie un contrat, et le jour où « TOTP » devient « double authentification » côté
+serveur, l'écran cesse silencieusement de proposer la sortie — le défaut exact qu'on vient de
+réparer reviendrait, sans qu'aucun test ne tombe.
+
+Or la condition est connue **avant tout appel** : `me.totpEnabled`. C'est elle qu'on lit. Le
+corollaire vaut au-delà de ce chantier : *on peut lire un statut, un code HTTP, un drapeau — on
+ne construit jamais une décision sur une phrase destinée à un humain.*
+
+#### Le bandeau vit hors de la limite d'erreur, et c'est le test qui le dit
+
+`GardeFou` remplace le contenu de l'écran quand celui-ci lève. Un rappel posé **dedans**
+disparaîtrait au moment précis où il sert le plus — une page d'administration en panne est ce
+qu'un compte sans TOTP voit d'abord. Il est donc posé au-dessus, dans `AppShell`, et un test
+monte un composant qui explose pour vérifier que le rappel survit.
+
+#### Une étape du chantier a été abandonnée, après vérification
+
+J'avais proposé de retirer `http://localhost:5173` de `CORS_ORIGINS` dans `render.yaml`, en le
+présentant comme « sans usage en production, coût nul ». **Les deux moitiés étaient fausses.**
+
+- Il a un usage, et c'est le vôtre : `apps/web/.env` pointe sur l'API **de production** — « jamais
+  de serveur local, jamais de Docker ». Cette ligne est ce qui rend `npm run dev` possible. La
+  retirer aurait cassé le développement local pour rien.
+- Et le risque n'existe pas. `main.ts` pose `credentials: false`, il n'y a aucun cookie, et le
+  jeton est un Bearer rangé dans `sessionStorage` — **illisible depuis une autre origine**.
+  Autoriser cette origine ne donne à personne davantage qu'un `curl`.
+
+*La leçon est celle du chantier 19, retournée : une dette se vérifie avant d'être inscrite autant
+qu'avant d'être soldée. J'avais signalé celle-ci sans ouvrir `main.ts` — exactement le geste que
+le §9 s'interdit depuis.*
+
+#### Deux constats faits en passant, non traités
+
+- **`messageDe` est dupliqué à l'identique dans huit fichiers** (une ligne chacun). Réel, mais
+  hors sujet : toucher huit écrans pour une déduplication cosmétique ajoute du risque sans rien
+  rendre. À grouper avec un chantier qui les rouvre pour une autre raison.
+- **Le chantier 23 n'avait pas de ligne au §10** alors qu'il était poussé et déployé. Inscrit le
+  02/09 d'après son commit. *Le §7 demande le journal « en même temps que le code » ; ce n'est pas
+  le chantier qui a manqué, c'est la règle.*
 
 ### Ce que le chantier 22 (les squelettes) a appris
 

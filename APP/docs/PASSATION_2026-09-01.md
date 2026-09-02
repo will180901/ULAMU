@@ -3,6 +3,17 @@
 **À lire en entier avant toute action.** Ce document remplace `PASSATION_2026-08-25.md`, qui
 explique le *pourquoi* de la reconstruction et devient un document d'histoire.
 
+> **Révision du 02/09/2026.** Ce document reste le point de reprise, mais **son §3 portait deux
+> erreurs de fait** — corrigées ci-dessous, et signalées plutôt que réécrites en silence :
+> l'instruction « supprimer ou bannir » les comptes de démonstration était **inexécutable**, et
+> l'ordre des gestes n'était pas dit alors qu'il commande tout.
+>
+> Ce qui a changé depuis, et qui n'est **pas encore poussé** : le **chantier 24** (§10 du plan) —
+> la langue de la page, ce que les écrans d'administration disent d'un refus RM-01-06, et la phrase
+> de B3 sur la double authentification. **web 497 ✓**, types et lint propres, rien côté serveur.
+> Le dernier commit du dépôt est `421a1da` (et non `59dcb81` : le tableau ci-dessous ne comptait pas
+> le commit de cette passation).
+
 ---
 
 ## 1. Où en est le projet, en une phrase
@@ -46,8 +57,29 @@ Le détail de chacun est au **§10 du plan**, avec ce qu'il a appris. Ce documen
 
 Aucun code ne peut les faire à sa place. Ils touchent les consoles.
 
-1. **Changer le mot de passe du super-administrateur en ligne**, et activer son TOTP.
-2. **Supprimer ou bannir les six comptes de démonstration** (`demo1234`) depuis l'écran E7.
+> **⚠️ Révisé le 02/09/2026.** L'ordre n'était pas indiqué, et il commande tout : **le TOTP passe
+> en premier**, sinon les gestes suivants sont refusés (§3.2). Et le geste n°2 était **impossible
+> tel qu'écrit** — vérifié dans le code, pas relu.
+
+1. **Activer son TOTP** sur `/configuration-totp`, **avant tout le reste**. Puis **changer le mot
+   de passe du super-administrateur en ligne**.
+2. **SUSPENDRE les comptes de démonstration** (`demo1234`) depuis l'écran E7.
+
+   *Corrigé le 02/09.* « Supprimer ou bannir » ne marche ni dans un sens ni dans l'autre :
+   **aucune route ne supprime un compte** — la seule clôture, `POST /v1/accounts/me/close`, exige
+   le mot de passe **et** l'OTP *de son titulaire* — et **bannir demande un second administrateur
+   distinct** (`canSecondApproveBan` refuse l'auto-approbation, EF-16-07). Un super-administrateur
+   seul peut demander un bannissement que personne ne pourra jamais approuver.
+
+   **La suspension est le seul chemin, et elle suffit** : `m05.directory.service.ts` filtre sur
+   `account: { status: "ACTIVE" }` (RM-05-05), donc un compte suspendu **quitte l'annuaire public
+   aussitôt**. Ne pas ajouter de route de suppression : le journal d'audit est en insertion seule.
+
+   🔴 **Et c'est urgent, plus qu'écrit ici le 01/09.** Vérifié en ligne le 02/09 : `GET /v1/directory`
+   ne renvoie **qu'un seul soignant**, `dr.armel` (« Armel Konaté »), Badge Vérifié, note **4,8/5
+   sur 215 avis** — des chiffres semés, jamais gagnés. C'est donc **un compte de démonstration qui
+   est la vitrine publique d'ULAMU**. Son mot de passe est en clair dans `prisma/seed.ts` (l. 81),
+   et **le dépôt GitHub est public** : `raw.githubusercontent.com` sert le fichier à qui le demande.
 3. **Mettre `SECRETBOX_KEY` à l'abri hors ligne** — perdue, pièces justificatives, messages et
    secrets 2FA deviennent définitivement illisibles. Procédure :
    `APP/docs/procedure_sauvegarde_SECRETBOX_KEY.md`.
@@ -64,17 +96,28 @@ toutes les routes admin.** Les écrans afficheront « n'a pas pu être lu » par
 La sortie existe et n'est pas gardée : **`/configuration-totp`**. Scanner le QR avec Google
 Authenticator, confirmer, et tout se rouvre.
 
-*Amélioration possible, non faite : faire dire aux écrans d'administration « activez votre double
-authentification » au lieu du message générique. Une demi-heure.*
+*✅ **Faite le 02/09 (chantier 24).** Les sept écrans d'administration portent désormais un bandeau
+qui nomme la cause et la sortie, et les six branches d'échec remplacent « Réessayer » — un geste qui
+ne pouvait pas aboutir — par le lien d'activation. Coût réel : une demi-journée, pas une demi-heure.
+⚠️ Le bandeau énonce une condition **nécessaire**, jamais suffisante : un compte d'administration
+sans sous-rôle resterait bloqué après activation, et la garde le refuse avant même de regarder le
+TOTP.*
 
 ### 3.3 Deux décisions ouvertes
 
-- **`components/ulamu/Field.tsx`** — mort dans l'application, mais `test/field.test.tsx`
+- **`components/ulamu/Field.tsx`** — mort dans l'application, mais `src/test/field.test.tsx`
   l'entretient. Du code testé que personne n'utilise. Supprimer les deux, ou l'employer.
-- **Les trois dérives documentaires jamais arbitrées** (§9 du plan) : le cahier dit OTP par **SMS**,
+  *(Chemin corrigé le 02/09 : le test est dans `src/test/`, pas `test/`.)*
+- **Les dérives documentaires du §9 du plan.** Il en reste **deux** : le cahier dit OTP par **SMS**,
   le code fait **email** ; le cahier dit connexion par **téléphone**, le code accepte nom
-  d'utilisateur ou email ; le cahier dit TOTP **optionnel** pour les pros, le web le déclare
-  **obligatoire**.
+  d'utilisateur ou email.
+
+  ✅ **La troisième est soldée le 02/09 (chantier 24)**, et ce n'en était pas tout à fait une : le
+  cahier et le serveur disaient déjà la même chose — `disableTotp` refuse la désactivation aux
+  **seuls** administrateurs. C'est l'**écran** qui divergeait, en montrant à tout le monde une
+  phrase vraie pour les seuls administrateurs. 📌 **Une dette naît en échange** (§9, n°11) : la
+  désactivation, que le serveur accepte pour un soignant, n'a aucun chemin dans le web. Non urgent,
+  et à ne pas ouvrir sans raison — voir la recommandation au §9.
 
 ### 3.4 Ce qui a été tranché et ne doit plus être reproposé
 

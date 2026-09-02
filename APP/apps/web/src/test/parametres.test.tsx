@@ -479,3 +479,32 @@ describe('B3 — à propos du compte', () => {
     expect(document.body.textContent).not.toMatch(/USR-\d{4}-\d+/)
   })
 })
+
+// ── Ce que B3 dit de la double authentification (chantier 24, 02/09/2026) ───────────────────────
+
+/*
+  L'écran annonçait à TOUT LE MONDE : « Obligatoire sur ULAMU — elle ne peut pas être désactivée ».
+
+  C'est ce que le serveur applique à un administrateur (`disableTotp` répond 403 sur
+  `account.type === "ADMIN"`, RM-01-06). Pour un soignant, les deux moitiés sont fausses : la
+  désactivation est acceptée, le cahier la donne pour optionnelle, et rien dans le web ne l'impose.
+
+  On verrouille donc le FAIT — qui est tenu par l'obligation, et qui ne l'est pas — et non une
+  tournure : la leçon du chantier 16, où un test qui interdisait des mots avait fini par interdire
+  l'explication qui les employait.
+*/
+describe('B3 — la double authentification dit à chacun ce qui le concerne', () => {
+  it('un administrateur lit une obligation, parce que le serveur la lui applique', async () => {
+    monter('securite', { accountType: 'ADMIN', adminRole: 'SUPER_ADMIN' })
+
+    expect(await screen.findByText(/Obligatoire pour l.administration/i)).toBeInTheDocument()
+  })
+
+  it('un soignant ne lit plus une obligation que personne ne fait respecter', async () => {
+    monter('securite')
+
+    expect(await screen.findByText(/Fortement recommandée/i)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Obligatoire sur ULAMU/)
+  })
+})
+

@@ -39,6 +39,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Flag, Gavel, ShieldQuestion, UserX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ActionApresEchec } from '@/components/layout/RappelTotpAdmin'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
@@ -293,9 +294,7 @@ export function SignalementsPage() {
         <div className="mx-auto max-w-lg py-8">
           <Carte icone={AlertTriangle} titre="Les signalements n'ont pas pu être lus" sousTitre="Aucune décision n'est perdue">
             <div>
-              <Button type="button" onClick={() => tous.refetch()}>
-                Réessayer
-              </Button>
+              <ActionApresEchec surReessayer={() => tous.refetch()} />
             </div>
           </Carte>
         </div>
