@@ -95,8 +95,14 @@ export function LoginPage() {
 
   const occupe = login.isPending || loadMe.isPending
 
+  /*
+    02/09/2026 (chantier 28) — le sous-titre ci-dessous annonçait « professionnels, structures et
+    administration ». Le chantier 25 avait corrigé le COMMENTAIRE en tête de ce fichier et laissé la
+    phrase AFFICHÉE : la première dit ce que le code fait, la seconde dit ce que l'utilisateur lit.
+    Seule la seconde compte pour lui, et c'est celle qui a survécu trois chantiers.
+  */
   return (
-    <AuthLayout titre="Connexion à ULAMU" subtitle="Connectez-vous à votre compte ULAMU — professionnels, structures et administration.">
+    <AuthLayout titre="Connexion à ULAMU" subtitle="Connectez-vous à votre compte ULAMU — soignants et administration.">
       {/* Se retrouver déconnecté sans un mot donne l'impression d'un bogue, alors que l'application
           vient précisément de protéger le compte. On nomme la raison, et surtout la DURÉE : sans
           elle, l'utilisateur ne peut pas anticiper la prochaine fois. */}

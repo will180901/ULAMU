@@ -355,8 +355,9 @@ function TableauSoignant() {
               </ul>
               {/*
                 La conséquence réelle d'une expiration, tranchée en famille 3 (groupe E) : ce n'est
-                pas une suspension — cette règle ne vise que les pharmacies — c'est un taux public
-                qui baisse, et que les patients lisent avant de choisir.
+                pas une suspension, c'est un taux public qui baisse, et que les patients lisent
+                avant de choisir.
+                *(La suspension automatique visait les officines, sorties du produit le 02/09.)*
               */}
               <p className="px-4 pb-3 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
                 Une demande laissée expirer compte comme une non-réponse dans le taux affiché aux

@@ -135,8 +135,8 @@ export function ForgotPasswordPage() {
           </span>
           <p className="m-0 font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.3] text-foreground">Mot de passe mis à jour</p>
           {/* Conséquence annoncée explicitement : une réinitialisation révoque TOUTES les sessions
-              (CU-01-04). Laisser l'utilisateur découvrir seul qu'il a été déconnecté de son poste
-              d'officine serait une mauvaise surprise. */}
+              (CU-01-04). Laisser l'utilisateur découvrir seul qu'il a été déconnecté d'un poste
+              partagé — un cabinet, un bureau d'administration — serait une mauvaise surprise. */}
           <p className="m-0 max-w-[42ch] text-[13px] leading-[1.55] text-muted-foreground">
             Toutes vos sessions actives ont été déconnectées par sécurité.
           </p>
@@ -270,7 +270,7 @@ export function ForgotPasswordPage() {
             </label>
 
             {/* Dit AVANT de valider, pas après : quelqu'un qui réinitialise depuis un poste partagé
-                doit savoir qu'il fermera aussi sa session d'officine. */}
+                doit savoir qu'il fermera aussi ses autres sessions. */}
             <p className="m-0 flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-2.5 text-xs leading-[1.5] text-[var(--info-texte)]">
               <Info size={14} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
               Toutes vos sessions actives seront déconnectées.

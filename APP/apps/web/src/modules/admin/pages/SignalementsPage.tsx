@@ -396,7 +396,7 @@ export function SignalementsPage() {
                   */}
                   <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
                     Vous ne verrez jamais qui a signalé. C'est ce qui permet de signaler quelqu'un
-                    dont on dépend — un praticien, une officine.
+                    dont on dépend — le soignant qu'on retournera voir.
                   </p>
                 </Carte>
               )}

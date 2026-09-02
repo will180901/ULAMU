@@ -590,6 +590,12 @@ export function FileVerificationPage() {
                         </td>
 
                         <td role="cell" data-libelle="Type" className="px-3 py-3 whitespace-nowrap text-[13px] text-[var(--texte-secondaire)]">
+                          {/*
+                            « Structure » reste, et ce n'est pas un oubli (02/09/2026) : plus aucun
+                            dossier de ce type ne peut être DÉPOSÉ depuis D-051, mais la file sert
+                            ce que la base contient. Retirer la branche afficherait un vide sur un
+                            dossier hérité — l'administrateur ne saurait plus ce qu'il examine.
+                          */}
                           {it.subjectKind === 'PROFESSIONAL' ? 'Soignant' : 'Structure'}
                         </td>
 

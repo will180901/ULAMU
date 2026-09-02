@@ -490,6 +490,56 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **27** | **Six promesses que le nettoyage avait manquées** — 02/09, **après vérification en ligne**. Le chantier 26 était poussé, déployé, les routes retirées répondaient 404 et les trois suites étaient vertes. **Six phrases avaient survécu, et elles étaient en production.** Le carrousel des écrans d'entrée annonçait « Réservez vos médicaments tout près » et « Retirez-les en pharmacie en toute confiance » — sur le PREMIER écran, celui qui décide si quelqu'un s'inscrit. Le QR de l'ordonnance disait, côté médecin, « Le patient présente ce code en pharmacie », et côté patient « Le pharmacien scanne ce code : il voit les lignes et quantités restantes ». **Aucun test ne pouvait les attraper : ce n'est pas du code, ce sont des promesses.** Corrigé : deux diapositives retirées (web et mobile — les carrousels sont dérivés de `SLIDES.length`, rien d'autre à toucher), le QR redit pour ce qu'il EST (un sceau d'intégrité) et non pour ce qu'il n'est plus (un ticket de retrait), et `promesses.test.ts` verrouille les faits — jamais le vocabulaire. **web 501 ✓ (498 + 3) · API 485 ✓ · mobile 7 ✓ · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
 
+| **28** | **Une phrase visible avait survécu à trois chantiers** — 02/09, trouvée en vérifiant en ligne le chantier 27. L'écran de connexion annonçait encore, **en toutes lettres**, « Connectez-vous à votre compte ULAMU — professionnels, **structures** et administration ». Le chantier 25 avait pourtant ouvert ce fichier : il en avait corrigé le **commentaire d'en-tête** et laissé la phrase **affichée**, trois lignes plus bas. Corrigé aussi : E6 illustrait l'anonymat du signaleur par « un praticien, une officine » — on ne peut plus signaler une officine ; et trois commentaires devenus trompeurs (le « poste d'officine » de A3, la règle « qui ne vise que les pharmacies » de B2). **Et un ajout qui va dans l'autre sens** : E1 garde « Structure » pour nommer un dossier hérité, avec un test qui l'exige — retirer la branche afficherait un vide sur un dossier que la base contient encore. `promesses.test.ts` gagne un second bloc qui lit ce que les écrans **disent** du périmètre, plus seulement ce qu'ils importent. **web 504 ✓ (501 + 3) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 28 (la phrase survivante) a appris
+
+*Trouvée le 02/09/2026 en regardant l'écran de connexion EN LIGNE, après le chantier 27.*
+
+#### Chercher un identifiant ne trouve pas une phrase
+
+Le chantier 25 avait balayé `FACILITY_MEMBER` dans tout le dépôt — 84 occurrences triées une par
+une, dont celles de `LoginPage.tsx`. Il en avait corrigé le commentaire d'en-tête : *« Réservée aux
+comptes PROFESSIONAL / ADMIN »*.
+
+Trois lignes plus bas, la `prop` que l'utilisateur LIT disait toujours « professionnels,
+**structures** et administration ». Elle a traversé les chantiers 25, 26 et 27 sans être vue.
+
+La raison est mécanique : `grep FACILITY_MEMBER` ne trouve pas le mot « structures » écrit en
+français dans une chaîne de caractères. **Le nettoyage cherchait le nom technique ; la promesse
+était en langue naturelle.**
+
+*Corollaire du chantier 27, et plus précis que lui : le compilateur ne trouve pas les promesses
+mortes, et la recherche d'identifiants non plus. Après un retrait de périmètre, il faut relire ce
+que les écrans DISENT — dans la langue où ils le disent.*
+
+#### Le commentaire corrigé donnait l'illusion du travail fait
+
+C'est ce qui rend ce défaut instructif plutôt qu'anecdotique. Le fichier avait été ouvert, lu,
+modifié. Un `git log` l'aurait montré touché par le bon chantier, avec le bon message. Et la seule
+ligne qui comptait pour l'utilisateur n'avait pas bougé.
+
+**Un commentaire dit ce que le code fait ; une `prop` dit ce que la personne lit. Corriger le
+premier ne corrige rien pour elle.**
+
+#### Le test qui manquait ne ressemble pas aux autres
+
+`promesses.test.ts` cherchait des tournures de SERVICE — réserver, retirer, scanner. Il ne pouvait
+pas attraper une énumération de publics.
+
+Le second bloc lit donc autre chose : ce que les écrans **annoncent du périmètre**. Il verrouille la
+`prop` affichée, pas le commentaire au-dessus — et c'est exactement la distinction qui a manqué.
+
+#### Un test qui EXIGE une présence, pour une fois
+
+Le même chantier ajoute une assertion inverse : E1 **doit** continuer d'afficher « Structure » pour
+un dossier de vérification hérité. La file sert ce que la base contient ; retirer la branche
+laisserait un administrateur devant un dossier sans type.
+
+*Trois chantiers de suite ont retiré des choses. Celui-ci écrit noir sur blanc ce qui ne doit PAS
+être retiré — parce que le prochain nettoyage, mécanique, chercherait « Structure » et le
+trouverait.*
+
 ### Ce que le chantier 27 (les promesses manquées) a appris
 
 *Mené le 02/09/2026, immédiatement après la vérification EN LIGNE du chantier 26.*

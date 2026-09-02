@@ -26,6 +26,19 @@
  *
  * On lit donc la source — comme `responsive.test.ts` lit celle des cinq tableaux — et on cherche
  * les tournures qui annoncent un SERVICE : réserver, retirer, scanner.
+ *
+ * ── Ce que le chantier 28 y a ajouté, le lendemain de rien du tout ────────────────────────────
+ *
+ * En vérifiant EN LIGNE le chantier 27, l'écran de connexion disait encore, en toutes lettres :
+ * « Connectez-vous à votre compte ULAMU — professionnels, **structures** et administration. »
+ *
+ * Le chantier 25 avait pourtant traité ce fichier — il en avait corrigé le COMMENTAIRE d'en-tête.
+ * La phrase AFFICHÉE, trois lignes plus bas, était restée. **Une phrase visible avait survécu à
+ * trois chantiers de nettoyage**, parce que chercher `FACILITY_MEMBER` ne trouve pas le mot
+ * « structures » écrit en français dans une `prop`.
+ *
+ * D'où le second bloc : il ne lit plus des identifiants, il lit ce que les écrans DISENT du
+ * périmètre.
  */
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -74,5 +87,41 @@ describe('L’application ne promet pas la chaîne du médicament (D-052)', () =
     expect(s).not.toMatch(/prescriptions\/scan/i)
     expect(s).not.toMatch(/\/v1\/disclosures/i)
     expect(s).not.toMatch(/\/v1\/stocks/i)
+  })
+})
+
+describe('Les écrans disent le bon périmètre : soignant et administration', () => {
+  /*
+    L'écran de connexion est le seul qui énumère les publics servis. Il l'a fait faux pendant trois
+    chantiers — le test lit donc la `prop` affichée, pas le commentaire au-dessus.
+  */
+  it('la connexion n’annonce plus les « structures »', () => {
+    const s = sansCommentaires(source('modules/auth/pages/LoginPage.tsx'))
+
+    expect(s).toMatch(/subtitle="[^"]*soignants et administration/)
+    expect(s).not.toMatch(/subtitle="[^"]*structures/i)
+  })
+
+  /*
+    E6 expliquait l'anonymat du signaleur par un exemple devenu impossible — « un praticien, une
+    officine ». On ne peut plus signaler une officine : il n'y en a plus dans le produit. Un exemple
+    faux dans une phrase vraie affaiblit la phrase entière.
+  */
+  it('E6 n’illustre plus l’anonymat par une officine', () => {
+    const s = sansCommentaires(source('modules/admin/pages/SignalementsPage.tsx'))
+
+    expect(s).not.toMatch(/une officine/i)
+    expect(s).toMatch(/qu'on retournera voir/)
+  })
+
+  /*
+    Le pendant : ce test NE DOIT PAS interdire « Structure » dans E1. La file de vérification sert
+    ce que la base contient, et un dossier hérité doit s'afficher pour ce qu'il est. On vérifie donc
+    qu'il est toujours là — l'inverse d'une interdiction.
+  */
+  it('E1 sait encore nommer un dossier de structure hérité', () => {
+    const s = source('modules/admin/pages/FileVerificationPage.tsx')
+
+    expect(s).toMatch(/subjectKind === 'PROFESSIONAL' \? 'Soignant' : 'Structure'/)
   })
 })
