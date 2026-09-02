@@ -714,79 +714,18 @@ export const PRESCRIPTION_ROUTES = {
   one: (id: string): string => `/v1/prescriptions/${encodeURIComponent(id)}`,
 } as const;
 
-// ── M12 — Recherche & dévoilement-réservation (CU-12-01/02) ──────────────────
-export interface CatalogItem {
-  id: string;
-  dci: string;
-  commercialNames: string[];
-  form: string | null;
-  dosage: string | null;
-}
-export interface CatalogResponse {
-  items: CatalogItem[];
-}
-export interface SearchItem {
-  medicamentId: string;
-  quantity: number;
-}
-export interface AnonymousDistrictResult {
-  district: string;
-  pharmacyCount: number;
-  products: Array<{medicamentId: string; totalAvailable: number; pharmaciesWithIt: number}>;
-}
-export interface SearchRequest {
-  district?: string;
-  items: SearchItem[];
-}
-export interface SearchResult {
-  districts: AnonymousDistrictResult[];
-  items: SearchItem[];
-  suggestAlert: boolean;
-}
-export type DisclosureStatus = 'PENDING_PAYMENT' | 'ACTIVE' | 'SERVED' | 'EXPIRED' | 'REFUNDED';
-export interface RevealedFacility {
-  facilityId: string;
-  name: string;
-  phone: string | null;
-  quarter: string | null;
-  latitude: number | null;
-  longitude: number | null;
-}
-export interface RequestDisclosureRequest {
-  district: string;
-  items: SearchItem[];
-  operator: MomoOperator;
-}
-export interface DisclosureView {
-  id: string;
-  status: DisclosureStatus;
-  district: string;
-  requestedItems: SearchItem[];
-  createdAt: string;
-  paidAt: string | null;
-  expiresAt: string | null;
-  servedAt: string | null;
-  /** Compte à rebours serveur — 0 hors dévoilement ACTIVE. */
-  remainingSeconds: number;
-  orderRef: string;
-  /** Prix effectivement facturé pour CE dévoilement (PM-03 au moment du paiement) — jamais en dur. */
-  amountXaf: number;
-  /** Identité de la pharmacie — présente UNIQUEMENT si ACTIVE (RM-12-01), sinon null. */
-  facility: RevealedFacility | null;
-}
-export interface CreateAlertRequest {
-  district: string;
-  medicamentIds: string[];
-}
-export interface DisclosurePriceResponse {
-  amountXaf: number;
-}
+/*
+  ── M12 « Recherche & dévoilement-réservation » est RETIRÉ (02/09/2026, chantier 26) ───────────
 
-export const MEDS_ROUTES = {
-  catalog: '/v1/medicaments',
-  search: '/v1/search',
-  alerts: '/v1/search/alerts',
-  disclosures: '/v1/disclosures',
-  disclosurePrice: '/v1/disclosures/price',
-  disclosure: (id: string): string => `/v1/disclosures/${encodeURIComponent(id)}`,
-} as const;
+  Le parcours « je cherche un médicament → je paie un dévoilement (PM-03) → j'ai une réservation de
+  24 h » supposait des pharmacies tenant leur stock à jour. ULAMU couvre trois acteurs — le patient,
+  le médecin, l'administration — et le compte qui tenait ce stock est sorti du produit le 02/09
+  (D-051). Sans lui, la recherche aurait fait PAYER une information qui se dégrade.
+
+  Onze types et six routes sont partis avec. Le module serveur n'existe plus non plus.
+
+  ⚠️ `/v1/medicaments` — le référentiel — n'a PAS disparu : il a changé de module (M12 → M09) sans
+  changer d'adresse, parce que ce n'était pas une donnée de pharmacie mais ce dans quoi un médecin
+  choisit une ligne d'ordonnance (EF-09-02). Aucun écran du mobile ne l'appelle : c'est le
+  prescripteur qui en a besoin, sur le web.
+*/

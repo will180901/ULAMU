@@ -16,7 +16,6 @@ import { HandshakeService } from "../m06-handshake-session/m06.handshake.service
 import { ReportService } from "../m06-handshake-session/m06.report.service";
 import { SessionService } from "../m06-handshake-session/m06.session.service";
 import { PrescriptionService } from "../m09-prescriptions/m09.prescription.service";
-import { DisclosureService } from "../m12-search-disclosure/m12.disclosure.service";
 import { ReconciliationService } from "../m13-payments/m13.reconciliation.service";
 import { NotificationsService } from "../m14-notifications/m14.service";
 
@@ -32,7 +31,6 @@ export class SchedulerService {
     private readonly handshakes: HandshakeService,
     private readonly reports: ReportService,
     private readonly prescriptions: PrescriptionService,
-    private readonly disclosures: DisclosureService,
     private readonly reconciliation: ReconciliationService,
     private readonly notifications: NotificationsService,
   ) {}
@@ -54,7 +52,8 @@ export class SchedulerService {
       "m06.sweepElapsedActive": () => this.sessions.sweepElapsedActive(),
       "m06.handshake.sweepExpired": () => this.handshakes.sweepExpired(),
       "m09.prescription.sweepExpired": () => this.prescriptions.sweepExpired(),
-      "m12.disclosure.sweepExpired": () => this.disclosures.sweepExpired(),
+      /* « m12.disclosure.sweepExpired » retiré le 02/09/2026 (chantier 26) : les dévoilements
+         n'existent plus, il n'y a plus de réservation de 24 h à faire expirer. */
     });
   }
 

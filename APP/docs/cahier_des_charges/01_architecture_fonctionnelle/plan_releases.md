@@ -25,8 +25,8 @@
 | M08 Missions de Triage | | 🔜 Should | | ❓ Le parcours 🅲 (suivi) démarre au MVP avec sessions de suivi + rappels, sans triage terrain |
 | M09 Ordonnance & Délivrance | ✅ Must | | | Indispensable au parcours 🅱 |
 | M10 Examens & Résultats | | 🔜 Should | | Recruter les labos demande un effort dédié |
-| M11 Stocks & Catalogues | ✅ Must | | | Stock pharmacie seulement au MVP |
-| M12 Recherche & Dévoilement | ✅ Must | | | 2ᵉ source de revenus |
+| ~~M11 Stocks & Catalogues~~ | ❌ | | | **Retiré du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) |
+| ~~M12 Recherche & Dévoilement~~ | ❌ | | | **Retiré le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). ⚠️ C'était la **2ᵉ source de revenus** : le modèle économique repose désormais sur la seule commission de consultation. À arbitrer avec [[../00_cadrage/modele_economique|le modèle économique]]. |
 | M13 Paiements & Gains | ✅ Must | | | |
 | M14 Notifications & Rappels | ✅ Must | | | MVP : push + rappels médicaments ; canal SMS en V1 (coût) |
 | M15 Urgence | | 🔜 Should | | ❓ Q-006 non tranchée — concevoir en V1 plutôt que bâcler au MVP |
@@ -45,7 +45,7 @@
 Chantier 1 — Socle : M01 → M02 → M03 (+M04 journal en continu)
 Chantier 2 — Flux d'argent : M13 (+ agrégateur MoMo) → M14
 Chantier 3 — Cœur : M07 → M05 → M06 ⭐
-Chantier 4 — Médicament : M11 → M09 → M12
+~~Chantier 4 — Médicament : M11 → M09 → M12~~ *(M11 et M12 retirés le 02/09/2026 ; M09 conserve la prescription et le référentiel)*
 Chantier 5 — Pilotage : M16 (back-office minimal, en parallèle dès le chantier 1)
 ```
 

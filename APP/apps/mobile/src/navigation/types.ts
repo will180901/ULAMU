@@ -29,7 +29,9 @@ export type AppStackParamList = {
   Family: undefined; // carnet familial / personnes à charge (M07)
   Reminders: undefined; // rappels de médicaments (M14)
   Ordonnance: {prescriptionId: string}; // ordonnance + QR de délivrance (M09)
-  Meds: undefined; // recherche & dévoilement-réservation de médicaments (M12)
+  /* « Meds » (recherche & dévoilement-réservation de médicaments, M12) est RETIRÉ le 02/09/2026
+     — chantier 26. ULAMU couvre trois acteurs : le patient, le médecin, l'administration ; la
+     chaîne du médicament en pharmacie supposait un quatrième, sorti du produit le 02/09. */
   Notifications: undefined; // centre de notifications (M14)
   Payments: undefined; // reçus de paiement (M13)
   Settings: undefined; // réglages compte & sécurité (M01)

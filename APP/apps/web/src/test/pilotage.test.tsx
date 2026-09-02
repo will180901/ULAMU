@@ -48,8 +48,8 @@ const KPIS: PilotKpi[] = [
 ]
 
 const COUVERTURE = [
-  { district: 'Bacongo', professionals: 8, facilities: 3 },
-  { district: 'Makélékélé', professionals: 1, facilities: 0 },
+  { district: 'Bacongo', professionals: 8 },
+  { district: 'Makélékélé', professionals: 1 },
 ]
 
 const FILE: VerificationQueue = {
@@ -112,7 +112,12 @@ describe('E5 — la couverture par arrondissement (S6)', () => {
 
     const bloc = (await screen.findByText('Couverture par arrondissement')).closest('section') as HTMLElement
     expect(within(bloc).getByText('Bacongo')).toBeInTheDocument()
-    expect(within(bloc).getByText(/8 soignants · 3 officines/)).toBeInTheDocument()
+    expect(within(bloc).getByText(/8 soignants/)).toBeInTheDocument()
+    /* 02/09/2026 (chantier 26) : les officines ne sont plus comptées. Additionner un chiffre vivant
+       (les soignants) et un chiffre figé (des pharmacies que plus personne n'alimente) donnait un
+       territoire mieux couvert qu'il ne l'est — dans le mauvais sens, sur l'écran où l'on décide où
+       la plateforme manque. */
+    expect(bloc.textContent ?? '').not.toMatch(/officine/i)
     // Les effectifs de la maquette, écrits en dur.
     expect(document.body.textContent).not.toContain('78 soignants')
   })
@@ -143,7 +148,7 @@ describe('E5 — la couverture par arrondissement (S6)', () => {
   it('un territoire encore vide le dit, plutôt qu’un cadre muet', async () => {
     monter(KPIS, [])
 
-    expect(await screen.findByText(/Aucun soignant exerçant ni officine active/)).toBeInTheDocument()
+    expect(await screen.findByText(/Aucun soignant exerçant n'est encore rattaché/)).toBeInTheDocument()
   })
 })
 

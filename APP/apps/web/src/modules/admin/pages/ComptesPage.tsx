@@ -97,9 +97,16 @@ const PROCEDURES: Record<SupportProcedureType, { titre: string; aide: string; et
       'Changement effectué dans le compte',
     ],
   },
+  /*
+    « Titulaire de structure injoignable » n'a plus d'objet depuis le 02/09/2026 : aucun compte
+    n'administre plus de structure (D-051), et la chaîne du médicament est sortie du périmètre
+    (chantier 26). L'entrée reste ici — et SEULEMENT ici — parce que des procédures déjà ouvertes
+    en base portent ce sujet : sans elle, la file d'E7 afficherait un code brut au lieu d'un
+    intitulé. Elle est retirée des choix proposés, plus bas.
+  */
   OWNER_UNREACHABLE: {
     titre: 'Titulaire de structure injoignable',
-    aide: "Une officine n'a plus de titulaire actif : personne ne peut plus délivrer ni gérer son stock.",
+    aide: "Procédure sans objet depuis le 02/09/2026 — conservée pour relire les dossiers ouverts avant cette date.",
     etapes: [
       'Tentatives de contact documentées',
       'Second membre de la structure identifié',
@@ -301,11 +308,15 @@ function NouvelleProcedure({ onFini }: { onFini: () => void }) {
             setType(v)
             setFranchies(new Set())
           }}
-          options={(Object.keys(PROCEDURES) as SupportProcedureType[]).map((t) => ({
-            cle: t,
-            label: PROCEDURES[t].titre,
-            aide: PROCEDURES[t].aide,
-          }))}
+          /* `OWNER_UNREACHABLE` est écarté des CHOIX (02/09/2026) : la procédure n'a plus d'objet.
+             Elle reste dans `PROCEDURES` pour que les dossiers ouverts avant gardent leur intitulé. */
+          options={(Object.keys(PROCEDURES) as SupportProcedureType[])
+            .filter((t) => t !== 'OWNER_UNREACHABLE')
+            .map((t) => ({
+              cle: t,
+              label: PROCEDURES[t].titre,
+              aide: PROCEDURES[t].aide,
+            }))}
         />
       </div>
 

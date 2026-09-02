@@ -229,6 +229,21 @@ describe('E1 — la décision', () => {
     expect(decider).not.toHaveBeenCalled()
   })
 
+  /*
+    ── Pourquoi CE test a un budget à lui (02/09/2026) ───────────────────────────────────────────
+
+    Il a échoué en « Test timed out in 5000ms » sur quatre exécutions complètes sur cinq, et passé
+    à chaque fois qu'on le lançait seul. Mesuré isolément, **sans aucune concurrence : 2841 ms** —
+    57 % du budget par défaut. Sous la charge d'une suite entière, il le dépasse.
+
+    Ce n'est donc ni de la malchance ni un défaut de l'écran : c'est le test le plus lourd du dépôt.
+    Il enchaîne DEUX listes Radix (« Décision » puis « Pièce concernée »), chacune montant un portail
+    et attendant son animation, plus une frappe caractère par caractère et une mutation.
+
+    Le budget est relevé **pour lui seul**, à 15 s. Relever le budget GLOBAL masquerait la lenteur
+    des autres : un test qui ralentit doit se voir. *(La même logique avait fixé `findBy*` à 2,5 s
+    au chantier 5 — assez pour un portail Radix, pas assez pour cacher un vrai blocage.)*
+  */
   it('un refus peut NOMMER la pièce en cause', async () => {
     const utilisateur = userEvent.setup()
     const decider = vi.spyOn(api, 'decideCase').mockResolvedValue({ caseId: 'c-1', status: 'REJECTED' })
@@ -251,7 +266,7 @@ describe('E1 — la décision', () => {
         documentId: 'd2',
       }),
     )
-  })
+  }, 15_000)
 
   it('une vérification ne demande pas de pièce concernée', async () => {
     vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())

@@ -9,6 +9,22 @@
 
 ---
 
+> ## 🔴 UNE SOURCE DE REVENUS SUR DEUX DISPARAÎT (02/09/2026)
+>
+> Décision [[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]] : la chaîne du médicament en pharmacie sort du produit. **Le dévoilement — 500 XAF,
+> la deuxième source de revenus — n'existe plus.** ULAMU ne facture désormais que la **commission de
+> consultation**.
+>
+> ⚠️ **Ce document n'est PAS réécrit, et c'est délibéré.** Il décrit un modèle à deux sources, dont
+> une n'est plus. Le refaire demanderait de nouvelles hypothèses de volume et de point d'équilibre —
+> **c'est un arbitrage du porteur, pas une correction de rédaction.** Ce qui suit reste donc lisible
+> comme l'état de la réflexion au 10/06/2026, avec cet avertissement en tête.
+>
+> **Trois endroits sont directement touchés** : le tableau des prix au §3 (deux lignes
+> « Dévoilement » sans objet), l'exemple d'épisode de soin au §4, et surtout la « lecture honnête »
+> du §5 — elle pose **trois** conditions de viabilité, dont *« les pharmacies tiennent leur stock à
+> jour parce que les dévoilements amènent des ventes »*. Ce pilier tombe entièrement.
+
 ## 1. Principes (déjà validés)
 
 1. Le patient paie le prix affiché, **jamais un franc de plus** (D-010).

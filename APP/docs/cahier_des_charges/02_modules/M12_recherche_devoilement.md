@@ -31,6 +31,20 @@
 
 ---
 
+> ## ❌ CE MODULE EST RETIRÉ DU PRODUIT (02/09/2026)
+>
+> Décision [[../00_cadrage/registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]] : ULAMU garde **uniquement les modules qui couvrent son périmètre — patient, médecin,
+> administration**. La chaîne du médicament en pharmacie n'en fait pas partie.
+>
+> C'est la suite de D-051 : en retirant le compte de structure, on avait laissé ce sous-système sans
+> opérateur. Plutôt que de le maintenir sur un stock que plus personne n'alimente — et de faire
+> **payer** au patient une information qui se dégrade — il est retiré.
+>
+> **Cette spécification est conservée pour l'histoire.** Elle documente ce qui a été construit, et
+> ce qu'il faudrait reprendre le jour où la question se reposerait.
+
+---
+
 ## 1. Mission et périmètre
 
 Le **modèle signature d'ULAMU** : dire gratuitement *« le médicament existe près de chez toi »*, et vendre — 500 XAF — *« voici exactement où, réservé pour toi pendant 24 h »*. Deuxième source de revenus ([[../00_cadrage/modele_economique|modèle économique]] R2).

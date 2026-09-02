@@ -15,7 +15,7 @@
 |---|---|---|---|
 | PM-01 | Commission sur consultation / suivi / mission de triage | **10 %** | D-022 ✅ |
 | PM-02 | Commission sur retrait des gains | **0 %** (frais opérateur réels seulement) | D-022 ✅ |
-| PM-03 | Prix du dévoilement (pharmacie et labo) | **500 XAF** | D-023 ✅ |
+| ~~PM-03~~ | ~~Prix du dévoilement~~ | ❌ **sans objet** depuis le 02/09/2026 ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) — plus aucun code ne le lit |
 | PM-04 | Devise unique | XAF | D-012 ✅ |
 | PM-05 | Opérateurs de paiement | MTN MoMo, Airtel Money (via agrégateur agréé) | [[cadre_reglementaire]] §6 ✅ |
 | PM-06 | Prix des offres de consultation | Libre, fixé par le professionnel — plancher 500 XAF | D-024 ✅ |
@@ -25,7 +25,7 @@
 | ID | Paramètre | Valeur | Source |
 |---|---|---|---|
 | PM-07 | Expiration de la confirmation (poignée de main) | **5 minutes** | D-024 ✅ |
-| PM-08 | Durée de la session de dévoilement et de la réservation | **24 heures** | D-009 ✅ |
+| ~~PM-08~~ | ~~Durée de la session de dévoilement et de la réservation~~ | ❌ **sans objet** depuis le 02/09/2026 (D-052) |
 | PM-09 | Durées d'offre autorisées | 10 à 60 minutes | D-024 ✅ |
 | PM-10 | Expiration d'une ordonnance non délivrée | **30 jours** | D-024 ✅ |
 | PM-11 | Délai cible de vérification d'un professionnel/structure | **72 h ouvrées** | D-024 ✅ |
@@ -46,8 +46,8 @@
 | PM-30 | Délai de dépôt du compte-rendu (gains gelés au-delà) | **24 h** | D-032 ✅ (M06) |
 | PM-31 | Conservation du Carnet après clôture de compte | **10 ans** (à confirmer avocat) | D-033 ✅ (M07) |
 | PM-32 | Alerte de péremption proche (stock pharmacie) | **60 jours** avant la date | D-035 ✅ (M11) |
-| PM-33 | Fraîcheur du stock : exclusion de la recherche après | **7 jours** sans mouvement ni confirmation | D-035 ✅ (M11) |
-| PM-34 | Exclusion temporaire après 3 strikes de fiabilité en 30 jours | **7 jours** | D-036 ✅ (M12) |
+| ~~PM-33~~ | ~~Fraîcheur du stock~~ | ❌ **sans objet** depuis le 02/09/2026 (D-052) — M11 est retiré |
+| ~~PM-34~~ | ~~Exclusion après 3 strikes de fiabilité~~ | ❌ **sans objet** depuis le 02/09/2026 (D-052) — M12 est retiré |
 | PM-35 | Seuil de double validation des remboursements manuels | **50 000 XAF** | D-037 ✅ (M13) |
 | PM-36 | Délai maximum d'exécution d'un retrait | **24 h** | D-037 ✅ (M13) |
 | PM-37 | Rétention du centre de notifications | **90 jours** | D-038 ✅ (M14) |

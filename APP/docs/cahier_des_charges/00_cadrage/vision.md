@@ -26,14 +26,14 @@ Au Congo-Brazzaville, se soigner est un parcours du combattant. Le patient fait 
 | 5. Consultation | **Session de messagerie chronométrée** (texte, photos, vocaux) + compte-rendu obligatoire | Déjà prise à l'étape 2 |
 | 6. Examens | Demande d'examens numérique → recherche labo → résultats versés au dossier | Dévoilement (D-009) |
 | 7. Ordonnance | Numérique, signée, QR code, vérification des allergies — gratuite | — |
-| 8. Pharmacie | Recherche par ordonnance → **dévoilement + réservation 24 h** → scan QR, délivrance, stock décrémenté | Dévoilement (D-009) |
+| ~~8. Pharmacie~~ | ~~Recherche par ordonnance → dévoilement + réservation 24 h → scan QR, délivrance, stock décrémenté~~ | ❌ **RETIRÉ du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). Le patient garde son ordonnance scellée sur son téléphone ; il la présente comme une ordonnance papier, hors chaîne ULAMU. |
 | 9. Suivi | Rappels de médicaments gratuits, session de suivi à tarif réduit | Commission sur le suivi |
 
 ## 3. Les acteurs
 
 - **Patients** — app mobile, acteur central.
 - **Professionnels de santé** : prescripteurs (généralistes, spécialistes, dentistes, sages-femmes) et non-prescripteurs (infirmiers, agents de santé communautaire) — application web.
-- ~~**Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application web.~~ **Retiré le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]).** ULAMU a **trois acteurs** : le patient (mobile), le soignant et l'administration (web). La pharmacie reste un **objet** du modèle — la recherche de médicaments du patient en dépend — mais plus un titulaire de compte.
+- ~~**Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application web.~~ **Retiré le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]).** ULAMU a **trois acteurs** : le patient (mobile), le soignant et l'administration (web). La pharmacie restait alors un **objet** du modèle. **Le 02/09 également, [[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]] l'a retirée entièrement** : les modules M11 (stocks) et M12 (recherche & dévoilement) sortent du produit.
 - **Équipe ULAMU** : administration en sous-rôles — application web.
 - **Le Système** : rappels, expirations, remboursements automatiques, alertes.
 
@@ -57,7 +57,7 @@ Détail : [[registre_decisions#D-002 — Acteurs : toutes les catégories de soi
 
 ## 6. Ce que ULAMU n'est PAS (anti-périmètre du démarrage)
 
-- ❌ Pas de localisation publique des pharmacies/labos (cœur du modèle de dévoilement).
+- ~~❌ Pas de localisation publique des pharmacies/labos (cœur du modèle de dévoilement).~~ **Sans objet depuis le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) : il n'y a plus de dévoilement.
 - ❌ Pas de paiement des examens de laboratoire via la plateforme (au labo, hors plateforme).
 - ❌ Pas de multilinguisme au lancement : **français uniquement** (D-005).
 - ❌ Pas d'app mobile pour les professionnels : mobile = patients, web = tous les autres (D-012).

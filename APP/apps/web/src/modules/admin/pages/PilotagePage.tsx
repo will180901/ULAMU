@@ -112,7 +112,7 @@ export function PilotagePage() {
   const enRetard = (file.data?.items ?? []).filter((it) => it.overdue).length
   const tauxRemboursement = liste.find((k) => k.key.includes('REMBOURSEMENT'))
 
-  const maxCouverture = Math.max(1, ...(couverture.data ?? []).map((c) => c.professionals + c.facilities))
+  const maxCouverture = Math.max(1, ...(couverture.data ?? []).map((c) => c.professionals))
 
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col">
@@ -163,7 +163,7 @@ export function PilotagePage() {
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
             <section aria-label="Couverture du territoire" className="min-w-0 flex-1">
-              <Carte icone={MapPin} titre="Couverture par arrondissement" sousTitre="Soignants exerçants et officines actives">
+              <Carte icone={MapPin} titre="Couverture par arrondissement" sousTitre="Soignants exerçants, vérifiés et sous contrat">
                 {couverture.isPending ? (
                   <p className="flex items-center gap-2 py-4 text-[12px] text-[var(--texte-tertiaire)]">
                     <Spinner className="size-3.5" /> Comptage…
@@ -172,25 +172,23 @@ export function PilotagePage() {
                   <Avis ton="erreur">La couverture n'a pas pu être calculée.</Avis>
                 ) : (couverture.data ?? []).length === 0 ? (
                   <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
-                    Aucun soignant exerçant ni officine active n'est encore rattaché à un arrondissement.
+                    Aucun soignant exerçant n'est encore rattaché à un arrondissement.
                   </p>
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {(couverture.data ?? []).map((c) => {
-                      const total = c.professionals + c.facilities
                       return (
                         <li key={c.district}>
                           <p className="flex flex-wrap items-baseline gap-2">
                             <span className="min-w-0 flex-1 text-[13px] font-medium text-foreground">{c.district}</span>
                             <span className="text-[12px] text-[var(--texte-secondaire)]">
-                              {c.professionals} soignant{c.professionals > 1 ? 's' : ''} · {c.facilities} officine
-                              {c.facilities > 1 ? 's' : ''}
+                              {c.professionals} soignant{c.professionals > 1 ? 's' : ''}
                             </span>
                           </p>
                           <span aria-hidden="true" className="mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                             <span
                               className="block h-full rounded-full bg-[var(--ap-400)]"
-                              style={{ width: `${Math.round((total / maxCouverture) * 100)}%` }}
+                              style={{ width: `${Math.round((c.professionals / maxCouverture) * 100)}%` }}
                             />
                           </span>
                         </li>

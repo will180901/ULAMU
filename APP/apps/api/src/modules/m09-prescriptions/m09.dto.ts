@@ -117,3 +117,20 @@ export class DispenseDto {
   @Type(() => DispenseLineDto)
   lines!: DispenseLineDto[];
 }
+
+/**
+ * Recherche du référentiel médicaments (EF-09-02) — déplacée de M12 le 02/09/2026 (chantier 26).
+ * Le référentiel n'est pas une donnée de pharmacie : c'est ce dans quoi le prescripteur choisit.
+ */
+export class CatalogQueryDto {
+  @IsString()
+  @IsNotEmpty({ message: "Terme de recherche requis" })
+  @MaxLength(80, { message: "Terme trop long : 80 caractères maximum" })
+  q!: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "Limite : entier attendu" })
+  @Min(1, { message: "Limite : 1 au minimum" })
+  limit?: number;
+}

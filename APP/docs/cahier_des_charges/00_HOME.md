@@ -36,8 +36,8 @@
 - [[M06_poignee_session]] ⭐ — le cœur : poignée de main, session chronométrée, compte-rendu
 - [[M07_carnet]] — la mémoire médicale à vie + carnet familial
 - [[M09_ordonnance_delivrance]] — ordonnance signée QR, garde-fou allergies, délivrance
-- [[M11_stocks_catalogues]] — stock vivant par lots, règle de fraîcheur anti-R-03
-- [[M12_recherche_devoilement]] — le modèle signature : anonyme → dévoilement → réservation
+- ~~[[M11_stocks_catalogues]]~~ — ❌ **retiré du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]])
+- ~~[[M12_recherche_devoilement]]~~ — ❌ **retiré le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). ⚠️ Le référentiel médicaments passe à M09, sans changer d'adresse
 - [[M13_paiements_gains]] — l'argent aveugle : MoMo, répartitions, gains, retraits
 - [[M14_notifications_rappels]] — service aveugle : push, centre in-app, rappels de médicaments
 - [[M16_pilotage_administration]] — back-office, paramètres, KPIs du pilote
@@ -88,8 +88,8 @@
 | [[M06_poignee_session]] ⭐ | 🟢 Validé (2026-06-10) — D-032 |
 | [[M07_carnet]] | 🟢 Validé (2026-06-10) — D-033, Carnet familial |
 | [[M09_ordonnance_delivrance]] | 🟢 Validé (2026-06-10) — D-034 |
-| [[M11_stocks_catalogues]] | 🟢 Validé (2026-06-10) — D-035 |
-| [[M12_recherche_devoilement]] | 🟢 Validé (2026-06-10) — D-036, garantie actée |
+| ~~[[M11_stocks_catalogues]]~~ | ❌ **Retiré du produit (02/09/2026 — D-052)** |
+| ~~[[M12_recherche_devoilement]]~~ | ❌ **Retiré du produit (02/09/2026 — D-052)** |
 | [[M13_paiements_gains]] | 🟢 Validé (2026-06-10) — D-037 |
 | [[M14_notifications_rappels]] | 🟢 Validé (2026-06-10) — D-038 |
 | [[M16_pilotage_administration]] | 🟢 Validé (2026-06-10) — D-038, **Phase 2 (MVP) terminée ✅** |

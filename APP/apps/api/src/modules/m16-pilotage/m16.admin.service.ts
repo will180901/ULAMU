@@ -17,7 +17,6 @@ import { OutboxService } from "../../common/outbox.service";
 import { PrismaService } from "../../common/prisma.service";
 import { PaymentsService } from "../m13-payments/m13.payments.service";
 import { VerificationStatusService } from "../m03-verification-contracts/m03.status.service";
-import { DisclosureService } from "../m12-search-disclosure/m12.disclosure.service";
 import { canSecondApproveBan } from "./m16.policies";
 
 export interface AccountSearchHit {
@@ -40,7 +39,6 @@ export class AdminService {
     // Lecture seule du statut de vérification (C6) — disponible pour enrichir les vues admin.
     private readonly verification: VerificationStatusService,
     // Arbitrage des strikes : M16 DÉCIDE, M12 (propriétaire) APPLIQUE (RM-16-01).
-    private readonly disclosures: DisclosureService,
   ) {}
 
   // ── EF-16-03 : recherche de comptes (RM-16-02 : données minimales) ───────────
@@ -339,18 +337,16 @@ export class AdminService {
     return { sanctionId, rejected: true };
   }
 
-  // ── EF-12-07 : arbitrage des strikes de fiabilité (CU via M16) ───────────────
+  /*
+    ── L'arbitrage des strikes de fiabilité est RETIRÉ (02/09/2026, chantier 26) ────────────────
 
-  /**
-   * Arbitrage d'un strike contesté (CU via M16, EF-12-07). RM-16-01 : M16 ne touche PAS
-   * ReliabilityStrike (domaine M12) — il DÉLÈGUE à DisclosureService.arbitrateStrike (propriétaire),
-   * qui applique la transition conditionnelle, notifie le titulaire et audite (avec l'adminId).
-   * uphold=false ⇒ le strike tombe (CANCELLED) ; uphold=true ⇒ maintenu (ACTIVE).
-   */
-  async resolveStrike(adminId: string, strikeId: string, uphold: boolean, reason: string): Promise<{ strikeId: string; status: string }> {
-    const { status } = await this.disclosures.arbitrateStrike(adminId, strikeId, uphold, reason);
-    return { strikeId, status };
-  }
+    EF-12-07 arbitrait la contestation d'un « strike » — la pénalité posée à une pharmacie qui
+    n'avait pas le produit qu'elle annonçait. Avec M12, l'objet lui-même disparaît : plus de
+    dévoilement, donc plus de promesse à tenir, donc plus de strike à contester.
+
+    Ce n'est pas un pouvoir qu'on retire à l'administration, c'est un litige qui n'existe plus.
+    La route `POST /v1/admin/strikes/:id/resolve` part avec.
+  */
 
   // ── Aide partagée ─────────────────────────────────────────────────────────────
 

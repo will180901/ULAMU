@@ -11,11 +11,9 @@ import {
   AvailabilityAlertResponse,
   bearer,
   CareSessionListResponse,
-  CatalogResponse,
   CheckUsernameResponse,
   CloseAccountRequest,
   ConfirmPhoneChangeRequest,
-  CreateAlertRequest,
   CreateReminderRequest,
   CreateSubProfileRequest,
   DeclareEntryRequest,
@@ -32,13 +30,7 @@ import {
   UploadSessionMediaRequest,
   UploadMediaResponse,
   UpdateReminderRequest,
-  DisclosurePriceResponse,
-  DisclosureView,
   DIRECTORY_ROUTES,
-  MEDS_ROUTES,
-  RequestDisclosureRequest,
-  SearchRequest,
-  SearchResult,
   SessionInfo,
   StartPhoneChangeRequest,
   HEALTH_ROUTES,
@@ -432,25 +424,9 @@ export class ApiClient {
     return this.request('GET', PRESCRIPTION_ROUTES.one(id), undefined, true);
   }
 
-  // ── M12 — recherche & dévoilement (authentifié) ───────────────────────────
-  searchCatalog(q: string, limit = 20): Promise<CatalogResponse> {
-    return this.request('GET', `${MEDS_ROUTES.catalog}?q=${encodeURIComponent(q)}&limit=${limit}`, undefined, true);
-  }
-  searchAvailability(dto: SearchRequest): Promise<SearchResult> {
-    return this.request('POST', MEDS_ROUTES.search, dto, true);
-  }
-  createMedAlert(dto: CreateAlertRequest): Promise<unknown> {
-    return this.request('POST', MEDS_ROUTES.alerts, dto, true);
-  }
-  requestDisclosure(dto: RequestDisclosureRequest): Promise<DisclosureView> {
-    return this.request('POST', MEDS_ROUTES.disclosures, dto, true);
-  }
-  getDisclosure(id: string): Promise<DisclosureView> {
-    return this.request('GET', MEDS_ROUTES.disclosure(id), undefined, true);
-  }
-  getDisclosurePrice(): Promise<DisclosurePriceResponse> {
-    return this.request('GET', MEDS_ROUTES.disclosurePrice, undefined, true);
-  }
+  /* Les six méthodes de recherche et de dévoilement (M12) sont RETIRÉES le 02/09/2026 — chantier
+     26. Le module serveur n'existe plus : ULAMU couvre le patient, le médecin et l'administration,
+     et la chaîne du médicament en pharmacie supposait un quatrième acteur sorti du produit. */
 }
 
 /** Sérialise les filtres définis en query-string (ignore undefined). */

@@ -90,7 +90,13 @@ describe("L'application se câble", () => {
       • un paramètre simple, le cas le plus courant ;
       • un paramètre SUIVI d'un segment fixe — la forme que `path-to-regexp` v8 traite autrement ;
       • deux paramètres dans un même chemin ;
-      • un chemin encodé (`scan/:qrToken`), qui porte un jeton en clair dans l'URL.
+      • un paramètre suivi de DEUX segments, dont un fixe au bout (`:caseId/documents/:id/file`).
+
+    ⚠️ 02/09/2026 (chantier 26) — le témoin « jeton en clair dans l'URL » était
+    `POST /v1/prescriptions/scan/:qrToken/dispense`. Cette route est partie avec la délivrance en
+    pharmacie, hors périmètre. Elle est REMPLACÉE, pas retirée : elle gardait une forme de chemin,
+    et supprimer la ligne aurait discrètement cessé de surveiller cette forme-là. Son remplaçant
+    porte le même risque — un paramètre suivi d'un segment fixe, puis un second paramètre.
     Et deux routes qui n'existaient pas avant le 01/09, pour que ce test dise aussi quelque chose
     du câblage récent.
   */
@@ -102,7 +108,10 @@ describe("L'application se câble", () => {
     // s'inversait, `/mine` serait avalé par `:sessionId` et rendrait « séance introuvable ».
     "GET /v1/care-sessions/mine",
     "PATCH /v1/care-sessions/:sessionId/messages/:messageId",
-    "POST /v1/prescriptions/scan/:qrToken/dispense",
+    "GET /v1/admin/verification/:caseId/documents/:id/file",
+    // Ajoutée le 02/09 : le référentiel médicaments a changé de module (M12 → M09) sans changer
+    // d'adresse. Ce témoin le prouve — un déplacement ne doit rien coûter à ceux qui appellent.
+    "GET /v1/medicaments",
     "GET /v1/admin/verification/:caseId",
     "PUT /v1/admin/parameters/:key",
     "DELETE /v1/admin/admins/:accountId/role",

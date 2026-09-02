@@ -20,8 +20,7 @@ import {
   ListSupportRequestsQueryDto,
   MotiveDto,
   OpenSupportProcedureDto,
-  ResolveStrikeDto,
-  SearchAccountsQueryDto,
+    SearchAccountsQueryDto,
   UpdateParameterDto,
 } from "./m16.dto";
 import { ParametersService } from "./m16.parameters.service";
@@ -88,12 +87,6 @@ export class M16AdminController {
   }
 
   /** EF-12-07 : arbitrage d'un strike de fiabilité (maintenu / levé). */
-  @AdminOnly(AdminRole.ADMIN_VERIFICATION, AdminRole.ADMIN_MAP)
-  @Post("strikes/:id/resolve")
-  @HttpCode(200)
-  resolveStrike(@Actor() actor: AuthenticatedActor, @Param("id") id: string, @Body() dto: ResolveStrikeDto) {
-    return this.admin.resolveStrike(actor.accountId, id, dto.uphold, dto.reason);
-  }
 
   // ── Paramètres plateforme (EF-16-04) — SUPER_ADMIN seul ──────────────────────
 

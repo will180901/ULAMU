@@ -61,6 +61,15 @@ interface NormalizedLine {
   qtyPrescribed: number;
 }
 
+/** Une entrée du référentiel médicaments (EF-09-02) — déplacée de M12 le 02/09/2026. */
+export interface CatalogItem {
+  id: string;
+  dci: string;
+  commercialNames: string[];
+  form: string | null;
+  dosage: string | null;
+}
+
 @Injectable()
 export class PrescriptionService {
   constructor(
@@ -533,5 +542,38 @@ export class PrescriptionService {
     if (ids.length === 0) return new Map();
     const rows = await this.prisma.medicament.findMany({ where: { id: { in: ids } } });
     return new Map(rows.map((m) => [m.id, m]));
+  }
+
+  /**
+   * Référentiel médicaments (EF-09-02) — recherche par nom, DCI ou marque.
+   *
+   * ── Déplacée depuis M12 le 02/09/2026 (chantier 26) ──────────────────────────────────────────
+   *
+   * Elle vivait dans le module de recherche et de dévoilement en pharmacie, retiré du produit.
+   * Sa place était pourtant ici depuis toujours : son exigence est EF-09-02, et son commentaire
+   * d'origine disait déjà « AUCUNE donnée de stock ici (catalogue pur) ». C'est ce dans quoi le
+   * prescripteur choisit une ligne — sans elle, l'écran C7 chercherait dans le vide et le médecin
+   * ne pourrait plus prescrire qu'en texte libre, donc **sans le garde-fou allergies** qui ne
+   * s'applique qu'aux lignes référentielles.
+   *
+   * Le corps est repris **sans modification** : deux caractères minimum (dit à l'écran), 500 lignes
+   * lues au plus, filtre sur la DCI et les noms commerciaux, limite bornée entre 1 et 50.
+   */
+  async searchCatalog(q: string, limit = 20): Promise<{ items: CatalogItem[] }> {
+    const term = (q ?? "").trim().toLowerCase();
+    if (term.length < 2) return { items: [] };
+    const rows = await this.prisma.medicament.findMany({ where: { active: true }, take: 500, orderBy: { dci: "asc" } });
+    const matched = rows.filter(
+      (m) => m.dci.toLowerCase().includes(term) || m.commercialNames.some((n) => n.toLowerCase().includes(term)),
+    );
+    return {
+      items: matched.slice(0, Math.max(1, Math.min(limit, 50))).map((m) => ({
+        id: m.id,
+        dci: m.dci,
+        commercialNames: m.commercialNames,
+        form: m.form,
+        dosage: m.dosage,
+      })),
+    };
   }
 }

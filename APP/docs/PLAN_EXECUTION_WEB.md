@@ -121,6 +121,12 @@ Aucun effet sur le déploiement — ce fichier ne sert qu'aux outils de dévelop
 >
 > Les écrans D1 → D4 étaient déjà « hors MVP, écartés » ci-dessous. Ils sont désormais **hors
 > produit** — ce n'est plus un report, c'est acté (chantier 25).
+>
+> **Et le 02/09 également, les MODULES qui les servaient sont retirés** (chantier 26, cahier
+> **D-052**) : **M11 Stocks** et **M12 Recherche & dévoilement**, plus la **délivrance de M09**.
+> ULAMU ne garde que les modules de son périmètre. ⚠️ Le **référentiel médicaments** est passé de
+> M12 à M09 **sans changer d'adresse** — c'est ce dans quoi un médecin choisit une ligne
+> d'ordonnance, et sans lui le garde-fou allergies ne s'applique plus.
 
 | Groupe | Écrans | État |
 |---|---|---|
@@ -400,8 +406,14 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | 11 | **La désactivation du TOTP n'a aucun chemin sur le web (née le 02/09, chantier 24).** Le serveur l'accepte pour un non-administrateur — `POST /v1/accounts/me/totp/disable`, mot de passe **et** code exigés — et le cahier donne le second facteur pour optionnel aux professionnels. B3 ne l'offre nulle part : une fois activé, un soignant ne peut plus revenir en arrière depuis l'application. Ce n'est plus un **mensonge** depuis que la phrase a été corrigée (l'écran ne prétend plus que c'est impossible), c'est une **route sans client** — la cinquième trouvée depuis le début du palier. ⚠️ **Ce n'est pas un oubli à réparer d'office** : ouvrir ce chemin, c'est offrir de baisser la protection d'un compte qui donne accès à des dossiers de santé. Le coût est faible (un bloc dans `SectionSecurite`, formulaire mot de passe + code déjà écrit deux fois dans le même fichier, ~1 h avec tests). **Recommandation : ne rien faire pour l'instant.** Personne ne l'a demandé, aucun soignant n'est bloqué par une obligation réelle, et le jour où quelqu'un le demande, la vraie question sera « pourquoi » — pas « comment ». | 🟡 **arbitrage porteur**, non urgent |
 
-| 12 | **Plus personne n'alimente le stock des pharmacies (née le 02/09, chantier 25).** En retirant `FACILITY_MEMBER` (D-051), on retire l'acteur qui tenait l'inventaire — `POST /v1/stocks/:facilityId/entries` et ses voisines n'ont plus d'opérateur. **Ce n'est pas une dette de code, c'est une dette de produit**, et elle touche le patient : son parcours « je cherche un médicament → je paie un dévoilement (PM-03, 500 XAF) → j'ai une réservation de 24 h » lit ce stock. Les données existantes ne disparaissent pas, elles **vieillissent** — et le patient paie pour une information qui se dégrade sans que rien ne le dise. Trois issues : (a) **retirer aussi la recherche payée de médicaments** du parcours patient — cohérent, mais c'est amputer M12 d'une fonctionnalité facturée ; (b) **la garder en disant son âge** — afficher la date de dernière confirmation de fraîcheur (`FacilityStockState.lastFreshAt` existe déjà, RM-11-05) et refuser le dévoilement au-delà d'un seuil : ~1 j, et l'écran cesse de mentir ; (c) **rendre un acteur au stock** sous une autre forme (l'administration saisit ? un import ?) — c'est un chantier, pas une correction. | 🔴 **arbitrage porteur** · **recommandation : (b)**, la seule qui protège le patient sans rien amputer |
+| 12 | ✅ **TRANCHÉE le 02/09 (chantier 26) — le porteur retient l'issue (a) : la recherche payée de médicaments est RETIRÉE**, avec M11, M12 et la délivrance de M09. Les dettes 14, 15 et 16 ci-dessous en sont les conséquences. *Énoncé d'origine :* **Plus personne n'alimente le stock des pharmacies (née le 02/09, chantier 25).** En retirant `FACILITY_MEMBER` (D-051), on retire l'acteur qui tenait l'inventaire — `POST /v1/stocks/:facilityId/entries` et ses voisines n'ont plus d'opérateur. **Ce n'est pas une dette de code, c'est une dette de produit**, et elle touche le patient : son parcours « je cherche un médicament → je paie un dévoilement (PM-03, 500 XAF) → j'ai une réservation de 24 h » lit ce stock. Les données existantes ne disparaissent pas, elles **vieillissent** — et le patient paie pour une information qui se dégrade sans que rien ne le dise. Trois issues : (a) **retirer aussi la recherche payée de médicaments** du parcours patient — cohérent, mais c'est amputer M12 d'une fonctionnalité facturée ; (b) **la garder en disant son âge** — afficher la date de dernière confirmation de fraîcheur (`FacilityStockState.lastFreshAt` existe déjà, RM-11-05) et refuser le dévoilement au-delà d'un seuil : ~1 j, et l'écran cesse de mentir ; (c) **rendre un acteur au stock** sous une autre forme (l'administration saisit ? un import ?) — c'est un chantier, pas une correction. | 🔴 **arbitrage porteur** · **recommandation : (b)**, la seule qui protège le patient sans rien amputer |
 | 13 | **La fermeture complète de `FACILITY_MEMBER` demande un ménage en base (née le 02/09, chantier 25).** La valeur reste dans l'énumération Prisma, ses six règles dans la matrice M02, et les quatre `auditActorType` gardent leur cas. **Chacun pour une raison vérifiée** : retirer la valeur exige une migration sur la base de **production** (celle effacée le 23/08) et échouerait si une ligne la porte ; retirer les règles sans retirer `assertFacilityRight` donnerait deux vérités pour une même règle ; retirer le cas d'audit ferait inscrire l'action d'un humain comme `"system"` dans un journal **en insertion seule**, donc à jamais. L'ordre est donc contraint : **d'abord inventorier les comptes et adhésions en base** (`scripts/menage-comptes-demo.ts` a un mode inventaire qui n'écrit rien), **puis** décider. | 🟡 **geste porteur**, non urgent — rien ne fuit, la porte est déjà fermée |
+
+| 14 | **Une ordonnance n'a plus de lecteur (née le 02/09, chantier 26).** Elle est toujours prescrite, scellée, consultable et annulable — mais elle ne peut plus être **servie** dans ULAMU : le scan du QR et la délivrance sont partis avec M11. Conséquences concrètes : les statuts `DISPENSED` et `PARTIALLY_DISPENSED` du modèle deviennent **inatteignables**, le compteur `qtyDispensed` reste à zéro à jamais, et C4 affiche donc un état d'ordonnance qui ne prendra jamais que trois valeurs sur cinq. Le patient montre son ordonnance sur son téléphone comme une ordonnance papier : elle reste **traçable et infalsifiable**, mais hors chaîne. ⚠️ **Ce n'est pas une régression à réparer, c'est le prix de la décision** — il est écrit ici pour qu'on ne le redécouvre pas comme un défaut. | 🟡 **conséquence assumée de D-052** · rien à faire, sauf à rouvrir la décision |
+| 15 | **Les tables de la pharmacie restent en base, sans lecteur (née le 02/09, chantier 26).** `Facility`, `StockItem`, `StockMovement`, `StockThreshold`, `FacilityStockState`, `Dispensation`, `DispensationLine`, `Reservation`, `ReservationLine`, `Disclosure`, `ReliabilityStrike`, `FacilityMember`, `FacilityMemberProfile`, `FacilityInvitation` — **aucun code ne les lit plus**. Les retirer demande une migration sur la base de **production**, celle effacée le 23/08, et l'ordre est contraint : d'abord inventorier ce qu'elles contiennent, ensuite décider. **Coût réel : elles ne coûtent que de la place** — aucune fuite, aucun chemin d'accès, aucune route. **Recommandation : ne rien faire pour l'instant.** Une migration destructrice sur une base de santé pour gagner quelques mégaoctets est un risque sans contrepartie ; à grouper le jour où une autre migration devra de toute façon être écrite. | 🟡 **geste porteur**, non urgent |
+| 16 | **Le modèle économique n'a plus qu'une source de revenus (née le 02/09, chantier 26).** Le dévoilement — **500 XAF, PM-03** — était la seconde. Il reste la commission de consultation (10 %, PM-01). Le `modele_economique` du cahier pose **trois** conditions de viabilité au §5, dont *« les pharmacies tiennent leur stock à jour parce que les dévoilements amènent des ventes »* : ce pilier tombe entièrement. Le document porte un avertissement en tête et **n'a pas été réécrit** — refaire un modèle à une source demande de nouvelles hypothèses de volume et de point d'équilibre. ⚠️ **C'est un arbitrage de porteur, pas une correction de rédaction**, et il touche aussi le plan de sortie : sur ses sept critères de succès, **deux ne sont plus mesurables**. | 🔴 **arbitrage porteur** · **recommandation : reprendre le §5 du modèle économique avant toute présentation du projet** — c'est la première question qu'on posera |
+
+| 17 | **La gestion des structures de M02 est inatteignable, mais toujours là (née le 02/09, chantier 26).** Neuf routes subsistent — créer une structure, inviter un membre, changer ses droits, le suspendre, transférer la titularité — et **plus aucun compte ne peut les appeler** : `createFacility` et `acceptInvitation` exigent `type === "FACILITY_MEMBER"`, type fermé depuis D-051. S'y ajoutent `PermissionsService.assertFacilityRight`, qui **n'a plus un seul appelant** depuis le retrait de M11 et de la délivrance, et la branche `FACILITY` du détenteur de gains dans M13. ⚠️ **M02 lui-même RESTE** : il porte aussi les sous-rôles d'administration (E4, `listAdmins`, `assignAdminRole`), qui sont dans le périmètre — c'est sa moitié « structures » qui est morte, pas le module. **Coût du retrait : ~450 lignes de service, 9 routes, leurs DTO et leurs tests, plus la branche M13.** ⚠️ Ce n'est pas un simple `rm` : `EarningsHolderType` et `subjectKind` du dossier de vérification portent encore `FACILITY`, et ces types décrivent ce que le serveur peut **renvoyer** sur des données existantes. **Recommandation : le faire, mais dans un chantier à lui** — le grouper ici aurait mélangé « retirer la chaîne du médicament » et « retirer la gestion des structures », deux décisions différentes du porteur. Rien ne fuit entre-temps : la porte est fermée à l'entrée. | 🟡 **chantier à planifier**, non urgent |
 
 ### Trois dérives documentaires jamais arbitrées
 
@@ -473,6 +485,114 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **24** | **Ce que les écrans disent de la double authentification** — 02/09. **Serveur : aucun.** Trois faussetés, dont deux **vérifiées sur le site en ligne avant correction**. (1) `index.html` déclarait `lang="en"` sur une application servie **en français seul** — une synthèse vocale lisait donc du français avec une voix anglaise. (2) Les **six branches d'échec** de l'administration offraient « Réessayer », geste qui ne peut pas aboutir sous RM-01-06, et **ne nommaient jamais la sortie** — `/configuration-totp`, qui existe et n'est pas gardée. (3) B3 annonçait à **tout le monde** « Obligatoire sur ULAMU — elle ne peut pas être désactivée » : vrai pour un administrateur (`disableTotp` répond 403 sur `type === "ADMIN"`), **faux sur ses deux moitiés pour un soignant**. Ajouté : `RappelTotpAdmin` (bandeau posé **hors** de la limite d'erreur, pour survivre à un écran qui tombe), le hook `useTotpAdminManquant`, et `ActionApresEchec`. **Une étape a été abandonnée en cours de route** — voir ci-dessous. **web 497 ✓ (485 + 12) · types propres · lint à sa base (20 avertissements préexistants, aucun nouveau).** | ⏸ en attente | ⏸ |
 
 | **25** | **Trois acteurs, deux sur le web** — 02/09. **Décision du porteur, inscrite au cahier sous D-051.** `FACILITY_MEMBER` — le membre de structure — **sort du produit**. Serveur : la route publique `POST /v1/accounts/register/facility-member` retirée, avec son DTO et sa méthode de service (**~100 lignes**) : plus aucun compte de ce type ne peut naître. Web : capacité `facility`, « Espace officine », le tableau de bord officine (**70 lignes**), la branche morte d'inscription gardée par un `true` littéral, et **172 lignes de client API sans appelant** — dont les 16 méthodes de structure, de stock et de scan d'ordonnance, qu'aucun écran n'appelait déjà. Documentation : **D-051 inscrite**, D-003 et D-004 marquées remplacées sur le volet compte, le glossaire, la vision, la carte des domaines, les plans de modules et de releases, quatre spécifications de module et le persona P7. **Ce qui NE part pas, et pourquoi : la pharmacie reste un objet du modèle** — `m12.disclosure.service.ts` importe `StockAvailabilityService` de M11, donc la recherche de médicaments du patient en dépend, et le patient est dans le périmètre. **web 497 ✓ · API 554 ✓ · mobile 7 ✓ · types propres · builds propres · lint web **20 → 19 avertissements** — le `no-constant-condition` de `RegisterPage` est parti avec la branche morte qu'il signalait.** | ⏸ en attente | ⏸ |
+
+| **26** | **La chaîne du médicament sort du produit** — 02/09. **Décision du porteur, inscrite au cahier sous D-052** : ULAMU ne garde que les modules de son périmètre — patient, médecin, administration. Suite directe de la dette n°12 ouverte au chantier 25 ; le porteur retient son issue (a). Retirés : **M11 Stocks** (7 fichiers, 1 330 l.) · **M12 Recherche & dévoilement** (7 fichiers, 1 843 l.) · la **délivrance de M09** (scan + dispense + son service) · l'écran mobile « Médicaments » (376 l.), sa route, sa tuile, 6 méthodes d'API et 11 types · l'arbitrage des strikes et son balayage dans M16 · **2 des 7 KPI du pilote** et le compte des officines dans la couverture · **12 modèles de notification** sans émetteur · les pharmacies de démonstration du seed. **Ce qui NE part pas : le référentiel médicaments.** `GET /v1/medicaments` **change de module (M12 → M09) sans changer d'adresse** — son exigence était EF-09-02 depuis toujours, et sans lui le médecin ne peut plus prescrire qu'en texte libre, donc **sans garde-fou allergies**. **API 484 ✓ · web 498 ✓ · mobile 7 ✓ · types, lint et builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 26 (la chaîne du médicament) a appris
+
+*Mené le 02/09/2026, sur décision du porteur : « retire tout ce qui concerne pharmacie, recherche
+médicament — on garde uniquement les modules qui couvrent notre périmètre : médecin,
+administrateur, patient ».*
+
+#### Ce chantier est la dette du précédent, tranchée
+
+Le chantier 25 avait retiré l'ACTEUR (le compte de structure) et inscrit le jour même ce qu'il
+coûtait — dette n°12 : *« plus personne n'alimente le stock ; la recherche PAYÉE du patient répond
+sur des données qui vieillissent »*, avec trois issues et une recommandation. Le porteur a choisi la
+première : **retirer la fonctionnalité plutôt que la maintenir sur une donnée morte.**
+
+*C'est la première fois dans ce plan qu'une dette écrite est reprise et tranchée par le porteur au
+chantier suivant. Elle a servi à ça — pas à décorer un §9.*
+
+#### La découverte qui a commandé tout le découpage
+
+`GET /v1/medicaments` — le référentiel de médicaments — vivait dans **M12**, le module à supprimer.
+Et c'est **l'écran C7 du médecin** qui l'appelle (`PanneauOrdonnance.tsx:124`) pour composer une
+ligne d'ordonnance.
+
+Supprimer M12 en bloc aurait donc **retiré au médecin la possibilité de prescrire correctement** —
+un acteur du périmètre, atteint par le retrait d'un autre. Et pas seulement le confort : le
+**garde-fou allergies (EF-09-03) ne s'applique qu'aux lignes référentielles**. Sans référentiel, le
+prescripteur ne peut plus écrire qu'en texte libre, c'est-à-dire sans le contrôle qui l'empêche de
+prescrire de l'Amoxicilline à un patient allergique à la pénicilline.
+
+Le référentiel a donc **changé de module sans changer d'adresse**. Sa place était M09 depuis
+toujours : son exigence est **EF-09-02**, et son propre commentaire disait déjà *« AUCUNE donnée de
+stock ici (catalogue pur) »*. Un second contrôleur monté sur `v1` garde la route identique — et un
+témoin a été ajouté à `app.boot.spec.ts` pour le prouver.
+
+> **La règle qu'on retient : un module n'est pas un périmètre.** Ce qui est rangé quelque part n'y
+> appartient pas forcément, et c'est en supprimant qu'on s'en aperçoit. Il faut regarder ce que
+> chaque route SERT, pas le dossier où elle dort.
+
+#### Ce qu'une suppression apprend sur les tests
+
+Trois tests ont attrapé le chantier, et chacun disait quelque chose de différent :
+
+- **`app.boot.spec.ts`** a réclamé `POST /prescriptions/scan/:qrToken/dispense`. Ce témoin n'était
+  pas là pour la route mais pour sa **forme** — un jeton en clair dans l'URL. Le supprimer aurait
+  discrètement cessé de surveiller cette forme-là. Il a donc été **remplacé** par un chemin de même
+  risque, pas retiré. *Un test témoin ne se supprime pas avec ce qu'il témoignait.*
+- **`m16.coverage.spec.ts`** comptait encore les officines **après** que le service eut cessé de le
+  faire. Il se déclarait « copie de la règle » : c'est le test qui mentait. Deux vérités pour une
+  même règle — la dette de C1 du 23/08, une fois de plus, et cette fois du côté du test.
+- **`m16.policies.spec.ts`** exigeait « EXACTEMENT sept critères — pas un de plus ». Il en dit
+  maintenant cinq, **et il dit pourquoi** : sans cette phrase, quelqu'un remettrait sept en croyant
+  réparer une régression.
+
+#### Un test lent n'est pas un test instable
+
+`file-verification.test.tsx > un refus peut NOMMER la pièce en cause` échouait en
+« Test timed out in 5000ms » sur **quatre exécutions complètes sur cinq**, et passait à chaque fois
+qu'on le lançait seul. Facile à classer « suite instable sur cette machine » — c'est ce que le §10
+disait depuis le chantier 1.
+
+Mesuré isolément, **sans aucune concurrence : 2 841 ms**, soit 57 % du budget. Ce n'est pas de la
+malchance : c'est le test le plus lourd du dépôt — deux listes Radix, chacune montant un portail,
+plus une frappe caractère par caractère et une mutation. Sous la charge d'une suite entière, il
+dépasse.
+
+Le budget est relevé **pour lui seul**, à 15 s. Relever le budget global aurait masqué la lenteur
+des autres. *Une intermittence qui se reproduit n'est pas un aléa : c'est une mesure qu'on n'a pas
+prise.*
+
+#### Ce que le retrait coûte, et qui doit le savoir
+
+Trois conséquences, toutes inscrites au §9 plutôt que tues :
+
+1. **Le patient perd la recherche de médicaments** — une fonctionnalité **facturée** (PM-03,
+   500 XAF) et **la deuxième des deux sources de revenus** du modèle économique. Le §5 du
+   `modele_economique` posait trois conditions de viabilité, dont *« les pharmacies tiennent leur
+   stock à jour parce que les dévoilements amènent des ventes »*. Ce pilier tombe entièrement.
+2. **Une ordonnance n'a plus de lecteur.** Elle est toujours prescrite, scellée, consultable et
+   annulable — mais plus **servie** dans ULAMU. `DISPENSED` et `PARTIALLY_DISPENSED` deviennent
+   inatteignables, et le QR n'est plus scanné par personne : le patient le montre comme une
+   ordonnance papier, traçable et infalsifiable, mais hors chaîne.
+3. **Le plan de sortie compte sept critères de succès ; deux ne sont plus mesurables.**
+
+*Le document économique n'a pas été réécrit, et c'est délibéré : refaire un modèle à une source
+demande de nouvelles hypothèses de volume et de point d'équilibre. C'est un arbitrage du porteur,
+pas une correction de rédaction. Il porte donc un avertissement en tête, et reste lisible comme
+l'état de la réflexion au 10/06.*
+
+#### Où le nettoyage s'est arrêté, encore une fois
+
+Les **tables** restent : `Facility`, `StockItem`, `Dispensation`, `Reservation`, `Disclosure`,
+`ReliabilityStrike` et leurs voisines. Les retirer demande une migration sur la base de
+**production** — celle effacée le 23/08. Aucun code ne les lit plus ; elles ne coûtent que de la
+place.
+
+Même frontière qu'au chantier 25, et elle tient toujours : **un nettoyage s'arrête là où la donnée
+existante commence.**
+
+#### Ce que la mesure a donné
+
+| Zone | Retiré |
+|---|---|
+| `apps/api` | M11 (7 fichiers) · M12 (7 fichiers) · `m09.dispensation.service.ts` · 2 routes de délivrance · l'arbitrage des strikes et sa route · 2 KPI et leurs cibles · les officines de la couverture · 12 modèles de notification · les pharmacies du seed · `chantier4.int.spec.ts` |
+| `apps/mobile` | `MedsScreen.tsx` (376 l.) · sa route · sa tuile d'accueil · 6 méthodes d'API · 11 types et 6 routes de contrat |
+| `apps/web` | le compte des officines dans E5 · la mention des officines dans les **mentions légales** (elles valent preuve) · « Titulaire de structure injoignable » retirée des choix d'E7 |
+| `docs/cahier_des_charges` | **D-052 inscrite** · bandeaux sur M09, M11, M12 · domaine **D6 retiré** · plans de modules et de releases · vision · glossaire · 4 paramètres métier · **avertissement en tête du modèle économique** |
 
 ### Ce que le chantier 25 (les trois acteurs) a appris
 

@@ -17,8 +17,6 @@ import { M05DirectoryModule } from "./modules/m05-directory/m05.module";
 import { M06HandshakeSessionModule } from "./modules/m06-handshake-session/m06.module";
 import { M07HealthRecordModule } from "./modules/m07-health-record/m07.module";
 import { M09PrescriptionsModule } from "./modules/m09-prescriptions/m09.module";
-import { M11StocksModule } from "./modules/m11-stocks/m11.module";
-import { M12SearchDisclosureModule } from "./modules/m12-search-disclosure/m12.module";
 import { M13PaymentsModule } from "./modules/m13-payments/m13.module";
 import { M14NotificationsModule } from "./modules/m14-notifications/m14.module";
 import { M16PilotageModule } from "./modules/m16-pilotage/m16.module";
@@ -50,8 +48,10 @@ import { OtaModule } from "./modules/ota/ota.module";
     M06HandshakeSessionModule,
     M07HealthRecordModule,
     M09PrescriptionsModule,
-    M11StocksModule,
-    M12SearchDisclosureModule,
+    /* M11 (stocks) et M12 (recherche & dévoilement) sont RETIRÉS le 02/09/2026 — chantier 26.
+       ULAMU couvre trois acteurs : le patient, le médecin, l'administration. La pharmacie n'en est
+       pas un depuis D-051, et ces deux modules n'avaient plus personne pour les exploiter.
+       Le référentiel médicaments, lui, est passé dans M09 : ce n'était pas une donnée de stock. */
     M13PaymentsModule,
     M14NotificationsModule,
     M16PilotageModule,

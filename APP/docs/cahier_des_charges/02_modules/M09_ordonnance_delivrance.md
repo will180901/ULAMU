@@ -31,6 +31,23 @@
 
 ---
 
+> ## ⚠️ LE VOLET « DÉLIVRANCE » EST RETIRÉ (02/09/2026) — l'ordonnance reste
+>
+> Décision [[../00_cadrage/registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]. Ce qui part : le **scan du QR** (`POST /prescriptions/scan/:qrToken`), la
+> **délivrance** (`.../dispense`) et le décrément de stock. Ce qui reste, et qui est le cœur du
+> module : **prescrire en session, sceller, consulter, annuler**.
+>
+> **Le référentiel de médicaments (EF-09-02) ARRIVE ici** — il vivait dans M12, qui est retiré.
+> C'était sa place depuis toujours : c'est ce dans quoi un médecin choisit une ligne, pas une donnée
+> de stock. `GET /v1/medicaments` ne change pas d'adresse.
+>
+> ⚠️ **Ce que cela change pour l'ordonnance, et il faut le savoir** : elle ne peut plus être SERVIE
+> dans ULAMU. Les statuts `DISPENSED` et `PARTIALLY_DISPENSED` deviennent inatteignables, et le QR
+> scellé n'a plus de lecteur — le patient le montre comme une ordonnance papier, traçable et
+> infalsifiable, mais hors chaîne.
+
+---
+
 ## 1. Mission et périmètre
 
 Remplacer l'ordonnance papier — perdue, illisible, falsifiable — par un document **signé, infalsifiable et traçable** de la prescription jusqu'à la délivrance en pharmacie.

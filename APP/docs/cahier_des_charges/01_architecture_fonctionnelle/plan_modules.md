@@ -25,8 +25,8 @@
 | **M08** | Missions de Triage | D4 | Demande, attribution et paiement des missions de terrain des soignants ; constantes versées au Carnet. |
 | **M09** | Ordonnance & Délivrance | D5 | Création en session, garde-fou allergies, QR, scan en pharmacie, délivrance totale/partielle. |
 | **M10** | Examens & Résultats | D5 | Demande d'examens en session, téléversement des résultats par le labo dans le Carnet. |
-| **M11** | Stocks & Catalogues | D6 | Gestion du stock pharmacie (lots, péremption, prix) et du catalogue d'examens labo. |
-| **M12** | Recherche & Dévoilement | D6 | Recherche anonyme, dévoilement payé, réservation 24 h, guidage GPS. |
+| ~~**M11**~~ | ~~Stocks & Catalogues~~ | D6 | ❌ **RETIRÉ du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) — hors périmètre : ULAMU couvre le patient, le médecin, l'administration. |
+| ~~**M12**~~ | ~~Recherche & Dévoilement~~ | D6 | ❌ **RETIRÉ le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). ⚠️ Le **référentiel médicaments** (`GET /v1/medicaments`, EF-09-02) n'est pas supprimé : il passe à **M09**, sans changer d'adresse. |
 | **M13** | Paiements & Gains | D7 | Encaissement MoMo (agrégateur), répartition commission, reçus, remboursements automatiques, gains, retraits. **Ne connaît pas le métier** : exécute des ordres référencés. |
 | **M14** | Notifications & Rappels | D8 | Push/SMS, rappels de médicaments. Service aveugle au métier : reçoit des demandes d'envoi. |
 | **M15** | Urgence | D9 | Bouton Urgence flottant (périmètre à trancher : Q-006). Ne dépend que du Carnet. |
@@ -64,11 +64,11 @@ graph BT
 |---|---|---|
 | C1 | M13 ← M06, M08, M12 | « Encaisse X XAF, référence R » / « Rembourse la référence R » — M13 répond : payé / échoué / remboursé |
 | C2 | M07 ← M06, M08, M09, M10 | « Ajoute cette Entrée au Carnet du patient P » (compte-rendu, constantes, ordonnance, résultats) |
-| C3 | M11 ← M09 | Événement « délivrance effectuée » → décrément du stock |
+| ~~C3~~ | ~~M11 ← M09~~ | ❌ sans objet depuis le 02/09/2026 ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) |
 | C4 | M14 ← tous | « Notifie l'utilisateur U : modèle T, données D, canal préféré » |
 | C5 | M04 ← tous | Événement d'audit horodaté (acteur, action, ressource) — écriture seule |
 | C6 | M03 → M05, M06 | Statut du professionnel : vérifié / non vérifié / suspendu (conditionne visibilité et exercice) |
-| C7 | M12 ← M11 | Disponibilité agrégée par arrondissement (recherche anonyme) puis détail (dévoilement) |
+| ~~C7~~ | ~~M12 ← M11~~ | ❌ sans objet depuis le 02/09/2026 ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) |
 
 ## 4. Correspondance avec l'ancien cahier (traçabilité)
 
@@ -86,7 +86,7 @@ graph BT
 | 17 Ordonnance | M09 |
 | 18 Paiements, 19 Portefeuille | M13 |
 | 20 Abonnements | ❌ Abandonné (nouveau modèle : commissions + dévoilements, D-022/D-023) |
-| 21 Carte, 22 Stocks | M11, M12 |
+| ~~21 Carte, 22 Stocks~~ | ~~M11, M12~~ — ❌ retirés ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) |
 | 23 Urgence | M15 |
 | 24 Dashboards | M16 |
 | 25 Épidémiologie | ❌ Reporté (vision long terme, hors périmètre actuel) |

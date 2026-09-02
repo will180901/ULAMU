@@ -67,9 +67,9 @@
 
 | Terme | Définition | Ne pas dire |
 |---|---|---|
-| **Recherche anonyme** | Résultat gratuit d'une recherche de produit/examen : arrondissement, nombre de structures, quantité globale — jamais l'identité des structures (D-009). | aperçu |
-| **Dévoilement** | Achat (500 XAF, D-023) des informations complètes : nom, téléphone, quartier, position, guidage. | unlock |
-| **Réservation** | Effet du dévoilement : le produit est réservé 24 h dans la structure révélée. | mise de côté |
+| ~~**Recherche anonyme**~~ | ❌ **Retirée du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). *Était :* résultat gratuit d'une recherche de produit, par arrondissement, sans l'identité des structures (D-009). | aperçu |
+| ~~**Dévoilement**~~ | ❌ **Retiré le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) — c'était la **2ᵉ source de revenus**. *Était :* achat (500 XAF, D-023) des informations complètes d'une officine. | unlock |
+| ~~**Réservation**~~ | ❌ **Retirée le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]) — elle était l'effet du dévoilement. | mise de côté |
 | **Session de dévoilement** | Fenêtre de 24 h pendant laquelle les informations dévoilées restent accessibles. Expirée = informations masquées. | accès |
 
 ## 6. Paiements & contrats

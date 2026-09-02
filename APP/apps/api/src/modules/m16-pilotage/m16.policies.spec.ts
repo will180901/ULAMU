@@ -14,16 +14,28 @@ import {
   rate,
 } from "./m16.policies";
 
-describe("Cibles des 7 KPIs du pilote (EF-16-05, plan_releases §3)", () => {
-  it("expose EXACTEMENT sept critères — pas un de plus au MVP", () => {
-    expect(KPI_TARGET_LIST).toHaveLength(7);
+describe("Cibles des KPIs du pilote (EF-16-05, plan_releases §3)", () => {
+  /*
+    ── Sept critères au plan de sortie, CINQ mesurés (02/09/2026, chantier 26) ──────────────────
+
+    Deux mesuraient la chaîne du médicament en pharmacie : « ≥ 20 pharmacies au stock vivant » et
+    « ≥ 500 dévoilements payés ». ULAMU ne la couvre plus — elle sortait du périmètre des trois
+    acteurs (patient, médecin, administration).
+
+    Ce test disait « EXACTEMENT sept — pas un de plus ». Il dit maintenant cinq, et surtout il dit
+    POURQUOI il n'en dit plus sept : sans cette phrase, quelqu'un remettrait un jour le chiffre à
+    sept en croyant réparer une régression. **L'écart avec le plan de sortie est réel et il
+    appartient au porteur** — il est inscrit au §9 du plan d'exécution web.
+  */
+  it("expose EXACTEMENT cinq critères mesurés — les deux autres n'ont plus d'objet", () => {
+    expect(KPI_TARGET_LIST).toHaveLength(5);
+    expect(KPI_TARGET_LIST.map((k) => k.key)).not.toContain("pharmacies_stock_vivant");
+    expect(KPI_TARGET_LIST.map((k) => k.key)).not.toContain("devoilements_payes");
   });
 
-  it("porte les chiffres de spec (30, 20, 1000, 500, 70, 5, 40) avec le bon sens", () => {
+  it("porte les chiffres de spec (30, 1000, 70, 5, 40) avec le bon sens", () => {
     expect(KPI_TARGETS.PROS_VERIFIES).toMatchObject({ target: 30, direction: "gte" });
-    expect(KPI_TARGETS.PHARMACIES_STOCK_VIVANT).toMatchObject({ target: 20, direction: "gte" });
     expect(KPI_TARGETS.SESSIONS).toMatchObject({ target: 1000, direction: "gte" });
-    expect(KPI_TARGETS.DEVOILEMENTS_PAYES).toMatchObject({ target: 500, direction: "gte" });
     expect(KPI_TARGETS.TAUX_CONFIRMATION).toMatchObject({ target: 70, direction: "gte" });
     expect(KPI_TARGETS.TAUX_REMBOURSEMENT_AUTO).toMatchObject({ target: 5, direction: "lte" });
     expect(KPI_TARGETS.PATIENTS_REVENUS).toMatchObject({ target: 40, direction: "gte" });

@@ -13,7 +13,6 @@ import {ForgotScreen} from '../screens/ForgotScreen';
 import {HandshakeScreen} from '../screens/HandshakeScreen';
 import {LoginOtpScreen} from '../screens/LoginOtpScreen';
 import {LoginScreen} from '../screens/LoginScreen';
-import {MedsScreen} from '../screens/MedsScreen';
 import {NotificationsScreen} from '../screens/NotificationsScreen';
 import {OrdonnanceScreen} from '../screens/OrdonnanceScreen';
 import {PaymentsScreen} from '../screens/PaymentsScreen';
@@ -63,7 +62,6 @@ export function RootNavigator() {
           <AppStack.Screen name="Family" component={FamilyScreen} />
           <AppStack.Screen name="Reminders" component={RemindersScreen} />
           <AppStack.Screen name="Ordonnance" component={OrdonnanceScreen} />
-          <AppStack.Screen name="Meds" component={MedsScreen} />
           <AppStack.Screen name="Notifications" component={NotificationsScreen} />
           <AppStack.Screen name="Payments" component={PaymentsScreen} />
           <AppStack.Screen name="Settings" component={SettingsScreen} />

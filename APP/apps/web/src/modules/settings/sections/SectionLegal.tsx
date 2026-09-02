@@ -31,9 +31,16 @@ import { Link } from 'react-router-dom'
 import { ROUTE_AIDE, PAYS_DE_SERVICE } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 
-/** Textes de la maquette — ils sont le contenu produit, pas de l'habillage. */
+/**
+ * Textes de la maquette — ils sont le contenu produit, pas de l'habillage.
+ *
+ * ⚠️ **Ces textes sont ACCEPTÉS à l'inscription : ils valent preuve.** Une phrase fausse ici expose
+ * autant qu'un fait faux ailleurs — c'est la leçon du « hébergées au Congo-Brazzaville » corrigé le
+ * 24/08. La mention des officines est retirée le 02/09/2026 (chantier 26) : ULAMU ne met plus en
+ * relation que des patients et des professionnels de santé vérifiés.
+ */
 const CGU = [
-  "ULAMU met en relation des patients, des professionnels de santé vérifiés et des officines au Congo-Brazzaville. Le service ne remplace ni les urgences, ni une consultation présentielle lorsque l'état du patient l'exige.",
+  "ULAMU met en relation des patients et des professionnels de santé vérifiés au Congo-Brazzaville. Le service ne remplace ni les urgences, ni une consultation présentielle lorsque l'état du patient l'exige.",
   "Le professionnel s'engage à ne répondre qu'aux demandes relevant de sa compétence et de sa vérification, et à orienter sans délai vers une structure adaptée dans le cas contraire.",
   'Toute décision médicale prise via la plateforme reste sous la responsabilité du professionnel qui la signe.',
 ]

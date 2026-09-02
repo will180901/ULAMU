@@ -105,11 +105,27 @@ describe("Matrice statique des rôles globaux (spec M02 §5)", () => {
     const actions = GLOBAL_PERMISSIONS_MATRIX.filter((r) => r.ownerOnly).map((r) => r.action);
     expect(actions).toEqual(expect.arrayContaining(["members.manage", "digitalAgreement.manage", "withdrawal.request"]));
   });
-  it("stock/délivrance/stats → membre selon droit interne (le titulaire l'a d'office)", () => {
+  /*
+    02/09/2026 (chantier 26) — « stock.manage » (M11) et « dispensation.process » (M09) sont
+    retirées de la matrice : leurs modules n'existent plus. Une règle qui nomme un module absent ne
+    décrit plus rien qu'on puisse appliquer.
+
+    Le test verrouille les DEUX moitiés : ce qui subsiste garde son droit interne, et ce qui est
+    parti ne revient pas. Sans la seconde assertion, quelqu'un remettrait un jour ces lignes en
+    croyant réparer une matrice incomplète — le champ `facilityRight` existe encore, et « stock »
+    reste une valeur légale du type.
+  */
+  it("stats → membre selon droit interne (le titulaire l'a d'office)", () => {
     const byAction = new Map(GLOBAL_PERMISSIONS_MATRIX.map((r) => [r.action, r]));
-    expect(byAction.get("stock.manage")?.facilityRight).toBe("stock");
-    expect(byAction.get("dispensation.process")?.facilityRight).toBe("dispense");
     expect(byAction.get("stats.view")?.facilityRight).toBe("stats");
+  });
+  it("ne décrit plus AUCUNE action d'un module retiré (M11, M12)", () => {
+    const modules = GLOBAL_PERMISSIONS_MATRIX.map((r) => r.module);
+    expect(modules).not.toContain("M11");
+    expect(modules).not.toContain("M12");
+    const actions = GLOBAL_PERMISSIONS_MATRIX.map((r) => r.action);
+    expect(actions).not.toContain("stock.manage");
+    expect(actions).not.toContain("dispensation.process");
   });
   it("les actions admin sont cantonnées à leur sous-rôle (EF-02-08)", () => {
     const byAction = new Map(GLOBAL_PERMISSIONS_MATRIX.map((r) => [r.action, r]));

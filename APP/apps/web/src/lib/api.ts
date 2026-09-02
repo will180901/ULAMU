@@ -1374,9 +1374,14 @@ export const api = {
    * soignant pour 8 000 habitants » a donc disparu avec elle.
    *
    * « Soignants » = dossier vérifié **et** contrat signé : ceux qui peuvent réellement exercer.
+   *
+   * ⚠️ **Les officines ne sont plus comptées depuis le 02/09/2026 (chantier 26).** La chaîne du
+   * médicament est sortie du périmètre d'ULAMU ; plus personne n'alimente ces données. Additionner
+   * un chiffre vivant et un chiffre figé donnait un territoire plus couvert qu'il ne l'est — dans
+   * le mauvais sens, sur l'écran où l'on décide où la plateforme manque.
    */
   coverage: () =>
-    request<Array<{ district: string; professionals: number; facilities: number }>>(
+    request<Array<{ district: string; professionals: number }>>(
       'GET',
       '/v1/admin/coverage',
       undefined,

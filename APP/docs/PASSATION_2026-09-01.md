@@ -12,12 +12,27 @@ explique le *pourquoi* de la reconstruction et devient un document d'histoire.
 > - **Chantier 24** (poussé le 02/09, `de0b615`, déployé et vérifié en ligne) — la langue de la page,
 >   ce que les écrans d'administration disent d'un refus RM-01-06, la phrase de B3 sur la double
 >   authentification.
-> - **Chantier 25** (02/09, **pas encore poussé**) — 🔴 **LE PÉRIMÈTRE A CHANGÉ.** Sur décision du
+> - **Chantier 25** (02/09, poussé — `524eae9`) — 🔴 **LE PÉRIMÈTRE A CHANGÉ.** Sur décision du
 >   porteur, ULAMU a désormais **TROIS acteurs** : le **patient** (mobile), le **soignant** et
 >   l'**administration** (web). Le quatrième type de compte, `FACILITY_MEMBER` (membre de structure),
 >   **sort du produit** — sa route d'inscription est retirée. Décision inscrite au cahier des charges
 >   sous **D-051**, chantier détaillé au §10 du plan. **La pharmacie reste un objet du modèle** : la
 >   recherche de médicaments du patient en dépend.
+>
+> - **Chantier 26** (02/09, **pas encore poussé**) — 🔴 **LA CHAÎNE DU MÉDICAMENT SORT DU
+>   PRODUIT.** Décision du porteur, inscrite au cahier sous **D-052** : ULAMU ne garde que les
+>   modules de son périmètre. **M11 (stocks)**, **M12 (recherche & dévoilement)** et la
+>   **délivrance de M09** sont retirés, avec l'écran mobile « Médicaments ». C'est la dette n°12 du
+>   chantier 25, tranchée par son issue (a).
+>
+>   ⚠️ **Trois conséquences à connaître avant toute présentation du projet** (§9, dettes 14 à 16) :
+>   une **ordonnance n'a plus de lecteur** dans ULAMU · les **tables de la pharmacie restent en
+>   base** sans lecteur · et surtout **le modèle économique perd une source de revenus sur deux** —
+>   le dévoilement à 500 XAF n'existe plus, il ne reste que la commission de consultation.
+>
+>   ⚠️ Le **référentiel médicaments** (`GET /v1/medicaments`) n'a PAS disparu : il a changé de
+>   module (M12 → M09) **sans changer d'adresse**. Sans lui, le médecin ne peut plus prescrire
+>   qu'en texte libre, donc **sans garde-fou allergies**.
 >
 > **Règle de travail nouvelle (02/09) :** les tests d'écran se font **sur le site en ligne**
 > (`https://ulamu-web.onrender.com`), plus en local. Le code non poussé n'est donc pas vérifiable à

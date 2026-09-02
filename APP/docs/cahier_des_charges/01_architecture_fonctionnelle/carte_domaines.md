@@ -20,7 +20,7 @@
 | **D3** | **Soin** ⭐ | Orchestrer l'acte médical : de la poignée de main au compte-rendu. | Offre, Initiation, Confirmation, Poignée de main, Session, Décompteur, Pré-consultation, Prolongation, Suivi, Compte-rendu, Notation | Patient, Professionnel |
 | **D4** | **Carnet** | Construire la mémoire médicale à vie du patient. | Carnet, Entrée, Constantes, Mission de triage | Patient, Professionnels, Le Système |
 | **D5** | **Prescription** | Faire circuler ordonnances et examens de façon infalsifiable. | Ordonnance, Ligne, Garde-fou allergies, Délivrance, Demande d'examens, Résultats | Prescripteur, Pharmacie, Laboratoire, Patient |
-| **D6** | **Disponibilité & Localisation** | Dire où se trouve ce dont le patient a besoin — et le réserver. | Stock, Recherche anonyme, Dévoilement, Réservation, guidage | Patient, Pharmacie, Laboratoire |
+| ~~**D6**~~ | ~~**Disponibilité & Localisation**~~ | ❌ **DOMAINE RETIRÉ du produit le 02/09/2026** ([[registre_decisions#D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)|D-052]]). Ses deux modules (M11, M12) sortent du périmètre : ULAMU couvre le patient, le médecin, l'administration. | ~~Stock, Recherche anonyme, Dévoilement, Réservation, guidage~~ | — |
 | **D7** | **Argent** | Encaisser, répartir, rembourser, reverser — au franc près. | Paiement, Commission, Reçu, Remboursement automatique, Gains, Retrait | Patient, Professionnels, Admin Finance |
 | **D8** | **Communication** | Notifier la bonne personne, au bon moment, sur le bon canal. | notifications push/SMS, rappels de médicaments | Le Système, tous |
 | **D9** | **Urgence** | Sauver des minutes quand tout va mal — jamais monétisé. | Bouton Urgence (périmètre : Q-006) | Patient, tiers |

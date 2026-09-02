@@ -26,8 +26,6 @@ import { M06HandshakeSessionModule } from "../src/modules/m06-handshake-session/
 import { HandshakeService } from "../src/modules/m06-handshake-session/m06.handshake.service";
 import { M07HealthRecordModule } from "../src/modules/m07-health-record/m07.module";
 import { M09PrescriptionsModule } from "../src/modules/m09-prescriptions/m09.module";
-import { M11StocksModule } from "../src/modules/m11-stocks/m11.module";
-import { M12SearchDisclosureModule } from "../src/modules/m12-search-disclosure/m12.module";
 import { M13PaymentsModule } from "../src/modules/m13-payments/m13.module";
 import { M14NotificationsModule } from "../src/modules/m14-notifications/m14.module";
 import { M16PilotageModule } from "../src/modules/m16-pilotage/m16.module";
@@ -65,7 +63,6 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
   let patientId = "";
   let patient2Id = "";
   let offerId = "";
-  let facilityId = "";
 
   const lastOtp = (phone: string): string => {
     const m = [...sms.sent].reverse().find((s) => s.phone === phone && /\b\d{6}\b/.test(s.message));
@@ -99,8 +96,8 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         CommonModule, M01AccountsModule, M03VerificationContractsModule, M05DirectoryModule,
-        M06HandshakeSessionModule, M07HealthRecordModule, M09PrescriptionsModule, M11StocksModule,
-        M12SearchDisclosureModule, M13PaymentsModule, M14NotificationsModule, M16PilotageModule,
+        M06HandshakeSessionModule, M07HealthRecordModule, M09PrescriptionsModule,
+        M13PaymentsModule, M14NotificationsModule, M16PilotageModule,
       ],
     }).compile();
     await moduleRef.init();
@@ -220,12 +217,6 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     offerId = (await offers.createOffer(proActor, { label: "Consultation", durationMin: 30, priceXaf: 5000 })).id;
     await presence.setState(doctorId, "ONLINE");
 
-    // Une pharmacie + un strike de fiabilité (pour l'arbitrage M16→M12).
-    facilityId = (await prisma.facility.create({
-      data: { type: "PHARMACY", name: "Pharmacie Test", district: "Talangaï", quarter: "Q" },
-    })).id;
-    await prisma.facilityStockState.create({ data: { facilityId, lastFreshAt: new Date() } });
-
     await drain();
   }, 120000);
 
@@ -260,18 +251,19 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     expect(await params.getInt("PM-03")).toBe(500);
   });
 
-  it("EF-16-05 / CU-16-03 — les 7 KPIs du pilote sont calculés avec seuils vert/rouge", async () => {
+  /* 02/09/2026 (chantier 26) : sept KPIs → CINQ. Les deux retirés mesuraient la chaîne du
+     médicament en pharmacie, hors périmètre d'ULAMU. */
+  it("EF-16-05 / CU-16-03 — les 5 KPIs mesurés du pilote sont calculés avec seuils vert/rouge", async () => {
     const list = await kpis.getPilotKpis();
-    expect(list).toHaveLength(7);
+    expect(list).toHaveLength(5);
     const keys = list.map((k) => k.key);
     expect(keys).toEqual([
-      "pros_verifies_actifs", "pharmacies_stock_vivant", "sessions_realisees",
-      "devoilements_payes", "taux_confirmation", "taux_remboursement_auto", "patients_revenus",
+      "pros_verifies_actifs", "sessions_realisees",
+      "taux_confirmation", "taux_remboursement_auto", "patients_revenus",
     ]);
     for (const k of list) expect(["green", "red"]).toContain(k.status);
-    // Le médecin vérifié+signé compte ; la pharmacie au stock frais compte.
+    // Le médecin vérifié+signé compte.
     expect(list.find((k) => k.key === "pros_verifies_actifs")?.value).toBeGreaterThanOrEqual(1);
-    expect(list.find((k) => k.key === "pharmacies_stock_vivant")?.value).toBeGreaterThanOrEqual(1);
     // Aucune donnée médicale n'apparaît dans le tableau (RM-16-05) — agrégats seulement.
     expect(JSON.stringify(list)).not.toMatch(/diagnos|sympt|allerg/i);
   });
@@ -291,16 +283,10 @@ describe("Chantier 5 — M16 Pilotage & Administration", () => {
     expect(banned.closedAt).not.toBeNull();
   });
 
-  it("RM-16-01 — l'arbitrage d'un strike est DÉLÉGUÉ à M12 (M16 ne touche pas ReliabilityStrike)", async () => {
-    const strike = await prisma.reliabilityStrike.create({
-      data: { facilityId, reason: "Produit manquant", status: "ACTIVE" },
-    });
-    const res = await admin.resolveStrike(ADMIN_1, strike.id, false, "Contestation fondée");
-    expect(res.status).toBe("CANCELLED");
-    const fresh = await prisma.reliabilityStrike.findUniqueOrThrow({ where: { id: strike.id } });
-    expect(fresh.status).toBe("CANCELLED");
-    await drain();
-  });
+  /* Le test « RM-16-01 — l'arbitrage d'un strike est DÉLÉGUÉ à M12 » est RETIRÉ le 02/09/2026
+     (chantier 26). Il éprouvait une délégation réelle et bien conçue — M16 décidait, M12 appliquait
+     — mais l'objet arbitré, le strike de fiabilité d'une pharmacie, n'existe plus : sans
+     dévoilement, il n'y a plus de promesse à tenir ni de pénalité à contester. */
 
   it("Cadence — tickFrequent enchaîne les balayages sans jeter (un échec n'interrompt pas les autres)", async () => {
     const recap = await scheduler.tickFrequent();

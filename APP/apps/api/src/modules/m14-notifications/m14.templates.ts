@@ -397,93 +397,19 @@ export const TEMPLATE_CATALOG: Record<string, NotificationTemplate> = {
     body: () =>
       "Le prescripteur a annulé votre ordonnance : son QR n'est plus valide. Si nécessaire, une nouvelle ordonnance devra être établie en consultation.",
   },
+  /* ── Douze modèles ont été RETIRÉS le 02/09/2026 (chantier 26) ──────────────────────────────
+     Deux de M09 (« délivrance complète », « délivrance partielle ») et dix de M12 (dévoilement,
+     strikes de fiabilité, exclusion d'une officine). Ils n'ont plus d'émetteur : la chaîne du
+     médicament en pharmacie sort du périmètre d'ULAMU, qui couvre le patient, le médecin et
+     l'administration. Un catalogue qui garde des modèles que personne n'émet finit par faire
+     croire qu'un chemin existe encore. */
   "m09.prescription.expired": {
     category: "care",
     title: () => "Ordonnance expirée",
     body: () =>
       "Le délai de validité de votre ordonnance est dépassé : elle ne peut plus être délivrée. Vous pouvez en redemander une via une consultation de suivi.",
   },
-  "m09.prescription.dispensed": {
-    category: "care",
-    title: () => "Délivrance complète",
-    body: () =>
-      "Votre ordonnance a été entièrement délivrée. La délivrance est inscrite dans votre carnet de santé.",
-  },
-  "m09.prescription.partially_dispensed": {
-    category: "care",
-    title: () => "Délivrance partielle",
-    body: () =>
-      "Une partie de votre ordonnance a été délivrée. Le solde reste délivrable dans une autre pharmacie — relancez une recherche sur les produits restants.",
-  },
 
-  // ── M12 — Recherche & Dévoilement ──────────────────────────────────────────
-  // RM-14-03 : jamais l'identité de la pharmacie dans la notification — le patient l'ouvre
-  // dans sa session de dévoilement ACTIVE (RM-12-01). Argent (révélation payée, remboursement) = critique.
-  "m12.disclosure.revealed": {
-    // CU-12-02 : le patient vient de payer 500 FCFA — notification importante, jamais désactivable.
-    category: "critical",
-    title: () => "Pharmacie dévoilée",
-    body: () =>
-      "Votre paiement est confirmé : la pharmacie qui a vos produits est dévoilée pour 24 h, réservation posée. Ouvrez votre dévoilement pour l'adresse et l'itinéraire.",
-  },
-  "m12.disclosure.payment_failed": {
-    category: "money",
-    title: () => "Paiement du dévoilement non abouti",
-    body: () =>
-      "Votre paiement du dévoilement n'a pas abouti. Aucun montant n'a été encaissé et aucune pharmacie n'a été révélée : vous pouvez réessayer.",
-  },
-  "m12.disclosure.served": {
-    category: "care",
-    title: () => "Réservation servie",
-    body: () =>
-      "Votre réservation a été remise en pharmacie : le dévoilement est clôturé. Merci d'avoir utilisé ULAMU.",
-  },
-  "m12.disclosure.redisclosed": {
-    category: "care",
-    title: () => "Nouvelle pharmacie dévoilée gratuitement",
-    body: () =>
-      "Le produit manquait dans la pharmacie indiquée : nous vous avons dévoilé gratuitement une autre pharmacie qui l'a en stock. Ouvrez votre dévoilement pour la nouvelle adresse.",
-  },
-  "m12.disclosure.refunded": {
-    // Garantie Q-004 (argent) — critique, jamais désactivable (RM-14-02).
-    category: "critical",
-    title: () => "Dévoilement remboursé",
-    body: () =>
-      "Aucune pharmacie ne pouvait honorer votre recherche : vous êtes intégralement remboursé des frais de dévoilement. Toutes nos excuses. Nous vous préviendrons dès qu'un stock réapparaît.",
-  },
-  "m12.disclosure.expired": {
-    category: "care",
-    title: () => "Dévoilement expiré",
-    body: () =>
-      "Votre dévoilement de 24 h a expiré : l'adresse de la pharmacie n'est plus visible et la réservation est libérée. Un nouveau dévoilement est nécessaire pour la retrouver.",
-  },
-  "m12.facility.excluded": {
-    // Alerte CONTRACTUELLE au titulaire de la pharmacie (EF-12-07) — critique.
-    category: "critical",
-    title: () => "Alerte fiabilité : exclusion temporaire",
-    body: () =>
-      "Votre pharmacie a cumulé trop de signalements de produits manquants et est temporairement exclue de la recherche. Consultez votre espace structure pour régulariser.",
-  },
-  "m12.refund.payment_missing": {
-    // Anomalie de réconciliation (alerte finance) — un remboursement dû n'a trouvé aucun paiement.
-    category: "critical",
-    title: () => "Alerte finance : remboursement sans paiement",
-    body: () =>
-      "Un remboursement de dévoilement n'a trouvé aucun paiement correspondant et requiert un traitement manuel. Consultez la console finance.",
-  },
-  // Arbitrage d'un strike de fiabilité (EF-12-07) — issue notifiée au titulaire de la pharmacie.
-  "m12.strike.upheld": {
-    category: "system",
-    title: () => "Signalement de fiabilité maintenu",
-    body: () =>
-      "Après arbitrage, le signalement de fiabilité visant votre pharmacie est maintenu. Consultez votre espace structure pour le détail.",
-  },
-  "m12.strike.cancelled": {
-    category: "system",
-    title: () => "Signalement de fiabilité annulé",
-    body: () =>
-      "Après arbitrage, le signalement de fiabilité visant votre pharmacie a été annulé. Aucune pénalité n'en découle.",
-  },
 
   // ── M16 — Pilotage & Administration (sanctions de compte) ──────────────────
   "m16.account.suspended": {

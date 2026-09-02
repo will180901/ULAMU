@@ -142,34 +142,6 @@ const DEMO_PROS: DemoPro[] = [
  */
 const DEMO_MEDS = REFERENTIEL_MEDICAMENTS;
 
-/** Pharmacies vérifiées de démo (M02/M11) — stock = liste de DCI couvertes, prix indicatif. */
-const DEMO_PHARMACIES: Array<{ phone: string; name: string; district: string; quarter: string; lat: number; lng: number; stock: Array<{ dci: string; priceXaf: number; quantity: number }> }> = [
-  {
-    phone: "+242060000201", name: "Pharmacie du Marché", district: "Talangaï", quarter: "Poto-Poto", lat: -4.2521, lng: 15.2876,
-    stock: [
-      { dci: "Amlodipine", priceXaf: 2400, quantity: 120 },
-      { dci: "Ramipril", priceXaf: 3100, quantity: 80 },
-      { dci: "Paracétamol", priceXaf: 800, quantity: 300 },
-      { dci: "Amoxicilline", priceXaf: 2900, quantity: 60 },
-    ],
-  },
-  {
-    phone: "+242060000202", name: "Pharmacie de la Paix", district: "Talangaï", quarter: "Mikalou", lat: -4.2489, lng: 15.2731,
-    stock: [
-      { dci: "Amlodipine", priceXaf: 2600, quantity: 40 },
-      { dci: "Paracétamol", priceXaf: 750, quantity: 200 },
-      { dci: "Ibuprofène", priceXaf: 1500, quantity: 150 },
-    ],
-  },
-  {
-    phone: "+242060000203", name: "Pharmacie Centrale", district: "Moungali", quarter: "Centre-ville", lat: -4.2701, lng: 15.2603,
-    stock: [
-      { dci: "Ramipril", priceXaf: 3000, quantity: 50 },
-      { dci: "Métronidazole", priceXaf: 1800, quantity: 90 },
-      { dci: "Amoxicilline", priceXaf: 3050, quantity: 70 },
-    ],
-  },
-];
 
 async function seedDemo(): Promise<void> {
   const { hashPassword } = await import("../src/common/crypto/password");
@@ -319,84 +291,34 @@ async function seedDemo(): Promise<void> {
     });
   }
 
-  // ── Référentiel médicaments (M11) — créé une seule fois, mappé par DCI ──
-  const medIdByDci = new Map<string, string>();
+  /* ── Référentiel médicaments (EF-09-02) — créé une seule fois ────────────────────────────────
+     Rattaché à M11 jusqu'au 02/09/2026 ; il relève de M09 depuis (chantier 26) : c'est ce dans quoi
+     un médecin choisit une ligne d'ordonnance, pas une donnée de stock. La carte DCI → identifiant
+     ne servait qu'à garnir les lots des pharmacies de démonstration ; elle part avec eux. */
   for (const med of DEMO_MEDS) {
     let row = await prisma.medicament.findFirst({ where: { dci: med.dci, dosage: med.dosage } });
     if (!row) {
       row = await prisma.medicament.create({ data: { dci: med.dci, commercialNames: med.commercialNames, form: med.form, dosage: med.dosage } });
     }
-    medIdByDci.set(med.dci, row.id);
   }
 
-  // ── Pharmacies vérifiées sous contrat signé + stock frais (M02/M11/M12) ──
-  const expiry = new Date(now.getTime() + 365 * 24 * 3_600_000); // +1 an
-  for (const ph of DEMO_PHARMACIES) {
-    let facility = await prisma.facility.findFirst({ where: { name: ph.name, district: ph.district } });
-    if (!facility) {
-      facility = await prisma.facility.create({
-        data: {
-          type: "PHARMACY", name: ph.name, district: ph.district, quarter: ph.quarter,
-          latitude: ph.lat, longitude: ph.lng, phone: ph.phone, status: "ACTIVE",
-        },
-      });
-    }
-    const facilityId = facility.id;
+  /*
+    ── Les pharmacies de démonstration ne sont plus semées (02/09/2026, chantier 26) ─────────────
 
-    /*
-      ── Le titulaire de démo est RETIRÉ (02/09/2026, chantier 25 / D-051) ──────────────────────
+    Ce bloc créait cinq officines vérifiées sous contrat, leur état de fraîcheur et leurs lots de
+    stock. Il n'a plus d'objet : les modules M11 (stocks) et M12 (recherche & dévoilement) sont
+    retirés du produit — ULAMU couvre le patient, le médecin et l'administration.
 
-      ULAMU a trois acteurs : le patient (mobile), le soignant et l'administration (web).
-      `FACILITY_MEMBER` sort du produit — sa route d'inscription est retirée de l'API.
+    ⚠️ **Le référentiel de médicaments, lui, EST toujours semé** (juste au-dessus) : c'est ce dans
+    quoi un médecin choisit une ligne d'ordonnance (EF-09-02), et le garde-fou allergies ne
+    s'applique qu'aux lignes référentielles. Le retirer priverait le prescripteur de son seul
+    garde-fou.
 
-      Ce bloc créait `pharma.demo`, un compte de ce type, avec son adhésion OWNER et les trois
-      droits internes. Le laisser aurait rouvert PAR LE SEED la porte qu'on venait de fermer dans
-      le service : `prisma db seed` aurait fabriqué un acteur que le produit ne reconnaît plus.
+    ⚠️ Des pharmacies déjà en base ne partent pas toutes seules : le seed ne supprime rien. Elles ne
+    sont plus lues par aucun code. Voir la dette n°15 au §9 du plan d'exécution web.
+  */
 
-      ⚠️ **Les pharmacies elles-mêmes restent semées** (juste au-dessus) : ce sont des OBJETS, et la
-      recherche de médicaments du patient en dépend — M12 lit le stock de M11. C'est le COMPTE qui
-      part, pas l'officine.
-
-      ⚠️ **Un `pharma.demo` déjà en base ne part pas tout seul** : le seed ne supprime rien. Voir la
-      dette n°13 du §9 du plan d'exécution web.
-    */
-
-    // VerificationCase VERIFIED + contrat signé (RM-05-01 / D-029 — sinon non publiable).
-    const existingCase = await prisma.verificationCase.findUnique({ where: { facilityId } });
-    if (!existingCase) {
-      await prisma.verificationCase.create({
-        data: {
-          facilityId, status: "VERIFIED",
-          agreement: { create: { versions: { create: {
-            version: 1, commissionPct: 10, bodyHash: "seed-demo-pharma", signedAt: now, signedBy: "seed", effectiveAt: now,
-          } } } },
-        },
-      });
-    } else if (existingCase.status !== "VERIFIED") {
-      await prisma.verificationCase.update({ where: { id: existingCase.id }, data: { status: "VERIFIED" } });
-    }
-
-    // Fraîcheur du stock rafraîchie à chaque exécution (PM-33 — garde la pharmacie publiable).
-    await prisma.facilityStockState.upsert({
-      where: { facilityId },
-      update: { lastFreshAt: now },
-      create: { facilityId, lastFreshAt: now },
-    });
-
-    // Lots de stock (créés une seule fois par médicament).
-    for (const s of ph.stock) {
-      const medicamentId = medIdByDci.get(s.dci);
-      if (!medicamentId) continue;
-      const lotCode = "LOT-DEMO";
-      const exists = await prisma.stockItem.findUnique({ where: { facilityId_medicamentId_lotCode: { facilityId, medicamentId, lotCode } } });
-      if (!exists) {
-        await prisma.stockItem.create({ data: { facilityId, medicamentId, lotCode, quantity: s.quantity, expiryDate: expiry, priceXaf: s.priceXaf } });
-      }
-    }
-  }
-
-  // eslint-disable-next-line no-console
-  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + soignant en brouillon « ${DEMO_PRO_BROUILLON.username} » (mdp ${DEMO_PRO_BROUILLON.password}) + ${DEMO_PROS.length} soignants vérifiés + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
+  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + soignant en brouillon « ${DEMO_PRO_BROUILLON.username} » (mdp ${DEMO_PRO_BROUILLON.password}) + ${DEMO_PROS.length} soignants vérifiés + ${DEMO_MEDS.length} médicaments.`);
 }
 
 async function main(): Promise<void> {

@@ -99,16 +99,28 @@ export function isInvitationAcceptable(invitation: InvitationSnapshot, ctx: Acce
  * `POST /v1/accounts/register/facility-member` a été retirée, plus aucun compte de ce type ne peut
  * naître (chantier 25).
  *
- * **Il reste néanmoins dans ce type, et ses six règles restent dans la matrice ci-dessous. Ce n'est
- * pas un oubli.** La matrice a un seul rôle : dire ce que le serveur applique VRAIMENT. Or le
- * contrôle d'accès des structures ne passe pas par elle — il passe par
- * `PermissionsService.assertFacilityRight`, qui lit la table `FacilityMember`. Tant qu'une adhésion
- * héritée existe en base, ce chemin accorde encore ces droits.
+ * **Il reste néanmoins dans ce type. Ce n'est pas un oubli** : la valeur demeure dans l'énumération
+ * Prisma — l'en retirer demande une migration sur la base de production — et le journal d'audit, en
+ * insertion seule, porte encore des lignes qui la nomment.
  *
- * Retirer les lignes sans retirer le chemin donnerait **deux vérités pour une même règle**, et la
- * matrice serait celle qui ment — exactement la dette corrigée en C1 le 23/08 et rappelée au
- * chantier 11. La fermeture complète suppose d'abord un ménage des données en production ; elle est
- * inscrite au §9 du plan avec son coût.
+ * ── ⚠️ CORRECTION DU 02/09, APRÈS LE CHANTIER 26 ──────────────────────────────────────────────
+ *
+ * Le chantier 25 avait gardé **six** règles de structure dans la matrice, en écrivant pourquoi : le
+ * contrôle d'accès ne passait pas par elle mais par `PermissionsService.assertFacilityRight`, et
+ * retirer les lignes sans retirer le chemin aurait donné **deux vérités pour une même règle**.
+ *
+ * **Ce raisonnement ne tient plus.** Le chantier 26 a supprimé M11 (stocks) et la délivrance de
+ * M09 : `assertFacilityRight` **n'a plus un seul appelant**. Le chemin est mort, donc l'argument
+ * qui protégeait les lignes est tombé avec lui — et l'annotation d'hier serait devenue la fausseté
+ * d'aujourd'hui.
+ *
+ * Les deux règles dont le module a disparu sont donc retirées : `stock.manage` (M11) et
+ * `dispensation.process` (M09). Les quatre autres décrivent des routes de M02/M03/M13 **qui
+ * existent encore** — inatteignables faute de compte, mais présentes. Elles restent, parce que la
+ * matrice doit dire ce qui EST, pas ce qui devrait être.
+ *
+ * *La leçon : une annotation qui justifie une exception doit être relue quand son motif change.
+ * Écrire « ce n'est pas un oubli » ne dispense pas de vérifier que ce n'en est toujours pas un.*
  */
 export type GlobalRole = "PATIENT" | "PROFESSIONAL" | "FACILITY_MEMBER" | "ADMIN";
 /** Sous-rôles admin (EF-02-08) — alignés sur l'enum Prisma AdminRole. */
@@ -142,8 +154,9 @@ export const GLOBAL_PERMISSIONS_MATRIX: readonly PermissionRule[] = [
   // Professionnel (si vérifié — C6 ← M03)
   { action: "careOffer.publish", module: "M05", roles: ["PROFESSIONAL"], requiresVerification: true },
   // Membre (si droit interne) + Titulaire — espace vérifié requis pour publier (RM-02-04)
-  { action: "stock.manage", module: "M11", roles: ["FACILITY_MEMBER"], facilityRight: "stock" },
-  { action: "dispensation.process", module: "M09", roles: ["FACILITY_MEMBER"], facilityRight: "dispense" },
+  /* « stock.manage » (M11) et « dispensation.process » (M09) sont RETIRÉES le 02/09/2026 —
+     chantier 26 : leurs modules n'existent plus. Une règle qui nomme un module absent ne décrit
+     plus rien qu'on puisse appliquer. */
   { action: "stats.view", module: "M02", roles: ["FACILITY_MEMBER"], facilityRight: "stats" },
   // Réservé au titulaire (EF-02-05)
   { action: "members.manage", module: "M02", roles: ["FACILITY_MEMBER"], ownerOnly: true },

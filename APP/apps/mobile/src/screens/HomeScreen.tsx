@@ -42,9 +42,19 @@ const CHIPS: [ChipId, string][] = [
   ['infirmier', 'Triage'],
 ];
 
-const QUICK: [IconName, string, string, 'consult' | 'meds' | 'carnet' | 'reminders'][] = [
+/*
+  La tuile « Médicaments — trouver & réserver » est RETIRÉE le 02/09/2026 (chantier 26).
+
+  Elle menait à la recherche de médicaments en pharmacie, avec dévoilement payé et réservation de
+  24 h. ULAMU couvre trois acteurs — le patient, le médecin, l'administration — et cette chaîne
+  supposait un quatrième, le membre de structure, sorti du produit le 02/09 (D-051). Sans personne
+  pour tenir un stock à jour, la recherche aurait fait PAYER une information qui se dégrade.
+
+  ⚠️ « Mes rappels » reste : les rappels de prise sont posés par le patient sur son ordonnance,
+  ils ne dépendent d'aucune pharmacie.
+*/
+const QUICK: [IconName, string, string, 'consult' | 'carnet' | 'reminders'][] = [
   ['stethoscope', 'Consulter', 'un médecin', 'consult'],
-  ['pill', 'Médicaments', 'trouver & réserver', 'meds'],
   ['bell', 'Mes rappels', 'médicaments', 'reminders'],
   ['file-medical', 'Mon dossier', 'à vie, gratuit', 'carnet'],
 ];
@@ -421,7 +431,7 @@ export function HomeScreen({navigation}: Props) {
         {/* Actions rapides */}
         <View style={styles.quickRow}>
           {QUICK.map(([ic, t, s, kind]) => (
-            <Pressable key={t} onPress={() => (kind === 'consult' ? searchRef.current?.focus() : kind === 'meds' ? navigation.navigate('Meds') : kind === 'carnet' ? navigation.navigate('Carnet') : navigation.navigate('Reminders'))} style={styles.quickCard}>
+            <Pressable key={t} onPress={() => (kind === 'consult' ? searchRef.current?.focus() : kind === 'carnet' ? navigation.navigate('Carnet') : navigation.navigate('Reminders'))} style={styles.quickCard}>
               <Icon name={ic} size={17} variant="tile" style={styles.quickIcon} />
               <Text style={styles.quickTitle}>{t}</Text>
               <Text style={styles.quickSub}>{s}</Text>

@@ -33,21 +33,29 @@ export class PilotKpiService {
     private readonly params: ParamsService,
   ) {}
 
-  /** CU-16-03 : les 7 indicateurs en temps quasi réel, avec seuils vert/rouge. */
+  /**
+   * CU-16-03 : les indicateurs du pilote en temps quasi réel, avec seuils vert/rouge.
+   *
+   * ⚠️ **Ils étaient SEPT, ils sont CINQ depuis le 02/09/2026 (chantier 26).** Deux mesuraient la
+   * chaîne du médicament en pharmacie — « pharmacies au stock vivant » et « dévoilements payés » —
+   * et ULAMU ne la couvre plus : elle sortait du périmètre des trois acteurs (patient, médecin,
+   * administration). Les garder aurait servi des compteurs à décroissance lente sur des données
+   * que plus personne n'alimente : un chiffre faux est pire qu'un chiffre absent, et c'est un
+   * écran de PILOTAGE.
+   *
+   * ⚠️ Le plan de sortie compte toujours sept critères de succès : **deux ne sont plus mesurés, ni
+   * mesurables.** Cet écart appartient au porteur, il est inscrit au §9 du plan d'exécution.
+   */
   async getPilotKpis(): Promise<PilotKpi[]> {
     const [
       prosVerifiesActifs,
-      pharmaciesStockVivant,
       sessionsRealisees,
-      devoilementsPayes,
       tauxConfirmation,
       tauxRemboursementAuto,
       patientsRevenus,
     ] = await Promise.all([
       this.prosVerifiesActifs(),
-      this.pharmaciesStockVivant(),
       this.sessionsRealisees(),
-      this.devoilementsPayes(),
       this.tauxConfirmation(),
       this.tauxRemboursementAuto(),
       this.patientsRevenus(),
@@ -55,9 +63,7 @@ export class PilotKpiService {
 
     return [
       this.kpi("PROS_VERIFIES", "Professionnels vérifiés et actifs", prosVerifiesActifs, "count"),
-      this.kpi("PHARMACIES_STOCK_VIVANT", "Pharmacies au stock vivant", pharmaciesStockVivant, "count"),
       this.kpi("SESSIONS", "Sessions réalisées", sessionsRealisees, "count"),
-      this.kpi("DEVOILEMENTS_PAYES", "Dévoilements payés", devoilementsPayes, "count"),
       this.kpi("TAUX_CONFIRMATION", "Taux de confirmation des poignées de main", tauxConfirmation, "%"),
       this.kpi("TAUX_REMBOURSEMENT_AUTO", "Taux de remboursement automatique", tauxRemboursementAuto, "%"),
       this.kpi("PATIENTS_REVENUS", "Patients revenus (≥ 2 sessions)", patientsRevenus, "%"),
@@ -82,47 +88,32 @@ export class PilotKpiService {
    * • **Soignants** : les mêmes que le KPI « professionnels vérifiés et actifs » — dossier
    *   `VERIFIED` **et** contrat signé (D-029). Compter les vérifiés non signés gonflerait la
    *   couverture d'exerçants qui n'exercent pas.
-   * • **Officines** : structures `PHARMACY` au statut `ACTIVE`. Une pharmacie suspendue ne couvre
-   *   personne.
+   * ⚠️ **Les officines ont été retirées du décompte le 02/09/2026 (chantier 26).** Elles étaient
+   * comptées sur les structures `PHARMACY` actives — une donnée que plus personne n'alimente
+   * depuis que la chaîne du médicament est sortie du périmètre. Un indicateur de couverture qui
+   * additionne un chiffre vivant et un chiffre figé donne un total faux, et c'est un écran de
+   * pilotage : on y décide où la plateforme manque.
    *
    * Un arrondissement sans profil renseigné (`district: null`) n'apparaît pas : on ne fabrique pas
    * une ligne « non renseigné » qui ressemblerait à un territoire.
    *
    * Agrégats seuls, aucune donnée individuelle (RM-16-05).
    */
-  async couvertureParArrondissement(): Promise<Array<{ district: string; professionals: number; facilities: number }>> {
-    const [soignants, officines] = await Promise.all([
-      this.prisma.professionalProfile.groupBy({
-        by: ["district"],
-        where: {
-          district: { not: null },
-          // La relation est un à un (`VerificationCase.professionalId` est unique) : `is`, pas `some`.
-          verificationCase: { is: { status: "VERIFIED", agreement: { versions: { some: { signedAt: { not: null } } } } } },
-        },
-        _count: { _all: true },
-      }),
-      this.prisma.facility.groupBy({
-        by: ["district"],
-        where: { type: "PHARMACY", status: "ACTIVE" },
-        _count: { _all: true },
-      }),
-    ]);
-
-    const parDistrict = new Map<string, { district: string; professionals: number; facilities: number }>();
-    for (const l of soignants) {
-      const d = l.district as string;
-      parDistrict.set(d, { district: d, professionals: l._count._all, facilities: 0 });
-    }
-    for (const l of officines) {
-      const existant = parDistrict.get(l.district);
-      if (existant) existant.facilities = l._count._all;
-      else parDistrict.set(l.district, { district: l.district, professionals: 0, facilities: l._count._all });
-    }
+  async couvertureParArrondissement(): Promise<Array<{ district: string; professionals: number }>> {
+    const soignants = await this.prisma.professionalProfile.groupBy({
+      by: ["district"],
+      where: {
+        district: { not: null },
+        // La relation est un à un (`VerificationCase.professionalId` est unique) : `is`, pas `some`.
+        verificationCase: { is: { status: "VERIFIED", agreement: { versions: { some: { signedAt: { not: null } } } } } },
+      },
+      _count: { _all: true },
+    });
 
     // Du mieux couvert au moins couvert : c'est la fin de la liste qui intéresse le pilotage.
-    return [...parDistrict.values()].sort(
-      (a, b) => b.professionals + b.facilities - (a.professionals + a.facilities),
-    );
+    return soignants
+      .map((l) => ({ district: l.district as string, professionals: l._count._all }))
+      .sort((a, b) => b.professionals - a.professionals);
   }
 
   /** Assemble un KPI à partir de sa cible de spec et de sa valeur agrégée. */
@@ -144,35 +135,9 @@ export class PilotKpiService {
     });
   }
 
-  /**
-   * Pharmacies (PHARMACY actives) dont la fraîcheur du stock est en-deçà du seuil PM-33 (secondes).
-   * On filtre bien sur le type/statut de la structure : un labo ou une structure suspendue ne gonfle
-   * pas le compteur « pharmacies au stock vivant ».
-   */
-  private async pharmaciesStockVivant(): Promise<number> {
-    const freshnessWindowS = await this.params.getInt("PM-33");
-    const threshold = new Date(Date.now() - freshnessWindowS * 1000);
-    const fresh = await this.prisma.facilityStockState.findMany({
-      where: { lastFreshAt: { gte: threshold } },
-      select: { facilityId: true },
-    });
-    if (fresh.length === 0) return 0;
-    return this.prisma.facility.count({
-      where: { id: { in: fresh.map((s) => s.facilityId) }, type: "PHARMACY", status: "ACTIVE" },
-    });
-  }
-
   /** Sessions de consultation menées à terme. */
   private sessionsRealisees(): Promise<number> {
     return this.prisma.careSession.count({ where: { status: "ENDED" } });
-  }
-
-  /**
-   * Dévoilements effectivement payés et NON remboursés (preuve de la 2ᵉ source de revenus) : un
-   * dévoilement REFUNDED conserve son paidAt mais ne compte pas comme une recette nette.
-   */
-  private devoilementsPayes(): Promise<number> {
-    return this.prisma.disclosure.count({ where: { paidAt: { not: null }, status: { not: "REFUNDED" } } });
   }
 
   // ── Taux (agrégats, RM-16-05) ───────────────────────────────────────────────

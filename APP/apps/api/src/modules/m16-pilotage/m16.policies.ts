@@ -35,12 +35,12 @@ export interface KpiTarget {
 export const KPI_TARGETS = {
   /** ≥ 30 professionnels vérifiés ET actifs (contrat signé). */
   PROS_VERIFIES: { key: "pros_verifies_actifs", target: 30, direction: "gte" },
-  /** ≥ 20 pharmacies avec un stock « vivant » (fraîcheur PM-33). */
-  PHARMACIES_STOCK_VIVANT: { key: "pharmacies_stock_vivant", target: 20, direction: "gte" },
+  /* PHARMACIES_STOCK_VIVANT et DEVOILEMENTS_PAYES sont RETIRÉS le 02/09/2026 (chantier 26) : la
+     chaîne du médicament en pharmacie sort du périmètre d'ULAMU. Le plan de sortie compte
+     toujours sept critères de succès — DEUX NE SONT PLUS MESURÉS, ni mesurables. L'écart
+     appartient au porteur et il est inscrit au §9 du plan d'exécution web. */
   /** ≥ 1000 sessions de consultation réalisées (terminées). */
   SESSIONS: { key: "sessions_realisees", target: 1000, direction: "gte" },
-  /** ≥ 500 dévoilements payés. */
-  DEVOILEMENTS_PAYES: { key: "devoilements_payes", target: 500, direction: "gte" },
   /** ≥ 70 % de taux de confirmation des poignées de main. */
   TAUX_CONFIRMATION: { key: "taux_confirmation", target: 70, direction: "gte" },
   /** ≤ 5 % de remboursements automatiques (incidents). */
@@ -52,9 +52,7 @@ export const KPI_TARGETS = {
 /** Liste ordonnée des 7 cibles (ordre d'affichage du tableau « critères du pilote »). */
 export const KPI_TARGET_LIST: readonly KpiTarget[] = [
   KPI_TARGETS.PROS_VERIFIES,
-  KPI_TARGETS.PHARMACIES_STOCK_VIVANT,
   KPI_TARGETS.SESSIONS,
-  KPI_TARGETS.DEVOILEMENTS_PAYES,
   KPI_TARGETS.TAUX_CONFIRMATION,
   KPI_TARGETS.TAUX_REMBOURSEMENT_AUTO,
   KPI_TARGETS.PATIENTS_REVENUS,

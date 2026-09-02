@@ -6,26 +6,15 @@
  * - délivrance : droit « dispense » sur une pharmacie vérifiée (RM-09-03).
  * RM-09-04 : le scan ne révèle QUE l'ordonnance — jamais le Carnet.
  */
-import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
-import { IsUUID } from "class-validator";
+import { Body, Controller, Get, HttpCode, Param, Post } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
-import { CancelPrescriptionDto, CreatePrescriptionDto, DispenseDto } from "./m09.dto";
-import { DispensationService } from "./m09.dispensation.service";
+import { CancelPrescriptionDto, CreatePrescriptionDto } from "./m09.dto";
 import { PrescriptionService } from "./m09.prescription.service";
-
-/** Le scan cible une pharmacie précise : le droit « dispense » sur CETTE pharmacie est vérifié. */
-class ScanQueryDto {
-  @IsUUID(undefined, { message: "Pharmacie invalide" })
-  facilityId!: string;
-}
 
 @Controller("v1/prescriptions")
 export class M09Controller {
-  constructor(
-    private readonly prescriptions: PrescriptionService,
-    private readonly dispensations: DispensationService,
-  ) {}
+  constructor(private readonly prescriptions: PrescriptionService) {}
 
   // ── Prescripteur en session (EF-09-01/02/03/04/08/09) ───────────────────────
 
@@ -64,19 +53,21 @@ export class M09Controller {
     return this.prescriptions.cancel(actor, id, dto.reason);
   }
 
-  // ── Pharmacie : scan & délivrance (EF-09-06/07 ; CU-09-02/03) ───────────────
+  /*
+    ── Le scan et la délivrance sont RETIRÉS (02/09/2026, chantier 26) ─────────────────────────
 
-  /** Scanne un QR : état réel côté serveur (lignes + quantités restantes + validité). RM-09-04. */
-  @Post("scan/:qrToken")
-  @HttpCode(200)
-  scan(@Actor() actor: AuthenticatedActor, @Param("qrToken") qrToken: string, @Query() query: ScanQueryDto) {
-    return this.dispensations.scanVerify(actor, qrToken, query.facilityId);
-  }
+    ULAMU couvre trois acteurs : le patient, le médecin, l'administration. La pharmacie n'en est
+    pas un — le compte de structure est sorti du produit le 02/09 (D-051), et avec lui le sous-
+    système qui n'avait plus personne pour l'exploiter.
 
-  /** Délivre totalement ou partiellement (le solde reste délivrable ailleurs, CU-09-03). */
-  @Post("scan/:qrToken/dispense")
-  @HttpCode(200)
-  dispense(@Actor() actor: AuthenticatedActor, @Param("qrToken") qrToken: string, @Body() dto: DispenseDto) {
-    return this.dispensations.dispense(actor, qrToken, dto);
-  }
+    `POST scan/:qrToken` et `POST scan/:qrToken/dispense` étaient les deux seules routes que la
+    pharmacie appelait ici. Elles exigeaient le droit « dispense » sur une officine vérifiée : plus
+    aucun compte ne peut le porter, elles ne répondaient donc déjà plus à personne.
+
+    ⚠️ **Ce que cela change pour l'ordonnance, et il faut le savoir** : elle est toujours prescrite,
+    scellée, consultable et annulable — mais elle ne peut plus être SERVIE dans ULAMU. Les statuts
+    `DISPENSED` et `PARTIALLY_DISPENSED` du modèle deviennent inatteignables, et le QR n'a plus de
+    lecteur. L'écart était déjà inscrit dans ALIGNEMENT_MAQUETTE_CAHIER pour C4 ; il est désormais
+    définitif. Voir la dette n°14 au §9 du plan d'exécution web.
+  */
 }

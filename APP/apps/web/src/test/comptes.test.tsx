@@ -340,10 +340,27 @@ describe('E7 — les procédures support', () => {
 
     // Les listes ne sont plus natives : on ouvre le champ, puis on désigne l'option.
     await utilisateur.click(await screen.findByLabelText('Type de situation'))
-    await utilisateur.click(await screen.findByRole('option', { name: /Titulaire de structure injoignable/ }))
+    await utilisateur.click(await screen.findByRole('option', { name: /Transfert de carnet de santé/ }))
 
-    expect(await screen.findByLabelText('Transfert de titularité effectué')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Identité du nouveau responsable vérifiée')).toBeInTheDocument()
     expect(screen.queryByLabelText('Ancien numéro confirmé injoignable')).not.toBeInTheDocument()
+  })
+
+  /*
+    02/09/2026 (chantier 26) — « Titulaire de structure injoignable » n'est plus PROPOSÉ : aucun
+    compte n'administre plus de structure (D-051) et la chaîne du médicament est hors périmètre.
+
+    Elle reste connue de l'écran, et c'est délibéré : des procédures ouvertes avant cette date
+    portent ce sujet en base, et la file d'E7 doit les nommer plutôt que d'afficher un code brut.
+    Ce test verrouille les deux moitiés — plus offerte, toujours lisible.
+  */
+  it('n’offre plus « Titulaire de structure injoignable » — la situation n’a plus d’objet', async () => {
+    const utilisateur = userEvent.setup()
+    monter()
+
+    await utilisateur.click(await screen.findByLabelText('Type de situation'))
+
+    expect(screen.queryByRole('option', { name: /Titulaire de structure injoignable/ })).toBeNull()
   })
 
   it('affiche les procédures ouvertes avec leurs étapes horodatées', async () => {

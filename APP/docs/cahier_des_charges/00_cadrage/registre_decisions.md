@@ -97,6 +97,32 @@ Le professionnel doit rédiger un compte-rendu court (diagnostic, recommandation
 ### D-022 — Taux de commission : 10 % unique (close Q-001)
 Commission ULAMU de **10 %** sur consultations, suivis et missions de triage terrain (le professionnel garde 90 %). **0 %** sur les retraits de gains (seuls les frais réels de l'opérateur MoMo s'appliquent). Inscription, contrats et espaces structures **gratuits**. Tout changement de taux = avenant au contrat signé, notifié à l'avance. Détail : [[modele_economique]].
 
+### D-052 — La chaîne du médicament en pharmacie sort du produit (M11, M12, délivrance M09)
+**Décision du porteur, 02/09/2026.** ULAMU garde **uniquement les modules qui couvrent son périmètre : patient, médecin, administration.** La recherche de médicaments en pharmacie et sa délivrance n'en font pas partie.
+
+**C'est la suite logique de [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]].** En retirant le compte de structure, on avait laissé un sous-système sans opérateur — et une dette écrite le jour même (§9 n°12) : *« plus personne n'alimente le stock ; la recherche PAYÉE du patient répond sur des données qui vieillissent »*. Trois issues y étaient proposées. Le porteur retient la première : **retirer la fonctionnalité plutôt que la maintenir sur une donnée morte.**
+
+**Ce qui part.**
+- **M11 — Stocks & catalogues** (7 fichiers, ~1 330 lignes) : approvisionnement, sorties, corrections, seuils, fraîcheur, disponibilité.
+- **M12 — Recherche & dévoilement** (7 fichiers, ~1 843 lignes) : recherche anonyme par arrondissement, dévoilement payé (PM-03), réservation de 24 h, garantie Q-004, strikes de fiabilité.
+- **La délivrance de M09** : `POST /prescriptions/scan/:qrToken` et `.../dispense`, plus `m09.dispensation.service.ts`.
+- **Côté mobile** : l'écran « Médicaments » (376 lignes), sa route, sa tuile d'accueil, six méthodes d'API et onze types.
+- **Côté administration** : l'arbitrage des strikes (EF-12-07), le balayage des dévoilements expirés, **deux des sept KPI du pilote** (« pharmacies au stock vivant », « dévoilements payés »), et le compte des officines dans la couverture territoriale.
+- **Douze modèles de notification** devenus sans émetteur, et les pharmacies de démonstration du seed.
+
+**Ce qui reste, et ce n'est pas une inconséquence.**
+- **Le référentiel de médicaments** — `GET /v1/medicaments` — **change de module sans changer d'adresse** : il passe de M12 à M09. Son exigence a toujours été **EF-09-02**, et son propre commentaire disait *« AUCUNE donnée de stock ici (catalogue pur) »*. C'est ce dans quoi un médecin choisit une ligne d'ordonnance. Sans lui, l'écran C7 chercherait dans le vide et le prescripteur ne pourrait plus écrire qu'en texte libre — **c'est-à-dire sans le garde-fou allergies**, qui ne s'applique qu'aux lignes référentielles.
+- **L'ordonnance** est toujours prescrite, scellée, consultable et annulable. Ce qu'elle ne peut plus être, c'est **servie dans ULAMU**.
+
+**Ce que la décision coûte, dit plutôt que tu.**
+1. **Le patient perd la recherche de médicaments.** C'était une fonctionnalité facturée (PM-03, 500 XAF) et l'une des deux sources de revenus du modèle économique. À arbitrer avec [[modele_economique]].
+2. **Une ordonnance n'a plus de lecteur.** Les statuts `DISPENSED` et `PARTIALLY_DISPENSED` deviennent inatteignables, et le QR scellé n'est plus scanné par personne dans ULAMU. Le patient le montre sur son téléphone comme une ordonnance papier — traçable et infalsifiable, mais hors chaîne.
+3. **Le plan de sortie compte sept critères de succès ; deux ne sont plus mesurables.**
+
+**Ce qui reste en base, et pourquoi.** Les tables — `Facility`, `StockItem`, `Dispensation`, `Reservation`, `Disclosure`, `ReliabilityStrike` et leurs voisines — **ne sont pas supprimées**. Les retirer demande une migration sur la base de **production**, celle qui a été effacée le 23/08. Aucun code ne les lit plus ; elles ne coûtent que de la place. Inscrit au §9 avec son geste.
+
+*Le principe qui a guidé le découpage : **on retire un ACTEUR et ce qu'il opérait ; on ne retire pas une donnée que quelqu'un d'autre du périmètre utilise.** C'est pour cela que le référentiel est déplacé et non supprimé.*
+
 ### D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)
 **Décision du porteur, 02/09/2026.** ULAMU a **trois acteurs** : le **patient** (application mobile), le **soignant** et l'**administration** (application web). Le quatrième type de compte du modèle initial, `FACILITY_MEMBER` — le membre de structure, pharmacie ou laboratoire —, **sort du produit**.
 
