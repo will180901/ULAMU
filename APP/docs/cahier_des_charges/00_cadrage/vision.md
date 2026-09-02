@@ -33,7 +33,7 @@ Au Congo-Brazzaville, se soigner est un parcours du combattant. Le patient fait 
 
 - **Patients** — app mobile, acteur central.
 - **Professionnels de santé** : prescripteurs (généralistes, spécialistes, dentistes, sages-femmes) et non-prescripteurs (infirmiers, agents de santé communautaire) — application web.
-- **Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application web.
+- ~~**Structures** : pharmacies et laboratoires, avec espace propre, titulaire et membres — application web.~~ **Retiré le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]).** ULAMU a **trois acteurs** : le patient (mobile), le soignant et l'administration (web). La pharmacie reste un **objet** du modèle — la recherche de médicaments du patient en dépend — mais plus un titulaire de compte.
 - **Équipe ULAMU** : administration en sous-rôles — application web.
 - **Le Système** : rappels, expirations, remboursements automatiques, alertes.
 

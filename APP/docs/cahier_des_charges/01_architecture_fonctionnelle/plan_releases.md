@@ -16,7 +16,7 @@
 | Module | MVP | V1 | V2 | Note de périmètre |
 |---|---|---|---|---|
 | M01 Comptes & Auth | ✅ Must | | | |
-| M02 Rôles & Espaces Structures | ✅ Must | | | Pharmacies seulement au MVP ; labos en V1 |
+| M02 Rôles & Espaces Structures | ✅ Must | | | ⚠️ **Le volet « espaces structures » est retiré du produit** le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) — seules les permissions par rôle restent |
 | M03 Vérification & Contrats | ✅ Must | | | La confiance ne se reporte pas |
 | M04 Audit & Signalements | ✅ Must | | | MVP : journal d'audit + signalement simple ; modération outillée en V1 |
 | M05 Annuaire des Professionnels | ✅ Must | | | |
@@ -32,7 +32,7 @@
 | M15 Urgence | | 🔜 Should | | ❓ Q-006 non tranchée — concevoir en V1 plutôt que bâcler au MVP |
 | M16 Pilotage & Administration | ✅ Must *(réduit)* | | | MVP : back-office vérification + finance ; tableaux de bord riches en V1 |
 | iOS patient | | | 🔮 Could | Android d'abord (part de marché Congo) |
-| Cliniques comme structures | | | 🔮 Could | Extension du modèle Structure |
+| ~~Cliniques comme structures~~ | | | ❌ | **Sans objet depuis [[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]** : plus aucun compte n'administre une structure |
 | Lingala / multilingue | | | 🔮 Could | Réouverture éventuelle de D-005 |
 | Épidémiologie anonymisée | | | 🔮 Won't (pour l'instant) | Vision long terme ([[vision]] §7) |
 | Services premium pros (R4) | | | 🔮 Could | Jamais nécessaire pour travailler |

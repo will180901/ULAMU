@@ -2,7 +2,7 @@
   "name": "ulamu",
   "version": "0.1.0",
   "private": true,
-  "description": "ULAMU — Plateforme de santé numérique, Congo-Brazzaville. Monorepo : api (NestJS), mobile (React Native, patients), web (React + Vite, professionnels/structures/admin).",
+  "description": "ULAMU — Plateforme de santé numérique, Congo-Brazzaville. Monorepo : api (NestJS), mobile (React Native, patients), web (React + Vite, soignants et administration).",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"

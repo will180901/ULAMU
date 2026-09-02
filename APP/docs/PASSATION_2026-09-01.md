@@ -8,11 +8,20 @@ explique le *pourquoi* de la reconstruction et devient un document d'histoire.
 > l'instruction « supprimer ou bannir » les comptes de démonstration était **inexécutable**, et
 > l'ordre des gestes n'était pas dit alors qu'il commande tout.
 >
-> Ce qui a changé depuis, et qui n'est **pas encore poussé** : le **chantier 24** (§10 du plan) —
-> la langue de la page, ce que les écrans d'administration disent d'un refus RM-01-06, et la phrase
-> de B3 sur la double authentification. **web 497 ✓**, types et lint propres, rien côté serveur.
-> Le dernier commit du dépôt est `421a1da` (et non `59dcb81` : le tableau ci-dessous ne comptait pas
-> le commit de cette passation).
+> **Deux chantiers ont suivi cette passation :**
+> - **Chantier 24** (poussé le 02/09, `de0b615`, déployé et vérifié en ligne) — la langue de la page,
+>   ce que les écrans d'administration disent d'un refus RM-01-06, la phrase de B3 sur la double
+>   authentification.
+> - **Chantier 25** (02/09, **pas encore poussé**) — 🔴 **LE PÉRIMÈTRE A CHANGÉ.** Sur décision du
+>   porteur, ULAMU a désormais **TROIS acteurs** : le **patient** (mobile), le **soignant** et
+>   l'**administration** (web). Le quatrième type de compte, `FACILITY_MEMBER` (membre de structure),
+>   **sort du produit** — sa route d'inscription est retirée. Décision inscrite au cahier des charges
+>   sous **D-051**, chantier détaillé au §10 du plan. **La pharmacie reste un objet du modèle** : la
+>   recherche de médicaments du patient en dépend.
+>
+> **Règle de travail nouvelle (02/09) :** les tests d'écran se font **sur le site en ligne**
+> (`https://ulamu-web.onrender.com`), plus en local. Le code non poussé n'est donc pas vérifiable à
+> l'écran.
 
 ---
 

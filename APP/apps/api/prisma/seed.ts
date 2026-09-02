@@ -86,16 +86,6 @@ const DEMO_PATIENT = {
   district: "Talangaï",
 };
 
-/** Titulaire de démo (FACILITY_MEMBER, OWNER) — rattaché à la première pharmacie de DEMO_PHARMACIES. */
-const DEMO_PHARMACIST = {
-  phone: "+242060000301",
-  username: "pharma.demo",
-  password: "demo1234",
-  firstName: "Bruno",
-  lastName: "Ossona",
-  pharmacyName: "Pharmacie du Marché",
-};
-
 /** Le soignant qui vient de s'inscrire : dossier vide, tout reste à faire. Sert à tester C1. */
 const DEMO_PRO_BROUILLON = {
   phone: "+242069000110",
@@ -353,27 +343,23 @@ async function seedDemo(): Promise<void> {
     }
     const facilityId = facility.id;
 
-    // Titulaire de démo (identifiants connus) — seulement sur la pharmacie désignée.
-    if (ph.name === DEMO_PHARMACIST.pharmacyName) {
-      let pharmacist = await prisma.account.findUnique({ where: { phone: DEMO_PHARMACIST.phone } });
-      if (!pharmacist) {
-        pharmacist = await prisma.account.create({
-          data: {
-            phone: DEMO_PHARMACIST.phone,
-            username: DEMO_PHARMACIST.username,
-            passwordHash: await hashPassword(DEMO_PHARMACIST.password),
-            type: "FACILITY_MEMBER",
-            facilityMemberProfile: { create: { firstName: DEMO_PHARMACIST.firstName, lastName: DEMO_PHARMACIST.lastName } },
-            consents,
-          },
-        });
-      }
-      await prisma.facilityMember.upsert({
-        where: { facilityId_accountId: { facilityId, accountId: pharmacist.id } },
-        update: {},
-        create: { facilityId, accountId: pharmacist.id, role: "OWNER", rights: ["stock", "dispense", "stats"] },
-      });
-    }
+    /*
+      ── Le titulaire de démo est RETIRÉ (02/09/2026, chantier 25 / D-051) ──────────────────────
+
+      ULAMU a trois acteurs : le patient (mobile), le soignant et l'administration (web).
+      `FACILITY_MEMBER` sort du produit — sa route d'inscription est retirée de l'API.
+
+      Ce bloc créait `pharma.demo`, un compte de ce type, avec son adhésion OWNER et les trois
+      droits internes. Le laisser aurait rouvert PAR LE SEED la porte qu'on venait de fermer dans
+      le service : `prisma db seed` aurait fabriqué un acteur que le produit ne reconnaît plus.
+
+      ⚠️ **Les pharmacies elles-mêmes restent semées** (juste au-dessus) : ce sont des OBJETS, et la
+      recherche de médicaments du patient en dépend — M12 lit le stock de M11. C'est le COMPTE qui
+      part, pas l'officine.
+
+      ⚠️ **Un `pharma.demo` déjà en base ne part pas tout seul** : le seed ne supprime rien. Voir la
+      dette n°13 du §9 du plan d'exécution web.
+    */
 
     // VerificationCase VERIFIED + contrat signé (RM-05-01 / D-029 — sinon non publiable).
     const existingCase = await prisma.verificationCase.findUnique({ where: { facilityId } });
@@ -410,7 +396,7 @@ async function seedDemo(): Promise<void> {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + soignant en brouillon « ${DEMO_PRO_BROUILLON.username} » (mdp ${DEMO_PRO_BROUILLON.password}) + ${DEMO_PROS.length} soignants vérifiés + titulaire « ${DEMO_PHARMACIST.username} » (mdp ${DEMO_PHARMACIST.password}) + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
+  console.log(`Démo OK — patient « ${DEMO_PATIENT.username} » (mdp ${DEMO_PATIENT.password}) + soignant en brouillon « ${DEMO_PRO_BROUILLON.username} » (mdp ${DEMO_PRO_BROUILLON.password}) + ${DEMO_PROS.length} soignants vérifiés + ${DEMO_MEDS.length} médicaments + ${DEMO_PHARMACIES.length} pharmacies.`);
 }
 
 async function main(): Promise<void> {

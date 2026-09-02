@@ -71,20 +71,6 @@ export class RegisterProfessionalDto {
   @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
 }
 
-/** Compte membre de structure (D-003/D-045) — futur titulaire ou invité (CU-02-02). */
-export class RegisterFacilityMemberDto {
-  @IsString() @IsNotEmpty() phone!: string;
-  @IsEmail() email!: string;
-  @IsString() @MinLength(3) @MaxLength(30) @Matches(USERNAME_REGEX, { message: USERNAME_MSG }) username!: string;
-  @IsString() @Length(6, 6) otpCode!: string;
-  @IsString() @Length(8, 128) password!: string;
-  @IsString() @IsNotEmpty() @MaxLength(80) firstName!: string;
-  @IsString() @IsNotEmpty() @MaxLength(80) lastName!: string;
-  @IsBoolean() @Equals(true, { message: ACCEPT_TERMS_MSG }) acceptTerms!: boolean;
-  @IsIn(["mobile", "web"]) client!: string;
-  @IsOptional() @IsString() @MaxLength(120) deviceLabel?: string;
-}
-
 /** `username` accepte un nom d'utilisateur OU une adresse email (2026-07) — le service détecte lequel. */
 export class LoginDto {
   @IsString() @MinLength(3) @MaxLength(254) username!: string;

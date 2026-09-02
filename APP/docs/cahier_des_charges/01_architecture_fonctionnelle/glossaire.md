@@ -11,15 +11,19 @@
 
 ## 1. Acteurs
 
+> **ULAMU a TROIS acteurs porteurs d'un compte** — le **patient** (mobile), le **professionnel** et
+> l'**administration** (web) — plus **le Système**, acteur automatique.
+> Décision [[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] du 02/09/2026 : le **membre de structure** n'en est plus un.
+
 | Terme             | Définition                                                                                                                                    | Ne pas dire               |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | **Patient**       | Personne qui se soigne via ULAMU. Utilise l'app mobile.                                                                                       | client, utilisateur final |
 | **Professionnel** | Toute personne du corps médical avec un compte individuel : prescripteur ou soignant.                                                         | docteur (générique)       |
 | **Prescripteur**  | Professionnel habilité à émettre une ordonnance : médecin généraliste, médecin spécialiste, chirurgien-dentiste, sage-femme (domaine limité). | —                         |
 | **Soignant**      | Professionnel non prescripteur : infirmier diplômé, agent de santé communautaire.                                                             | aide-soignant             |
-| **Structure**     | Entité collective avec un espace propre : pharmacie ou laboratoire (extensible : clinique).                                                   | établissement             |
-| **Titulaire**     | Responsable légal d'une structure ; crée l'espace et gère ses membres.                                                                        | propriétaire, gérant      |
-| **Membre**        | Compte rattaché à une structure par son titulaire, avec des droits définis.                                                                   | employé                   |
+| **Structure**     | Entité collective : pharmacie ou laboratoire. **Objet du modèle, plus un titulaire de compte depuis D-051 (02/09/2026)** — la recherche de médicaments du patient en dépend, son espace de gestion non. | établissement |
+| ~~**Titulaire**~~ | ~~Responsable légal d'une structure ; crée l'espace et gère ses membres.~~ **Retiré du produit — D-051.**                                      | propriétaire, gérant      |
+| ~~**Membre**~~    | ~~Compte rattaché à une structure par son titulaire, avec des droits définis.~~ **Retiré du produit — D-051.**                                 | employé                   |
 | **Équipe ULAMU**  | Administration de la plateforme. Sous-rôles : Super Admin, Admin Finance, Admin Vérification, Admin Carte.                                    | back-office, staff        |
 | **Le Système**    | Acteur automatique : expirations, rappels, remboursements automatiques, alertes.                                                              | le serveur, le bot        |
 

@@ -25,7 +25,7 @@ Garantir que chaque professionnel et chaque structure sont **vrais** (vérificat
 | Acteur | Usage |
 |---|---|
 | Professionnel | Dépose son dossier, signe son contrat |
-| Titulaire | Idem pour sa structure |
+| ~~Titulaire~~ | ~~Idem pour sa structure~~ — **retiré du produit le 02/09/2026** ([[../00_cadrage/registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) : plus aucun compte n'administre une structure, donc plus aucun dossier de vérification de structure ne peut être déposé. |
 | Admin Vérification | Examine, décide, révoque |
 | Le Système | Files d'attente, alertes de délai, expiration des documents |
 
@@ -34,7 +34,7 @@ Garantir que chaque professionnel et chaque structure sont **vrais** (vérificat
 | ID | Exigence |
 |---|---|
 | EF-03-01 | Dossier de vérification **professionnel** : pièce d'identité, diplôme(s), numéro d'ordre / autorisation d'exercice, photo de profil. Statuts : à compléter → déposé → en examen → **vérifié** / refusé / complément demandé. |
-| EF-03-02 | Dossier de vérification **structure** (pharmacie au MVP) : autorisation d'exercice de l'officine, identité du titulaire, justificatif de localisation. ⚠️ Liste exacte à confirmer avec l'autorité pharmaceutique ([[../00_cadrage/cadre_reglementaire|cadre réglementaire]] §5). |
+| EF-03-02 | ⚠️ **Sans acteur depuis le 02/09/2026** ([[../00_cadrage/registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) — aucun compte ne peut plus déposer un dossier de structure. *Conservé pour l'histoire :* dossier de vérification **structure** (pharmacie au MVP) : autorisation d'exercice de l'officine, identité du titulaire, justificatif de localisation. ⚠️ Liste exacte à confirmer avec l'autorité pharmaceutique ([[../00_cadrage/cadre_reglementaire|cadre réglementaire]] §5). |
 | EF-03-03 | File de traitement pour l'Admin Vérification : tri par ancienneté, **délai cible 72 h ouvrées** (PM-11), alerte automatique en cas de dépassement. |
 | EF-03-04 | Toute décision est **motivée** : vérifié / refusé (motifs précis) / complément demandé. Re-soumission possible après refus ou complément. |
 | EF-03-05 | **Posture stricte (D-029 ✅)** : aucune pratique sans vérification — pas d'offre publiée, pas de poignée de main reçue, pas de stock visible tant que le Badge Vérifié n'est pas accordé. |

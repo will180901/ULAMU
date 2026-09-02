@@ -114,12 +114,20 @@ Aucun effet sur le déploiement — ce fichier ne sert qu'aux outils de dévelop
 
 ## 3. Le périmètre
 
+> **ULAMU a TROIS acteurs** — le **patient** (application mobile), le **soignant** et
+> l'**administration** (application web). Décision du porteur du **02/09/2026**, inscrite au cahier
+> des charges sous **D-051**. Le quatrième type de compte du modèle initial, le **membre de
+> structure** (`FACILITY_MEMBER`), est **retiré du produit** : sa route d'inscription n'existe plus.
+>
+> Les écrans D1 → D4 étaient déjà « hors MVP, écartés » ci-dessous. Ils sont désormais **hors
+> produit** — ce n'est plus un report, c'est acté (chantier 25).
+
 | Groupe | Écrans | État |
 |---|---|---|
 | **A — Authentification** | A1 Connexion, A2 Inscription, A3 Mot de passe oublié, A4 2FA | ✅ **VALIDÉS — on n'y touche pas** |
 | **B — Coquille** | B1 Coquille, B2 Tableau de bord, B3 Mes paramètres | 🔴 à refaire |
 | **C — Professionnel** | C1 → C6, **+ C7 Ordonnance (écran neuf)** | 🔴 à refaire |
-| **D — Pharmacie** | D1 → D4 | ⬜ **hors MVP, écartés** |
+| ~~**D — Pharmacie**~~ | ~~D1 → D4~~ | ❌ **HORS PRODUIT (02/09, D-051)** — plus aucun compte ne peut les atteindre |
 | **E — Administration** | E1 → E7 | 🔴 à refaire |
 
 **15 écrans à construire**, dont un qui n'a aucune maquette : **C7 — Ordonnance**, créé de zéro dans
@@ -392,6 +400,9 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | 11 | **La désactivation du TOTP n'a aucun chemin sur le web (née le 02/09, chantier 24).** Le serveur l'accepte pour un non-administrateur — `POST /v1/accounts/me/totp/disable`, mot de passe **et** code exigés — et le cahier donne le second facteur pour optionnel aux professionnels. B3 ne l'offre nulle part : une fois activé, un soignant ne peut plus revenir en arrière depuis l'application. Ce n'est plus un **mensonge** depuis que la phrase a été corrigée (l'écran ne prétend plus que c'est impossible), c'est une **route sans client** — la cinquième trouvée depuis le début du palier. ⚠️ **Ce n'est pas un oubli à réparer d'office** : ouvrir ce chemin, c'est offrir de baisser la protection d'un compte qui donne accès à des dossiers de santé. Le coût est faible (un bloc dans `SectionSecurite`, formulaire mot de passe + code déjà écrit deux fois dans le même fichier, ~1 h avec tests). **Recommandation : ne rien faire pour l'instant.** Personne ne l'a demandé, aucun soignant n'est bloqué par une obligation réelle, et le jour où quelqu'un le demande, la vraie question sera « pourquoi » — pas « comment ». | 🟡 **arbitrage porteur**, non urgent |
 
+| 12 | **Plus personne n'alimente le stock des pharmacies (née le 02/09, chantier 25).** En retirant `FACILITY_MEMBER` (D-051), on retire l'acteur qui tenait l'inventaire — `POST /v1/stocks/:facilityId/entries` et ses voisines n'ont plus d'opérateur. **Ce n'est pas une dette de code, c'est une dette de produit**, et elle touche le patient : son parcours « je cherche un médicament → je paie un dévoilement (PM-03, 500 XAF) → j'ai une réservation de 24 h » lit ce stock. Les données existantes ne disparaissent pas, elles **vieillissent** — et le patient paie pour une information qui se dégrade sans que rien ne le dise. Trois issues : (a) **retirer aussi la recherche payée de médicaments** du parcours patient — cohérent, mais c'est amputer M12 d'une fonctionnalité facturée ; (b) **la garder en disant son âge** — afficher la date de dernière confirmation de fraîcheur (`FacilityStockState.lastFreshAt` existe déjà, RM-11-05) et refuser le dévoilement au-delà d'un seuil : ~1 j, et l'écran cesse de mentir ; (c) **rendre un acteur au stock** sous une autre forme (l'administration saisit ? un import ?) — c'est un chantier, pas une correction. | 🔴 **arbitrage porteur** · **recommandation : (b)**, la seule qui protège le patient sans rien amputer |
+| 13 | **La fermeture complète de `FACILITY_MEMBER` demande un ménage en base (née le 02/09, chantier 25).** La valeur reste dans l'énumération Prisma, ses six règles dans la matrice M02, et les quatre `auditActorType` gardent leur cas. **Chacun pour une raison vérifiée** : retirer la valeur exige une migration sur la base de **production** (celle effacée le 23/08) et échouerait si une ligne la porte ; retirer les règles sans retirer `assertFacilityRight` donnerait deux vérités pour une même règle ; retirer le cas d'audit ferait inscrire l'action d'un humain comme `"system"` dans un journal **en insertion seule**, donc à jamais. L'ordre est donc contraint : **d'abord inventorier les comptes et adhésions en base** (`scripts/menage-comptes-demo.ts` a un mode inventaire qui n'écrit rien), **puis** décider. | 🟡 **geste porteur**, non urgent — rien ne fuit, la porte est déjà fermée |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
@@ -460,6 +471,98 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **23** | **Le code mort** — 01/09. **Serveur : aucun.** *(Ligne écrite le 02/09 : ce chantier avait été poussé sans être inscrit ici — le §7 le demande « en même temps que le code, jamais après », et c'est la règle qui a sauté, pas le chantier.)* « Supprimer le code mort » visait deux fichiers ; un parcours réel des importations depuis `main.tsx` et `App.tsx` en a trouvé **56, pour 6 923 lignes**. Huit sont partis — ceux que le projet avait écrits lui-même — avec la CSS devenue orpheline (`.ul-btn*`, `.ul-state*`, `.ul-steps*`, `@keyframes ul-spin`). **Une chose a été sauvée avant la suppression** : `Stepper.tsx` portait un résumé accessible — « Étape 3 sur 5 » — qu'`EtapesAuth` n'avait pas ; ses pastilles s'annonçaient une à une sans jamais dire combien il en restait. `Field.tsx` n'a **pas** été touché : mort dans l'application, entretenu par son test — décision au porteur. **web 485 ✓ · lint propre · build propre.** | 01/09 (`59dcb81`) | ⏸ |
 
 | **24** | **Ce que les écrans disent de la double authentification** — 02/09. **Serveur : aucun.** Trois faussetés, dont deux **vérifiées sur le site en ligne avant correction**. (1) `index.html` déclarait `lang="en"` sur une application servie **en français seul** — une synthèse vocale lisait donc du français avec une voix anglaise. (2) Les **six branches d'échec** de l'administration offraient « Réessayer », geste qui ne peut pas aboutir sous RM-01-06, et **ne nommaient jamais la sortie** — `/configuration-totp`, qui existe et n'est pas gardée. (3) B3 annonçait à **tout le monde** « Obligatoire sur ULAMU — elle ne peut pas être désactivée » : vrai pour un administrateur (`disableTotp` répond 403 sur `type === "ADMIN"`), **faux sur ses deux moitiés pour un soignant**. Ajouté : `RappelTotpAdmin` (bandeau posé **hors** de la limite d'erreur, pour survivre à un écran qui tombe), le hook `useTotpAdminManquant`, et `ActionApresEchec`. **Une étape a été abandonnée en cours de route** — voir ci-dessous. **web 497 ✓ (485 + 12) · types propres · lint à sa base (20 avertissements préexistants, aucun nouveau).** | ⏸ en attente | ⏸ |
+
+| **25** | **Trois acteurs, deux sur le web** — 02/09. **Décision du porteur, inscrite au cahier sous D-051.** `FACILITY_MEMBER` — le membre de structure — **sort du produit**. Serveur : la route publique `POST /v1/accounts/register/facility-member` retirée, avec son DTO et sa méthode de service (**~100 lignes**) : plus aucun compte de ce type ne peut naître. Web : capacité `facility`, « Espace officine », le tableau de bord officine (**70 lignes**), la branche morte d'inscription gardée par un `true` littéral, et **172 lignes de client API sans appelant** — dont les 16 méthodes de structure, de stock et de scan d'ordonnance, qu'aucun écran n'appelait déjà. Documentation : **D-051 inscrite**, D-003 et D-004 marquées remplacées sur le volet compte, le glossaire, la vision, la carte des domaines, les plans de modules et de releases, quatre spécifications de module et le persona P7. **Ce qui NE part pas, et pourquoi : la pharmacie reste un objet du modèle** — `m12.disclosure.service.ts` importe `StockAvailabilityService` de M11, donc la recherche de médicaments du patient en dépend, et le patient est dans le périmètre. **web 497 ✓ · API 554 ✓ · mobile 7 ✓ · types propres · builds propres · lint web **20 → 19 avertissements** — le `no-constant-condition` de `RegisterPage` est parti avec la branche morte qu'il signalait.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 25 (les trois acteurs) a appris
+
+*Mené le 02/09/2026, sur décision du porteur : « on ne garde que deux types d'utilisateur, le
+soignant et l'admin ».*
+
+#### La consigne disait deux, et aussi trois — les deux étaient vraies
+
+« Deux types d'utilisateur : le soignant et l'admin », puis « on reste sur le périmètre : patient,
+médecin, administrateur ». Ce n'est pas une contradiction, c'est **deux échelles** : deux acteurs sur
+l'application **web**, trois sur la **plateforme** — le patient vivant sur mobile.
+
+Le lever avant de couper a évité de retirer le patient du produit. *Une consigne qui se compte
+différemment selon l'échelle demande qu'on nomme l'échelle, pas qu'on choisisse un chiffre.*
+
+#### Le quatrième type était déjà à moitié parti, et personne ne l'avait écrit
+
+`FACILITY_MEMBER` existait partout **sauf là où il aurait servi** : sa capacité était déclarée
+(`useCapabilities.ts`), son tableau de bord construit (70 lignes), ses 16 méthodes d'API écrites —
+et **aucune entrée de navigation** ne les atteignait. J'ai compté les capacités de
+`navigation.config.ts` : cinq `professional`, six `admin`, **zéro `facility`**.
+
+Un membre de structure qui se connectait avait donc une barre latérale **vide** — pas même « Mes
+paramètres », réservé à `['professional', 'admin']`.
+
+Et `RegisterPage.tsx` portait, depuis le 24/08, un ternaire `true ? registerProfessional : registerFacilityMember`.
+La branche était morte, neutralisée plutôt que retirée — d'où l'avertissement `no-constant-condition`
+que le lint signalait sans que personne ne l'attribue à cette décision. *Une branche qu'on neutralise
+sans la retirer laisse croire qu'on hésite encore ; six jours plus tard, personne ne sait plus si
+c'est un report ou un oubli.*
+
+#### Retirer un ACTEUR n'est pas retirer une FONCTIONNALITÉ
+
+C'est la distinction qui a commandé tout le chantier, et elle n'était pas évidente au départ.
+
+`m12.disclosure.service.ts` importe `StockAvailabilityService` de M11. Le parcours du patient — « je
+cherche un médicament → je paie un dévoilement (PM-03) → j'ai une réservation de 24 h » — **lit le
+stock des pharmacies**. Supprimer le sous-système aurait retiré une fonctionnalité **du patient**,
+qui est dans le périmètre.
+
+Ce qui part, c'est donc le **compte** qui administrait l'objet. L'objet reste : `Facility`,
+`StockItem`, `Dispensation`, `Reservation` et huit autres tables.
+
+**Et la conséquence se dit** : sans membre de structure, plus personne n'alimente le stock. Les
+données se figent, et la recherche **payée** du patient répond sur un stock qui vieillit. C'est
+inscrit au §9 avec ses issues — parce qu'un renoncement tu vieillit plus mal qu'un renoncement écrit
+(leçon du chantier 9).
+
+#### Trois choses qu'il ne fallait PAS nettoyer, et c'est le plus important
+
+Un nettoyage qui va au bout de sa logique casse quelque chose. Trois arrêts, chacun pour une raison
+vérifiée dans le code :
+
+1. **Les quatre `auditActorType`** (M03, M04, M07, M14) traduisent un type de compte **stocké** vers
+   le journal d'audit. Retirer le cas `FACILITY_MEMBER` ferait retomber sur le `default` — et
+   l'action d'un humain serait inscrite `"system"` dans un journal **chaîné par hachage et en
+   insertion seule**, donc **définitivement**. Une falsification, produite par un nettoyage.
+
+2. **Les six règles de la matrice M02.** Le contrôle d'accès des structures ne passe pas par elle :
+   il passe par `PermissionsService.assertFacilityRight`, qui lit la table `FacilityMember`. Retirer
+   les lignes sans retirer le chemin donnerait **deux vérités pour une même règle**, et la matrice
+   serait celle qui ment — la dette exacte corrigée en C1 le 23/08, rappelée au chantier 11.
+
+3. **La valeur dans l'énumération Prisma.** L'en retirer demande une migration sur la base de
+   **production** — celle qui a été effacée le 23/08. Et elle échouerait si une seule ligne la porte
+   encore.
+
+*La règle qu'on retient : **un nettoyage s'arrête là où la donnée existante commence.** Ce qui décrit
+ce qu'on peut créer demain se retire ; ce qui décrit ce qui a été écrit hier se garde, et s'annote.*
+
+#### Un type de client ne se rétrécit pas comme une déclaration de produit
+
+`packages/contracts/src/auth.ts` et `apps/mobile/src/lib/contracts.ts` déclaraient `AccountType` en
+se disant « alignés sur le schéma Prisma ». Or Prisma garde quatre valeurs et le produit n'en a plus
+que trois : l'alignement annoncé devenait faux dans un sens ou dans l'autre.
+
+Les trois unions clientes disent désormais le **produit** (trois types), avec le commentaire qui
+explique la quatrième valeur en base. C'était tenable parce que **chaque branche a son repli** : un
+compte hérité qui se connecterait retombe sur le parcours soignant, aucun client ne plante sur une
+valeur inattendue. *Sans ce repli, il aurait fallu garder l'union large — un type qui ment sur ce que
+le serveur envoie est la dette qu'`api.ts` a déjà payée trois fois (chantiers 5, 7 et 12).*
+
+#### Ce que la mesure a donné
+
+| Zone | Retiré |
+|---|---|
+| `apps/web` | la capacité `facility`, « Espace officine », `TableauOfficine` (70 l.), la branche morte d'inscription, **172 lignes** de client API sans appelant |
+| `apps/api` | la route publique d'inscription, son DTO, sa méthode de service — **~100 lignes** |
+| `packages/contracts`, `apps/mobile` | la quatrième valeur de `AccountType`, avec sa note |
+| `docs/cahier_des_charges` | **D-051 inscrite** ; D-003 et D-004 marquées remplacées ; glossaire, vision, carte des domaines, plans de modules et de releases, M02/M03/M09/M10/M11/M12, persona P7 |
 
 ### Ce que le chantier 24 (la double authentification) a appris
 

@@ -73,10 +73,15 @@ const ETATS_COMPTE: Record<string, { libelle: string; ton: TonPilule }> = {
   PENDING: { libelle: 'En attente', ton: 'info' },
 }
 
+/*
+  Les trois acteurs d'ULAMU (chantier 25, 02/09/2026) : le patient sur mobile, le soignant et
+  l'administration sur le web. `FACILITY_MEMBER` a été retiré du produit — ce Record reste tolérant
+  aux valeurs inconnues (voir son usage : repli sur la valeur brute), donc un compte hérité d'avant
+  le retrait s'affiche avec son code plutôt que sous une étiquette qui ne veut plus rien dire.
+*/
 const TYPES_COMPTE: Record<string, string> = {
   PATIENT: 'Patient',
   PROFESSIONAL: 'Soignant',
-  FACILITY_MEMBER: 'Structure',
   ADMIN: 'Administration',
 }
 

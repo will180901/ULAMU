@@ -21,10 +21,16 @@ Les 25 modules existants (`docs/Cahier des Charges (supprimé depuis — histori
 - **Équipe d'administration ULAMU** (sous-rôles : super admin, finance, vérification/modération, carte)
 - **Le Système** (acteur automatique)
 
+> ⚠️ **Précisé par [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] (02/09/2026) :** ULAMU compte **trois acteurs porteurs d'un compte** — le patient (mobile), le soignant et l'administration (web). Le membre de structure n'en est plus un.
+
 ### D-003 — Les pharmacies sont des structures, pas des personnes
+> ⚠️ **Partiellement remplacée par [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] (02/09/2026).** Ce qui reste vrai : une pharmacie **n'est pas une personne**, et le modèle de données le reflète toujours. Ce qui est retiré : le **compte** `FACILITY_MEMBER` qui l'administrait.
+
 Une pharmacie a son **espace propre** : un pharmacien titulaire (responsable) + des membres (assistants, vendeurs) avec des droits différenciés.
 
 ### D-004 — Les laboratoires sont des structures (même modèle que les pharmacies)
+> ⚠️ **Partiellement remplacée par [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] (02/09/2026)** — même raison qu'en D-003.
+
 Espace propre, membres, catalogue d'examens avec prix. Modèle extensible plus tard aux cliniques.
 
 ### D-005 — Langue : français uniquement au démarrage
@@ -56,8 +62,10 @@ La commission ULAMU est prélevée **côté professionnel**, incluse dans le pri
 À l'inscription : conditions, taux de commission, engagements — signé électroniquement, conservé comme preuve juridique de la relation.
 
 ### D-012 — Clients applicatifs
+> ⚠️ **Précisée par [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] (02/09/2026)** : le web sert **deux** acteurs, pas trois.
+
 - **App mobile** = les patients.
-- **Application web** (React + Vite, client-serveur) = professionnels, structures, administration. *(Détails de stack en Référence Technique, plus tard.)*
+- **Application web** (React + Vite, client-serveur) = ~~professionnels, structures, administration~~ → **professionnels et administration**. *(Détails de stack en Référence Technique, plus tard.)*
 
 ### D-013 — Interface mobile patient : 3 onglets + bouton urgence
 Barre du bas : **① Accueil** (portail public : catégories de soignants, recherche médicaments, filtres) · **② Consultations** (sessions actives + décompteur, historique, ordonnances) · **③ Mon Espace** (profil, dossier médical, reçus, paramètres). **Bouton Urgence flottant** accessible partout.
@@ -89,6 +97,21 @@ Le professionnel doit rédiger un compte-rendu court (diagnostic, recommandation
 ### D-022 — Taux de commission : 10 % unique (close Q-001)
 Commission ULAMU de **10 %** sur consultations, suivis et missions de triage terrain (le professionnel garde 90 %). **0 %** sur les retraits de gains (seuls les frais réels de l'opérateur MoMo s'appliquent). Inscription, contrats et espaces structures **gratuits**. Tout changement de taux = avenant au contrat signé, notifié à l'avance. Détail : [[modele_economique]].
 
+### D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)
+**Décision du porteur, 02/09/2026.** ULAMU a **trois acteurs** : le **patient** (application mobile), le **soignant** et l'**administration** (application web). Le quatrième type de compte du modèle initial, `FACILITY_MEMBER` — le membre de structure, pharmacie ou laboratoire —, **sort du produit**.
+
+**Ce que la décision retire.** La route publique `POST /v1/accounts/register/facility-member` (plus aucun compte de ce type ne peut naître), le parcours d'inscription correspondant, et toute trace du type dans l'application web : capacité `facility`, « Espace officine », le tableau de bord officine (70 lignes) et 172 lignes de client API sans appelant — dont les **16 méthodes** de gestion de structure, de stock et de scan d'ordonnance, qu'**aucun écran n'appelait déjà**.
+
+**Ce que la décision NE retire PAS, et pourquoi.** La **pharmacie comme objet** reste : `Facility`, `StockItem`, `Dispensation`, `Reservation` et les huit autres tables. Ce n'est pas une timidité — **la recherche de médicaments du patient en dépend directement** : `m12.disclosure.service.ts` importe `StockAvailabilityService` de M11, et le parcours « je cherche un médicament → je paie un dévoilement (PM-03) → j'ai une réservation de 24 h » lit ce stock. Le patient est dans le périmètre ; sa fonctionnalité reste.
+
+**La conséquence, dite plutôt que tue.** Sans membre de structure, **plus personne n'alimente le stock**. Les données existantes se figent, et la recherche payée du patient répond sur un stock qui vieillit. C'est le coût réel de la décision — inscrit au §9 du plan d'exécution avec ses issues.
+
+**Ce qui reste en base, et pourquoi ce n'est pas un oubli.** La valeur `FACILITY_MEMBER` demeure dans l'énumération Prisma `AccountType`, et ses six règles dans la matrice M02. Deux raisons : (1) l'en retirer demande une **migration sur la base de production** — celle qui a été effacée le 23/08 ; (2) surtout, le contrôle d'accès des structures ne passe pas par la matrice mais par `PermissionsService.assertFacilityRight`, qui lit la table `FacilityMember`. Retirer les lignes sans retirer le chemin donnerait **deux vérités pour une même règle**, et la matrice serait celle qui ment. La fermeture complète suppose d'abord un ménage des données en production.
+
+**Ce que D-003 et D-004 gardent de valable.** Une pharmacie ou un laboratoire **n'est pas une personne** — c'est toujours vrai, et le modèle de données le reflète. Ce que D-051 retire, c'est le **compte** qui les administrait.
+
+*Les quatre maquettes D1 à D4 (Ma pharmacie, Stock, Délivrance, Réservations) sortent du périmètre. Elles ne sont pas supprimées : ce sont des artefacts de conception, et elles documentent ce qui a été envisagé.*
+
 ### D-050 — Chantier 5 (M16 Pilotage & Administration) : le back-office + la cadence — MVP COMPLET
 Workflow : 1 agent d'implémentation (M16 intégral) → 3 vérificateurs adversariaux. Schéma D10 (AccountSanction, ParameterChange, SupportProcedure) posé par le porteur-IA ; exports de service ouverts pour la cadence/avenant (M03Service, M06 Handshake/Report, M09 Prescription, M13 Reconciliation). M16 livré (12 fichiers) en **lecture seule sur les domaines** (RM-16-01) : ses seules écritures propres sont les sanctions, l'historique des paramètres et les procédures support — tout autre effet passe par un service propriétaire (remboursement → M13, avenant → M03, **arbitrage de strike → M12.arbitrateStrike**). Services : PilotKpiService (les 7 KPIs du pilote EF-16-05, agrégats seuls RM-16-05), DashboardService (pro/structure/patient, jamais de Carnet RM-16-02), AdminService (recherche, suspension+révocation des sessions+remboursement des sessions vives CU-16-01, réactivation, bannissement à double validation EF-16-07, arbitrage), ParametersService (PM-xx + historique + invalidation cache + avenant D-022), SupportProcedureService (trace auditée CU-16-04), **SchedulerService** (@Cron qui cadence enfin les balayages dé-scopés : D-008/PM-07/PM-08/PM-10 chaque minute, rappels PM-30 + reprise critique M14 chaque heure, réconciliation EF-13-09 + purge PM-37 chaque jour ; chaque balayage isolé en try/catch). `ScheduleModule.forRoot()` + M16 câblés dans app.module. **Revue adversariale — 17 constats (3 BLOCKER, 6 MAJOR, 8 MINOR), tous traités** : (BLOCKER) resolveStrike écrivait dans ReliabilityStrike (domaine M12) → délégué à `DisclosureService.arbitrateStrike` (M16 décide, M12 applique+notifie) ; M16 non monté + ScheduleModule absent → câblés ; (MAJOR) approveBan ne remboursait pas les sessions vives du pro → ajouté ; bans PENDING multiples possibles → rejet si demande déjà en attente ; approveBan n'éprouvait pas le count de clôture → effets seulement si transition réelle ; `effectiveAt` futur appliqué immédiatement → refusé (différé = V1) ; PM-02 déclenchait un avenant + reissue non idempotent → PM-02 retiré des taux contractuels + reissue seulement si la valeur change ; (MINOR) KPIs affinés (pharmacies filtrées PHARMACY/ACTIVE, patients revenus sur sessions ENDED, dévoilements payés hors REFUNDED), SUSPENSION→REVERSED posée à la réactivation, audit de la tentative d'auto-approbation d'un ban, oldValue relu dans la transaction. Validation : typecheck propre, **505 tests verts** (21 suites, 6 d'intégration) — back-office prouvé : suspension+remboursement C1, bannissement à double validation, paramètre historisé + avenant, KPIs agrégés, arbitrage délégué, cadence. **Le périmètre MVP est COMPLET : 13 modules livrés (M01-M07, M09, M11-M14, M16)** ; restent M08/M10/M15 (V1).
 
@@ -105,6 +128,8 @@ Workflow multi-agents (2 impl + 2 vérif). **Bloquant corrigé** : course captur
 Le workflow multi-agents (implémentation M02/M03/M04 + vérification adversariale) a produit 25 constats ; tous les bloquants/majeurs corrigés : parcours d'inscription FACILITY_MEMBER (D-045), transfert à intention persistée + OTP des deux parties, structure vérifiée exigée pour inviter, écritures conditionnelles anti-concurrence partout (invitations, transitions M03, modération M04), notifications C4 de M03, relais outbox démarré + retry sur conflit de sérialisation + quarantaine des événements illisibles, cloisonnement du journal par sous-rôle, export CSV audité, alerte critique de rupture de chaîne. **Dé-scopes assumés (Chantier 1)** : EF-03-09 (expiration des pièces — exige l'état SUSPENDED, planifié avec M16), export PDF du journal, catalogue formel des événements (EF-04-03), purge de rétention PM-24 ; Q-008 reste tranchée MVP (RM-02-06). Validation : build vert, **128 tests verts** dont 16 d'intégration contre PostgreSQL réel (flux M01→M02→M03→M04 complet, altération de chaîne détectée).
 
 ### D-045 — Comptes « membre de structure » : parcours d'inscription dédié (M01)
+> ⚠️ **Remplacée par [[#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] (02/09/2026) sur son volet « inscription structure ».** La route décrite ci-dessous **n'existe plus** : ULAMU a trois acteurs. Le reste de la décision — bootstrap du SUPER_ADMIN par le seed, gestion des sous-rôles — **reste valable**.
+
 Pour résoudre le bloquant RM-02-06 : route publique `/accounts/register/facility-member` (type FACILITY_MEMBER + profil minimal) — c'est le parcours du futur titulaire ET de l'invité sans compte (CU-02-02). La création d'une structure exige ce type de compte. Bootstrap du premier SUPER_ADMIN par le seed (TOTP obligatoire avant toute action admin, RM-01-06) ; gestion des sous-rôles (EF-02-08) par le SUPER_ADMIN via M02.
 
 ### D-044 — Maquettes officielles livrées par le porteur (Claude Design)

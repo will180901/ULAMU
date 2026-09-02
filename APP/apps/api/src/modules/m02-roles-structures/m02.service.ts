@@ -59,12 +59,18 @@ export class M02Service {
     },
   ): Promise<{ facilityId: string }> {
     return this.prisma.$transaction(async (tx) => {
-      // RM-02-06 (décision D-045) : seul un compte dédié FACILITY_MEMBER crée et rejoint
-      // une structure — inscription via /accounts/register/facility-member (M01).
+      /* RM-02-06 (D-045) : seul un compte dédié FACILITY_MEMBER crée et rejoint une structure.
+
+         ⚠️ 02/09/2026 (chantier 25 / D-051) — la route `/accounts/register/facility-member` N'EXISTE
+         PLUS : ULAMU a trois acteurs (patient, soignant, administration). Cette garde ne peut donc
+         plus être franchie que par un compte HÉRITÉ. Elle reste, et c'est délibéré : elle est ce qui
+         empêche un soignant ou un patient de créer une structure, et la retirer ouvrirait ce que
+         personne n'a demandé d'ouvrir. Le message ci-dessous ne renvoie plus vers un parcours
+         d'inscription — il n'y en a plus. */
       const account = await tx.account.findUnique({ where: { id: actorId } });
       if (!account || account.type !== "FACILITY_MEMBER") {
         throw new ForbiddenException(
-          "La création d'une structure exige un compte « membre de structure » dédié (RM-02-06, D-045) — inscrivez-vous via le parcours structure",
+          "La création d'une structure n'est plus ouverte : ULAMU compte trois acteurs — patient, soignant, administration (D-051, 02/09/2026)",
         );
       }
       // RM-02-05/06 : le futur titulaire ne doit avoir AUCUN rattachement actif —
@@ -199,11 +205,12 @@ export class M02Service {
       throw new ConflictException("Votre compte est déjà rattaché à une structure — une seule structure par compte au MVP (RM-02-05)");
     }
 
-    // RM-02-06 (Q-008) : pas de cumul de casquettes au MVP — seul un compte de type
-    // FACILITY_MEMBER peut être rattaché. DÉCISION D'IMPLÉMENTATION À CONFIRMER :
-    // l'inscription M01 ne crée pas (encore) de comptes FACILITY_MEMBER ; le parcours
-    // « numéro sans compte → inscription puis rattachement » (CU-02-02) suppose un
-    // parcours d'inscription dédié, à trancher avec M01 (voir réponse finale).
+    /* RM-02-06 (Q-008) : pas de cumul de casquettes — seul un compte FACILITY_MEMBER se rattache.
+
+       ⚠️ 02/09/2026 (chantier 25 / D-051) — la question « à trancher avec M01 » qui figurait ici est
+       TRANCHÉE, et dans l'autre sens : il n'y aura pas de parcours d'inscription dédié, le type sort
+       du produit. CU-02-02 (« numéro sans compte → inscription puis rattachement ») est donc sans
+       objet : plus aucun compte ne peut naître pour accepter une invitation. */
     if (account.type !== "FACILITY_MEMBER") {
       throw new ForbiddenException(
         "Ce compte ne peut pas rejoindre une structure : au MVP, un compte patient ou professionnel ne cumule pas " +

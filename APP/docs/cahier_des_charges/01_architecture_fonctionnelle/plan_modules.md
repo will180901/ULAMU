@@ -16,7 +16,7 @@
 | # | Module | Domaine | Mission |
 |---|---|---|---|
 | **M01** | Comptes & Authentification | D1 | Inscription, connexion, récupération d'accès, sécurité du compte. Le socle. |
-| **M02** | Rôles & Espaces Structures | D1 | Permissions par rôle ; création d'un espace structure, gestion titulaire/membres. |
+| **M02** | Rôles & Espaces Structures | D1 | Permissions par rôle. ⚠️ ~~création d'un espace structure, gestion titulaire/membres~~ — **retiré du produit le 02/09/2026** ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]). |
 | **M03** | Vérification & Contrats | D2 | Dossier de vérification des professionnels/structures, Badge Vérifié, signature du contrat numérique. |
 | **M04** | Audit & Signalements | D2 | Journal d'audit inaltérable (reçoit les événements de tous), signalements et modération. |
 | **M05** | Annuaire des Professionnels | D3 | Profils publics, offres de consultation, recherche et filtres, affichage des notations. |

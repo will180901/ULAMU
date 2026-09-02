@@ -24,7 +24,19 @@ export const AUTH_HEADER = 'Authorization';
 export const bearer = (token: string): string => `Bearer ${token}`;
 
 // ── M01 — Authentification (username + mot de passe + TOTP) ──────────────────
-export type AccountType = 'PATIENT' | 'PROFESSIONAL' | 'FACILITY_MEMBER' | 'ADMIN';
+/**
+ * Les TROIS acteurs d'ULAMU : le patient (mobile), le professionnel et l'administration (web).
+ *
+ * ⚠️ L'énumération Prisma `AccountType` en compte un QUATRIÈME, `FACILITY_MEMBER`, et ce n'est pas
+ * une désynchronisation : ce type est **fermé depuis le 02/09/2026** (chantier 25) — sa route
+ * d'inscription est retirée, aucun compte ne peut plus naître. La valeur reste en base parce que
+ * l'en retirer demanderait une migration sur la base de production, et parce que le journal d'audit
+ * — en insertion seule — porte encore des lignes qui la nomment.
+ *
+ * Un compte hérité qui se connecterait quand même retombe sur le parcours professionnel : aucun
+ * client ne plante sur une valeur inattendue, chacun a son repli.
+ */
+export type AccountType = 'PATIENT' | 'PROFESSIONAL' | 'ADMIN';
 export type Sex = 'M' | 'F';
 export type ClientKind = 'mobile' | 'web';
 /** OTP SMS : uniquement vérif du téléphone (inscription) + récupération. PAS la connexion. */

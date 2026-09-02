@@ -11,6 +11,26 @@
 
 ---
 
+> ## ⚠️ Le compte « membre de structure » est RETIRÉ du produit (02/09/2026)
+>
+> Décision [[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]] : ULAMU a **trois acteurs** — le patient (mobile), le soignant et l'administration (web).
+> `FACILITY_MEMBER` n'en est plus un : la route publique `POST /v1/accounts/register/facility-member`
+> est retirée, **plus aucun compte de ce type ne peut naître**.
+>
+> **Ce qui reste vrai dans cette spécification** : la pharmacie comme **objet** — `Facility`, ses
+> stocks, ses dispensations, ses réservations. La **recherche de médicaments du patient en dépend
+> directement** (M12 lit M11), et le patient est dans le périmètre.
+>
+> **Ce qui n'a plus d'acteur** : tout ce qui suppose qu'un humain administre l'espace — créer une
+> structure, inviter un membre, tenir le stock, servir une ordonnance. Ces routes existent encore et
+> ne répondent qu'à des adhésions **héritées** ; aucune nouvelle ne peut se créer.
+>
+> **La conséquence, dite plutôt que tue** : plus personne n'alimente le stock. Les données se figent,
+> et la recherche payée du patient répond sur un stock qui vieillit. Coût et issues au §9 du plan
+> d'exécution web.
+
+---
+
 ## 1. Mission et périmètre
 
 Remplacer l'ordonnance papier — perdue, illisible, falsifiable — par un document **signé, infalsifiable et traçable** de la prescription jusqu'à la délivrance en pharmacie.

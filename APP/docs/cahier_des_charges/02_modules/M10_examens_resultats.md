@@ -23,7 +23,7 @@ Fermer la boucle des **examens complémentaires** : le prescripteur demande des 
 
 | Besoin | Déjà couvert par |
 |---|---|
-| Espace labo, titulaire, membres | M02 (type de structure « laboratoire ») |
+| ~~Espace labo, titulaire, membres~~ | ~~M02 (type de structure « laboratoire »)~~ — **sans objet depuis le 02/09/2026** ([[../00_cadrage/registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) : le compte membre de structure est retiré du produit. M10 est en V1 ; sa reprise devra dire par quel acteur un laboratoire est administré. |
 | Vérification + contrat | M03 (posture stricte D-029) |
 | Catalogue d'examens (prix, délais) | M11 (entité CatalogueExamen prévue) |
 | Recherche + dévoilement + réservation 24 h | M12 (D-009, prix PM-03) — le patient cherche « NFS + glycémie », même mécanique que les médicaments |

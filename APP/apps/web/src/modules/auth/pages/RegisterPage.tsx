@@ -34,10 +34,17 @@ import { useLoadMeMutation } from '../hooks/useLogin'
 type Step = 'contact' | 'identity' | 'profile' | 'security' | 'otp'
 
 /* ⚠️ L'ÉTAPE « TYPE » A DISPARU (24/08/2026), avec le compte « Structure / Pharmacie ».
-   La branche officine sort du périmètre de la soutenance : ses quatre écrans ne seront pas
-   construits. Or laisser quelqu'un CRÉER ce compte pour le trouver vide serait la pire des
-   promesses. Le type disparaît donc d'ici aussi — et comme il ne restait qu'un choix, l'étape
-   entière n'avait plus de raison d'être : on ne fait pas choisir entre une option et rien.
+   Laisser quelqu'un CRÉER ce compte pour le trouver vide aurait été la pire des promesses. Le type
+   disparaît donc d'ici aussi — et comme il ne restait qu'un choix, l'étape entière n'avait plus de
+   raison d'être : on ne fait pas choisir entre une option et rien.
+
+   02/09/2026 — CE N'EST PLUS UN REPORT, C'EST ACTÉ. ULAMU a trois acteurs : le patient (mobile),
+   le soignant et l'administration (web). `FACILITY_MEMBER` est retiré du produit (chantier 25).
+   L'appel à `registerFacilityMember` survivait ici dans une branche morte gardée par un `true`
+   littéral — d'où l'avertissement `no-constant-condition` que le lint signalait sans que personne
+   ne l'attribue à cette décision. Le ternaire est supprimé.
+
+   *Une branche qu'on neutralise sans la retirer laisse croire qu'on hésite encore.*
 
    « Contact » et « Identité » sont deux étapes et non une seule (20/08/2026). Les cinq champs
    réunis demandaient 634 px, or la carte est plafonnée à 90 vh — soit 630 px sur une fenêtre de
@@ -117,22 +124,20 @@ export function RegisterPage() {
   const requestOtp = useMutation({ mutationFn: () => api.requestOtp({ email, purpose: 'REGISTRATION' }) })
   const register = useMutation({
     mutationFn: () =>
-      true
-        ? api.registerProfessional({
-            phone,
-            email,
-            username,
-            otpCode,
-            password,
-            firstName,
-            lastName,
-            category,
-            specialty: specialty.trim() || undefined,
-            acceptTerms,
-            client: 'web',
-            deviceLabel: 'ULAMU Web',
-          })
-        : api.registerFacilityMember({ phone, email, username, otpCode, password, firstName, lastName, acceptTerms, client: 'web', deviceLabel: 'ULAMU Web' }),
+      api.registerProfessional({
+        phone,
+        email,
+        username,
+        otpCode,
+        password,
+        firstName,
+        lastName,
+        category,
+        specialty: specialty.trim() || undefined,
+        acceptTerms,
+        client: 'web',
+        deviceLabel: 'ULAMU Web',
+      }),
   })
   const loadMe = useLoadMeMutation()
 

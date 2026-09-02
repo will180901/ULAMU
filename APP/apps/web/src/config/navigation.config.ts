@@ -154,7 +154,6 @@ export const NAV_GROUPS: NavGroup[] = [
  */
 export const ESPACE_PAR_ROLE: Record<string, string> = {
   PROFESSIONAL: 'Espace soignant',
-  FACILITY_MEMBER: 'Espace officine',
   ADMIN: 'Espace administration',
 }
 

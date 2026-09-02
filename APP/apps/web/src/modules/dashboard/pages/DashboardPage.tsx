@@ -1,14 +1,18 @@
 /**
  * B2 — Tableau de bord. D'après `docs/maquettes/B2 - Tableau de bord.dc.html`.
  *
- * **Un seul écran, trois visages** selon le rôle — soignant, officine, administration. C'est le choix
- * acté au plan de refonte : trois écrans séparés auraient triplé le travail de maintenance pour un
- * cadre identique.
+ * **Un seul écran, deux visages** selon le rôle — soignant, administration. C'est le choix acté au
+ * plan de refonte : des écrans séparés auraient multiplié le travail de maintenance pour un cadre
+ * identique.
+ *
+ * *(Le troisième visage, « officine », a été retiré le 02/09/2026 avec le type de compte
+ * `FACILITY_MEMBER` — chantier 25. Il n'avait de toute façon aucune entrée de navigation pour y
+ * mener.)*
  *
  * ⚠️ **Ce qui manque, et pourquoi il manque.** La maquette montre par rôle quatre KPI avec tendances,
  * un graphique sur six mois et une répartition par type. L'API ne calcule RIEN de tout cela :
- * `me/dashboard` renvoie quatre nombres bruts, `me/facility/:id/dashboard` en renvoie deux, et aucune
- * comparaison historique n'existe nulle part.
+ * `me/dashboard` renvoie quatre nombres bruts, et aucune comparaison historique n'existe nulle
+ * part.
  *
  * Décision du 20/08/2026 : **construire avec le réel**. Chaque chiffre affiché ici est vrai. Pas de
  * tendance inventée, pas de courbe décorative — un tableau de bord qui ment est pire qu'un tableau de
@@ -45,14 +49,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Activity,
   AlertTriangle,
-  Banknote,
   CheckCircle2,
   ClipboardList,
   Handshake,
   Hourglass,
   LayoutDashboard,
-  PackageCheck,
-  ShoppingBag,
   TrendingUp,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -436,76 +437,6 @@ function TableauSoignant() {
   )
 }
 
-// ── Officine ──────────────────────────────────────────────────────────────────────────────────
-function TableauOfficine() {
-  const officine = useQuery({ queryKey: ['facility', 'mine'], queryFn: () => api.myFacility(), retry: false })
-  const id = officine.data?.id
-  const bord = useQuery({ queryKey: ['dashboard', 'facility', id], queryFn: () => api.facilityDashboard(id as string), enabled: !!id, retry: false })
-  const alertes = useQuery({ queryKey: ['stock', 'alerts', id], queryFn: () => api.stockAlerts(id as string), enabled: !!id, retry: false })
-  const reservations = useQuery({ queryKey: ['disclosures', id], queryFn: () => api.facilityDisclosures(id as string), enabled: !!id, retry: false })
-
-  if (officine.isPending) return <Chargement />
-  if (officine.isError) return <Echec onRetry={() => void officine.refetch()} />
-  if (!officine.data) {
-    return (
-      <Panneau icone={ShoppingBag} titre="Aucune structure rattachée">
-        <Vide
-          texte="Les chiffres d'une officine arrivent ici une fois la pharmacie créée ou rejointe."
-          action={
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/pharmacie">Ma pharmacie</Link>
-            </Button>
-          }
-        />
-      </Panneau>
-    )
-  }
-
-  const aServir = (reservations.data?.items ?? []).filter((d) => d.status === 'ACTIVE')
-  const nbAlertes = alertes.data?.alerts?.length ?? 0
-
-  return (
-    <>
-      <Grille>
-        <CarteKpi icone={ShoppingBag} ton="ambre" label="Réservations à servir" valeur={String(aServir.length)} aide="Payées, en attente de retrait" />
-        <CarteKpi icone={AlertTriangle} ton="rose" label="Alertes de stock" valeur={String(nbAlertes)} aide="Lots périmés ou proches de l'être" />
-        <CarteKpi icone={PackageCheck} ton="emeraude" label="Réservations servies" valeur={String(bord.data?.reservationsServed ?? 0)} aide="Depuis l'ouverture de l'officine" />
-        <CarteKpi icone={Banknote} label="Gains disponibles" valeur={xaf(bord.data?.earnings.availableXaf ?? 0)} aide={`XAF · ${xaf(bord.data?.earnings.pendingXaf ?? 0)} en attente`} />
-      </Grille>
-
-      <Panneau
-        icone={ShoppingBag}
-        titre="À servir au comptoir"
-        sousTitre="Marquez « servie » dès la remise — une réservation expirée compte contre votre fiabilité."
-        action={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/reservations">Tout voir</Link>
-          </Button>
-        }
-      >
-        {aServir.length === 0 ? (
-          <Vide texte="Aucune réservation en attente. Votre stock doit être à jour pour apparaître dans les recherches." />
-        ) : (
-          <ul className="m-0 list-none p-0">
-            {aServir.slice(0, 5).map((d) => (
-              <Ligne
-                key={d.id}
-                principal={d.requestedItems.map((i) => i.label ?? i.dci).filter(Boolean).join(' · ') || 'Traitement réservé'}
-                secondaire={`Réf. ${d.orderRef}`}
-                droite={
-                  <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    {Math.max(0, Math.floor(d.remainingSeconds / 3600))} h
-                  </span>
-                }
-              />
-            ))}
-          </ul>
-        )}
-      </Panneau>
-    </>
-  )
-}
-
 // ── Administration ────────────────────────────────────────────────────────────────────────────
 function TableauAdmin() {
   const kpis = useQuery({ queryKey: ['pilot-kpis'], queryFn: () => api.pilotKpis(), retry: false })
@@ -569,7 +500,7 @@ function TableauAdmin() {
 
 export function DashboardPage() {
   const me = useSessionStore((s) => s.me)
-  const soignant = me?.accountType !== 'ADMIN' && me?.accountType !== 'FACILITY_MEMBER'
+  const soignant = me?.accountType !== 'ADMIN'
 
   // La même requête que `TableauSoignant` : React Query la sert depuis son cache, elle ne part
   // qu'une fois. Activée pour le seul rôle que la question concerne.
@@ -582,8 +513,7 @@ export function DashboardPage() {
   const enAttente = (demandes.data?.items ?? []).filter((h) => h.status === 'INITIATED' || h.status === 'CONFIRMED').length
 
   const aujourdhui = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const titre =
-    me?.accountType === 'FACILITY_MEMBER' ? 'Tableau de bord' : me?.accountType === 'ADMIN' ? 'Pilotage ULAMU' : 'Tableau de bord'
+  const titre = me?.accountType === 'ADMIN' ? 'Pilotage ULAMU' : 'Tableau de bord'
 
   return (
     <div className="ulamu-step-fade">
@@ -596,7 +526,7 @@ export function DashboardPage() {
             : undefined
         }
       />
-      {me?.accountType === 'ADMIN' ? <TableauAdmin /> : me?.accountType === 'FACILITY_MEMBER' ? <TableauOfficine /> : <TableauSoignant />}
+      {me?.accountType === 'ADMIN' ? <TableauAdmin /> : <TableauSoignant />}
     </div>
   )
 }

@@ -19,12 +19,12 @@ import type { MeResponse } from '@/lib/api'
 
 const ME: MeResponse = {
   accountId: 'a1',
-  accountType: 'FACILITY_MEMBER',
+  accountType: 'PROFESSIONAL',
   adminRole: null,
-  username: 'pharma.demo',
+  username: 'dr.nouveau',
   phone: '+242060000000',
-  firstName: 'Bruno',
-  lastName: 'Ossona',
+  firstName: 'Ange',
+  lastName: 'Makaya',
   district: null,
   category: null,
   specialty: null,

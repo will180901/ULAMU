@@ -7,9 +7,21 @@
 
 // ── Énumérations partagées (alignées sur le schéma Prisma) ───────────────────
 
-export type AccountType = "PATIENT" | "PROFESSIONAL" | "FACILITY_MEMBER" | "ADMIN";
+/**
+ * Les TROIS acteurs d'ULAMU : le patient (mobile), le professionnel et l'administration (web).
+ *
+ * ⚠️ L'énumération Prisma `AccountType` en compte un QUATRIÈME, `FACILITY_MEMBER`, et ce n'est pas
+ * une désynchronisation : ce type est **fermé depuis le 02/09/2026** (chantier 25) — sa route
+ * d'inscription est retirée, aucun compte ne peut plus naître. La valeur reste en base parce que
+ * l'en retirer demanderait une migration sur la base de production, et parce que le journal d'audit
+ * — en insertion seule — porte encore des lignes qui la nomment.
+ *
+ * Un compte hérité qui se connecterait quand même retombe sur le parcours professionnel : aucun
+ * client ne plante sur une valeur inattendue, chacun a son repli.
+ */
+export type AccountType = "PATIENT" | "PROFESSIONAL" | "ADMIN";
 export type Sex = "M" | "F";
-/** Le client appelant — mobile = patients, web = pros/structures/admin (D-012). */
+/** Le client appelant — mobile = patients, web = professionnels et administration (D-012). */
 export type ClientKind = "mobile" | "web";
 /** Catégories de professionnels (M01/M05). */
 export type ProfessionalCategory =
@@ -55,16 +67,6 @@ export interface RegisterProfessionalRequest {
   deviceLabel?: string;
 }
 
-export interface RegisterFacilityMemberRequest {
-  phone: string;
-  otpCode: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  client: ClientKind;
-  deviceLabel?: string;
-}
-
 export interface LoginRequest {
   phone: string;
   password: string;
@@ -105,7 +107,6 @@ export const AUTH_ROUTES = {
   requestOtp: "/v1/accounts/otp/request",
   registerPatient: "/v1/accounts/register/patient",
   registerProfessional: "/v1/accounts/register/professional",
-  registerFacilityMember: "/v1/accounts/register/facility-member",
   login: "/v1/auth/login",
   resetPassword: "/v1/auth/password-reset",
 } as const;

@@ -3,8 +3,8 @@
  *
  * Deux étapes dans un seul écran : identifiants, puis code de second facteur si le compte en a un.
  * Nom d'utilisateur OU email — l'API route sur l'un ou l'autre selon la présence d'un « @ », comme
- * sur mobile. Réservée aux comptes PROFESSIONAL / FACILITY_MEMBER / ADMIN : les patients restent sur
- * mobile (D-039/D-044).
+ * sur mobile. Réservée aux comptes PROFESSIONAL / ADMIN : les patients restent sur mobile
+ * (D-039/D-044).
  *
  * ⚠️ **Un écart assumé avec la maquette, et la raison est sérieuse.** La maquette affiche six cases
  * pour le code, et sous ces cases la mention « un code de secours à 10 caractères est aussi

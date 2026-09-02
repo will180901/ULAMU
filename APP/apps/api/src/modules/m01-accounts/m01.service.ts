@@ -326,76 +326,6 @@ export class M01Service {
     }
   }
 
-  /**
-   * Inscription d'un membre de structure (D-003/RM-02-06, décision D-045) : compte dédié
-   * FACILITY_MEMBER — c'est le parcours du futur titulaire ET de l'invité sans compte (CU-02-02).
-   */
-  async registerFacilityMember(dto: {
-    phone: string;
-    email: string;
-    username: string;
-    otpCode: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    acceptTerms: boolean;
-    client: string;
-    deviceLabel?: string;
-  }): Promise<{ accountId: string; sessionToken: string }> {
-    this.ensureTermsAccepted(dto.acceptTerms);
-    const phone = this.normalizeOrThrow(dto.phone);
-    await this.ensurePhoneFree(phone);
-    const email = this.normalizeEmailOrThrow(dto.email);
-    await this.ensureEmailFree(email);
-    const username = normalizeUsername(dto.username);
-    if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
-    await this.ensureUsernameFree(username);
-    this.ensurePasswordOk(dto.password);
-    const passwordHash = await hashPassword(dto.password);
-
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.REGISTRATION, dto.otpCode);
-      const account = await tx.account.create({
-        data: {
-          phone,
-          email,
-          username,
-          passwordHash,
-          type: "FACILITY_MEMBER",
-          facilityMemberProfile: { create: { firstName: dto.firstName, lastName: dto.lastName } },
-          consents: {
-            createMany: {
-              data: [
-                { documentType: "CGU", documentVersion: "1.0" },
-                { documentType: "PRIVACY", documentVersion: "1.0" },
-              ],
-            },
-          },
-        },
-      });
-        const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
-        await this.outbox.emit(tx, { type: "m01.account.facility_member_created", payload: { accountId: account.id } });
-        await this.audit.emit(tx, {
-          actorId: account.id,
-          actorType: "facility_member",
-          action: "m01.account.created",
-          resource: `account:${account.id}`,
-          context: { type: "FACILITY_MEMBER" },
-        });
-        return { accountId: account.id, sessionToken: token };
-      });
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
-        if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
-        if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
-        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
-      }
-      throw e;
-    }
-  }
-
   // ── Connexion (EF-01-03/06/10 ; CU-01-03/08) ───────────────────────────────
 
   async login(dto: {
@@ -459,7 +389,7 @@ export class M01Service {
     }
     if (account.status === "SUSPENDED") throw new ForbiddenException("Compte suspendu (RM-01-05)");
     if (account.status === "CLOSED") throw new ForbiddenException("Compte clôturé — contactez le support (PM-21)");
-    // D-012 : le web est l'app pro/structure/admin, le mobile est l'app patient. Sans ce refus, un patient
+    // D-012 : le web est l'app soignant/administration, le mobile est l'app patient. Sans ce refus, un patient
     // obtenait une session web valide puis restait coincé (aucune capacité → garde de route qui rejette,
     // puis redirection en boucle vers ce même tableau de bord), sans comprendre pourquoi. Vérifié APRÈS le
     // mot de passe : refuser avant révélerait l'existence du compte et son type (anti-énumération).
@@ -687,6 +617,9 @@ export class M01Service {
     const select = { avatarKey: true };
     if (type === "PATIENT") return (await this.prisma.patientProfile.findUnique({ where, select }))?.avatarKey ?? null;
     if (type === "PROFESSIONAL") return (await this.prisma.professionalProfile.findUnique({ where, select }))?.avatarKey ?? null;
+    /* Le type sort du produit le 02/09/2026 (D-051), mais des comptes HÉRITÉS peuvent porter un
+       profil de structure. Retirer la branche leur ferait perdre leur photo sur une donnée qui
+       existe : un nettoyage s'arrête là où la donnée existante commence. */
     if (type === "FACILITY_MEMBER") return (await this.prisma.facilityMemberProfile.findUnique({ where, select }))?.avatarKey ?? null;
     throw new ForbiddenException("Ce type de compte n'a pas de photo de profil");
   }

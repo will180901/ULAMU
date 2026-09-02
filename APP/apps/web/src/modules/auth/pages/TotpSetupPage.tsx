@@ -182,7 +182,7 @@ export function TotpSetupPage() {
      *
      * Les comptes d'administration, eux, n'ont pas de dossier à déposer : ils vont au tableau de bord.
      */
-    const aUnDossier = me.accountType === 'PROFESSIONAL' || me.accountType === 'FACILITY_MEMBER'
+    const aUnDossier = me.accountType === 'PROFESSIONAL'
     navigate(aUnDossier ? '/verification' : '/dashboard', { replace: true })
   }
 

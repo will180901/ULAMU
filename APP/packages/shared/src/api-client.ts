@@ -13,7 +13,6 @@ import {
   bearer,
   LoginRequest,
   LoginResponse,
-  RegisterFacilityMemberRequest,
   RegisterPatientRequest,
   RegisterProfessionalRequest,
   RegisterResponse,
@@ -123,9 +122,6 @@ export class ApiClient {
   }
   registerProfessional(dto: RegisterProfessionalRequest): Promise<RegisterResponse> {
     return this.request("POST", AUTH_ROUTES.registerProfessional, dto);
-  }
-  registerFacilityMember(dto: RegisterFacilityMemberRequest): Promise<RegisterResponse> {
-    return this.request("POST", AUTH_ROUTES.registerFacilityMember, dto);
   }
   login(dto: LoginRequest): Promise<LoginResponse> {
     return this.request("POST", AUTH_ROUTES.login, dto);

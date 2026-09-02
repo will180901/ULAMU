@@ -1,5 +1,5 @@
 /**
- * Client API ULAMU (app web pro/structure/admin) — même contrat REST que le backend NestJS déjà
+ * Client API ULAMU (app web soignant/administration) — même contrat REST que le backend NestJS déjà
  * consommé par l'app mobile patiente (apps/mobile/src/lib/api-client.ts) ; ce fichier est un client
  * minimal indépendant (pas de package partagé, cohérent avec l'app mobile qui a elle aussi son propre
  * client vendoré plutôt qu'un package @ulamu/shared).
@@ -115,11 +115,21 @@ export interface LoginResponse {
   totpRequired: boolean
   sessionToken?: string
   accountId?: string
-  accountType?: 'PATIENT' | 'PROFESSIONAL' | 'FACILITY_MEMBER' | 'ADMIN'
+  accountType?: 'PATIENT' | 'PROFESSIONAL' | 'ADMIN'
 }
+/**
+ * Les TROIS acteurs d'ULAMU : le patient (mobile), le professionnel et l'administration (web).
+ * Cette application n'en sert que deux — les patients restent sur mobile (D-039/D-044).
+ *
+ * ⚠️ L'énumération Prisma en compte un quatrième, `FACILITY_MEMBER`, **fermé le 02/09/2026**
+ * (chantier 25) : sa route d'inscription est retirée, aucun compte ne peut plus naître. La valeur
+ * reste en base — l'en retirer demanderait une migration sur la production, et le journal d'audit,
+ * en insertion seule, porte encore des lignes qui la nomment. Un compte hérité qui se connecterait
+ * ici retombe sur le parcours soignant : chaque branche a son repli, rien ne plante.
+ */
 export interface MeResponse {
   accountId: string
-  accountType: 'PATIENT' | 'PROFESSIONAL' | 'FACILITY_MEMBER' | 'ADMIN'
+  accountType: 'PATIENT' | 'PROFESSIONAL' | 'ADMIN'
   username: string | null
   phone: string
   firstName: string | null
@@ -179,23 +189,6 @@ export interface RegisterProfessionalRequest {
   client: 'web'
   deviceLabel?: string
 }
-export interface RegisterFacilityMemberRequest {
-  phone: string
-  email: string
-  username: string
-  otpCode: string
-  password: string
-  firstName: string
-  lastName: string
-  /**
-   * Acceptation explicite des CGU et de la politique de confidentialité (EF-01-08, loi n° 29-2019).
-   * L'API refuse l'inscription si ce champ n'est pas `true` : le serveur écrit un enregistrement de
-   * consentement qualifié de « preuve légale, immuable », il ne peut pas le fabriquer tout seul.
-   */
-  acceptTerms: boolean
-  client: 'web'
-  deviceLabel?: string
-}
 export interface RegisterResponse {
   accountId: string
   sessionToken: string
@@ -229,11 +222,6 @@ export interface ProfessionalDashboard {
   lastSixMonths: Array<{ month: string; sessions: number; earnedXaf: number }>
   averageRating: number | null
   confirmationRatePct: number
-}
-export interface FacilityDashboard {
-  facilityId: string
-  reservationsServed: number
-  earnings: { availableXaf: number; pendingXaf: number }
 }
 
 export interface ResetPasswordTotpRequest {
@@ -396,32 +384,6 @@ export interface Presence {
 export interface OwnPresence extends Presence {
   /** PM-27 — sessions simultanées maximum (EF-06-14). */
   maxConcurrentSessions: number
-}
-
-// ── M12 — Dévoilements reçus par l'officine (CU-12-03) ─────────────────────
-
-export type DisclosureStatus = 'PENDING' | 'ACTIVE' | 'SERVED' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED'
-
-export interface DisclosureItem {
-  dci?: string
-  label?: string
-  quantity?: number
-}
-
-export interface Disclosure {
-  id: string
-  status: DisclosureStatus
-  district: string
-  requestedItems: DisclosureItem[]
-  createdAt: string
-  paidAt: string | null
-  expiresAt: string | null
-  servedAt: string | null
-  /** Compte à rebours calculé par le SERVEUR — 0 hors dévoilement actif. */
-  remainingSeconds: number
-  /** Référence opaque du paiement (contrat C1) — jamais une identité. */
-  orderRef: string
-  amountXaf: number
 }
 
 // ── M02 — Sous-rôles d'administration (EF-02-08) ───────────────────────────
@@ -803,65 +765,6 @@ export interface WithdrawalQuote {
   payoutDelaySeconds: number
 }
 
-// ── M02 / M11 — Espace structure (CU-02-01/02/03, CU-11-01) ────────────────
-
-export type FacilityRight = 'stock' | 'dispense' | 'stats'
-
-export interface FacilityMember {
-  id: string
-  accountId: string
-  firstName: string | null
-  lastName: string | null
-  role: string
-  rights: FacilityRight[]
-  active: boolean
-}
-
-export interface Facility {
-  id: string
-  type: string
-  name: string
-  district: string
-  quarter: string
-  hours: string | null
-  status: string
-  members: FacilityMember[]
-}
-
-export interface StockItem {
-  id: string
-  medicamentId: string
-  dci: string
-  form: string | null
-  dosage: string | null
-  lotCode: string
-  quantity: number
-  expiryDate: string
-  priceXaf: number
-  /** Tranché par le SERVEUR, pour que toutes les interfaces disent la même chose. */
-  expired: boolean
-}
-
-/** Résultat d'un scan de QR d'ordonnance (CU-09-02). Lecture seule : ne délivre rien. */
-export interface ScannedPrescription {
-  prescriptionId: string
-  status: string
-  /** Tranché par le SERVEUR d'après SON horloge (RM-09-02) — jamais recalculé côté client. */
-  dispensable: boolean
-  expiresAt: string
-  lines: Array<{
-    id: string
-    medicamentId: string | null
-    freeText: string | null
-    posology: string
-    durationDays: number | null
-    qtyPrescribed: number | null
-    qtyDispensed: number
-    /** Ce qu'il RESTE à servir — une ordonnance peut être délivrée en plusieurs fois. */
-    remaining: number | null
-  }>
-}
-
 // ── Administration — M03 (vérification), M16 (pilotage) ────────────────────
 
 export interface VerificationQueue {
@@ -1143,8 +1046,6 @@ export const api = {
   requestOtp: (dto: RequestOtpRequest) => request<RequestOtpResponse>('POST', '/v1/accounts/otp/request', dto),
   registerProfessional: (dto: RegisterProfessionalRequest) =>
     request<RegisterResponse>('POST', '/v1/accounts/register/professional', dto),
-  registerFacilityMember: (dto: RegisterFacilityMemberRequest) =>
-    request<RegisterResponse>('POST', '/v1/accounts/register/facility-member', dto),
   setupTotp: () => request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/setup', undefined, true),
   confirmTotp: (code: string) => request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/confirm', { code }, true),
   resetPasswordByTotp: (dto: ResetPasswordTotpRequest) => request<void>('POST', '/v1/auth/password-reset/totp', dto),
@@ -1244,13 +1145,6 @@ export const api = {
   myPresence: () => request<OwnPresence>('GET', '/v1/presence/me', undefined, true),
   setPresence: (state: PresenceState) => request<Presence>('POST', '/v1/presence/state', { state }, true),
   presenceHeartbeat: () => request<Presence>('POST', '/v1/presence/heartbeat', undefined, true),
-
-  // M12 — dévoilements reçus par l'officine
-  facilityDisclosures: (facilityId: string) =>
-    request<{ items: Disclosure[] }>('GET', `/v1/disclosures/facility/${facilityId}`, undefined, true),
-  /** Clôture propre (RM-12-03). Le serveur refuse si le dévoilement a expiré entre-temps. */
-  markDisclosureServed: (disclosureId: string) =>
-    request<Disclosure>('POST', `/v1/disclosures/${disclosureId}/mark-served`, undefined, true),
 
   // M02 — sous-rôles d'administration (SUPER_ADMIN)
   //
@@ -1418,60 +1312,6 @@ export const api = {
   confirmWithdrawal: (dto: { withdrawalId: string; password: string; otpCode: string }) =>
     request<{ status: string }>('POST', '/v1/withdrawals/confirm', dto, true),
 
-  // M02 — ma structure
-  /** `null` quand le compte n'est rattaché à aucune structure — ce n'est pas une erreur. */
-  myFacility: () => request<Facility | null>('GET', '/v1/facilities/me', undefined, true),
-  createFacility: (dto: { type: 'PHARMACY'; name: string; district: string; quarter: string; hours?: string }) =>
-    request<Facility>('POST', '/v1/facilities', dto, true),
-  inviteMember: (facilityId: string, dto: { phone: string; proposedRights: FacilityRight[] }) =>
-    request<{ id: string }>('POST', `/v1/facilities/${facilityId}/invitations`, dto, true),
-  updateMemberRights: (facilityId: string, memberId: string, rights: FacilityRight[]) =>
-    request<FacilityMember>('PATCH', `/v1/facilities/${facilityId}/members/${memberId}`, { rights }, true),
-  /**
-   * Transfert de titularité (EF-02-06 / CU-02-05) — en deux temps.
-   *
-   * `start` crée une intention PERSISTÉE et liée à UNE cible : un code demandé pour transférer à A ne
-   * peut jamais confirmer un transfert vers B. Le serveur envoie ensuite un code au titulaire ET un
-   * à la personne visée — « les deux confirment » n'est pas une formule, c'est la garantie qu'aucune
-   * officine ne change de main à l'insu de l'un des deux.
-   */
-  startTransfer: (facilityId: string, toMemberId: string) =>
-    request<{ intentId: string; expiresInSeconds: number }>('POST', `/v1/facilities/${facilityId}/transfer/start`, { toMemberId }, true),
-  confirmTransfer: (facilityId: string, dto: { intentId: string; ownerOtpCode: string; targetOtpCode: string }) =>
-    request<Facility>('POST', `/v1/facilities/${facilityId}/transfer/confirm`, dto, true),
-  removeMember: (facilityId: string, memberId: string) =>
-    request<void>('DELETE', `/v1/facilities/${facilityId}/members/${memberId}`, undefined, true),
-
-  // M11 — stock
-  stockItems: (facilityId: string) =>
-    request<{ items: StockItem[] }>('GET', `/v1/stocks/${facilityId}/items`, undefined, true),
-  stockAlerts: (facilityId: string) =>
-    request<{ alerts: Array<{ kind: string; medicamentId: string; label?: string; detail?: string }> }>(
-      'GET',
-      `/v1/stocks/${facilityId}/alerts`,
-      undefined,
-      true,
-    ),
-  /** RM-11-05 : confirmer la fraîcheur remet le compteur à zéro et garde la pharmacie visible. */
-  confirmFreshness: (facilityId: string) =>
-    request<{ lastFreshAt: string }>('POST', `/v1/stocks/${facilityId}/freshness`, undefined, true),
-
-  // M11 — écritures de stock
-  stockEntry: (
-    facilityId: string,
-    dto: { medicamentId: string; lotCode: string; quantity: number; expiryDate: string; priceXaf: number; supplier?: string },
-  ) => request<StockItem>('POST', `/v1/stocks/${facilityId}/entries`, dto, true),
-  /** EF-11-03 : le motif est OBLIGATOIRE — une sortie sans raison est un trou dans l'inventaire. */
-  stockExit: (facilityId: string, dto: { medicamentId: string; lotCode: string; quantity: number; reason: string }) =>
-    request<StockItem>('POST', `/v1/stocks/${facilityId}/exits`, dto, true),
-
-  // M09 — délivrance en pharmacie (scan du QR de l'ordonnance)
-  /** Vérifie le QR et renvoie l'ordonnance + ce qu'il reste à servir. Ne délivre RIEN. */
-  scanPrescription: (qrToken: string, facilityId: string) =>
-    request<ScannedPrescription>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}?facilityId=${facilityId}`, undefined, true),
-  dispense: (qrToken: string, dto: { facilityId: string; lines: Array<{ prescriptionLineId: string; quantity: number }> }) =>
-    request<{ status: string }>('POST', `/v1/prescriptions/scan/${encodeURIComponent(qrToken)}/dispense`, dto, true),
-
   // Administration — file de vérification (sous-rôle Vérification)
   verificationQueue: (status?: string) =>
     request<VerificationQueue>('GET', `/v1/admin/verification/queue${status ? `?status=${status}` : ''}`, undefined, true),
@@ -1525,8 +1365,6 @@ export const api = {
 
   // Administration — pilotage et audit (sous-rôle Super)
   professionalDashboard: () => request<ProfessionalDashboard>('GET', '/v1/me/dashboard', undefined, true),
-  facilityDashboard: (facilityId: string) =>
-    request<FacilityDashboard>('GET', `/v1/me/facility/${facilityId}/dashboard`, undefined, true),
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
   /**
    * S6 — la couverture par arrondissement (01/09/2026).

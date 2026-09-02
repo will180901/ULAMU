@@ -20,7 +20,7 @@ async function bootstrap(): Promise<void> {
   app.useBodyParser("urlencoded", { limit: "130mb", extended: true });
   // Validation côté serveur partout — le client est indicatif (menaces §4.2).
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-  // CORS : l'app mobile (native) n'en avait pas besoin ; la nouvelle app web pro/structure/admin en a
+  // CORS : l'app mobile (native) n'en avait pas besoin ; la nouvelle app web soignant/administration en a
   // besoin pour appeler l'API depuis le navigateur. Pas de cookies (jeton = Bearer) → credentials false.
   const corsOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
     .split(",")

@@ -45,7 +45,7 @@ erDiagram
 | **ProfilPatient** | utilisateur, nom, prénom, naissance, sexe, arrondissement, contact d'urgence | 1 patient = 1 Carnet créé automatiquement. |
 | **ProfilProfessionnel** | utilisateur, catégorie (généraliste, spécialiste, dentiste, sage-femme, infirmier, agent communautaire), spécialité, biographie, statut de vérification | Prescripteur = dérivé de la catégorie, jamais stocké en double. |
 | **Structure** | id, type (pharmacie / laboratoire), nom, arrondissement, quartier, position GPS, horaires, statut de vérification | Position GPS jamais exposée sans Dévoilement (D-009). |
-| **MembreStructure** | structure, utilisateur, rôle interne (titulaire / membre), droits | 1 seul titulaire actif par structure. |
+| **MembreStructure** | structure, utilisateur, rôle interne (titulaire / membre), droits | 1 seul titulaire actif par structure. ⚠️ **Plus alimentée depuis le 02/09/2026** ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) : le compte membre de structure est retiré du produit. La table demeure — l'en retirer demanderait une migration sur la production, et le journal d'audit la nomme encore. |
 
 ### D2 — Confiance & Conformité
 | Entité | Attributs clés | Règles |

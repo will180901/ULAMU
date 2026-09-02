@@ -29,7 +29,7 @@
 
 ### Phase 2 — Modules (12 au MVP)
 - [[M01_comptes_authentification]] — le socle : comptes, OTP, TOTP, sessions de connexion
-- [[M02_roles_espaces_structures]] — permissions + espaces pharmacies (titulaire/membres)
+- [[M02_roles_espaces_structures]] — permissions par rôle. ⚠️ Les **espaces pharmacies (titulaire/membres) sont retirés du produit** le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) : la pharmacie reste un objet du modèle, plus un titulaire de compte.
 - [[M03_verification_contrats]] — badges, dossiers de vérification, contrats signés
 - [[M04_audit_signalements]] — journal inaltérable + modération simple
 - [[M05_annuaire_professionnels]] — vitrine, offres, filtres, présence en ligne

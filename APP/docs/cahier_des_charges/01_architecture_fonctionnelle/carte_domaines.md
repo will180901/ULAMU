@@ -15,13 +15,13 @@
 
 | # | Domaine | Mission (une phrase) | Concepts du [[glossaire]] | Acteurs principaux |
 |---|---|---|---|---|
-| **D1** | **Identité & Accès** | Savoir qui est qui, et qui a le droit de faire quoi. | Comptes, rôles, espaces structures, Titulaire, Membre | Tous |
-| **D2** | **Confiance & Conformité** | Garantir que les professionnels sont vrais et que tout est tracé. | Vérification, Badge Vérifié, Contrat numérique, Signalement, journal d'audit | Professionnels, Structures, Admin Vérification |
+| **D1** | **Identité & Accès** | Savoir qui est qui, et qui a le droit de faire quoi. | Comptes, rôles. ~~espaces structures, Titulaire, Membre~~ (retirés — [[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]) | Tous |
+| **D2** | **Confiance & Conformité** | Garantir que les professionnels sont vrais et que tout est tracé. | Vérification, Badge Vérifié, Contrat numérique, Signalement, journal d'audit | Professionnels, Admin Vérification |
 | **D3** | **Soin** ⭐ | Orchestrer l'acte médical : de la poignée de main au compte-rendu. | Offre, Initiation, Confirmation, Poignée de main, Session, Décompteur, Pré-consultation, Prolongation, Suivi, Compte-rendu, Notation | Patient, Professionnel |
 | **D4** | **Carnet** | Construire la mémoire médicale à vie du patient. | Carnet, Entrée, Constantes, Mission de triage | Patient, Professionnels, Le Système |
 | **D5** | **Prescription** | Faire circuler ordonnances et examens de façon infalsifiable. | Ordonnance, Ligne, Garde-fou allergies, Délivrance, Demande d'examens, Résultats | Prescripteur, Pharmacie, Laboratoire, Patient |
 | **D6** | **Disponibilité & Localisation** | Dire où se trouve ce dont le patient a besoin — et le réserver. | Stock, Recherche anonyme, Dévoilement, Réservation, guidage | Patient, Pharmacie, Laboratoire |
-| **D7** | **Argent** | Encaisser, répartir, rembourser, reverser — au franc près. | Paiement, Commission, Reçu, Remboursement automatique, Gains, Retrait | Patient, Professionnels, Structures, Admin Finance |
+| **D7** | **Argent** | Encaisser, répartir, rembourser, reverser — au franc près. | Paiement, Commission, Reçu, Remboursement automatique, Gains, Retrait | Patient, Professionnels, Admin Finance |
 | **D8** | **Communication** | Notifier la bonne personne, au bon moment, sur le bon canal. | notifications push/SMS, rappels de médicaments | Le Système, tous |
 | **D9** | **Urgence** | Sauver des minutes quand tout va mal — jamais monétisé. | Bouton Urgence (périmètre : Q-006) | Patient, tiers |
 | **D10** | **Pilotage** | Donner à chacun sa vue : tableaux de bord, administration, paramètres. | tableaux de bord, paramètres plateforme | Tous, Équipe ULAMU |

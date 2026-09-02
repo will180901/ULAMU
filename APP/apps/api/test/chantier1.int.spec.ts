@@ -7,6 +7,7 @@ import { Test } from "@nestjs/testing";
 import { CommonModule } from "../src/common/common.module";
 import { OutboxService } from "../src/common/outbox.service";
 import { PrismaService } from "../src/common/prisma.service";
+import { hashPassword } from "../src/common/crypto/password";
 import { DevSmsGateway } from "../src/common/sms/sms.service";
 import { DevEmailGateway, EMAIL_GATEWAY } from "../src/common/email/email.service";
 import { M01AccountsModule } from "../src/modules/m01-accounts/m01.module";
@@ -58,18 +59,31 @@ describe("Chantier 1 — intégration inter-modules (M01→M02→M03→M04)", ()
     return (msg.html.match(/>(\d{6})</) as RegExpMatchArray)[1] as string;
   };
 
+  /*
+    ── Le compte de structure se monte DIRECTEMENT depuis le 02/09/2026 (chantier 25 / D-051) ────
+
+    `m01.registerFacilityMember` n'existe plus : ULAMU a trois acteurs — patient, soignant,
+    administration — et la route publique d'inscription d'un membre de structure est retirée.
+
+    Les tests qui suivent n'éprouvent PAS cette inscription : ils éprouvent l'espace structure lui-
+    même (création, invitation, dossier de vérification ouvert par l'outbox), qui existe toujours et
+    ne répond plus qu'à des adhésions héritées. Le compte est donc semé en base, exactement comme
+    `chantier4.int.spec.ts` le fait déjà — ce qui reste testé est ce qui tourne encore.
+
+    ⚠️ Le mot de passe est haché ici parce que le test M03 signe un contrat avec (`m03.sign`).
+  */
   const registerFacilityMember = async (phone: string, firstName: string) => {
-    await m01.requestOtp({ email: emailFor(phone) }, "REGISTRATION");
-    return m01.registerFacilityMember({
-      phone,
-      email: emailFor(phone),
-      username: "u" + phone.replace(/\D/g, "").slice(-9),
-      otpCode: lastEmailOtpFor(phone),
-      password: "motdepasse1",
-      firstName,
-      lastName: "Test",
-      acceptTerms: true, client: "web",
+    const account = await prisma.account.create({
+      data: {
+        phone,
+        email: emailFor(phone),
+        username: "u" + phone.replace(/\D/g, "").slice(-9),
+        passwordHash: await hashPassword("motdepasse1"),
+        type: "FACILITY_MEMBER",
+        facilityMemberProfile: { create: { firstName, lastName: "Test" } },
+      },
     });
+    return { accountId: account.id, sessionToken: "" };
   };
 
   const drainAll = async (): Promise<void> => {

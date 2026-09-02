@@ -20,7 +20,9 @@ pour l'admin/double-validation) :
 - Un dossier par module : src/modules/m16-pilotage/. Fichiers mXX.module.ts, mXX.*.controller.ts, mXX.dto.ts,
   mXX.policies.ts (+ .spec.ts pour les fonctions PURES), un service par responsabilité.
 - AuthGuard global. Acteur via @Actor() (../../common/auth/actor.decorator), type AuthenticatedActor
-  (../../common/auth/auth.guard) : { accountId, accountType: "PATIENT"|"PROFESSIONAL"|"FACILITY_MEMBER"|"ADMIN", sessionId, client }.
+  (../../common/auth/auth.guard) : { accountId, accountType: "PATIENT"|"PROFESSIONAL"|"ADMIN", sessionId, client }.
+  (D-051, 02/09/2026 : "FACILITY_MEMBER" reste dans l'enum Prisma pour les comptes hérités, mais il
+  est retiré du produit — ULAMU a trois acteurs. Ne pas en écrire de nouveau code.)
 - Routes ADMIN : @UseGuards(AdminGuard) au niveau contrôleur + @AdminOnly(AdminRole.X) par méthode
   (../../common/auth/admin.guard) — TOTP déjà imposé par le guard (RM-01-06). SUPER_ADMIN passe partout.
   Sous-rôles AdminRole : SUPER_ADMIN, ADMIN_FINANCE, ADMIN_VERIFICATION, ADMIN_MAP.

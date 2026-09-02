@@ -93,6 +93,23 @@ export function isInvitationAcceptable(invitation: InvitationSnapshot, ctx: Acce
 
 // ── Matrice statique des rôles globaux (EF-02-01/02, spec §5) ────────────────
 
+/**
+ * ⚠️ ULAMU a TROIS acteurs depuis le 02/09/2026 : le PATIENT (mobile), le PROFESSIONNEL et
+ * l'ADMINISTRATION (web). `FACILITY_MEMBER` est **fermé** — la route publique
+ * `POST /v1/accounts/register/facility-member` a été retirée, plus aucun compte de ce type ne peut
+ * naître (chantier 25).
+ *
+ * **Il reste néanmoins dans ce type, et ses six règles restent dans la matrice ci-dessous. Ce n'est
+ * pas un oubli.** La matrice a un seul rôle : dire ce que le serveur applique VRAIMENT. Or le
+ * contrôle d'accès des structures ne passe pas par elle — il passe par
+ * `PermissionsService.assertFacilityRight`, qui lit la table `FacilityMember`. Tant qu'une adhésion
+ * héritée existe en base, ce chemin accorde encore ces droits.
+ *
+ * Retirer les lignes sans retirer le chemin donnerait **deux vérités pour une même règle**, et la
+ * matrice serait celle qui ment — exactement la dette corrigée en C1 le 23/08 et rappelée au
+ * chantier 11. La fermeture complète suppose d'abord un ménage des données en production ; elle est
+ * inscrite au §9 du plan avec son coût.
+ */
 export type GlobalRole = "PATIENT" | "PROFESSIONAL" | "FACILITY_MEMBER" | "ADMIN";
 /** Sous-rôles admin (EF-02-08) — alignés sur l'enum Prisma AdminRole. */
 export type AdminSubRole = "SUPER_ADMIN" | "ADMIN_FINANCE" | "ADMIN_VERIFICATION" | "ADMIN_MAP";

@@ -4,6 +4,24 @@ Source de vérité : `uploads/plan_refonte_web_shadcn.md` (23 écrans, 5 groupes
 `uploads/Charte Graphique/` (CG-01→11), le patrimoine `uploads/patrimoine-web/`, et le codebase
 monté `web/` (tokens réels dans `web/src/styles/globals.css`).
 
+> ## ⚠️ Périmètre — trois acteurs depuis le 02/09/2026 (D-051)
+>
+> ULAMU a **trois acteurs** : le **patient** (mobile), le **soignant** et l'**administration** (web).
+> Le compte « membre de structure » (`FACILITY_MEMBER`) est **retiré du produit**.
+>
+> **Conséquences pour ces maquettes, qui ne sont PAS modifiées** — ce sont des artefacts de
+> conception, et les corriger effacerait ce que le projet a envisagé :
+>
+> - **D1 « Ma pharmacie », D2 « Stock », D3 « Délivrance », D4 « Réservations »** sont **hors
+>   produit**. Elles ne seront pas construites. *(Elles étaient déjà « hors MVP, écartées » au §3 du
+>   plan d'exécution ; ce n'est plus un report.)*
+> - **A2 « Inscription »** montre une étape « type de compte » avec le choix « Structure /
+>   Pharmacie ». **Cette étape n'existe plus depuis le 24/08/2026** : il ne restait qu'un choix, et
+>   on ne fait pas choisir entre une option et rien.
+>
+> La pharmacie reste un **objet** du modèle — la recherche de médicaments du patient en dépend —
+> mais plus un titulaire de compte.
+
 ## Arbitrages tranchés par le porteur (10/08/2026)
 
 | Sujet | Décision |

@@ -52,6 +52,11 @@
 
 ## 3. Personas structures (application web)
 
+> ⚠️ **Hors périmètre depuis le 02/09/2026 ([[registre_decisions#D-051 — Trois acteurs, et deux seulement sur le web (remplace D-003 et D-004 sur le volet COMPTE)|D-051]]).** ULAMU a trois acteurs : le patient, le soignant,
+> l'administration. Ce persona est conservé pour l'histoire — il documente ce que la plateforme a
+> envisagé, et **ce que le patient perd** : sans personne pour tenir le stock, sa recherche de
+> médicaments répond sur des données qui vieillissent.
+
 ### 💊 P7 — Pharmacie du Marché, Poto-Poto (M. Destin, titulaire + 3 employés)
 - **Situation** : bonne pharmacie de quartier, concurrence rude, clients qui repartent quand le produit manque.
 - **Avec ULAMU** : son espace structure (titulaire + membres), son stock à jour la rend visible dans les recherches anonymes ; les dévoilements lui amènent des clients **sûrs** (produit réservé = vente quasi garantie) ; scan du QR des ordonnances, stock décrémenté tout seul.

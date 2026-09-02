@@ -17,8 +17,7 @@ import {
   EnableEmailTwoFactorDto,
   LoginDto,
   RegenerateBackupCodesDto,
-  RegisterFacilityMemberDto,
-  RegisterPatientDto,
+    RegisterPatientDto,
   RegisterProfessionalDto,
   RequestOtpDto,
   ResetPasswordDto,
@@ -86,11 +85,6 @@ export class M01Controller {
     return this.service.registerProfessional(dto);
   }
 
-  @Public()
-  @Post("accounts/register/facility-member")
-  registerFacilityMember(@Body() dto: RegisterFacilityMemberDto) {
-    return this.service.registerFacilityMember(dto);
-  }
 
   @Public()
   @Post("auth/login")

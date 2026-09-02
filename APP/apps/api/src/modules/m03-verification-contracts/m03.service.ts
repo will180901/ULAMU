@@ -55,6 +55,15 @@ function auditActorType(accountType: string): "patient" | "professional" | "faci
       return "patient";
     case "PROFESSIONAL":
       return "professional";
+    /* ⚠️ NE PAS RETIRER CE CAS (chantier 25, 02/09/2026).
+
+       `FACILITY_MEMBER` sort du PRODUIT (D-051) : plus aucun compte de ce type ne peut naître. Mais
+       cette fonction ne décrit pas ce qu'on peut créer — elle traduit un type **déjà stocké** vers
+       le journal d'audit, qui est chaîné par hachage et en INSERTION SEULE.
+
+       Retirer le cas ferait retomber sur le `default` : l'action d'un compte hérité serait inscrite
+       comme venant du « système », **définitivement**, et l'intégrité de la chaîne interdirait de la
+       corriger. Un nettoyage produirait une falsification. */
     case "FACILITY_MEMBER":
       return "facility_member";
     case "ADMIN":
