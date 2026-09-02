@@ -70,7 +70,10 @@ export function PaymentsScreen({navigation}: NativeStackScreenProps<AppStackPara
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {receipts.length === 0 ? (
             <Card style={{alignItems: 'center', paddingVertical: 8}}>
-              <EmptyState icon="credit-card" title="Aucun paiement pour l'instant." hint="Vos reçus de consultation et de dévoilement apparaîtront ici." />
+              {/* 02/09/2026 (chantier 30) — disait « de consultation et de dévoilement ». Le dévoilement payé
+                  (PM-03) est sorti du produit avec D-052 : promettre un reçu qui n'arrivera jamais
+                  fait attendre quelque chose. */}
+              <EmptyState icon="credit-card" title="Aucun paiement pour l'instant." hint="Vos reçus de consultation apparaîtront ici." />
             </Card>
           ) : (
             <Card padding={0}>

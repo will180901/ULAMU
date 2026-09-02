@@ -415,6 +415,9 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | 17 | **La gestion des structures de M02 est inatteignable, mais toujours là (née le 02/09, chantier 26).** Neuf routes subsistent — créer une structure, inviter un membre, changer ses droits, le suspendre, transférer la titularité — et **plus aucun compte ne peut les appeler** : `createFacility` et `acceptInvitation` exigent `type === "FACILITY_MEMBER"`, type fermé depuis D-051. S'y ajoutent `PermissionsService.assertFacilityRight`, qui **n'a plus un seul appelant** depuis le retrait de M11 et de la délivrance, et la branche `FACILITY` du détenteur de gains dans M13. ⚠️ **M02 lui-même RESTE** : il porte aussi les sous-rôles d'administration (E4, `listAdmins`, `assignAdminRole`), qui sont dans le périmètre — c'est sa moitié « structures » qui est morte, pas le module. **Coût du retrait : ~450 lignes de service, 9 routes, leurs DTO et leurs tests, plus la branche M13.** ⚠️ Ce n'est pas un simple `rm` : `EarningsHolderType` et `subjectKind` du dossier de vérification portent encore `FACILITY`, et ces types décrivent ce que le serveur peut **renvoyer** sur des données existantes. **Recommandation : le faire, mais dans un chantier à lui** — le grouper ici aurait mélangé « retirer la chaîne du médicament » et « retirer la gestion des structures », deux décisions différentes du porteur. Rien ne fuit entre-temps : la porte est fermée à l'entrée. | 🟡 **chantier à planifier**, non urgent |
 
+| 18 | **Les intitulés des catégories de notification sont écrits DEUX fois (née le 02/09, chantier 30).** `NOTIFICATION_CATEGORIES` vit sur le serveur ; ses cinq intitulés en français sont recopiés à la main dans `SectionPreferences.tsx` (web) **et** `NotificationsScreen.tsx` (mobile), sans qu'aucune ligne ne soit partagée. C'est ce qui a fait qu'une même phrase fausse — « réservations qui expirent » — a demandé deux chantiers pour partir : le 29 pour le web, le 30 pour le mobile. **Deux vérités pour une même règle**, la dette que le chantier 11 nomme. Trois issues : (a) **le serveur sert les intitulés** dans `GET /v1/notifications/me/preferences` — le plus juste, mais il faudrait décider où vit le texte d'une interface ; (b) **un fichier partagé** dans `packages/contracts` — sauf que ni le web ni le mobile n'importent ce paquet aujourd'hui, par choix assumé (clients vendorés) ; (c) **un test qui compare les deux listes** et échoue si elles divergent — ne supprime pas la duplication mais la rend bruyante. **Recommandation : (c)**, ~20 lignes, aucune architecture à changer. | 🟡 **à planifier** |
+| 19 | **`HeaderArt` est mort et appelle un site tiers (née le 02/09, chantier 30).** Le composant n'est monté par aucun écran, et il charge ses illustrations depuis `illustrations.popsy.co` — une dépendance réseau externe. Il ne porte **aucune promesse fausse** : il n'entrait donc pas dans le chantier 30, qui traitait les phrases. Son voisin `StepCarousel` a été retiré parce qu'il en portait une. **Coût : 8 lignes.** ⚠️ Vérifier d'abord qu'aucun écran à venir ne le prévoit — c'est un composant d'illustration, pas de la logique. | 🟢 **trivial**, à grouper avec un prochain passage |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
@@ -493,6 +496,69 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **28** | **Une phrase visible avait survécu à trois chantiers** — 02/09, trouvée en vérifiant en ligne le chantier 27. L'écran de connexion annonçait encore, **en toutes lettres**, « Connectez-vous à votre compte ULAMU — professionnels, **structures** et administration ». Le chantier 25 avait pourtant ouvert ce fichier : il en avait corrigé le **commentaire d'en-tête** et laissé la phrase **affichée**, trois lignes plus bas. Corrigé aussi : E6 illustrait l'anonymat du signaleur par « un praticien, une officine » — on ne peut plus signaler une officine ; et trois commentaires devenus trompeurs (le « poste d'officine » de A3, la règle « qui ne vise que les pharmacies » de B2). **Et un ajout qui va dans l'autre sens** : E1 garde « Structure » pour nommer un dossier hérité, avec un test qui l'exige — retirer la branche afficherait un vide sur un dossier que la base contient encore. `promesses.test.ts` gagne un second bloc qui lit ce que les écrans **disent** du périmètre, plus seulement ce qu'ils importent. **web 504 ✓ (501 + 3) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
 
 | **29** | **Deux réglages qui ne réglaient rien, et un test qui s'était désarmé** — 02/09, trouvés par un balayage **systématique du bundle déployé** au lieu d'un contrôle de ce qu'on venait de corriger. B3 « Aide » offrait encore le sujet « **Ma structure · Titulaire injoignable** » — une demande qu'aucun administrateur ne saurait traiter, la procédure ayant été retirée d'E7 le même jour. B3 « Préférences » proposait de couper les « Rappels — échéances de vérification, **réservations qui expirent** » : les réservations sont sorties avec D-052, **et la catégorie `reminder` ne porte aucun modèle de notification** — compté dans `m14.templates.ts` : care 19, system 12, critical 10, money 7, reminder **zéro**. Et C7 disait d'une ordonnance annulée que « son code a été rendu inerte », **incohérence introduite par le chantier 27** qui venait de redéfinir ce code comme un sceau ne servant pas à la délivrance. **Le plus instructif est un test** : `ordonnance.test.tsx` cherchait l'absence du texte alternatif « Code à scanner en pharmacie » — que le chantier 27 avait renommé. L'assertion restait verte pour la mauvaise raison. **web 506 ✓ (504 + 2) · types propres · build propre · lint 19.** | ⏸ en attente | ⏸ |
+
+| **30** | **Le mobile n'avait jamais été balayé** — 02/09. Quatre chantiers de vérification s'étaient tous appuyés sur le **bundle web déployé** : l'application mobile n'est pas servie par Render, **aucun de ces contrôles ne la couvrait**. Trois promesses fausses y vivaient encore. `ui.tsx` portait un **SECOND carrousel**, `StepCarousel`, distinct de `AuthCarouselDrawer` et annonçant lui aussi « Réservez vos médicaments tout près » — **du code mort que personne ne montait**, et qui chargeait ses illustrations depuis un site tiers. `NotificationsScreen` décrivait la catégorie « Rappels » par « Médicaments, **réservations**, expirations » — la ligne jumelle de celle retirée de B3 au chantier 29, et pour la même raison : **zéro modèle de notification** ne porte cette catégorie. `PaymentsScreen` promettait « vos reçus de consultation **et de dévoilement** » — un reçu qui n'arrivera jamais. **Vérifié au passage, contre une erreur qu'on allait faire** : les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, 401 en ligne) existent toujours et n'ont rien à voir — le service n'importe que Prisma, il n'émet aucune notification. **mobile 7 ✓ · lint 108 → 104 · web 506 ✓ · API 485 ✓ · types propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 30 (le mobile jamais balayé) a appris
+
+*Mené le 02/09/2026, après le quatrième balayage du bundle web.*
+
+#### Une méthode de vérification a un angle mort, et il faut le nommer
+
+La règle du 02/09 dit : **on teste sur le site en ligne.** Elle a trouvé, quatre fois de suite, ce
+que le code et les tests ne voyaient pas — six promesses au chantier 27, une phrase survivante au
+28, trois réglages vides au 29.
+
+Et elle a un angle mort qu'aucun de ces succès ne signalait : **l'application mobile n'est pas
+servie par Render.** Aucune de ces quatre vérifications ne pouvait la voir. Pendant que le web était
+inspecté quatre fois, le mobile ne l'avait jamais été.
+
+*La leçon n'est pas que la règle est mauvaise — elle est excellente. Elle est : **une méthode de
+vérification définit ce qu'elle ne peut pas voir, et ce périmètre-là doit être écrit à côté
+d'elle.** Pour ULAMU : le site en ligne prouve le web et l'API ; le mobile se vérifie à la source,
+faute d'être déployé.*
+
+#### Une promesse fausse dans du code mort survit à tout
+
+`StepCarousel` annonçait « Réservez vos médicaments tout près » — exactement la phrase retirée de
+`AuthCarouselDrawer` au chantier 27. Elle a survécu parce que **personne ne monte ce composant** :
+il n'apparaît sur aucun écran, donc aucune relecture visuelle ne pouvait le montrer, et aucun
+balayage du rendu ne pouvait l'atteindre.
+
+C'est le pire des deux mondes : invisible à l'usage, présente à la lecture. Le premier à rouvrir ce
+fichier pour écrire un écran d'accueil l'aurait reprise en croyant reprendre du bon code.
+
+*Corollaire du chantier 23, qui avait trouvé 56 fichiers morts en remontant les importations depuis
+`main.tsx` : **le code mort ne coûte pas que de la place — il conserve les erreurs qu'on croit avoir
+corrigées.***
+
+#### Deux lignes jumelles, un seul chantier les avait vues
+
+« Rappels · réservations qui expirent » existait en DEUX exemplaires : `SectionPreferences.tsx` côté
+web, `NotificationsScreen.tsx` côté mobile. Le chantier 29 n'en avait retiré qu'un — celui que le
+bundle déployé montrait.
+
+Les deux applications décrivent les mêmes catégories de notification, sans partager une ligne de
+code : ce sont deux dictionnaires écrits à la main, à deux endroits, qui doivent dire la même chose.
+
+*À signaler comme dette : ces catégories viennent du serveur (`NOTIFICATION_CATEGORIES`), et leurs
+intitulés sont dupliqués côté client. Deux vérités pour une même règle — la dette exacte que le
+chantier 11 nomme.*
+
+#### Vérifier avant de couper a évité une vraie faute
+
+Le balayage signalait « Mes rappels · médicaments » sur l'écran d'accueil mobile, et
+`Reminders: undefined; // rappels de médicaments (M14)` dans la navigation. Le réflexe du moment —
+quatre chantiers à retirer du vocabulaire — était de les compter comme des restes.
+
+Vérification faite : `GET /v1/reminders/me` répond **401 en ligne**, donc la route existe ; et
+`m14.reminders.service.ts` n'importe que `PrismaService` — aucune notification, aucun outbox. Ce
+sont des **alarmes que le patient se pose à lui-même** pour prendre ses médicaments. Rien à voir
+avec la chaîne du médicament en pharmacie, et une fonctionnalité vivante du périmètre patient.
+
+*Les retirer aurait amputé le patient d'une fonctionnalité qui marche, au nom d'un mot. **Le
+vocabulaire n'est pas le périmètre** — c'est la contrepartie exacte de la leçon du chantier 26,
+« un module n'est pas un périmètre ».*
 
 ### Ce que le chantier 29 (les réglages vides) a appris
 

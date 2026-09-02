@@ -20,7 +20,21 @@ import {useTheme, useThemedStyles} from '../state/ThemeContext';
 const CAT_LABEL: Record<string, {title: string; sub: string}> = {
   care: {title: 'Consultations & soins', sub: 'Confirmations, sessions, comptes-rendus'},
   money: {title: 'Paiements & reçus', sub: 'Paiements, remboursements'},
-  reminder: {title: 'Rappels', sub: 'Médicaments, réservations, expirations'},
+  /*
+    02/09/2026 (chantier 30) — « Rappels » disait « Médicaments, réservations, expirations ». Les
+    réservations sont sorties avec la chaîne du médicament (D-052), et surtout : AUCUN modèle de
+    notification ne porte la catégorie `reminder` — compté dans `m14.templates.ts`, care 19,
+    system 12, critical 10, money 7, reminder zéro. Aucune notification n'arrivera jamais sous ce
+    titre, donc l'entrée ne peut pas s'afficher.
+
+    Elle est retirée du dictionnaire comme la ligne jumelle l'a été de B3 côté web (chantier 29).
+    ⚠️ Le rendu retombe sur la clé brute si le serveur en envoyait une un jour — c'est le
+    comportement voulu : mieux vaut voir « reminder » et se poser la question qu'un intitulé qui
+    décrit ce qui n'existe pas.
+
+    ⚠️ À ne pas confondre avec les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, M14), qui existent
+    toujours : ce sont des alarmes locales que le patient se pose, pas des notifications serveur.
+  */
   system: {title: 'Système & compte', sub: 'Mises à jour de votre compte'},
   critical: {title: 'Sécurité & urgences', sub: 'Toujours actives — non désactivables'},
 };

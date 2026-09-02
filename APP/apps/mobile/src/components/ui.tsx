@@ -152,42 +152,24 @@ export function HeaderArt({slug, height = 170}: {slug: string; height?: number})
   );
 }
 
-/* ──────────── Carrousel de parcours (en-tête Connexion) ──────────── */
-const JOURNEY = [
-  {slug: 'communication', t: 'Trouvez un soignant vérifié'},
-  {slug: 'video-call', t: 'Consultez à distance, au tarif annoncé'},
-  {slug: 'taking-notes', t: 'Recevez votre ordonnance signée'},
-  {slug: 'customer-support', t: 'Réservez vos médicaments tout près'},
-  {slug: 'success', t: 'Votre dossier de santé, à vie'},
-];
-export function StepCarousel() {
-  const styles = useThemedStyles(makeStyles);
-  const [i, setI] = useState(0);
-  const fade = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const t = setInterval(() => {
-      Animated.timing(fade, {toValue: 0, duration: 240, useNativeDriver: true}).start(() => {
-        setI(v => (v + 1) % JOURNEY.length);
-        Animated.timing(fade, {toValue: 1, duration: 320, useNativeDriver: true}).start();
-      });
-    }, 5000);
-    return () => clearInterval(t);
-  }, [fade]);
-  const step = JOURNEY[i];
-  return (
-    <View>
-      <Animated.View style={[styles.carouselArt, {opacity: fade}]}>
-        <SvgUri uri={`https://illustrations.popsy.co/white/${step.slug}.svg`} width="100%" height="100%" />
-      </Animated.View>
-      <Animated.Text style={[styles.carouselTitle, {opacity: fade}]}>{step.t}</Animated.Text>
-      <View style={styles.dotsRow}>
-        {JOURNEY.map((_, k) => (
-          <View key={k} style={[styles.dot, k === i ? styles.dotOn : styles.dotOff]} />
-        ))}
-      </View>
-    </View>
-  );
-}
+/*
+  ── `StepCarousel` est RETIRÉ (02/09/2026, chantier 30) ────────────────────────────────────────
+
+  Un SECOND carrousel de parcours vivait ici, distinct de `AuthCarouselDrawer`, et il annonçait
+  encore « Réservez vos médicaments tout près » — la promesse retirée du premier au chantier 27. Le
+  balayage de ce jour-là n'avait regardé qu'un fichier ; celui-ci portait la même phrase.
+
+  Deux raisons de le supprimer plutôt que de corriger sa phrase :
+
+  1. **Personne ne le montait.** Aucun écran ne l'importe — vérifié sur tout `apps/mobile/src`. Une
+     promesse fausse dans du code mort ne se voit pas, et c'est précisément ce qui l'a fait survivre
+     à trois chantiers de nettoyage.
+  2. Il chargeait ses illustrations depuis **un site tiers** (`illustrations.popsy.co`) à chaque
+     affichage — une dépendance réseau externe sur l'écran de connexion.
+
+  ⚠️ `HeaderArt`, juste au-dessus, est mort lui aussi et charge du même site. Il ne porte AUCUNE
+  promesse fausse : il n'entre donc pas dans ce chantier. Signalé au §9.
+*/
 
 /* ──────────── Titre de carte (identité de la page) ──────────── */
 export function CardHeading({title, subtitle}: {title: string; subtitle?: string}) {
