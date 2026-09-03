@@ -27,6 +27,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { AlertCircle, AlertTriangle, Check, Copy, Download, RotateCcw, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Spinner } from '@/components/ui/spinner'
 import { api, ApiError } from '@/lib/api'
@@ -119,7 +120,6 @@ export function TotpSetupPage() {
     « bloquant », RM-01-06 rendant alors le TOTP obligatoire pour l'administration. Ce n'est plus
     le cas — il est optionnel pour tous. Le garde-fou reste : un écran d'activation qui tombe
     priverait quand même de la protection qu'on venait chercher.
-    aucun chemin vers l'administration.
 
     Or l'écran propose DÉJÀ la saisie manuelle du secret, juste à côté. En cas d'échec on y bascule
     donc, au lieu de tout perdre : le QR est un confort, le secret est la vraie donnée.
@@ -361,7 +361,16 @@ export function TotpSetupPage() {
                 className="ulamu-step-fade flex flex-col gap-4"
               >
                 <p className="m-0 text-[13px] leading-[1.55] text-muted-foreground">
-                  Entrez le code à 6 chiffres affiché par votre application. Il change toutes les 30 secondes.
+                  {/*
+                    02/09/2026 (chantier 34) — cette phrase disait « Il change toutes les 30 secondes ».
+                    Un chiffre écrit dans la page, alors que la période vit dans `TOTP_STEP_SECONDS`
+                    côté serveur : c'est exactement ce que le plan interdit depuis le début, et le
+                    même défaut que les « 48 heures » de C5 ou les « 12 % » de C6.
+
+                    Le décompte ci-dessous le remplace — et il dit mieux, puisqu'il annonce le temps
+                    RESTANT plutôt qu'une durée théorique.
+                  */}
+                  Entrez le code à 6 chiffres affiché par votre application.
                 </p>
 
                 <div>
@@ -373,6 +382,9 @@ export function TotpSetupPage() {
                       ))}
                     </InputOTPGroup>
                   </InputOTP>
+                  <div className="mt-2">
+                    <DecompteTotp />
+                  </div>
                 </div>
 
                 {error ? (

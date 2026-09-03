@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Spinner } from '@/components/ui/spinner'
 import { AuthLayout } from '@/components/layout/AuthLayout'
+import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { ApiError } from '@/lib/api'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 import { useSessionStore } from '@/state/session.store'
@@ -243,6 +244,13 @@ export function LoginPage() {
                       ))}
                     </InputOTPGroup>
                   </InputOTP>
+                </div>
+
+                {/* Le rythme du code (chantier 34) — uniquement sous les six cases du TOTP : le
+                    code de SECOURS, lui, ne tourne pas, et le mode email suit un tout autre
+                    minuteur (celui de l'OTP, côté serveur). */}
+                <div className="mt-2">
+                  <DecompteTotp />
                 </div>
 
                 {/* La maquette place ici un pavé numérique. Retiré sur consigne du 20/08/2026 : sur

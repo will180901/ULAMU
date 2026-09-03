@@ -1072,6 +1072,21 @@ export const api = {
   requestOtp: (dto: RequestOtpRequest) => request<RequestOtpResponse>('POST', '/v1/accounts/otp/request', dto),
   registerProfessional: (dto: RegisterProfessionalRequest) =>
     request<RegisterResponse>('POST', '/v1/accounts/register/professional', dto),
+  /**
+   * Le rythme des codes TOTP, vu du SERVEUR (chantier 34, 02/09/2026).
+   *
+   * Publique et sans jeton : deux des quatre écrans qui affichent le décompte sont atteints sans
+   * être connecté — la saisie du second facteur à la connexion, et la réinitialisation du mot de
+   * passe par TOTP.
+   *
+   * ⚠️ Ne PAS calculer ce nombre localement, même si `Date.now()` le donnerait en une ligne : un
+   * code TOTP se calcule sur des tranches de temps absolues, et une horloge de navigateur qui dérive
+   * déphaserait le décompte de ce que le téléphone affiche. L'écran donnerait alors une seconde
+   * vérité sur le même instant.
+   */
+  rythmeTotp: () =>
+    request<{ periodeSecondes: number; secondesAvantNouveauCode: number }>('GET', '/v1/auth/totp/rythme'),
+
   setupTotp: () => request<SetupTotpResponse>('POST', '/v1/accounts/me/totp/setup', undefined, true),
   confirmTotp: (code: string) => request<ConfirmTotpResponse>('POST', '/v1/accounts/me/totp/confirm', { code }, true),
   resetPasswordByTotp: (dto: ResetPasswordTotpRequest) => request<void>('POST', '/v1/auth/password-reset/totp', dto),

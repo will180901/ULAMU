@@ -3,6 +3,7 @@ import { Throttle } from "@nestjs/throttler";
 import { OtpPurpose } from "@prisma/client";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
+import { secondsUntilNextTotpStep, TOTP_STEP_SECONDS } from "../../common/crypto/totp";
 import {
   ChangePasswordDto,
   CheckEmailDto,
@@ -35,6 +36,35 @@ export class M01Controller {
   constructor(private readonly service: M01Service) {}
 
   // ── Public (inscription, connexion, récupération) ──────────────────────────
+
+  /**
+   * Le rythme des codes TOTP, vu du SERVEUR — chantier 34, 02/09/2026.
+   *
+   * ── Pourquoi une route pour ça ────────────────────────────────────────────────────────────────
+   *
+   * Les quatre écrans qui demandent un code TOTP affichent un décompte « nouveau code dans N s ».
+   * Le calculer depuis l'horloge du navigateur serait plus simple — et **déphasé** dès que cette
+   * horloge dérive, puisqu'un code TOTP se calcule sur des tranches de temps absolues. L'écran
+   * donnerait alors une seconde vérité sur le même instant, celle que le téléphone contredit.
+   *
+   * La règle du projet est écrite dans `useDecompteurServeur` : *« Le temps du serveur fait foi ;
+   * les horloges clients sont indicatives. »*
+   *
+   * ── Pourquoi PUBLIQUE ─────────────────────────────────────────────────────────────────────────
+   *
+   * Deux des quatre écrans sont atteints **sans être connecté** : la saisie du second facteur à la
+   * connexion, et la réinitialisation du mot de passe par TOTP. Une route authentifiée ne les
+   * servirait pas.
+   *
+   * Elle ne révèle rien : la période est publique (elle figure en clair dans le QR code, `period=30`)
+   * et le reste se déduit de l'heure — que n'importe quelle réponse HTTP donne déjà dans son en-tête
+   * `Date`. **Aucun secret, aucun compte, aucune énumération possible.**
+   */
+  @Public()
+  @Get("auth/totp/rythme")
+  rythmeTotp(): { periodeSecondes: number; secondesAvantNouveauCode: number } {
+    return { periodeSecondes: TOTP_STEP_SECONDS, secondesAvantNouveauCode: secondsUntilNextTotpStep() };
+  }
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })

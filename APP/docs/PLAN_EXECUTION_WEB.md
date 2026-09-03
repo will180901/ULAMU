@@ -507,6 +507,71 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **33** | **E4 affichait « admin » au lieu de « Super Admin »** — 02/09, trouvé en répondant à une question du porteur : « comment l'admin a-t-il été créé ? ». `listAdmins` lisait le nom dans `patientProfile`, alors que **les deux seuls chemins qui créent un compte d'administration** écrivent dans `facilityMemberProfile` — le bootstrap du seed (celui qui a créé le compte en ligne) et la route `createAdmin`, **vingt lignes sous la lecture fautive**. Le nom revenait donc `null` pour tous les administrateurs, et l'écran se rabattait sur le nom d'utilisateur. Corrigé en reprenant l'ordre exact de `M01Service.me()` — patient, professionnel, structure — plutôt qu'en échangeant un tiroir : **une seule règle pour résoudre un nom, à deux endroits**. `m02.nom-admin.spec.ts` monte le vrai service sur un faux Prisma et verrouille les quatre cas plus l'ordre ; vérifié en remettant le défaut, **2 tests tombent**. **API 501 ✓ (496 + 5) · types et lint propres.** | ⏸ en attente | ⏸ |
 
+| **34** | **Un décompte en direct sur chaque code TOTP** — 02/09, demande du porteur. Ajouté aux **quatre** endroits où un code TOTP se saisit : la connexion, l'activation (A4), le formulaire partagé de B3 (ré-association, codes de secours, désactivation) et la réinitialisation du mot de passe. Serveur : `secondsUntilNextTotpStep` et une route **publique** `GET /v1/auth/totp/rythme` — publique parce que deux de ces écrans sont atteints **sans être connecté**, et sans secret puisque la période figure déjà en clair dans le QR code. **Deux décisions que la consigne ne disait pas, et qui la corrigent** : le décompte annonce « **nouveau code dans N s** » et **jamais** « ce code expire », parce que `verifyTotp` tolère ±1 pas — le serveur accepte encore le code précédent ; et il est **ancré sur l'horloge du serveur**, un calcul local étant déphasé de tout écart d'horloge du navigateur. Retiré au passage : « Il change toutes les **30 secondes** », un chiffre écrit en dur dans A4. **API 505 ✓ (501 + 4) · web 512 ✓ (505 + 7) · types, lint et builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 34 (le décompte du code) a appris
+
+*Mené le 02/09/2026, sur demande du porteur : « mettre sur les interfaces un compte en direct pour
+permettre aux utilisateurs de voir le délai de chaque code ».*
+
+#### La consigne disait « le délai du code » — et ce délai n'existe pas
+
+C'est la découverte qui a commandé tout le chantier. `verifyTotp` boucle sur `[-1, 0, +1]` pas : le
+serveur accepte **le code précédent, l'actuel et le suivant**. Un code affiché sur un téléphone
+reste donc valable jusqu'à la fin du pas suivant — jusqu'à soixante secondes, pas trente.
+
+Un décompte annonçant « ce code expire dans 3 s » aurait été **faux**, et faux dans le sens qui
+coûte : il aurait fait **attendre** quelqu'un qui a, sous les yeux, un code parfaitement accepté.
+
+L'écran dit donc ce qui est vrai : **« Nouveau code dans N s »**. Ce n'est pas une nuance de style —
+c'est la différence entre décrire l'appareil de l'utilisateur (qui va changer son affichage) et
+prétendre décrire la décision du serveur (qui, elle, est plus tolérante).
+
+*Même famille que le chantier 13 : une phrase juste sur la règle — « un code a une durée de vie » —
+et fausse sur le nombre. Ici c'est le nombre qui rend la phrase nuisible.*
+
+#### `30 - (Date.now()/1000) % 30` tenait en une ligne, et aurait menti
+
+Un code TOTP se calcule sur des **tranches de temps absolues**. Le téléphone et le serveur la
+calculent chacun de leur côté ; le navigateur, lui, ne participe pas au calcul du tout.
+
+Un décompte tiré de l'horloge locale aurait donc été **déphasé de tout l'écart de cette horloge** :
+« 25 s » à l'écran quand le téléphone vient de basculer. L'écran aurait donné une seconde vérité sur
+le même instant, contredite par l'appareil que l'utilisateur tient en main.
+
+D'où la route serveur. *C'est la règle que `useDecompteurServeur` énonce depuis sa création — « le
+temps du serveur fait foi » — appliquée pour la première fois à une échéance que le serveur ne
+possède pas vraiment, mais dont il est le seul arbitre.*
+
+#### Un décompte qui BOUCLE n'est pas un décompte qui expire
+
+Tous les autres décomptes du projet visent une échéance et s'arrêtent à zéro : une fenêtre de
+poignée de main, un compte-rendu à déposer. Celui-ci **repart** : à zéro, un nouveau pas commence.
+
+D'où un modulo là où les autres ont un plancher — et le `+ periode` avant le modulo, sans quoi
+JavaScript rend `-1` pour `(-1 % 30)` et l'écran afficherait un nombre négatif à chaque bascule. Un
+test verrouille précisément cette seconde-là.
+
+#### Le décompte ne se contente pas d'informer, il conseille
+
+Sous cinq secondes, la phrase devient « **attendez-le** ». Le seuil est en secondes absolues, pas en
+proportion de la période : ce qui compte est le temps qu'il faut pour **taper six chiffres**, et il
+ne dépend pas de la durée du pas.
+
+Sans ce conseil, le décompte serait un ornement : on lirait « 3 s », on taperait quand même, et on
+recevrait « code invalide » sans comprendre — le code ayant changé au milieu de la saisie.
+
+#### Et un chiffre écrit en dur, trouvé en passant
+
+A4 annonçait « Il change toutes les **30 secondes** ». La période vit dans `TOTP_STEP_SECONDS`, côté
+serveur. C'est exactement l'interdit du plan — le même défaut que les « 48 heures » de C5 et les
+« 12 % » de C6 — et il avait survécu à la relecture visuelle du chantier 18.
+
+Le décompte le remplace, et dit mieux : le temps **restant** plutôt qu'une durée théorique.
+
+*À retenir : un chiffre en dur se cache mieux dans une phrase vraie. « Il change toutes les 30
+secondes » ÉTAIT vrai — c'est de l'avoir écrit là qui était fautif.*
+
 ### Ce que le chantier 33 (le nom de l'administrateur) a appris
 
 *Trouvé le 02/09/2026 en répondant à une question du porteur — « comment l'admin a-t-il été créé ? » —

@@ -19,6 +19,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, CheckCircle2, Info, KeyRound, Mail, ShieldCheck } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
+import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { EtapesAuth } from '@/components/auth/EtapesAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -248,6 +249,16 @@ export function ForgotPasswordPage() {
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
+                {/*
+                  Uniquement sur la voie TOTP (chantier 34) : le code reçu par EMAIL suit un tout
+                  autre minuteur — celui de l'OTP, côté serveur — et afficher ici le rythme du TOTP
+                  ferait attendre une bascule qui n'a rien à voir avec la validité de ce code-là.
+                */}
+                {voie !== 'email' ? (
+                  <div className="mt-2">
+                    <DecompteTotp />
+                  </div>
+                ) : null}
               </div>
             )}
 

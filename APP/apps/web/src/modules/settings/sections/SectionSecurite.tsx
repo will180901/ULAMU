@@ -16,6 +16,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { AtSign, Camera, KeyRound, Lock, MailCheck, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Critere, Reglage } from '@/components/ulamu/parts'
@@ -632,6 +633,14 @@ function Formulaire({
             Code de l'application, ou code de secours
           </Label>
           <Input id="preuve-code" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} />
+          {/*
+            Le rythme du code (chantier 34). Ce champ accepte AUSSI un code de secours, qui ne tourne
+            pas — le décompte ne prétend donc rien sur lui : il annonce quand l'APPLICATION produira
+            son prochain code, ce qui reste vrai quel que soit ce qu'on tape ici.
+          */}
+          <div className="mt-2">
+            <DecompteTotp />
+          </div>
         </div>
       </div>
       <div className="flex gap-2">
