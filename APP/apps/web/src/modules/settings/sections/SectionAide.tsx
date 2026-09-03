@@ -31,11 +31,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
-import { api, ApiError, type SupportProcedureType } from '@/lib/api'
+import { api, type SupportProcedureType } from '@/lib/api'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
+import { messageErreur } from '@/lib/message-erreur'
 
+/* Le repli est propre à cet écran : l'utilisateur vient d'écrire un texte et veut savoir s'il
+   est parti. « Une erreur est survenue » ne le lui dirait pas. */
 const messageDe = (e: unknown) =>
-  e instanceof ApiError ? e.message : "Votre demande n'a pas pu être envoyée. Réessayez dans un moment."
+  messageErreur(e, "Votre demande n'a pas pu être envoyée. Réessayez dans un moment.")
 
 /**
  * Les quatre sujets sont ceux des procédures support déjà outillées côté administration : une

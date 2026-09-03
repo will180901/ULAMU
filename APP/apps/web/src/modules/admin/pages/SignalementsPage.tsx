@@ -42,10 +42,9 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
-import { api, ApiError, type ReportDecision, type UserReport } from '@/lib/api'
+import { api, type ReportDecision, type UserReport } from '@/lib/api'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateHeureFr = (iso: string) =>
   new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -109,7 +108,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
   const decider = useMutation({
     mutationFn: () => api.decideReport(signalement.id, { decision: issue as ReportDecision, reasons: motif.trim() }),
     onSuccess: onDecide,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const motifDe = MOTIFS[signalement.reasonCode] ?? { label: signalement.reasonCode, ton: 'neutre' as TonPilule }

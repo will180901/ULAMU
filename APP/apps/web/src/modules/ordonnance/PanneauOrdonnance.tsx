@@ -60,8 +60,7 @@ import {
   type Prescription,
 } from '@/lib/api'
 
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
-
+import { messageErreur } from '@/lib/message-erreur'
 const ETATS: Record<Prescription['status'], { libelle: string; ton: TonPilule }> = {
   ACTIVE: { libelle: 'Active', ton: 'succes' },
   PARTIALLY_DISPENSED: { libelle: 'Partiellement délivrée', ton: 'info' },
@@ -431,7 +430,7 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
   const annuler = useMutation({
     mutationFn: () => api.cancelPrescription(ordonnance.id, motif.trim()),
     onSuccess: onAnnulee,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const annulable = ordonnance.status === 'ACTIVE' || ordonnance.status === 'PARTIALLY_DISPENSED'
@@ -616,7 +615,7 @@ export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; ac
         return
       }
       setConflits([])
-      setErreur(messageDe(e))
+      setErreur(messageErreur(e))
     },
   })
 

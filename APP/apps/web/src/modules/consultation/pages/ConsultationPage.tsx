@@ -103,7 +103,6 @@ import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
-  ApiError,
   lireMediaSession,
   type CareSession,
   type CareSessionStatus,
@@ -115,8 +114,7 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const heureFr = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
@@ -533,7 +531,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
 
   return (
     <Carte icone={BookOpen} titre="Carnet du patient" sousTitre="Lecture seule · votre consultation est enregistrée">
-      {echec ? <Avis ton="erreur">{messageDe(echec)}</Avis> : null}
+      {echec ? <Avis ton="erreur">{messageErreur(echec)}</Avis> : null}
 
       {synthese.isPending ? (
         <p className="flex items-center gap-2 text-[12px] text-[var(--texte-tertiaire)]">
@@ -680,7 +678,7 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
       localStorage.removeItem(cle)
       onDepose()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   if (session.reportDepositedAt) {
@@ -861,7 +859,7 @@ export function ConsultationPage() {
       quitterLeMode()
       rafraichir()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const modifier = useMutation({
@@ -870,7 +868,7 @@ export function ConsultationPage() {
       quitterLeMode()
       rafraichir()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const envoyerPhoto = useMutation({
@@ -890,7 +888,7 @@ export function ConsultationPage() {
         lecteur.readAsDataURL(f)
       }),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const supprimer = useMutation({
@@ -899,19 +897,19 @@ export function ConsultationPage() {
     mutationFn: ({ id, pourTous }: { id: string; pourTous: boolean }) =>
       api.deleteSessionMessage(sessionId, id, pourTous),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const reagir = useMutation({
     mutationFn: ({ id, emoji }: { id: string; emoji: string }) => api.reactToSessionMessage(sessionId, id, emoji),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const prolonger = useMutation({
     mutationFn: () => api.extendSession(sessionId, 10),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   // Signal de frappe, au plus une fois toutes les quatre secondes : le serveur lui donne ~6 s de vie.

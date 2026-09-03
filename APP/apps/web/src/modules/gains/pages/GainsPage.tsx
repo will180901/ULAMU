@@ -64,11 +64,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
-import { api, ApiError, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/lib/api'
+import { api, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
+import { messageErreur } from '@/lib/message-erreur'
 
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 const moisFr = (d: Date) => d.toLocaleDateString('fr-FR', { month: 'short' })
@@ -125,7 +125,7 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
       setDevis(q)
       setErreur(null)
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const confirmer = useMutation({
@@ -138,7 +138,7 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
       setCode('')
       onFini()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   if (gains.availableXaf === 0) {

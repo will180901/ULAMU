@@ -542,6 +542,18 @@ export const SPACE_ROUTES = {
 export type NotificationCategory = 'care' | 'money' | 'reminder' | 'system' | 'critical';
 export interface NotificationPreference {
   category: string;
+  /**
+   * Intitulé et aide **servis par le serveur** depuis le 03/09/2026 (dette n°18).
+   *
+   * Ils étaient écrits à la main ici ET dans le web, et les deux avaient déjà divergé :
+   * « Consultations & soins » d'un côté, « Consultations » de l'autre. Deux utilisateurs de la
+   * même plateforme ne lisaient pas le même nom pour le même réglage.
+   *
+   * ⚠️ La réponse ne porte plus que les catégories qui ont réellement un modèle de notification —
+   * « Rappels » n'en a jamais eu, et disparaît donc des deux applications à la fois.
+   */
+  label: string;
+  help: string;
   enabled: boolean;
   /** false pour « critical » (non désactivable, RM-14-02). */
   adjustable: boolean;

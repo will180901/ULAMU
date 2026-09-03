@@ -1234,14 +1234,23 @@ export const api = {
     request<{ deleted: number }>('DELETE', '/v1/notifications/me', { ids }, true),
 
   // M14 — préférences de notification (les seules du lot qui suivent le compte)
-  /** `critical` remonte toujours `adjustable: false` — les alertes vitales ne se coupent pas (RM-14-02). */
+  /**
+   * `critical` remonte toujours `adjustable: false` — les alertes vitales ne se coupent pas (RM-14-02).
+   *
+   * `label` et `help` sont **servis par le serveur** depuis le 03/09/2026 (dette n°18). Ils étaient
+   * écrits à la main ici ET dans le mobile, et les deux avaient déjà divergé. La réponse ne porte
+   * plus que les catégories qui ont réellement un modèle : « Rappels » n'en a jamais eu.
+   */
   notificationPreferences: () =>
-    request<{ preferences: Array<{ category: NotificationCategory; enabled: boolean; adjustable: boolean }> }>(
-      'GET',
-      '/v1/notifications/me/preferences',
-      undefined,
-      true,
-    ),
+    request<{
+      preferences: Array<{
+        category: NotificationCategory
+        label: string
+        help: string
+        enabled: boolean
+        adjustable: boolean
+      }>
+    }>('GET', '/v1/notifications/me/preferences', undefined, true),
   setNotificationPreference: (dto: { category: NotificationCategory; enabled: boolean }) =>
     request<{ category: string; enabled: boolean }>('PUT', '/v1/notifications/me/preferences', dto, true),
 

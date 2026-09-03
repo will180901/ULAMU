@@ -37,10 +37,9 @@ import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
-import { api, ApiError, type DocumentKind, type VerificationStatus } from '@/lib/api'
+import { api, type DocumentKind, type VerificationStatus } from '@/lib/api'
 import { SqueletteTableau } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -94,7 +93,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
       void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
       onDecide()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const decider = useMutation({
@@ -111,7 +110,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
       void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
       onDecide()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const voir = async (id: string, titre: string) => {
@@ -121,7 +120,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
       const f = await api.adminDocumentUrl(caseId, id)
       setApercu({ ...f, titre })
     } catch (e) {
-      setErreur(messageDe(e))
+      setErreur(messageErreur(e))
     } finally {
       setOuverture(null)
     }

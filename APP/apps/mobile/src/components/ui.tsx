@@ -21,7 +21,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import Svg, {G, Path, Rect, SvgUri} from 'react-native-svg';
+import Svg, {G, Path, Rect} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {fonts, Palette, radius, shadow, ToneName, toneForName} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -142,16 +142,6 @@ export function HeaderIconBadge({name}: {name: IconName}) {
   );
 }
 
-/* ──────────── Illustration héro (SVG popsy, plein largeur) ──────────── */
-export function HeaderArt({slug, height = 170}: {slug: string; height?: number}) {
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <View style={[styles.headerArt, {height}]}>
-      <SvgUri uri={`https://illustrations.popsy.co/white/${slug}.svg`} width="100%" height="100%" />
-    </View>
-  );
-}
-
 /*
   ── `StepCarousel` est RETIRÉ (02/09/2026, chantier 30) ────────────────────────────────────────
 
@@ -167,8 +157,11 @@ export function HeaderArt({slug, height = 170}: {slug: string; height?: number})
   2. Il chargeait ses illustrations depuis **un site tiers** (`illustrations.popsy.co`) à chaque
      affichage — une dépendance réseau externe sur l'écran de connexion.
 
-  ⚠️ `HeaderArt`, juste au-dessus, est mort lui aussi et charge du même site. Il ne porte AUCUNE
-  promesse fausse : il n'entre donc pas dans ce chantier. Signalé au §9.
+  ✅ **`HeaderArt` est parti à son tour le 03/09/2026** (dette n°19). Il était mort lui aussi et
+  chargeait du même site tiers. Il ne portait AUCUNE promesse fausse — c'est pourquoi il n'entrait
+  pas dans le chantier 30, qui traitait les phrases — mais une dépendance réseau externe dans du
+  code que personne ne monte n'a aucune raison de rester. Retirés avec lui : son style `headerArt`
+  et l'import `SvgUri`, tous deux devenus orphelins.
 */
 
 /* ──────────── Titre de carte (identité de la page) ──────────── */
@@ -728,15 +721,6 @@ const makeStyles = (colors: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 6,
-    },
-    headerArt: {
-      marginTop: 2,
-      borderRadius: 22,
-      backgroundColor: 'rgba(255,255,255,0.12)',
-      paddingVertical: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
     },
 
     // Carrousel

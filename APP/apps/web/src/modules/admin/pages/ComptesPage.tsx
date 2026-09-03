@@ -54,14 +54,12 @@ import { Liste } from '@/components/ulamu/Liste'
 import { SqueletteCartes, SqueletteTableau } from '@/components/ulamu/Squelette'
 import {
   api,
-  ApiError,
   type AdminAccount,
   type SupportProcedure,
   type SupportProcedureType,
 } from '@/lib/api'
 
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
-
+import { messageErreur } from '@/lib/message-erreur'
 const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -171,7 +169,7 @@ function ActionCompte({
       else await api.requestBan(compte.accountId, raison)
     },
     onSuccess: onFini,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const titre =
@@ -270,7 +268,7 @@ function NouvelleProcedure({ onFini }: { onFini: () => void }) {
       setErreur(null)
       onFini()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const basculer = (etape: string) =>
@@ -409,7 +407,7 @@ function DemandesDeSupport() {
       setErreur(null)
       void qc.invalidateQueries({ queryKey: ['admin-support-requests'] })
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const liste = demandes.data ?? []
@@ -619,7 +617,7 @@ export function ComptesPage() {
           {comptes.isPending ? (
             <SqueletteTableau colonnes={4} lignes={3} libelle="Recherche des comptes…" />
           ) : comptes.isError ? (
-            <Avis ton="erreur">{messageDe(comptes.error)}</Avis>
+            <Avis ton="erreur">{messageErreur(comptes.error)}</Avis>
           ) : resultats.length === 0 ? (
             <Carte icone={Search} titre="Aucun compte trouvé" sousTitre={`Rien ne correspond à « ${recherche} »`}>
               <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
@@ -760,7 +758,7 @@ export function ComptesPage() {
             {procedures.isPending ? (
               <SqueletteCartes nombre={2} hauteur={104} libelle="Lecture des procédures support…" />
             ) : procedures.isError ? (
-              <Avis ton="erreur">{messageDe(procedures.error)}</Avis>
+              <Avis ton="erreur">{messageErreur(procedures.error)}</Avis>
             ) : (procedures.data ?? []).length === 0 ? (
               <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
                 {ongletProc === 'OPEN'

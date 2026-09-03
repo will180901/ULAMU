@@ -20,12 +20,11 @@ import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Critere, Reglage } from '@/components/ulamu/parts'
-import { api, ApiError, urlAvatar, type MeResponse } from '@/lib/api'
+import { api, urlAvatar, type MeResponse } from '@/lib/api'
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateFr = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
 /** Initiales — le repli quand il n'y a pas de photo, jamais un avatar générique anonyme. */
 function initiales(me: MeResponse): string {
@@ -53,12 +52,12 @@ function BlocPhoto({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
         lecteur.readAsDataURL(f)
       }),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
   const retirer = useMutation({
     mutationFn: () => api.removeAvatar(),
     onSuccess: rafraichir,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const choisir = (f: File | undefined) => {
@@ -150,7 +149,7 @@ function BlocEmail({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
       setEtape('codes')
       setErreur(null)
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const confirmer = useMutation({
@@ -168,7 +167,7 @@ function BlocEmail({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
       setCodeAncienne('')
       rafraichir(await api.me())
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (
@@ -299,7 +298,7 @@ function BlocMotDePasse() {
       setActuel('')
       setNouveau('')
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (
@@ -400,7 +399,7 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
       fermer()
       rafraichir(await api.me())
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const regenerer = useMutation({
@@ -410,7 +409,7 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
       fermer()
       rafraichir(await api.me())
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   /**
@@ -427,7 +426,7 @@ function BlocDeuxFacteurs({ me, rafraichir }: { me: MeResponse; rafraichir: (m: 
       rafraichir(await api.me())
       navigate('/configuration-totp')
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const enCours = regenerer.isPending || reassocier.isPending || desactiver.isPending
@@ -655,7 +654,6 @@ function Formulaire({
   )
 }
 
-
 /**
  * La 2FA par EMAIL — injoignable depuis le web jusqu'au 02/09/2026 (chantier 31).
  *
@@ -696,7 +694,7 @@ function BlocDeuxFacteursEmail({ me, rafraichir }: { me: MeResponse; rafraichir:
       setErreur(null)
       setEtape('code')
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const activer = useMutation({
@@ -705,7 +703,7 @@ function BlocDeuxFacteursEmail({ me, rafraichir }: { me: MeResponse; rafraichir:
       fermer()
       rafraichir(await api.me())
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   /* La désactivation ne demande QUE le mot de passe : c'est le serveur qui en décide ainsi, et la
@@ -717,7 +715,7 @@ function BlocDeuxFacteursEmail({ me, rafraichir }: { me: MeResponse; rafraichir:
       fermer()
       rafraichir(await api.me())
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const enCours = demander.isPending || activer.isPending || desactiver.isPending

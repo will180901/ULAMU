@@ -438,3 +438,79 @@ export const TEMPLATE_CATALOG: Record<string, NotificationTemplate> = {
       "Une demande de bannissement de compte attend une seconde validation. Ouvrez la console d'administration pour l'examiner et la décider.",
   },
 };
+
+/*
+  ── Les intitulés des catégories, et pourquoi ils vivent ICI (dette n°18, 03/09/2026) ──────────
+
+  Ils étaient écrits DEUX fois à la main : dans `SectionPreferences.tsx` (web) et dans
+  `NotificationsScreen.tsx` (mobile). Aucune ligne partagée entre les deux.
+
+  **Et ils avaient déjà divergé** — c'est ce qui a tranché la question :
+
+      web                    mobile
+      « Consultations »      « Consultations & soins »
+      « Paiements et gains » « Paiements & reçus »
+      « Service »            « Système & compte »
+      « Alertes vitales »    « Sécurité & urgences »
+
+  Deux utilisateurs de la même plateforme ne lisaient donc pas le même nom pour le même réglage.
+  C'est aussi ce qui a fait qu'une phrase fausse — « réservations qui expirent » — a demandé DEUX
+  chantiers pour disparaître : le 29 pour le web, le 30 pour le mobile.
+
+  La dette n°18 proposait trois issues, et recommandait la plus tiède : un test qui compare les deux
+  listes. Elle ne tenait pas — ce test aurait échoué dès sa première exécution, sur une divergence
+  bien réelle, sans dire laquelle des deux formulations était la bonne.
+
+  **Le texte descend donc au serveur.** Ce n'est pas une entorse à l'architecture, c'est la
+  cohérence : les TITRES et les CORPS des notifications y vivent déjà (EF-14-03, le catalogue
+  ci-dessus). Les intitulés de leurs catégories les rejoignent, à côté de ce qu'ils décrivent.
+*/
+export const CATEGORY_LABELS: Record<NotificationCategory, { label: string; help: string }> = {
+  care: {
+    label: "Consultations et soins",
+    help: "Demandes reçues, séances qui démarrent, comptes-rendus attendus",
+  },
+  money: {
+    label: "Paiements et gains",
+    help: "Encaissements, retraits, remboursements",
+  },
+  reminder: {
+    // Aucun modèle ne porte cette catégorie : elle n'est jamais servie (voir plus bas).
+    label: "Rappels",
+    help: "Aucune notification n'utilise cette catégorie aujourd'hui",
+  },
+  system: {
+    label: "Service et compte",
+    help: "Maintenances, changements de conditions, état de votre compte",
+  },
+  critical: {
+    label: "Alertes vitales",
+    help: "Sécurité du compte, paiements, urgences — toujours actives",
+  },
+};
+
+/**
+ * Les catégories qui portent RÉELLEMENT au moins un modèle — comptées dans le catalogue,
+ * jamais écrites à la main.
+ *
+ * ── Le défaut que ce calcul rend impossible ───────────────────────────────────────────────────
+ *
+ * `reminder` figure dans `NOTIFICATION_CATEGORIES` depuis le début et **aucun modèle ne l'a jamais
+ * portée**. Son interrupteur ne coupait donc rien — et on lui confiait le silence de rappels qui
+ * n'existent pas. C'est la règle du chantier 10, celle qui a fait retirer le sélecteur de langue :
+ * *un interrupteur qui ne change rien est pire qu'un interrupteur absent, parce qu'on lui fait
+ * confiance.*
+ *
+ * Le web l'avait retiré à la main au chantier 29 ; le mobile l'affiche encore. **Compté, le
+ * problème ne peut plus se reposer** : le jour où un premier rappel sera écrit, la catégorie
+ * réapparaîtra d'elle-même dans les deux applications, sans que personne ait à y penser.
+ *
+ * Le gabarit de repli (`GENERIC_TEMPLATE`, catégorie "system") compte lui aussi : il est bel et
+ * bien émis, chaque fois qu'un modèle inconnu passe.
+ */
+export const CATEGORIES_WITH_TEMPLATES: readonly NotificationCategory[] = (() => {
+  const vues = new Set<NotificationCategory>([GENERIC_TEMPLATE.category]);
+  for (const modele of Object.values(TEMPLATE_CATALOG)) vues.add(modele.category);
+  // On garde l'ordre de NOTIFICATION_CATEGORIES : l'affichage ne dépend pas de l'ordre d'un objet.
+  return NOTIFICATION_CATEGORIES.filter((c) => vues.has(c));
+})();

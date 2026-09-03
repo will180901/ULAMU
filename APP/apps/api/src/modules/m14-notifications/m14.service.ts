@@ -25,7 +25,12 @@ import {
   purgeBefore,
   renderNotification,
 } from "./m14.policies";
-import { NotificationCategory, NOTIFICATION_CATEGORIES, TemplatePayload } from "./m14.templates";
+import {
+  CATEGORIES_WITH_TEMPLATES,
+  CATEGORY_LABELS,
+  NotificationCategory,
+  TemplatePayload,
+} from "./m14.templates";
 import { PUSH_GATEWAY, PushGateway } from "./m14.push.gateway";
 
 /** Lot TECHNIQUE de renvoi des critiques en échec (EF-14-08) — pas un paramètre métier. */
@@ -386,18 +391,37 @@ export class NotificationsService {
   // ── Préférences (EF-14-04 ; CU-14-03) ───────────────────────────────────────
 
   /**
-   * Les 5 catégories, ACTIVES par défaut (aucune ligne = activé). "critical" est
+   * Les catégories réglables, ACTIVES par défaut (aucune ligne = activé). "critical" est
    * toujours renvoyée active et non ajustable (RM-14-02) — même si une ligne parasite
    * prétendait le contraire, la sortie force enabled=true.
+   *
+   * ── Deux changements du 03/09/2026 (dette n°18) ─────────────────────────────────────────────
+   *
+   * **1. La réponse porte le texte.** `label` et `help` viennent de `CATEGORY_LABELS`, à côté du
+   * catalogue qu'ils décrivent. Ils étaient auparavant écrits à la main dans le web ET dans le
+   * mobile, et les deux avaient déjà divergé : « Service » d'un côté, « Système & compte » de
+   * l'autre. Deux utilisateurs de la même plateforme ne lisaient pas le même nom pour le même
+   * réglage.
+   *
+   * **2. On ne sert plus les 5 catégories, mais celles qui portent un modèle.** `reminder` est
+   * déclarée depuis le début et **aucune notification ne l'a jamais portée** : son interrupteur ne
+   * coupait rien. Le web l'avait retirée à la main au chantier 29, le mobile l'affichait encore.
+   * `CATEGORIES_WITH_TEMPLATES` la retire des deux à la fois, en la COMPTANT — et la ramènera
+   * d'elle-même le jour où un premier rappel sera écrit.
+   *
+   * ⚠️ `NOTIFICATION_CATEGORIES` reste le contrat de la BASE et de `setPreference` : on ne retire
+   * pas une valeur qu'une ligne existante peut porter. C'est l'offre qui se restreint, pas le type.
    */
-  async getPreferences(
-    accountId: string,
-  ): Promise<{ preferences: Array<{ category: string; enabled: boolean; adjustable: boolean }> }> {
+  async getPreferences(accountId: string): Promise<{
+    preferences: Array<{ category: string; label: string; help: string; enabled: boolean; adjustable: boolean }>;
+  }> {
     const rows = await this.prisma.notificationPreference.findMany({ where: { accountId } });
     const byCategory = new Map(rows.map((r) => [r.category, r.enabled]));
     return {
-      preferences: NOTIFICATION_CATEGORIES.map((category) => ({
+      preferences: CATEGORIES_WITH_TEMPLATES.map((category) => ({
         category,
+        label: CATEGORY_LABELS[category].label,
+        help: CATEGORY_LABELS[category].help,
         enabled: category === "critical" ? true : (byCategory.get(category) ?? true),
         adjustable: isPreferenceAdjustable(category),
       })),

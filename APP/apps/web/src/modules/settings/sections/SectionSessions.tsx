@@ -29,11 +29,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Avis, Carte, Critere } from '@/components/ulamu/parts'
-import { api, ApiError, type SessionInfo } from '@/lib/api'
+import { api, type SessionInfo } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 /** « Il y a 3 heures » plutôt qu'une date : ce qui compte est la fraîcheur, pas l'horodatage. */
 function depuis(iso: string): string {
@@ -101,7 +100,7 @@ function BlocCloture() {
       setCanal(r)
       setErreur(null)
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const cloturer = useMutation({
@@ -109,7 +108,7 @@ function BlocCloture() {
     // Le serveur a déjà révoqué toutes les sessions ; l'état local doit suivre, sinon l'application
     // continuerait d'afficher un compte qui n'existe plus jusqu'au premier 401.
     onSuccess: () => deconnecter('volontaire'),
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (
@@ -241,7 +240,7 @@ export function SectionSessions() {
   const revoquer = useMutation({
     mutationFn: (id: string) => api.revokeSession(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sessions'] }),
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   // Pas d'endpoint « tout révoquer » côté serveur : on boucle. `allSettled` plutôt que `all` — si un
@@ -255,7 +254,7 @@ export function SectionSessions() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sessions'] }),
     onError: (e) => {
       void qc.invalidateQueries({ queryKey: ['sessions'] })
-      setErreur(e instanceof Error ? e.message : messageDe(e))
+      setErreur(e instanceof Error ? e.message : messageErreur(e))
     },
   })
 

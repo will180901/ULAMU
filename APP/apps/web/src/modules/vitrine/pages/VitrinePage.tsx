@@ -61,7 +61,6 @@ import { Avis, Carte, Critere, Pilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
-  ApiError,
   urlAvatar,
   type MeResponse,
   type Offer,
@@ -69,9 +68,9 @@ import {
   type OfferLimits,
 } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
+import { messageErreur } from '@/lib/message-erreur'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
 
 /**
  * La présentation est bornée à 400 caractères — la contrainte de la MAQUETTE, plus stricte que les
@@ -389,12 +388,12 @@ export function VitrinePage() {
   const creerOffre = useMutation({
     mutationFn: (dto: { label: string; durationMin: number; priceXaf: number; kind: OfferKind }) => api.createOffer(dto),
     onSuccess: rafraichirOffres,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
   const desactiverOffre = useMutation({
     mutationFn: (id: string) => api.deactivateOffer(id),
     onSuccess: rafraichirOffres,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const avatar = useMutation({
@@ -404,7 +403,7 @@ export function VitrinePage() {
       setMe(m)
       void qc.invalidateQueries({ queryKey: ['directory-me'] })
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   // Le taux vient du CONTRAT SIGNÉ, jamais d'une constante : deux médecins peuvent avoir deux taux

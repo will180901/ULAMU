@@ -43,15 +43,13 @@ import { Bell, Check, CheckCheck, Settings2, Trash2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Avis } from '@/components/ulamu/parts'
 import { SqueletteLignes } from '@/components/ulamu/Squelette'
-import { api, ApiError, type NotificationRecue } from '@/lib/api'
+import { api, type NotificationRecue } from '@/lib/api'
 import { accord } from '@/lib/accord'
 import { dateComplete, depuis } from '@/lib/temps'
 import { destinationNotification } from '@/lib/destination-notification'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { cn } from '@/lib/utils'
-
-const messageDe = (e: unknown) =>
-  e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.'
+import { messageErreur } from '@/lib/message-erreur'
 
 /**
  * L'étiquette lue à voix haute pour une ligne.
@@ -125,7 +123,29 @@ export function CentreNotifications() {
   })
 
   const items: NotificationRecue[] = liste.data?.pages.flatMap((p) => p.items) ?? []
-  const nonLues = badge.data?.unread ?? 0
+
+  /*
+    ⚠️ `undefined` veut dire « on ne sait pas » — et ce n'est ni zéro, ni « aucune ».
+
+    La première version écrivait `?? 0`. Vu en ligne, le défaut sautait aux yeux : quand la lecture
+    du compteur échoue (API endormie sur l'offre gratuite de Render, réseau coupé), la cloche
+    annonçait « aucune non lue » — un mensonge, et exactement celui que le principe du projet
+    interdit : **une lecture qui échoue n'est ni un zéro ni un « non »**.
+
+    Trois états, donc, et non deux : on sait qu'il y en a N · on sait qu'il n'y en a aucune · on ne
+    sait pas.
+  */
+  const nonLues = badge.data?.unread
+  const compteurIndisponible = badge.isError
+
+  /**
+   * Y a-t-il quelque chose à marquer ?
+   *
+   * On regarde le compteur ET la liste : si le compteur a échoué mais que la liste montre des
+   * non-lues, le bouton doit rester offert. L'inverse est vrai aussi, la liste n'étant chargée
+   * qu'à l'ouverture.
+   */
+  const auMoinsUneNonLue = (nonLues ?? 0) > 0 || items.some((n) => n.readAt === null)
 
   /** Le lien n'existe que si l'écran existe ET que ce compte a le droit de l'ouvrir. */
   const menePart = (n: NotificationRecue) => {
@@ -152,16 +172,28 @@ export function CentreNotifications() {
     <Popover open={ouvert} onOpenChange={setOuvert}>
       <PopoverTrigger
         aria-label={
-          nonLues > 0
-            ? `Notifications : ${nonLues} non ${accord(nonLues, 'lue')}`
-            : 'Notifications : aucune non lue'
+          compteurIndisponible
+            ? 'Notifications — le nombre de non-lues n’a pas pu être lu'
+            : nonLues === undefined
+              ? 'Notifications'
+              : nonLues > 0
+                ? `Notifications : ${nonLues} non ${accord(nonLues, 'lue')}`
+                : 'Notifications : aucune non lue'
         }
         className="relative flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none data-[state=open]:bg-secondary data-[state=open]:text-foreground"
       >
         <Bell size={18} strokeWidth={1.5} aria-hidden="true" />
         {/* La pastille est décorative : le nombre est déjà dans l'intitulé du bouton, lu par les
             lecteurs d'écran. L'annoncer deux fois le ferait entendre deux fois. */}
-        {nonLues > 0 ? (
+        {compteurIndisponible ? (
+          /* Compteur illisible : une pastille GRISE et VIDE. Elle ne dit pas « zéro » — elle dit
+             qu'il y a quelque chose à savoir et qu'on ne le sait pas. L'intitulé du bouton
+             l'explique en toutes lettres. */
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 size-[7px] rounded-full bg-[var(--texte-tertiaire)]"
+          />
+        ) : nonLues !== undefined && nonLues > 0 ? (
           <span
             aria-hidden="true"
             className="absolute -top-0.5 -right-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--erreur-accent)] px-1 font-mono text-[9px] leading-none font-semibold text-white"
@@ -174,7 +206,7 @@ export function CentreNotifications() {
       <PopoverContent align="end" sideOffset={6} className="w-[min(24rem,calc(100vw-2rem))] gap-0 p-0">
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
           <h2 className="text-[13px] font-semibold text-foreground">Notifications</h2>
-          {nonLues > 0 ? (
+          {auMoinsUneNonLue ? (
             <button
               type="button"
               onClick={() => toutMarquer.mutate()}
@@ -194,7 +226,7 @@ export function CentreNotifications() {
             </div>
           ) : liste.isError ? (
             <div className="p-3">
-              <Avis ton="erreur">{messageDe(liste.error)}</Avis>
+              <Avis ton="erreur">{messageErreur(liste.error)}</Avis>
             </div>
           ) : items.length === 0 ? (
             /* Un vide EXPLIQUÉ. « Aucune notification » seul laisse croire à une panne ; la seconde

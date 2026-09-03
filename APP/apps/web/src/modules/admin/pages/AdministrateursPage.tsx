@@ -48,11 +48,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
-import { api, ApiError, type AdminRole, type AuditEntry, type PlatformAdmin } from '@/lib/api'
+import { api, type AdminRole, type AuditEntry, type PlatformAdmin } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteLignes, SqueletteTableau } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateHeureFr = (iso: string) =>
   new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -97,7 +96,7 @@ function ChangerRole({ admin, onFini, onAnnuler }: { admin: PlatformAdmin; onFin
   const attribuer = useMutation({
     mutationFn: () => api.assignAdminRole(admin.accountId, role, motif.trim() || undefined),
     onSuccess: onFini,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const change = role !== admin.role
@@ -205,7 +204,7 @@ function CreerAdmin({ onFini }: { onFini: () => void }) {
       setErreur(null)
       onFini()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const complet =
@@ -325,7 +324,7 @@ function JournalHabilitations() {
       {enCours ? (
         <SqueletteLignes nombre={3} libelle="Lecture du journal…" />
       ) : echec ? (
-        <Avis ton="erreur">{messageDe(echec.error)}</Avis>
+        <Avis ton="erreur">{messageErreur(echec.error)}</Avis>
       ) : entrees.length === 0 ? (
         <p className="py-2 text-[12px] text-[var(--texte-tertiaire)]">
           Aucune habilitation enregistrée depuis l'installation.
@@ -367,7 +366,7 @@ export function AdministrateursPage() {
   const revoquer = useMutation({
     mutationFn: (accountId: string) => api.revokeAdminRole(accountId),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['admins'] }),
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const rafraichir = () => {

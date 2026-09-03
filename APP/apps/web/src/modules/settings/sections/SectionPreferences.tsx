@@ -22,31 +22,31 @@ import { NAV_GROUPS } from '@/config/navigation.config'
 import { useCapabilities } from '@/hooks/useCapabilities'
 import { SqueletteReglages } from '@/components/ulamu/Squelette'
 
-/** Intitulés des cinq catégories de M14. `critical` figure mais ne se coupe pas (RM-14-02). */
-const CATEGORIES: Array<{ cle: NotificationCategory; label: string; aide: string }> = [
-  { cle: 'care', label: 'Consultations', aide: 'Demandes reçues, séances qui démarrent, comptes-rendus attendus' },
-  { cle: 'money', label: 'Paiements et gains', aide: 'Encaissements, retraits, remboursements' },
-  /*
-    02/09/2026 (chantier 29) — la catégorie « Rappels » est retirée, pour DEUX raisons dont une
-    seule vient de nous.
+/*
+  ── Les intitulés ne sont plus écrits ici (dette n°18, 03/09/2026) ────────────────────────────
 
-    La nôtre : son intitulé annonçait « réservations qui expirent ». Les réservations sont sorties
-    du produit avec la chaîne du médicament (D-052) — la phrase était fausse depuis ce jour-là.
+  Cet écran portait sa propre liste des cinq catégories, avec leurs intitulés et leurs phrases
+  d'aide. Le mobile portait la sienne. **Les deux avaient déjà divergé** : « Consultations » ici,
+  « Consultations & soins » là-bas ; « Service » ici, « Système & compte » là-bas. Deux
+  utilisateurs de la même plateforme ne lisaient pas le même nom pour le même réglage.
 
-    L'autre, trouvée en la vérifiant : **aucun modèle de notification n'a jamais porté cette
-    catégorie.** Compté dans `m14.templates.ts` — care 19, system 12, critical 10, money 7,
-    reminder ZÉRO. L'interrupteur ne coupait donc rien, et ne l'a jamais fait.
+  C'est aussi ce qui a fait qu'une phrase fausse — « réservations qui expirent » — a demandé DEUX
+  chantiers pour disparaître : le 29 pour cet écran, le 30 pour le mobile.
 
-    C'est exactement la règle du chantier 10, qui avait fait retirer le sélecteur de langue :
-    **un interrupteur qui ne change rien est pire qu'un interrupteur absent, parce qu'on lui fait
-    confiance.** Ici on lui confiait le silence de rappels qui n'existent pas.
+  **Le serveur sert désormais `label` et `help`**, à côté du catalogue de modèles qui les décrit
+  (`m14.templates.ts`). Cet écran n'a plus qu'à les afficher.
 
-    ⚠️ `reminder` reste dans `NOTIFICATION_CATEGORIES` côté serveur : le jour où un rappel sera
-    écrit, la ligne revient ici. Ce n'est pas le contrat qu'on retire, c'est la promesse.
-  */
-  { cle: 'system', label: 'Service', aide: 'Maintenances, changements de conditions' },
-  { cle: 'critical', label: 'Alertes vitales', aide: 'Toujours actives — elles ne peuvent pas être coupées' },
-]
+  ── Et la catégorie « Rappels » disparaît toute seule ─────────────────────────────────────────
+
+  Le chantier 29 l'avait retirée d'ici à la main, pour une raison vérifiée : **aucun modèle de
+  notification ne porte cette catégorie**, son interrupteur ne coupait donc rien. Le mobile, lui,
+  l'affichait encore.
+
+  Le serveur ne sert plus que les catégories qui portent réellement un modèle — comptées dans le
+  catalogue, jamais écrites à la main. La suppression manuelle d'ici n'a plus lieu d'être, et **le
+  jour où un premier rappel sera écrit, la ligne reviendra d'elle-même dans les deux applications**
+  sans que personne ait à y penser.
+*/
 
 export function SectionPreferences() {
   const theme = useThemeStore((s) => s.choice)
@@ -125,25 +125,22 @@ export function SectionPreferences() {
 
       <Carte icone={Bell} titre="Notifications" sousTitre="Celles-ci suivent votre compte, sur tous vos appareils">
         {prefs.isPending ? (
-          <SqueletteReglages nombre={5} libelle="Lecture de vos préférences…" />
+          <SqueletteReglages nombre={4} libelle="Lecture de vos préférences…" />
         ) : prefs.isError ? (
           <Avis ton="erreur">
             Vos préférences de notification n'ont pas pu être lues. Rien n'a été modifié — réessayez dans un moment.
           </Avis>
         ) : (
-          CATEGORIES.map((c) => {
-            const ligne = prefs.data.preferences.find((p) => p.category === c.cle)
-            return (
-              <Reglage key={c.cle} titre={c.label} aide={c.aide}>
-                <Switch
-                  checked={ligne?.enabled ?? true}
-                  disabled={!ligne?.adjustable || bascule.isPending}
-                  aria-label={c.label}
-                  onCheckedChange={(enabled) => bascule.mutate({ category: c.cle, enabled })}
-                />
-              </Reglage>
-            )
-          })
+          prefs.data.preferences.map((c) => (
+            <Reglage key={c.category} titre={c.label} aide={c.help}>
+              <Switch
+                checked={c.enabled}
+                disabled={!c.adjustable || bascule.isPending}
+                aria-label={c.label}
+                onCheckedChange={(enabled) => bascule.mutate({ category: c.category, enabled })}
+              />
+            </Reglage>
+          ))
         )}
         {bascule.isError ? <Avis ton="erreur">Le changement n'a pas été enregistré. L'interrupteur est revenu à son état réel.</Avis> : null}
       </Carte>

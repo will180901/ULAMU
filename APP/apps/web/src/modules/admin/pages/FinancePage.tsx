@@ -48,11 +48,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
-import { api, ApiError, type RefundRequest, type RefundStatus } from '@/lib/api'
+import { api, type RefundRequest, type RefundStatus } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 const dateFr = (iso: string) =>
@@ -93,13 +92,13 @@ function LigneRemboursement({
   const approuver = useMutation({
     mutationFn: () => api.approveRefund(demande.requestId),
     onSuccess: onDecide,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const rejeter = useMutation({
     mutationFn: () => api.rejectRefund(demande.requestId),
     onSuccess: onDecide,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (
@@ -184,7 +183,7 @@ function Rapprochement() {
 
   const lancer = useMutation({
     mutationFn: () => api.runReconciliation(),
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const rapport = lancer.data
@@ -390,7 +389,7 @@ export function FinancePage() {
             <div className="flex flex-col gap-2 py-2">
               <Avis ton="erreur">
                 La file n'a pas pu être lue. Aucune demande n'a été tranchée, et aucun montant n'a
-                bougé : cet écran ne fait que lire. ({messageDe(attente.error)})
+                bougé : cet écran ne fait que lire. ({messageErreur(attente.error)})
               </Avis>
               <div>
                 <Button type="button" onClick={() => attente.refetch()}>

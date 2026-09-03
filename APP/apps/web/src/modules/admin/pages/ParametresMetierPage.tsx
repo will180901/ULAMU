@@ -42,10 +42,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
-import { api, ApiError, type PlatformParameter } from '@/lib/api'
+import { api, type PlatformParameter } from '@/lib/api'
 import { SqueletteLignes, SqueletteTableau } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateHeureFr = (iso: string) =>
   new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -81,7 +80,7 @@ function Changer({ parametre, onFini }: { parametre: PlatformParameter; onFini: 
         reason: motif.trim(),
       }),
     onSuccess: onFini,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const change = valeur.trim() !== parametre.value
@@ -227,7 +226,7 @@ function Historique({ cle }: { cle: string }) {
       <SqueletteLignes nombre={2} libelle="Lecture de l'historique…" />
     )
   }
-  if (histoire.isError) return <Avis ton="erreur">{messageDe(histoire.error)}</Avis>
+  if (histoire.isError) return <Avis ton="erreur">{messageErreur(histoire.error)}</Avis>
   if ((histoire.data ?? []).length === 0) {
     return <p className="py-2 text-[11px] text-[var(--texte-tertiaire)]">Jamais modifié depuis l'installation.</p>
   }

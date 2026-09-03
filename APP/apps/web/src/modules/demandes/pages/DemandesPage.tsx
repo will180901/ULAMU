@@ -39,11 +39,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
-import { api, ApiError, type Handshake, type HandshakeStatus } from '@/lib/api'
+import { api, type Handshake, type HandshakeStatus } from '@/lib/api'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 /**
  * L'heure de réception, comme la maquette l'affiche sur chaque ligne (« 09:12 », « Hier »).
@@ -230,12 +229,12 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
   const confirmer = useMutation({
     mutationFn: () => api.confirmHandshake(h.id),
     onSuccess: onFait,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
   const refuser = useMutation({
     mutationFn: () => api.refuseHandshake(h.id, motif.trim()),
     onSuccess: onFait,
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (

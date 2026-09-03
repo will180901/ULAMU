@@ -67,13 +67,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
-import { api, ApiError, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
+import { api, lirePieceJustificative, type DocumentKind, type VerificationCase, type VerificationStatus } from '@/lib/api'
 import { Link } from 'react-router-dom'
 import { routeAide } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
-
-const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')
+import { messageErreur } from '@/lib/message-erreur'
 
 const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -233,7 +232,7 @@ function BlocPiece({
       const f = await lirePieceJustificative(id)
       setApercu({ ...f, titre: documents.length > 1 ? `${info.titre} — page ${numero}` : info.titre })
     } catch (e) {
-      setErreur(messageDe(e))
+      setErreur(messageErreur(e))
     } finally {
       setOuverture(null)
     }
@@ -381,7 +380,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
       setEnvoye(true)
       setErreur(null)
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const signer = useMutation({
@@ -391,7 +390,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
       setOtp('')
       recharger()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const telecharger = () => {
@@ -629,7 +628,7 @@ export function VerificationPage() {
       setErreur(null)
       recharger()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const retirer = useMutation({
@@ -638,7 +637,7 @@ export function VerificationPage() {
       setErreur(null)
       recharger()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   const deposer = useMutation({
@@ -648,7 +647,7 @@ export function VerificationPage() {
       setErreur(null)
       recharger()
     },
-    onError: (e) => setErreur(messageDe(e)),
+    onError: (e) => setErreur(messageErreur(e)),
   })
 
   if (dossier.isPending) {

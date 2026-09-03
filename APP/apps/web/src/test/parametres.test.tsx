@@ -58,7 +58,15 @@ const PREREQUIS_OK = [
   { key: 'reservations', label: 'Aucune réservation active en pharmacie', ok: true },
 ]
 
-function monter(section: string, moi: Partial<MeResponse> = {}, prerequis = PREREQUIS_OK) {
+type LignePref = { category: string; label: string; help: string; enabled: boolean; adjustable: boolean }
+
+function monter(
+  section: string,
+  moi: Partial<MeResponse> = {},
+  prerequis = PREREQUIS_OK,
+  /** Les préférences servies. Passées ici et non doublées après coup : la requête part au montage. */
+  preferences?: LignePref[],
+) {
   vi.spyOn(api, 'sessions').mockResolvedValue([
     { id: 's1', client: 'web', deviceLabel: 'Chrome · Windows', lastActiveAt: new Date().toISOString(), current: true },
     { id: 's2', client: 'mobile', deviceLabel: 'Tecno Camon', lastActiveAt: new Date(Date.now() - 3600e3).toISOString(), current: false },
@@ -68,14 +76,18 @@ function monter(section: string, moi: Partial<MeResponse> = {}, prerequis = PRER
     { documentType: 'CGU', documentVersion: '1.0', acceptedAt: '2026-03-12T10:00:00.000Z' },
     { documentType: 'PRIVACY', documentVersion: '1.0', acceptedAt: '2026-03-12T10:00:00.000Z' },
   ])
+  /*
+    Ce que le serveur sert RÉELLEMENT depuis la dette n°18 (03/09/2026) : quatre catégories, chacune
+    avec son intitulé et son aide. « Rappels » n'y est plus — aucun modèle ne l'a jamais portée, et
+    c'est désormais COMPTÉ côté serveur plutôt que retiré à la main dans chaque écran.
+  */
   vi.spyOn(api, 'notificationPreferences').mockResolvedValue({
-    preferences: [
-      { category: 'care', enabled: true, adjustable: true },
-      { category: 'money', enabled: true, adjustable: true },
-      { category: 'reminder', enabled: false, adjustable: true },
-      { category: 'system', enabled: true, adjustable: true },
-      { category: 'critical', enabled: true, adjustable: false },
-    ],
+    preferences: (preferences ?? [
+      { category: 'care', label: 'Consultations et soins', help: 'Demandes reçues, séances qui démarrent', enabled: true, adjustable: true },
+      { category: 'money', label: 'Paiements et gains', help: 'Encaissements, retraits, remboursements', enabled: true, adjustable: true },
+      { category: 'system', label: 'Service et compte', help: 'Maintenances, changements de conditions', enabled: true, adjustable: true },
+      { category: 'critical', label: 'Alertes vitales', help: 'Toujours actives', enabled: true, adjustable: false },
+    ]) as never,
   })
   useSessionStore.setState({ token: 'jeton', me: { ...BASE_MOI, ...moi }, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -268,7 +280,36 @@ describe('B3 — préférences', () => {
 
     const vitales = await screen.findByRole('switch', { name: 'Alertes vitales' })
     expect(vitales).toBeDisabled()
-    expect(screen.getByRole('switch', { name: 'Consultations' })).toBeEnabled()
+    expect(screen.getByRole('switch', { name: 'Consultations et soins' })).toBeEnabled()
+  })
+
+  /*
+    Dette n°18, soldée le 03/09/2026. Cet écran portait sa propre liste d'intitulés, le mobile la
+    sienne, et **les deux avaient déjà divergé** — « Consultations » ici, « Consultations & soins »
+    là-bas. L'écran n'écrit donc plus aucun de ces mots : il affiche ce que le serveur envoie.
+
+    Le test le prouve en servant des intitulés que l'application n'a jamais connus : s'ils
+    s'affichent, c'est qu'ils ne sont écrits nulle part dans le web.
+  */
+  it('affiche les intitulés SERVIS, sans en écrire aucun', async () => {
+    monter('preferences', {}, PREREQUIS_OK, [
+      { category: 'care', label: 'Libellé venu du serveur', help: 'Aide venue du serveur', enabled: true, adjustable: true },
+    ])
+
+    expect(await screen.findByRole('switch', { name: 'Libellé venu du serveur' })).toBeInTheDocument()
+    expect(screen.getByText('Aide venue du serveur')).toBeInTheDocument()
+  })
+
+  /*
+    Le pendant : ce que le serveur ne sert pas ne s'affiche pas. « Rappels » figurait en dur dans
+    le mobile alors qu'aucune notification ne porte cette catégorie — un interrupteur qui ne coupe
+    rien, et à qui l'on fait confiance.
+  */
+  it('n’affiche aucune catégorie que le serveur n’a pas servie', async () => {
+    monter('preferences')
+
+    await screen.findByRole('switch', { name: 'Alertes vitales' })
+    expect(screen.queryByRole('switch', { name: /Rappels/ })).not.toBeInTheDocument()
   })
 
   it('l’écran dit où vit chaque réglage — l’appareil ou le compte', async () => {

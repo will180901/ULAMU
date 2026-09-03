@@ -66,11 +66,22 @@ function notif(p: Partial<NotificationRecue> = {}): NotificationRecue {
   }
 }
 
-function monter(opts: { items?: NotificationRecue[]; nonLues?: number; nextCursor?: string | null } = {}) {
+function monter(
+  opts: {
+    items?: NotificationRecue[]
+    nonLues?: number
+    nextCursor?: string | null
+    /** Le compteur échoue. À doubler AVANT le montage : sa requête part au premier rendu. */
+    compteurEnEchec?: boolean
+  } = {},
+) {
   const items = opts.items ?? [notif()]
-  vi.spyOn(api, 'notificationsUnreadCount').mockResolvedValue({
-    unread: opts.nonLues ?? items.filter((n) => !n.readAt).length,
-  })
+  const compteur = vi.spyOn(api, 'notificationsUnreadCount')
+  if (opts.compteurEnEchec) {
+    compteur.mockRejectedValue(new Error('réseau'))
+  } else {
+    compteur.mockResolvedValue({ unread: opts.nonLues ?? items.filter((n) => !n.readAt).length })
+  }
   vi.spyOn(api, 'notifications').mockResolvedValue({ items, nextCursor: opts.nextCursor ?? null })
   // La coquille lit aussi la présence et les sessions : le réseau est coupé en test, on les double.
   vi.spyOn(api, 'myPresence').mockResolvedValue({
@@ -157,6 +168,46 @@ describe('Le centre de notifications', () => {
     monter({ nonLues: 1 })
 
     await waitFor(() => expect(cloche()).toHaveAccessibleName('Notifications : 1 non lue'))
+  })
+
+  /*
+    Trouvé EN LIGNE, dans le code de ce chantier, après la première mise en production.
+
+    La cloche écrivait `badge.data?.unread ?? 0`. Quand la lecture du compteur échoue — l'API
+    gratuite de Render s'endort au bout de quinze minutes — elle annonçait donc « aucune non lue ».
+    C'est le mensonge que le principe du projet nomme : **une lecture qui échoue n'est ni un zéro ni
+    un « non ».** Un médecin y aurait lu « rien de nouveau » à l'instant où un patient l'attendait.
+  */
+  it('une lecture du compteur en échec ne dit JAMAIS « aucune non lue »', async () => {
+    monter({ compteurEnEchec: true })
+
+    await waitFor(() => expect(cloche()).toHaveAccessibleName(/n’a pas pu être lu/))
+    expect(cloche()).not.toHaveAccessibleName(/aucune non lue/)
+    // Et aucun chiffre : une pastille « 0 » serait le même mensonge, en plus discret.
+    expect(cloche()).not.toHaveTextContent(/\d/)
+  })
+
+  /*
+    Le pendant : quand le serveur dit VRAIMENT zéro, on l'affirme. Sans ce test, on pourrait
+    « corriger » le précédent en ne disant plus jamais rien.
+  */
+  it('mais quand le serveur dit zéro, elle le dit', async () => {
+    monter({ items: [], nonLues: 0 })
+
+    await waitFor(() => expect(cloche()).toHaveAccessibleName('Notifications : aucune non lue'))
+  })
+
+  /*
+    Le bouton « tout marquer » regarde le compteur ET la liste. Si le compteur a échoué mais que la
+    liste montre des non-lues, le geste doit rester offert : la panne d'un compteur ne doit pas
+    priver d'une action dont on a la preuve sous les yeux.
+  */
+  it('offre encore « tout marquer » quand le compteur a échoué mais que la liste montre des non-lues', async () => {
+    monter({ compteurEnEchec: true })
+
+    await userEvent.click(cloche())
+
+    expect(await screen.findByRole('button', { name: /Tout marquer comme lu/ })).toBeInTheDocument()
   })
 
   /*

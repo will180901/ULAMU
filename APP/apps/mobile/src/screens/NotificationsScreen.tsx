@@ -17,27 +17,33 @@ import {NotificationCategory, NotificationItem, NotificationPreference} from '..
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
-const CAT_LABEL: Record<string, {title: string; sub: string}> = {
-  care: {title: 'Consultations & soins', sub: 'Confirmations, sessions, comptes-rendus'},
-  money: {title: 'Paiements & reçus', sub: 'Paiements, remboursements'},
-  /*
-    02/09/2026 (chantier 30) — « Rappels » disait « Médicaments, réservations, expirations ». Les
-    réservations sont sorties avec la chaîne du médicament (D-052), et surtout : AUCUN modèle de
-    notification ne porte la catégorie `reminder` — compté dans `m14.templates.ts`, care 19,
-    system 12, critical 10, money 7, reminder zéro. Aucune notification n'arrivera jamais sous ce
-    titre, donc l'entrée ne peut pas s'afficher.
+/*
+  ── Les intitulés des catégories ne sont plus écrits ici (dette n°18, 03/09/2026) ──────────────
 
-    Elle est retirée du dictionnaire comme la ligne jumelle l'a été de B3 côté web (chantier 29).
-    ⚠️ Le rendu retombe sur la clé brute si le serveur en envoyait une un jour — c'est le
-    comportement voulu : mieux vaut voir « reminder » et se poser la question qu'un intitulé qui
-    décrit ce qui n'existe pas.
+  Cet écran portait `CAT_LABEL`, son propre dictionnaire des catégories. Le web portait le sien.
+  **Les deux avaient déjà divergé** : « Consultations & soins » ici, « Consultations » là-bas ;
+  « Système & compte » ici, « Service » là-bas. Deux utilisateurs de la même plateforme ne lisaient
+  pas le même nom pour le même réglage.
 
-    ⚠️ À ne pas confondre avec les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, M14), qui existent
-    toujours : ce sont des alarmes locales que le patient se pose, pas des notifications serveur.
-  */
-  system: {title: 'Système & compte', sub: 'Mises à jour de votre compte'},
-  critical: {title: 'Sécurité & urgences', sub: 'Toujours actives — non désactivables'},
-};
+  C'est aussi ce qui a fait qu'une phrase fausse — « réservations qui expirent » — a demandé DEUX
+  chantiers pour disparaître : le 29 pour le web, le 30 pour cet écran.
+
+  Le serveur sert désormais `label` et `help`, à côté du catalogue de modèles qui les décrit.
+
+  ── Et « Rappels » disparaît sans qu'on ait à y penser ────────────────────────────────────────
+
+  Le chantier 30 avait retiré cette entrée du dictionnaire, pour une raison vérifiée : **aucun
+  modèle de notification ne porte la catégorie `reminder`** — son interrupteur ne coupait rien.
+  Mais le retirer du dictionnaire ne la retirait pas de la LISTE : le serveur l'envoyait encore, et
+  l'écran retombait sur la clé brute, affichant « reminder ».
+
+  Le serveur ne sert plus que les catégories qui portent réellement un modèle, comptées dans le
+  catalogue. La ligne a disparu des deux applications, et **reviendra d'elle-même le jour où un
+  premier rappel sera écrit**.
+
+  ⚠️ À ne pas confondre avec les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, M14), qui existent
+  toujours : ce sont des alarmes locales que le patient se pose, pas des notifications serveur.
+*/
 
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 function relTime(iso: string): string {
@@ -305,12 +311,11 @@ function PreferencesModal({visible, onClose}: {visible: boolean; onClose: () => 
             <Text style={styles.loading}>Chargement…</Text>
           ) : (
             prefs.map(p => {
-              const meta = CAT_LABEL[p.category] ?? {title: p.category, sub: ''};
               return (
                 <View key={p.category} style={styles.prefRow}>
                   <View style={styles.flex}>
-                    <Text style={styles.prefTitle}>{meta.title}</Text>
-                    {meta.sub ? <Text style={styles.prefSub}>{meta.sub}</Text> : null}
+                    <Text style={styles.prefTitle}>{p.label}</Text>
+                    {p.help ? <Text style={styles.prefSub}>{p.help}</Text> : null}
                   </View>
                   {p.adjustable ? (
                     <Switch value={p.enabled} onValueChange={next => toggle(p, next)} />
