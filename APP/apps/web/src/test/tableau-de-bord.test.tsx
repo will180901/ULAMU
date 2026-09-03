@@ -350,6 +350,39 @@ describe('B2 — ce que deviennent les demandes', () => {
     expect(document.body.textContent).not.toMatch(/suspend/i)
   })
 
+  /*
+    ── 04/09/2026 — le test qui manquait, et l'écran mentait dans le trou ────────────────────────
+
+    Le test ci-dessus éprouvait la MOITIÉ de la phrase : l'expiration. L'autre moitié disait
+    « **un refus motivé, non** », et personne ne la vérifiait. Elle était fausse depuis toujours.
+
+    Ce que fait réellement le serveur : `initiationsTotal` est incrémenté **à la sollicitation**,
+    avant toute réponse ; seule une confirmation incrémente `confirmedTotal`. Un refus n'émet
+    aucun événement de statistiques — vérifié dans `m06.handshake.service.ts`, et `m05.module.ts`
+    ne s'abonne qu'à quatre événements, dont aucun ne concerne le refus.
+
+    **Un refus motivé coûte donc exactement autant qu'une demande ignorée.**
+
+    *Règle : un test qui vérifie une phrase à moitié laisse l'autre moitié mentir. Quand un texte
+    affirme deux choses, il faut deux assertions.*
+  */
+  it('ne prétend PAS qu’un refus motivé serait sans conséquence', async () => {
+    await monter([demande('h1', 'REFUSED')])
+
+    // La phrase corrigée : les deux issues coûtent la même chose.
+    expect(await screen.findByText(/un refus motivé aussi/i)).toBeInTheDocument()
+    // Et l'ancienne promesse ne doit jamais revenir, sous aucune de ses formes.
+    expect(document.body.textContent).not.toMatch(/refus motivé,\s*non/i)
+  })
+
+  /* La ligne « Refusées » porte désormais la même mention que « Expirées » — même conséquence. */
+  it('marque le refus comme faisant baisser le taux, au même titre que l’expiration', async () => {
+    await monter([demande('h1', 'REFUSED'), demande('h2', 'EXPIRED')])
+
+    const bloc = (await screen.findByText('Ce que deviennent vos demandes')).closest('section') as HTMLElement
+    expect(within(bloc).getAllByText('Fait baisser votre taux de confirmation')).toHaveLength(2)
+  })
+
   it('avoue que le compte porte sur les cent dernières, sans le laisser croire complet', async () => {
     await monter([demande('h1', 'PAID')])
 

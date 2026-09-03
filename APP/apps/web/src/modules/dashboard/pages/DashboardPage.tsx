@@ -346,7 +346,13 @@ function TableauSoignant() {
                     key={s.cle}
                     principal={s.label}
                     secondaire={
-                      s.cle === 'EXPIRED' && s.n > 0 ? 'Fait baisser votre taux de confirmation' : ' '
+                      /*
+                        04/09/2026 — le refus porte la MÊME mention que l'expiration, parce qu'il a
+                        la même conséquence. Voir la note sous la liste.
+                      */
+                      (s.cle === 'EXPIRED' || s.cle === 'REFUSED') && s.n > 0
+                        ? 'Fait baisser votre taux de confirmation'
+                        : ' '
                     }
                     droite={
                       <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">{s.n}</span>
@@ -359,10 +365,37 @@ function TableauSoignant() {
                 pas une suspension, c'est un taux public qui baisse, et que les patients lisent
                 avant de choisir.
                 *(La suspension automatique visait les officines, sorties du produit le 02/09.)*
+
+                ── ⚠️ CORRECTION DU 04/09/2026 : cette phrase était FAUSSE ─────────────────────────
+
+                Elle disait : « Une demande laissée expirer compte comme une non-réponse […].
+                **Un refus motivé, non.** » C'est l'inverse de ce que fait le serveur.
+
+                Le taux se construit à partir de DEUX compteurs de `ProfessionalStats` :
+                  • une sollicitation reçue → `initiationsTotal++`, **immédiatement**, avant toute
+                    réponse du soignant (`m06.handshake.initiated`, émis à l'initiation) ;
+                  • une confirmation → `confirmedTotal++` (`m06.handshake.confirmed`).
+
+                **Refuser n'émet aucun événement de statistiques.** Vérifié dans
+                `m06.handshake.service.ts` : un refus émet une notification au patient et une ligne
+                d'audit, rien d'autre ; et `m05.module.ts` ne s'abonne qu'à quatre événements, dont
+                aucun ne concerne le refus. Le dénominateur a donc déjà bougé, le numérateur ne
+                bougera jamais : **un refus motivé coûte exactement autant qu'une demande ignorée.**
+
+                Le cahier ne dit rien des refus — EF-05-01 parle seulement d'un « taux de
+                confirmation ». La phrase promettait donc quelque chose que personne n'avait décidé,
+                et elle changeait un comportement : on croit refuser gratuitement.
+
+                📌 **Ce qui reste à trancher, et qui appartient au porteur** : faut-il changer la
+                RÈGLE plutôt que la phrase ? Un refus rapide fait gagner du temps au patient, là où
+                une expiration le lui fait perdre — les traiter à l'identique se discute. Mais c'est
+                le taux que les patients lisent pour choisir : on ne le modifie pas sans décision.
+                Inscrit au §9 (dette n°23). En attendant, **l'écran dit ce que le serveur fait.**
               */}
               <p className="px-4 pb-3 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
                 Une demande laissée expirer compte comme une non-réponse dans le taux affiché aux
-                patients. Un refus motivé, non.
+                patients — <strong className="font-semibold text-foreground">un refus motivé aussi</strong>.
+                Seule une confirmation le fait monter.
               </p>
             </>
           )}
