@@ -32,7 +32,11 @@ const ECRANS = [
   { rel: 'modules/consultation/pages/ConsultationsPage.tsx', nom: 'C4 · Consultations', colonnes: 7 },
   { rel: 'modules/admin/pages/FileVerificationPage.tsx', nom: 'E1 · File de vérification', colonnes: 7 },
   { rel: 'modules/admin/pages/ParametresMetierPage.tsx', nom: 'E3 · Paramètres métier', colonnes: 5 },
-  { rel: 'modules/admin/pages/AdministrateursPage.tsx', nom: 'E4 · Administrateurs', colonnes: 4 },
+  /* 5 depuis le 02/09/2026 (chantier 32) : « Second facteur » est ajoutée en contrepartie de D-053.
+     Ce compte n'est pas décoratif — il a fait tomber ce test, ce qui a rappelé que la nouvelle
+     cellule devait porter son `data-libelle`, sans quoi elle serait apparue sans intitulé en mode
+     carte, sous 1024 px. */
+  { rel: 'modules/admin/pages/AdministrateursPage.tsx', nom: 'E4 · Administrateurs', colonnes: 5 },
   { rel: 'modules/admin/pages/ComptesPage.tsx', nom: 'E7 · Comptes', colonnes: 4 },
 ]
 

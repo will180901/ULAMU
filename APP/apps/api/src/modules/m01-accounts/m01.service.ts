@@ -29,6 +29,7 @@ import { SMS_GATEWAY, SmsGateway } from "../../common/sms/sms.service";
 import { StorageService } from "../../common/storage.service";
 import {
   canSendOtp,
+  doitTracerConnexionSansSecondFacteur,
   isAcceptablePassword,
   isAcceptableUsername,
   isAdult,
@@ -431,6 +432,40 @@ export class M01Service {
     return this.prisma.$transaction(async (tx) => {
       await tx.loginAttempt.create({ data: { phone: account.phone, success: true, client: dto.client } });
       const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
+
+      /*
+        ── Une connexion d'administration sans second facteur laisse une trace (chantier 32) ──────
+
+        Contrepartie de D-053. Depuis que le TOTP est optionnel pour tous, un compte d'administration
+        peut entrer avec son seul mot de passe. La décision est assumée ; **ce qui ne l'est pas,
+        c'est qu'un tel accès soit indistinguable des autres après coup.**
+
+        On n'empêche rien et on ne ralentit personne : on inscrit. Le jour où quelque chose cloche,
+        la question « par où est-ce entré » a une réponse — et le journal est en insertion seule,
+        donc cette réponse ne s'efface pas.
+
+        Trois précisions qui comptent :
+
+        • **Seulement les comptes ADMIN.** Un patient ou un soignant sans second facteur n'ouvre pas
+          la console d'administration : tracer sa connexion produirait du bruit, et le bruit fait
+          qu'on cesse de lire un journal.
+        • **Aucune donnée personnelle**, pas même l'identifiant de session : l'`accountId`, le canal,
+          et rien d'autre. Un journal en insertion seule doit contenir le minimum, puisque ce qui y
+          entre n'en sort plus (RM-04-03).
+        • **Dans la MÊME transaction que l'ouverture de session.** Si l'écriture échoue, la connexion
+          échoue avec elle. Un accès qui réussirait sans laisser sa trace serait exactement ce qu'on
+          cherche à empêcher.
+      */
+      if (doitTracerConnexionSansSecondFacteur(account.type, account.totpSecret?.enabled === true, account.emailTwoFactorEnabled)) {
+        await this.audit.emit(tx, {
+          actorId: account.id,
+          actorType: "admin",
+          action: "m01.admin.login_without_second_factor",
+          resource: `account:${account.id}`,
+          context: { client: dto.client },
+        });
+      }
+
       return { totpRequired: false, otpRequired: false, sessionToken: token, accountId: account.id, accountType: account.type };
     });
   }

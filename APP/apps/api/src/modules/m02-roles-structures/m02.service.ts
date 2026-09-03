@@ -492,11 +492,33 @@ export class M02Service {
       role: string | null;
       assignedBy: string | null;
       assignedAt: string | null;
+      /**
+       * Le compte a-t-il un second facteur ACTIF — application d'authentification, ou code par email ?
+       *
+       * Ajouté le 02/09/2026 (chantier 32), **en contrepartie de D-053**. Depuis que le TOTP est
+       * optionnel pour tous, la console d'administration n'est plus protégée que par un mot de passe
+       * pour qui ne l'active pas. On ne remet pas l'obligation — **on rend l'état visible**.
+       *
+       * Sans cette information, elle existait en base (`totpSecret`, `emailTwoFactorEnabled`) et
+       * personne ne pouvait la lire : chacun connaissait son propre réglage, nul ne connaissait celui
+       * des autres. Un super-administrateur ne pouvait donc pas savoir si son équipe était protégée.
+       */
+      secondFacteur: { totp: boolean; email: boolean };
     }>
   > {
     const comptes = await this.prisma.account.findMany({
       where: { type: "ADMIN" },
-      select: { id: true, username: true, phone: true, patientProfile: { select: { firstName: true, lastName: true } } },
+      select: {
+        id: true,
+        username: true,
+        phone: true,
+        emailTwoFactorEnabled: true,
+        patientProfile: { select: { firstName: true, lastName: true } },
+        /* `totpSecret` porte un drapeau `enabled` : une configuration ENTAMÉE mais jamais confirmée
+           laisse une ligne avec `enabled: false`. Compter la ligne plutôt que le drapeau annoncerait
+           protégé un compte qui a scanné le QR sans jamais valider. */
+        totpSecret: { select: { enabled: true } },
+      },
       orderBy: { username: "asc" },
     });
     if (comptes.length === 0) return [];
@@ -517,6 +539,7 @@ export class M02Service {
         role: a?.role ?? null,
         assignedBy: a?.assignedBy ?? null,
         assignedAt: a?.assignedAt.toISOString() ?? null,
+        secondFacteur: { totp: c.totpSecret?.enabled === true, email: c.emailTwoFactorEnabled },
       };
     });
   }

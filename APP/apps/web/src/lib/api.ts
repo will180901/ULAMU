@@ -425,6 +425,14 @@ export interface PlatformAdmin {
   role: AdminRole | null
   assignedBy: string | null
   assignedAt: string | null
+  /**
+   * Le second facteur de ce compte — application d'authentification, ou code par email.
+   *
+   * Servi depuis le 02/09/2026 (chantier 32), en contrepartie de D-053 : le TOTP étant devenu
+   * optionnel pour tous, un super-administrateur doit pouvoir voir qui, dans son équipe, est
+   * protégé. L'information existait en base et **personne ne pouvait la lire**.
+   */
+  secondFacteur: { totp: boolean; email: boolean }
 }
 
 // ── M16 — Paramètres métier (EF-16-04, CU-16-02) ───────────────────────────

@@ -1,7 +1,14 @@
 /**
  * Tests des règles M01 — critères d'acceptation CU-01-01/03 (PM-16/17/18/19).
  */
-import { canSendOtp, isAcceptablePassword, isAdult, lockoutUntil, normalizePhone } from "./m01.policies";
+import {
+  canSendOtp,
+  doitTracerConnexionSansSecondFacteur,
+  isAcceptablePassword,
+  isAdult,
+  lockoutUntil,
+  normalizePhone,
+} from "./m01.policies";
 
 const CFG = { maxFailures: 5, windowSeconds: 900, blockSeconds: 900 }; // PM-18
 
@@ -75,4 +82,37 @@ describe("Mot de passe acceptable (RM-01-02)", () => {
       expect(isAcceptablePassword(pw as string)).toBe(ok);
     },
   );
+});
+
+/**
+ * La trace d'une connexion d'administration sans second facteur — chantier 32, 02/09/2026.
+ *
+ * Contrepartie de D-053 : le TOTP est optionnel pour tous, comptes d'administration compris. On
+ * n'empêche rien — on inscrit, pour qu'un accès par mot de passe seul ne soit pas indistinguable
+ * des autres après coup.
+ *
+ * Le test verrouille les DEUX sens. Ce qui doit être tracé l'est, et — c'est ce qui coûterait le
+ * plus cher — **ce qui ne doit pas l'être ne l'est pas** : un journal en insertion seule qui se
+ * remplirait à chaque connexion de patient cesserait d'être lu, et la trace utile s'y noierait.
+ */
+describe("Trace d'une connexion d'administration sans second facteur (D-053)", () => {
+  it("trace un administrateur qui n'a que son mot de passe", () => {
+    expect(doitTracerConnexionSansSecondFacteur("ADMIN", false, false)).toBe(true);
+  });
+
+  it("ne trace pas un administrateur protégé par son application d'authentification", () => {
+    expect(doitTracerConnexionSansSecondFacteur("ADMIN", true, false)).toBe(false);
+  });
+
+  it("ne trace pas un administrateur protégé par un code email", () => {
+    expect(doitTracerConnexionSansSecondFacteur("ADMIN", false, true)).toBe(false);
+  });
+
+  /*
+    Le sens qui protège le journal. Un patient ou un soignant sans second facteur n'ouvre pas la
+    console d'administration : le tracer produirait du bruit, et le bruit fait qu'on cesse de lire.
+  */
+  it.each(["PATIENT", "PROFESSIONAL"])("ne trace pas un compte %s sans second facteur", (type) => {
+    expect(doitTracerConnexionSansSecondFacteur(type, false, false)).toBe(false);
+  });
 });

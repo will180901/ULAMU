@@ -79,3 +79,36 @@ export function isAcceptableUsername(raw: string): boolean {
   const u = normalizeUsername(raw);
   return u.length >= 3 && u.length <= 30 && USERNAME_RE.test(u);
 }
+
+/**
+ * Faut-il inscrire au journal d'audit qu'une connexion s'est faite sans second facteur ?
+ *
+ * ── Pourquoi cette règle existe (chantier 32, 02/09/2026) ──────────────────────────────────────
+ *
+ * Contrepartie de **D-053** : le TOTP est devenu optionnel pour TOUS les types de compte, comptes
+ * d'administration compris. La décision est assumée — mais elle laisse la console d'administration,
+ * ouverte sur internet, accessible avec un mot de passe seul pour qui ne l'active pas.
+ *
+ * On n'empêche rien et on ne ralentit personne : **on inscrit**. Le jour où quelque chose cloche, la
+ * question « par où est-ce entré » a une réponse — et le journal étant en insertion seule, cette
+ * réponse ne s'efface pas.
+ *
+ * ── Pourquoi les comptes d'administration SEULEMENT ───────────────────────────────────────────
+ *
+ * Un patient ou un soignant sans second facteur n'ouvre pas la console d'administration. Tracer sa
+ * connexion produirait du bruit — et le bruit fait qu'on cesse de lire un journal, ce qui coûterait
+ * plus que la trace ne rapporte.
+ *
+ * ── Pourquoi c'est une fonction PURE, et pas un `if` dans le service ──────────────────────────
+ *
+ * Éprouver ce `if` dans `login` demanderait de simuler Prisma, les sessions, le hachage du mot de
+ * passe et l'émetteur d'audit — pour vérifier une condition à trois termes. Sortie ici, la règle
+ * porte un nom, se lit seule et se teste seule : c'est la convention de ce fichier depuis le début.
+ */
+export function doitTracerConnexionSansSecondFacteur(
+  accountType: string,
+  totpActif: boolean,
+  emailTwoFactorActif: boolean,
+): boolean {
+  return accountType === "ADMIN" && !totpActif && !emailTwoFactorActif;
+}

@@ -54,6 +54,9 @@ const admin = (over: Partial<PlatformAdmin> = {}): PlatformAdmin => ({
   role: 'ADMIN_VERIFICATION',
   assignedBy: 'adm-1',
   assignedAt: '2026-02-14T11:05:00.000Z',
+  /* Protégé par défaut : c'est l'état SOUHAITABLE, donc celui qu'un test doit devoir demander pour
+     en sortir. Un défaut à « mot de passe seul » ferait passer les cas nominaux sans qu'on y pense. */
+  secondFacteur: { totp: true, email: false },
   ...over,
 })
 
@@ -295,5 +298,55 @@ describe('E4 — le journal des habilitations', () => {
     monter(undefined, [])
 
     expect(await screen.findByText(/Aucune habilitation enregistrée/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le second facteur, VU et non imposé — chantier 32, 02/09/2026.
+ *
+ * ── Pourquoi cette colonne existe ─────────────────────────────────────────────────────────────
+ *
+ * D-053 a rendu le TOTP optionnel pour tous, comptes d'administration compris. La décision est
+ * assumée, mais elle laisse la console d'administration — ouverte sur internet — accessible avec un
+ * mot de passe seul pour qui ne l'active pas.
+ *
+ * On ne remet pas l'obligation : **on rend l'état visible.** L'information existait déjà en base
+ * (`totpSecret.enabled`, `emailTwoFactorEnabled`) et personne ne pouvait la lire — chacun connaissait
+ * son propre réglage, nul ne connaissait celui des autres. Un super-administrateur ne pouvait donc
+ * pas savoir si son équipe était protégée.
+ *
+ * ── Ce que ces tests verrouillent ─────────────────────────────────────────────────────────────
+ *
+ * Les DEUX sens. Qu'un compte protégé le montre, et — c'est le point du chantier — **qu'un compte
+ * qui ne l'est pas soit nommé**. Sans la seconde assertion, une colonne qui n'afficherait plus rien
+ * en cas d'absence passerait pour correcte : c'est justement le cas qu'on veut voir.
+ */
+describe('E4 — qui est protégé par un second facteur', () => {
+  it('nomme le compte qui n’a que son mot de passe', async () => {
+    monter([MOI_ADMIN, admin({ secondFacteur: { totp: false, email: false } })])
+
+    expect(await screen.findByText('Mot de passe seul')).toBeInTheDocument()
+  })
+
+  it('distingue l’application du code par email', async () => {
+    monter([
+      admin({ accountId: 'a-totp', username: 'a.totp', secondFacteur: { totp: true, email: false } }),
+      admin({ accountId: 'a-mail', username: 'a.mail', secondFacteur: { totp: false, email: true } }),
+    ])
+
+    expect(await screen.findByText('Application')).toBeInTheDocument()
+    expect(screen.getByText('Email')).toBeInTheDocument()
+  })
+
+  /*
+    Le pendant : une équipe entièrement protégée ne doit afficher AUCUNE alerte. Un écran qui
+    signale un risque en permanence cesse d'être lu — c'est la leçon du bandeau du chantier 24,
+    payée le jour même.
+  */
+  it('ne signale rien quand toute l’équipe est protégée', async () => {
+    monter([MOI_ADMIN, admin({ secondFacteur: { totp: true, email: false } })])
+
+    await screen.findAllByText('Application')
+    expect(screen.queryByText('Mot de passe seul')).toBeNull()
   })
 })

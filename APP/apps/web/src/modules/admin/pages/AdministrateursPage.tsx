@@ -466,10 +466,10 @@ export function AdministrateursPage() {
           ) : null}
 
           <div className="ul-tableau-defilant overflow-x-auto rounded-[10px] border border-border">
-            <table role="table" className="ul-tableau-cartes w-full min-w-[720px] border-collapse text-left">
+            <table role="table" className="ul-tableau-cartes w-full min-w-[860px] border-collapse text-left">
               <thead>
                 <tr role="row" className="border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)]">
-                  {['Administrateur', 'Sous-rôle', 'Attribué le', ''].map((t, i) => (
+                  {['Administrateur', 'Sous-rôle', 'Second facteur', 'Attribué le', ''].map((t, i) => (
                     <th
                       key={t || `action-${i}`}
                       role="columnheader"
@@ -510,6 +510,28 @@ export function AdministrateursPage() {
                           /* `role: null` — le compte existe mais n'ouvre rien. Le dire vaut mieux
                              qu'une cellule vide, qu'on lirait comme un défaut d'affichage. */
                           <span className="text-[12px] text-[var(--alerte-texte)]">Aucun — n'accède à rien</span>
+                        )}
+                      </td>
+                      {/*
+                        ── Le second facteur, VU et non imposé (chantier 32, 02/09/2026) ──────────
+
+                        Contrepartie de D-053 : le TOTP est optionnel pour tous, y compris pour
+                        l'administration. On ne remet pas l'obligation — on rend l'état visible, pour
+                        que le super-administrateur sache où en est son équipe.
+
+                        La pastille est en `alerte` et non en `erreur` quand il manque : ce n'est pas
+                        une panne, c'est une protection qui n'a pas été prise. `parts.tsx` pose cette
+                        distinction, et elle vaut ici plus qu'ailleurs — un rouge ferait lire une
+                        faute là où il y a un choix que le porteur a explicitement autorisé.
+                      */}
+                      <td role="cell" data-libelle="Second facteur" className="px-3 py-3">
+                        {a.secondFacteur.totp || a.secondFacteur.email ? (
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            {a.secondFacteur.totp ? <Pilule ton="succes">Application</Pilule> : null}
+                            {a.secondFacteur.email ? <Pilule ton="succes">Email</Pilule> : null}
+                          </span>
+                        ) : (
+                          <Pilule ton="alerte">Mot de passe seul</Pilule>
                         )}
                       </td>
                       <td role="cell" data-libelle="Attribué le" className="px-3 py-3 whitespace-nowrap text-[12px] text-[var(--texte-tertiaire)]">

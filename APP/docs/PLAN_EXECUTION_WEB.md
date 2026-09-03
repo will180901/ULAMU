@@ -418,7 +418,7 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 18 | **Les intitulés des catégories de notification sont écrits DEUX fois (née le 02/09, chantier 30).** `NOTIFICATION_CATEGORIES` vit sur le serveur ; ses cinq intitulés en français sont recopiés à la main dans `SectionPreferences.tsx` (web) **et** `NotificationsScreen.tsx` (mobile), sans qu'aucune ligne ne soit partagée. C'est ce qui a fait qu'une même phrase fausse — « réservations qui expirent » — a demandé deux chantiers pour partir : le 29 pour le web, le 30 pour le mobile. **Deux vérités pour une même règle**, la dette que le chantier 11 nomme. Trois issues : (a) **le serveur sert les intitulés** dans `GET /v1/notifications/me/preferences` — le plus juste, mais il faudrait décider où vit le texte d'une interface ; (b) **un fichier partagé** dans `packages/contracts` — sauf que ni le web ni le mobile n'importent ce paquet aujourd'hui, par choix assumé (clients vendorés) ; (c) **un test qui compare les deux listes** et échoue si elles divergent — ne supprime pas la duplication mais la rend bruyante. **Recommandation : (c)**, ~20 lignes, aucune architecture à changer. | 🟡 **à planifier** |
 | 19 | **`HeaderArt` est mort et appelle un site tiers (née le 02/09, chantier 30).** Le composant n'est monté par aucun écran, et il charge ses illustrations depuis `illustrations.popsy.co` — une dépendance réseau externe. Il ne porte **aucune promesse fausse** : il n'entrait donc pas dans le chantier 30, qui traitait les phrases. Son voisin `StepCarousel` a été retiré parce qu'il en portait une. **Coût : 8 lignes.** ⚠️ Vérifier d'abord qu'aucun écran à venir ne le prévoit — c'est un composant d'illustration, pas de la logique. | 🟢 **trivial**, à grouper avec un prochain passage |
 
-| 20 | **L'administration n'est plus protégée que par un mot de passe, pour qui n'active pas le second facteur (née le 02/09, chantier 31).** D-053 rend le TOTP optionnel pour tous, comptes d'administration compris. Ce qui tient encore : l'authentification, le type de compte, l'existence d'un sous-rôle, la matrice M02, et la limitation des tentatives sur la route OTP. Ce qui ne tient plus : l'exigence d'un second facteur sur une console **ouverte sur internet**, qui donne accès aux dossiers de vérification, aux remboursements et aux paramètres métier. **Ce n'est pas une dette de code — le code fait exactement ce qui a été décidé.** C'est un risque à surveiller. Trois façons de le réduire **sans revenir sur la décision** : (a) **afficher dans E4** quels administrateurs ont un second facteur actif — l'information existe déjà (`totpEnabled`), il suffit de la servir dans `listAdmins` : ~15 lignes, et le super-administrateur voit l'état de son équipe ; (b) **un rappel non bloquant** à la connexion d'un compte d'administration sans TOTP — une phrase, pas une garde ; (c) **journaliser** les connexions d'administration sans second facteur, pour qu'un abus laisse une trace lisible. **Recommandation : (a) puis (c)** — la première rend le risque visible, la seconde le rend traçable, et aucune ne contredit D-053. | 🟡 **surveillance**, décision au porteur |
+| 20 | **L'administration n'est plus protégée que par un mot de passe, pour qui n'active pas le second facteur (née le 02/09, chantier 31).** D-053 rend le TOTP optionnel pour tous, comptes d'administration compris. **Ce n'est pas une dette de code — le code fait exactement ce qui a été décidé** ; c'est un risque à surveiller. ✅ **Deux des trois atténuations sont FAITES le 02/09 (chantier 32)** : (a) E4 montre qui a un second facteur actif et nomme « Mot de passe seul » ceux qui n'en ont pas — le risque est désormais **visible** ; (c) toute connexion d'administration sans second facteur s'inscrit au journal d'audit, dans la transaction de la session — le risque est désormais **traçable**. 🟡 **Reste (b)**, un rappel non bloquant à la connexion : non fait, et **ma recommandation est de ne pas le faire pour l'instant** — la visibilité dans E4 s'adresse à qui peut agir sur l'équipe, un rappel s'adresserait à chacun sur un choix qu'on vient de lui accorder. ⚠️ **Ce qui reste entier, et qui ne dépend pas de moi** : le mot de passe du super-administrateur en ligne n'a jamais été changé (dette n°1). Un mot de passe jamais changé plus aucun second facteur, c'est **une seule chose à deviner**. | 🟢 **surveillance outillée** ; reste la dette n°1 |
 
 ### Trois dérives documentaires jamais arbitrées
 
@@ -502,6 +502,84 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **30** | **Le mobile n'avait jamais été balayé** — 02/09. Quatre chantiers de vérification s'étaient tous appuyés sur le **bundle web déployé** : l'application mobile n'est pas servie par Render, **aucun de ces contrôles ne la couvrait**. Trois promesses fausses y vivaient encore. `ui.tsx` portait un **SECOND carrousel**, `StepCarousel`, distinct de `AuthCarouselDrawer` et annonçant lui aussi « Réservez vos médicaments tout près » — **du code mort que personne ne montait**, et qui chargeait ses illustrations depuis un site tiers. `NotificationsScreen` décrivait la catégorie « Rappels » par « Médicaments, **réservations**, expirations » — la ligne jumelle de celle retirée de B3 au chantier 29, et pour la même raison : **zéro modèle de notification** ne porte cette catégorie. `PaymentsScreen` promettait « vos reçus de consultation **et de dévoilement** » — un reçu qui n'arrivera jamais. **Vérifié au passage, contre une erreur qu'on allait faire** : les RAPPELS DE MÉDICAMENTS (`/v1/reminders`, 401 en ligne) existent toujours et n'ont rien à voir — le service n'importe que Prisma, il n'émet aucune notification. **mobile 7 ✓ · lint 108 → 104 · web 506 ✓ · API 485 ✓ · types propres.** | ⏸ en attente | ⏸ |
 
 | **31** | **Le TOTP devient optionnel, et le 2FA du web devient opérationnel** — 02/09. Décision du porteur, **D-053** : le TOTP n'est obligatoire pour **aucun** type de compte, désactivé par défaut, chacun l'active et le désactive. Serveur : les **deux** gardes retirées — celle d'`AdminGuard` (403 sur toute route d'administration) et le refus de `disableTotp` pour les comptes ADMIN ; `ADMIN_REQUIRE_TOTP` n'est plus lue. **Mais appliquer la décision a révélé que le 2FA du web n'était pas opérationnel.** Trois défauts, trouvés en cartographiant les 12 routes 2FA du serveur contre le client : (1) `POST /totp/disable` existait depuis toujours, **aucun écran ne l'appelait** — c'était la dette n°11, soldée ici ; (2) les **trois routes de la 2FA par email** n'étaient pas déclarées dans le client ; (3) le plus grave — `LoginResponse` ne déclarait pas `otpRequired`, et sur `{ totpRequired: false, otpRequired: true }` **les deux branches de l'écran tombaient à côté : il ne se passait RIEN**. Un compte ayant activé la 2FA par email depuis le mobile était **enfermé dehors du web, en silence**, sans pouvoir atteindre le réglage qui le bloquait. Ajoutés : la désactivation dans B3, une carte « Code par email à la connexion », l'étape email à la connexion avec son libellé propre, et **`admin.guard.spec.ts` — la garde d'administration n'avait JAMAIS eu de test.** Retirés : le bandeau et le bouton conditionnel du chantier 24, devenus faux. **API 491 ✓ (485 + 6) · web 502 ✓ · types propres.** | ⏸ en attente | ⏸ |
+
+| **32** | **Le second facteur devient VISIBLE et TRAÇABLE, sans redevenir obligatoire** — 02/09. Les deux atténuations recommandées à la dette n°20, choisies par le porteur : **(a)** E4 gagne une colonne « Second facteur » — l'information existait en base (`totpSecret.enabled`, `emailTwoFactorEnabled`) et **personne ne pouvait la lire** : chacun connaissait son propre réglage, nul ne connaissait celui des autres. `listAdmins` la sert désormais, l'écran distingue « Application », « Email » et « **Mot de passe seul** ». **(b)** Une connexion d'administration sans second facteur s'inscrit au journal d'audit — `m01.admin.login_without_second_factor`, dans la **même transaction** que l'ouverture de session : un accès qui réussirait sans laisser sa trace serait exactement ce qu'on cherche à empêcher. La règle est **extraite en fonction pure** (`doitTracerConnexionSansSecondFacteur`) plutôt que laissée en `if` : l'éprouver dans `login` aurait demandé de simuler Prisma, les sessions, le hachage et l'audit — pour une condition à trois termes. **API 496 ✓ (491 + 5) · web 505 ✓ (502 + 3) · types, lint et builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 32 (rendre visible plutôt qu'interdire) a appris
+
+*Mené le 02/09/2026, après que le porteur a demandé les mesures (a) et (c) de la dette n°20.*
+
+#### Une information qui existe et que personne ne peut lire n'existe pas
+
+`totpSecret.enabled` et `emailTwoFactorEnabled` étaient en base depuis toujours. Chaque compte
+connaissait **son** réglage, dans B3. Aucun écran ne montrait celui des autres.
+
+Un super-administrateur ne pouvait donc pas répondre à la question la plus simple qui soit après
+D-053 : *« mon équipe est-elle protégée ? »* — sans ouvrir la base.
+
+*Le coût du remède : quatre champs ajoutés à un `select` Prisma et une colonne. **Quinze lignes pour
+transformer une donnée dormante en information.** C'est la sixième fois dans ce plan qu'une capacité
+existait sans lecteur — après les procédures support, le rapprochement, l'impact des paramètres, le
+journal d'audit et la désactivation du TOTP.*
+
+#### Compter la ligne ou lire le drapeau n'est pas la même chose
+
+`totpSecret` porte un champ `enabled`. Une configuration **entamée mais jamais confirmée** — QR
+scanné, code jamais validé — laisse une ligne avec `enabled: false`.
+
+Tester l'existence de la ligne aurait donc annoncé **protégé** un compte qui ne l'est pas. Le
+`select` ne demande que le drapeau, et la projection le compare explicitement à `true`.
+
+*Un piège discret : les deux écritures se ressemblent, et seule la seconde dit la vérité. C'est la
+même famille que le `data ?? []` du chantier 18 — une valeur par défaut qui répond à la place de la
+donnée.*
+
+#### Le ton d'une pastille est une décision, pas une couleur
+
+« Mot de passe seul » s'affiche en **alerte**, jamais en **erreur**. `parts.tsx` pose la
+distinction depuis le début : *erreur* dit qu'une action a échoué, *alerte* qu'une action manque.
+
+Ici elle compte plus qu'ailleurs. Un rouge ferait lire une **faute** là où il y a un **choix que le
+porteur a explicitement autorisé** (D-053). L'écran informe le super-administrateur ; il ne
+réprimande pas ses collègues.
+
+*Et un test verrouille le pendant : une équipe entièrement protégée n'affiche AUCUNE alerte. Un
+écran qui signale un risque en permanence cesse d'être lu — la leçon du bandeau du chantier 24,
+payée le jour même.*
+
+#### La trace vit dans la transaction de la session, et c'est le point
+
+L'audit est émis **dans la même transaction** que l'ouverture de session. Si l'écriture échoue, la
+connexion échoue avec elle.
+
+C'était le choix à faire consciemment : émettre après coup aurait été plus simple et aurait laissé
+passer, en cas de panne du journal, exactement l'accès qu'on voulait tracer. *Un accès qui réussit
+sans laisser sa trace est pire qu'un accès non tracé du tout, parce qu'on croit avoir la trace.*
+
+Et l'entrée ne porte que l'`accountId` et le canal. Le journal est en insertion seule : ce qui y
+entre n'en sort plus (RM-04-03), donc il doit contenir le minimum.
+
+#### Extraire la règle plutôt que la tester à travers tout le service
+
+La condition tient en trois termes : compte d'administration, pas de TOTP, pas de 2FA email.
+L'éprouver dans `login` aurait demandé de simuler Prisma, les sessions, le hachage du mot de passe
+et l'émetteur d'audit.
+
+Sortie dans `m01.policies.ts` — où ce module range ses règles pures depuis le début — elle porte un
+nom, se lit seule et se teste seule. **Cinq tests, aucun montage.**
+
+*Le test verrouille les deux sens, et le second compte autant : un patient sans second facteur
+**n'est pas** tracé. Un journal en insertion seule qui se remplirait à chaque connexion cesserait
+d'être lu, et la trace utile s'y noierait.*
+
+#### Le test qui a rappelé une règle du projet
+
+Ajouter une colonne a fait **tomber `responsive.test.ts`**, qui compte les cellules de chaque
+tableau. Ce n'était pas une gêne : c'est ce compte qui a rappelé que la nouvelle cellule devait
+porter son `data-libelle`, sans quoi elle serait apparue **sans intitulé** en mode carte, sous
+1024 px — une valeur orpheline dont personne n'aurait su dire ce qu'elle est.
+
+*Un test qui échoue pour la bonne raison au bon moment vaut mieux qu'une relecture.*
 
 ### Ce que le chantier 31 (le 2FA optionnel, et opérationnel) a appris
 
