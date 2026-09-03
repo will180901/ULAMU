@@ -505,6 +505,65 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **32** | **Le second facteur devient VISIBLE et TRAÇABLE, sans redevenir obligatoire** — 02/09. Les deux atténuations recommandées à la dette n°20, choisies par le porteur : **(a)** E4 gagne une colonne « Second facteur » — l'information existait en base (`totpSecret.enabled`, `emailTwoFactorEnabled`) et **personne ne pouvait la lire** : chacun connaissait son propre réglage, nul ne connaissait celui des autres. `listAdmins` la sert désormais, l'écran distingue « Application », « Email » et « **Mot de passe seul** ». **(b)** Une connexion d'administration sans second facteur s'inscrit au journal d'audit — `m01.admin.login_without_second_factor`, dans la **même transaction** que l'ouverture de session : un accès qui réussirait sans laisser sa trace serait exactement ce qu'on cherche à empêcher. La règle est **extraite en fonction pure** (`doitTracerConnexionSansSecondFacteur`) plutôt que laissée en `if` : l'éprouver dans `login` aurait demandé de simuler Prisma, les sessions, le hachage et l'audit — pour une condition à trois termes. **API 496 ✓ (491 + 5) · web 505 ✓ (502 + 3) · types, lint et builds propres.** | ⏸ en attente | ⏸ |
 
+| **33** | **E4 affichait « admin » au lieu de « Super Admin »** — 02/09, trouvé en répondant à une question du porteur : « comment l'admin a-t-il été créé ? ». `listAdmins` lisait le nom dans `patientProfile`, alors que **les deux seuls chemins qui créent un compte d'administration** écrivent dans `facilityMemberProfile` — le bootstrap du seed (celui qui a créé le compte en ligne) et la route `createAdmin`, **vingt lignes sous la lecture fautive**. Le nom revenait donc `null` pour tous les administrateurs, et l'écran se rabattait sur le nom d'utilisateur. Corrigé en reprenant l'ordre exact de `M01Service.me()` — patient, professionnel, structure — plutôt qu'en échangeant un tiroir : **une seule règle pour résoudre un nom, à deux endroits**. `m02.nom-admin.spec.ts` monte le vrai service sur un faux Prisma et verrouille les quatre cas plus l'ordre ; vérifié en remettant le défaut, **2 tests tombent**. **API 501 ✓ (496 + 5) · types et lint propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 33 (le nom de l'administrateur) a appris
+
+*Trouvé le 02/09/2026 en répondant à une question du porteur — « comment l'admin a-t-il été créé ? » —
+et non en cherchant un défaut.*
+
+#### Un repli qui marche cache le défaut qu'il compense
+
+`nomDe()` fait, dans E4 :
+
+```
+[firstName, lastName].filter(Boolean).join(' ') || username || '(compte sans profil)'
+```
+
+Le nom revenait `null`, le repli affichait `admin`, et l'écran paraissait normal. **Rien ne plantait,
+rien n'était vide, aucun test ne tombait.** Personne ne cherche un défaut derrière un mot qui
+ressemble à un identifiant plausible.
+
+*C'est l'inverse exact du `data ?? []` du chantier 18, et la même famille : là, un repli affichait
+« 0 dossier » sur une panne ; ici, un repli affiche un nom d'utilisateur sur un nom manquant. **Un
+repli est fait pour l'exceptionnel ; quand il devient le cas nominal, il ment en silence.***
+
+#### Le lecteur et l'écrivain étaient dans le même fichier, à vingt lignes
+
+`listAdmins` lisait `patientProfile`. `createAdmin` — **vingt lignes plus bas, dans le même
+fichier** — écrit `facilityMemberProfile`. Et le seed, ailleurs, fait de même.
+
+La proximité n'a servi à rien parce que **personne ne lit un fichier de haut en bas** : on ouvre la
+fonction qu'on vient corriger. C'est pour cela que le défaut a survécu depuis `049ce70`.
+
+*Ce qui l'a fait sortir n'est pas une relecture ni un test : c'est d'avoir dû **expliquer** comment
+le compte naissait. Répondre à « comment ça marche » oblige à suivre un chemin de bout en bout, ce
+qu'aucune correction ciblée ne demande.*
+
+#### Corriger le symptôme aurait suffi, et aurait laissé la dette
+
+Échanger `patientProfile` contre `facilityMemberProfile` réparait l'affichage en un mot. On a
+préféré reprendre **l'ordre exact de `M01Service.me()`** — patient, puis professionnel, puis
+structure.
+
+La raison n'est pas la robustesse théorique : c'est qu'**avoir deux règles pour résoudre un même nom
+est exactement ce qui a produit ce défaut**. Un échange en aurait laissé deux, simplement mieux
+accordées ce jour-là.
+
+*Un test verrouille d'ailleurs l'ORDRE, pas seulement la présence : un compte portant deux profils
+doit donner le même nom dans les deux écrans.*
+
+#### Ce que la question du porteur a aussi établi
+
+Il n'existe que **deux** chemins pour créer un administrateur, et le premier ne peut pas servir au
+premier compte : `POST /v1/admin/admins` porte `@AdminOnly("SUPER_ADMIN")`. Reste le bootstrap du
+seed, qui ne s'exécute **que si aucun administrateur n'existe**.
+
+Et **Render ne joue jamais le seed** — ni au build, ni au démarrage. Le compte en ligne a donc
+nécessairement été créé en lançant le seed depuis une machine locale, pointée sur la base de
+production. *C'est la démonstration, et non plus l'hypothèse, de ce que la dette n°1 affirmait : il
+porte le mot de passe employé ce jour-là.*
+
 ### Ce que le chantier 32 (rendre visible plutôt qu'interdire) a appris
 
 *Mené le 02/09/2026, après que le porteur a demandé les mesures (a) et (c) de la dette n°20.*

@@ -513,7 +513,25 @@ export class M02Service {
         username: true,
         phone: true,
         emailTwoFactorEnabled: true,
+        /*
+          ── Les TROIS profils, et pas seulement celui du patient (corrigé le 02/09/2026) ─────────
+
+          Cette lecture ne regardait que `patientProfile`. Or **les deux seuls chemins qui créent un
+          administrateur écrivent son nom dans `facilityMemberProfile`** : le bootstrap du seed
+          (`prisma/seed.ts`) et la route `createAdmin` de ce même fichier, vingt lignes plus bas.
+
+          Conséquence : E4 affichait « admin » — le repli sur le nom d'utilisateur — au lieu de
+          « Super Admin », pour TOUS les comptes d'administration. Rien ne plantait, et c'est
+          précisément ce qui l'a fait durer : un nom de repli ressemble à un nom.
+
+          On aurait pu se contenter d'échanger un tiroir contre l'autre. On reprend plutôt l'ordre
+          exact de `M01Service.me()` — patient, puis professionnel, puis structure — parce qu'un
+          compte hérité peut porter son nom ailleurs, et qu'avoir DEUX règles pour résoudre un même
+          nom est la dette qui a produit ce défaut.
+        */
         patientProfile: { select: { firstName: true, lastName: true } },
+        professionalProfile: { select: { firstName: true, lastName: true } },
+        facilityMemberProfile: { select: { firstName: true, lastName: true } },
         /* `totpSecret` porte un drapeau `enabled` : une configuration ENTAMÉE mais jamais confirmée
            laisse une ligne avec `enabled: false`. Compter la ligne plutôt que le drapeau annoncerait
            protégé un compte qui a scanné le QR sans jamais valider. */
@@ -533,8 +551,9 @@ export class M02Service {
       return {
         accountId: c.id,
         username: c.username,
-        firstName: c.patientProfile?.firstName ?? null,
-        lastName: c.patientProfile?.lastName ?? null,
+        /* Même ordre que `M01Service.me()` — une seule règle pour résoudre un nom, à deux endroits. */
+        firstName: c.patientProfile?.firstName ?? c.professionalProfile?.firstName ?? c.facilityMemberProfile?.firstName ?? null,
+        lastName: c.patientProfile?.lastName ?? c.professionalProfile?.lastName ?? c.facilityMemberProfile?.lastName ?? null,
         phone: c.phone,
         role: a?.role ?? null,
         assignedBy: a?.assignedBy ?? null,
