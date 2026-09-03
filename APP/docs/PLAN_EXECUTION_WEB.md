@@ -56,6 +56,10 @@ outils.
 
 ---
 
+> 📗 **Suite de ce plan : `docs/PLAN_ECRANS_SOIGNANT.md`** (04/09/2026). Celui-ci raconte la
+> RECONSTRUCTION, chantiers 1 à 40. Le nouveau prépare l'AMÉLIORATION : les sept écarts mesurés
+> entre le serveur et les écrans, ce qui ment encore, et l'ordre des chantiers 41 à 46.
+
 ## 1. La règle du jeu
 
 **Une chose à la fois.** J'annonce le chantier en français simple, avec la raison du choix → vous
