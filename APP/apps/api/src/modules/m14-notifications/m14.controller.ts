@@ -31,6 +31,18 @@ export class M14Controller {
     return this.service.unreadCount(actor.accountId);
   }
 
+  /**
+   * Marque comme lues toutes les non-lues — chantier 37.
+   *
+   * Route FIXE, déclarée avant `me/:id/read` : même si les deux ne peuvent pas entrer en conflit
+   * (deux segments contre trois), l'ordre suit la règle déjà posée plus bas pour `@Delete`.
+   */
+  @Post("me/read-all")
+  @HttpCode(200)
+  markAllRead(@Actor() actor: AuthenticatedActor) {
+    return this.service.markAllRead(actor.accountId);
+  }
+
   /** Marque comme lue — idempotent et conditionnel (D-046). */
   @Post("me/:id/read")
   @HttpCode(200)

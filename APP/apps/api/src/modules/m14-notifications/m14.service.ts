@@ -328,6 +328,34 @@ export class NotificationsService {
     return { id: notificationId, read: true };
   }
 
+  /**
+   * Marque comme lues TOUTES les notifications in-app encore non lues — chantier 37, 03/09/2026.
+   *
+   * ── Pourquoi cette route existe ────────────────────────────────────────────────────────────
+   *
+   * Le centre in-app savait marquer UNE notification. Un soignant qui revient de congés en a
+   * trente : sans cette route, le web aurait dû envoyer trente requêtes — trente occasions d'échec
+   * partiel, et un badge qui descend par à-coups. Elle reflète `deleteManyMine`, qui existait déjà
+   * pour la suppression groupée ; la lecture groupée manquait, sans raison.
+   *
+   * ── La fenêtre de rétention est celle du badge, volontairement ────────────────────────────
+   *
+   * On ne marque que ce qui entre dans PM-37 — c'est-à-dire **exactement ce que l'utilisateur peut
+   * voir** dans sa liste et compter dans son badge. Marquer au-delà changerait des lignes qu'il n'a
+   * jamais pu lire : « tout marquer comme lu » ne doit rien promettre de plus que « tout » à l'écran.
+   *
+   * Idempotent : rien à marquer renvoie `{ read: 0 }` et non une erreur — le geste a bien eu lieu.
+   */
+  async markAllRead(accountId: string): Promise<{ read: number }> {
+    const retentionDays = await this.params.getInt("PM-37");
+    const since = purgeBefore(retentionDays, new Date());
+    const res = await this.prisma.notification.updateMany({
+      where: { accountId, channel: "IN_APP", readAt: null, createdAt: { gte: since } },
+      data: { readAt: new Date(), status: NotificationStatus.READ },
+    });
+    return { read: res.count };
+  }
+
   /** Suppression d'UNE notification in-app de l'utilisateur (cloisonné par accountId, RM-02-03). */
   async deleteMine(accountId: string, notificationId: string): Promise<{ id: string; deleted: boolean }> {
     const res = await this.prisma.notification.deleteMany({

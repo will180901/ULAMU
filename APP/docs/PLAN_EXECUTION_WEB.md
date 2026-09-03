@@ -75,6 +75,28 @@ pas le faire ».
 **Si je bute ou si j'ai un doute, je le dis et je propose des solutions.** Je ne devine pas, je ne
 comble pas un trou par une invention, et je ne déclare jamais « c'est fait » sans preuve.
 
+### ⚠️ La référence a changé le 03/09/2026 — ce n'est plus la maquette, c'est le site
+
+**Règle du porteur, mot pour mot : « on ne doit plus se fier à la maquette dorénavant mais plutôt au
+site actuel ».**
+
+Ce que cela remplace : la règle fondatrice de ce plan disait *« la maquette décide de la FORME, le
+cahier décide des FAITS »*. Elle a servi trente-six chantiers et elle a fait son travail — remettre
+les proportions, les quatre états, les trois tailles. Elle n'est plus la bonne, pour une raison
+simple : **le site a dépassé la maquette.** Les trois acteurs (D-051), la chaîne du médicament
+retirée (D-052), le 2FA optionnel (D-053), la présence, les squelettes — rien de tout cela n'existe
+dans les `.dc.html`, et un écart avec eux n'est donc plus un défaut, c'est souvent un progrès.
+
+**La règle qui la remplace :**
+
+1. **La référence est `https://ulamu-web.onrender.com`**, tel qu'il est en ligne à cet instant.
+2. Le **cahier des charges décide toujours des faits** — cette moitié-là n'a pas bougé.
+3. La maquette redevient ce qu'elle aurait dû rester : une **archive d'intentions graphiques**, à
+   consulter quand on cherche une inspiration de forme, jamais à invoquer comme un arbitre.
+4. Le travail ne consiste plus à *rattraper* un modèle, mais à **améliorer, ajouter, retirer** :
+   vérifier le CRUD de chaque page, ses raccourcis, ses actions secondaires, et interroger l'utilité
+   de chaque élément affiché.
+
 ### Les deux règles d'interface intangibles
 
 1. Les écrans d'authentification gardent le **carrousel à gauche 42 % / formulaire à droite 58 %**.
@@ -83,6 +105,12 @@ comble pas un trou par une invention, et je ne déclare jamais « c'est fait » 
 ---
 
 ## 2. Afficher la maquette — le geste qui manquait
+
+> ⚠️ **Section historique depuis le 03/09/2026.** Elle décrit le rituel des chantiers 1 à 36, quand
+> la maquette était l'arbitre. Elle ne l'est plus (voir la règle au §1). Ce qui reste vrai et ne se
+> périme pas : **avant d'écrire une ligne d'un écran, on l'OUVRE** — désormais celui du site en
+> ligne, dans le navigateur intégré, connecté au compte concerné. Le mode d'emploi du serveur de
+> maquettes est conservé plus bas parce qu'elles gardent une valeur d'archive.
 
 **Avant d'écrire une ligne d'un écran, on l'ouvre.** Sans exception. C'est la mesure corrective
 n°1 de ce plan.
@@ -420,6 +448,9 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | 20 | **L'administration n'est plus protégée que par un mot de passe, pour qui n'active pas le second facteur (née le 02/09, chantier 31).** D-053 rend le TOTP optionnel pour tous, comptes d'administration compris. **Ce n'est pas une dette de code — le code fait exactement ce qui a été décidé** ; c'est un risque à surveiller. ✅ **Deux des trois atténuations sont FAITES le 02/09 (chantier 32)** : (a) E4 montre qui a un second facteur actif et nomme « Mot de passe seul » ceux qui n'en ont pas — le risque est désormais **visible** ; (c) toute connexion d'administration sans second facteur s'inscrit au journal d'audit, dans la transaction de la session — le risque est désormais **traçable**. 🟡 **Reste (b)**, un rappel non bloquant à la connexion : non fait, et **ma recommandation est de ne pas le faire pour l'instant** — la visibilité dans E4 s'adresse à qui peut agir sur l'équipe, un rappel s'adresserait à chacun sur un choix qu'on vient de lui accorder. ⚠️ **Ce qui reste entier, et qui ne dépend pas de moi** : le mot de passe du super-administrateur en ligne n'a jamais été changé (dette n°1). Un mot de passe jamais changé plus aucun second facteur, c'est **une seule chose à deviner**. | 🟢 **surveillance outillée** ; reste la dette n°1 |
 
+| 21 | **Le message d'erreur d'une requête est recopié dans huit fichiers (née le 03/09, chantier 37).** La ligne `const messageDe = (e: unknown) => (e instanceof ApiError ? e.message : 'Une erreur est survenue. Réessayez dans un moment.')` figure **à l'identique** dans sept écrans d'administration et de soignant — et le centre de notifications en a ajouté une huitième, faute de point commun où la mettre. C'est exactement le motif que le chantier 36 a condamné sur les pluriels : **une règle recopiée est une règle qui dérive.** Le jour où la phrase de repli doit changer (une autre langue, un lien vers l'aide, un code d'incident), il faudra la retrouver huit fois. **Coût : ~30 min** — l'exporter depuis `lib/api.ts`, remplacer les huit déclarations, relancer la suite. Aucun risque : le comportement est identique, le compilateur signale toute erreur d'import. **Recommandation : le faire**, en fin de chantier, quand on passera de toute façon sur ces écrans. | 🟢 **trivial**, à grouper |
+| 22 | **Le centre de notifications du serveur n'a JAMAIS eu de test (née le 03/09, chantier 37).** Constaté en le branchant : ni test unitaire, ni test d'intégration ne touchait `listMine`, `markRead`, `deleteMine`, `deleteManyMine` ni `unreadCount` — cinq routes qui lisent et écrivent des données d'un compte, et dont la seule protection contre une fuite entre comptes est une clause `where`. Le chantier 37 en a couvert **une** (`markAllRead`, celle qu'il a écrite) avec une doublure de Prisma. **Les quatre autres restent nues.** ⚠️ La cause n'est pas la négligence : les suites d'intégration de l'API **vident la base**, et la base du projet est celle du site en ligne — elles sont donc à l'arrêt (dette n°8). **Coût : ~2 h** en tests unitaires sur doublure, sur le modèle de `m14.service.spec.ts` ; **~30 min** en tests d'intégration, mais seulement une fois la branche Neon de test créée. **Recommandation : attendre la branche Neon** (dette n°8, deux clics gratuits) plutôt que d'écrire deux heures de doublures qu'un vrai test rendrait redondantes. | 🟡 **à planifier**, dépend de la dette n°8 |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
@@ -512,6 +543,112 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **35** | **B2 : la courbe de la maquette, à la place des barres** — 03/09, demande du porteur, écran regardé côté à côté avec sa maquette. **Le comparatif du chantier 9 avait inscrit ce bloc « conforme ». Il ne l'était pas** : la maquette montre une courbe avec aire dégradée, l'écran affichait des barres. Géométrie relevée sur `B2 - Tableau de bord.dc.html` — `viewBox="0 0 620 190"`, tracé de x=30 à x=614, base à y=168, ligne de 2 px, points de rayon 2,4, aire de 0,18 à 0. Seule adaptation : la couleur vient de `--ap-400` et non du `#2756A6` écrit en dur de la maquette, qui a un fichier par thème quand l'application n'a qu'un écran pour les deux. **Deux défauts trouvés EN REGARDANT, qu'aucun test n'aurait signalés** : l'axe graduait d'abord « 2,5 · 5 · 7,5 · 10 » — des demi-consultations —, puis, une fois le pas choisi avant le sommet, essayait 25 avant 10 et graduait 28 en « 0 · 25 · 50 ». `echelleMois` vit dans `lib/echelle-graphique.ts` et couvre 400 maxima en test. **web 522 ✓ (512 + 10) · types, build et lint propres.** | ⏸ en attente | ⏸ |
 
 | **36** | **« 1 consultations au total »** — 03/09, lu par le porteur EN LIGNE sur son propre tableau de bord. Balayage de tout le web : **seize chaînes** écrivaient un nombre suivi d'un mot invariablement au pluriel — « 1 ordonnances », « 1 pages », « 0 retirables ». **Quatre étaient déjà justes** et n'ont pas été touchées ; une cinquième (`GainsPage`) ne peut pas descendre sous deux jours, sa garde le prouve. **Huit corrigées**, par une règle unique — `lib/accord.ts` — plutôt que par huit ternaires recopiés. **Le test a trouvé un défaut dans ma propre règle** : le seuil `> 1`, celui du motif déjà présent dans le dépôt, accorde « 1,5 heures » ; le pluriel français commence à **deux**. Sur des entiers les deux seuils sont identiques — c'est pourquoi personne ne l'aurait vu. **web 529 ✓ (522 + 7) · types, build et lint propres.** | ⏸ en attente | ⏸ |
+
+| **37** | **Le centre de notifications** — 03/09, recommandation n°1 de l'analyse du tableau de bord, retenue par le porteur. **Le serveur envoie 49 modèles de notification ; le web n'en affichait aucune.** Il branchait les *préférences* : un soignant choisissait avec soin les catégories qu'il recevait, et n'en voyait jamais une seule — l'interrupteur marchait, la lampe n'était pas branchée. Ce qui se perdait : « un patient vous sollicite », « compte-rendu en retard — **gains gelés** » (D-008), « contrat réédité, à re-signer pour exercer ». **Serveur : une route écrite pour cet écran**, `POST /v1/notifications/me/read-all` — la suppression groupée existait depuis le début, la **lecture** groupée non ; sans elle, trente non-lues auraient coûté trente requêtes. Elle s'arrête à la même fenêtre PM-37 que la liste et le badge. Web : cloche + pastille plafonnée à « 99+ », tiroir paginé au curseur, marquer lu, tout marquer lu, supprimer, lien vers les préférences — et **chaque notification mène à son écran** quand il en existe un (`lib/destination-notification.ts`). **Trois défauts trouvés par les tests, dont deux dans mon propre code** : les capacités des destinations étaient recopiées à la main et réduisaient `/admin/signalements` au seul super-admin — elles sont désormais **lues** dans `NAV_GROUPS` ; une réécriture « à l'identique » a fait retomber `m06.report.overdue.admin` dans le préfixe `m06.report.`, donc vers les consultations d'un soignant ; et `lib/temps.ts` disait « hier » pour une notification de vingt heures — le test a imposé « il y a 20 h », une demande de vingt heures étant perdue quand celle de trois heures ne l'est pas. **Constaté en passant : le centre in-app du serveur n'avait JAMAIS eu de test** (dette n°22). **API 509 ✓ (505 + 4) · web 568 ✓ (529 + 39) · types, lint (19, référence) et builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 37 (le centre de notifications) a appris
+
+*Codé le 03/09/2026, sur la recommandation n°1 de l'analyse du tableau de bord.*
+
+#### Quarante-neuf messages partaient, personne ne les recevait
+
+Le serveur porte **49 modèles** de notification et les livre depuis le premier jour. Le web n'en
+affichait **aucune**. Il branchait, lui, les **préférences** : un soignant pouvait choisir avec soin
+les catégories qu'il souhaitait recevoir, et n'en voir jamais une seule.
+
+C'est la forme la plus achevée du réglage sans effet — celle que le chantier 10 avait dénoncée sur
+le sélecteur de langue, et le chantier 29 sur la catégorie « Rappels ». Ici l'interrupteur
+fonctionnait parfaitement ; c'est **la lampe qui n'était pas branchée**.
+
+Ce que perdait un médecin, concrètement : « un patient vous sollicite » (avec un délai qui court),
+« votre compte-rendu est en retard » — **les gains de la séance sont gelés** (D-008) —, « votre
+contrat a été réédité », qu'il faut signer pour continuer d'exercer.
+
+#### Le chantier 1 avait eu raison de l'écarter, et il fallait quand même le faire
+
+`TopHeader.tsx` portait, depuis le 27/08, cette phrase : *« le tiroir de notifications — réel côté
+serveur, mais c'est une fonctionnalité à part entière, pas un morceau de coquille »*.
+
+Elle était juste. Construire un centre de notifications au moment de poser la coquille aurait
+mélangé deux travaux. **Mais une omission justifiée reste une omission**, et elle a tenu
+trente-six chantiers parce qu'elle était écrite là où seuls les développeurs la lisent, et non au
+§9 avec les dettes.
+
+*Règle à retenir : **ce qu'on écarte volontairement doit aller dans la liste des dettes, pas dans un
+commentaire de code.** Un commentaire explique à qui lit le fichier ; une dette revient réclamer.*
+
+#### Une route manquait, et son absence se voyait à l'écran
+
+Le serveur savait **supprimer en lot** (`deleteManyMine`) depuis le début. Il ne savait pas **lire
+en lot**. Un soignant revenant de congés avec trente non-lues aurait donc reçu trente requêtes —
+trente occasions d'échec partiel, et un badge descendant par à-coups.
+
+`POST /v1/notifications/me/read-all` a été écrite pour cet écran. Elle s'arrête à la **même fenêtre
+de rétention** que la liste et le badge : « tout marquer comme lu » ne doit rien promettre de plus
+que le « tout » que l'utilisateur a sous les yeux.
+
+*C'est l'application de la règle « backend d'abord » du §1 : le manque a été comblé au serveur, avec
+son test, avant que l'écran s'appuie dessus.*
+
+#### Ouvrir le tiroir ne marque rien comme lu — et c'est le choix qui se défend le moins spontanément
+
+L'usage le plus répandu ailleurs est d'effacer le badge dès l'ouverture. C'est le pire : il supprime
+le seul repère de l'utilisateur au premier coup d'œil. Ici, une notification devient lue quand on la
+**lit** — quand on clique dessus — ou quand on le demande explicitement.
+
+Le test qui le défend est le premier du fichier, avec sa raison écrite : c'est la décision la plus
+facile à défaire par inadvertance, en croyant rendre service.
+
+#### La carte des destinations a fauté deux fois, et le test a rattrapé les deux
+
+Une notification qui prévient sans emmener oblige à refaire le chemin de tête. La clé du modèle
+(`m06.handshake.initiated`) dit le sujet ; `lib/destination-notification.ts` la traduit en écran.
+
+**Première faute — les capacités recopiées.** La carte portait, pour chaque destination, sa liste de
+capacités écrite à la main. `/admin/signalements` y était réservé au super-administrateur, alors que
+la navigation l'ouvre **aussi** à `admin:verification`. Un administrateur de vérification aurait reçu
+une notification muette vers un écran qui lui est pourtant ouvert. Corrigé en **lisant** `NAV_GROUPS`
+au lieu de le redire — et avec un effet de bord voulu : *un écran absent de la navigation n'est
+jamais lié.*
+
+**Seconde faute — une exception perdue dans une réécriture.** `m06.report.overdue.admin` n'a aucune
+destination (l'administration n'a pas d'écran de sessions). La première version le disait ; la
+réécriture l'a laissé retomber dans le préfixe `m06.report.` — donc vers les consultations d'un
+soignant. Le test l'a signalé aussitôt.
+
+*Deux leçons en une : **une règle recopiée dérive** (chantier 36, appliqué à autre chose que des
+pluriels), et **une exception nommée doit passer avant toute règle générale**, y compris après une
+réécriture qu'on croit à l'identique.*
+
+#### Le temps écoulé : le test a tranché une question de langue, contre ma première version
+
+`lib/temps.ts` dit l'ancienneté d'une notification. À 14 h 30, une notification de la veille à
+18 h 30 : « hier », ou « il y a 20 h » ?
+
+J'avais écrit « hier », parce que la date du calendrier a changé. **Le test a imposé l'autre
+réponse, pour une raison métier** : une demande de consultation de vingt heures est perdue, celle de
+trois heures peut-être pas. « Hier » efface cette différence.
+
+Et le revers, à l'autre bout de la nuit : à 0 h 30, une notification de 23 h la veille n'a
+qu'**une heure et demie**. La dire « hier » serait exact et parfaitement inutile.
+
+*Le seuil est donc 24 h, et non minuit. C'est le genre de choix qu'on ne prend consciemment que si
+on écrit le test des deux côtés.*
+
+#### Un trou de couverture, trouvé en passant, et qui ne se bouche pas tout de suite
+
+En écrivant le test de la nouvelle route, un constat : **le centre in-app du serveur n'était éprouvé
+nulle part**. Ni `listMine`, ni `markRead`, ni les deux suppressions, ni `unreadCount` — cinq routes
+dont la seule protection contre une fuite entre comptes est une clause `where`.
+
+La cause n'est pas la négligence : les suites d'intégration **vident la base**, et la base du projet
+est celle du site en ligne. Elles sont à l'arrêt depuis le 23/08 (dette n°8).
+
+Le chantier en a couvert **une** — celle qu'il a écrite — avec une doublure de Prisma, en éprouvant
+précisément les quatre bornes du cloisonnement. Les quatre autres sont inscrites à la **dette n°22**,
+avec leur coût et une recommandation qui n'est pas « le faire tout de suite » : deux heures de
+doublures qu'un vrai test d'intégration rendrait redondantes valent moins que deux clics dans la
+console Neon.
 
 ### Ce que le chantier 36 (l'accord en nombre) a appris
 

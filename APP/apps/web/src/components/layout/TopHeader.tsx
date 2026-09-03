@@ -2,15 +2,18 @@
  * Barre du haut — 48 px, verre dépoli, d'après la maquette B1 (mesurée le 27/08 en l'affichant).
  *
  * De gauche à droite : le fil d'Ariane (ou le bouton de navigation sur mobile), puis à droite la
- * **pastille de présence** et le **rideau de confidentialité**.
+ * **pastille de présence**, la **cloche de notifications** et le **rideau de confidentialité**.
  *
- * ⚠️ **Deux éléments de la maquette restent absents, volontairement** :
- *   • la **recherche globale** — l'alignement la conserve mais en change la PORTÉE : elle cherchera
- *     dans les consultations et ordonnances du médecin lui-même, jamais dans les patients
- *     (EF-06-01 impose une fiche anonymisée). Elle ira donc avec C4, quand il y aura des dossiers
- *     à chercher — la construire ici reviendrait à chercher dans le vide ;
- *   • le **tiroir de notifications** — réel côté serveur (M14 : `GET /v1/notifications/me` et
- *     `/me/unread-count`), mais c'est une fonctionnalité à part entière, pas un morceau de coquille.
+ * ⚠️ **Un élément de la maquette reste absent, volontairement** : la **recherche globale**.
+ * L'alignement la conserve mais en change la PORTÉE — elle cherchera dans les consultations et
+ * ordonnances du médecin lui-même, jamais dans les patients (EF-06-01 impose une fiche
+ * anonymisée). Elle ira donc avec C4, quand il y aura des dossiers à chercher ; la construire ici
+ * reviendrait à chercher dans le vide.
+ *
+ * Le **tiroir de notifications** figurait ici sur la même liste depuis le chantier 1, avec sa
+ * raison : « réel côté serveur, mais c'est une fonctionnalité à part entière, pas un morceau de
+ * coquille ». Elle était juste, et elle a tenu trente-six chantiers. **Il est construit depuis le
+ * 03/09/2026** (chantier 37) — voir `CentreNotifications.tsx`.
  *
  * Le « rideau de confidentialité », lui, était écarté depuis le 20/08 faute de trace au cahier.
  * **Le porteur l'a retenu le 27/08** (40ᵉ écart) : c'est une forme, pas un fait. Voir
@@ -20,6 +23,7 @@ import { Menu } from 'lucide-react'
 import { useSessionStore } from '@/state/session.store'
 import { ESPACE_PAR_ROLE } from '@/config/navigation.config'
 import { IndicateurPresence } from '@/components/layout/IndicateurPresence'
+import { CentreNotifications } from '@/components/layout/CentreNotifications'
 import { BoutonRideau } from '@/components/layout/RideauConfidentialite'
 
 export function TopHeader({
@@ -65,6 +69,10 @@ export function TopHeader({
       {/* La présence ne concerne que les professionnels : le composant se retire tout seul pour les
           autres rôles (un administrateur n'a aucune disponibilité à déclarer). */}
       <IndicateurPresence />
+
+      {/* La cloche reste sur mobile, contrairement au rideau : c'est justement sur un téléphone,
+          entre deux consultations, qu'on veut savoir qu'un patient attend. */}
+      <CentreNotifications />
 
       {/* Absent sur mobile, comme dans la maquette : un téléphone se retourne, et la place dans une
           barre de 48 px y est comptée. */}

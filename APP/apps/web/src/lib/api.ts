@@ -265,6 +265,35 @@ export interface ResetPasswordRequest {
 /** Une session de connexion ouverte. `current` = celle de cet onglet — on ne se révoque pas soi-même. */
 export type NotificationCategory = 'care' | 'money' | 'reminder' | 'system' | 'critical'
 
+/**
+ * Une notification reçue — telle que le serveur la RESTITUE (chantier 37, 03/09/2026).
+ *
+ * ⚠️ `title` et `body` sont rendus **au moment de la lecture**, depuis le catalogue de modèles
+ * (EF-14-03) et la charge utile stockée. Le texte n'est donc pas figé en base : corriger une
+ * formulation dans `m14.templates.ts` corrige aussi les notifications déjà reçues.
+ *
+ * `template` est l'identifiant du modèle (`m06.handshake.initiated`, …). Il est servi et il est
+ * précieux : c'est lui qui permettrait un jour de faire d'une notification un LIEN vers l'écran
+ * concerné. Aujourd'hui l'écran ne s'en sert pas — voir la dette au §9.
+ */
+export interface NotificationRecue {
+  id: string
+  template: string
+  category: string
+  priority: string
+  title: string
+  body: string
+  /** `null` = jamais lue. C'est cette valeur, et non un booléen, qui dit AUSSI quand elle l'a été. */
+  readAt: string | null
+  createdAt: string
+}
+
+export interface NotificationsPage {
+  items: NotificationRecue[]
+  /** `null` = dernière page. À repasser en `cursor` pour la suivante. */
+  nextCursor: string | null
+}
+
 export interface SessionInfo {
   id: string
   client: string
@@ -1160,6 +1189,49 @@ export const api = {
     request<{ channel: 'email' | 'sms'; hint: string }>('POST', '/v1/accounts/me/close/request-otp', undefined, true),
   closeAccount: (dto: { password: string; otpCode: string }) =>
     request<void>('POST', '/v1/accounts/me/close', dto, true),
+
+  /*
+    ── M14 — le CENTRE de notifications (chantier 37, 03/09/2026) ────────────────────────────────
+
+    Ces cinq routes existaient au serveur depuis le début et **aucune n'était déclarée ici**. Le web
+    ne branchait que les PRÉFÉRENCES : un soignant pouvait choisir les notifications qu'il reçoit,
+    et n'en voyait jamais une seule.
+
+    Ce n'était pas un oubli — le chantier 1 l'avait écarté en écrivant « M14 est une fonctionnalité
+    à part entière, pas un morceau de coquille ». C'était juste ; elle est construite maintenant.
+
+    Ce que le médecin ne recevait pas, entre autres : « un patient vous sollicite » (avec son compte
+    à rebours), « votre compte-rendu est en retard » (et le paiement part), « re-signez votre
+    contrat ou vous n'exercez plus ». Le patient, lui, les voit sur mobile depuis toujours.
+  */
+  /** Historique paginé, du plus récent au plus ancien. La rétention PM-37 filtre déjà côté serveur. */
+  notifications: (q: { cursor?: string; limit?: number } = {}) =>
+    request<NotificationsPage>(
+      'GET',
+      `/v1/notifications/me${q.cursor || q.limit ? `?${new URLSearchParams({ ...(q.cursor ? { cursor: q.cursor } : {}), ...(q.limit ? { limit: String(q.limit) } : {}) })}` : ''}`,
+      undefined,
+      true,
+    ),
+  /** Le compteur de la pastille. Séparé de la liste : il se rafraîchit souvent, elle non. */
+  notificationsUnreadCount: () =>
+    request<{ unread: number }>('GET', '/v1/notifications/me/unread-count', undefined, true),
+  /** Idempotent côté serveur : rejouer un « marquer lu » ne change rien et ne lève pas. */
+  markNotificationRead: (id: string) =>
+    request<{ id: string; read: boolean }>('POST', `/v1/notifications/me/${id}/read`, undefined, true),
+  /**
+   * Tout marquer comme lu — une seule requête, et non une par ligne.
+   *
+   * La route a été écrite pour cet écran (chantier 37) : le serveur savait supprimer en lot depuis
+   * le début, mais pas LIRE en lot. Elle s'arrête à la même fenêtre de rétention que la liste —
+   * « tout » veut dire « tout ce que vous voyez », rien de plus.
+   */
+  markAllNotificationsRead: () =>
+    request<{ read: number }>('POST', '/v1/notifications/me/read-all', undefined, true),
+  deleteNotification: (id: string) =>
+    request<{ id: string; deleted: boolean }>('DELETE', `/v1/notifications/me/${id}`, undefined, true),
+  /** Suppression groupée — le serveur plafonne la taille du lot, l'écran n'envoie que ce qu'il affiche. */
+  deleteNotifications: (ids: string[]) =>
+    request<{ deleted: number }>('DELETE', '/v1/notifications/me', { ids }, true),
 
   // M14 — préférences de notification (les seules du lot qui suivent le compte)
   /** `critical` remonte toujours `adjustable: false` — les alertes vitales ne se coupent pas (RM-14-02). */
