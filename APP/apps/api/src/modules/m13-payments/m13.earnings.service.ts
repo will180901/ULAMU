@@ -2,7 +2,7 @@
  * M13 — gains & retraits côté titulaire (EF-13-06/07/08 ; CU-13-04).
  * Autorisations (mêmes règles partout) :
  * - PROFESSIONAL : l'acteur EST le titulaire (holderId = son accountId) ;
- * - FACILITY : l'acteur est membre OWNER ACTIF de la structure (PermissionsService, RM-02-03).
+ * - FACILITY : plus servi (D-051) — refus explicite, voir `assertHolderAccess`.
  * Retrait = action sensible : mot de passe + OTP (EF-13-07), commission ULAMU PM-02 (0 %).
  */
 import {
@@ -22,7 +22,6 @@ import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
-import { PermissionsService } from "../m02-roles-structures/m02.permissions.service";
 import { ConfirmWithdrawalDto, EarningsMeQueryDto, StartWithdrawalDto } from "./m13.dto";
 import { PaymentsService } from "./m13.payments.service";
 import { withdrawalFee } from "./m13.policies";
@@ -37,23 +36,35 @@ export class EarningsService {
     private readonly outbox: OutboxService,
     private readonly audit: AuditEmitter,
     private readonly payments: PaymentsService,
-    private readonly permissions: PermissionsService,
     private readonly m01: M01Service,
     @Inject(AGGREGATOR_GATEWAY) private readonly gateway: AggregatorGateway,
   ) {}
 
-  /** Garde d'accès au compte de gains — vérifiée serveur, à chaque requête (RM-02-03). */
-  private async assertHolderAccess(actor: AuthenticatedActor, holderType: EarningsHolderType, holderId: string): Promise<void> {
-    if (holderType === "PROFESSIONAL") {
-      if (actor.accountId !== holderId) {
-        throw new ForbiddenException("Seul le titulaire de ce compte de gains peut y accéder (EF-13-06)");
-      }
-      return;
+  /**
+   * Garde d'accès au compte de gains — vérifiée serveur, à chaque requête (RM-02-03).
+   *
+   * ── Le cas FACILITY ne passe plus par M02 (dette n°17, 03/09/2026) ──────────────────────────
+   *
+   * Il vérifiait auparavant, via `PermissionsService`, que l'acteur était titulaire ACTIF de la
+   * structure. Ce chemin ne pouvait plus aboutir : plus aucun compte `FACILITY_MEMBER` ne peut
+   * naître depuis D-051, et l'inventaire de la base de production a confirmé le 03/09 qu'il n'en
+   * existe **aucun** — ni aucune adhésion, ni aucun compte de gains de type FACILITY.
+   *
+   * La garde répondait donc déjà « refusé » à tous les coups, en trois requêtes. Elle le dit
+   * maintenant en une ligne, et M13 n'a plus besoin d'importer M02.
+   *
+   * ⚠️ Le type `EarningsHolderType` de Prisma garde sa valeur `FACILITY` : c'est une colonne de
+   * base, et la retirer demanderait une migration sur la production. Ce `switch` reste donc
+   * exhaustif — il refuse ce qu'il ne sait plus servir, au lieu de laisser passer.
+   */
+  private assertHolderAccess(actor: AuthenticatedActor, holderType: EarningsHolderType, holderId: string): void {
+    if (holderType !== "PROFESSIONAL") {
+      throw new ForbiddenException(
+        "Les comptes de gains de structure ne sont plus servis par ULAMU (D-051) — seuls les gains d'un professionnel le sont",
+      );
     }
-    // FACILITY : seul le titulaire (OWNER) actif de la structure manipule les gains.
-    const membership = await this.permissions.getMembership(actor.accountId, holderId);
-    if (!membership || !membership.active || membership.role !== "OWNER") {
-      throw new ForbiddenException("Seul le titulaire actif de la structure peut accéder à ses gains (EF-13-06)");
+    if (actor.accountId !== holderId) {
+      throw new ForbiddenException("Seul le titulaire de ce compte de gains peut y accéder (EF-13-06)");
     }
   }
 

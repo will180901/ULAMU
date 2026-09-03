@@ -66,12 +66,13 @@ function monterService(attributions: Array<{ accountId: string; role: Role }>) {
 
   const audit = { emit: async (_tx: unknown, e: { action: string; resource: string }) => void journal.push(e) };
 
+  // Six dépendances depuis le 03/09 : `PermissionsService` est parti avec la moitié
+  // « structures » du module (dette n°17).
   const service = new M02Service(
     client as never,
     undefined as never,
     undefined as never,
     audit as never,
-    undefined as never,
     undefined as never,
     undefined as never,
   );

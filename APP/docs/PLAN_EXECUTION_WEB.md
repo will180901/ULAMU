@@ -439,13 +439,32 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | ~~11~~ | ✅ **SOLDÉE le 02/09/2026 (chantier 31).** La désactivation est offerte dans B3 — mot de passe **et** code, comme le serveur l'exige. La recommandation d'alors était « ne rien faire pour l'instant, et le jour où quelqu'un le demande la vraie question sera *pourquoi* » : le porteur l'a demandé, et le pourquoi est venu avec — **D-053**, le TOTP n'est obligatoire pour aucun type de compte. *Cette dette a failli faire échouer la décision : sans ce chemin, « optionnel » n'aurait été qu'un mot.* | ✅ soldée |
 
 | 12 | ✅ **TRANCHÉE le 02/09 (chantier 26) — le porteur retient l'issue (a) : la recherche payée de médicaments est RETIRÉE**, avec M11, M12 et la délivrance de M09. Les dettes 14, 15 et 16 ci-dessous en sont les conséquences. *Énoncé d'origine :* **Plus personne n'alimente le stock des pharmacies (née le 02/09, chantier 25).** En retirant `FACILITY_MEMBER` (D-051), on retire l'acteur qui tenait l'inventaire — `POST /v1/stocks/:facilityId/entries` et ses voisines n'ont plus d'opérateur. **Ce n'est pas une dette de code, c'est une dette de produit**, et elle touche le patient : son parcours « je cherche un médicament → je paie un dévoilement (PM-03, 500 XAF) → j'ai une réservation de 24 h » lit ce stock. Les données existantes ne disparaissent pas, elles **vieillissent** — et le patient paie pour une information qui se dégrade sans que rien ne le dise. Trois issues : (a) **retirer aussi la recherche payée de médicaments** du parcours patient — cohérent, mais c'est amputer M12 d'une fonctionnalité facturée ; (b) **la garder en disant son âge** — afficher la date de dernière confirmation de fraîcheur (`FacilityStockState.lastFreshAt` existe déjà, RM-11-05) et refuser le dévoilement au-delà d'un seuil : ~1 j, et l'écran cesse de mentir ; (c) **rendre un acteur au stock** sous une autre forme (l'administration saisit ? un import ?) — c'est un chantier, pas une correction. | ✅ **soldée le 02/09** — l'issue (a) a été retenue et APPLIQUÉE au chantier 26. *(La colonne disait encore « arbitrage porteur » : c'était l'état d'avant la décision, corrigé le 03/09.)* |
-| 13 | **La fermeture complète de `FACILITY_MEMBER` demande un ménage en base (née le 02/09, chantier 25).** La valeur reste dans l'énumération Prisma, ses six règles dans la matrice M02, et les quatre `auditActorType` gardent leur cas. **Chacun pour une raison vérifiée** : retirer la valeur exige une migration sur la base de **production** (celle effacée le 23/08) et échouerait si une ligne la porte ; retirer les règles sans retirer `assertFacilityRight` donnerait deux vérités pour une même règle ; retirer le cas d'audit ferait inscrire l'action d'un humain comme `"system"` dans un journal **en insertion seule**, donc à jamais. L'ordre est donc contraint : **d'abord inventorier les comptes et adhésions en base** (`scripts/menage-comptes-demo.ts` a un mode inventaire qui n'écrit rien), **puis** décider. | 🟡 **geste porteur**, non urgent — rien ne fuit, la porte est déjà fermée |
+| 13 | **La fermeture complète de `FACILITY_MEMBER` demande un ménage en base (née le 02/09, chantier 25).** La valeur reste dans l'énumération Prisma, ses six règles dans la matrice M02, et les quatre `auditActorType` gardent leur cas. **Chacun pour une raison vérifiée** : retirer la valeur exige une migration sur la base de **production** (celle effacée le 23/08) et échouerait si une ligne la porte ; retirer les règles sans retirer `assertFacilityRight` donnerait deux vérités pour une même règle ; retirer le cas d'audit ferait inscrire l'action d'un humain comme `"system"` dans un journal **en insertion seule**, donc à jamais. L'ordre est donc contraint : **d'abord inventorier les comptes et adhésions en base, puis décider.**
+
+✅ **L'inventaire a été fait le 03/09/2026** — `scripts/inventaire-structures.ts`, en lecture seule, contre la base de production :
+
+| | |
+|---|---|
+| Comptes `FACILITY_MEMBER` | **0** |
+| `FacilityMember` (adhésions) | **0** |
+| `FacilityInvitation` | **0** |
+| `OwnershipTransferIntent` | **0** |
+| `Facility` | **3** |
+| `FacilityMemberProfile` | **1** ⚠️ *c'est le nom du super-administrateur* |
+| `VerificationCase` avec `facilityId` | **3** |
+| `EarningsAccount` FACILITY | **0** |
+
+**Ce que ces chiffres autorisent, et ce qu'ils interdisent.** Ils ont autorisé le retrait du code (chantier 39, dette n°17) : personne ne pouvait plus l'atteindre. Ils **interdisent** de retirer la valeur de l'énumération Prisma : une migration échouerait sur les 3 `Facility` et les 3 dossiers, et surtout `FacilityMemberProfile` **n'est pas une table de structure malgré son nom** — les comptes d'administration y écrivent leur identité (chantier 33). La vider effacerait le nom du seul administrateur de la plateforme.
+
+**Recommandation inchangée, et maintenant chiffrée : ne rien migrer.** Le gain serait de quelques kilo-octets ; le risque, la production. | 🟡 **geste porteur**, non urgent — **inventorié le 03/09**, rien ne fuit, la porte est fermée |
 
 | 14 | **Une ordonnance n'a plus de lecteur (née le 02/09, chantier 26).** Elle est toujours prescrite, scellée, consultable et annulable — mais elle ne peut plus être **servie** dans ULAMU : le scan du QR et la délivrance sont partis avec M11. Conséquences concrètes : les statuts `DISPENSED` et `PARTIALLY_DISPENSED` du modèle deviennent **inatteignables**, le compteur `qtyDispensed` reste à zéro à jamais, et C4 affiche donc un état d'ordonnance qui ne prendra jamais que trois valeurs sur cinq. Le patient montre son ordonnance sur son téléphone comme une ordonnance papier : elle reste **traçable et infalsifiable**, mais hors chaîne. ⚠️ **Ce n'est pas une régression à réparer, c'est le prix de la décision** — il est écrit ici pour qu'on ne le redécouvre pas comme un défaut. | ✅ **close le 03/09 comme CONSÉQUENCE, non comme dette** — rien à corriger : c'est le prix de D-052, écrit ici pour qu'on ne le redécouvre pas comme un défaut. Rouvrir la décision est la seule action possible, et elle appartient au porteur. |
-| 15 | **Les tables de la pharmacie restent en base, sans lecteur (née le 02/09, chantier 26).** `Facility`, `StockItem`, `StockMovement`, `StockThreshold`, `FacilityStockState`, `Dispensation`, `DispensationLine`, `Reservation`, `ReservationLine`, `Disclosure`, `ReliabilityStrike`, `FacilityMember`, `FacilityMemberProfile`, `FacilityInvitation` — **aucun code ne les lit plus**. Les retirer demande une migration sur la base de **production**, celle effacée le 23/08, et l'ordre est contraint : d'abord inventorier ce qu'elles contiennent, ensuite décider. **Coût réel : elles ne coûtent que de la place** — aucune fuite, aucun chemin d'accès, aucune route. **Recommandation : ne rien faire pour l'instant.** Une migration destructrice sur une base de santé pour gagner quelques mégaoctets est un risque sans contrepartie ; à grouper le jour où une autre migration devra de toute façon être écrite. | 🟡 **geste porteur**, non urgent |
+| 15 | **Les tables de la pharmacie restent en base, sans lecteur (née le 02/09, chantier 26).** `Facility`, `StockItem`, `StockMovement`, `StockThreshold`, `FacilityStockState`, `Dispensation`, `DispensationLine`, `Reservation`, `ReservationLine`, `Disclosure`, `ReliabilityStrike`, `FacilityMember`, `FacilityMemberProfile`, `FacilityInvitation` — **aucun code ne les lit plus**. Les retirer demande une migration sur la base de **production**, celle effacée le 23/08, et l'ordre est contraint : d'abord inventorier ce qu'elles contiennent, ensuite décider. **Coût réel : elles ne coûtent que de la place** — aucune fuite, aucun chemin d'accès, aucune route. **Recommandation : ne rien faire pour l'instant.** Une migration destructrice sur une base de santé pour gagner quelques mégaoctets est un risque sans contrepartie ; à grouper le jour où une autre migration devra de toute façon être écrite.
+
+✅ **Inventorié le 03/09/2026** (`scripts/inventaire-structures.ts`, lecture seule) : ces tables contiennent **3 `Facility`, 1 `FacilityMemberProfile`, et rien d'autre** — zéro adhésion, invitation, transfert. ⚠️ **Le `FacilityMemberProfile` porte le nom du super-administrateur** : malgré son nom, cette table n'est pas une table de structure. La recommandation « ne rien faire » est donc désormais chiffrée, et elle se renforce : le seul gain mesurable serait de supprimer 4 lignes. | 🟡 **geste porteur**, non urgent — **inventorié le 03/09** |
 | 16 | **Le modèle économique n'a plus qu'une source de revenus (née le 02/09, chantier 26).** Le dévoilement — **500 XAF, PM-03** — était la seconde. Il reste la commission de consultation (10 %, PM-01). Le `modele_economique` du cahier pose **trois** conditions de viabilité au §5, dont *« les pharmacies tiennent leur stock à jour parce que les dévoilements amènent des ventes »* : ce pilier tombe entièrement. Le document porte un avertissement en tête et **n'a pas été réécrit** — refaire un modèle à une source demande de nouvelles hypothèses de volume et de point d'équilibre. ⚠️ **C'est un arbitrage de porteur, pas une correction de rédaction**, et il touche aussi le plan de sortie : sur ses sept critères de succès, **deux ne sont plus mesurables**. | 🔴 **arbitrage porteur** · **recommandation : reprendre le §5 du modèle économique avant toute présentation du projet** — c'est la première question qu'on posera |
 
-| 17 | **La gestion des structures de M02 est inatteignable, mais toujours là (née le 02/09, chantier 26).** Neuf routes subsistent — créer une structure, inviter un membre, changer ses droits, le suspendre, transférer la titularité — et **plus aucun compte ne peut les appeler** : `createFacility` et `acceptInvitation` exigent `type === "FACILITY_MEMBER"`, type fermé depuis D-051. S'y ajoutent `PermissionsService.assertFacilityRight`, qui **n'a plus un seul appelant** depuis le retrait de M11 et de la délivrance, et la branche `FACILITY` du détenteur de gains dans M13. ⚠️ **M02 lui-même RESTE** : il porte aussi les sous-rôles d'administration (E4, `listAdmins`, `assignAdminRole`), qui sont dans le périmètre — c'est sa moitié « structures » qui est morte, pas le module. **Coût du retrait : ~450 lignes de service, 9 routes, leurs DTO et leurs tests, plus la branche M13.** ⚠️ Ce n'est pas un simple `rm` : `EarningsHolderType` et `subjectKind` du dossier de vérification portent encore `FACILITY`, et ces types décrivent ce que le serveur peut **renvoyer** sur des données existantes. **Recommandation : le faire, mais dans un chantier à lui** — le grouper ici aurait mélangé « retirer la chaîne du médicament » et « retirer la gestion des structures », deux décisions différentes du porteur. Rien ne fuit entre-temps : la porte est fermée à l'entrée. | 🟡 **chantier à planifier**, non urgent |
+| 17 | **La gestion des structures de M02 est inatteignable, mais toujours là (née le 02/09, chantier 26).** Neuf routes subsistent — créer une structure, inviter un membre, changer ses droits, le suspendre, transférer la titularité — et **plus aucun compte ne peut les appeler** : `createFacility` et `acceptInvitation` exigent `type === "FACILITY_MEMBER"`, type fermé depuis D-051. S'y ajoutent `PermissionsService.assertFacilityRight`, qui **n'a plus un seul appelant** depuis le retrait de M11 et de la délivrance, et la branche `FACILITY` du détenteur de gains dans M13. ⚠️ **M02 lui-même RESTE** : il porte aussi les sous-rôles d'administration (E4, `listAdmins`, `assignAdminRole`), qui sont dans le périmètre — c'est sa moitié « structures » qui est morte, pas le module. **Coût du retrait : ~450 lignes de service, 9 routes, leurs DTO et leurs tests, plus la branche M13.** ⚠️ Ce n'est pas un simple `rm` : `EarningsHolderType` et `subjectKind` du dossier de vérification portent encore `FACILITY`, et ces types décrivent ce que le serveur peut **renvoyer** sur des données existantes. ✅ **SOLDÉE le 03/09 (chantier 39).** ⚠️ **Le coût annoncé était sous-estimé de moitié** : ~450 lignes prévues, **1 261 supprimées** — parce que l'estimation ne comptait que le service, en oubliant le contrôleur, les DTO, `PermissionsService`, `m02.policies.ts` et ses 23 tests, et la suite d'intégration `chantier1.int.spec.ts` (8 tests, entièrement bâtie sur ce flux). **Ce qui a autorisé le retrait n'était pas une déduction** : `scripts/inventaire-structures.ts` (lecture seule, aucune écriture) a interrogé la base de PRODUCTION et répondu **zéro compte `FACILITY_MEMBER`** — fermer la porte d'entrée n'expulse pas ceux qui sont déjà dedans, et un compte antérieur au 02/09 se connecterait encore. **L'inventaire a aussi dit ce qui doit RESTER** : 3 structures, 3 dossiers de vérification qui en désignent une, et 1 `FacilityMemberProfile` — **celui-ci porte le nom du super-administrateur**. Les tables et les types restent donc ; c'est le code mort qui part. **Une dixième route a été trouvée par le relevé de routes et non à l'œil** : `GET /v1/me/facility/:id/dashboard`, cachée dans M16, qui comptait des *réservations* (sorties avec D-052) et répondait 403 à tous les coups. **API 515 ✓ · 160 routes, zéro de structure.** | ✅ **soldée le 03/09** |
 
 | 18 | **Les intitulés des catégories de notification sont écrits DEUX fois (née le 02/09, chantier 30).** `NOTIFICATION_CATEGORIES` vit sur le serveur ; ses cinq intitulés en français sont recopiés à la main dans `SectionPreferences.tsx` (web) **et** `NotificationsScreen.tsx` (mobile), sans qu'aucune ligne ne soit partagée. C'est ce qui a fait qu'une même phrase fausse — « réservations qui expirent » — a demandé deux chantiers pour partir : le 29 pour le web, le 30 pour le mobile. **Deux vérités pour une même règle**, la dette que le chantier 11 nomme. Trois issues : (a) **le serveur sert les intitulés** dans `GET /v1/notifications/me/preferences` — le plus juste, mais il faudrait décider où vit le texte d'une interface ; (b) **un fichier partagé** dans `packages/contracts` — sauf que ni le web ni le mobile n'importent ce paquet aujourd'hui, par choix assumé (clients vendorés) ; (c) **un test qui compare les deux listes** et échoue si elles divergent — ne supprime pas la duplication mais la rend bruyante. ~~**Recommandation : (c)**~~ — **elle ne tenait pas.** ✅ **SOLDÉE le 03/09 par l'issue (a) : le serveur sert les intitulés.** En l'ouvrant, un constat qui a tranché la question : **les deux listes avaient DÉJÀ divergé** — « Consultations » (web) contre « Consultations & soins » (mobile), « Service » contre « Système & compte », « Paiements et gains » contre « Paiements & reçus ». Deux utilisateurs de la même plateforme ne lisaient pas le même nom pour le même réglage. Le test recommandé aurait donc échoué à sa première exécution **sans dire laquelle des deux formulations était la bonne**. `CATEGORY_LABELS` vit désormais dans `m14.templates.ts`, à côté du catalogue qu'il décrit — ce n'est pas une entorse à l'architecture mais sa cohérence : les TITRES et les CORPS des notifications y vivent déjà (EF-14-03). **Et un défaut de la même famille tombe avec** : `CATEGORIES_WITH_TEMPLATES` est *comptée* dans le catalogue, si bien qu'une catégorie sans modèle n'est plus jamais offerte. « Rappels » disparaît des DEUX applications à la fois — le web l'avait retirée à la main au chantier 29, le mobile l'affichait encore — et reviendra d'elle-même le jour où un premier rappel sera écrit. **API +10 tests · web +2 tests.** | ✅ **soldée le 03/09** |
 | 19 | **`HeaderArt` est mort et appelle un site tiers (née le 02/09, chantier 30).** Le composant n'est monté par aucun écran, et il charge ses illustrations depuis `illustrations.popsy.co` — une dépendance réseau externe. Il ne porte **aucune promesse fausse** : il n'entrait donc pas dans le chantier 30, qui traitait les phrases. Son voisin `StepCarousel` a été retiré parce qu'il en portait une. **Coût : 8 lignes.** ✅ **SOLDÉE le 03/09.** Vérifié d'abord qu'aucun écran ne le monte (balayage de tout `apps/mobile/src`). Retirés avec lui : son style `headerArt` et l'import `SvgUri`, tous deux devenus orphelins — c'est le compilateur qui les a désignés, pas une supposition. **mobile 7 ✓ · types propres · lint à sa base (104 avertissements).** | ✅ **soldée le 03/09** |
@@ -551,6 +570,100 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **37** | **Le centre de notifications** — 03/09, recommandation n°1 de l'analyse du tableau de bord, retenue par le porteur. **Le serveur envoie 49 modèles de notification ; le web n'en affichait aucune.** Il branchait les *préférences* : un soignant choisissait avec soin les catégories qu'il recevait, et n'en voyait jamais une seule — l'interrupteur marchait, la lampe n'était pas branchée. Ce qui se perdait : « un patient vous sollicite », « compte-rendu en retard — **gains gelés** » (D-008), « contrat réédité, à re-signer pour exercer ». **Serveur : une route écrite pour cet écran**, `POST /v1/notifications/me/read-all` — la suppression groupée existait depuis le début, la **lecture** groupée non ; sans elle, trente non-lues auraient coûté trente requêtes. Elle s'arrête à la même fenêtre PM-37 que la liste et le badge. Web : cloche + pastille plafonnée à « 99+ », tiroir paginé au curseur, marquer lu, tout marquer lu, supprimer, lien vers les préférences — et **chaque notification mène à son écran** quand il en existe un (`lib/destination-notification.ts`). **Trois défauts trouvés par les tests, dont deux dans mon propre code** : les capacités des destinations étaient recopiées à la main et réduisaient `/admin/signalements` au seul super-admin — elles sont désormais **lues** dans `NAV_GROUPS` ; une réécriture « à l'identique » a fait retomber `m06.report.overdue.admin` dans le préfixe `m06.report.`, donc vers les consultations d'un soignant ; et `lib/temps.ts` disait « hier » pour une notification de vingt heures — le test a imposé « il y a 20 h », une demande de vingt heures étant perdue quand celle de trois heures ne l'est pas. **Constaté en passant : le centre in-app du serveur n'avait JAMAIS eu de test** (dette n°22). **API 509 ✓ (505 + 4) · web 568 ✓ (529 + 39) · types, lint (19, référence) et builds propres.** | ⏸ en attente | ⏸ |
 
 | **38** | **Solder les dettes — et une décision du porteur qui en change deux** — 03/09. Consigne : *« pas de base test neon, tout doit se faire depuis la vraie base neon de l'app. je ne veux pas de dettes non résolu »*. **Un point ne pouvait pas être obéi à la lettre et il a été dit tout de suite** : les sept suites d'intégration commencent par VIDER vingt-quatre tables — les lancer sur la base du site l'effacerait, comme le 23/08. « Pas de base de test » ne veut donc pas dire « elles tournent sur la production », mais « elles ne tourneront plus jamais » (53 tests). **Dette n°8 close par cette décision** ; le garde-fou reste, la couverture est réécrite ailleurs. **Dette n°22 close** : les cinq routes du centre in-app couvertes sur doublure (19 tests), **vérifiées en injectant la faute** — retirer `accountId` du `where` de la suppression groupée fait tomber un test. **Dette n°21 close** : la ligne `messageDe` était recopiée **seize fois** et non huit — *un compte fait de mémoire n'est pas un compte* ; une nuance a été préservée au passage, l'onglet « Aide » gardant son propre repli. **Dette n°19 close** : `HeaderArt`, mort et chargeant un site tiers, retiré avec son style et son import orphelins. **Dette n°18 close, mais PAS par la recommandation d'origine** : en l'ouvrant, les deux listes d'intitulés avaient **déjà divergé** (« Consultations » / « Consultations & soins », « Service » / « Système & compte ») — le test recommandé aurait échoué sans dire laquelle avait raison. Le serveur sert donc les intitulés, et **une catégorie sans modèle n'est plus jamais offerte** (comptée, pas écrite) : « Rappels » disparaît des deux applications d'un coup. **Corrigé aussi : un défaut du chantier 37 vu EN LIGNE** — la cloche écrivait `?? 0`, donc annonçait « aucune non lue » quand la lecture du compteur échouait ; c'est le mensonge que le principe du projet interdit. **API 538 ✓ (509 + 29) · web 573 ✓ (568 + 5) · mobile 7 ✓ · types, lint (API 0, web 19, mobile 104 — leurs bases) et builds propres.** | ⏸ en attente | ⏸ |
+
+| **39** | **La gestion des structures quitte M02** — 03/09, dette n°17. **1 261 lignes retirées** (l'estimation en annonçait ~450) : `m02.controller.ts` et ses 9 routes, 424 lignes de service, `m02.dto.ts`, `m02.permissions.service.ts`, `m02.policies.ts` et ses 23 tests, la branche FACILITY de M13, et `chantier1.int.spec.ts` (8 tests bâtis sur ce flux). **Le retrait n'a PAS été décidé par déduction** : « plus aucun compte ne peut naître » ne dit rien de ceux qui existent, et un compte antérieur au 02/09 se connecterait encore — la connexion ne regarde pas le type. `scripts/inventaire-structures.ts`, **en lecture seule**, a interrogé la base de production : zéro compte `FACILITY_MEMBER`, zéro adhésion, zéro invitation. **Le même inventaire a dit ce qui doit rester** : 3 structures, 3 dossiers de vérification, et un `FacilityMemberProfile` qui porte le nom du super-administrateur. **Une dixième route, trouvée par le relevé et non à l'œil** : `GET /v1/me/facility/:id/dashboard` vivait dans M16, comptait des réservations sorties du produit, et répondait 403 à tous les coups. **API 515 ✓ · web 573 ✓ · mobile 7 ✓ · 160 routes, zéro de structure · types, lint et builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 39 (le retrait des structures) a appris
+
+*03/09/2026 — dette n°17, ouverte le 02/09 au chantier 26.*
+
+#### « Personne ne peut entrer » ne veut pas dire « personne n'est dedans »
+
+Le raisonnement qui autorisait le retrait était : *le type `FACILITY_MEMBER` est fermé à la
+création depuis D-051, donc ces neuf routes sont inatteignables.*
+
+Il est faux. **Fermer la porte d'entrée n'expulse pas ceux qui sont déjà dedans.** La connexion ne
+regarde pas le type de compte : un `FACILITY_MEMBER` créé avant le 02/09 se connecterait encore, et
+appellerait `GET /v1/facilities/me` ou `PATCH .../members/:id` sans rien enfreindre.
+
+Retirer le code sur cette base, c'était **casser un accès réel en croyant supprimer du code mort**.
+
+La réponse n'existait qu'à un seul endroit : la base de production. `scripts/inventaire-structures.ts`
+l'a posée — **en lecture seule, sans un seul `create`, `update` ou `delete`** — et elle est
+rassurante : zéro compte, zéro adhésion, zéro invitation, zéro transfert.
+
+*La dette n°13 le disait déjà, et dans le bon ordre : **inventorier d'abord, décider ensuite.***
+
+#### Le même inventaire a dit ce qu'il ne fallait PAS toucher
+
+Il n'a pas seulement autorisé le retrait ; il a dessiné sa limite :
+
+| Ce qu'il a trouvé | Ce que ça impose |
+|---|---|
+| 3 `Facility` | la table reste — elle porte des données réelles |
+| 3 `VerificationCase` avec `facilityId` | `SubjectKind = "PROFESSIONAL" \| "FACILITY"` reste dans M03 |
+| **1 `FacilityMemberProfile`** | **c'est le nom du super-administrateur** (chantier 33) |
+| 0 `EarningsAccount` FACILITY | la branche M13 pouvait devenir un refus explicite |
+
+La troisième ligne est celle qui aurait fait le plus de dégâts : un nettoyage « logique » de la
+table des profils de structure aurait effacé l'identité du seul administrateur de la plateforme.
+
+*Un nom de table ne dit pas à quoi elle sert.*
+
+#### Un périmètre se vérifie par les ROUTES servies, pas par les dossiers du code
+
+J'ai balayé M02, M13, les clients. J'avais fini. `scripts/relever-routes.ts` a alors imprimé
+**`GET /v1/me/facility/:facilityId/dashboard`** — une dixième route de structure, vivant dans
+**M16** parce que c'est un tableau de bord, et qu'un tableau de bord se range avec les tableaux de
+bord.
+
+Elle comptait des *réservations servies* — une notion sortie du produit avec la chaîne du
+médicament (D-052) — et lisait des gains de structure. Sa garde exigeait un membre actif : avec zéro
+adhésion, elle répondait **403 à tous les coups**.
+
+*Chercher « structure » dans le dossier `m02-roles-structures` était le réflexe naturel, et le
+mauvais. Le relevé de routes coûte quinze secondes et ne se laisse pas tromper par un rangement.*
+
+#### Un type dit ce qu'on peut RELIRE ; une liste dit ce qu'on accepte de RECEVOIR
+
+`EarningsHolderTypeCode` valait `"PROFESSIONAL" | "FACILITY"`, et `EARNINGS_HOLDER_TYPES` — la liste
+validée à l'entrée — reprenait les deux. Les deux se confondaient, et c'est ce qui laissait une
+route ouverte sur un cas mort.
+
+Ils sont séparés désormais : **le type garde `FACILITY`** (c'est une colonne de base, l'en retirer
+demanderait une migration sur la production) ; **la liste acceptée se réduit à `PROFESSIONAL`**.
+Une requête `holderType=FACILITY` est refusée à la porte, par la validation, au lieu de l'être
+après trois requêtes en base.
+
+*C'est la même distinction que pour `subjectKind`, qui garde ses deux valeurs — parce que trois
+dossiers de vérification désignent réellement une structure. **Ce qui décrit des données stockées
+reste ; ce qui décrit une entrée acceptée se restreint.***
+
+#### Une matrice de permissions que rien n'applique est pire qu'une matrice absente
+
+`m02.policies.ts` portait `GLOBAL_PERMISSIONS_MATRIX` : « transcription fidèle de la spec M02 §5 »,
+huit règles, avec ses 23 tests de cohérence.
+
+Après le retrait, **plus un seul de ses seize exports n'avait de lecteur**. Le contrôle d'accès réel
+passe par `AdminGuard` et les décorateurs `@AdminOnly`, éprouvés ailleurs. La matrice ne
+protégeait rien — elle *ressemblait* à une protection.
+
+C'est la règle du chantier 10, appliquée à un artefact de sécurité plutôt qu'à un interrupteur :
+**un garde-fou auquel on fait confiance et qui ne garde rien est plus dangereux que son absence.**
+Le modèle de permissions vit dans le cahier des charges ; une transcription que rien ne lit est une
+seconde source de vérité, donc une source de dérive.
+
+#### Le coût annoncé était sous-estimé de moitié
+
+La dette annonçait « ~450 lignes de service, 9 routes, leurs DTO et leurs tests ». Le retrait en a
+fait partir **1 261**.
+
+L'écart ne vient pas d'une surprise mais d'un **comptage partiel** : j'avais mesuré le service, et
+estimé le reste. Le contrôleur, les DTO, `PermissionsService`, les 303 lignes de règles et de tests,
+la suite d'intégration — chacun connu, aucun compté.
+
+*Même leçon qu'au chantier 38 sur les seize copies de `messageDe` : **une estimation qui n'a pas été
+comptée n'est pas une estimation, c'est une impression.***
 
 ### Ce que le chantier 38 (solder les dettes) a appris
 

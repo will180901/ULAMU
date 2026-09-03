@@ -56,9 +56,10 @@ function monterService(compte: {
     adminRoleAssignment: { findMany: async () => [] },
   };
 
+  // Six dépendances depuis le 03/09 : `PermissionsService` est parti avec la moitié
+  // « structures » du module (dette n°17).
   return new M02Service(
     client as never,
-    undefined as never,
     undefined as never,
     undefined as never,
     undefined as never,

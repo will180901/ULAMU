@@ -139,6 +139,23 @@ export function canSecondApprove(requestedBy: string, approverId: string): boole
 
 // ── Titulaires de gains (EF-13-06) ───────────────────────────────────────────
 
+/**
+ * Le TYPE garde `FACILITY` : c'est une colonne de base (`EarningsAccount.holderType`), et l'en
+ * retirer demanderait une migration sur la production. Il décrit ce que le serveur peut LIRE.
+ */
 export type EarningsHolderTypeCode = "PROFESSIONAL" | "FACILITY";
 
-export const EARNINGS_HOLDER_TYPES: readonly EarningsHolderTypeCode[] = ["PROFESSIONAL", "FACILITY"];
+/**
+ * La liste ACCEPTÉE en entrée, en revanche, se réduit à `PROFESSIONAL` le 03/09/2026 (dette n°17).
+ *
+ * ── La distinction qui compte ─────────────────────────────────────────────────────────────────
+ *
+ * Un type dit ce qu'on peut **relire**. Cette liste dit ce qu'on accepte de **recevoir**. Les deux
+ * se confondaient jusqu'ici, et c'est ce qui laissait une route ouverte sur un cas mort.
+ *
+ * Plus aucun compte `FACILITY_MEMBER` ne peut naître (D-051), et l'inventaire de la base de
+ * production a confirmé le 03/09 : **zéro compte de gains de type FACILITY**, zéro adhésion. Une
+ * requête `holderType=FACILITY` ne pouvait donc que se faire refuser après trois requêtes en base.
+ * Elle est désormais refusée à la porte, par la validation, avec un message qui dit quoi envoyer.
+ */
+export const EARNINGS_HOLDER_TYPES: readonly EarningsHolderTypeCode[] = ["PROFESSIONAL"];

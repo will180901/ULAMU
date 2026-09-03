@@ -3,7 +3,7 @@
  * AuthGuard global : tout est authentifié. Les tableaux de bord personnels vérifient l'accès
  * serveur (chacun ne voit que le sien). Les KPIs du pilote sont réservés à l'Équipe ULAMU.
  */
-import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
@@ -48,12 +48,6 @@ export class M16ReadController {
   @Get("me/dashboard")
   professionalDashboard(@Actor() actor: AuthenticatedActor) {
     return this.dashboards.professionalDashboard(actor);
-  }
-
-  /** EF-16-01 : tableau de bord d'une structure dont l'acteur est membre actif. */
-  @Get("me/facility/:facilityId/dashboard")
-  facilityDashboard(@Actor() actor: AuthenticatedActor, @Param("facilityId") facilityId: string) {
-    return this.dashboards.facilityDashboard(actor, facilityId);
   }
 
   /** EF-16-02 : Mon Espace patient (compteurs + reçus, jamais le Carnet). */

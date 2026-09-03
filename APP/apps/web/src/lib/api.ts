@@ -750,7 +750,20 @@ export function estAlerteAllergie(details: unknown): details is AllergyGuardErro
 
 // ── M13 — Gains et retraits (CU-13-04) ─────────────────────────────────────
 
-export type EarningsHolderType = 'PROFESSIONAL' | 'FACILITY'
+/**
+ * Le seul titulaire de gains servi par ULAMU — dette n°17, 03/09/2026.
+ *
+ * Ce type valait `'PROFESSIONAL' | 'FACILITY'`. La structure n'est plus servie : plus aucun compte
+ * `FACILITY_MEMBER` ne peut naître (D-051), et l'inventaire de la base de production a confirmé
+ * qu'il n'existe aucun compte de gains de ce type. Le serveur refuse désormais la valeur à la
+ * validation.
+ *
+ * ⚠️ La colonne `holderType` garde `FACILITY` en base — l'en retirer demanderait une migration sur
+ * la production. Ce qu'on restreint ici, c'est ce qu'on **envoie**, pas ce qui est **stocké**.
+ * (À comparer avec `subjectKind` plus bas, qui garde ses deux valeurs : trois dossiers de
+ * vérification désignent réellement une structure.)
+ */
+export type EarningsHolderType = 'PROFESSIONAL'
 export type MomoOperator = 'MTN_MOMO' | 'AIRTEL_MONEY'
 
 export interface Earnings {

@@ -26,12 +26,6 @@ export interface ProfessionalDashboard {
   lastSixMonths: Array<{ month: string; sessions: number; earnedXaf: number }>;
 }
 
-export interface FacilityDashboard {
-  facilityId: string;
-  reservationsServed: number;
-  earnings: { availableXaf: number; pendingXaf: number };
-}
-
 export interface PatientSpace {
   sessionsCount: number;
   disclosuresCount: number;
@@ -120,26 +114,21 @@ export class DashboardService {
     };
   }
 
-  // ── EF-16-01 : tableau de bord structure (pharmacie) ─────────────────────────
+  /*
+    ── Le tableau de bord d'une STRUCTURE est retiré le 03/09/2026 (dette n°17) ─────────────────
 
-  async facilityDashboard(actor: ActorRef, facilityId: string): Promise<FacilityDashboard> {
-    // Accès vérifié serveur : membre ACTIF de la pharmacie visée (D-003).
-    const membership = await this.prisma.facilityMember.findFirst({
-      where: { facilityId, accountId: actor.accountId, active: true },
-    });
-    if (!membership) throw new ForbiddenException("Réservé aux membres actifs de la structure");
+    Il vivait ici, entre celui du professionnel et l'Espace patient, et comptait deux choses qui
+    n'existent plus : les **réservations servies** — notion sortie du produit avec la chaîne du
+    médicament (D-052) — et les **gains d'une structure**, dont l'inventaire de la base a confirmé
+    le 03/09 qu'il n'en existe aucun.
 
-    const [reservationsServed, earnings] = await Promise.all([
-      this.prisma.reservation.count({ where: { facilityId, status: "SERVED" } }),
-      this.payments.getEarnings("FACILITY", facilityId),
-    ]);
+    Sa garde d'accès exigeait un membre ACTIF de la structure : avec zéro adhésion en base, elle
+    répondait **403 à tous les coups**. Une route qui ne peut que refuser n'est pas une route.
 
-    return {
-      facilityId,
-      reservationsServed,
-      earnings: { availableXaf: earnings.availableXaf, pendingXaf: earnings.pendingXaf },
-    };
-  }
+    C'était la dernière survivante du balayage — trouvée par `scripts/relever-routes.ts` et non à
+    l'œil, parce qu'elle vivait dans M16 et non dans M02. *Un périmètre se vérifie par les ROUTES
+    servies, pas par les dossiers du code.*
+  */
 
   // ── EF-16-02 : Mon Espace patient ────────────────────────────────────────────
 
