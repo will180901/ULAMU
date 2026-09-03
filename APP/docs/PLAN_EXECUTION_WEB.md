@@ -509,6 +509,80 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **34** | **Un décompte en direct sur chaque code TOTP** — 02/09, demande du porteur. Ajouté aux **quatre** endroits où un code TOTP se saisit : la connexion, l'activation (A4), le formulaire partagé de B3 (ré-association, codes de secours, désactivation) et la réinitialisation du mot de passe. Serveur : `secondsUntilNextTotpStep` et une route **publique** `GET /v1/auth/totp/rythme` — publique parce que deux de ces écrans sont atteints **sans être connecté**, et sans secret puisque la période figure déjà en clair dans le QR code. **Deux décisions que la consigne ne disait pas, et qui la corrigent** : le décompte annonce « **nouveau code dans N s** » et **jamais** « ce code expire », parce que `verifyTotp` tolère ±1 pas — le serveur accepte encore le code précédent ; et il est **ancré sur l'horloge du serveur**, un calcul local étant déphasé de tout écart d'horloge du navigateur. Retiré au passage : « Il change toutes les **30 secondes** », un chiffre écrit en dur dans A4. **API 505 ✓ (501 + 4) · web 512 ✓ (505 + 7) · types, lint et builds propres.** | ⏸ en attente | ⏸ |
 
+| **35** | **B2 : la courbe de la maquette, à la place des barres** — 03/09, demande du porteur, écran regardé côté à côté avec sa maquette. **Le comparatif du chantier 9 avait inscrit ce bloc « conforme ». Il ne l'était pas** : la maquette montre une courbe avec aire dégradée, l'écran affichait des barres. Géométrie relevée sur `B2 - Tableau de bord.dc.html` — `viewBox="0 0 620 190"`, tracé de x=30 à x=614, base à y=168, ligne de 2 px, points de rayon 2,4, aire de 0,18 à 0. Seule adaptation : la couleur vient de `--ap-400` et non du `#2756A6` écrit en dur de la maquette, qui a un fichier par thème quand l'application n'a qu'un écran pour les deux. **Deux défauts trouvés EN REGARDANT, qu'aucun test n'aurait signalés** : l'axe graduait d'abord « 2,5 · 5 · 7,5 · 10 » — des demi-consultations —, puis, une fois le pas choisi avant le sommet, essayait 25 avant 10 et graduait 28 en « 0 · 25 · 50 ». `echelleMois` vit dans `lib/echelle-graphique.ts` et couvre 400 maxima en test. **web 522 ✓ (512 + 10) · types, build et lint propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 35 (la courbe de B2) a appris
+
+*Mené le 03/09/2026, écran ouvert à côté de sa maquette, à la demande du porteur.*
+
+#### « Conforme » avait été écrit sans regarder
+
+Le comparatif bloc à bloc du chantier 9 porte cette ligne :
+
+> | Graphique « Consultations honorées · Mars – août » | idem, six barres… | **conforme** |
+
+La maquette ne montre pas de barres. Elle montre une **courbe avec aire dégradée**, et le mot
+« idem » recouvrait un changement de forme complet.
+
+Ce n'est pas une inattention isolée : c'est le risque propre à l'exercice. **Un comparatif écrit
+protège de ce qu'une relecture manque, mais rien ne protège d'un comparatif rempli de mémoire.** La
+seule parade est celle que le §7 impose déjà — rouvrir la maquette — et elle n'avait pas été suivie
+sur cette ligne-là.
+
+*Le porteur l'a vu en dix secondes, en mettant les deux écrans côte à côte.*
+
+#### Une courbe et des barres ne disent pas la même chose
+
+Le remplacement n'est pas décoratif. Des **barres** disent des quantités, qu'on compare une à une ;
+une **courbe** dit une évolution, dont la pente se lit d'un regard. Sur six mois d'activité, ce que
+regarde un soignant est le sens de la pente.
+
+*Quatrième fois dans ce plan qu'un écart de forme s'avère être un écart de fond — après les onglets
+de C3, la colonne de C2 et le tableau de C4.*
+
+#### Ce qu'on copie d'une maquette, et ce qu'on ne peut pas copier
+
+La géométrie se relève au pixel : cadre, coordonnées, épaisseurs, opacités du dégradé. Elle a été
+lue dans le fichier, pas estimée à l'œil.
+
+Mais **la couleur ne se copie pas**. La maquette écrit `#2756A6` en dur — elle a un fichier par
+thème, elle peut se le permettre. L'application n'a qu'un écran pour les deux : la courbe lit
+`--ap-400`, comme les barres qu'elle remplace. *Copier la couleur aurait donné une courbe bleu foncé
+sur fond sombre — conforme à la maquette, et illisible.*
+
+**Et l'échelle ne se copie pas non plus.** La maquette gradue 0 · 25 · 50 · 75 · 100 parce que ses
+données fabriquées montent à 92. Recopier ces graduations aurait écrasé au ras du sol l'activité
+réelle d'un soignant qui démarre.
+
+#### Deux défauts que seul le regard pouvait trouver
+
+Ils sont arrivés l'un après l'autre, et c'est la partie instructive.
+
+**Le premier** : la première échelle choisissait le sommet puis le divisait en quatre. Sur dix
+consultations, elle graduait **2,5 · 5 · 7,5 · 10**. Des demi-consultations. Le code portait pourtant
+le commentaire « toujours entières » — il décrivait une intention, pas ce que faisait la ligne
+d'en dessous.
+
+**Le second**, apparu en corrigeant le premier : en choisissant le pas d'abord, l'ordre de recherche
+essayait 25 avant 10 — et graduait un maximum de 28 en « 0 · 25 · 50 » là où « 0 · 10 · 20 · 30 »
+serre bien mieux les données. Il a fallu **imprimer la table des cas** pour le voir.
+
+*La leçon n'est pas « il fallait tester ». Un test écrit avec la première version aurait verrouillé
+2,5 · 5 · 7,5 · 10 comme un résultat attendu. **Certaines choses se voient d'abord, et se
+verrouillent ensuite** — le test n'est pas ce qui trouve, c'est ce qui empêche de reperdre.*
+
+#### Un test dont la cible change de forme se réécrit, il ne se supprime pas
+
+`tableau-de-bord.test.tsx` comptait six `listitem` pour garantir qu'**un mois vide garde sa place** —
+sauter les mois creux donnerait un graphique qui ment sur le rythme.
+
+Le fait défendu ne bouge pas d'un iota, et il compte même davantage sur une courbe que sur des
+barres : une pente calculée sur des mois manquants est fausse. Seule la façon de l'observer change —
+on compte désormais les points du tracé.
+
+*Réflexe à écarter : supprimer un test qui tombe parce que le balisage a changé. C'est la propriété
+qu'il garde qui compte, pas le sélecteur qu'il interrogeait.*
+
 ### Ce que le chantier 34 (le décompte du code) a appris
 
 *Mené le 02/09/2026, sur demande du porteur : « mettre sur les interfaces un compte en direct pour

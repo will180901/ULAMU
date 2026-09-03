@@ -15,7 +15,7 @@
  * part.
  *
  * Décision du 20/08/2026 : **construire avec le réel**. Chaque chiffre affiché ici est vrai. Pas de
- * tendance inventée, pas de courbe décorative — un tableau de bord qui ment est pire qu'un tableau de
+ * tendance inventée, pas de graphique décoratif — un tableau de bord qui ment est pire qu'un tableau de
  * bord incomplet, parce qu'on y prend des décisions.
  *
  * ── Ce qui a changé le 01/09/2026 (chantier 9) ─────────────────────────────────────────────────
@@ -58,6 +58,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CarteKpi, Panneau } from '@/components/ulamu/CarteKpi'
+import { CourbeMois } from '@/components/ulamu/CourbeMois'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { api, type ProfessionalDashboard } from '@/lib/api'
@@ -67,23 +68,21 @@ import { SqueletteTuiles } from '@/components/ulamu/Squelette'
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
 /**
- * Six mois d'activité, en barres.
+ * Six mois d'activité, en courbe.
  *
  * ⚠️ Ce bloc a longtemps été ABSENT : la maquette B2 le montrait, et M16 ne calculait aucune série.
  * Plutôt qu'une courbe décorative, l'écran n'affichait que quatre nombres bruts. M16 sait désormais
  * regrouper par mois ce qui existe déjà — chaque consultation payée porte sa date, chaque crédit
  * aussi (correction du 24/08/2026).
  *
- * Écrit en SVG à la main : six barres ne justifient pas une bibliothèque de graphiques, ses 40 Ko
- * et son thème à réaccorder. Les hauteurs sont des pourcentages du maximum — pas une échelle
- * absolue, qui écraserait tout dès qu'un mois se détache.
+ * Écrit en SVG à la main : six points ne justifient pas une bibliothèque de graphiques, ses 40 Ko
+ * et son thème à réaccorder.
+ *
+ * ⚠️ 03/09/2026 (chantier 35) — ce bloc affichait des BARRES ; la maquette montre une courbe avec
+ * aire dégradée, et le comparatif du chantier 9 l'avait pourtant inscrit « conforme ». Le tracé vit
+ * désormais dans `components/ulamu/CourbeMois.tsx`, avec la géométrie relevée sur la maquette.
  */
 function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
-  const max = Math.max(1, ...mois.map((m) => m.sessions))
-  const nom = (cle: string) => {
-    const [a, m] = cle.split('-')
-    return new Date(Number(a), Number(m) - 1, 1).toLocaleDateString('fr-FR', { month: 'short' })
-  }
   const total = mois.reduce((t, m) => t + m.sessions, 0)
 
   return (
@@ -93,23 +92,24 @@ function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
           Aucune consultation sur les six derniers mois. Vos premières apparaîtront ici.
         </p>
       ) : (
-        <ul className="flex items-end justify-between gap-2 p-4">
-          {mois.map((m) => (
-            <li key={m.month} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-              <span className="font-mono text-[10px] font-semibold text-foreground">{m.sessions || ''}</span>
-              <span
-                aria-hidden="true"
-                style={{ height: `${Math.round((m.sessions / max) * 76) + 4}px` }}
-                className={
-                  'w-full rounded-t-sm ' + (m.sessions > 0 ? 'bg-[var(--ap-400)]' : 'bg-secondary')
-                }
-              />
-              <span className="font-mono text-[10px] uppercase text-[var(--texte-tertiaire)]">{nom(m.month)}</span>
-            </li>
-          ))}
-        </ul>
+        /*
+          ── Une COURBE, et non des barres (chantier 35, 03/09/2026) ─────────────────────────────
+
+          La maquette B2 montre une courbe avec aire dégradée. L'écran affichait des barres, et le
+          comparatif du chantier 9 avait inscrit ce bloc « conforme » — il ne l'était pas. La règle
+          du projet est pourtant explicite : *la maquette décide de la forme*.
+
+          Ce n'est pas qu'esthétique : une courbe dit une ÉVOLUTION, dont la pente se lit d'un
+          regard ; des barres disent des quantités, qu'on compare une à une. Sur six mois
+          d'activité, c'est l'évolution qu'un soignant regarde.
+
+          Le tableau `sr-only` ci-dessous ne bouge pas — c'est lui qui porte les chiffres pour qui
+          ne voit pas le dessin, et il le faisait déjà pour les barres.
+        */
+        <CourbeMois mois={mois} />
       )}
-      {/* Une barre sans chiffre ne se lit pas : le tableau dit ce que le dessin suggère (CG-11). */}
+      {/* Un point sans chiffre ne se lit pas : le tableau dit ce que le dessin suggère (CG-11).
+          C'est aussi lui qui rend la courbe accessible — d'où son `aria-hidden`. */}
       <table className="sr-only">
         <caption>Consultations et gains par mois, sur six mois</caption>
         <thead>

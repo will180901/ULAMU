@@ -179,9 +179,18 @@ describe('B2 — les six derniers mois', () => {
       { month: '2026-08', sessions: 6, earnedXaf: 30000 },
     ])
 
-    // Six colonnes, pas trois : sauter les mois vides donnerait une courbe qui ment sur le rythme.
+    /*
+      Six points, pas trois : sauter les mois vides donnerait une courbe qui ment sur le rythme.
+
+      ⚠️ 03/09/2026 (chantier 35) — ce test comptait des `listitem`, parce que le bloc dessinait des
+      BARRES. Il dessine désormais une courbe, conformément à la maquette : le FAIT défendu ne change
+      pas, seule la façon de l'observer. On compte donc les points du tracé.
+
+      *Un test dont la cible change de forme doit être réécrit, pas supprimé : c'est la propriété
+      qu'il garde qui compte, pas le balisage qu'il interrogeait.*
+    */
     const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
-    expect(within(bloc).getAllByRole('listitem')).toHaveLength(6)
+    expect(bloc.querySelectorAll('circle')).toHaveLength(6)
     expect(within(bloc).getByText('12 consultations au total')).toBeInTheDocument()
   })
 
