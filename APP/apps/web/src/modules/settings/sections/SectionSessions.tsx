@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Laptop, MonitorSmartphone, Smartphone, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
@@ -39,7 +40,7 @@ function depuis(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime()
   const min = Math.round(ms / 60000)
   if (min < 2) return 'À l’instant'
-  if (min < 60) return `Il y a ${min} minutes`
+  if (min < 60) return `Il y a ${min} ${accord(min, 'minute')}`
   const h = Math.round(min / 60)
   if (h < 24) return `Il y a ${h} heure${h > 1 ? 's' : ''}`
   const j = Math.round(h / 24)

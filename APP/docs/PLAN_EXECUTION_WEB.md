@@ -511,6 +511,59 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **35** | **B2 : la courbe de la maquette, à la place des barres** — 03/09, demande du porteur, écran regardé côté à côté avec sa maquette. **Le comparatif du chantier 9 avait inscrit ce bloc « conforme ». Il ne l'était pas** : la maquette montre une courbe avec aire dégradée, l'écran affichait des barres. Géométrie relevée sur `B2 - Tableau de bord.dc.html` — `viewBox="0 0 620 190"`, tracé de x=30 à x=614, base à y=168, ligne de 2 px, points de rayon 2,4, aire de 0,18 à 0. Seule adaptation : la couleur vient de `--ap-400` et non du `#2756A6` écrit en dur de la maquette, qui a un fichier par thème quand l'application n'a qu'un écran pour les deux. **Deux défauts trouvés EN REGARDANT, qu'aucun test n'aurait signalés** : l'axe graduait d'abord « 2,5 · 5 · 7,5 · 10 » — des demi-consultations —, puis, une fois le pas choisi avant le sommet, essayait 25 avant 10 et graduait 28 en « 0 · 25 · 50 ». `echelleMois` vit dans `lib/echelle-graphique.ts` et couvre 400 maxima en test. **web 522 ✓ (512 + 10) · types, build et lint propres.** | ⏸ en attente | ⏸ |
 
+| **36** | **« 1 consultations au total »** — 03/09, lu par le porteur EN LIGNE sur son propre tableau de bord. Balayage de tout le web : **seize chaînes** écrivaient un nombre suivi d'un mot invariablement au pluriel — « 1 ordonnances », « 1 pages », « 0 retirables ». **Quatre étaient déjà justes** et n'ont pas été touchées ; une cinquième (`GainsPage`) ne peut pas descendre sous deux jours, sa garde le prouve. **Huit corrigées**, par une règle unique — `lib/accord.ts` — plutôt que par huit ternaires recopiés. **Le test a trouvé un défaut dans ma propre règle** : le seuil `> 1`, celui du motif déjà présent dans le dépôt, accorde « 1,5 heures » ; le pluriel français commence à **deux**. Sur des entiers les deux seuils sont identiques — c'est pourquoi personne ne l'aurait vu. **web 529 ✓ (522 + 7) · types, build et lint propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 36 (l'accord en nombre) a appris
+
+*Trouvé le 03/09/2026 par le porteur, en lisant son tableau de bord en ligne.*
+
+#### Un défaut d'accord ne se voit qu'au singulier
+
+`tableau-de-bord.test.tsx` éprouvait déjà ce sous-titre — sur **douze** consultations, où le pluriel
+est juste. Le test passait, et il avait raison de passer.
+
+Le cas fautif est celui d'**un** soignant qui démarre : une consultation, un dossier, une page. C'est
+précisément le cas qu'aucun jeu de données de test ne contient spontanément, parce qu'on écrit des
+exemples « réalistes » — donc pluriels.
+
+*Règle à retenir : **quand une chaîne compte quelque chose, le cas à éprouver est UN**, pas dix.*
+
+#### Le motif existait, et c'est ce qui l'a rendu inégal
+
+Le dépôt portait déjà `${n} code${n > 1 ? 's' : ''}` à plusieurs endroits. La règle était donc
+connue — et **recopiée à la main**, donc appliquée là où on y pensait.
+
+Une règle recopiée n'est pas une règle : c'est une habitude, et une habitude a des trous. Seize
+chaînes, dont huit fautives, pour un motif que le dépôt connaissait depuis le début.
+
+#### Le test a trouvé un défaut dans la règle elle-même
+
+`lib/accord.ts` a d'abord repris le seuil du dépôt : `> 1`. Le test des décimales l'a fait tomber.
+
+**« 1,5 heure » reste au singulier** — en français, le pluriel commence à deux. `> 1` accordait
+« 1,5 heures ». Sur des entiers, `> 1` et `>= 2` donnent exactement le même résultat : le défaut ne
+pouvait apparaître qu'en éprouvant une valeur que le code de production ne produit pas encore.
+
+*Écrire un test « pour la forme » sur un cas qui ne se présente pas a corrigé la règle. C'est
+l'inverse du reproche habituel fait aux tests exhaustifs.*
+
+#### Et un piège de langue, qui est la raison d'être du fichier
+
+**En français, zéro prend le singulier** : « 0 consultation ». En anglais, « 0 items ». Un
+`n === 1 ? '' : 's'` — l'écriture spontanée d'un anglophone, et le réglage par défaut de plusieurs
+bibliothèques d'internationalisation — serait faux ici, et faux d'une façon que personne ne relit.
+
+Le test le verrouille en toutes lettres, et son intitulé dit pourquoi : *« c'est la règle française,
+pas l'anglaise »*. Le jour où quelqu'un « corrigera » ce seuil, il lira la raison avant de le faire.
+
+#### Quatre chaînes n'ont pas été touchées, et c'est un résultat
+
+Sur seize candidates, cinq étaient déjà correctes : trois portaient leur ternaire, et
+`GainsPage.delaiFr` ne peut pas descendre sous deux jours — sa garde `h < 48` le lui interdit.
+
+*Les « corriger » aurait ajouté du bruit à du code juste. **Un balayage ne vaut que si on lit ce
+qu'il trouve** — la même leçon qu'au chantier 29, apprise une seconde fois sur un sujet trivial.*
+
 ### Ce que le chantier 35 (la courbe de B2) a appris
 
 *Mené le 03/09/2026, écran ouvert à côté de sa maquette, à la demande du porteur.*

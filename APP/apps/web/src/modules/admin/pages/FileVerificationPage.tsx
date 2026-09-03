@@ -29,6 +29,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { accord } from '@/lib/accord'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -520,7 +521,7 @@ export function FileVerificationPage() {
                 le mercredi — et l'annoncer autrement ferait attendre l'administration pour rien.
               */}
               <Avis ton="erreur">
-                {`${horsDelai.length} dossier${horsDelai.length > 1 ? 's ont' : ' a'} dépassé le délai de ${cible} heures. Ils remontent en tête de file : la file est traitée du plus ancien au plus récent.`}
+                {`${horsDelai.length} dossier${horsDelai.length > 1 ? 's ont' : ' a'} dépassé le délai de ${cible} ${accord(cible, 'heure')}. Ils remontent en tête de file : la file est traitée du plus ancien au plus récent.`}
               </Avis>
             </div>
           ) : null}

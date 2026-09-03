@@ -52,6 +52,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Camera, Check, Eye, Loader2, Plus, ShieldCheck, Star, Store, Tag, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -82,7 +83,7 @@ const BIO_MAX = 400
 /** Traduit un délai de confirmation en langage humain — « 4 min » dit plus que « 240 s ». */
 function delaiHumain(secondes: number | null): string | null {
   if (secondes === null) return null
-  if (secondes < 60) return `${Math.round(secondes)} secondes`
+  if (secondes < 60) return `${Math.round(secondes)} ${accord(Math.round(secondes), 'seconde')}`
   const min = Math.round(secondes / 60)
   if (min < 60) return `${min} minute${min > 1 ? 's' : ''}`
   const h = Math.round(min / 60)

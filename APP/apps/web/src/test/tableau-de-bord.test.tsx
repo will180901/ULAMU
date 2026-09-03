@@ -194,6 +194,31 @@ describe('B2 — les six derniers mois', () => {
     expect(within(bloc).getByText('12 consultations au total')).toBeInTheDocument()
   })
 
+  /*
+    ── « 1 consultationS au total » (chantier 36, 03/09/2026) ───────────────────────────────────
+
+    Le porteur l'a lu EN LIGNE, sur son propre tableau de bord. Le sous-titre écrivait le pluriel
+    quel que soit le nombre — et douze autres chaînes de l'application faisaient de même
+    (« 1 ordonnances », « 1 pages », « 0 retirables »).
+
+    Le cas nominal, lui, passait : le test ci-dessus porte sur douze consultations, où le pluriel
+    est juste. **Un défaut d'accord ne se voit qu'au singulier**, et c'est le cas qu'aucun test
+    n'éprouvait.
+  */
+  it('accorde son sous-titre au singulier — une seule consultation', async () => {
+    await monter([], null, [
+      { month: '2026-03', sessions: 0, earnedXaf: 0 },
+      { month: '2026-04', sessions: 0, earnedXaf: 0 },
+      { month: '2026-05', sessions: 0, earnedXaf: 0 },
+      { month: '2026-06', sessions: 0, earnedXaf: 0 },
+      { month: '2026-07', sessions: 0, earnedXaf: 0 },
+      { month: '2026-08', sessions: 1, earnedXaf: 5000 },
+    ])
+
+    const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
+    expect(within(bloc).getByText('1 consultation au total')).toBeInTheDocument()
+  })
+
   it('sans aucune consultation, il dit son vide au lieu de dessiner une ligne plate', async () => {
     await monter([], null, [
       { month: '2026-03', sessions: 0, earnedXaf: 0 },

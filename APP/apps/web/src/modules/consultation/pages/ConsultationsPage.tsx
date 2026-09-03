@@ -59,6 +59,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { api, type CareSessionStatus, type Prescription, type SessionListItem } from '@/lib/api'
@@ -505,7 +506,7 @@ export function ConsultationsPage() {
         <p>
           {visibles.length === items.length
             ? `${items.length} consultation${items.length > 1 ? 's' : ''}`
-            : `${visibles.length} sur ${items.length} consultations`}
+            : `${visibles.length} sur ${items.length} ${accord(items.length, 'consultation')}`}
         </p>
 
         {/*

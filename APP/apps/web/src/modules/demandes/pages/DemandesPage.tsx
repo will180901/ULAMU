@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { accord } from '@/lib/accord'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
@@ -252,7 +253,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               {h.patientFirstName ?? 'Patient'}
             </span>
             <span className="mt-0.5 block text-[12px] text-[var(--texte-tertiaire)]">
-              {h.patientAge !== null ? `${h.patientAge} ans` : 'Âge non communiqué'}
+              {h.patientAge !== null ? `${h.patientAge} ${accord(h.patientAge, 'an')}` : 'Âge non communiqué'}
             </span>
           </span>
         </div>
@@ -306,7 +307,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
           <div>
             <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">Durée</dt>
             <dd className="mt-0.5 text-[14px] font-medium text-foreground">
-              {h.offerDurationMin !== null ? `${h.offerDurationMin} minutes` : '—'}
+              {h.offerDurationMin !== null ? `${h.offerDurationMin} ${accord(h.offerDurationMin, 'minute')}` : '—'}
             </dd>
           </div>
           <div>

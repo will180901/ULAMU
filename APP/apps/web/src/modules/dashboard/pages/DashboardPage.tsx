@@ -58,6 +58,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CarteKpi, Panneau } from '@/components/ulamu/CarteKpi'
+import { accord } from '@/lib/accord'
 import { CourbeMois } from '@/components/ulamu/CourbeMois'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -86,7 +87,7 @@ function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
   const total = mois.reduce((t, m) => t + m.sessions, 0)
 
   return (
-    <Panneau icone={TrendingUp} titre="Six derniers mois" sousTitre={total === 0 ? undefined : `${total} consultations au total`}>
+    <Panneau icone={TrendingUp} titre="Six derniers mois" sousTitre={total === 0 ? undefined : `${total} ${accord(total, 'consultation')} au total`}>
       {total === 0 ? (
         <p className="px-4 py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
           Aucune consultation sur les six derniers mois. Vos premières apparaîtront ici.
@@ -229,7 +230,7 @@ const signe = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '=
 
 /** Le prénom et l'âge, seuls (EF-06-01 : « pas plus avant paiement »). */
 function ficheAnonyme(h: { patientFirstName: string | null; patientAge: number | null }): string {
-  const parts = [h.patientFirstName, h.patientAge !== null ? `${h.patientAge} ans` : null].filter(Boolean)
+  const parts = [h.patientFirstName, h.patientAge !== null ? `${h.patientAge} ${accord(h.patientAge, 'an')}` : null].filter(Boolean)
   return parts.length > 0 ? parts.join(' · ') : 'Patient'
 }
 
@@ -310,7 +311,7 @@ function TableauSoignant() {
           label="Gains du mois"
           valeur={xaf(moisCourant?.earnedXaf ?? 0)}
           /* Aucune date de versement : les gains sont retirables à tout moment (famille 1, pt 2). */
-          aide={`XAF · ${xaf(bord.data.earnings.availableXaf)} retirables${
+          aide={`XAF · ${xaf(bord.data.earnings.availableXaf)} ${accord(bord.data.earnings.availableXaf, 'retirable')}${
             dGains === null ? '' : ` · ${signe(dGains)} XAF vs le mois dernier`
           }`}
         />
@@ -466,7 +467,7 @@ function TableauAdmin() {
       <Panneau
         icone={ClipboardList}
         titre="Critères du pilote"
-        sousTitre={`${atteints} sur ${liste.length} atteints`}
+        sousTitre={`${atteints} sur ${liste.length} ${accord(liste.length, 'atteint')}`}
         action={
           <Button variant="outline" size="sm" asChild>
             <Link to="/admin/pilotage">Pilotage</Link>
