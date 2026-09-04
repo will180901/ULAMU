@@ -74,6 +74,7 @@ import {
   Ellipsis,
   Eye,
   FileText,
+  Flag,
   HeartPulse,
   Hourglass,
   ImagePlus,
@@ -114,6 +115,7 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
+import { DialogueSignalement } from '@/components/ulamu/DialogueSignalement'
 import { messageErreur } from '@/lib/message-erreur'
 
 const heureFr = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -242,6 +244,7 @@ function GestesBulle({
   onReagir,
   onModifier,
   onSupprimer,
+  onSignaler,
 }: {
   aMoi: boolean
   editable: boolean
@@ -250,6 +253,7 @@ function GestesBulle({
   onReagir: (emoji: string) => void
   onModifier: () => void
   onSupprimer: (pourTous: boolean) => void
+  onSignaler: () => void
 }) {
   return (
     <span
@@ -330,6 +334,20 @@ function GestesBulle({
               </DropdownMenuItem>
             </>
           ) : null}
+          {/*
+            Signaler — chantier 41. Uniquement sur les messages de L'AUTRE : se signaler soi-même
+            n'a aucun sens, et l'offrir ferait douter de ce que le geste veut dire. « Retirer de mon
+            fil » reste au-dessus parce qu'il répond au même problème sans engager personne.
+          */}
+          {aMoi ? null : (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={onSignaler}>
+                <Flag size={14} strokeWidth={1.6} aria-hidden="true" />
+                Signaler ce message
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </span>
@@ -353,6 +371,7 @@ function Bulle({
   onRepondre,
   onModifier,
   onSupprimer,
+  onSignaler,
   onReagir,
   onAllerAuCite,
 }: {
@@ -366,6 +385,7 @@ function Bulle({
   onRepondre: () => void
   onModifier: () => void
   onSupprimer: (pourTous: boolean) => void
+  onSignaler: () => void
   onReagir: (emoji: string) => void
   onAllerAuCite: (id: string) => void
 }) {
@@ -402,6 +422,7 @@ function Bulle({
             onReagir={onReagir}
             onModifier={onModifier}
             onSupprimer={onSupprimer}
+            onSignaler={onSignaler}
           />
         ) : null}
 
@@ -801,6 +822,13 @@ export function ConsultationPage() {
   const [mode, setMode] = useState<ModeSaisie>({ type: 'nouveau' })
   const [surligne, setSurligne] = useState<string | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
+  /*
+    Signalement (chantier 41). Deux états et non un : on signale soit LE PATIENT, soit UN MESSAGE
+    précis — et l'administration a besoin de savoir lequel des deux. Le second porte l'identifiant
+    du message ; `null` ferme la boîte.
+  */
+  const [signalerPatient, setSignalerPatient] = useState(false)
+  const [messageSignale, setMessageSignale] = useState<string | null>(null)
   const recuA = useRef(Date.now())
   const finFil = useRef<HTMLDivElement>(null)
   const champFichier = useRef<HTMLInputElement>(null)
@@ -1103,6 +1131,7 @@ export function ConsultationPage() {
                             onRepondre={() => ouvrirReponse(m)}
                             onModifier={() => ouvrirEdition(m)}
                             onSupprimer={(pourTous) => supprimer.mutate({ id: m.id, pourTous })}
+                            onSignaler={() => setMessageSignale(m.id)}
                             onReagir={(emoji) => reagir.mutate({ id: m.id, emoji })}
                             onAllerAuCite={allerAuCite}
                           />
@@ -1308,8 +1337,51 @@ export function ConsultationPage() {
               </div>
             </Carte>
           ) : null}
+
+          {/*
+            ── Signaler, tout en bas du rail (chantier 41, 04/09/2026) ────────────────────────────
+
+            Placement délibéré. Signaler est RARE — le mettre en évidence à côté des gestes de soin
+            reviendrait à suggérer qu'on s'y attend. Mais l'absence de porte était pire : jusqu'ici
+            personne ne pouvait créer un signalement, et toute la file de modération attendait
+            derrière un bouton qui n'existait pas.
+
+            La cible est le COMPTE du patient (`PROFILE`) et non la séance : un comportement se
+            signale à propos d'une personne. Le message fautif, lui, se signale depuis sa bulle —
+            l'administration a besoin de savoir LEQUEL.
+          */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setSignalerPatient(true)}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-[var(--texte-tertiaire)] transition-colors hover:bg-secondary hover:text-[var(--erreur-texte)] focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
+            >
+              <Flag size={12} strokeWidth={1.6} aria-hidden="true" />
+              Signaler ce patient
+            </button>
+          </div>
         </aside>
       </div>
+
+      {/*
+        Les deux boîtes vivent ICI, au niveau de la page, et non dans chaque bulle : une boîte de
+        dialogue par message monterait autant de formulaires qu'il y a de messages, pour n'en
+        montrer qu'un. Ce sont les deux états du haut qui décident lequel s'ouvre.
+      */}
+      <DialogueSignalement
+        ouvert={signalerPatient}
+        surFermer={() => setSignalerPatient(false)}
+        cible="PROFILE"
+        cibleId={s.patientAccountId}
+        quoi="ce patient"
+      />
+      <DialogueSignalement
+        ouvert={messageSignale !== null}
+        surFermer={() => setMessageSignale(null)}
+        cible="SESSION_MESSAGE"
+        cibleId={messageSignale ?? ''}
+        quoi="ce message"
+      />
     </div>
   )
 }

@@ -910,6 +910,31 @@ export interface UserReport {
 
 export type ReportDecision = 'DISMISSED' | 'WARNING' | 'ESCALATED_M16' | 'ESCALATED_M03'
 
+/**
+ * Ce qu'on peut signaler — chantier 41, 04/09/2026.
+ *
+ * ⚠️ Le serveur en accepte un TROISIÈME, `FACILITY`. Il n'est pas déclaré ici, et ce n'est pas un
+ * oubli : les structures sont sorties du produit le 02/09 (D-051). La valeur reste au serveur parce
+ * qu'elle décrit des lignes qui peuvent exister en base ; offrir le choix serait offrir une porte
+ * qui ne mène nulle part.
+ */
+export type ReportTargetType = 'PROFILE' | 'SESSION_MESSAGE'
+
+/**
+ * Les six motifs de signalement (EF-04-05) — liste FERMÉE, côté serveur comme ici.
+ *
+ * Le texte libre existe (`reasonText`), mais il ne remplace jamais le code : c'est le code qui
+ * décide de l'ordre de traitement dans la file de modération (le harcèlement passe devant le spam).
+ * Un signalement sans code serait un signalement sans priorité.
+ */
+export type ReportReasonCode =
+  | 'INAPPROPRIATE_BEHAVIOR'
+  | 'MISLEADING_INFORMATION'
+  | 'SUSPECTED_FAKE_PROFILE'
+  | 'HARASSMENT'
+  | 'SPAM'
+  | 'OTHER'
+
 /** Compte trouvé par la recherche du back-office (M16). */
 /**
  * Un compte trouvé par la recherche d'administration (RM-16-02 : données minimales).
@@ -1573,6 +1598,32 @@ export const api = {
       true,
     )
   },
+
+  /*
+    ── Signaler (M04, EF-04-05) — chantier 41, 04/09/2026 ────────────────────────────────────────
+
+    `POST /v1/reports` existait depuis le premier jour et **aucun client ne l'appelait**. La
+    conséquence n'était pas mince : l'écran d'administration « Signalements » sait examiner,
+    avertir, suspendre — et il serait resté vide à jamais, faute d'une porte d'entrée. Sur une
+    plateforme de santé, c'est la voie de recours qui manquait.
+
+    ⚠️ **Ce que le serveur garantit, et qu'il faut dire à l'écran** : `redactReportForAdmin`
+    (RM-04-04) retire l'identité du signaleur AVANT de servir quoi que ce soit à l'administration.
+    Un médecin qui signale un patient ne sera jamais nommé. Ce n'est pas un détail technique, c'est
+    la condition pour qu'on ose signaler.
+
+    ✅ **Et la réponse revient** : quand l'administration tranche, le serveur notifie l'auteur du
+    signalement (`m04.report.resolved`, avec l'issue mais sans le détail des sanctions, CU-04-03).
+    Cette notification n'atteignait personne avant le 03/09 — le web n'affichait aucune
+    notification. **Le chantier 37 a fermé cette boucle** : la cloche la reçoit désormais. C'est
+    pourquoi ce chantier n'ajoute AUCUNE route serveur.
+  */
+  createReport: (dto: {
+    targetType: ReportTargetType
+    targetId: string
+    reasonCode: ReportReasonCode
+    reasonText?: string
+  }) => request<{ reportId: string }>('POST', '/v1/reports', dto, true),
 
   // Administration — signalements (M04) et comptes (M16)
   reports: (status?: string) =>

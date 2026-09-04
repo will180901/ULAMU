@@ -59,20 +59,22 @@ offrirait.** Les écarts sont ailleurs — dans l'administration, et dans ce que
 
 Classés par gravité. Chacun avec son coût réel et ma recommandation.
 
-### 🔴 A. Personne ne peut signaler quoi que ce soit — et tout le module de modération attend
+### ✅ A. Personne ne peut signaler quoi que ce soit — **SOLDÉ le 04/09 (chantier 41)**
 
-`POST /v1/reports` **n'est appelée par aucun client**, ni web ni mobile.
+*Énoncé d'origine :* `POST /v1/reports` **n'était appelée par aucun client**, ni web ni mobile.
 
 Conséquence : M04 existe, l'écran d'administration **E6 « Signalements »** existe, il sait examiner,
-avertir, suspendre — et **il sera toujours vide**, parce qu'aucun signalement ne peut naître. Un
-patient ne peut pas signaler un soignant ; un soignant ne peut pas signaler un patient.
+avertir, suspendre — et **il serait resté vide à jamais**, parce qu'aucun signalement ne pouvait
+naître. Un patient ne pouvait pas signaler un soignant ; un soignant ne pouvait pas signaler un
+patient.
 
-Sur une plateforme de santé, c'est la voie de recours qui manque.
+Sur une plateforme de santé, c'est la voie de recours qui manquait.
 
-> **Coût : ~1 j** (un bouton « Signaler » dans la consultation côté web, un dans l'écran patient côté
-> mobile, avec le choix du motif et l'écran de confirmation).
-> **Recommandation : le faire, et en premier.** C'est le seul écart de cette liste qui touche à la
-> sécurité des personnes.
+> ✅ **Fait le 04/09 pour le WEB** (chantier 41) : `DialogueSignalement.tsx`, branché sur un message
+> et sur le patient, dans la consultation. **Aucune ligne de serveur** — et c'est la découverte du
+> chantier : `decideReport` notifiait déjà l'auteur du signalement, mais cette notification
+> n'atteignait personne avant que le chantier 37 ne construise la cloche.
+> ⏳ **Reste le MOBILE** : le patient ne peut toujours pas signaler un médecin. ~½ j.
 
 ### 🔴 B. Une vérification ne peut jamais être défaite
 

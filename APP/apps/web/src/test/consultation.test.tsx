@@ -538,3 +538,182 @@ describe('C5 — le Carnet du patient', () => {
     expect(screen.getByText(/déclaré par le patient/)).toBeInTheDocument()
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Signaler — chantier 41, 04/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  `POST /v1/reports` existait depuis le premier jour et **aucun client ne l'appelait**. Tout M04
+  était construit — la file de modération, le tri par gravité, la décision motivée — et l'écran
+  d'administration « Signalements » serait resté vide à jamais, faute d'une porte d'entrée.
+
+  Quatre choses doivent tenir, et chacune peut se défaire par inadvertance :
+
+  **1. Le bon type de cible.** Un message se signale en `SESSION_MESSAGE` avec l'identifiant DU
+  message ; un patient en `PROFILE` avec l'identifiant de son COMPTE. Les confondre enverrait à
+  l'administration un signalement qu'elle ne peut pas instruire — et le serveur refuserait en 404
+  sur une cible introuvable.
+
+  **2. On ne se signale pas soi-même.** L'entrée n'existe que sur les messages de l'autre.
+
+  **3. Le motif est obligatoire.** C'est lui qui décide de l'ordre de traitement (CU-04-04) : un
+  signalement sans code serait un signalement sans priorité.
+
+  **4. La protection du signaleur est DITE avant le formulaire.** `redactReportForAdmin` (RM-04-04)
+  la garantit côté serveur ; sans la lire, un médecin qui reverra ce patient n'ose pas signaler.
+  C'est une phrase d'interface, mais elle décide de l'usage de toute la fonctionnalité.
+*/
+
+/** Ouvre le menu « autres actions » d'un message, puis sa boîte de signalement. */
+async function ouvrirSignalementMessage(utilisateur: ReturnType<typeof userEvent.setup>) {
+  await utilisateur.click(await screen.findByRole('button', { name: /Autres actions sur ce message/ }))
+  await utilisateur.click(await screen.findByRole('menuitem', { name: /Signaler ce message/ }))
+}
+
+describe('C5 — signaler (chantier 41)', () => {
+  it('signale un MESSAGE avec son identifiant et le bon type de cible', async () => {
+    const creer = vi.spyOn(api, 'createReport').mockResolvedValue({ reportId: 'r1' })
+    await monter(seance(), [message({ id: 'm-fautif', senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+    await utilisateur.click(await screen.findByRole('radio', { name: /Harcèlement/ }))
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    await waitFor(() =>
+      expect(creer).toHaveBeenCalledWith({
+        targetType: 'SESSION_MESSAGE',
+        targetId: 'm-fautif',
+        reasonCode: 'HARASSMENT',
+      }),
+    )
+  })
+
+  it('signale le PATIENT avec l’identifiant de son compte, pas celui de la séance', async () => {
+    const creer = vi.spyOn(api, 'createReport').mockResolvedValue({ reportId: 'r2' })
+    await monter(seance({ id: 's1', patientAccountId: 'pat-1' }))
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Signaler ce patient/ }))
+    await utilisateur.click(await screen.findByRole('radio', { name: /Profil suspect/ }))
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    await waitFor(() =>
+      expect(creer).toHaveBeenCalledWith({
+        targetType: 'PROFILE',
+        targetId: 'pat-1',
+        reasonCode: 'SUSPECTED_FAKE_PROFILE',
+      }),
+    )
+  })
+
+  /* Le texte libre est facultatif : il ne part que s'il a été écrit, et jamais vide. */
+  it('joint les précisions quand il y en a, et rien quand il n’y en a pas', async () => {
+    const creer = vi.spyOn(api, 'createReport').mockResolvedValue({ reportId: 'r3' })
+    await monter(seance(), [message({ id: 'm-fautif', senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+    await utilisateur.click(await screen.findByRole('radio', { name: /Spam/ }))
+    await utilisateur.type(screen.getByLabelText(/Précisions/), 'Trois messages publicitaires.')
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    await waitFor(() =>
+      expect(creer).toHaveBeenCalledWith(expect.objectContaining({ reasonText: 'Trois messages publicitaires.' })),
+    )
+  })
+
+  /*
+    Le motif décide de l'ordre de traitement dans la file de modération : sans lui, le signalement
+    part sans priorité. Le bouton reste donc fermé tant qu'aucun motif n'est choisi.
+  */
+  it('refuse d’envoyer tant qu’aucun motif n’est choisi', async () => {
+    const creer = vi.spyOn(api, 'createReport')
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+
+    expect(screen.getByRole('button', { name: /Envoyer le signalement/ })).toBeDisabled()
+    expect(creer).not.toHaveBeenCalled()
+  })
+
+  /*
+    On ne se signale pas soi-même. L'offrir ferait douter de ce que le geste veut dire — et
+    produirait des signalements que l'administration ne pourrait qu'écarter.
+  */
+  it('n’offre pas de signaler ses PROPRES messages', async () => {
+    await monter(seance(), [message({ id: 'a-moi', senderId: 'pro-1' })])
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Autres actions sur ce message/ }))
+
+    expect(await screen.findByRole('menuitem', { name: /Retirer de mon fil/ })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /Signaler/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    LA phrase qui décide de l'usage. Elle est garantie par le serveur (`redactReportForAdmin`,
+    RM-04-04) et elle doit être lue AVANT de remplir : un médecin qui reverra ce patient la semaine
+    prochaine n'ose pas signaler s'il croit être nommé.
+  */
+  it('dit AVANT le formulaire que l’identité du signaleur est protégée', async () => {
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+
+    expect(await screen.findByText(/Votre nom ne sera jamais montré/)).toBeInTheDocument()
+  })
+
+  /*
+    Et la promesse de retour, qui distingue un formulaire d'un trou noir — la règle que le projet
+    s'est donnée en remplaçant l'adresse de support morte. Elle est tenable depuis le chantier 37 :
+    le serveur notifie l'auteur à la décision (`m04.report.resolved`), et la cloche l'affiche enfin.
+  */
+  it('annonce que la réponse reviendra dans les notifications', async () => {
+    vi.spyOn(api, 'createReport').mockResolvedValue({ reportId: 'r4' })
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+    await utilisateur.click(await screen.findByRole('radio', { name: /Comportement inapproprié/ }))
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    expect(await screen.findByText(/dans vos notifications/)).toBeInTheDocument()
+  })
+
+  /* Un échec ne se perd pas en silence : le brouillon reste, et le motif de refus s'affiche. */
+  it('montre l’échec sans effacer ce qui a été saisi', async () => {
+    vi.spyOn(api, 'createReport').mockRejectedValue(new Error('réseau'))
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+    await utilisateur.click(await screen.findByRole('radio', { name: /Autre/ }))
+    await utilisateur.type(screen.getByLabelText(/Précisions/), 'Un texte que je ne veux pas retaper.')
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Précisions/)).toHaveValue('Un texte que je ne veux pas retaper.')
+  })
+
+  /*
+    Les structures sont sorties du produit (D-051). Le serveur accepte encore `FACILITY` — la valeur
+    décrit des lignes qui peuvent exister en base — mais l'offrir serait offrir une porte qui ne
+    mène nulle part.
+  */
+  it('n’offre aucun motif ni aucune cible hors du produit', async () => {
+    await monter(seance(), [message({ senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await ouvrirSignalementMessage(utilisateur)
+
+    expect(screen.queryByText(/structure|pharmacie|officine/i)).not.toBeInTheDocument()
+    // Les six motifs du serveur, ni plus ni moins.
+    expect(screen.getAllByRole('radio')).toHaveLength(6)
+  })
+})

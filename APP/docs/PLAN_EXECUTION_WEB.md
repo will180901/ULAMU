@@ -580,6 +580,72 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **39** | **La gestion des structures quitte M02** — 03/09, dette n°17. **1 261 lignes retirées** (l'estimation en annonçait ~450) : `m02.controller.ts` et ses 9 routes, 424 lignes de service, `m02.dto.ts`, `m02.permissions.service.ts`, `m02.policies.ts` et ses 23 tests, la branche FACILITY de M13, et `chantier1.int.spec.ts` (8 tests bâtis sur ce flux). **Le retrait n'a PAS été décidé par déduction** : « plus aucun compte ne peut naître » ne dit rien de ceux qui existent, et un compte antérieur au 02/09 se connecterait encore — la connexion ne regarde pas le type. `scripts/inventaire-structures.ts`, **en lecture seule**, a interrogé la base de production : zéro compte `FACILITY_MEMBER`, zéro adhésion, zéro invitation. **Le même inventaire a dit ce qui doit rester** : 3 structures, 3 dossiers de vérification, et un `FacilityMemberProfile` qui porte le nom du super-administrateur. **Une dixième route, trouvée par le relevé et non à l'œil** : `GET /v1/me/facility/:id/dashboard` vivait dans M16, comptait des réservations sorties du produit, et répondait 403 à tous les coups. **API 515 ✓ · web 573 ✓ · mobile 7 ✓ · 160 routes, zéro de structure · types, lint et builds propres.** | ⏸ en attente | ⏸ |
 
+| **40** | **« Un refus motivé, non » était faux** — 04/09, trouvé en répondant à une question du porteur : « explique-moi le taux de confirmation ». Le tableau de bord affirmait qu'une demande expirée fait baisser le taux **mais pas un refus motivé**. C'est l'inverse de ce que fait le serveur : `initiationsTotal` monte À LA SOLLICITATION, avant toute réponse, et un refus n'émet **aucun** événement de statistiques — vérifié dans `m06.handshake.service.ts` et dans les quatre abonnements de `m05.module.ts`. Un refus motivé coûte donc exactement autant qu'une demande ignorée. **Le test qui manquait** : un test défendait déjà cette phrase, mais sa MOITIÉ seulement — l'expiration ; l'autre moitié mentait sans que personne la vérifie. *Quand un texte affirme deux choses, il faut deux assertions.* Deux dettes ouvertes : **n°23** (faut-il changer la RÈGLE plutôt que la phrase ? décision de produit) et **n°24** (les indicateurs publics des comptes de démonstration sont fabriqués : 242 sollicitations en base pour 2 demandes réelles). **web 575 ✓ (573 + 2).** | ⏸ en attente | ⏸ |
+
+| **41** | **Signaler — la porte d'entrée de la modération** — 04/09, écart A du plan des écrans. `POST /v1/reports` existait depuis le premier jour et **aucun client ne l'appelait**, ni web ni mobile. Tout M04 était construit — file de modération, tri par gravité, décision motivée, avertissement, transmission — et l'écran E6 « Signalements » **serait resté vide à jamais**. Sur une plateforme de santé, ce n'est pas une fonctionnalité manquante : c'est la voie de recours. **Serveur : aucune ligne** — et c'est la découverte du chantier : je m'apprêtais à ajouter `GET /v1/reports/mine` pour que le signalement ne soit pas un trou noir, avant de vérifier que `decideReport` **notifie déjà l'auteur** (`m04.report.resolved`, l'issue sans le détail des sanctions, CU-04-03). Cette notification n'atteignait personne jusqu'au 03/09 : **le chantier 37 a fermé la boucle sans qu'on s'en rende compte.** Web : `DialogueSignalement.tsx`, branché à DEUX endroits de C5 — sur un message (`SESSION_MESSAGE`, l'identifiant DU message) et sur le patient (`PROFILE`, l'identifiant de son COMPTE). **Trois choix tranchés** : la garantie d'anonymat du signaleur est dite **avant** le formulaire et non après (c'est elle qui décide si on ose remplir) ; le motif est une **liste fermée** parce que c'est lui qui donne sa priorité au signalement dans la file (CU-04-04) ; et on ne peut pas signaler ses propres messages. **`FACILITY` n'est pas offerte** — le serveur l'accepte encore, mais les structures sont sorties du produit (D-051). **Vérifié en injectant la faute** : signaler un message avec l'identifiant de la séance fait tomber un test. **web 584 ✓ (575 + 9) · types, lint (19, sa base) et build propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 41 (le signalement) a appris
+
+*04/09/2026 — premier chantier du plan des écrans du soignant.*
+
+#### Vérifier ce que le serveur fait DÉJÀ, avant de promettre de l'écrire
+
+En expliquant le chantier au porteur, j'ai annoncé deux heures de serveur en plus : une route
+`GET /v1/reports/mine`, pour qu'un signalement ne parte pas dans un trou noir — la règle que le
+projet s'était donnée en remplaçant l'adresse de support morte.
+
+**Ces deux heures étaient inutiles.** `decideReport` notifie déjà l'auteur du signalement
+(`m04.report.resolved`, avec l'issue mais sans le détail des sanctions, CU-04-03). La ligne était là
+depuis le premier jour.
+
+Ce qui manquait n'était pas la notification : c'était **un écran pour la lire**. Elle n'atteignait
+personne jusqu'au 03/09, parce que le web n'affichait aucune notification. **Le chantier 37 a fermé
+cette boucle sans que personne s'en aperçoive** — y compris moi, qui l'avais construit.
+
+*Deux leçons en une. La première : **une fonctionnalité peut être complète côté serveur et invisible
+faute d'un seul écran** — et on ne le voit qu'en suivant le chemin jusqu'au bout. La seconde :
+j'avais annoncé un coût au porteur avant de l'avoir vérifié. L'annonce était fausse, et c'est lui
+qui l'aurait payée.*
+
+#### La phrase qui décide de l'usage de toute la fonctionnalité
+
+`redactReportForAdmin` (RM-04-04) retire l'identité du signaleur avant que l'administration ne voie
+quoi que ce soit. C'est une garantie du serveur, écrite et éprouvée.
+
+**Mais elle ne sert à rien si personne ne la lit.** Un médecin qui reverra ce patient la semaine
+prochaine ne signale pas s'il croit être nommé. La phrase est donc placée **avant** le formulaire, et
+non dans la confirmation qui suit l'envoi : après, il est trop tard, la décision d'oser est déjà
+prise.
+
+*Une garantie technique invisible ne protège personne. Ce qui protège, c'est de la savoir.*
+
+#### Le motif est une liste, et ce n'est pas une commodité d'interface
+
+La file de modération trie par **gravité d'abord, ancienneté ensuite** (CU-04-04) : le harcèlement
+passe devant le spam. C'est le code du motif qui porte cette gravité.
+
+Un champ libre seul aurait donc produit des signalements **sans priorité**, traités en dernier —
+exactement les plus urgents, si l'utilisateur avait mal choisi ses mots. La liste n'est pas là pour
+simplifier la saisie ; elle est là pour que l'urgence arrive en tête.
+
+#### Deux entrées, parce que l'administration a besoin de savoir laquelle
+
+Signaler *un message* et signaler *un patient* ne sont pas le même acte, et le serveur ne les traite
+pas de la même façon — la cible d'un message est l'identifiant DU message, celle d'un patient
+l'identifiant de son COMPTE.
+
+Les confondre enverrait à l'administration un dossier qu'elle ne peut pas instruire. **Le test
+l'éprouve en injectant précisément la faute la plus probable** : signaler un message avec
+l'identifiant de la séance. Il tombe.
+
+#### Un chantier peut être « purement frontend » et ne rien avoir de trivial
+
+Aucune ligne de serveur n'a été écrite. Et pourtant : deux entrées à placer, une liste fermée à
+respecter, une garantie à énoncer au bon endroit, un type de cible à ne pas confondre, une valeur
+(`FACILITY`) à ne surtout pas offrir.
+
+*« Purement frontend » décrit où le code est écrit, pas ce qu'il faut savoir pour l'écrire.*
+
 ### Ce que le chantier 39 (le retrait des structures) a appris
 
 *03/09/2026 — dette n°17, ouverte le 02/09 au chantier 26.*
