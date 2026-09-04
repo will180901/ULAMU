@@ -584,6 +584,48 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **41** | **Signaler — la porte d'entrée de la modération** — 04/09, écart A du plan des écrans. `POST /v1/reports` existait depuis le premier jour et **aucun client ne l'appelait**, ni web ni mobile. Tout M04 était construit — file de modération, tri par gravité, décision motivée, avertissement, transmission — et l'écran E6 « Signalements » **serait resté vide à jamais**. Sur une plateforme de santé, ce n'est pas une fonctionnalité manquante : c'est la voie de recours. **Serveur : aucune ligne** — et c'est la découverte du chantier : je m'apprêtais à ajouter `GET /v1/reports/mine` pour que le signalement ne soit pas un trou noir, avant de vérifier que `decideReport` **notifie déjà l'auteur** (`m04.report.resolved`, l'issue sans le détail des sanctions, CU-04-03). Cette notification n'atteignait personne jusqu'au 03/09 : **le chantier 37 a fermé la boucle sans qu'on s'en rende compte.** Web : `DialogueSignalement.tsx`, branché à DEUX endroits de C5 — sur un message (`SESSION_MESSAGE`, l'identifiant DU message) et sur le patient (`PROFILE`, l'identifiant de son COMPTE). **Trois choix tranchés** : la garantie d'anonymat du signaleur est dite **avant** le formulaire et non après (c'est elle qui décide si on ose remplir) ; le motif est une **liste fermée** parce que c'est lui qui donne sa priorité au signalement dans la file (CU-04-04) ; et on ne peut pas signaler ses propres messages. **`FACILITY` n'est pas offerte** — le serveur l'accepte encore, mais les structures sont sorties du produit (D-051). **Vérifié en injectant la faute** : signaler un message avec l'identifiant de la séance fait tomber un test. **web 584 ✓ (575 + 9) · types, lint (19, sa base) et build propres.** | ⏸ en attente | ⏸ |
 
+| **41 bis** | **Le bouton d'envoi était hors de l'écran** — 04/09, trouvé en VÉRIFIANT le chantier 41 en ligne, dix minutes après l'avoir livré. Le formulaire de signalement mesurait **740 px dans une fenêtre de 495** : il débordait en haut ET en bas, **sans défiler**, et le bouton « Envoyer le signalement » se trouvait à 521 px — injoignable. Le geste entier était impossible sur un écran court : un portable à 100 %, une tablette couchée. **Le défaut n'était pas dans mon écran mais dans la primitive** `DialogContent`, qui n'a jamais eu de hauteur maximale — il valait donc pour TOUTES les boîtes de l'application. Corrigé là : `max-h-[calc(100dvh-2rem)]` et `overflow-y-auto`. **Corriger a été vérifié AVANT d'être poussé** : les deux règles appliquées à la boîte ouverte dans le navigateur du porteur ramènent la hauteur de 740 à 463 px et rendent le bouton atteignable. **web 586 ✓ (584 + 2, dans `responsive.test.ts`) · types, lint et build propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 41 bis (le bouton hors de l'écran) a appris
+
+*04/09/2026, dix minutes après la livraison du chantier 41.*
+
+#### 586 tests verts et un bouton injoignable
+
+La suite passait entièrement. Les huit tests du signalement passaient. Les types, le lint et la
+compilation étaient propres. **Et la fonctionnalité était inutilisable sur un écran court.**
+
+`jsdom` n'applique aucune feuille de style et ne calcule aucune mise en page. Un test de rendu voit
+donc les éléments, leurs rôles et leurs textes — **jamais leurs dimensions**. Le bouton existait,
+portait le bon intitulé, déclenchait la bonne requête. Il était simplement à 521 px dans une fenêtre
+de 495.
+
+*C'est exactement la leçon du chantier 21 (le responsive) et du chantier 35 (l'axe du graphique),
+apprise une troisième fois : **certains défauts ne se voient qu'en REGARDANT.** La suite de tests ne
+remplace pas l'œil, elle le complète.*
+
+#### Le défaut n'était pas où je l'avais fait
+
+Mon réflexe a été d'ajouter la hauteur maximale à MON formulaire. En regardant la primitive :
+`DialogContent` n'en avait **aucune**, depuis toujours. Le défaut valait pour toutes les boîtes de
+l'application — celle de révocation de session dans B3 comprise.
+
+Corriger à l'usage aurait réparé un écran et laissé le piège en place pour le suivant.
+
+*Règle : **quand un défaut apparaît dans le premier usage d'une primitive, il faut regarder la
+primitive avant de corriger l'usage.***
+
+#### Une correction se vérifie AVANT d'être poussée, quand c'est possible
+
+La règle du projet interdit de tester en local, et le porteur pousse lui-même. J'aurais donc
+normalement livré la correction à l'aveugle, puis vérifié après coup.
+
+Il y avait mieux : appliquer les deux règles CSS à la boîte **déjà ouverte dans le navigateur du
+porteur**, et remesurer. 740 px → 463 px, plus de débordement, bouton atteignable après défilement.
+
+*La correction était prouvée dans le vrai navigateur, à la vraie taille, avant d'être écrite au
+dépôt. Ça ne remplace pas la vérification après déploiement — ça évite de la faire deux fois.*
+
 ### Ce que le chantier 41 (le signalement) a appris
 
 *04/09/2026 — premier chantier du plan des écrans du soignant.*

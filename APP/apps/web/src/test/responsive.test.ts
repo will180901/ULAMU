@@ -211,3 +211,31 @@ describe('Un panneau latéral obéit à l’écran qui l’ouvre', () => {
   })
 })
 
+/*
+  ── Une boîte de dialogue plus haute que la fenêtre doit DÉFILER (04/09/2026) ──────────────────
+
+  Trouvé EN LIGNE, sur le formulaire de signalement du chantier 41 : 740 px de boîte dans une
+  fenêtre de 495 px. Elle débordait en haut ET en bas, sans défiler, et le bouton « Envoyer le
+  signalement » se trouvait à 521 px — **hors écran, inatteignable**. Le geste entier était
+  impossible sur un écran court : un portable à 100 %, une tablette couchée.
+
+  La primitive `DialogContent` n'avait aucune hauteur maximale ; le défaut valait donc pour TOUTES
+  les boîtes de l'application, pas seulement celle du signalement.
+
+  Ce test lit la source pour la même raison que ceux du dessus : **jsdom ne calcule aucune mise en
+  page.** Les 584 tests de la suite passaient tous, et le bouton restait injoignable.
+*/
+describe('Les boîtes de dialogue ne débordent pas de la fenêtre', () => {
+  const dialogue = () => source('components/ui/dialog.tsx')
+
+  it('borne sa hauteur à celle de la fenêtre', () => {
+    // `dvh` et non `vh` : sur un téléphone, la barre d'adresse fait varier la hauteur réelle.
+    expect(dialogue(), 'hauteur maximale absente : une boîte haute déborde sans défiler').toMatch(
+      /max-h-\[calc\(100dvh/,
+    )
+  })
+
+  it('défile quand son contenu dépasse', () => {
+    expect(dialogue(), 'sans défilement, le bouton d’envoi devient inatteignable').toContain('overflow-y-auto')
+  })
+})

@@ -61,7 +61,25 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          /*
+            ── `max-h` + `overflow-y-auto` : ajoutés le 04/09/2026 ────────────────────────────
+
+            La primitive n'avait AUCUNE hauteur maximale. Une boîte plus haute que la fenêtre
+            débordait donc en haut ET en bas, sans défiler.
+
+            Constaté EN LIGNE sur le formulaire de signalement (chantier 41) : 740 px de boîte
+            dans une fenêtre de 495 px, et le bouton « Envoyer le signalement » à 521 px —
+            **hors écran, inatteignable**. Le geste entier était impossible sur un écran court :
+            un portable à 100 %, une tablette couchée.
+
+            Aucun test ne pouvait le voir : jsdom n'applique pas de feuille de style et ne calcule
+            aucune mise en page. C'est `responsive.test.ts` qui verrouille désormais la règle, en
+            lisant ce fichier — comme il le fait déjà pour les tableaux en cartes.
+
+            `dvh` et non `vh` : sur un téléphone, la barre d'adresse fait varier la hauteur réelle,
+            et c'est la même raison qui a fait choisir `dvh` au chantier 21.
+          */
+          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
