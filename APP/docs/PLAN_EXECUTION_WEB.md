@@ -481,6 +481,8 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | 23 | **Un refus motivé pénalise le soignant autant qu'une demande ignorée (née le 04/09, chantier 40).** Le taux de confirmation se construit sur deux compteurs de `ProfessionalStats` : `initiationsTotal` monte **à la sollicitation**, avant toute réponse ; `confirmedTotal` ne monte qu'à la confirmation. **Un refus n'émet aucun événement de statistiques** — vérifié dans `m06.handshake.service.ts` (il n'émet qu'une notification et une ligne d'audit) et dans `m05.module.ts`, qui ne s'abonne qu'à quatre événements, dont aucun ne concerne le refus. ⚠️ **L'écran affirmait le contraire** (« un refus motivé, non ») ; la phrase est corrigée le 04/09 — l'écran dit désormais ce que le serveur fait. **Mais la question de fond reste ouverte, et elle est vôtre** : un refus rapide fait GAGNER du temps au patient, là où une expiration le lui fait perdre. Les traiter à l'identique décourage le seul des deux comportements qui rende service. Le cahier ne tranche pas — EF-05-01 parle d'un « taux de confirmation », sans un mot sur les refus. **Deux issues** : (a) **ne rien changer** — le taux mesure alors « ce médecin prend-il des patients ? », ce qui est défendable ; (b) **retirer les refus motivés du dénominateur** — un événement `m06.handshake.refused` de plus, un abonnement M05, un compteur `refusedTotal` pour garder la trace, ~2 h, **et un changement de ce que les patients lisent dans l'annuaire**. **Recommandation : (b)**, parce qu'un indicateur public doit récompenser le comportement qui sert le patient — mais c'est une décision de produit, pas de code. | 🔴 **arbitrage porteur** |
 | 24 | **Les indicateurs publics des comptes de démonstration sont FABRIQUÉS (née le 04/09, chantier 40).** Lu dans la base de production : `dr.armel` porte **242 sollicitations, 234 confirmations, 215 avis** dans `ProfessionalStats`, alors que ses tables réelles contiennent **2 demandes (1 payée, 1 expirée), 1 consultation, 1 évaluation**. `prisma/seed.ts` écrit ces compteurs **directement**, sans passer par les événements. Conséquences : le tableau de bord **se contredit lui-même** — la tuile annonce 96,7 % quand le panneau juste en dessous, qui compte les vraies demandes, dit 1 menée à bien et 1 expirée (soit 50 %) ; et surtout **ces chiffres sont montrés aux PATIENTS** dans l'annuaire public (EF-05-01), où `dr.armel` affiche 4,8/5 sur 215 avis pour une seule évaluation réelle. Un patient choisit son médecin là-dessus. ⚠️ **Ce n'est pas un défaut de code** : l'écran lit fidèlement ce que le serveur sert. C'est la donnée qui est fausse. **Deux issues** : (a) **suspendre les comptes de démonstration** — c'est la dette n°3, et elle règle tout d'un coup, un compte suspendu quittant l'annuaire (RM-05-05) ; (b) **remettre les compteurs à leur valeur réelle** par un script (~30 min) — mais la vitrine afficherait alors 50 % et 1 avis. **Recommandation : (a)**, et c'est le geste que la dette n°3 réclamait déjà. | 🔴 **geste porteur** — voir la dette n°3 |
 
+| 25 | **Un soignant révoqué par erreur ne peut plus jamais être rétabli (née le 04/09, chantier 42).** Constaté en construisant le bouton de révocation : `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — le statut est **terminal** — et `VerificationCase.professionalId` est `@unique`, donc un professionnel n'a **qu'un dossier, à vie**. Une révocation prononcée à tort ferme donc définitivement l'accès de ce soignant à la plateforme : il ne peut ni re-déposer, ni ouvrir un nouveau dossier, ni être vérifié de nouveau. **La seule issue serait une écriture directe en base.** ⚠️ Ce n'est pas un défaut de code — le serveur fait exactement ce qui a été spécifié (EF-03-08). C'est une **absence de voie de recours** sur une décision humaine, et les humains se trompent. L'écran l'annonce désormais en toutes lettres avant le clic, et exige une confirmation tapée : c'est tout ce que l'interface peut faire. **Deux issues** : (a) **ouvrir la transition `REVOKED → IN_REVIEW`** dans `m03.policies.ts`, réservée au super-administrateur, avec motif et journal — ~3 h, et le dossier reprend son cours normal ; (b) **assumer l'irréversibilité** et le documenter comme une garantie (une révocation est définitive, c'est ce qui lui donne son poids). **Recommandation : (a)**, parce qu'une plateforme de santé ne peut pas faire dépendre la carrière d'un soignant de l'absence d'erreur d'un administrateur. Mais c'est votre décision. | 🔴 **arbitrage porteur** |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
@@ -587,6 +589,67 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 | **41 bis** | **Le bouton d'envoi était hors de l'écran** — 04/09, trouvé en VÉRIFIANT le chantier 41 en ligne, dix minutes après l'avoir livré. Le formulaire de signalement mesurait **740 px dans une fenêtre de 495** : il débordait en haut ET en bas, **sans défiler**, et le bouton « Envoyer le signalement » se trouvait à 521 px — injoignable. Le geste entier était impossible sur un écran court : un portable à 100 %, une tablette couchée. **Le défaut n'était pas dans mon écran mais dans la primitive** `DialogContent`, qui n'a jamais eu de hauteur maximale — il valait donc pour TOUTES les boîtes de l'application. Corrigé là : `max-h-[calc(100dvh-2rem)]` et `overflow-y-auto`. **Corriger a été vérifié AVANT d'être poussé** : les deux règles appliquées à la boîte ouverte dans le navigateur du porteur ramènent la hauteur de 740 à 463 px et rendent le bouton atteignable. **web 586 ✓ (584 + 2, dans `responsive.test.ts`) · types, lint et build propres.** | ⏸ en attente | ⏸ |
 
 | **41 ter** | **Un fil clos ne se signalait plus** — 04/09, second défaut trouvé en vérifiant le chantier 41 en ligne. La barre d'actions d'un message était **entièrement conditionnée à l'état ACTIF** de la séance : sur une consultation terminée, aucun moyen de signaler un message. Or c'est **après coup** qu'on repense à un propos déplacé, et le message est la preuve. J'avais placé une action sans limite de temps dans un conteneur limité au temps de la séance. **Ma première correction était trop large, et un test existant l'a refusée** : elle rouvrait TOUS les gestes après la clôture, au motif vérifié que le serveur les accepte (seul `sendMessage` exige `status === ACTIVE`). Le test « une séance close n'offre plus aucun geste : le fil est archivé » est tombé — **et il avait raison**. Version retenue : l'archive reste intouchable (ni répondre, ni réagir, ni modifier, ni retirer), **et le seul signalement s'y ajoute** — il n'est pas une modification de l'archive, c'est une alerte à son sujet. Le test existant a été **amendé, pas supprimé** : sa règle est conservée et renforcée de deux assertions, plus deux tests pour l'exception. **web 589 ✓ (586 + 3) · types, lint et build propres.** | ⏸ en attente | ⏸ |
+
+| **42** | **Révoquer un Badge Vérifié** — 04/09, écart B du plan des écrans. `POST /admin/verification/:id/revoke` existait depuis le premier jour et **aucun écran ne l'appelait** : un soignant vérifié par erreur, ou qui perd son autorisation d'exercer, restait vérifié **pour toujours**, Badge compris, visible et crédible dans l'annuaire public. ⚠️ **En lisant le serveur, le geste s'est révélé bien plus grave que l'écart ne le laissait croire** : `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — aucune sortie — et `VerificationCase.professionalId` est `@unique`, donc **un seul dossier par professionnel, à vie**. Révoquer ferme définitivement l'accès d'un soignant à la plateforme, **sans aucun chemin de retour dans le produit**. La carte le dit donc en toutes lettres avant le formulaire, exige un motif (le soignant le lira, c'est sa seule explication) et une **confirmation tapée**, sur le modèle de la clôture de compte — le seul autre geste sans retour. Elle n'apparaît que sur un dossier VÉRIFIÉ, seul état que le serveur accepte. **Deux défauts trouvés par les tests, tous deux dans mon travail** : cinq tests regardaient l'écran avant que le dossier soit chargé (le panneau s'ouvre dès l'URL, pas à la réponse) ; et mon avertissement permanent portait `role="alert"`, donnant **deux alertes indistinctes** dans la même carte — corrigé en `alerte`, rien n'ayant échoué. **Vérifié en injectant la faute** : retirer les deux conditions du bouton fait tomber deux tests. 📌 **Dette n°25 ouverte** : rien ne permet de rétablir un soignant révoqué par erreur. **web 599 ✓ (589 + 10) · types, lint et build propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 42 (la révocation) a appris
+
+*04/09/2026 — écart B du plan des écrans du soignant.*
+
+#### L'écart annonçait un bouton ; le serveur annonçait une porte qui ne se rouvre pas
+
+Le plan disait : « un bouton dans E1, avec motif obligatoire et confirmation — la route existe et
+journalise déjà. ~2 h. »
+
+En lisant le serveur avant d'écrire, deux faits ont changé la nature du chantier :
+
+* `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — **un dossier révoqué n'a aucune sortie** ;
+* `VerificationCase.professionalId` est `@unique` — **un professionnel n'a qu'un dossier, à vie**.
+
+Révoquer ne retire donc pas un badge : cela **ferme définitivement l'accès d'un soignant à la
+plateforme**, sans aucun moyen de le rétablir depuis le produit.
+
+*Un administrateur qui aurait cliqué en pensant « il refera son dossier » aurait détruit une
+carrière sur la plateforme. **L'écran doit dire ce que le geste fait, et le geste ne se lit pas dans
+son nom.***
+
+#### Ce que le ton d'un message dit à un lecteur d'écran
+
+Mon avertissement « Ce geste est définitif » utilisait le ton `erreur`. Un test l'a signalé sans le
+chercher : il trouvait **deux `role="alert"`** dans la même carte — l'avertissement permanent et
+l'échec réel de la requête.
+
+Or le projet distingue déjà les deux, et c'est écrit dans `parts.tsx` : *« erreur » dit qu'une
+action a ÉCHOUÉ ; « alerte » qu'une action MANQUE*. Ici **rien n'a échoué** — on prévient de ce qui
+va arriver.
+
+Deux alertes dans une carte les rendent toutes deux indistinctes : celle qui interrompt pour
+prévenir d'un danger, et celle qui interrompt parce qu'une requête vient d'échouer.
+
+*Le rouge n'est pas une intensité : c'est un état. Il appartient à ce qui a échoué.*
+
+#### Cinq tests tombés, et le code était juste
+
+Cinq de mes dix tests sont tombés à la première exécution. Diagnostic : `monter()` n'attend que
+l'ouverture du panneau, et ce panneau s'ouvre **dès que l'URL porte un dossier** — donc avant que la
+requête ait répondu. Une lecture synchrone juste après ne trouvait qu'un squelette : aucun champ,
+aucune étiquette.
+
+Les tests qui passaient étaient ceux qui utilisaient `findByText` — asynchrone, donc patients.
+
+*Le réflexe, devant cinq échecs, est de soupçonner le code. **Ici le harnais regardait trop tôt** —
+et il valait mieux le découvrir en écrivant les tests qu'en croyant à un défaut inexistant.*
+
+#### Une dette naît de ce chantier, et elle n'est pas de moi
+
+Rien ne permet de **rétablir** un soignant révoqué par erreur. Ni transition, ni second dossier, ni
+route d'administration. La seule issue serait une écriture directe en base.
+
+Le chantier ne pouvait pas le corriger — c'est une décision de produit, pas un bouton manquant.
+Elle est inscrite au §9 (dette n°25) avec ses deux issues et leur coût.
+
+*Livrer un geste irréversible impose de dire ce qu'il faudrait pour le défaire — même quand la
+réponse est « rien ».*
 
 ### Ce que le chantier 41 ter (le fil archivé) a appris
 

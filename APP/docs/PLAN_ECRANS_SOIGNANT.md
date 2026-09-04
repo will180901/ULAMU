@@ -76,17 +76,19 @@ Sur une plateforme de santé, c'est la voie de recours qui manquait.
 > n'atteignait personne avant que le chantier 37 ne construise la cloche.
 > ⏳ **Reste le MOBILE** : le patient ne peut toujours pas signaler un médecin. ~½ j.
 
-### 🔴 B. Une vérification ne peut jamais être défaite
+### ✅ B. Une vérification ne peut jamais être défaite — **SOLDÉ le 04/09 (chantier 42)**
 
 `POST /v1/admin/verification/:id/revoke` n'a **aucun bouton**.
 
 Un soignant vérifié par erreur, ou qui perd son autorisation d'exercer, **reste vérifié pour
 toujours** — Badge Vérifié compris, donc visible et crédible dans l'annuaire public.
 
-> **Coût : ~2 h** (un bouton dans E1, avec motif obligatoire et confirmation — la route existe et
-> journalise déjà).
-> **Recommandation : le faire.** Un badge qu'on ne peut pas retirer n'est pas un badge, c'est une
-> promesse définitive.
+> ✅ **Fait le 04/09** (chantier 42) : une carte dans E1, visible sur les seuls dossiers vérifiés,
+> avec motif obligatoire et confirmation tapée.
+> ⚠️ **Le geste s'est révélé bien plus grave que cet écart ne le laissait croire** : `REVOKED` est un
+> état **terminal** et un professionnel n'a **qu'un dossier à vie**. Révoquer ferme définitivement
+> l'accès d'un soignant, sans chemin de retour dans le produit. L'écran le dit maintenant avant le
+> clic — et la **dette n°25** pose la question qui reste : faut-il une voie de recours ?
 
 ### 🟡 C. Le parcours de re-signature du contrat existe… et rien ne peut le déclencher
 

@@ -27,9 +27,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldCheck, UserRound } from 'lucide-react'
+import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { accord } from '@/lib/accord'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -85,6 +86,25 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
 
   const dossier = useQuery({ queryKey: ['admin-case', caseId], queryFn: () => api.adminCase(caseId), retry: false })
   const qc = useQueryClient()
+
+  /*
+    Révocation (chantier 42). Deux états : le motif, et le mot tapé qui confirme. La confirmation
+    n'est pas une précaution d'interface — voir la carte plus bas : le geste est SANS RETOUR.
+  */
+  const [motifRevocation, setMotifRevocation] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+
+  const revoquer = useMutation({
+    mutationFn: () => api.revokeCase(caseId, motifRevocation.trim()),
+    onSuccess: () => {
+      setMotifRevocation('')
+      setConfirmation('')
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
+      onDecide()
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
 
   const prendre = useMutation({
     mutationFn: () => api.claimCase(caseId),
@@ -232,6 +252,104 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               </li>
             ))}
           </ul>
+        </Carte>
+      ) : null}
+
+      {/*
+        ── Révoquer le Badge Vérifié (chantier 42, 04/09/2026 — écart B) ────────────────────────
+
+        `POST /admin/verification/:id/revoke` existait depuis le premier jour et **aucun écran ne
+        l'appelait**. Un soignant vérifié par erreur, ou qui perd son autorisation d'exercer,
+        restait vérifié pour toujours — Badge compris, donc visible et crédible dans l'annuaire.
+
+        ⚠️ **Le ton de cette carte n'est pas de la dramatisation.** Deux faits, vérifiés :
+          • `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — un dossier révoqué n'a AUCUNE sortie ;
+          • `VerificationCase.professionalId` est `@unique` — un professionnel n'a qu'UN dossier,
+            à vie, et ne peut donc pas en ouvrir un nouveau.
+
+        Révoquer ferme donc définitivement l'accès d'un soignant à la plateforme, sans chemin de
+        retour dans le produit. Un administrateur qui croirait « il refera son dossier » se
+        tromperait — et c'est exactement pour ça que l'écran le dit avant, et non après.
+
+        La confirmation tapée reprend le motif de celle de la clôture de compte (B3) : le seul
+        autre geste sans retour de la plateforme.
+      */}
+      {d.status === 'VERIFIED' ? (
+        <Carte icone={ShieldAlert} titre="Révoquer le Badge Vérifié" sousTitre="Fraude, pièces falsifiées, autorisation d'exercer perdue (EF-03-08)">
+          {/*
+            `alerte` et non `erreur` : rien n'a échoué. Le projet distingue les deux — « erreur » dit
+            qu'une action a ÉCHOUÉ, et porte `role="alert"`, qui interrompt un lecteur d'écran.
+            Deux `role="alert"` dans une même carte (celui-ci et l'échec réel de la requête) les
+            rendent tous deux indistincts. C'est un test qui l'a signalé, pas une relecture.
+          */}
+          <Avis ton="alerte">
+            <strong className="font-semibold">Ce geste est définitif.</strong> Un dossier révoqué ne
+            peut plus revenir : ce soignant ne pourra ni re-déposer, ni être vérifié de nouveau. Il
+            n'existe aucun moyen de le rétablir depuis la plateforme.
+          </Avis>
+
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+            <li className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>Il disparaît de l'annuaire public en moins d'une minute.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>Plus aucun patient ne peut le solliciter.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>Il est prévenu, et lira votre motif dans son espace.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              <span>La décision est inscrite au journal, sous votre compte, en insertion seule.</span>
+            </li>
+          </ul>
+
+          <div>
+            <Label htmlFor="motif-revocation" className="mb-1.5 block text-[13px]">
+              Motif transmis au soignant
+            </Label>
+            <Textarea
+              id="motif-revocation"
+              rows={3}
+              maxLength={2000}
+              value={motifRevocation}
+              onChange={(e) => setMotifRevocation(e.target.value)}
+              placeholder="Ce qui a été constaté, et sur quelle pièce."
+            />
+            <p className="mt-1 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+              Il n'aura pas de recours dans l'application : ce texte est la seule explication qu'il
+              recevra.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="confirmation-revocation" className="mb-1.5 block text-[13px]">
+              Saisissez RÉVOQUER pour confirmer
+            </Label>
+            <Input
+              id="confirmation-revocation"
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+              autoComplete="off"
+              className="max-w-56"
+            />
+          </div>
+
+          <div>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => revoquer.mutate()}
+              disabled={
+                revoquer.isPending || motifRevocation.trim().length === 0 || confirmation.trim().toUpperCase() !== 'RÉVOQUER'
+              }
+            >
+              {revoquer.isPending ? 'Révocation…' : 'Révoquer définitivement'}
+            </Button>
+          </div>
         </Carte>
       ) : null}
 

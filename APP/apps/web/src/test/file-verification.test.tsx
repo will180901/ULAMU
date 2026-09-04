@@ -326,3 +326,133 @@ describe('E1 — le dossier examiné', () => {
     expect(within(journal).getByText('Diplôme')).toBeInTheDocument()
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Révoquer le Badge Vérifié — chantier 42, 04/09/2026 (écart B).
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  `POST /admin/verification/:id/revoke` existait depuis le premier jour et **aucun écran ne
+  l'appelait**. Un soignant vérifié par erreur, ou qui perd son autorisation d'exercer, restait
+  vérifié pour toujours — Badge compris, donc visible et crédible dans l'annuaire public.
+
+  ⚠️ **Le geste est SANS RETOUR**, et deux faits du serveur le prouvent :
+    • `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — un dossier révoqué n'a aucune sortie ;
+    • `VerificationCase.professionalId` est `@unique` — un professionnel n'a qu'un dossier, à vie.
+
+  Un administrateur qui croirait « il refera son dossier » fermerait définitivement l'accès d'un
+  soignant à la plateforme. C'est pourquoi trois garde-fous sont éprouvés ici : la carte n'apparaît
+  que sur un dossier VÉRIFIÉ, le motif est obligatoire, et la confirmation doit être TAPÉE.
+*/
+describe('E1 — révoquer le Badge Vérifié (chantier 42)', () => {
+  /**
+   * Ouvre le panneau sur un dossier au statut voulu, **et attend qu'il soit chargé**.
+   *
+   * ⚠️ `monter()` n'attend que l'ouverture du panneau (`findByRole('dialog')`), et celui-ci s'ouvre
+   * dès que l'URL porte un dossier — donc AVANT que `adminCase` ait répondu. Une requête
+   * synchrone juste après ne trouvait qu'un squelette : aucun champ, aucune étiquette.
+   *
+   * C'est ce qui a fait tomber cinq de ces tests à leur première écriture. Le code était juste ;
+   * c'est le harnais qui regardait trop tôt.
+   */
+  async function panneau(statut: 'VERIFIED' | 'IN_REVIEW' | 'REJECTED' | 'REVOKED') {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: statut }))
+    await monter()
+    // Le nom du sujet n'apparaît QUE le dossier chargé, quel que soit son statut.
+    await screen.findAllByText('Ange Makaya')
+  }
+
+  it('n’offre la révocation QUE sur un dossier vérifié', async () => {
+    await panneau('VERIFIED')
+
+    expect(await screen.findByRole('button', { name: /Révoquer définitivement/ })).toBeInTheDocument()
+  })
+
+  /*
+    Le serveur refuse toute autre transition (`canTransition`). Offrir le bouton ailleurs
+    promettrait un geste qui reviendrait en 409 — la faute que le projet nomme « proposer ce qu'on
+    ne tient pas ».
+  */
+  it.each(['IN_REVIEW', 'REJECTED', 'REVOKED'] as const)(
+    'ne l’offre pas sur un dossier %s',
+    async (statut) => {
+      await panneau(statut)
+
+      expect(screen.queryByRole('button', { name: /Révoquer définitivement/ })).not.toBeInTheDocument()
+    },
+  )
+
+  /*
+    LA phrase de cette carte. Un administrateur qui croit que le soignant pourra re-déposer se
+    trompe : le dossier révoqué est terminal, et il n'y a qu'un dossier par professionnel.
+  */
+  it('annonce que le geste est définitif, AVANT le formulaire', async () => {
+    await panneau('VERIFIED')
+
+    expect(await screen.findByText(/Ce geste est définitif/)).toBeInTheDocument()
+    expect(screen.getByText(/ne pourra ni re-déposer, ni être vérifié de nouveau/)).toBeInTheDocument()
+  })
+
+  it('dit ce qui arrive au soignant, et qu’il lira le motif', async () => {
+    await panneau('VERIFIED')
+
+    expect(await screen.findByText(/annuaire public en moins d'une minute/)).toBeInTheDocument()
+    expect(screen.getByText(/lira votre motif dans son espace/)).toBeInTheDocument()
+  })
+
+  /* Sans motif, le soignant n'aurait aucune explication — et le serveur refuse un motif vide. */
+  it('exige un motif', async () => {
+    const revoquer = vi.spyOn(api, 'revokeCase')
+    await panneau('VERIFIED')
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.type(screen.getByLabelText(/Saisissez RÉVOQUER/), 'RÉVOQUER')
+
+    expect(screen.getByRole('button', { name: /Révoquer définitivement/ })).toBeDisabled()
+    expect(revoquer).not.toHaveBeenCalled()
+  })
+
+  /*
+    La confirmation tapée reprend celle de la clôture de compte — le seul autre geste sans retour de
+    la plateforme. Un clic isolé ne doit pas suffire à fermer la carrière d'un soignant.
+  */
+  it('exige la confirmation tapée, même avec un motif', async () => {
+    const revoquer = vi.spyOn(api, 'revokeCase')
+    await panneau('VERIFIED')
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.type(screen.getByLabelText(/Motif transmis au soignant/), 'Pièces falsifiées.')
+
+    expect(screen.getByRole('button', { name: /Révoquer définitivement/ })).toBeDisabled()
+    expect(revoquer).not.toHaveBeenCalled()
+  })
+
+  it('révoque avec le motif quand les deux conditions sont remplies', async () => {
+    const revoquer = vi.spyOn(api, 'revokeCase').mockResolvedValue({ caseId: 'c-1', status: 'REVOKED' })
+    await panneau('VERIFIED')
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.type(screen.getByLabelText(/Motif transmis au soignant/), 'Autorisation d’exercer retirée.')
+    await utilisateur.type(screen.getByLabelText(/Saisissez RÉVOQUER/), 'RÉVOQUER')
+    await utilisateur.click(screen.getByRole('button', { name: /Révoquer définitivement/ }))
+
+    await waitFor(() => expect(revoquer).toHaveBeenCalledWith('c-1', 'Autorisation d’exercer retirée.'))
+  })
+
+  /* L'échec ne se perd pas : le motif reste, et la raison du refus s'affiche. */
+  it('montre l’échec sans effacer le motif saisi', async () => {
+    vi.spyOn(api, 'revokeCase').mockRejectedValue(new Error('réseau'))
+    await panneau('VERIFIED')
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.type(screen.getByLabelText(/Motif transmis au soignant/), 'Un motif long à retaper.')
+    await utilisateur.type(screen.getByLabelText(/Saisissez RÉVOQUER/), 'RÉVOQUER')
+    await utilisateur.click(screen.getByRole('button', { name: /Révoquer définitivement/ }))
+
+    // On vise le MESSAGE d'échec, pas le rôle : la carte porte déjà un avertissement permanent.
+    expect(await screen.findByText(/Une erreur est survenue/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Motif transmis au soignant/)).toHaveValue('Un motif long à retaper.')
+  })
+})

@@ -1552,6 +1552,35 @@ export const api = {
   ) =>
     request<{ caseId: string; status: VerificationStatus }>('POST', `/v1/admin/verification/${caseId}/decide`, dto, true),
 
+  /**
+   * Révoquer le Badge Vérifié — écart B du plan des écrans, chantier 42 (04/09/2026).
+   *
+   * ── Ce qui manquait ───────────────────────────────────────────────────────────────────────
+   *
+   * La route existait depuis le premier jour et **aucun écran ne l'appelait**. Un soignant vérifié
+   * par erreur, ou qui perd son autorisation d'exercer, restait vérifié pour toujours — Badge
+   * compris, donc visible et crédible dans l'annuaire public.
+   *
+   * ── ⚠️ CE GESTE EST DÉFINITIF, et il faut le savoir avant de l'offrir ─────────────────────
+   *
+   * Vérifié dans `m03.policies.ts` et dans le schéma :
+   *   • `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — **aucune sortie**. Un dossier révoqué ne redevient
+   *     jamais vérifié, et ne peut pas être re-soumis ;
+   *   • `VerificationCase.professionalId` est `@unique` — **un seul dossier par professionnel, à
+   *     vie**. Il ne peut donc pas en ouvrir un nouveau.
+   *
+   * Révoquer, c'est fermer définitivement l'accès d'un soignant à la plateforme. Il n'existe
+   * aucun chemin de retour dans le produit — seule une écriture directe en base en ouvrirait un.
+   * C'est pourquoi l'écran exige une confirmation tapée, et le dit en toutes lettres.
+   */
+  revokeCase: (caseId: string, reasons: string) =>
+    request<{ caseId: string; status: VerificationStatus }>(
+      'POST',
+      `/v1/admin/verification/${caseId}/revoke`,
+      { reasons },
+      true,
+    ),
+
   // Administration — pilotage et audit (sous-rôle Super)
   professionalDashboard: () => request<ProfessionalDashboard>('GET', '/v1/me/dashboard', undefined, true),
   pilotKpis: () => request<PilotKpi[]>('GET', '/v1/admin/pilot-kpis', undefined, true),
