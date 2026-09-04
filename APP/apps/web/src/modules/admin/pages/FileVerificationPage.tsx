@@ -27,7 +27,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Clock, FileText, Gavel, Inbox, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react'
+import { AlertTriangle, Clock, FileText, Gavel, Inbox, RotateCcw, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
@@ -41,6 +41,7 @@ import { Liste } from '@/components/ulamu/Liste'
 import { api, type DocumentKind, type VerificationStatus } from '@/lib/api'
 import { SqueletteTableau } from '@/components/ulamu/Squelette'
 import { messageErreur } from '@/lib/message-erreur'
+import { useCapabilities } from '@/hooks/useCapabilities'
 
 const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -91,7 +92,12 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
     Révocation (chantier 42). Deux états : le motif, et le mot tapé qui confirme. La confirmation
     n'est pas une précaution d'interface — voir la carte plus bas : le geste est SANS RETOUR.
   */
+  /* La levée d'une révocation est réservée au super-administrateur — voir sa carte plus bas. */
+  const caps = useCapabilities()
+
   const [motifRevocation, setMotifRevocation] = useState('')
+  /* Rétablissement (dette n°25) : un seul champ, et pas de confirmation tapée — voir la carte. */
+  const [motifRetablissement, setMotifRetablissement] = useState('')
   const [confirmation, setConfirmation] = useState('')
 
   const revoquer = useMutation({
@@ -99,6 +105,17 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
     onSuccess: () => {
       setMotifRevocation('')
       setConfirmation('')
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
+      onDecide()
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  const retablir = useMutation({
+    mutationFn: () => api.reinstateCase(caseId, motifRetablissement.trim()),
+    onSuccess: () => {
+      setMotifRetablissement('')
       setErreur(null)
       void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
       onDecide()
@@ -262,17 +279,19 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
         l'appelait**. Un soignant vérifié par erreur, ou qui perd son autorisation d'exercer,
         restait vérifié pour toujours — Badge compris, donc visible et crédible dans l'annuaire.
 
-        ⚠️ **Le ton de cette carte n'est pas de la dramatisation.** Deux faits, vérifiés :
-          • `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — un dossier révoqué n'a AUCUNE sortie ;
-          • `VerificationCase.professionalId` est `@unique` — un professionnel n'a qu'UN dossier,
-            à vie, et ne peut donc pas en ouvrir un nouveau.
+        ⚠️ **Le ton de cette carte n'est pas de la dramatisation.** `VerificationCase.professionalId`
+        est `@unique` : un professionnel n'a qu'UN dossier, à vie, et ne peut pas en ouvrir un autre.
+        Un administrateur qui croirait « il refera son dossier » se tromperait — c'est pour ça que
+        l'écran le dit avant, et non après.
 
-        Révoquer ferme donc définitivement l'accès d'un soignant à la plateforme, sans chemin de
-        retour dans le produit. Un administrateur qui croirait « il refera son dossier » se
-        tromperait — et c'est exactement pour ça que l'écran le dit avant, et non après.
+        ⚠️ **Cette carte disait « aucun moyen de le rétablir » jusqu'au 04/09/2026.** C'était vrai :
+        `LEGAL_TRANSITIONS.REVOKED` valait `[]`. La dette n°25 a ouvert une sortie, étroite et
+        réservée au super-administrateur — la phrase a donc changé le jour même. **Une carte qui
+        promet plus de gravité que le serveur n'en applique ment autant qu'une qui en promet moins.**
 
-        La confirmation tapée reprend le motif de celle de la clôture de compte (B3) : le seul
-        autre geste sans retour de la plateforme.
+        Ce qui n'a PAS changé, et qui justifie la confirmation tapée : le soignant perd son badge,
+        son annuaire et ses patients à l'instant du clic, et seul un autre humain peut revenir
+        dessus.
       */}
       {d.status === 'VERIFIED' ? (
         <Carte icone={ShieldAlert} titre="Révoquer le Badge Vérifié" sousTitre="Fraude, pièces falsifiées, autorisation d'exercer perdue (EF-03-08)">
@@ -283,9 +302,10 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
             rendent tous deux indistincts. C'est un test qui l'a signalé, pas une relecture.
           */}
           <Avis ton="alerte">
-            <strong className="font-semibold">Ce geste est définitif.</strong> Un dossier révoqué ne
-            peut plus revenir : ce soignant ne pourra ni re-déposer, ni être vérifié de nouveau. Il
-            n'existe aucun moyen de le rétablir depuis la plateforme.
+            <strong className="font-semibold">Ce geste prend effet immédiatement.</strong> Ce
+            soignant perd son badge, quitte l'annuaire et ne peut plus être sollicité. Il ne pourra
+            pas re-déposer de dossier : seul un super-administrateur peut lever une révocation, et
+            cela ne lui rend pas son badge — cela remet son dossier en examen.
           </Avis>
 
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
@@ -348,6 +368,65 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               }
             >
               {revoquer.isPending ? 'Révocation…' : 'Révoquer définitivement'}
+            </Button>
+          </div>
+        </Carte>
+      ) : null}
+
+      {/*
+        ── Lever une révocation (dette n°25, 04/09/2026) ────────────────────────────────────────
+
+        Le chantier 42 a livré la révocation et découvert, en la livrant, qu'elle n'avait aucune
+        sortie : `professionalId` est `@unique`, donc un dossier révoqué fermait l'accès du soignant
+        **à vie**, y compris sur une erreur d'administration. La seule issue était une écriture
+        directe en base — hors de tout journal, donc hors de toute preuve.
+
+        Trois choix portés par cette carte, et chacun a une raison :
+
+        • **Réservée au super-administrateur** (`admin:super`) : défaire la décision d'un
+          examinateur n'appartient pas aux examinateurs. Le serveur le garde aussi (403) ; ceci
+          n'est que la courtoisie de ne pas montrer un bouton qui refuserait.
+        • **Pas de confirmation tapée**, contrairement à la révocation. Elle protège des gestes
+          SANS RETOUR ; celui-ci en est un, précisément. Exiger la même cérémonie pour défaire que
+          pour faire découragerait la correction d'une erreur — l'inverse du but.
+        • **Le motif reste obligatoire.** Le soignant le lira, et le journal le gardera : « rétabli
+          le 5, pour tel motif » est ce qui rend la première décision relisable.
+      */}
+      {d.status === 'REVOKED' && caps.has('admin:super') ? (
+        <Carte
+          icone={RotateCcw}
+          titre="Lever la révocation"
+          sousTitre="Quand la révocation a été prononcée à tort (dette n°25)"
+        >
+          <Avis ton="info">
+            Cette levée <strong className="font-semibold">ne rend pas le badge</strong> : elle remet
+            le dossier en examen. La vérification se décide ensuite normalement, pièces à l'appui.
+          </Avis>
+
+          <div>
+            <Label htmlFor="motif-retablissement" className="mb-1.5 block text-[13px]">
+              Motif transmis au soignant
+            </Label>
+            <Textarea
+              id="motif-retablissement"
+              rows={3}
+              maxLength={2000}
+              value={motifRetablissement}
+              onChange={(e) => setMotifRetablissement(e.target.value)}
+              placeholder="Ce qui justifie la levée — une erreur constatée, une pièce retrouvée."
+            />
+            <p className="mt-1 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+              La décision de révocation reste au dossier : rien n'est effacé, cette levée s'y ajoute.
+            </p>
+          </div>
+
+          <div>
+            <Button
+              type="button"
+              onClick={() => retablir.mutate()}
+              disabled={retablir.isPending || motifRetablissement.trim().length === 0}
+            >
+              {retablir.isPending ? 'Levée…' : 'Lever la révocation'}
             </Button>
           </div>
         </Carte>

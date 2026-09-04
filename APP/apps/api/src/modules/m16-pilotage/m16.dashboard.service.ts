@@ -8,12 +8,22 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 import { PaymentsService } from "../m13-payments/m13.payments.service";
+// La règle du taux vit dans M05, et nulle part ailleurs (dette n°23).
+import { confirmDenominator, confirmRate } from "../m05-directory/m05.policies";
 
 export interface ProfessionalDashboard {
   sessionsThisMonth: number;
   earnings: { availableXaf: number; pendingXaf: number };
   averageRating: number | null;
   confirmationRatePct: number;
+  /**
+   * Sur combien de demandes ce taux porte — les sollicitations MOINS les refus motivés (n°23).
+   *
+   * Sans lui, l'écran affiche un pourcentage dont il ignore l'assiette : « 100 % » sur deux
+   * demandes et « 100 % » sur deux cents s'écrivent pareil et ne valent pas la même chose. C'est
+   * aussi la seule façon honnête de dire au médecin que ses refus n'y sont plus comptés.
+   */
+  confirmationBase: number;
   /**
    * Les six derniers mois, du plus ancien au plus récent (2026-08).
    *
@@ -81,10 +91,15 @@ export class DashboardService {
 
     const averageRating =
       stats && stats.ratingCount > 0 ? Math.round((stats.ratingSum / stats.ratingCount) * 10) / 10 : null;
-    const confirmationRatePct =
-      stats && stats.initiationsTotal > 0
-        ? Math.round((stats.confirmedTotal / stats.initiationsTotal) * 1000) / 10
-        : 0;
+    /*
+      La formule était recopiée ici (dette n°23) : `confirmedTotal / initiationsTotal`, à la main.
+      Elle vit désormais dans `confirmRate` (M05), seule définition du taux — sans quoi le tableau
+      de bord du médecin et l'annuaire public auraient affiché deux chiffres différents pour lui.
+
+      `confirmRate` renvoie 0..1 ; l'arrondi au dixième de POINT reste ici, c'est de la présentation.
+    */
+    const confirmationRatePct = stats ? Math.round(confirmRate(stats) * 1000) / 10 : 0;
+    const confirmationBase = stats ? confirmDenominator(stats) : 0;
 
     // Les six cases sont créées VIDES d'abord : un mois sans activité doit valoir zéro et occuper
     // sa place. Ne renvoyer que les mois vécus donnerait une courbe qui saute des mois entiers.
@@ -110,6 +125,7 @@ export class DashboardService {
       earnings: { availableXaf: earnings.availableXaf, pendingXaf: earnings.pendingXaf },
       averageRating,
       confirmationRatePct,
+      confirmationBase,
       lastSixMonths: [...cases.values()],
     };
   }

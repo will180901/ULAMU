@@ -101,6 +101,17 @@ export const TEMPLATE_CATALOG: Record<string, NotificationTemplate> = {
     body: () =>
       "Votre badge de vérification a été révoqué avec effet immédiat. Consultez votre espace pour les motifs et les démarches possibles.",
   },
+  /*
+    Le pendant de `m03.case.revoked` (dette n°25). Il dit deux choses, et pas une de plus : la
+    révocation est levée, et le dossier repart en examen — le badge n'est PAS rendu par ce geste.
+    Laisser croire le contraire ferait au soignant une seconde promesse manquée.
+  */
+  "m03.case.reinstated": {
+    category: "system",
+    title: () => "Révocation levée — dossier remis en examen",
+    body: () =>
+      "La révocation de votre vérification a été levée. Votre dossier est de nouveau en cours d'examen : votre badge n'est pas encore rétabli. Consultez votre espace pour le motif.",
+  },
   "m03.agreement.reissued": {
     category: "money",
     title: () => "Nouveau contrat d'adhésion disponible",

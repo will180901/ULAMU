@@ -1,0 +1,19 @@
+-- Un refus MOTIVÉ cesse de pénaliser un soignant autant qu'une demande ignorée (dette n°23).
+--
+-- Le taux de confirmation public (EF-05-01) valait `confirmedTotal / initiationsTotal`.
+-- `initiationsTotal` monte à la SOLLICITATION, avant toute réponse ; `confirmedTotal` ne monte
+-- qu'à la confirmation. Un refus n'émettait aucun événement de statistiques : il restait donc au
+-- dénominateur, et pesait exactement autant qu'une demande laissée expirer.
+--
+-- Or les deux ne rendent pas le même service. Un refus rapide fait GAGNER du temps au patient, qui
+-- va voir ailleurs ; une expiration lui en fait perdre. Un indicateur public qui les confond
+-- décourage le seul des deux comportements qui serve le patient.
+--
+-- La colonne compte les refus plutôt que de les soustraire à `initiationsTotal` : la trace reste
+-- lisible, et le taux se calcule sur `initiations - refused`.
+--
+-- ⚠️ Purement ADDITIVE : une colonne, avec valeur par défaut. Aucune donnée existante n'est
+-- touchée, aucune table n'est déplacée. Les lignes déjà en base valent 0 — c'est-à-dire le
+-- comportement d'avant — jusqu'au passage de `scripts/recalcul-indicateurs.ts`, qui reconstruit la
+-- valeur vraie depuis la table `Handshake`.
+ALTER TABLE "ProfessionalStats" ADD COLUMN "refusedTotal" INTEGER NOT NULL DEFAULT 0;

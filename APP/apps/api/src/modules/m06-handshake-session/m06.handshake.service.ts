@@ -324,6 +324,18 @@ export class HandshakeService {
       });
       if (count === 0) return;
       refused = true;
+      /*
+        → indicateurs M05 (dette n°23) : le refus sort du DÉNOMINATEUR du taux de confirmation.
+
+        Cet événement n'existait pas : `initiationsTotal` montait à la sollicitation, et rien ne
+        redescendait au refus. Un médecin qui répond « non, pas ma spécialité » en deux minutes
+        voyait donc son taux public baisser exactement comme celui qui n'ouvre jamais l'application.
+        Payload minimal, comme les autres événements de statistiques.
+      */
+      await this.outbox.emit(tx, {
+        type: "m06.handshake.refused",
+        payload: { professionalId: handshake.professionalId },
+      });
       // CU-06-01 : motif court affiché au patient (les suggestions équivalentes relèvent de M05).
       await this.outbox.emit(tx, {
         type: "notify.request",

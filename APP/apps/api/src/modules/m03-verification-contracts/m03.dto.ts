@@ -55,6 +55,14 @@ export class RevokeDto {
   @IsString() @IsNotEmpty() @MaxLength(2000) reasons!: string;
 }
 
+/**
+ * Rétablissement d'une révocation prononcée à tort (dette n°25) — réservé au SUPER_ADMIN.
+ * Le motif n'est pas décoratif : le soignant le lira, et le journal le gardera.
+ */
+export class ReinstateDto {
+  @IsString() @IsNotEmpty() @MaxLength(2000) reasons!: string;
+}
+
 /** Signature électronique = mot de passe + OTP (CU-03-03). */
 export class SignAgreementDto {
   @IsString() @IsNotEmpty() password!: string;

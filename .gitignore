@@ -42,3 +42,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Sauvegardes de recalcul des indicateurs (donnees de PRODUCTION) - jamais versionnees.
+APP/apps/api/scripts/.sauvegarde-indicateurs-*.json

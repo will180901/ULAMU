@@ -240,6 +240,13 @@ export interface ProfessionalDashboard {
   lastSixMonths: Array<{ month: string; sessions: number; earnedXaf: number }>
   averageRating: number | null
   confirmationRatePct: number
+  /**
+   * Sur combien de demandes ce taux porte — les sollicitations MOINS les refus motivés (n°23).
+   *
+   * Sans elle, l'écran afficherait un pourcentage dont il ignore l'assiette : « 100 % » sur deux
+   * demandes et « 100 % » sur deux cents s'écrivent pareil et ne valent pas la même chose.
+   */
+  confirmationBase: number
 }
 
 export interface ResetPasswordTotpRequest {
@@ -1569,14 +1576,37 @@ export const api = {
    *   • `VerificationCase.professionalId` est `@unique` — **un seul dossier par professionnel, à
    *     vie**. Il ne peut donc pas en ouvrir un nouveau.
    *
-   * Révoquer, c'est fermer définitivement l'accès d'un soignant à la plateforme. Il n'existe
-   * aucun chemin de retour dans le produit — seule une écriture directe en base en ouvrirait un.
-   * C'est pourquoi l'écran exige une confirmation tapée, et le dit en toutes lettres.
+   * Révoquer, c'est fermer l'accès d'un soignant à la plateforme. C'est pourquoi l'écran exige une
+   * confirmation tapée, et le dit en toutes lettres.
+   *
+   * ⚠️ **Ce commentaire disait « il n'existe aucun chemin de retour » jusqu'au 04/09/2026.** C'était
+   * vrai le jour où il a été écrit, et la dette n°25 l'a corrigé : `reinstateCase` ci-dessous ouvre
+   * une sortie, étroite, réservée au super-administrateur. Le geste reste GRAVE — le soignant perd
+   * son badge, son annuaire et ses patients à l'instant — mais il n'est plus sans recours.
    */
   revokeCase: (caseId: string, reasons: string) =>
     request<{ caseId: string; status: VerificationStatus }>(
       'POST',
       `/v1/admin/verification/${caseId}/revoke`,
+      { reasons },
+      true,
+    ),
+
+  /**
+   * Lever une révocation prononcée à tort (dette n°25, 04/09/2026) — **SUPER_ADMIN seul**.
+   *
+   * Le serveur ne rend PAS le badge : il repose le dossier en `IN_REVIEW`. C'est délibéré, et
+   * l'écran doit dire la même chose — un rétablissement se décide en regardant les pièces, pas en
+   * cliquant. D'où le statut renvoyé, qui n'est jamais `VERIFIED`.
+   *
+   * ⚠️ Un `ADMIN_VERIFICATION` reçoit 403 : défaire la décision d'un examinateur n'appartient pas
+   * aux examinateurs. L'écran ne montre donc le bouton qu'avec la capacité `admin:super` — mais
+   * c'est la garde du serveur qui fait foi, celle de l'écran n'étant que de la courtoisie.
+   */
+  reinstateCase: (caseId: string, reasons: string) =>
+    request<{ caseId: string; status: VerificationStatus }>(
+      'POST',
+      `/v1/admin/verification/${caseId}/reinstate`,
       { reasons },
       true,
     ),

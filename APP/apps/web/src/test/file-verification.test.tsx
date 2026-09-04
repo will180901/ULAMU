@@ -385,14 +385,27 @@ describe('E1 — révoquer le Badge Vérifié (chantier 42)', () => {
   )
 
   /*
-    LA phrase de cette carte. Un administrateur qui croit que le soignant pourra re-déposer se
-    trompe : le dossier révoqué est terminal, et il n'y a qu'un dossier par professionnel.
+    ── Ce test a CHANGÉ le 04/09/2026, et c'est lui qui a signalé le changement ───────────────
+
+    Il exigeait « Ce geste est définitif » et « ne pourra ni re-déposer, ni être vérifié de
+    nouveau ». C'était exact le jour où il a été écrit : `LEGAL_TRANSITIONS.REVOKED` valait `[]`.
+
+    La dette n°25 a ouvert une sortie (REVOKED → IN_REVIEW, super-administrateur seul). **Ce test
+    est alors tombé, seul de toute la suite** — la carte promettait une gravité que le serveur
+    n'appliquait plus. Il défend maintenant la phrase juste, et il en défend PLUS qu'avant : que
+    la carte annonce l'effet immédiat, ET la sortie, ET que cette sortie ne rend pas le badge.
+
+    *Une carte qui promet plus de gravité que le serveur n'en applique ment autant qu'une qui en
+    promet moins.*
   */
-  it('annonce que le geste est définitif, AVANT le formulaire', async () => {
+  it('annonce l’effet immédiat, et la seule sortie possible, AVANT le formulaire', async () => {
     await panneau('VERIFIED')
 
-    expect(await screen.findByText(/Ce geste est définitif/)).toBeInTheDocument()
-    expect(screen.getByText(/ne pourra ni re-déposer, ni être vérifié de nouveau/)).toBeInTheDocument()
+    expect(await screen.findByText(/Ce geste prend effet immédiatement/)).toBeInTheDocument()
+    expect(screen.getByText(/Il ne pourra pas re-déposer de dossier/)).toBeInTheDocument()
+    // La nuance qui évite la fausse promesse dans les deux sens.
+    expect(screen.getByText(/seul un super-administrateur peut lever une révocation/)).toBeInTheDocument()
+    expect(screen.getByText(/cela ne lui rend pas son badge/)).toBeInTheDocument()
   })
 
   it('dit ce qui arrive au soignant, et qu’il lira le motif', async () => {
@@ -454,5 +467,108 @@ describe('E1 — révoquer le Badge Vérifié (chantier 42)', () => {
     // On vise le MESSAGE d'échec, pas le rôle : la carte porte déjà un avertissement permanent.
     expect(await screen.findByText(/Une erreur est survenue/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Motif transmis au soignant/)).toHaveValue('Un motif long à retaper.')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Lever une révocation — dette n°25, 04/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  Le chantier 42 a livré la révocation, et découvert en la livrant qu'elle n'avait aucune sortie :
+  `professionalId` est `@unique`, donc un dossier révoqué fermait l'accès du soignant **à vie** —
+  y compris quand la révocation venait d'une erreur d'administration.
+
+  La sortie ouverte est délibérément ÉTROITE, et les trois garde-fous sont éprouvés ici :
+    • le super-administrateur seul la voit (l'examinateur qui révoque ne se dédit pas lui-même) ;
+    • elle ne rend PAS le badge — elle remet le dossier en examen, et la carte doit le dire ;
+    • le motif reste obligatoire : le soignant le lira, le journal le gardera.
+*/
+describe('E1 — lever une révocation (dette n°25)', () => {
+  async function panneauRevoque(role: MeResponse['adminRole'] = 'SUPER_ADMIN') {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: 'REVOKED' }))
+    await monter()
+    // `monter()` pose la session ; on ne surcharge le sous-rôle qu'ensuite, sinon il est écrasé.
+    if (role !== 'SUPER_ADMIN') useSessionStore.setState({ me: { ...ADMIN, adminRole: role } })
+  }
+
+  it('offre la levée au super-administrateur sur un dossier révoqué', async () => {
+    await panneauRevoque()
+
+    expect(await screen.findByRole('button', { name: /Lever la révocation/ })).toBeInTheDocument()
+  })
+
+  /*
+    Défaire la décision d'un examinateur n'appartient pas aux examinateurs. Le serveur répond 403 ;
+    l'écran ne montre donc pas un bouton qui refuserait — proposer ce qu'on ne tient pas est
+    exactement la faute que le projet s'interdit.
+  */
+  it('ne l’offre PAS à un administrateur de vérification', async () => {
+    await panneauRevoque('ADMIN_VERIFICATION')
+
+    await screen.findAllByText('Ange Makaya')
+    expect(screen.queryByRole('button', { name: /Lever la révocation/ })).not.toBeInTheDocument()
+  })
+
+  it.each(['VERIFIED', 'IN_REVIEW', 'REJECTED'] as const)(
+    'ne l’offre pas sur un dossier %s',
+    async (statut) => {
+      vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: statut }))
+      await monter()
+
+      await screen.findAllByText('Ange Makaya')
+      expect(screen.queryByRole('button', { name: /Lever la révocation/ })).not.toBeInTheDocument()
+    },
+  )
+
+  /*
+    LA phrase de cette carte. Un administrateur qui croirait rendre le badge d'un clic ferait au
+    soignant une seconde promesse manquée — après celle de la révocation.
+  */
+  it('dit que la levée ne rend PAS le badge', async () => {
+    await panneauRevoque()
+
+    expect(await screen.findByText(/ne rend pas le badge/)).toBeInTheDocument()
+    expect(screen.getByText(/remet\s+le dossier en examen/)).toBeInTheDocument()
+  })
+
+  it('exige un motif', async () => {
+    const lever = vi.spyOn(api, 'reinstateCase')
+    await panneauRevoque()
+
+    expect(await screen.findByRole('button', { name: /Lever la révocation/ })).toBeDisabled()
+    expect(lever).not.toHaveBeenCalled()
+  })
+
+  it('lève avec le motif saisi', async () => {
+    const lever = vi
+      .spyOn(api, 'reinstateCase')
+      .mockResolvedValue({ caseId: 'c-1', status: 'IN_REVIEW' })
+    await panneauRevoque()
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.type(
+      await screen.findByLabelText(/Motif transmis au soignant/),
+      'Révocation prononcée sur un homonyme.',
+    )
+    await utilisateur.click(screen.getByRole('button', { name: /Lever la révocation/ }))
+
+    await waitFor(() =>
+      expect(lever).toHaveBeenCalledWith('c-1', 'Révocation prononcée sur un homonyme.'),
+    )
+  })
+
+  /*
+    Pas de confirmation tapée ici, contrairement à la révocation — et c'est VOULU. La confirmation
+    protège des gestes sans retour ; celui-ci en est un. Exiger la même cérémonie pour défaire que
+    pour faire découragerait la correction d'une erreur, soit l'inverse du but de cette carte.
+  */
+  it('ne demande PAS de confirmation tapée — défaire n’est pas faire', async () => {
+    await panneauRevoque()
+
+    await screen.findByRole('button', { name: /Lever la révocation/ })
+    expect(screen.queryByLabelText(/Saisissez RÉVOQUER/)).not.toBeInTheDocument()
   })
 })

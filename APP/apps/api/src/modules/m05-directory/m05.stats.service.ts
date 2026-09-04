@@ -12,6 +12,10 @@
  *   pour des INDICATEURS publics (EF-05-01), contrairement à l'argent (RM-13-02) —
  *   le recalcul périodique complet (spec §5 « recalcul quotidien ») viendra avec M16/cron ;
  * - payloads attendus : { professionalId, delayS?, score? } — tout payload illisible est ignoré.
+ *
+ * Dette n°23 (04/09/2026) : `m06.handshake.refused` s'ajoute aux quatre événements historiques —
+ * un refus MOTIVÉ ne pèse plus autant qu'une demande ignorée. La règle du taux vit dans
+ * `m05.policies.ts` (`confirmRate`), pas ici : ce service ne fait que compter.
  */
 import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -25,6 +29,7 @@ interface StatDeltas {
   ratingSum?: number;
   ratingCount?: number;
   incidents?: number;
+  refused?: number;
 }
 
 @Injectable()
@@ -49,6 +54,21 @@ export class StatsService {
     if (!professionalId) return;
     const delayS = this.nonNegativeInt(payload.delayS) ?? 0; // délai absent = compté confirmé sans délai
     await this.apply(professionalId, { confirmed: 1, delayS });
+  }
+
+  /**
+   * m06.handshake.refused → refusedTotal++ (dette n°23, 04/09/2026).
+   *
+   * Un refus MOTIVÉ sort du dénominateur du taux de confirmation : voir `confirmRate` dans
+   * `m05.policies.ts`, où la règle vit — et vit à un seul endroit.
+   *
+   * ⚠️ Il n'est pas soustrait de `initiationsTotal` : la sollicitation a bien eu lieu, et
+   * l'effacer rendrait le compteur irréconciliable avec la table `Handshake`.
+   */
+  async onHandshakeRefused(payload: Record<string, unknown>): Promise<void> {
+    const professionalId = this.professionalIdOf(payload, "m06.handshake.refused");
+    if (!professionalId) return;
+    await this.apply(professionalId, { refused: 1 });
   }
 
   /** m06.session.rated → cumul de notation (échelle PM-13 ; score hors échelle = ignoré). */
@@ -108,6 +128,7 @@ export class StatsService {
           ratingSum: d.ratingSum ?? 0,
           ratingCount: d.ratingCount ?? 0,
           incidentsTotal: d.incidents ?? 0,
+          refusedTotal: d.refused ?? 0,
         },
         update: {
           ...(d.initiations ? { initiationsTotal: { increment: d.initiations } } : {}),
@@ -116,6 +137,7 @@ export class StatsService {
           ...(d.ratingSum ? { ratingSum: { increment: d.ratingSum } } : {}),
           ...(d.ratingCount ? { ratingCount: { increment: d.ratingCount } } : {}),
           ...(d.incidents ? { incidentsTotal: { increment: d.incidents } } : {}),
+          ...(d.refused ? { refusedTotal: { increment: d.refused } } : {}),
         },
       });
     } catch (err) {

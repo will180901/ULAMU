@@ -685,6 +685,57 @@ export class M03Service {
   }
 
   /**
+   * Rétablissement d'une révocation prononcée à tort (dette n°25, 04/09/2026) — SUPER_ADMIN seul.
+   *
+   * ── Ce que ce geste fait, et surtout ce qu'il NE fait pas ────────────────────────────────────
+   *
+   * Il lève la révocation et **remet le dossier en examen**. Il ne rend pas le badge : le soignant
+   * ne peut toujours pas exercer (`canPracticeEffective` exige VERIFIED). Le rétablissement effectif
+   * passe ensuite par la voie normale — un examinateur regarde les pièces et décide.
+   *
+   * Rien n'est effacé, conformément à RM-03-04 : la décision de révocation et son motif restent au
+   * dossier, et cette levée s'y ajoute comme une décision de plus. L'historique se lit donc en
+   * entier — « révoqué le 4, rétabli le 5, pour tel motif » — plutôt que de disparaître.
+   *
+   * ⚠️ L'événement `m03.status.changed` est réémis : sans lui, l'annuaire et le cache de C6
+   * garderaient l'état révoqué, et l'écran dirait une chose quand le serveur en penserait une autre.
+   */
+  async reinstate(adminId: string, caseId: string, reasons: string): Promise<{ caseId: string; status: VerificationStatus }> {
+    const c = await this.requireCase(caseId);
+    if (!canTransition(c.status, "IN_REVIEW") || c.status !== "REVOKED") {
+      throw new ConflictException(`Seul un dossier révoqué peut être rétabli — état actuel : ${c.status}`);
+    }
+    const subject = this.subjectOf(c);
+    return this.prisma.$transaction(async (tx) => {
+      // Écriture conditionnelle (anti-TOCTOU), comme partout ailleurs dans ce service.
+      const moved = await tx.verificationCase.updateMany({
+        where: { id: c.id, status: "REVOKED" },
+        data: { status: "IN_REVIEW" },
+      });
+      if (moved.count !== 1) throw new ConflictException("Le dossier a changé d'état entre-temps — rechargez puis réessayez");
+      await tx.verificationDecision.create({
+        data: { caseId: c.id, decision: "REINSTATED", reasons, adminId },
+      });
+      await this.outbox.emit(tx, {
+        type: "m03.status.changed",
+        payload: { subject: subject.ref, status: "IN_REVIEW", caseId: c.id },
+      });
+      await this.outbox.emit(tx, {
+        type: "notify.request",
+        payload: { accountId: await this.recipientAccountId(c), template: "m03.case.reinstated", caseId: c.id },
+      });
+      await this.audit.emit(tx, {
+        actorId: adminId,
+        actorType: "admin",
+        action: "m03.case.reinstated",
+        resource: `case:${c.id}`,
+        context: { reasons, subject: subject.ref },
+      });
+      return { caseId: c.id, status: "IN_REVIEW" };
+    });
+  }
+
+  /**
    * Avenant (EF-03-07, CU-03-04, D-022) : nouvelle version du contrat au taux PM-01 courant,
    * à re-signer par le sujet — préavis notifié (C4). Déclenché par l'admin après un changement
    * de conditions. Idempotent si une version non signée au même taux attend déjà.

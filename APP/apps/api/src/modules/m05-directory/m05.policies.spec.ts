@@ -8,6 +8,7 @@ import {
   alertIsNotifiable,
   avgConfirmDelayS,
   clampPageSize,
+  confirmDenominator,
   confirmRate,
   confirmRatePct,
   DEFAULT_PAGE_SIZE,
@@ -40,6 +41,7 @@ function stats(partial: Partial<ReactivityStats>): ReactivityStats {
     ratingSum: 0,
     ratingCount: 0,
     incidentsTotal: 0,
+    refusedTotal: 0,
     ...partial,
   };
 }
@@ -170,6 +172,61 @@ describe("confirmRate / confirmRatePct / avgConfirmDelayS / ratingAvg", () => {
   it("note moyenne : 18/4 → 4,5 ; aucun avis → null (affichage honnête EF-05-07)", () => {
     expect(ratingAvg(stats({ ratingSum: 18, ratingCount: 4 }))).toBe(4.5);
     expect(ratingAvg(stats({}))).toBeNull();
+  });
+});
+
+/*
+  ── Le refus motivé sort du dénominateur — dette n°23, 04/09/2026 ─────────────────────────────
+
+  Le taux valait `confirmées / initiées`. `initiationsTotal` monte à la SOLLICITATION, avant toute
+  réponse : un refus motivé y restait donc, et pesait exactement autant qu'une demande laissée
+  expirer sans un mot.
+
+  Or les deux ne rendent pas le même service au patient. Un refus rapide lui fait GAGNER du temps —
+  il va voir ailleurs ; une expiration lui en fait perdre. Un indicateur public qui les confond
+  décourage le seul des deux comportements qui le serve.
+
+  Ces tests défendent la nouvelle définition ET sa borne : **l'expiration, elle, pèse toujours.**
+  Sans ce dernier test, on aurait pu vider le dénominateur de tout ce qui n'est pas une
+  confirmation, et le taux ne dirait plus rien du tout.
+*/
+describe("confirmRate — les refus motivés hors du dénominateur (dette n°23)", () => {
+  it("8 confirmées, 10 sollicitations dont 2 refusées → 100 %, pas 80 %", () => {
+    const s = stats({ initiationsTotal: 10, confirmedTotal: 8, refusedTotal: 2 });
+
+    expect(confirmRate(s)).toBe(1);
+    expect(confirmRatePct(s)).toBe(100);
+  });
+
+  /*
+    LA garde de cette dette. Le médecin qui n'ouvre jamais l'application laisse expirer : ces
+    demandes RESTENT au dénominateur, et son taux baisse. C'est tout l'intérêt de la distinction.
+  */
+  it("une demande laissée expirer pèse toujours — seul le refus MOTIVÉ sort", () => {
+    // 10 sollicitations, 5 confirmées, 5 expirées sans un mot : rien ne sort du dénominateur.
+    expect(confirmRate(stats({ initiationsTotal: 10, confirmedTotal: 5, refusedTotal: 0 }))).toBe(0.5);
+  });
+
+  it("un médecin qui refuse TOUT n’affiche pas 100 % : plus rien au dénominateur → 0", () => {
+    expect(confirmRate(stats({ initiationsTotal: 4, confirmedTotal: 0, refusedTotal: 4 }))).toBe(0);
+  });
+
+  /*
+    Les lignes écrites AVANT la migration n'ont pas le champ (il est facultatif dans le type). Le
+    taux doit alors valoir exactement ce qu'il valait avant — sans quoi la mise en production
+    changerait les chiffres de tout le monde avant même le recalcul.
+  */
+  it("sans refusedTotal (lignes d’avant la migration), le taux est celui d’avant", () => {
+    const ancien = { initiationsTotal: 10, confirmedTotal: 8, confirmDelaySumS: 0, ratingSum: 0, ratingCount: 0, incidentsTotal: 0 };
+
+    expect(confirmRate(ancien)).toBe(0.8);
+    expect(confirmDenominator(ancien)).toBe(10);
+  });
+
+  it("confirmDenominator dit sur combien de demandes le taux porte", () => {
+    expect(confirmDenominator(stats({ initiationsTotal: 10, refusedTotal: 3 }))).toBe(7);
+    // Jamais négatif, même sur des compteurs incohérents : un écran afficherait « sur -1 demandes ».
+    expect(confirmDenominator(stats({ initiationsTotal: 2, refusedTotal: 5 }))).toBe(0);
   });
 });
 

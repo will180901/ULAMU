@@ -30,6 +30,17 @@
  *   (`ProfessionalStats`), pas une fenêtre glissante. Le sous-titre de la maquette, « sur les
  *   30 derniers jours », est donc faux lui aussi : il est corrigé, pas seulement dépouillé.
  *
+ * ── Ce que le taux compte, et ce qu'il ne compte plus (dette n°23, 04/09/2026) ────────────────
+ *
+ * Il valait « confirmées / sollicitations ». Un refus motivé y pesait donc **autant qu'une demande
+ * laissée expirer sans un mot** — alors qu'un refus rapide fait GAGNER du temps au patient, qui va
+ * voir ailleurs, là où le silence lui en fait perdre.
+ *
+ * Les refus motivés sortent du dénominateur ; **les expirations y restent**. Le taux répond
+ * désormais à « quand ce médecin répond, dit-il oui ? », et la tuile le DIT — un pourcentage sans
+ * son assiette ne se vérifie pas, et un médecin qui ignore ce qu'on lui compte ne peut rien en
+ * faire.
+ *
  * ── Les écarts à la maquette ──────────────────────────────────────────────────────────────────
  *
  * 1. **« Consultations du jour · 2 en téléconsultation »** → « du mois ». Le serveur compte au mois
@@ -324,10 +335,17 @@ function TableauSoignant() {
             compte. Et c'est celui que les patients voient dans l'annuaire — le dire change ce qu'on
             en fait.
           */
+          /*
+            L'assiette est passée devant la note (dette n°23) : elle qualifie le nombre juste
+            au-dessus. « Refus non comptés » n'est pas un détail de calcul — c'est ce qui dit au
+            médecin qu'il peut refuser une demande hors de sa spécialité sans se pénaliser.
+          */
           aide={
-            bord.data.averageRating === null
-              ? 'Depuis l’ouverture · visible des patients'
-              : `Note ${bord.data.averageRating} / 5 · visible des patients`
+            bord.data.confirmationBase === 0
+              ? 'Aucune demande à répondre à ce jour · visible des patients'
+              : `${bord.data.averageRating === null ? '' : `Note ${bord.data.averageRating} / 5 · `}sur ${
+                  bord.data.confirmationBase
+                } ${accord(bord.data.confirmationBase, 'demande')} · refus non comptés · visible des patients`
           }
         />
       </Grille>

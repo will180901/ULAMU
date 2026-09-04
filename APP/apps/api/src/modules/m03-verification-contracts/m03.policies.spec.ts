@@ -27,6 +27,7 @@ describe("Machine d'états du dossier (EF-03-01/04/08, EF-02-06)", () => {
     ["NEEDS_INFO", "SUBMITTED"], // re-soumission après complément (EF-03-04)
     ["VERIFIED", "REVOKED"], // révocation pour fraude (EF-03-08)
     ["VERIFIED", "IN_REVIEW"], // revalidation après transfert de titularité (EF-02-06)
+    ["REVOKED", "IN_REVIEW"], // rétablissement d'une révocation prononcée à tort (dette n°25)
   ];
 
   it.each(LEGAL)("%s → %s : autorisée", (from, to) => {
@@ -44,10 +45,26 @@ describe("Machine d'états du dossier (EF-03-01/04/08, EF-02-06)", () => {
     }
   });
 
-  it("REVOKED est terminal — rien n'est effacé, rien ne repart (RM-03-04)", () => {
+  /*
+    ── Ce test disait l'inverse jusqu'au 04/09/2026 ───────────────────────────────────────────
+
+    Il affirmait « REVOKED est terminal », et il avait raison de l'affirmer : le code disait
+    `REVOKED: []`. La dette n°25 a montré ce que cette règle coûtait — `professionalId` étant
+    `@unique`, un dossier révoqué sans sortie ferme l'accès du soignant à la plateforme **à vie**,
+    y compris sur une erreur d'administration.
+
+    Le test n'est pas supprimé : il est **resserré**. Ce qu'il défend maintenant est plus exigeant
+    que ce qu'il défendait avant — REVOKED a exactement UNE sortie, et surtout PAS le retour direct
+    au badge. Un rétablissement remet en examen ; il ne re-vérifie personne.
+  */
+  it("REVOKED n'a qu'une seule sortie : le retour en examen, jamais le badge (dette n°25)", () => {
+    expect(canTransition("REVOKED", "IN_REVIEW")).toBe(true);
+
     for (const to of VERIFICATION_STATUSES) {
-      expect(canTransition("REVOKED", to)).toBe(false);
+      if (to !== "IN_REVIEW") expect(canTransition("REVOKED", to)).toBe(false);
     }
+    // La garde qui compte : on ne se re-décerne pas un badge en un clic.
+    expect(canTransition("REVOKED", "VERIFIED")).toBe(false);
   });
 
   it("aucune décision sans prise en examen : SUBMITTED → VERIFIED interdit (CU-03-02)", () => {

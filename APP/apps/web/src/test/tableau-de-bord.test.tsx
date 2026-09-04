@@ -81,12 +81,15 @@ async function monter(
   demandes: Handshake[],
   note: number | null = null,
   lastSixMonths: ProfessionalDashboard['lastSixMonths'] = [],
+  // L'assiette du taux (dette n°23) : sur combien de demandes il porte, refus motivés déduits.
+  confirmationBase = 25,
 ) {
   vi.spyOn(api, 'professionalDashboard').mockResolvedValue({
     sessionsThisMonth: 6,
     earnings: { availableXaf: 486500, pendingXaf: 32000 },
     averageRating: note,
     confirmationRatePct: 92,
+    confirmationBase,
     lastSixMonths,
   })
   // ⚠️ La forme RÉELLE : un objet `{ items }`, pas un tableau. C'est tout l'objet de ce fichier.
@@ -126,10 +129,19 @@ describe('B2 — soignant', () => {
     expect(screen.getByRole('link', { name: /Compléter ma vitrine/ })).toBeInTheDocument()
   })
 
-  it('sans note reçue, aucun « null / 5 »', async () => {
+  /*
+    ── Ce test a changé le 04/09/2026 (dette n°23) ────────────────────────────────────────────
+
+    Il vérifiait que, sans note, la tuile affiche « Depuis l'ouverture » plutôt qu'un « null / 5 ».
+    La garde utile — pas de `null` à l'écran — est conservée telle quelle. Ce qui remplace la
+    mention temporelle, c'est **l'assiette du taux** : un pourcentage sans son assiette ne se
+    vérifie pas, et c'est ce que la dette n°23 reprochait à cette tuile.
+  */
+  it('sans note reçue, aucun « null / 5 » — et l’assiette reste dite', async () => {
     await monter([], null)
-    expect(screen.getByText(/Depuis l’ouverture/)).toBeInTheDocument()
+
     expect(screen.queryByText(/null/)).not.toBeInTheDocument()
+    expect(screen.getByText(/sur 25 demandes/)).toBeInTheDocument()
   })
 
   it('avec une note, elle est affichée telle quelle', async () => {
@@ -147,6 +159,38 @@ describe('B2 — soignant', () => {
 
     expect(document.body.textContent).not.toContain('30 derniers jours')
     expect(screen.getByText(/visible des patients/)).toBeInTheDocument()
+  })
+
+  /*
+    ── L'assiette du taux, et ce qu'elle promet au médecin (dette n°23) ──────────────────────
+
+    Le taux valait « confirmées / sollicitations » : un refus motivé y pesait autant qu'une demande
+    laissée expirer sans un mot. Il ne les compte plus pareil — mais **un médecin qui l'ignore ne
+    peut rien en faire**. La tuile doit donc le DIRE, sans quoi le changement reste invisible et le
+    médecin continue d'hésiter à refuser une demande hors de sa spécialité.
+  */
+  it('dit sur combien de demandes le taux porte, et que les refus n’y sont pas', async () => {
+    await monter([], 4.8, [], 7)
+
+    expect(screen.getByText(/sur 7 demandes/)).toBeInTheDocument()
+    expect(screen.getByText(/refus non comptés/)).toBeInTheDocument()
+  })
+
+  it('accorde le singulier — « sur 1 demande », jamais « 1 demandes »', async () => {
+    await monter([], null, [], 1)
+
+    expect(screen.getByText(/sur 1 demande ·/)).toBeInTheDocument()
+  })
+
+  /*
+    Assiette vide : afficher « sur 0 demandes · refus non comptés » ferait passer un 0 % pour un
+    jugement, alors qu'il n'y a rien à juger. Une lecture qui n'a pas de matière n'est pas un zéro.
+  */
+  it('sans aucune demande à répondre, ne fabrique pas une assiette de zéro', async () => {
+    await monter([], null, [], 0)
+
+    expect(screen.getByText(/Aucune demande à répondre à ce jour/)).toBeInTheDocument()
+    expect(screen.queryByText(/refus non comptés/)).not.toBeInTheDocument()
   })
 
   /**

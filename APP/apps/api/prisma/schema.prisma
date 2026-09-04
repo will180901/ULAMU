@@ -390,7 +390,7 @@ model VerificationDecision {
   id         String           @id @default(uuid())
   caseId     String
   case       VerificationCase @relation(fields: [caseId], references: [id])
-  decision   String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED"
+  decision   String // "VERIFIED" | "REJECTED" | "NEEDS_INFO" | "REVOKED" | "REINSTATED" (dette n°25)
   reasons    String
   /// Pièce VISÉE par la décision, quand il y en a une (2026-08).
   ///
@@ -566,6 +566,16 @@ model ProfessionalStats {
   ratingSum        Int      @default(0)
   ratingCount      Int      @default(0)
   incidentsTotal   Int      @default(0) // sessions remboursées D-008
+  /// Refus MOTIVÉS, retirés du dénominateur du taux de confirmation (dette n°23, 04/09/2026).
+  ///
+  /// Le taux valait `confirmées / initiées`. Un refus motivé y pesait donc exactement autant
+  /// qu'une demande ignorée jusqu'à expiration — alors qu'un refus rapide fait GAGNER du temps au
+  /// patient, là où le silence lui en fait perdre. Les traiter à l'identique décourageait le seul
+  /// des deux comportements qui rende service.
+  ///
+  /// Compté plutôt que soustrait à `initiationsTotal` : la trace reste lisible, et le dénominateur
+  /// se recalcule (`initiations − refused`) au lieu d'être détruit.
+  refusedTotal     Int      @default(0)
   updatedAt        DateTime @updatedAt
 }
 

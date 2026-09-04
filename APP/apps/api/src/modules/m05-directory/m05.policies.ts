@@ -112,12 +112,47 @@ export interface ReactivityStats {
   ratingSum: number;
   ratingCount: number;
   incidentsTotal: number;
+  /** Refus motivés — hors dénominateur depuis la dette n°23 (facultatif : lignes d'avant = 0). */
+  refusedTotal?: number;
 }
 
-/** Taux de confirmation des poignées de main, 0..1 — 0 si aucune initiation (EF-05-01). */
+/**
+ * Taux de confirmation des poignées de main, 0..1 (EF-05-01).
+ *
+ * ── Ce que le dénominateur exclut, et pourquoi (dette n°23, 04/09/2026) ──────────────────────
+ *
+ * Il valait `confirmées / initiées`. `initiationsTotal` monte à la SOLLICITATION, avant toute
+ * réponse — un refus motivé y restait donc, et pesait exactement autant qu'une demande laissée
+ * expirer sans un mot.
+ *
+ * Or les deux ne rendent pas le même service. **Un refus rapide fait GAGNER du temps au patient**,
+ * qui va voir ailleurs sans attendre ; une expiration lui en fait perdre. Confondre les deux
+ * décourageait le seul des deux comportements qui serve le patient — un indicateur public qui
+ * punit la bonne conduite fabrique la mauvaise.
+ *
+ * Le taux répond donc maintenant à : « quand ce médecin RÉPOND, dit-il oui ? », et non plus
+ * « prend-il des patients ? ». Le refus reste compté à part (`refusedTotal`), donc rien n'est perdu.
+ *
+ * ⚠️ **Cette fonction est la SEULE définition du taux.** Elle l'est devenue le 04/09 : la formule
+ * était recopiée à la main dans `m16.dashboard.service.ts` et `m16.kpi.service.ts`, si bien que
+ * changer la règle ici aurait fait dire deux chiffres différents à deux écrans pour un même
+ * médecin. *Une règle recopiée est une règle qui dérive.*
+ */
 export function confirmRate(stats: ReactivityStats): number {
-  if (stats.initiationsTotal <= 0) return 0;
-  return Math.min(1, Math.max(0, stats.confirmedTotal / stats.initiationsTotal));
+  // Les refus sortent du dénominateur ; ils restent dans `initiationsTotal`, qui reste
+  // réconciliable avec la table Handshake.
+  const repondables = stats.initiationsTotal - (stats.refusedTotal ?? 0);
+  if (repondables <= 0) return 0;
+  return Math.min(1, Math.max(0, stats.confirmedTotal / repondables));
+}
+
+/**
+ * Le dénominateur du taux, exposé pour que les écrans puissent DIRE sur quoi il porte.
+ * Un pourcentage sans son assiette ne se vérifie pas : « 100 % » sur deux demandes et « 100 % »
+ * sur deux cents ne disent pas la même chose.
+ */
+export function confirmDenominator(stats: ReactivityStats): number {
+  return Math.max(0, stats.initiationsTotal - (stats.refusedTotal ?? 0));
 }
 
 /** Taux de confirmation affichable en % entier (EF-05-01 : « taux de confirmation % »). */

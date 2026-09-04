@@ -9,6 +9,8 @@
 import { Injectable } from "@nestjs/common";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
+// La définition du taux de confirmation vit dans M05, et nulle part ailleurs (dette n°23).
+import { confirmRate } from "../m05-directory/m05.policies";
 import { evaluateKpi, KPI_TARGETS, KpiStatus, rate } from "./m16.policies";
 
 export interface PilotKpi {
@@ -142,12 +144,30 @@ export class PilotKpiService {
 
   // ── Taux (agrégats, RM-16-05) ───────────────────────────────────────────────
 
-  /** Σ confirmées / Σ initiées des poignées de main (ProfessionalStats) — 0 % si aucune. */
+  /**
+   * Σ confirmées / (Σ initiées − Σ refus motivés) — 0 % si aucune (dette n°23, 04/09/2026).
+   *
+   * ⚠️ Le dénominateur n'excluait les refus NULLE PART : la formule était recopiée à la main ici,
+   * dans `m16.dashboard.service.ts` et dans `m05.policies.ts`. Trois copies, donc trois vérités
+   * possibles pour un même chiffre. Le calcul passe désormais par `confirmRate` (M05), qui porte
+   * la définition et son pourquoi.
+   *
+   * L'agrégat reste ici parce que celui-ci est un taux de PLATEFORME, pas d'un médecin : la somme
+   * des compteurs de tous, réduite en une seule ligne d'indicateurs.
+   */
   private async tauxConfirmation(): Promise<number> {
     const agg = await this.prisma.professionalStats.aggregate({
-      _sum: { confirmedTotal: true, initiationsTotal: true },
+      _sum: { confirmedTotal: true, initiationsTotal: true, refusedTotal: true },
     });
-    return rate(agg._sum.confirmedTotal ?? 0, agg._sum.initiationsTotal ?? 0);
+    return confirmRate({
+      initiationsTotal: agg._sum.initiationsTotal ?? 0,
+      confirmedTotal: agg._sum.confirmedTotal ?? 0,
+      refusedTotal: agg._sum.refusedTotal ?? 0,
+      confirmDelaySumS: 0,
+      ratingSum: 0,
+      ratingCount: 0,
+      incidentsTotal: 0,
+    });
   }
 
   /**

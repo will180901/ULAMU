@@ -49,7 +49,30 @@ export const REQUIRED_DOCS: Record<SubjectKind, readonly DocumentKind[]> = {
  * - REJECTED/NEEDS_INFO → SUBMITTED (re-soumission possible, EF-03-04) ;
  * - VERIFIED → REVOKED (fraude, EF-03-08) ;
  * - VERIFIED → IN_REVIEW (revalidation système après transfert de titularité, EF-02-06 / CU-02-05) ;
- * - REVOKED : terminal — rien n'est effacé, le dossier reste comme preuve (RM-03-04).
+ * - REVOKED → IN_REVIEW (rétablissement d'une révocation prononcée à tort — voir ci-dessous).
+ *
+ * ── Pourquoi REVOKED n'est plus terminal (04/09/2026, dette n°25) ─────────────────────────────
+ *
+ * Il l'était : `REVOKED: []`. RM-03-04 dit « rien n'est effacé, le dossier reste comme preuve » —
+ * et cela reste vrai, un rétablissement n'efface RIEN : la décision de révocation et son motif
+ * demeurent au dossier et au journal. Mais « ne rien effacer » avait été lu comme « ne rien
+ * pouvoir reprendre », et les deux ne sont pas la même chose.
+ *
+ * Ce que cette lecture coûtait, constaté en construisant l'écran de révocation (chantier 42) :
+ * `VerificationCase.professionalId` est `@unique`, donc un professionnel n'a **qu'un dossier, à
+ * vie**. Un dossier révoqué et sans sortie fermait donc l'accès de ce soignant à la plateforme
+ * **pour toujours** — y compris quand la révocation venait d'une erreur d'administration. La seule
+ * issue était une écriture directe en base, c'est-à-dire hors de tout journal.
+ *
+ * Une plateforme de santé ne peut pas faire dépendre la carrière d'un soignant de l'absence
+ * d'erreur d'un administrateur. La transition existe donc — **et elle est étroite** :
+ *   • réservée au SUPER_ADMIN (`m03.admin.controller.ts`), pas à l'examinateur qui a révoqué ;
+ *   • motivée, journalisée, et notifiée au soignant comme l'est la révocation ;
+ *   • elle ne rend PAS le badge : elle remet le dossier en examen. Le rétablissement se décide
+ *     ensuite par la voie normale (IN_REVIEW → VERIFIED), avec des pièces regardées.
+ *
+ * *Un geste irréversible n'est acceptable que si son irréversibilité sert à quelque chose. Ici
+ * elle ne protégeait personne — elle punissait seulement l'erreur de celui qui n'a pas le clavier.*
  */
 const LEGAL_TRANSITIONS: Record<VerificationStatusCode, readonly VerificationStatusCode[]> = {
   DRAFT: ["SUBMITTED"],
@@ -58,7 +81,7 @@ const LEGAL_TRANSITIONS: Record<VerificationStatusCode, readonly VerificationSta
   VERIFIED: ["REVOKED", "IN_REVIEW"],
   REJECTED: ["SUBMITTED"],
   NEEDS_INFO: ["SUBMITTED"],
-  REVOKED: [],
+  REVOKED: ["IN_REVIEW"],
 };
 
 /** Valide une transition de statut — toute écriture de statut passe par ici. */

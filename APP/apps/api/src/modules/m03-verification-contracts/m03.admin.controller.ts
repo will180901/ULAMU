@@ -6,7 +6,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Query, StreamableFile, Us
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
-import { DecideDto, QueueQueryDto, RevokeDto } from "./m03.dto";
+import { DecideDto, QueueQueryDto, ReinstateDto, RevokeDto } from "./m03.dto";
 import { M03Service } from "./m03.service";
 
 @Controller("v1/admin/verification")
@@ -69,6 +69,23 @@ export class M03AdminController {
   @HttpCode(200)
   revoke(@Actor() actor: AuthenticatedActor, @Param("caseId") caseId: string, @Body() dto: RevokeDto) {
     return this.service.revoke(actor.accountId, caseId, dto.reasons);
+  }
+
+  /**
+   * Rétablissement d'une révocation prononcée à tort (dette n°25, 04/09/2026).
+   *
+   * ⚠️ **`@AdminOnly("SUPER_ADMIN")` n'est pas une précaution de façade.** La classe entière est
+   * ouverte à `ADMIN_VERIFICATION` ; cette route la restreint volontairement plus haut, parce que
+   * défaire la décision d'un examinateur ne peut pas appartenir aux examinateurs. C'est la même
+   * séparation que partout ailleurs : celui qui décide n'est pas celui qui contrôle.
+   *
+   * La route ne rend pas le badge — elle remet le dossier en examen (voir `m03.policies.ts`).
+   */
+  @Post(":caseId/reinstate")
+  @HttpCode(200)
+  @AdminOnly("SUPER_ADMIN")
+  reinstate(@Actor() actor: AuthenticatedActor, @Param("caseId") caseId: string, @Body() dto: ReinstateDto) {
+    return this.service.reinstate(actor.accountId, caseId, dto.reasons);
   }
 
   /** Avenant (EF-03-07, D-022) : nouvelle version du contrat au taux PM-01 courant, préavis notifié. */

@@ -38,6 +38,7 @@ export class M05DirectoryModule implements OnModuleInit {
     // sur un indicateur) ; un rejeu peut sur-compter à la marge — assumé (voir StatsService).
     this.outbox.on("m06.handshake.initiated", (p) => this.stats.onHandshakeInitiated(p));
     this.outbox.on("m06.handshake.confirmed", (p) => this.stats.onHandshakeConfirmed(p));
+    this.outbox.on("m06.handshake.refused", (p) => this.stats.onHandshakeRefused(p));
     this.outbox.on("m06.session.rated", (p) => this.stats.onSessionRated(p));
     this.outbox.on("m06.session.refunded", (p) => this.stats.onSessionRefunded(p));
   }
