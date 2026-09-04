@@ -245,6 +245,7 @@ function GestesBulle({
   onModifier,
   onSupprimer,
   onSignaler,
+  actif,
 }: {
   aMoi: boolean
   editable: boolean
@@ -254,7 +255,53 @@ function GestesBulle({
   onModifier: () => void
   onSupprimer: (pourTous: boolean) => void
   onSignaler: () => void
+  /**
+   * La séance est-elle en cours ?
+   *
+   * ── Ce que cette valeur décide, et pourquoi (chantier 41 ter, 04/09/2026) ────────────────────
+   *
+   * **Séance close = archive.** Aucun geste ne la modifie : ni répondre, ni réagir, ni modifier,
+   * ni retirer. C'est une décision du projet, éprouvée par un test depuis le chantier 4 — « une
+   * séance close n'offre plus aucun geste : le fil est archivé ».
+   *
+   * **Une seule exception : SIGNALER.** Elle a été trouvée en vérifiant le chantier 41 en ligne —
+   * sur une consultation terminée, il n'y avait aucun moyen de signaler un message, et c'est
+   * précisément après coup qu'on repense à un propos déplacé. Le message est la preuve.
+   *
+   * Signaler n'est pas une modification de l'archive : c'est une alerte À SON SUJET. La règle tient
+   * donc entière, et l'exception ne l'entame pas.
+   *
+   * *La première version de cette correction rouvrait TOUS les gestes après la clôture, au motif
+   * que le serveur les accepte (seul `sendMessage` exige `status === ACTIVE`). Le test existant l'a
+   * refusée, et il avait raison : **ce que le serveur autorise n'est pas ce que le produit veut.***
+   */
+  actif: boolean
 }) {
+  /*
+    Séance close : la barre se réduit au seul signalement — et disparaît entièrement sur ses
+    PROPRES messages, où il n'y a plus rien à offrir.
+  */
+  if (!actif) {
+    if (aMoi) return null
+    return (
+      <span
+        className={
+          'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
+          'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 lg:right-auto lg:left-full lg:ml-1'
+        }
+      >
+        <button
+          type="button"
+          onClick={onSignaler}
+          aria-label="Signaler ce message"
+          className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-[var(--erreur-texte)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+        >
+          <Flag size={13} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+      </span>
+    )
+  }
+
   return (
     <span
       /*
@@ -413,18 +460,28 @@ function Bulle({
       }
     >
       <div className="relative max-w-[min(34rem,85%)]">
-        {actif ? (
-          <GestesBulle
-            aMoi={aMoi}
-            editable={aMoi && m.kind === 'TEXT' && dansLaFenetre}
-            retirableParTous={aMoi && dansLaFenetre}
-            onRepondre={onRepondre}
-            onReagir={onReagir}
-            onModifier={onModifier}
-            onSupprimer={onSupprimer}
-            onSignaler={onSignaler}
-          />
-        ) : null}
+        {/*
+          ── La barre est montée même séance close (chantier 41 ter, 04/09/2026) ────────────────
+
+          Elle ne l'était pas, et le signalement d'un message était donc impossible dès la clôture
+          — trouvé EN LIGNE en vérifiant le chantier 41. Or c'est après coup qu'on repense à un
+          propos déplacé, et le message est la preuve.
+
+          `GestesBulle` décide de ce qu'elle montre : tout si la séance est ouverte, **le seul
+          signalement** si elle est close. Un fil clos reste une archive — on ne le modifie pas, on
+          alerte à son sujet.
+        */}
+        <GestesBulle
+          actif={!!actif}
+          aMoi={aMoi}
+          editable={aMoi && m.kind === 'TEXT' && dansLaFenetre}
+          retirableParTous={aMoi && dansLaFenetre}
+          onRepondre={onRepondre}
+          onReagir={onReagir}
+          onModifier={onModifier}
+          onSupprimer={onSupprimer}
+          onSignaler={onSignaler}
+        />
 
         <div
           className={

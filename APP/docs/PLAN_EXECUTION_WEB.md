@@ -586,6 +586,64 @@ Render, console Neon), trois attendent un arbitrage, une seule est hors de port�
 
 | **41 bis** | **Le bouton d'envoi était hors de l'écran** — 04/09, trouvé en VÉRIFIANT le chantier 41 en ligne, dix minutes après l'avoir livré. Le formulaire de signalement mesurait **740 px dans une fenêtre de 495** : il débordait en haut ET en bas, **sans défiler**, et le bouton « Envoyer le signalement » se trouvait à 521 px — injoignable. Le geste entier était impossible sur un écran court : un portable à 100 %, une tablette couchée. **Le défaut n'était pas dans mon écran mais dans la primitive** `DialogContent`, qui n'a jamais eu de hauteur maximale — il valait donc pour TOUTES les boîtes de l'application. Corrigé là : `max-h-[calc(100dvh-2rem)]` et `overflow-y-auto`. **Corriger a été vérifié AVANT d'être poussé** : les deux règles appliquées à la boîte ouverte dans le navigateur du porteur ramènent la hauteur de 740 à 463 px et rendent le bouton atteignable. **web 586 ✓ (584 + 2, dans `responsive.test.ts`) · types, lint et build propres.** | ⏸ en attente | ⏸ |
 
+| **41 ter** | **Un fil clos ne se signalait plus** — 04/09, second défaut trouvé en vérifiant le chantier 41 en ligne. La barre d'actions d'un message était **entièrement conditionnée à l'état ACTIF** de la séance : sur une consultation terminée, aucun moyen de signaler un message. Or c'est **après coup** qu'on repense à un propos déplacé, et le message est la preuve. J'avais placé une action sans limite de temps dans un conteneur limité au temps de la séance. **Ma première correction était trop large, et un test existant l'a refusée** : elle rouvrait TOUS les gestes après la clôture, au motif vérifié que le serveur les accepte (seul `sendMessage` exige `status === ACTIVE`). Le test « une séance close n'offre plus aucun geste : le fil est archivé » est tombé — **et il avait raison**. Version retenue : l'archive reste intouchable (ni répondre, ni réagir, ni modifier, ni retirer), **et le seul signalement s'y ajoute** — il n'est pas une modification de l'archive, c'est une alerte à son sujet. Le test existant a été **amendé, pas supprimé** : sa règle est conservée et renforcée de deux assertions, plus deux tests pour l'exception. **web 589 ✓ (586 + 3) · types, lint et build propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 41 ter (le fil archivé) a appris
+
+*04/09/2026 — second défaut trouvé en vérifiant le chantier 41 en ligne.*
+
+#### Une action sans limite de temps ne se range pas dans un conteneur limité au temps
+
+La barre de gestes d'un message porte : répondre, réagir, modifier, retirer. Toutes ces actions
+n'ont de sens que **pendant** la séance — la barre était donc conditionnée à `actif`, et c'était
+juste.
+
+J'y ai ajouté « Signaler » sans me demander si elle partageait cette limite. **Elle ne la partage
+pas** : un abus se remarque souvent une heure plus tard, quand la consultation est close et qu'on y
+repense. C'est même le cas le plus probable.
+
+*Règle : **avant d'ajouter une entrée dans un menu, se demander si la condition du menu est aussi
+la sienne.** Un conteneur transmet ses conditions en silence.*
+
+#### Ma correction était trop large, et un test l'a refusée
+
+Première version : rouvrir **tous** les gestes après la clôture. L'argument était vérifié — dans
+`m06.session.service.ts`, seul `sendMessage` exige `status === ACTIVE` ; modifier, réagir et
+supprimer ne contrôlent que la participation. Le serveur les accepte donc tous.
+
+**Un test existant est tombé** : « une séance close n'offre plus aucun geste : le fil est archivé ».
+Écrit au chantier 4, il défendait une décision de produit, pas une contrainte technique.
+
+*Il avait raison, et j'avais tort. **Ce que le serveur autorise n'est pas ce que le produit veut.**
+J'avais lu le code du serveur et j'en avais tiré une conclusion de conception — deux choses
+différentes.*
+
+#### Un test qui tombe n'a pas forcément tort
+
+Le réflexe, quand un test bloque une correction qu'on croit bonne, est de le réécrire. Ici il
+fallait le **lire** : son intitulé portait la raison (« le fil est archivé »), et cette raison
+tenait toujours.
+
+La bonne issue n'était ni « le test a tort » ni « ma correction a tort », mais une **exception
+nommée** : l'archive ne se modifie pas, et signaler n'est pas la modifier — c'est alerter à son
+sujet.
+
+Le test a donc été **amendé et renforcé** (deux assertions de plus sur ce qui reste interdit),
+jamais supprimé, et deux tests couvrent l'exception.
+
+*C'est la même leçon qu'au chantier 39 sur `m06.report.overdue.admin` : **une exception nommée passe
+avant toute règle générale**, et elle doit être écrite comme une exception, pas dissoudre la règle.*
+
+#### Trois défauts du même chantier, tous trouvés en REGARDANT
+
+Le chantier 41 est sorti avec 584 tests verts. La vérification en ligne en a trouvé **deux** — le
+bouton hors de l'écran, puis le fil archivé — et aucun test ne pouvait les voir : le premier
+demandait une mise en page, le second demandait de se placer dans une consultation TERMINÉE, ce
+qu'aucun test du signalement ne faisait.
+
+*La vérification en ligne n'est pas une formalité de fin de chantier. C'est une étape qui trouve
+des choses, et elle en a trouvé deux sur trois ici.*
+
 ### Ce que le chantier 41 bis (le bouton hors de l'écran) a appris
 
 *04/09/2026, dix minutes après la livraison du chantier 41.*

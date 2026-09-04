@@ -450,12 +450,44 @@ describe('C5 — les gestes sur un message', () => {
     await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '👍'))
   })
 
-  it('une séance close n’offre plus aucun geste : le fil est archivé', async () => {
+  /*
+    ── Amendé le 04/09/2026 (chantier 41 ter), et la règle n'a pas bougé ──────────────────────
+
+    « Une séance close est une archive » reste vrai : on n'y répond pas, on n'y réagit pas, on n'y
+    modifie ni ne retire rien. Toutes ces assertions sont conservées.
+
+    **Une seule exception s'y ajoute : SIGNALER.** Elle vient d'une vérification en ligne — sur une
+    consultation terminée, il n'existait aucun moyen de signaler un message, alors que c'est
+    précisément après coup qu'on repense à un propos déplacé, et que le message est la preuve.
+
+    Signaler ne modifie pas l'archive : c'est une alerte à son sujet. La règle tient donc entière.
+
+    *La première correction rouvrait TOUS les gestes après la clôture, au motif que le serveur les
+    accepte. Ce test l'a refusée, et il avait raison : ce que le serveur autorise n'est pas ce que
+    le produit veut. Un test qui tombe n'a pas forcément tort.*
+  */
+  it('une séance close n’offre plus aucun geste qui MODIFIE le fil : il est archivé', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
 
     await fil().findByText('Bonjour docteur')
     expect(fil().queryByLabelText('Répondre à ce message')).not.toBeInTheDocument()
     expect(fil().queryByLabelText('Autres actions sur ce message')).not.toBeInTheDocument()
+    expect(fil().queryByLabelText('Réagir à ce message')).not.toBeInTheDocument()
+    expect(fil().queryByLabelText('Modifier ce message')).not.toBeInTheDocument()
+  })
+
+  it('mais il reste signalable — c’est après coup qu’on repense à un propos déplacé', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message({ senderId: 'pat-1' })])
+
+    expect(await fil().findByLabelText('Signaler ce message')).toBeInTheDocument()
+  })
+
+  /* Sur SES PROPRES messages, une séance close n'offre plus rien du tout : on ne se signale pas. */
+  it('n’offre rien du tout sur ses propres messages, séance close', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message({ senderId: 'pro-1' })])
+
+    await fil().findByText('Bonjour docteur')
+    expect(fil().queryByLabelText('Signaler ce message')).not.toBeInTheDocument()
   })
 })
 
@@ -715,5 +747,46 @@ describe('C5 — signaler (chantier 41)', () => {
     expect(screen.queryByText(/structure|pharmacie|officine/i)).not.toBeInTheDocument()
     // Les six motifs du serveur, ni plus ni moins.
     expect(screen.getAllByRole('radio')).toHaveLength(6)
+  })
+})
+
+/*
+  ── La barre d'actions survit à la fin de la séance (chantier 41 ter, 04/09/2026) ─────────────
+
+  Trouvé EN LIGNE en vérifiant le chantier 41 : sur une consultation TERMINÉE, la barre d'actions
+  d'un message ne s'affichait pas du tout — donc **aucun moyen de signaler un message**. Or c'est
+  précisément après coup qu'on repense à un propos déplacé, et le message est la preuve.
+
+  J'avais placé une action sans limite de temps dans un conteneur limité au temps de la séance.
+
+  **Le serveur ne l'a jamais demandé.** Vérifié dans `m06.session.service.ts` : seul `sendMessage`
+  exige `status === ACTIVE`. `editMessage`, `reactToMessage` et `deleteMessage` ne contrôlent que la
+  participation. La barre montre donc ce que le serveur accepte encore, et « Répondre » — qui
+  prépare un envoi — est le seul geste à disparaître à la clôture.
+*/
+describe('C5 — signaler après la fin de la séance (chantier 41 ter)', () => {
+  /*
+    LE cas qui a motivé ce chantier bis. Trouvé en vérifiant le chantier 41 EN LIGNE : la barre
+    d'actions était entièrement conditionnée à l'état actif, donc invisible sur une consultation
+    terminée — et le signalement d'un message avec elle.
+
+    J'avais placé une action sans limite de temps dans un conteneur limité au temps de la séance.
+  */
+  it('signale encore un message sur une consultation terminée', async () => {
+    const creer = vi.spyOn(api, 'createReport').mockResolvedValue({ reportId: 'r5' })
+    await monter(seance({ status: 'ENDED', remainingSeconds: 0 }), [message({ id: 'm-tardif', senderId: 'pat-1' })])
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByLabelText('Signaler ce message'))
+    await utilisateur.click(await screen.findByRole('radio', { name: /Harcèlement/ }))
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
+
+    await waitFor(() =>
+      expect(creer).toHaveBeenCalledWith({
+        targetType: 'SESSION_MESSAGE',
+        targetId: 'm-tardif',
+        reasonCode: 'HARASSMENT',
+      }),
+    )
   })
 })
