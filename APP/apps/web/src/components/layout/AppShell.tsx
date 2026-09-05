@@ -20,6 +20,8 @@ import { GardeFou } from '@/components/layout/GardeFou'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { VoileRideau } from '@/components/layout/RideauConfidentialite'
+import { AideRaccourcis } from '@/components/layout/AideRaccourcis'
+import { useRaccourcisGlobaux } from '@/hooks/useRaccourcisGlobaux'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useIdleLogout } from '@/state/useIdleLogout'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -40,11 +42,26 @@ export function AppShell() {
   const [navMobile, setNavMobile] = useState(false)
   // Rideau de confidentialité : état d'écran, jamais persisté (voir `RideauConfidentialite.tsx`).
   const [rideau, setRideau] = useState(false)
+  /*
+    Les deux fenêtres ouvertes au clavier (chantier 47). Leur état vit ICI, et pas dans les
+    composants qui les affichent : c'est la coquille qui écoute les touches, et un état posé plus
+    bas obligerait à faire remonter l'événement — donc à poser un second écouteur.
+  */
+  const [rechercheOuverte, setRechercheOuverte] = useState(false)
+  const [aideOuverte, setAideOuverte] = useState(false)
+
   const estMobile = useIsMobile()
   const titre = useTitrePage()
   const { pathname } = useLocation()
 
   useIdleLogout(true)
+
+  // Un seul écouteur pour tous les raccourcis globaux — voir `useRaccourcisGlobaux` pour la garde
+  // de saisie et pour la raison de `e.key` plutôt que `e.code` (claviers AZERTY).
+  useRaccourcisGlobaux({
+    surRecherche: () => setRechercheOuverte((v) => !v),
+    surAide: () => setAideOuverte((v) => !v),
+  })
 
   // Changer de page referme le tiroir : sur mobile il recouvre l'écran, le laisser ouvert cacherait
   // la page qu'on vient justement de demander.
@@ -116,6 +133,8 @@ export function AppShell() {
           surOuvrirNav={() => setNavMobile(true)}
           rideau={rideau}
           surBasculerRideau={() => setRideau((v) => !v)}
+          rechercheOuverte={rechercheOuverte}
+          surRechercheChange={setRechercheOuverte}
         />
         {/* `--contenu-max` centre la colonne de lecture sur les très larges écrans : une ligne de
             texte qui traverse 2000 px ne se lit pas. */}
@@ -137,6 +156,8 @@ export function AppShell() {
           </div>
           {rideau ? <VoileRideau surLever={() => setRideau(false)} /> : null}
         </div>
+
+        <AideRaccourcis ouvert={aideOuverte} surChangement={setAideOuverte} />
       </main>
     </div>
   )

@@ -79,8 +79,13 @@ function sansAccent(texte: string): string {
 const CAPACITES_COMPTES =
   NAV_GROUPS.flatMap((g) => g.items).find((i) => i.key === 'admin-comptes')?.capabilities ?? []
 
-export function RechercheGlobale() {
-  const [ouvert, setOuvert] = useState(false)
+export function RechercheGlobale({
+  ouvert,
+  surChangement,
+}: {
+  ouvert: boolean
+  surChangement: (v: boolean) => void
+}) {
   const [terme, setTerme] = useState('')
   const [termeRetarde, setTermeRetarde] = useState('')
   const naviguer = useNavigate()
@@ -89,18 +94,17 @@ export function RechercheGlobale() {
 
   const peutChercherComptes = hasAny(...CAPACITES_COMPTES)
 
-  // Ctrl+K / ⌘K — le raccourci vient EN PLUS du bouton, jamais à sa place : une fonction qui
-  // n'existe qu'au clavier n'existe pas pour qui ne la connaît pas.
-  useEffect(() => {
-    function surTouche(e: KeyboardEvent) {
-      if (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        setOuvert((v) => !v)
-      }
-    }
-    window.addEventListener('keydown', surTouche)
-    return () => window.removeEventListener('keydown', surTouche)
-  }, [])
+  /*
+    ── L'écouteur de touches a DÉMÉNAGÉ le 05/09 (chantier 47) ─────────────────────────────────
+
+    Il vivait ici et ne connaissait que Ctrl+K. Ajouter `/` et `?` aurait donné deux écouteurs, donc
+    deux gardes de saisie à tenir d'accord — et le jour où l'une oublie les champs `contenteditable`,
+    un raccourci s'invite au milieu d'un message.
+
+    Tout passe désormais par `useRaccourcisGlobaux`, dans la coquille, et cette palette n'a plus
+    d'état propre : elle est ouverte par qui de droit. Le bouton reste, lui : un raccourci sans
+    bouton n'existe pas pour qui ne le connaît pas.
+  */
 
   // On n'interroge pas le serveur à chaque frappe : « Ngou » enverrait quatre requêtes, dont trois
   // dont personne ne lira jamais la réponse — et chacune est un accès à des données de comptes.
@@ -127,7 +131,7 @@ export function RechercheGlobale() {
   }, [groupes, recherche])
 
   function aller(href: string) {
-    setOuvert(false)
+    surChangement(false)
     setTerme('')
     setTermeRetarde('')
     naviguer(href)
@@ -140,7 +144,7 @@ export function RechercheGlobale() {
     <>
       <button
         type="button"
-        onClick={() => setOuvert(true)}
+        onClick={() => surChangement(true)}
         aria-label="Rechercher"
         aria-keyshortcuts="Control+K"
         className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
@@ -150,7 +154,7 @@ export function RechercheGlobale() {
 
       <CommandDialog
         open={ouvert}
-        onOpenChange={setOuvert}
+        onOpenChange={surChangement}
         title="Recherche"
         description="Cherchez un écran, ou un compte si votre rôle le permet."
       >

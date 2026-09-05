@@ -616,6 +616,85 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **46** | **La recherche globale** — 05/09. Écartée du chantier A1 en son temps (« chercher dans des dossiers qui n'existent pas encore n'a pas de sens ») ; les dossiers existent, et l'application a seize écrans. Une palette (bouton + Ctrl+K) qui cherche **deux choses, et le dit** : les écrans, lus de `useNavigation()` donc déjà filtrés par capacité, et les comptes, par la **seule route de toute l'API qui cherche du texte** (`GET /admin/accounts?query=`). ⚠️ **Elle annonce en toutes lettres ce qu'elle NE cherche pas** — consultations, pièces, journal : aucune route ne les cherche par texte, et le taire ferait chercher longtemps ce qui n'y sera jamais. **Le droit de chercher des comptes est LU** sur l'entrée `admin-comptes` de `NAV_GROUPS`, jamais recopié — un administrateur Finance ne l'a pas, et un test le garde. ⚠️ **Le test le plus important du chantier** : une recherche en échec ne dit JAMAIS « aucun compte » — sur une plateforme de santé, cette confusion ferait conclure qu'une personne n'existe pas. Le plafond de 50 lignes du serveur est annoncé, comme celui de l'export au chantier 45. Un résultat mène vraiment quelque part : `ComptesPage` lit désormais `?q=`. **web 638 ✓ (625 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
 
+| **47** | **Les raccourcis clavier, et la garde qui les rend acceptables** — 05/09. Ctrl+K existait depuis la veille et **personne ne pouvait le deviner** : un raccourci sans endroit où le lire est un secret entre le code et celui qui l'a écrit. Livré : `?` ouvre un **panneau d'aide** qui rend `RACCOURCIS`, la seule liste — y compris les raccourcis du composeur de consultation, implémentés bien avant, parce qu'on cherche « les raccourcis », pas « ceux de tel module ». `/` ouvre aussi la recherche. ⚠️ **Le cœur du chantier est la garde de saisie** : `/` et `?` sont des CARACTÈRES — sans elle, écrire « 20/09 » dans un motif de refus de 2 000 caractères ouvrirait la recherche au milieu du mot et perdrait la saisie. Ctrl+K reste l'exception, à dessein. ⚠️ **`e.key` et jamais `e.code`** : les utilisateurs sont en **AZERTY**, où `/` est Maj+: et `?` Maj+, — `e.code` aurait désigné une autre touche sur chaque disposition. **Deux défauts trouvés par mes propres tests** : la garde ratait les zones `contenteditable` imbriquées (corrigé par `closest`), et l'écouteur se réabonnait **à chaque rendu** faute de référence — le fichier promettait « un seul écouteur » et en posait un par rendu. L'écouteur de Ctrl+K du chantier 46 a été **déplacé** ici : deux écouteurs auraient donné deux gardes à tenir d'accord. **web 651 ✓ (638 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 47 (les raccourcis) a appris
+
+*05/09/2026.*
+
+#### Le raccourci n'était pas le travail ; l'endroit où le lire l'était
+
+Ctrl+K avait été livré la veille. Il fonctionnait. Et il n'existait, pour l'utilisateur, nulle part :
+son seul témoignage était un attribut `aria-keyshortcuts` sur le bouton loupe — c'est-à-dire rien,
+sauf pour qui navigue au lecteur d'écran.
+
+La moitié utile de ce chantier n'est donc pas le second raccourci, c'est le **panneau `?`**. Et il ne
+liste pas seulement ce que ce module déclenche : il liste aussi Entrée, Maj+Entrée et Échap du
+composeur de consultation, écrits des semaines plus tôt dans un autre fichier.
+
+*On cherche « les raccourcis de l'application », jamais « les raccourcis déclenchés par tel module ».
+Une documentation rangée selon le code est rangée pour le mauvais lecteur.*
+
+#### Une touche simple appartient à celui qui écrit
+
+`/` et `?` ne sont pas des commandes : ce sont des **caractères**.
+
+Le motif d'un refus de vérification accepte deux mille caractères, et un administrateur y écrit des
+dates. Sans garde, taper « 20/09 » aurait ouvert la palette de recherche au milieu du mot — la
+saisie perdue, et surtout **aucun moyen de comprendre ce qui venait de se passer**.
+
+Ctrl+K est l'exception, et elle est raisonnée : une combinaison à modificateur ne produit aucun
+caractère. L'interdire en saisie retirerait le raccourci exactement là où il sert le plus — au milieu
+d'un long texte, quand on veut vérifier un nom.
+
+#### AZERTY : `e.key` et jamais `e.code`
+
+Les utilisateurs sont au Congo-Brazzaville, donc majoritairement en AZERTY. Sur ce clavier, `/`
+s'obtient par Maj+: et `?` par Maj+, — ni l'un ni l'autre là où un QWERTY les met.
+
+`e.code` nomme la **touche physique** ; il aurait donc désigné une autre touche sur chaque
+disposition, et le raccourci serait tombé sur un caractère au hasard. `e.key` donne le **caractère
+réellement produit**.
+
+Même raison pour ne pas tester `e.shiftKey` sur `?` : l'exiger interdirait le raccourci aux
+dispositions qui produisent ce caractère autrement.
+
+*Un raccourci écrit pour le clavier de celui qui code ne marche que chez lui.*
+
+#### Deux défauts de mon propre travail, trouvés par mes propres tests
+
+**La garde ratait les zones de texte riche.** `isContentEditable` ne répond que pour l'élément visé —
+or la frappe peut viser un élément imbriqué dans la zone éditable. `closest` pose la vraie question :
+« suis-je quelque part dans une zone où l'on écrit ? »
+
+**L'écouteur se réabonnait à chaque rendu.** La coquille passe des fonctions fléchées écrites sur
+place, neuves à chaque fois ; les mettre en dépendance détachait puis rattachait l'écouteur à chaque
+frappe et chaque changement d'écran. Le fichier promettait « un seul écouteur » dans son en-tête et
+en posait un par rendu. Corrigé par une référence.
+
+*Le second ne se voyait dans aucun test et n'aurait cassé personne. Il rendait simplement le
+commentaire menteur — ce qui suffit.*
+
+#### Déplacer plutôt qu'ajouter
+
+Le réflexe était d'ajouter un écouteur pour `?` à côté de celui de Ctrl+K. Deux écouteurs, donc
+**deux gardes de saisie à tenir d'accord** — et le jour où l'une oublie un cas, un raccourci s'invite
+au milieu d'un message.
+
+L'écouteur du chantier 46 a donc déménagé dans la coquille, et la palette de recherche est devenue
+pilotée : elle n'a plus d'état propre.
+
+*Deux chemins vers le même geste finissent toujours par diverger. Le bon moment pour les réunir est
+celui où l'on s'apprête à en ouvrir un second.*
+
+#### Ce que le panneau dit en dernier
+
+« Tout se fait aussi à la souris. Ces raccourcis ne font que raccourcir. »
+
+Une liste de raccourcis peut donner l'impression qu'il faut les connaître pour se servir de
+l'application. Sur une plateforme que des soignants découvrent, cette impression coûte plus qu'elle
+ne rapporte.
+
 ### Ce que le chantier 46 (la recherche globale) a appris
 
 *05/09/2026.*

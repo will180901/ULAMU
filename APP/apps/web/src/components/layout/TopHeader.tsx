@@ -33,12 +33,18 @@ export function TopHeader({
   surOuvrirNav,
   rideau,
   surBasculerRideau,
+  rechercheOuverte,
+  surRechercheChange,
 }: {
   titre: string
   estMobile: boolean
   surOuvrirNav: () => void
   rideau: boolean
   surBasculerRideau: () => void
+  /* L'état de la palette vit dans la coquille depuis le chantier 47 : c'est elle qui écoute les
+     touches, et deux sources d'ouverture (le bouton, le raccourci) ne peuvent pas diverger. */
+  rechercheOuverte: boolean
+  surRechercheChange: (v: boolean) => void
 }) {
   const me = useSessionStore((s) => s.me)
   const espace = (me && ESPACE_PAR_ROLE[me.accountType]) ?? 'ULAMU'
@@ -72,7 +78,7 @@ export function TopHeader({
         justement sur un téléphone, où le tiroir recouvre l'écran entier, qu'atteindre un écran
         éloigné coûte le plus de gestes.
       */}
-      <RechercheGlobale />
+      <RechercheGlobale ouvert={rechercheOuverte} surChangement={surRechercheChange} />
 
       {/* La présence ne concerne que les professionnels : le composant se retire tout seul pour les
           autres rôles (un administrateur n'a aucune disponibilité à déclarer). */}
