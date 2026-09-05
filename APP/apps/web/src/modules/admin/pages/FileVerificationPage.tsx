@@ -27,7 +27,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Clock, FileText, Gavel, Inbox, RotateCcw, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react'
+import { AlertTriangle, Clock, FileSignature, FileText, Gavel, Inbox, RotateCcw, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
@@ -105,6 +105,20 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
     onSuccess: () => {
       setMotifRevocation('')
       setConfirmation('')
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
+      onDecide()
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  /*
+    Avenant (écart C). Pas d'état de saisie : le taux vient du référentiel, pas de l'écran — c'est
+    en E3 qu'on change PM-01, ici on ne fait qu'aligner UN dossier sur ce qu'il vaut déjà.
+  */
+  const reediter = useMutation({
+    mutationFn: () => api.reissueAgreement(caseId),
+    onSuccess: () => {
       setErreur(null)
       void qc.invalidateQueries({ queryKey: ['admin-case', caseId] })
       onDecide()
@@ -370,6 +384,98 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               {revoquer.isPending ? 'Révocation…' : 'Révoquer définitivement'}
             </Button>
           </div>
+        </Carte>
+      ) : null}
+
+      {/*
+        ── Rééditer le contrat d'adhésion (écart C, 05/09/2026) ─────────────────────────────────
+
+        `POST :caseId/agreement/reissue` n'avait aucun bouton, et le chantier 8 avait pourtant
+        construit TOUT le parcours de re-signature côté soignant.
+
+        ⚠️ **Le plan des écrans disait « rien ne peut le déclencher ». C'était faux**, et le
+        vérifier a changé cette carte : changer PM-01 depuis E3 réédite déjà en masse
+        (`m16.parameters.service.ts`). Ce qu'il manquait, ce sont les **trois trous** de ce lot :
+          • il ne prend que les dossiers ayant une version **SIGNÉE** — un soignant vérifié qui
+            n'a pas encore signé garde donc un contrat à l'ANCIEN taux, et le signerait tel quel ;
+          • il est borné à 500 dossiers (`REISSUE_BATCH`) ;
+          • un échec isolé est journalisé puis oublié, sans rien pour le reprendre.
+
+        ⚠️ **Et ce geste coûte cher au soignant.** Rééditer crée une version NON SIGNÉE, or
+        « peut exercer » = badge + version courante signée (RM-03-01), relu à chaque requête sans
+        cache. **Un soignant en exercice cesse de pouvoir l'être à l'instant du clic.** La carte le
+        dit donc avant, et distingue les deux cas — celui qui a signé perd quelque chose, celui qui
+        n'a pas encore signé ne perd rien.
+
+        Enfin, quand le contrat est déjà au taux courant, **il n'y a pas de bouton du tout** : un
+        interrupteur qui ne change rien est pire qu'un interrupteur absent.
+      */}
+      {d.status === 'VERIFIED' ? (
+        <Carte
+          icone={FileSignature}
+          titre="Contrat d'adhésion"
+          sousTitre="Avenant au taux de commission courant (EF-03-07, D-022)"
+        >
+          <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] leading-[1.5]">
+            <div>
+              <dt className="text-[var(--texte-tertiaire)]">Contrat du soignant</dt>
+              <dd className="m-0 font-medium text-foreground">
+                {d.agreementVersion === null
+                  ? 'Aucune version générée'
+                  : `Version ${d.agreementVersion} · ${d.agreementCommissionPct} %`}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--texte-tertiaire)]">Taux courant (PM-01)</dt>
+              <dd className="m-0 font-medium text-foreground">{d.currentCommissionPct} %</dd>
+            </div>
+          </dl>
+
+          {d.agreementVersion !== null && d.agreementCommissionPct === d.currentCommissionPct ? (
+            /* Rien à faire, et donc aucun bouton : le dire suffit, et évite un clic sans effet. */
+            <Avis ton="succes">
+              Ce contrat est déjà au taux courant. Il n'y a rien à rééditer.
+            </Avis>
+          ) : (
+            <>
+              <Avis ton="alerte">
+                {d.agreementSignedAt === null ? (
+                  <>
+                    <strong className="font-semibold">Ce soignant n'a pas encore signé</strong>, et
+                    son contrat porte un taux qui n'est plus en vigueur. Sans réédition, il signera
+                    un contrat périmé — et il ne peut de toute façon pas exercer avant d'avoir signé.
+                  </>
+                ) : (
+                  <>
+                    <strong className="font-semibold">Il ne pourra plus exercer</strong> tant qu'il
+                    n'aura pas signé la nouvelle version : ni publier d'offre, ni recevoir de
+                    nouvelle demande. Son contrat signé reste au dossier — rien n'est effacé.
+                  </>
+                )}
+              </Avis>
+
+              <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                <li className="flex gap-2">
+                  <span aria-hidden="true">·</span>
+                  <span>Il est prévenu, et retrouve la nouvelle version dans son espace.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden="true">·</span>
+                  <span>La réédition est inscrite au journal, sous votre compte.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden="true">·</span>
+                  <span>Pour changer le taux lui-même, c'est dans Paramètres métier (PM-01).</span>
+                </li>
+              </ul>
+
+              <div>
+                <Button type="button" onClick={() => reediter.mutate()} disabled={reediter.isPending}>
+                  {reediter.isPending ? 'Réédition…' : `Rééditer au taux de ${d.currentCommissionPct} %`}
+                </Button>
+              </div>
+            </>
+          )}
         </Carte>
       ) : null}
 

@@ -496,11 +496,27 @@ export class M03Service {
     documents: Array<{ id: string; kind: string; expiresAt: Date | null; createdAt: Date }>;
     decisions: Array<{ id: string; decision: string; reasons: string; documentId: string | null; documentKind: string | null; decidedAt: Date }>;
     agreementSignedAt: Date | null;
+    /*
+      ── Le contrat, et le taux qu'il porte (écart C, 05/09/2026) ──────────────────────────────
+
+      La route `POST :caseId/agreement/reissue` existait sans aucun bouton. Mais l'écran ne pouvait
+      pas non plus en porter un honnêtement : il ne savait NI à quel taux est le contrat de ce
+      soignant, NI quel est le taux courant. Un bouton « rééditer » aurait donc agi à l'aveugle —
+      l'administrateur n'aurait eu aucun moyen de savoir s'il y avait quelque chose à rééditer.
+
+      Ces trois champs se lisent du serveur, jamais d'une constante : PM-01 change, et un écran qui
+      l'aurait recopié afficherait un écart imaginaire.
+    */
+    agreementVersion: number | null;
+    agreementCommissionPct: number | null;
+    currentCommissionPct: number;
   }> {
     const c = await this.requireCase(caseId);
     const subject = this.subjectOf(c);
     const fournies = c.documents.map((d) => d.kind);
     const latest = this.latestVersion(c);
+    // Le taux courant vient du référentiel PM-xx, seule source des chiffres du métier (RT §3).
+    const currentCommissionPct = await this.params.getInt("PM-01");
     return {
       caseId: c.id,
       subjectKind: subject.kind,
@@ -524,6 +540,9 @@ export class M03Service {
           decidedAt: d.createdAt,
         })),
       agreementSignedAt: latest?.signedAt ?? null,
+      agreementVersion: latest?.version ?? null,
+      agreementCommissionPct: latest?.commissionPct ?? null,
+      currentCommissionPct,
     };
   }
 

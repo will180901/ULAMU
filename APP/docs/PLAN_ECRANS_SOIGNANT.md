@@ -90,7 +90,7 @@ toujours** — Badge Vérifié compris, donc visible et crédible dans l'annuair
 > l'accès d'un soignant, sans chemin de retour dans le produit. L'écran le dit maintenant avant le
 > clic — et la **dette n°25** pose la question qui reste : faut-il une voie de recours ?
 
-### 🟡 C. Le parcours de re-signature du contrat existe… et rien ne peut le déclencher
+### ✅ C. Le parcours de re-signature du contrat — **SOLDÉ le 05/09 (chantier 44)**
 
 `POST /v1/admin/verification/:id/agreement/reissue` n'a **aucun bouton**.
 
@@ -99,9 +99,27 @@ taux à côté du nouveau, texte relu, bouton qui dit ce qu'on regagne. Il est d
 *« le parcours d'avenant ne se déclenche qu'avec E3 »*. **E3 existe depuis le chantier 14, et le
 levier manque toujours.**
 
-> **Coût : ~2 h** (un bouton dans E1 sur un dossier vérifié, qui rééditera le contrat au taux
-> courant).
-> **Recommandation : le faire.** Du travail déjà payé dort faute d'un bouton.
+> ⚠️ **Le titre de cet écart était FAUX, et c'est la première chose qu'a montrée le chantier.**
+> « Rien ne peut le déclencher » : si, changer PM-01 depuis E3 réédite **déjà** les contrats en
+> masse (`m16.parameters.service.ts` → `reissueSignedAgreements`). Le parcours du chantier 8 n'était
+> donc pas mort — il était seulement inatteignable à l'unité.
+>
+> ✅ **Fait le 05/09** (chantier 44) : une carte dans E1 sur les dossiers vérifiés. Ce qu'elle
+> comble sont les **trois trous du lot** :
+> * il ne prend que les dossiers ayant une version **SIGNÉE** — un soignant vérifié qui n'a pas
+>   encore signé garde donc un contrat à l'ANCIEN taux, et le signerait tel quel ;
+> * il est borné à **500** dossiers (`REISSUE_BATCH`) ;
+> * un échec isolé est journalisé puis **oublié**, sans rien pour le reprendre.
+>
+> ⚠️ **Et le geste coûte cher au soignant** : rééditer crée une version NON SIGNÉE, or « peut
+> exercer » = badge + version courante signée (RM-03-01), relu par M05/M06 **à chaque requête, sans
+> cache**. Un soignant en exercice cesse de pouvoir l'être à l'instant du clic. La carte le dit
+> avant, et distingue les deux cas — celui qui a signé perd quelque chose, celui qui n'a pas signé
+> ne perd rien.
+>
+> Le serveur ne disait ni le taux du contrat ni le taux courant : trois champs ont été ajoutés à
+> `getCaseForAdmin`, sans quoi le bouton aurait agi à l'aveugle. Quand les deux taux sont égaux,
+> **il n'y a pas de bouton du tout**.
 
 ### 🟡 D. Le patient ne peut pas revendiquer son sous-profil
 

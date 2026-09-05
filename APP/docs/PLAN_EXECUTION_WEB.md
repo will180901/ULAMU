@@ -610,6 +610,77 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **43** | **Solder les dettes plutôt que les réciter** — 04/09. Le porteur : « chaque fois tu fais que me rappeler des dettes, alors que je t'avais dit de tout résoudre ». **Il avait raison, et le compte le prouve** : sur 12 dettes dites ouvertes, **six n'attendaient que moi**. Trois portaient déjà leur réponse (n°8 tranchée par le porteur le 03/09 — « pas de base test neon » ; n°13 dont l'inventaire était fait et deux parts sur trois livrées ; n°15 dont ma propre recommandation disait « ne rien faire ») et trois étaient présentées comme des arbitrages **alors qu'elles venaient avec une recommandation motivée**. Livré : **n°25** — `REVOKED → IN_REVIEW`, route `reinstate` réservée au SUPER_ADMIN, qui ne rend PAS le badge mais remet en examen ; **n°23** — un refus motivé sort du dénominateur du taux, événement + compteur + migration additive ; **n°24** — `scripts/recalcul-indicateurs.ts`, le « recalcul quotidien » que la spec M05 §5 réclamait depuis le début. **Deux découvertes en route** : la formule du taux était **recopiée dans trois fichiers**, et **deux phrases du chantier 42 sont devenues fausses le jour même** — un test est tombé, seul de toute la suite, pour le dire. **api 521 ✓ (516 + 5) · web 611 ✓ (599 + 12) · mobile 7 ✓ · lint 0 erreur · builds propres.** | ⏸ en attente | ⏸ |
 
+| **44** | **Le levier de l'avenant** — 05/09, écart C du plan des écrans. `POST /admin/verification/:id/agreement/reissue` n'avait aucun bouton, alors que le **chantier 8** avait construit tout le parcours de re-signature côté soignant. ⚠️ **La prémisse du plan était fausse et le chantier l'a montré d'abord** : « rien ne peut le déclencher » — si, changer PM-01 depuis E3 réédite déjà en masse. Ce que le bouton comble, ce sont les **trois trous de ce lot** : il ignore les dossiers sans version SIGNÉE (un soignant vérifié non signataire garde donc un contrat à l'ANCIEN taux, et le signerait tel quel), il s'arrête à 500 (`REISSUE_BATCH`), et il journalise puis oublie ses échecs. ⚠️ **Le geste suspend le soignant** : rééditer crée une version non signée, et « peut exercer » exige la version courante signée (RM-03-01), relu sans cache par M05/M06 — la carte le dit avant, et **distingue le signataire du non-signataire**, à qui l'alarme serait fausse. Le serveur ne disait ni le taux du contrat ni le taux courant : trois champs ajoutés à `getCaseForAdmin`, lus de PM-01, jamais recopiés. **Quand les deux taux sont égaux, aucun bouton.** **api 521 ✓ · web 620 ✓ (611 + 9) · lint 0 erreur · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 44 (le levier de l'avenant) a appris
+
+*05/09/2026 — écart C du plan des écrans du soignant.*
+
+#### La prémisse de l'écart était fausse, et ne pas la vérifier aurait donné le mauvais écran
+
+Le plan disait : *« le parcours de re-signature existe… et rien ne peut le déclencher »*. C'était la
+justification entière de l'écart.
+
+En cherchant où poser le bouton, on a trouvé `reissuedCount` dans le client web — et derrière,
+`m16.parameters.service.ts` : **changer PM-01 réédite déjà les contrats en masse.** Le parcours du
+chantier 8 n'était donc pas mort ; il se déclenchait, mais jamais à l'unité.
+
+Si on avait écrit le bouton sur la foi du plan, on aurait livré « le seul moyen de rééditer un
+contrat » — une phrase fausse dans un écran d'administration.
+
+*Un écart mesuré la semaine dernière est une hypothèse, pas un fait. On le relit avant d'y répondre.*
+
+#### Ce que le lot en masse laisse tomber, et personne ne le voit
+
+Trois trous, lus dans le code du lot :
+
+* il ne prend que `status: VERIFIED` **avec une version signée**. Un soignant vérifié qui n'a pas
+  encore signé garde donc un contrat à l'ancien taux — **et le signerait tel quel** ;
+* il est borné à `REISSUE_BATCH = 500` ;
+* la boucle attrape les erreurs, les journalise, et **continue**. Un contrat en échec n'est plus
+  jamais repris.
+
+Aucun des trois ne produit d'alerte. Ils se voient en lisant la boucle, pas en regardant l'écran.
+
+*Un traitement par lot qui « continue malgré les erreurs » ne perd pas ses erreurs : il perd la
+mémoire de les avoir eues.*
+
+#### Le bouton suspend le soignant, et le nom du geste ne le dit pas
+
+`canPracticeEffective` = Badge Vérifié **et** version courante signée. Rééditer crée une version
+**non signée**. Et `VerificationStatusService` relit cette règle **à chaque requête, sans cache** —
+M05 refuse alors la publication d'offre, M06 la nouvelle poignée de main.
+
+Donc : cliquer « rééditer le contrat » d'un médecin en exercice **l'empêche d'exercer, à l'instant**,
+jusqu'à ce qu'il signe. Rien dans le nom du geste ne l'annonce.
+
+*C'est la même leçon que la révocation au chantier 42, et elle s'est présentée deux fois en deux
+jours : **le geste ne se lit pas dans son nom.***
+
+#### La même carte dit deux choses différentes selon l'état du soignant
+
+Le soignant qui a signé **perd** son exercice. Celui qui n'a pas encore signé **ne perd rien** — il
+ne pouvait déjà pas exercer, et la réédition le sauve d'un contrat périmé.
+
+Servir le même avertissement aux deux aurait été une fausse alarme dans un cas sur deux. Et une
+fausse alarme répétée est exactement ce qui apprend à ne plus lire les vraies.
+
+#### Pas de bouton du tout quand il n'y a rien à faire
+
+Quand le contrat est déjà au taux courant, la carte le dit — et **n'offre aucun bouton**. Le serveur
+est idempotent, un clic serait sans effet ; mais un bouton sans effet enseigne que les boutons de
+cet écran ne font peut-être rien.
+
+*Un interrupteur qui ne change rien est pire qu'un interrupteur absent.*
+
+#### Une convention typographique qu'aucun document n'écrivait
+
+Deux tests sont tombés sur une apostrophe. Le dépôt emploie **la droite (16 150 occurrences)** dans
+le JSX, et **la courbe (572)** uniquement dans les chaînes entre quotes simples, où la droite
+fermerait la chaîne.
+
+C'est cohérent, et ce n'était écrit nulle part — seulement pratiqué.
+
 ### Ce que le chantier 43 (solder plutôt que réciter) a appris
 
 *04/09/2026 — sur une remarque du porteur, et elle était juste.*

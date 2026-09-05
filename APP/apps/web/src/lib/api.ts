@@ -1537,6 +1537,17 @@ export const api = {
         decidedAt: string
       }>
       agreementSignedAt: string | null
+      /**
+       * Le contrat et son taux, lus du serveur (écart C, 05/09/2026).
+       *
+       * Sans eux, un bouton « rééditer » agirait à l'aveugle : l'administrateur ne saurait ni à
+       * quel taux est le contrat de ce soignant, ni quel est le taux courant, donc pas même s'il y
+       * a quelque chose à rééditer. `currentCommissionPct` vient de PM-01 en base — le recopier
+       * dans l'écran afficherait un écart imaginaire le jour où le taux change.
+       */
+      agreementVersion: number | null
+      agreementCommissionPct: number | null
+      currentCommissionPct: number
     }>('GET', `/v1/admin/verification/${caseId}`, undefined, true),
   /** Lecture d'une pièce PAR L'ADMINISTRATION — tracée au journal d'audit (loi n° 29-2019). */
   adminDocumentUrl: async (caseId: string, documentId: string): Promise<{ url: string; type: string }> => {
@@ -1608,6 +1619,31 @@ export const api = {
       'POST',
       `/v1/admin/verification/${caseId}/reinstate`,
       { reasons },
+      true,
+    ),
+
+  /**
+   * Avenant : réédite le contrat d'adhésion au taux PM-01 courant (EF-03-07, D-022, écart C).
+   *
+   * ── Ce que ce geste fait au soignant, et qui n'est pas évident ────────────────────────────
+   *
+   * Il crée une version **NON SIGNÉE**. Or « peut exercer » = Badge Vérifié **et** version
+   * courante signée (`canPracticeEffective`, RM-03-01), et M05/M06 relisent cette règle à chaque
+   * requête — sans cache. **Un soignant en exercice cesse donc de pouvoir l'être à l'instant du
+   * clic**, jusqu'à ce qu'il signe : plus de publication d'offre, plus de nouvelle poignée de main.
+   *
+   * `reissued: false` n'est pas un échec : le serveur est idempotent (`issueAgreementVersion`) et
+   * ne régénère rien si une version non signée au taux courant attend déjà.
+   *
+   * ⚠️ Changer PM-01 depuis E3 réédite **déjà** en masse — mais seulement les dossiers ayant une
+   * version SIGNÉE, et au plus 500 (`REISSUE_BATCH`), les échecs étant journalisés puis oubliés.
+   * Ce bouton est le rattrapage à l'unité de ces trois trous.
+   */
+  reissueAgreement: (caseId: string) =>
+    request<{ caseId: string; reissued: boolean }>(
+      'POST',
+      `/v1/admin/verification/${caseId}/agreement/reissue`,
+      undefined,
       true,
     ),
 

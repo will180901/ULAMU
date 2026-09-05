@@ -87,6 +87,14 @@ function dossier(over: Partial<Awaited<ReturnType<typeof api.adminCase>>> = {}) 
     ],
     decisions: [],
     agreementSignedAt: null,
+    /*
+      Contrat ALIGNÉ par défaut (écart C) : le cas ordinaire est qu'il n'y ait rien à rééditer.
+      Un défaut qui n'apparaît que sur un écart doit être demandé explicitement par le test qui
+      le vise — sinon toute la suite le porterait sans que personne ne l'ait décidé.
+    */
+    agreementVersion: 1,
+    agreementCommissionPct: 15,
+    currentCommissionPct: 15,
     ...over,
   } as Awaited<ReturnType<typeof api.adminCase>>
 }
@@ -570,5 +578,109 @@ describe('E1 — lever une révocation (dette n°25)', () => {
 
     await screen.findByRole('button', { name: /Lever la révocation/ })
     expect(screen.queryByLabelText(/Saisissez RÉVOQUER/)).not.toBeInTheDocument()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Rééditer le contrat d'adhésion — écart C, 05/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  `POST :caseId/agreement/reissue` n'avait aucun bouton, alors que le chantier 8 avait construit
+  TOUT le parcours de re-signature côté soignant.
+
+  ⚠️ Le plan des écrans disait « rien ne peut le déclencher » — **c'était faux** : changer PM-01
+  depuis E3 réédite déjà en masse. Ce bouton comble trois trous de ce lot : il ignore les dossiers
+  sans version signée, il s'arrête à 500, et il oublie ses échecs.
+
+  ⚠️ **Le geste coûte cher.** Rééditer crée une version NON SIGNÉE, et « peut exercer » exige la
+  version courante signée (RM-03-01) : un soignant en exercice cesse de pouvoir l'être à l'instant
+  du clic. Les deux cas ne se disent donc pas pareil, et c'est ce que ces tests gardent.
+*/
+describe('E1 — rééditer le contrat d’adhésion (écart C)', () => {
+  async function contrat(over: Parameters<typeof dossier>[0] = {}) {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: 'VERIFIED', ...over }))
+    await monter()
+  }
+
+  /* Les deux taux viennent du SERVEUR. Un écran qui recopierait PM-01 afficherait un écart
+     imaginaire le jour où le taux change — et personne ne saurait lequel des deux croire. */
+  it('affiche le taux du contrat ET le taux courant, lus du serveur', async () => {
+    await contrat({ agreementVersion: 2, agreementCommissionPct: 12, currentCommissionPct: 18 })
+
+    expect(await screen.findByText(/Version 2 · 12 %/)).toBeInTheDocument()
+    expect(screen.getByText('18 %')).toBeInTheDocument()
+  })
+
+  /* « Un interrupteur qui ne change rien est pire qu'un interrupteur absent. » */
+  it('n’offre AUCUN bouton quand le contrat est déjà au taux courant', async () => {
+    await contrat({ agreementCommissionPct: 15, currentCommissionPct: 15 })
+
+    expect(await screen.findByText(/déjà au taux courant/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Rééditer au taux/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    LA phrase de cette carte. Rééditer le contrat d'un soignant QUI A SIGNÉ le suspend : M05 et M06
+    relisent `canPractice` à chaque requête, sans cache. Un administrateur qui l'ignore croit ne
+    faire qu'une mise à jour administrative.
+  */
+  it('prévient qu’un soignant DÉJÀ SIGNATAIRE ne pourra plus exercer', async () => {
+    await contrat({
+      agreementCommissionPct: 12,
+      currentCommissionPct: 18,
+      agreementSignedAt: '2026-08-01T10:00:00.000Z',
+    })
+
+    expect(await screen.findByText(/Il ne pourra plus exercer/)).toBeInTheDocument()
+    expect(screen.getByText(/ni publier d'offre, ni recevoir de nouvelle demande/)).toBeInTheDocument()
+  })
+
+  /*
+    L'autre moitié, et elle compte autant : un soignant qui n'a PAS signé ne perd rien — il ne peut
+    déjà pas exercer. Lui servir l'avertissement de suspension serait une fausse alarme, et une
+    fausse alarme répétée est ce qui apprend à ne plus lire les vraies.
+  */
+  it('ne crie pas à la suspension quand le soignant n’a pas encore signé', async () => {
+    await contrat({ agreementCommissionPct: 12, currentCommissionPct: 18, agreementSignedAt: null })
+
+    expect(await screen.findByText(/n'a pas encore signé/)).toBeInTheDocument()
+    expect(screen.getByText(/il signera un contrat périmé/)).toBeInTheDocument()
+    expect(screen.queryByText(/Il ne pourra plus exercer/)).not.toBeInTheDocument()
+  })
+
+  it('réédite au taux courant quand on clique', async () => {
+    const reediter = vi
+      .spyOn(api, 'reissueAgreement')
+      .mockResolvedValue({ caseId: 'c-1', reissued: true })
+    await contrat({ agreementCommissionPct: 12, currentCommissionPct: 18 })
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Rééditer au taux de 18 %/ }))
+
+    await waitFor(() => expect(reediter).toHaveBeenCalledWith('c-1'))
+  })
+
+  it.each(['IN_REVIEW', 'REJECTED', 'REVOKED'] as const)(
+    'ne montre pas la carte du contrat sur un dossier %s',
+    async (statut) => {
+      vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: statut }))
+      await monter()
+
+      await screen.findAllByText('Ange Makaya')
+      expect(screen.queryByText(/Taux courant \(PM-01\)/)).not.toBeInTheDocument()
+    },
+  )
+
+  it('montre l’échec plutôt que de laisser croire que c’est passé', async () => {
+    vi.spyOn(api, 'reissueAgreement').mockRejectedValue(new Error('réseau'))
+    await contrat({ agreementCommissionPct: 12, currentCommissionPct: 18 })
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Rééditer au taux/ }))
+
+    expect(await screen.findByText(/Une erreur est survenue/)).toBeInTheDocument()
   })
 })
