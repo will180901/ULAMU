@@ -4,8 +4,9 @@
  * /v1/admin/* : AdminGuard — type ADMIN + sous-rôle (le TOTP n'est plus exigé, D-053) ; journal = tout admin,
  * file de modération = ADMIN_VERIFICATION (EF-04-06) ; SUPER_ADMIN passe partout.
  */
-import { Body, Controller, Get, Header, HttpCode, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpCode, Param, Post, Query, Res, UseGuards } from "@nestjs/common";
 import { AdminRole } from "@prisma/client";
+import type { Response } from "express";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
@@ -41,12 +42,32 @@ export class M04Controller {
     return this.service.queryAuditLog(actor.accountId, q);
   }
 
-  /** Export CSV du journal (EF-04-04) — lui-même audité ; PDF déclaré hors MVP (revue D-046). */
+  /**
+   * Export CSV du journal (EF-04-04) — lui-même audité ; PDF déclaré hors MVP (revue D-046).
+   *
+   * ⚠️ **`X-Export-Truncated` n'est pas décoratif.** L'export s'arrête à `EXPORT_MAX_ROWS`, et le
+   * faisait en silence : un journal de 12 000 entrées rendait un fichier de 5 000 lignes ayant
+   * toutes les apparences d'un export complet. L'écran lit cet en-tête plutôt que de recopier le
+   * plafond — une constante dupliquée dans le web dériverait le jour où celle-ci change.
+   *
+   * `X-Export-Rows` évite au navigateur de recompter des lignes qu'il vient de recevoir, et rend
+   * l'avertissement lisible : « 5 000 lignes, et il y en avait davantage ».
+   */
   @AdminOnly()
   @Get("admin/audit/export.csv")
   @Header("Content-Type", "text/csv; charset=utf-8")
-  exportAudit(@Actor() actor: AuthenticatedActor, @Query() q: QueryAuditDto) {
-    return this.service.exportAuditCsv(actor.accountId, q);
+  async exportAudit(
+    @Actor() actor: AuthenticatedActor,
+    @Query() q: QueryAuditDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<string> {
+    const { csv, rowCount, truncated } = await this.service.exportAuditCsv(actor.accountId, q);
+    res.setHeader("X-Export-Rows", String(rowCount));
+    res.setHeader("X-Export-Truncated", truncated ? "1" : "0");
+    // Sans cet en-tête, `fetch` ne verrait ni l'un ni l'autre : seuls les en-têtes CORS exposés
+    // traversent, et le web est servi depuis une autre origine que l'API.
+    res.setHeader("Access-Control-Expose-Headers", "X-Export-Rows, X-Export-Truncated");
+    return csv;
   }
 
   // ── File de modération (EF-04-06 ; CU-04-04) ───────────────────────────────

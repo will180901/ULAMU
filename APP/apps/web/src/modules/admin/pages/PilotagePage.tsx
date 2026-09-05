@@ -35,7 +35,8 @@
  * 6. **« Arrêté au 13 août, 07:00 » retiré** : rien n'est arrêté à une heure — tout est calculé à
  *    la lecture. L'écran affiche l'heure de SA lecture.
  */
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Activity, AlertTriangle, CheckCircle2, Inbox, MapPin, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
 import { api, type PilotKpi } from '@/lib/api'
 import { SqueletteTuiles } from '@/components/ulamu/Squelette'
+import { messageErreur } from '@/lib/message-erreur'
 
 const nombre = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -98,6 +100,42 @@ export function PilotagePage() {
   const kpis = useQuery({ queryKey: ['pilot-kpis'], queryFn: () => api.pilotKpis(), retry: false })
   const couverture = useQuery({ queryKey: ['coverage'], queryFn: () => api.coverage(), retry: false })
   const integrite = useQuery({ queryKey: ['audit-integrity'], queryFn: () => api.auditIntegrity(), retry: false })
+
+  /*
+    ── Exporter le journal (écart E, 05/09/2026) ────────────────────────────────────────────
+
+    `GET /v1/admin/audit/export.csv` existait sans aucun bouton : E5 savait vérifier l'intégrité du
+    journal et le lire, mais pas le sortir. Or un journal d'audit qu'on ne peut pas remettre à un
+    tiers — un contrôle, un conseil, un avocat — ne remplit qu'à moitié son office.
+
+    Deux détails qui décident si le fichier est utilisable :
+      • la **marque d'ordre d'octets** en tête. Sans elle, Excel en français lit l'UTF-8 comme du
+        Windows-1252 et rend « Ã© » partout. Le serveur n'en met pas, et il a raison — un client
+        qui lit l'API par programme ne veut pas de ce préfixe ; c'est au navigateur de l'ajouter ;
+      • le nom du fichier, daté. « export.csv » dans un dossier de téléchargements ne se retrouve
+        pas, et deux exports du même journal ne se distinguent pas.
+  */
+  const [exportEtat, setExportEtat] = useState<{ lignes: number; tronque: boolean } | null>(null)
+  const [exportErreur, setExportErreur] = useState<string | null>(null)
+
+  const exporter = useMutation({
+    mutationFn: () => api.exportAuditCsv(),
+    onSuccess: ({ csv, lignes, tronque }) => {
+      setExportErreur(null)
+      setExportEtat({ lignes, tronque })
+      // « \ufeff » : la marque d'ordre d'octets. Elle ne sert qu'au tableur, pas à l'API.
+      const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }))
+      const lien = document.createElement('a')
+      lien.href = url
+      lien.download = `journal-audit-${new Date().toISOString().slice(0, 10)}.csv`
+      lien.click()
+      URL.revokeObjectURL(url)
+    },
+    onError: (e) => {
+      setExportEtat(null)
+      setExportErreur(messageErreur(e))
+    },
+  })
 
   /**
    * La file de vérification, pour la seule ligne du tableau « délais » qui soit mesurée : combien de
@@ -239,6 +277,46 @@ export function PilotagePage() {
                     été altéré : prévenez immédiatement le responsable de la plateforme.
                   </Avis>
                 )}
+                {/*
+                  ── Le bouton d'export, DANS la carte d'intégrité ───────────────────────────
+
+                  Il vit ici et pas ailleurs parce que c'est la même question : « puis-je faire
+                  confiance à ce journal, et puis-je le montrer à quelqu'un ? ». Séparer les deux
+                  aurait donné un bouton d'export sans le seul renseignement qui le qualifie.
+                */}
+                <div className="mt-1 flex flex-col gap-2 border-t border-border pt-3">
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => exporter.mutate()}
+                      disabled={exporter.isPending}
+                    >
+                      {exporter.isPending ? 'Export…' : 'Exporter le journal (CSV)'}
+                    </Button>
+                  </div>
+
+                  {exportErreur === null ? null : <Avis ton="erreur">{exportErreur}</Avis>}
+
+                  {exportEtat === null ? (
+                    <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                      Vous n'exportez que les domaines de votre matrice, et cet export est lui-même
+                      inscrit au journal.
+                    </p>
+                  ) : exportEtat.tronque ? (
+                    /* Le seul cas où l'on interrompt : le fichier ressemble à un export complet. */
+                    <Avis ton="alerte">
+                      Export limité à {nombre(exportEtat.lignes)} lignes — <strong className="font-semibold">le
+                      journal en contient davantage</strong>. Ce fichier n'est pas complet.
+                    </Avis>
+                  ) : (
+                    <Avis ton="succes">
+                      {nombre(exportEtat.lignes)} {exportEtat.lignes > 1 ? 'entrées exportées' : 'entrée exportée'}, sur
+                      la totalité de votre périmètre.
+                    </Avis>
+                  )}
+                </div>
+
                 {/*
                   La maquette annonce « Entrées scellées · Ruptures · Actions sans motif ·
                   Suppressions tentées ». Seuls les deux premiers existent : `auditIntegrity` renvoie

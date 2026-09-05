@@ -612,6 +612,68 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **44** | **Le levier de l'avenant** — 05/09, écart C du plan des écrans. `POST /admin/verification/:id/agreement/reissue` n'avait aucun bouton, alors que le **chantier 8** avait construit tout le parcours de re-signature côté soignant. ⚠️ **La prémisse du plan était fausse et le chantier l'a montré d'abord** : « rien ne peut le déclencher » — si, changer PM-01 depuis E3 réédite déjà en masse. Ce que le bouton comble, ce sont les **trois trous de ce lot** : il ignore les dossiers sans version SIGNÉE (un soignant vérifié non signataire garde donc un contrat à l'ANCIEN taux, et le signerait tel quel), il s'arrête à 500 (`REISSUE_BATCH`), et il journalise puis oublie ses échecs. ⚠️ **Le geste suspend le soignant** : rééditer crée une version non signée, et « peut exercer » exige la version courante signée (RM-03-01), relu sans cache par M05/M06 — la carte le dit avant, et **distingue le signataire du non-signataire**, à qui l'alarme serait fausse. Le serveur ne disait ni le taux du contrat ni le taux courant : trois champs ajoutés à `getCaseForAdmin`, lus de PM-01, jamais recopiés. **Quand les deux taux sont égaux, aucun bouton.** **api 521 ✓ · web 620 ✓ (611 + 9) · lint 0 erreur · builds propres.** | ⏸ en attente | ⏸ |
 
+| **45** | **Deux nettoyages, et deux surprises** — 05/09, écarts E et F. **E** : `GET /admin/audit/export.csv` n'avait aucun bouton. ⚠️ **Le chantier a trouvé pire que l'absence d'export** — le serveur s'arrêtait à 5 000 lignes **en silence**, rendant un fichier tronqué au même en-tête et au même format qu'un export complet. Un journal d'audit incomplet remis à un tiers est pire qu'un refus d'export. Le serveur pose désormais `X-Export-Truncated` / `X-Export-Rows` (exposés en CORS, sans quoi `fetch` ne les verrait pas), **et l'écran ne recopie aucun plafond**. Ajoutés aussi : la marque d'ordre d'octets (sans elle Excel en français rend « Ã© ») et un nom de fichier daté. **F** : `POST /verification/me/documents` exigeait une `fileKey` qu'aucun point d'entrée ne savait produire. ⚠️ **La prescription du plan était fausse** — « retirer la route, le DTO et la méthode » aurait cassé le dépôt de pièces : `uploadDocument` appelle `addDocument`. Seule la route est partie. **Vérifié par les routes servies** : 160, `reinstate` (+1) et celle-ci (−1) se compensent. **api 521 ✓ · web 625 ✓ (620 + 5) · lint 0 erreur · builds propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 45 (les deux nettoyages) a appris
+
+*05/09/2026 — écarts E et F du plan des écrans du soignant.*
+
+#### Le défaut n'était pas celui qu'annonçait l'écart
+
+L'écart E disait : « le journal ne s'exporte pas ». Vrai, et facile à corriger — un bouton.
+
+En lisant `exportAuditCsv` pour savoir quoi appeler, on a trouvé `take: 5000`. **Sans aucune trace
+dans le fichier produit.** Un administrateur exportant un journal de 12 000 entrées recevait 5 000
+lignes, avec le même en-tête, le même format, la même apparence qu'un export intégral.
+
+Le vrai défaut n'était donc pas l'absence de bouton : c'était qu'ajouter le bouton, tel quel, aurait
+**livré un mensonge** — un fichier incomplet remis à un contrôle, à un conseil, à un avocat.
+
+*Le pire défaut d'un export n'est pas de manquer : c'est d'être partiel sans le dire.*
+
+#### Le plafond appartient au serveur, pas à l'écran
+
+Le réflexe était d'écrire `if (lignes === 5000) avertir` dans le web. C'est une **règle recopiée** —
+exactement ce que le chantier 43 venait de payer avec la formule du taux, présente en trois
+exemplaires.
+
+Le serveur demande donc **une ligne de plus que le plafond** : si elle revient, il y avait une suite,
+et il le dit en en-tête. L'écran ne connaît aucun nombre ; il lit `X-Export-Truncated`.
+
+*Il a fallu un détail de plus, et facile à oublier : `Access-Control-Expose-Headers`. Le web est
+servi depuis une autre origine que l'API — sans cette ligne, `fetch` ne voit aucun en-tête
+personnalisé, et l'avertissement n'aurait jamais paru. Silencieusement.*
+
+#### La prescription de l'écart F aurait cassé le dépôt de pièces
+
+Elle disait : « retrait de la route, du DTO **et de la méthode de service** ».
+
+`M03Service.addDocument` n'est pas morte : `uploadDocument` l'appelle pour rattacher la pièce une
+fois le fichier stocké — et c'est précisément là que naît la `fileKey` qu'aucun client ne savait
+produire. La suivre à la lettre aurait supprimé le seul chemin de dépôt qui fonctionne.
+
+*Deux plans de suite se sont trompés sur ce qu'ils prescrivaient — l'écart C sur sa cause, l'écart F
+sur son remède. **Un plan est une hypothèse datée. On le relit dans le code avant de l'exécuter.***
+
+#### Ce qu'on ne peut pas garantir, et qu'on écrit plutôt que de le faire croire
+
+Rendre `addDocument` privée aurait été la vraie garantie — plus personne ne peut la ré-exposer par
+distraction. Impossible : `tsconfig.json` type-vérifie `test/`, et deux specs d'intégration
+l'appellent du dehors. La compilation casserait.
+
+C'est écrit dans le code, à l'endroit où quelqu'un se posera la question, plutôt que laissé à
+deviner.
+
+#### Un périmètre se vérifie par les routes servies
+
+`relever-routes.ts` en compte **160**, comme avant : `reinstate` ajoutée au chantier 43 (+1) et
+`me/documents` retirée ici (−1) se compensent exactement.
+
+Un total inchangé aurait pu passer pour « rien n'a bougé ». Les deux routes ont donc été vérifiées
+nommément — l'une présente, l'autre absente, la variante `/upload` intacte.
+
+*Un compte global qui ne bouge pas ne prouve pas qu'il ne s'est rien passé.*
+
 ### Ce que le chantier 44 (le levier de l'avenant) a appris
 
 *05/09/2026 — écart C du plan des écrans du soignant.*

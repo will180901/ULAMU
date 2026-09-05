@@ -5,6 +5,15 @@ import { DOCUMENT_KINDS, DocumentKind, VERIFICATION_STATUSES, VerificationStatus
  * Pièce justificative (EF-03-01/02) — le fichier est déjà téléversé (clé de stockage) ;
  * il n'est jamais public ni partagé (RM-03-03).
  */
+/**
+ * ⚠️ **Ce n'est plus un DTO d'entrée depuis le 05/09/2026 (écart F).** La route `POST me/documents`
+ * qui le validait a été retirée : elle exigeait une `fileKey` qu'aucun point d'entrée ne savait
+ * produire, donc elle ne pouvait pas aboutir.
+ *
+ * La forme reste parce que `M03Service.addDocument` la prend en paramètre — `uploadDocument`
+ * l'appelle après avoir stocké le fichier, et c'est là que la `fileKey` naît. Les décorateurs de
+ * validation ne servent donc plus rien à l'exécution ; ils documentent la forme attendue.
+ */
 export class AddDocumentDto {
   @IsIn([...DOCUMENT_KINDS]) kind!: DocumentKind;
   @IsString() @IsNotEmpty() @MaxLength(512) fileKey!: string;

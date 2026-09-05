@@ -38,6 +38,15 @@ export interface AuditQueryFilters {
  * Cloisonnement du journal par domaine (CU-04-02, matrice M02 §5) :
  * chaque sous-rôle ne voit que les actions de son périmètre ; SUPER_ADMIN voit tout.
  */
+/**
+ * Plafond de l'export CSV du journal (EF-04-04).
+ *
+ * Il valait 5000 en dur, au milieu d'une requête. Le nommer sert à deux choses : le retrouver, et
+ * pouvoir dire au demandeur qu'on s'y est arrêté — voir `exportAuditCsv`, qui demande une ligne de
+ * plus pour savoir s'il y avait une suite.
+ */
+const EXPORT_MAX_ROWS = 5000;
+
 const AUDIT_DOMAIN_SCOPE: Record<string, string[] | null> = {
   SUPER_ADMIN: null, // accès complet
   ADMIN_VERIFICATION: ["m01.", "m02.", "m03.", "m04."],
@@ -340,16 +349,34 @@ export class M04Service {
   // ── Export du journal (EF-04-04) ────────────────────────────────────────────
 
   /** Export CSV (max 5000 lignes), lui-même audité. L'export PDF est déclaré hors MVP (revue D-046). */
-  async exportAuditCsv(adminId: string, q: AuditQueryFilters): Promise<string> {
+  /**
+   * ── Le plafond ne doit pas être silencieux (écart E, 05/09/2026) ──────────────────────────
+   *
+   * L'export s'arrête à `EXPORT_MAX_ROWS` lignes. Il le faisait **sans le dire** : un
+   * administrateur qui exportait un journal de 12 000 entrées recevait un fichier de 5 000 lignes
+   * qui avait toutes les apparences d'un export complet — même en-tête, même format, aucune marque.
+   *
+   * Le service renvoie donc maintenant `truncated`, et le contrôleur le pose en en-tête de réponse.
+   * **L'écran n'a ainsi aucun nombre à recopier** : une constante dupliquée dans le web dériverait
+   * le jour où celle-ci change, et l'avertissement deviendrait faux dans un sens ou dans l'autre.
+   *
+   * *Un export incomplet qui se présente comme complet est pire qu'un export refusé.*
+   */
+  async exportAuditCsv(adminId: string, q: AuditQueryFilters): Promise<{ csv: string; rowCount: number; truncated: boolean }> {
     const where = await this.buildScopedWhere(adminId, q);
-    const rows = await this.prisma.auditEvent.findMany({ where, orderBy: { seq: "asc" }, take: 5000 });
+    // On demande UNE ligne de plus que le plafond : si elle revient, c'est qu'il y avait la suite.
+    const rows = await this.prisma.auditEvent.findMany({ where, orderBy: { seq: "asc" }, take: EXPORT_MAX_ROWS + 1 });
+    const truncated = rows.length > EXPORT_MAX_ROWS;
+    if (truncated) rows.length = EXPORT_MAX_ROWS;
     await this.prisma.$transaction(async (tx) => {
       await this.audit.emit(tx, {
         actorId: adminId,
         actorType: "admin",
         action: "m04.audit.exported",
         resource: "auditLog",
-        context: { rowCount: rows.length, action: q.action ?? null, from: q.from ?? null, to: q.to ?? null },
+        // `truncated` au journal aussi : sinon on ne saurait pas, plus tard, que cet export
+        // ne portait qu'une partie de la période demandée.
+        context: { rowCount: rows.length, truncated, action: q.action ?? null, from: q.from ?? null, to: q.to ?? null },
       });
     });
     const esc = (v: string | null): string => (v === null ? "" : `"${v.replaceAll('"', '""')}"`);
@@ -357,7 +384,7 @@ export class M04Service {
     const lines = rows.map((r) =>
       [r.seq.toString(), r.createdAt.toISOString(), esc(r.actorId), esc(r.actorType), esc(r.action), esc(r.resource), r.hash].join(";"),
     );
-    return [header, ...lines].join("\n");
+    return { csv: [header, ...lines].join("\n"), rowCount: rows.length, truncated };
   }
 
   // ── Aides internes ──────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, StreamableFile } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
-import { AddDocumentDto, SignAgreementDto, UploadDocumentDto } from "./m03.dto";
+import { SignAgreementDto, UploadDocumentDto } from "./m03.dto";
 import { M03Service } from "./m03.service";
 
 @Controller("v1/verification")
@@ -23,18 +23,26 @@ export class M03Controller {
     return this.service.getMine(actor.accountId, facilityId);
   }
 
-  /** Téléversement d'une pièce justificative (EF-03-01/02). */
-  @Post("me/documents")
-  addDocument(@Actor() actor: AuthenticatedActor, @Body() dto: AddDocumentDto, @Query("facilityId") facilityId?: string) {
-    return this.service.addDocument(actor, dto, facilityId);
-  }
+  /*
+    ── `POST me/documents` est RETIRÉE le 05/09/2026 (écart F) ─────────────────────────────────
 
-  /**
-   * Téléversement + rattachement d'une pièce, en un appel (EF-03-01/02).
-   *
-   * Complète `POST me/documents`, qui exigeait une `fileKey` qu'aucun endpoint ne savait produire
-   * pour un dossier de vérification : le dossier était donc impossible à remplir depuis un client.
-   */
+    Elle attendait une `fileKey` — une clé de fichier « déjà téléversé » — qu'**aucun point d'entrée
+    de l'API ne savait produire** pour un dossier de vérification. Un client qui l'appelait ne
+    pouvait donc jamais aboutir : il n'existait aucun moyen légitime d'obtenir la valeur à mettre
+    dedans. Le commentaire de `m03.dto.ts` le disait déjà, et la route est restée.
+
+    `POST me/documents/upload` ci-dessous fait le travail en un appel, et c'est elle que le web
+    utilise. Aucun client — web ni mobile — n'appelait la route retirée : vérifié avant la coupe.
+
+    ⚠️ **La MÉTHODE `addDocument` du service reste**, et ce n'est pas un oubli : `uploadDocument`
+    l'appelle pour rattacher la pièce après stockage. Ce qui disparaît, c'est son exposition en
+    HTTP — plus personne du dehors ne peut prétendre fournir une `fileKey`.
+
+    *Une route qui ne peut pas aboutir est un piège pour qui la lira dans six mois : elle a l'air
+    d'une fonctionnalité, et elle coûte une demi-journée avant qu'on comprenne qu'elle ment.*
+  */
+
+  /** Téléversement + rattachement d'une pièce, en un appel (EF-03-01/02). */
   @Post("me/documents/upload")
   uploadDocument(@Actor() actor: AuthenticatedActor, @Body() dto: UploadDocumentDto, @Query("facilityId") facilityId?: string) {
     return this.service.uploadDocument(actor, dto, facilityId);

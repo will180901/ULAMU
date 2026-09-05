@@ -1673,6 +1673,47 @@ export const api = {
     ),
   /** EF-04-03 : revérifie la chaîne sha256 du journal. Une rupture signale une altération. */
   auditIntegrity: () => request<AuditIntegrity>('GET', '/v1/admin/audit/integrity', undefined, true),
+
+  /**
+   * Export CSV du journal d'audit (EF-04-04, écart E du plan des écrans — 05/09/2026).
+   *
+   * ── Pourquoi ce n'est pas un simple lien ──────────────────────────────────────────────────
+   *
+   * La route exige l'en-tête d'autorisation : un `<a href>` partirait sans jeton et reviendrait
+   * 401. On récupère donc le texte, comme le fait déjà `adminDocumentUrl` pour les pièces.
+   *
+   * ── Ce que le serveur dit de son propre export ───────────────────────────────────────────
+   *
+   * L'export s'arrête à un plafond, et le faisait **en silence** : un journal de 12 000 entrées
+   * rendait un fichier tronqué ayant toutes les apparences d'un export complet. Le serveur pose
+   * désormais `X-Export-Truncated` ; **on ne recopie donc aucun plafond ici** — une constante
+   * dupliquée dériverait le jour où le serveur change la sienne.
+   *
+   * ⚠️ Le périmètre dépend du sous-rôle (`buildScopedWhere`) : un administrateur n'exporte que les
+   * domaines de sa matrice. Ce n'est pas une troncature, et l'écran ne doit pas les confondre.
+   *
+   * ⚠️ **La consultation du journal est elle-même auditée** (RM-04-02) : cet export laisse une
+   * trace, avec son nombre de lignes et son éventuelle troncature.
+   */
+  exportAuditCsv: async (): Promise<{ csv: string; lignes: number; tronque: boolean }> => {
+    const token = getToken?.()
+    const res = await fetch(`${API_BASE_URL}/v1/admin/audit/export.csv`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!res.ok) {
+      if (res.status === 401) onUnauthorized?.()
+      throw new ApiError(res.status, codeFromStatus(res.status), "Le journal n'a pas pu être exporté.")
+    }
+    const csv = await res.text()
+    /*
+      `lignes` vient du serveur quand il le donne. Le repli compte les lignes du fichier moins
+      l'en-tête — utile si l'en-tête HTTP est filtré par un intermédiaire, auquel cas on préfère un
+      nombre approché à aucun nombre.
+    */
+    const annonce = Number(res.headers.get('X-Export-Rows'))
+    const lignes = Number.isInteger(annonce) && annonce >= 0 ? annonce : Math.max(0, csv.split('\n').length - 1)
+    return { csv, lignes, tronque: res.headers.get('X-Export-Truncated') === '1' }
+  },
   /**
    * Consultation filtrée du journal (EF-04-04). **La consultation est elle-même auditée** (RM-04-02) :
    * chaque appel laisse une trace, ce qui interdit d'en faire une interrogation de fond.

@@ -130,22 +130,42 @@ ni par le mobile**. Un proche pour qui on a consulté ne peut donc pas récupér
 > **Recommandation : à planifier**, hors du périmètre « écrans du soignant ». Inscrit ici pour ne
 > pas le perdre.
 
-### 🟢 E. Le journal d'audit ne s'exporte pas
+### ✅ E. Le journal d'audit ne s'exporte pas — **SOLDÉ le 05/09 (chantier 45)**
 
 `GET /v1/admin/audit/export.csv` n'a aucun bouton. E5 affiche l'intégrité du journal et sait le
 lire, mais pas l'exporter.
 
-> **Coût : ~30 min.** **Recommandation : le faire**, en même temps qu'un autre passage sur E5.
+> ✅ **Fait le 05/09** : un bouton dans la carte « Intégrité du journal » — même carte, parce que
+> c'est la même question (« puis-je faire confiance à ce journal, et puis-je le montrer ? »).
+>
+> ⚠️ **Le chantier a trouvé pire que l'absence d'export : un export TRONQUÉ qui se présentait comme
+> complet.** Le serveur s'arrêtait à 5 000 lignes **en silence** — même en-tête, même format, aucune
+> marque. Un journal de 12 000 entrées rendait un fichier qui avait toutes les apparences d'un
+> export intégral. Le serveur pose désormais `X-Export-Truncated`, et l'écran interrompt.
+> **L'écran ne recopie aucun plafond** : une constante dupliquée dériverait le jour où le serveur
+> change la sienne.
+>
+> Deux détails qui décident si le fichier sert : la marque d'ordre d'octets (sans elle, Excel en
+> français rend « Ã© » partout) et un nom de fichier daté.
 
-### 🟢 F. Une route de dépôt de pièce est morte
+### ✅ F. Une route de dépôt de pièce est morte — **SOLDÉ le 05/09 (chantier 45)**
 
 `POST /v1/verification/me/documents` exige une `fileKey` **qu'aucun point d'entrée ne sait
 produire** — le commentaire du contrôleur le dit lui-même. Elle a été remplacée par
 `POST /v1/verification/me/documents/upload`, que le web utilise.
 
-> **Coût : ~20 min** (retrait de la route, du DTO et de la méthode de service).
-> **Recommandation : la retirer.** Une route qui ne peut pas aboutir est un piège pour qui la lira
-> dans six mois.
+> ⚠️ **La prescription était fausse sur un point, et l'appliquer aurait cassé le dépôt de pièces.**
+> « retrait de la route, du DTO et de la méthode de service » : la MÉTHODE `addDocument` n'est pas
+> morte — `uploadDocument` l'appelle pour rattacher la pièce une fois le fichier stocké, et c'est là
+> que la `fileKey` naît. Seule son **exposition HTTP** ne pouvait pas aboutir.
+>
+> ✅ **Fait le 05/09** : `POST /v1/verification/me/documents` retirée, l'import du DTO avec, et le
+> DTO annoté pour dire qu'il n'est plus une frontière d'entrée. Vérifié avant la coupe : **aucun
+> client, web ni mobile, ne l'appelait**. Vérifié après : `relever-routes.ts` en compte **160** —
+> `reinstate` ajoutée au chantier 43 et celle-ci retirée se compensent exactement.
+>
+> *La méthode reste publique à dessein : `test/` est typé-vérifié par `tsconfig.json` et deux specs
+> d'intégration l'appellent. La rendre privée casserait la compilation pour un gain de forme.*
 
 ### 🟢 G. Deux fausses alertes, et pourquoi elles comptent
 

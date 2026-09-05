@@ -13,6 +13,7 @@
  *     calculer, pas de les lire.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -246,5 +247,98 @@ describe('E5 — le respect des délais', () => {
     monter()
 
     expect(await screen.findByText(/que des compteurs et des taux/)).toBeInTheDocument()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Exporter le journal d'audit — écart E, 05/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  `GET /v1/admin/audit/export.csv` existait sans aucun bouton : E5 savait vérifier l'intégrité du
+  journal et le lire, mais pas le sortir. Un journal d'audit qu'on ne peut pas remettre à un tiers —
+  un contrôle, un conseil, un avocat — ne remplit qu'à moitié son office.
+
+  ⚠️ **Le vrai risque de cet écran n'est pas l'absence d'export, c'est un export TRONQUÉ qui se
+  présente comme complet.** Le serveur s'arrête à un plafond ; il le faisait en silence, et rendait
+  un fichier au même en-tête, au même format, sans aucune marque. Ces tests gardent surtout le cas
+  où il faut interrompre l'administrateur.
+*/
+describe('E5 — exporter le journal d’audit (écart E)', () => {
+  /** `document.createElement('a').click()` déclencherait un vrai téléchargement sous jsdom. */
+  function neutraliserTelechargement() {
+    const vraiCreate = document.createElement.bind(document)
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:faux')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = vraiCreate(tag)
+      if (tag === 'a') el.click = () => {}
+      return el
+    })
+  }
+
+  it('annonce le périmètre et la trace AVANT qu’on clique', async () => {
+    monter()
+
+    // Deux choses qu'un administrateur doit savoir avant d'exporter, pas après.
+    expect(await screen.findByText(/que les domaines de votre matrice/)).toBeInTheDocument()
+    expect(screen.getByText(/lui-même\s+inscrit au journal/)).toBeInTheDocument()
+  })
+
+  it('exporte et dit combien d’entrées sont sorties', async () => {
+    neutraliserTelechargement()
+    vi.spyOn(api, 'exportAuditCsv').mockResolvedValue({ csv: 'seq;createdAt', lignes: 1287, tronque: false })
+    monter()
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Exporter le journal/ }))
+
+    expect(await screen.findByText(/1 287 entrées exportées/)).toBeInTheDocument()
+  })
+
+  /*
+    LA garde de cet écart. Un fichier tronqué a le même en-tête et le même format qu'un fichier
+    complet : rien, dans le CSV, ne dit qu'il manque des lignes. Si l'écran ne le dit pas, personne
+    ne le saura — et un journal d'audit incomplet remis à un tiers est pire qu'un refus d'export.
+  */
+  it('avertit quand l’export est TRONQUÉ, au lieu de le laisser passer pour complet', async () => {
+    neutraliserTelechargement()
+    vi.spyOn(api, 'exportAuditCsv').mockResolvedValue({ csv: 'seq;createdAt', lignes: 5000, tronque: true })
+    monter()
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Exporter le journal/ }))
+
+    expect(await screen.findByText(/le\s+journal en contient davantage/)).toBeInTheDocument()
+    expect(screen.getByText(/n'est pas complet/)).toBeInTheDocument()
+    // Et surtout : il ne dit pas « exportées, sur la totalité » en même temps.
+    expect(screen.queryByText(/sur\s+la totalité/)).not.toBeInTheDocument()
+  })
+
+  it('montre l’échec plutôt qu’un fichier vide', async () => {
+    vi.spyOn(api, 'exportAuditCsv').mockRejectedValue(new Error('réseau'))
+    monter()
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Exporter le journal/ }))
+
+    expect(await screen.findByText(/Une erreur est survenue/)).toBeInTheDocument()
+  })
+
+  /*
+    Le singulier. « 1 entrées exportées » sur un écran d'administration d'une plateforme de santé
+    est le genre de détail qui fait douter du reste.
+  */
+  it('accorde le singulier sur une seule entrée', async () => {
+    neutraliserTelechargement()
+    vi.spyOn(api, 'exportAuditCsv').mockResolvedValue({ csv: 'seq;createdAt', lignes: 1, tronque: false })
+    monter()
+    const utilisateur = userEvent.setup()
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Exporter le journal/ }))
+
+    expect(await screen.findByText(/1 entrée exportée/)).toBeInTheDocument()
   })
 })
