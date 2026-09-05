@@ -24,6 +24,7 @@ import { useSessionStore } from '@/state/session.store'
 import { ESPACE_PAR_ROLE } from '@/config/navigation.config'
 import { IndicateurPresence } from '@/components/layout/IndicateurPresence'
 import { CentreNotifications } from '@/components/layout/CentreNotifications'
+import { RechercheGlobale } from '@/components/layout/RechercheGlobale'
 import { BoutonRideau } from '@/components/layout/RideauConfidentialite'
 
 export function TopHeader({
@@ -65,6 +66,13 @@ export function TopHeader({
           <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium text-foreground">{titre}</span>
         </nav>
       )}
+
+      {/*
+        La recherche globale (chantier 46). Elle reste sur mobile, et c'est délibéré : c'est
+        justement sur un téléphone, où le tiroir recouvre l'écran entier, qu'atteindre un écran
+        éloigné coûte le plus de gestes.
+      */}
+      <RechercheGlobale />
 
       {/* La présence ne concerne que les professionnels : le composant se retire tout seul pour les
           autres rôles (un administrateur n'a aucune disponibilité à déclarer). */}

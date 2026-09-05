@@ -614,6 +614,80 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **45** | **Deux nettoyages, et deux surprises** — 05/09, écarts E et F. **E** : `GET /admin/audit/export.csv` n'avait aucun bouton. ⚠️ **Le chantier a trouvé pire que l'absence d'export** — le serveur s'arrêtait à 5 000 lignes **en silence**, rendant un fichier tronqué au même en-tête et au même format qu'un export complet. Un journal d'audit incomplet remis à un tiers est pire qu'un refus d'export. Le serveur pose désormais `X-Export-Truncated` / `X-Export-Rows` (exposés en CORS, sans quoi `fetch` ne les verrait pas), **et l'écran ne recopie aucun plafond**. Ajoutés aussi : la marque d'ordre d'octets (sans elle Excel en français rend « Ã© ») et un nom de fichier daté. **F** : `POST /verification/me/documents` exigeait une `fileKey` qu'aucun point d'entrée ne savait produire. ⚠️ **La prescription du plan était fausse** — « retirer la route, le DTO et la méthode » aurait cassé le dépôt de pièces : `uploadDocument` appelle `addDocument`. Seule la route est partie. **Vérifié par les routes servies** : 160, `reinstate` (+1) et celle-ci (−1) se compensent. **api 521 ✓ · web 625 ✓ (620 + 5) · lint 0 erreur · builds propres.** | ⏸ en attente | ⏸ |
 
+| **46** | **La recherche globale** — 05/09. Écartée du chantier A1 en son temps (« chercher dans des dossiers qui n'existent pas encore n'a pas de sens ») ; les dossiers existent, et l'application a seize écrans. Une palette (bouton + Ctrl+K) qui cherche **deux choses, et le dit** : les écrans, lus de `useNavigation()` donc déjà filtrés par capacité, et les comptes, par la **seule route de toute l'API qui cherche du texte** (`GET /admin/accounts?query=`). ⚠️ **Elle annonce en toutes lettres ce qu'elle NE cherche pas** — consultations, pièces, journal : aucune route ne les cherche par texte, et le taire ferait chercher longtemps ce qui n'y sera jamais. **Le droit de chercher des comptes est LU** sur l'entrée `admin-comptes` de `NAV_GROUPS`, jamais recopié — un administrateur Finance ne l'a pas, et un test le garde. ⚠️ **Le test le plus important du chantier** : une recherche en échec ne dit JAMAIS « aucun compte » — sur une plateforme de santé, cette confusion ferait conclure qu'une personne n'existe pas. Le plafond de 50 lignes du serveur est annoncé, comme celui de l'export au chantier 45. Un résultat mène vraiment quelque part : `ComptesPage` lit désormais `?q=`. **web 638 ✓ (625 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 46 (la recherche globale) a appris
+
+*05/09/2026.*
+
+#### Chercher suppose qu'il y ait quelque chose à chercher
+
+Le premier travail n'a pas été d'écrire une palette, mais de relever ce que l'API sait chercher.
+Réponse : **une seule route**, `GET /v1/admin/accounts?query=`, et elle est réservée à deux
+sous-rôles.
+
+Tout le reste se *filtre* et ne se *cherche* pas : le journal d'audit par action et acteur **exacts**,
+les pièces par dossier, les consultations par participant, la file de vérification par statut. Aucun
+texte libre nulle part ailleurs.
+
+Une palette qui aurait proposé « chercher une consultation » aurait donc été une promesse sans
+serveur derrière. Elle dit l'inverse, en bas, en une phrase.
+
+*Le plus utile qu'une recherche puisse faire, quand elle ne trouve pas, c'est dire qu'elle ne
+cherchait pas là.*
+
+#### « Aucun résultat » et « je n'ai pas pu chercher » ne se disent pas pareil
+
+C'est la règle du projet — *une lecture qui échoue n'est ni un zéro ni un « non »* — et c'est ici
+qu'elle coûte le plus cher.
+
+Un administrateur cherche « Okemba », le réseau tombe, la palette affiche « aucun compte ». Il en
+conclut que cette personne n'existe pas. Sur une plateforme de santé, cette conclusion précède des
+suspensions et des refus.
+
+L'échec porte donc `role="alert"`, une phrase qui dit ce qui s'est passé, et **surtout** : *« Ce
+n'est pas une réponse. »*
+
+#### Les capacités se lisent, elles ne se réécrivent pas
+
+Le droit de chercher des comptes appartient à `ADMIN_VERIFICATION` et `ADMIN_MAP` (plus le
+super-administrateur, qui passe partout). Écrire cette liste dans la palette aurait été la troisième
+copie d'une même règle.
+
+Elle est donc **lue sur l'entrée `admin-comptes` de `NAV_GROUPS`**, qui la porte déjà — avec le
+commentaire qui l'explique. C'est exactement la correction apportée au chantier 37, où une liste
+recopiée avait réduit un écran au seul super-administrateur.
+
+*Une règle recopiée est une règle qui dérive. Elle a dérivé une fois ; on ne la recopie plus.*
+
+#### Un résultat doit mener quelque part
+
+Proposer un compte et ouvrir un écran vide serait pire que ne rien proposer : l'administrateur
+retaperait le nom qu'il vient de taper.
+
+`ComptesPage` lit donc `?q=` à l'ouverture — **une seule fois**, sinon l'URL écraserait ce qu'il est
+en train de saisir.
+
+#### Le plafond, encore
+
+`searchAccounts` s'arrête à 50 lignes. Cinquante résultats muets passent pour la totalité — la même
+faute que l'export d'audit tronqué du chantier 45, à un jour d'intervalle et dans un autre module.
+
+*Les bornes silencieuses ne sont pas un accident isolé : c'est un motif. Chaque `take:` du serveur
+est une phrase que l'écran doit savoir dire.*
+
+#### L'apostrophe, pour la troisième fois
+
+Trois tests de deux chantiers sont tombés sur la même chose : mes motifs cherchaient l'apostrophe
+courbe (`’`), l'écran écrit la droite (`'`).
+
+La convention du dépôt est pourtant nette — 16 150 droites contre 572 courbes, ces dernières
+uniquement dans les chaînes entre quotes simples où la droite fermerait la chaîne. Elle n'est écrite
+nulle part, seulement pratiquée.
+
+*Une convention qu'on ne peut découvrir qu'en la violant coûte un aller-retour à chaque fois. Elle
+est désormais écrite ici.*
+
 ### Ce que le chantier 45 (les deux nettoyages) a appris
 
 *05/09/2026 — écarts E et F du plan des écrans du soignant.*

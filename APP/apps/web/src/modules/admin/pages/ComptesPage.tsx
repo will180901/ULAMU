@@ -44,6 +44,7 @@
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Ban, ClipboardCheck, LifeBuoy, Plus, Search, ShieldOff, UserCheck, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -532,8 +533,21 @@ function DemandesDeSupport() {
 }
 
 export function ComptesPage() {
-  const [terme, setTerme] = useState('')
-  const [recherche, setRecherche] = useState('')
+  /*
+    ── Le terme peut venir de l'URL (chantier 46, 05/09/2026) ────────────────────────────────
+
+    La recherche globale propose des comptes ; choisir un résultat doit MENER quelque part. Sans
+    ce paramètre, elle aurait ouvert un écran Comptes vide, et l'administrateur aurait retapé le
+    nom qu'il venait de taper — une proposition qui ne tient pas ce qu'elle montre.
+
+    Lu une seule fois, à l'ouverture : ensuite c'est le champ qui commande, et réappliquer l'URL
+    écraserait ce que l'administrateur est en train de taper.
+  */
+  const [parametres] = useSearchParams()
+  const termeInitial = parametres.get('q')?.trim() ?? ''
+
+  const [terme, setTerme] = useState(termeInitial)
+  const [recherche, setRecherche] = useState(termeInitial)
   const [cible, setCible] = useState<{ compte: AdminAccount; action: 'suspend' | 'reactivate' | 'ban' } | null>(null)
   const [ongletProc, setOngletProc] = useState<SupportProcedure['status']>('OPEN')
   const qc = useQueryClient()
