@@ -15,6 +15,8 @@ import {
   CloseAccountRequest,
   ConfirmPhoneChangeRequest,
   CreateReminderRequest,
+  ClaimSubProfileRequest,
+  ClaimSubProfileResponse,
   CreateSubProfileRequest,
   DeclareEntryRequest,
   DisableEmailTwoFactorRequest,
@@ -23,6 +25,7 @@ import {
   Reminder,
   ReminderListResponse,
   REMINDER_ROUTES,
+  StartClaimResponse,
   SubProfile,
   UpdateProfileRequest,
   UpdateAvatarRequest,
@@ -256,6 +259,28 @@ export class ApiClient {
   }
   createSubProfile(dto: CreateSubProfileRequest): Promise<{subProfileId: string; healthRecordId: string}> {
     return this.request('POST', HEALTH_ROUTES.subProfiles, dto, true);
+  }
+
+  /**
+   * Étape 1 du transfert à la majorité — appelée par le TUTEUR (CU-07-05, écart D).
+   *
+   * Le serveur envoie un OTP « action sensible » sur le téléphone du tuteur et rend l'`intentId`
+   * qui désigne CE transfert. ⚠️ Il refuse si le sous-profil n'a pas l'âge requis (PM-16) : le
+   * message porte l'âge, que **l'application ne recopie pas** — le paramètre n'est servi à aucun
+   * client, et l'écrire en dur mentirait le jour où il change.
+   */
+  startSubProfileClaim(subProfileId: string): Promise<StartClaimResponse> {
+    return this.request('POST', HEALTH_ROUTES.startClaim(subProfileId), undefined, true);
+  }
+
+  /**
+   * Étape 2 — appelée par le MAJEUR, depuis SON compte, avec l'OTP reçu par le tuteur.
+   *
+   * Au succès, le Carnet change de propriétaire : le tuteur en perd l'accès à l'instant du commit
+   * (RM-07-06). Ce n'est donc pas un partage, c'est une remise.
+   */
+  claimSubProfile(subProfileId: string, dto: ClaimSubProfileRequest): Promise<ClaimSubProfileResponse> {
+    return this.request('POST', HEALTH_ROUTES.claim(subProfileId), dto, true);
   }
 
   // ── M01 — compte avancé (authentifié) ─────────────────────────────────────

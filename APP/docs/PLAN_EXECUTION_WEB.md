@@ -499,6 +499,10 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | 25 | **Un soignant révoqué par erreur ne peut plus jamais être rétabli (née le 04/09, chantier 42).** Constaté en construisant le bouton de révocation : `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — le statut est **terminal** — et `VerificationCase.professionalId` est `@unique`, donc un professionnel n'a **qu'un dossier, à vie**. Une révocation prononcée à tort ferme donc définitivement l'accès de ce soignant à la plateforme : il ne peut ni re-déposer, ni ouvrir un nouveau dossier, ni être vérifié de nouveau. **La seule issue serait une écriture directe en base.** ⚠️ Ce n'est pas un défaut de code — le serveur fait exactement ce qui a été spécifié (EF-03-08). C'est une **absence de voie de recours** sur une décision humaine, et les humains se trompent. L'écran l'annonce désormais en toutes lettres avant le clic, et exige une confirmation tapée : c'est tout ce que l'interface peut faire. **Deux issues** : (a) **ouvrir la transition `REVOKED → IN_REVIEW`** dans `m03.policies.ts`, réservée au super-administrateur, avec motif et journal — ~3 h, et le dossier reprend son cours normal ; (b) **assumer l'irréversibilité** et le documenter comme une garantie (une révocation est définitive, c'est ce qui lui donne son poids). **Recommandation : (a)**, parce qu'une plateforme de santé ne peut pas faire dépendre la carrière d'un soignant de l'absence d'erreur d'un administrateur. | ✅ **soldée le 04/09 (chantier 43)** — l'issue (a) est appliquée : `REVOKED → IN_REVIEW`, `POST /admin/verification/:id/reinstate` **réservée au SUPER_ADMIN** (l'examinateur qui révoque ne se dédit pas lui-même), motif obligatoire, notification et journal. **Elle ne rend pas le badge** — elle remet le dossier en examen, et l'écran le dit. ⚠️ **Deux phrases du chantier 42 sont devenues fausses le jour même** (« aucun moyen de le rétablir ») : corrigées, et c'est un test qui l'a signalé en tombant seul de toute la suite. |
 
+| 26 | **Le code de transfert d'un Carnet ne peut pas se dicter (née le 06/09, chantier 48).** Pour revendiquer son Carnet à sa majorité, le majeur doit recevoir de son tuteur **deux UUID** (`subProfileId` et `intentId`, 73 caractères réunis) puis un OTP à six chiffres. Le mobile les réduit à une seule chaîne partageable, et ça marche — **par SMS ou WhatsApp**. Mais le cas le plus fréquent est que les deux personnes soient **dans la même pièce**, et 73 caractères ne se dictent pas. **Issue** : que `claim/start` émette en plus un **code court** (8 caractères, durée de vie PM-17), stocké sur `SubProfileClaimIntent` et accepté par `claim` à la place de l'`intentId` — migration additive, ~2 h. **Recommandation : le faire**, c'est ce qui rend le geste utilisable sans réseau tiers. | 🟡 **à faire, chiffré** |
+
+| 27 | **Aucun client ne peut lire un paramètre métier (née le 06/09, chantier 48).** Les PM-xx ne sortent que par `GET /v1/admin/parameters`, réservé au super-administrateur. Conséquence constatée sur l'écran du Carnet familial : l'application **ne peut pas savoir à quel âge un transfert devient possible** (PM-16). Elle propose donc le geste à tous et laisse le serveur refuser en nommant l'âge — correct, mais l'utilisateur découvre la règle par un refus. ⚠️ **Recopier la valeur serait pire** : l'écran mentirait le jour où le paramètre change, et c'est exactement la dérive que le projet combat. **Issue** : une route publique en LECTURE SEULE sur une **liste blanche** de paramètres non sensibles (PM-16 l'âge, PM-13 l'échelle de notation, PM-07 le délai de confirmation) — ~1 h. **Recommandation : le faire** ; d'autres écrans buteront sur la même chose. | 🟡 **à faire, chiffré** |
+
 ### Trois dérives documentaires jamais arbitrées
 
 | Le cahier dit | Le code fait |
@@ -617,6 +621,78 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **46** | **La recherche globale** — 05/09. Écartée du chantier A1 en son temps (« chercher dans des dossiers qui n'existent pas encore n'a pas de sens ») ; les dossiers existent, et l'application a seize écrans. Une palette (bouton + Ctrl+K) qui cherche **deux choses, et le dit** : les écrans, lus de `useNavigation()` donc déjà filtrés par capacité, et les comptes, par la **seule route de toute l'API qui cherche du texte** (`GET /admin/accounts?query=`). ⚠️ **Elle annonce en toutes lettres ce qu'elle NE cherche pas** — consultations, pièces, journal : aucune route ne les cherche par texte, et le taire ferait chercher longtemps ce qui n'y sera jamais. **Le droit de chercher des comptes est LU** sur l'entrée `admin-comptes` de `NAV_GROUPS`, jamais recopié — un administrateur Finance ne l'a pas, et un test le garde. ⚠️ **Le test le plus important du chantier** : une recherche en échec ne dit JAMAIS « aucun compte » — sur une plateforme de santé, cette confusion ferait conclure qu'une personne n'existe pas. Le plafond de 50 lignes du serveur est annoncé, comme celui de l'export au chantier 45. Un résultat mène vraiment quelque part : `ComptesPage` lit désormais `?q=`. **web 638 ✓ (625 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
 
 | **47** | **Les raccourcis clavier, et la garde qui les rend acceptables** — 05/09. Ctrl+K existait depuis la veille et **personne ne pouvait le deviner** : un raccourci sans endroit où le lire est un secret entre le code et celui qui l'a écrit. Livré : `?` ouvre un **panneau d'aide** qui rend `RACCOURCIS`, la seule liste — y compris les raccourcis du composeur de consultation, implémentés bien avant, parce qu'on cherche « les raccourcis », pas « ceux de tel module ». `/` ouvre aussi la recherche. ⚠️ **Le cœur du chantier est la garde de saisie** : `/` et `?` sont des CARACTÈRES — sans elle, écrire « 20/09 » dans un motif de refus de 2 000 caractères ouvrirait la recherche au milieu du mot et perdrait la saisie. Ctrl+K reste l'exception, à dessein. ⚠️ **`e.key` et jamais `e.code`** : les utilisateurs sont en **AZERTY**, où `/` est Maj+: et `?` Maj+, — `e.code` aurait désigné une autre touche sur chaque disposition. **Deux défauts trouvés par mes propres tests** : la garde ratait les zones `contenteditable` imbriquées (corrigé par `closest`), et l'écouteur se réabonnait **à chaque rendu** faute de référence — le fichier promettait « un seul écouteur » et en posait un par rendu. L'écouteur de Ctrl+K du chantier 46 a été **déplacé** ici : deux écouteurs auraient donné deux gardes à tenir d'accord. **web 651 ✓ (638 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
+
+| **48** | **Le Carnet qui revient à son majeur** — 06/09, écart D, **premier chantier mobile depuis le 30/08**. `claim/start` et `claim` existaient depuis le premier jour et **aucun client ne les appelait** : un proche devenu adulte ne pouvait jamais récupérer son propre Carnet de santé. ⚠️ **L'écart annonçait un écran ; le serveur imposait une chorégraphie à deux personnes sur deux téléphones** — le majeur doit recevoir deux UUID *et* l'OTP reçu par le tuteur. D'où un code unique (`lib/transfert-carnet`, pur et éprouvé) et le partage natif, déjà l'idiome de l'application. ⚠️ **Un défaut que le chantier aurait CRÉÉ en s'arrêtant au bouton** : un Carnet transféré reste dans la liste du tuteur, qui n'y a plus accès (RM-07-06) — la ligne aurait mené à un refus. **PM-16 n'est servi à aucun client** : l'écran ne filtre donc pas par âge et laisse le serveur nommer la règle. 📌 **Deux suites chiffrées ouvertes** (n°26 le code dictable, n°27 les paramètres lisibles). **mobile 24 ✓ (7 + 17) · types et lint propres.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 48 (le Carnet rendu) a appris
+
+*06/09/2026 — écart D, et premier retour sur le mobile depuis le chantier 30.*
+
+#### L'écart annonçait un écran ; le serveur imposait une chorégraphie
+
+« Le patient ne peut pas revendiquer son sous-profil. » Lu ainsi, c'est un bouton.
+
+En lisant `claim`, le geste s'est révélé être une **cérémonie à deux personnes** :
+
+* le tuteur lance, et reçoit un OTP sur **son** téléphone ;
+* le majeur revendique depuis **son** compte, avec l'OTP du tuteur ;
+* et il lui faut aussi `subProfileId` et `intentId` — **deux UUID** qu'il ne peut pas connaître, le
+  serveur répondant « introuvable » à qui n'est pas le tuteur, exprès, contre l'énumération.
+
+Trois valeurs, deux comptes, deux téléphones. **Le copier-coller ne traverse pas deux appareils** :
+le seul chemin réel est le partage natif, ou la voix.
+
+*Un écart se mesure sur ce que l'écran doit montrer. Ce qu'il coûte se lit dans le serveur.*
+
+#### Le chantier aurait créé le défaut qu'il ne cherchait pas
+
+`listSubProfiles` ne filtre pas par statut : le tuteur **garde dans sa liste** les Carnets transférés.
+Et `RM-07-06` est net — il en perd l'accès au commit.
+
+Avant ce chantier, la question ne se posait pas : aucun transfert n'était possible, donc aucune ligne
+n'était dans cet état. **Livrer le bouton seul aurait donc fabriqué un cul-de-sac** — une ligne qui
+s'ouvre sur un refus, dans l'écran même qui vient de réussir le transfert.
+
+*Un geste nouveau produit des états nouveaux. La question n'est pas seulement « est-ce que ça
+marche », c'est « à quoi ressemble l'écran une fois que ça a marché ».*
+
+#### Ne pas recopier un nombre, même quand ça coûte
+
+Le transfert n'est possible qu'à partir de PM-16. L'écran aurait pu n'offrir le geste qu'aux
+sous-profils assez âgés — c'était plus élégant.
+
+Mais **PM-16 n'est servi à aucun client** : la route des paramètres est réservée au
+super-administrateur. Écrire « 18 » dans l'application aurait donné un écran juste aujourd'hui et
+menteur le jour où le paramètre change.
+
+Le geste est donc proposé à tous, et le serveur refuse en nommant l'âge. Ce n'est pas idéal —
+l'utilisateur découvre la règle par un refus — et c'est pourquoi la **dette n°27** est ouverte avec
+son chiffrage plutôt que laissée en commentaire.
+
+*Entre un écran qui devine et un écran qui demande, on choisit celui qui demande.*
+
+#### Ce qui désigne et ce qui autorise ne voyagent pas ensemble
+
+Le code partagé contient les deux identifiants. Il **ne contient pas** l'OTP, et un test s'en assure.
+
+La raison n'est pas théorique : ce message restera des mois dans une conversation WhatsApp. S'il
+portait aussi les six chiffres, il serait à lui seul un sésame pour quiconque relit la conversation —
+un frère, un téléphone prêté, un appareil revendu.
+
+*Le code désigne, l'OTP autorise. Deux rôles, deux canaux.*
+
+#### Tolérant sur la forme, strict sur le fond
+
+Un code qui traverse une messagerie revient décoré : espaces, retour à la ligne, majuscule
+automatique. Rien de tout cela ne change un identifiant — le refuser ferait accuser le tuteur d'une
+faute qu'il n'a pas commise.
+
+Mais un code **coupé** est refusé net, et c'est le cas qui compte : un UUID amputé reste *plausible*.
+Envoyé au serveur, il revient « introuvable » — et les deux personnes chercheraient le défaut dans le
+transfert alors qu'il est dans le message tronqué.
+
+*La validation la plus utile n'est pas celle qui protège le serveur : c'est celle qui évite de faire
+chercher au mauvais endroit.*
 
 ### Ce que le chantier 47 (les raccourcis) a appris
 

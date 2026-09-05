@@ -121,14 +121,26 @@ levier manque toujours.**
 > `getCaseForAdmin`, sans quoi le bouton aurait agi à l'aveugle. Quand les deux taux sont égaux,
 > **il n'y a pas de bouton du tout**.
 
-### 🟡 D. Le patient ne peut pas revendiquer son sous-profil
+### ✅ D. Le patient ne peut pas revendiquer son sous-profil — **SOLDÉ le 06/09 (chantier 48)**
 
 `POST /v1/health-record/sub-profiles/:id/claim` et `/claim/start` ne sont appelées **ni par le web
 ni par le mobile**. Un proche pour qui on a consulté ne peut donc pas récupérer son propre dossier.
 
-> **Coût : ~½ j**, sur mobile.
-> **Recommandation : à planifier**, hors du périmètre « écrans du soignant ». Inscrit ici pour ne
-> pas le perdre.
+> ✅ **Fait le 06/09** (chantier 48), sur mobile, dans l'écran Carnet familial.
+>
+> ⚠️ **L'écart annonçait « un écran » ; le serveur imposait une chorégraphie à deux personnes.**
+> `claim` réclame du majeur **trois valeurs** : `subProfileId` et `intentId` — deux UUID — plus l'OTP
+> à six chiffres reçu par le TUTEUR. Le majeur n'en possède aucune, et ne peut pas les deviner : le
+> serveur lui répond « introuvable » exprès, contre l'énumération. **Tuteur et majeur sont sur deux
+> téléphones** : le copier-coller ne traverse pas, d'où un code unique partagé par le partage natif.
+>
+> ⚠️ **Un défaut que ce chantier aurait CRÉÉ s'il s'était arrêté au bouton** : un Carnet transféré
+> reste dans la liste du tuteur, qui n'y a plus accès (RM-07-06). La ligne aurait mené à un refus.
+> Elle n'est plus cliquable et dit à qui le Carnet appartient désormais.
+>
+> **PM-16 n'est servi à aucun client** : l'application ne filtre donc pas par âge et laisse le
+> serveur refuser en nommant l'âge — recopier ce nombre le ferait mentir le jour où il change.
+> **mobile 24 ✓ (7 + 17) · types et lint propres.**
 
 ### ✅ E. Le journal d'audit ne s'exporte pas — **SOLDÉ le 05/09 (chantier 45)**
 

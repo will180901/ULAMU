@@ -504,6 +504,33 @@ export interface CreateSubProfileRequest {
   sex: Sex;
 }
 
+/**
+ * Transfert du Carnet à la majorité (CU-07-05, EF-07-09) — écart D, 06/09/2026.
+ *
+ * Deux appels, deux personnes, deux comptes :
+ *   • le TUTEUR lance (`claim/start`) et reçoit l'OTP sur SON téléphone ;
+ *   • le MAJEUR revendique (`claim`) depuis SON compte, avec l'OTP du tuteur.
+ *
+ * `status` d'un sous-profil : `DEPENDENT` tant que le tuteur en a la charge, `TRANSFERRED` une fois
+ * le Carnet passé au majeur. Le serveur refuse toute revendication d'un profil déjà transféré.
+ */
+export interface StartClaimResponse {
+  /** Désigne CETTE intention de transfert (D-048) : un OTP seul ne suffit plus à revendiquer. */
+  intentId: string;
+  expiresInSeconds: number;
+}
+
+export interface ClaimSubProfileRequest {
+  intentId: string;
+  /** Six chiffres, reçus par le TUTEUR — c'est lui qui autorise, depuis son propre téléphone. */
+  otpCode: string;
+}
+
+export interface ClaimSubProfileResponse {
+  subProfileId: string;
+  healthRecordId: string;
+}
+
 export const REMINDER_ROUTES = {
   mine: '/v1/reminders/me',
   create: '/v1/reminders',
@@ -690,6 +717,10 @@ export const HEALTH_ROUTES = {
   entries: '/v1/health-record/me/entries',
   export: '/v1/health-record/me/export',
   subProfiles: '/v1/health-record/me/sub-profiles',
+  /* Transfert à la majorité (CU-07-05). Le sous-profil est désigné par son identifiant, que le
+     majeur ne peut pas connaître autrement : le tuteur le lui transmet (voir `transfert-carnet`). */
+  startClaim: (id: string): string => `/v1/health-record/sub-profiles/${encodeURIComponent(id)}/claim/start`,
+  claim: (id: string): string => `/v1/health-record/sub-profiles/${encodeURIComponent(id)}/claim`,
 } as const;
 
 // ── M09 — Ordonnance & délivrance (EF-09-09, CU-09-01) ───────────────────────
