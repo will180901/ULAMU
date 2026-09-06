@@ -18,21 +18,32 @@ export function ChatActionSheet({
   visible,
   canEdit,
   canDeleteForEveryone,
+  canReport,
   onReact,
   onReply,
   onEdit,
   onDeleteForMe,
   onDeleteForEveryone,
+  onReport,
   onClose,
 }: {
   visible: boolean;
   canEdit: boolean;
   canDeleteForEveryone: boolean;
+  /**
+   * Signaler — uniquement sur les messages de L'AUTRE (chantier 59, 06/09/2026).
+   *
+   * Se signaler soi-même n'a aucun sens, et l'offrir ferait douter de ce que le geste veut dire.
+   * « Supprimer pour moi » reste au-dessus : il répond au même besoin — ne plus voir ce message —
+   * sans engager personne.
+   */
+  canReport: boolean;
   onReact: (emoji: string) => void;
   onReply: () => void;
   onEdit: () => void;
   onDeleteForMe: () => void;
   onDeleteForEveryone: () => void;
+  onReport: () => void;
   onClose: () => void;
 }) {
   const {colors} = useTheme();
@@ -76,6 +87,7 @@ export function ChatActionSheet({
               {canEdit && <Row icon="user" label="Modifier" onPress={onEdit} />}
               <View style={styles.sep} />
               <Row icon="trash" label="Supprimer" danger onPress={() => setStep('delete')} />
+              {canReport && <Row icon="flag" label="Signaler ce message" danger onPress={onReport} />}
             </>
           ) : (
             <>

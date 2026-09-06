@@ -642,6 +642,60 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **57** | **Les balayages ne tournaient qu'une nuit sur onze** — 06/09. En relançant le script des fichiers, le porteur a posé sans le savoir la bonne question. ⚠️ **Les `@Cron` ne s'exécutent que si le processus est VIVANT à l'instant dit — et Render endort le service après 15 min d'inactivité.** Preuve trouvée au journal d'audit : `m13.reconciliation.done` par `m16.scheduler` le **04/09 à 00:00:00 UTC, une seule fois sur 11,4 jours**. Les trois balayages livrés aujourd'hui — recréditer un retrait, effacer des données médicales, constater qu'une notification critique n'arrivera jamais — auraient donc tourné **une nuit sur onze**, au hasard de la présence d'un utilisateur. Livré : le déclencheur cesse d'être l'HEURE et devient l'ANCIENNETÉ. Une table `SchedulerRun` porte le dernier passage ; le tick d'une minute — qui part dès le réveil, donc à la première requête venue — rattrape ce qui est dû, sous **écriture conditionnelle** pour que le `@Cron` et le rattrapage ne fassent jamais le travail deux fois. **api 579 ✓ (574 + 5) · lint 0 · migration additive · 162 routes.** | ⏸ en attente | ⏸ |
 | **58** | **Changer son mot de passe sur mobile — et ne plus être mis dehors quand on se trompe** — 06/09. En mesurant ce que le serveur sait faire pour un patient et que l'application n'appelle pas : `POST /v1/accounts/me/password` existait **depuis le premier jour**, le web l'appelait, le mobile non — un patient devait se **déconnecter** puis passer par « mot de passe oublié ». ⚠️ En branchant l'écran, un défaut bien plus grave est apparu : **les deux clients traitent un `401` sur une requête authentifiée comme « ton jeton est mort » et effacent la session** — or l'API répondait `401` quand la session était valide et que seule la **preuve envoyée dans le corps** était fausse. **Une faute de frappe déconnectait**, sur douze routes : changement de mot de passe, désactivation de 2FA, fermeture de compte, signature du contrat soignant, et l'**exécution d'un retrait d'argent**. Corrigé au SERVEUR (une correction cliente n'atteindrait pas les téléphones déjà installés) : `ProofRefusedException` → 403, et `preuveEnSession()` pour les codes à usage unique consommés depuis une session ouverte. `401` ne veut plus dire qu'une chose. **api 587 ✓ (579 + 8) · mobile 32 ✓ (29 + 3) · web 659 ✓ · lint 0 erreur · 162 routes · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **59** | **Le patient n'avait aucun bouton pour signaler** — 06/09, moitié mobile de l'écart A. `POST /v1/reports` existe depuis le premier jour ; le web l'appelle depuis le chantier 41, l'application patient **non**. ⚠️ Ce n'est pas une fonctionnalité manquante parmi d'autres : c'est **la voie de recours**. Toute la modération était construite derrière — file triée par gravité, décision motivée, avertissement, transmission — sans porte d'entrée côté patient. Livré : la feuille `FeuilleSignalement` (les six motifs du serveur, la garantie d'anonymat annoncée AVANT le formulaire, l'accusé qui redit que la réponse reviendra dans les notifications), branchée à **deux endroits** — « Signaler ce message » à l'appui long, et « Signaler ce soignant » depuis la session ET depuis la fiche. Les règles sortent du JSX (`lib/signalement.ts`), l'icône `flag` rejoint le jeu d'icônes. **mobile 43 ✓ (32 + 11) · api 587 ✓ · web 659 ✓ · lint 0 erreur · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 59 (la voie de recours) a appris
+
+*06/09/2026 — la moitié mobile d'un écart soldé côté web quinze jours plus tôt.*
+
+#### « Livré » voulait dire « livré sur un seul des deux clients »
+
+L'écart A a été fermé le 04/09 par le chantier 41, et le journal l'a inscrit comme réglé. Il l'était
+— **pour le web**. Le patient, lui, n'avait toujours aucun bouton.
+
+Or c'est le patient qui en a le plus besoin : le soignant a un statut, une structure, un contrat ;
+le patient n'a que l'application.
+
+*Un écart n'est pas fermé tant qu'il reste ouvert pour l'acteur le plus démuni des deux.*
+
+#### Le chemin compte autant que le bouton
+
+Le premier réflexe était de mettre « Signaler ce soignant » sur la fiche d'annuaire, et rien d'autre.
+En cherchant comment un patient y accède après une consultation, la mesure a répondu : **il n'y a
+qu'un seul chemin vers cette fiche dans toute l'application** — revenir à l'accueil et retrouver la
+personne dans la liste. Où elle peut très bien ne plus apparaître : hors ligne, filtrée, plus loin
+dans les résultats.
+
+Demander à quelqu'un de **rechercher** celui qu'il veut signaler, c'est lui demander d'y renoncer.
+D'où le drapeau dans l'en-tête de la session elle-même, où la personne est déjà devant lui.
+
+*Un bouton n'existe que si le chemin qui y mène existe au moment où on en a besoin.*
+
+#### Une règle d'affichage est une règle, pas de la mise en page
+
+« On ne signale que les messages de l'autre » vivait, côté web, dans une condition JSX. Recopiée
+telle quelle ici, elle aurait fait deux copies d'une même règle dans deux langages — la définition
+même de ce qui dérive. Elle est donc sortie dans `lib/signalement.ts`, avec l'ordre d'affichage des
+motifs, et elle est éprouvée.
+
+*Le même geste qu'au chantier 53 pour l'expiration des sessions : ce qui décide quelque chose ne
+vit pas dans une condition d'affichage.*
+
+#### Trouvé au passage : un signalement de message est peu exploitable
+
+L'écran d'administration n'affiche du signalement que `targetType` et les **huit premiers
+caractères** de `targetId`. Pour un profil, l'équipe peut retrouver le compte. Pour un MESSAGE, elle
+lit `SESSION_MESSAGE · A3F91C2B` — et n'a aucun moyen de lire le message, ni de savoir qui l'a
+écrit.
+
+⚠️ Ce n'est pas un défaut de ce chantier : il existe côté web depuis le 04/09. Mais le mobile va
+maintenant en produire, et il vaut mieux le dire tant que la file est vide.
+
+**Ma recommandation** : une route `GET /v1/admin/reports/:id/context` qui résout la cible — pour un
+message, son texte, son auteur et sa session ; pour un profil, le compte. Coût estimé : une route,
+une section d'écran, une demi-journée. À faire avant que la file se remplisse de signalements que
+personne ne peut instruire.
+
 
 ### Ce que le chantier 58 (une faute de frappe qui déconnectait) a appris
 
@@ -708,7 +762,7 @@ coûtent à quelqu'un qui en a besoin :
 
 | Manque | Ce que ça fait à l'utilisateur | Ma recommandation |
 |---|---|---|
-| **Signaler** (`POST /v1/reports`) | Un patient qui subit un comportement grave **n'a aucun bouton**. C'est la moitié mobile de l'écart A, déjà livré côté web. | À faire en premier : c'est le seul des quatre où l'absence peut laisser quelqu'un sans recours. |
+| ~~**Signaler** (`POST /v1/reports`)~~ | ~~Un patient qui subit un comportement grave **n'a aucun bouton**.~~ | ✅ **Livré au chantier 59** (06/09) — feuille de signalement, branchée sur le message et sur le soignant. |
 | **Support** (`/v1/support-requests`) | Aucun moyen d'écrire à quelqu'un depuis l'application ; le seul chemin est de sortir et de chercher un contact. | Juste après : c'est aussi le filet quand tout le reste échoue. |
 | **TOTP** (`setup`/`confirm`/`backup-codes`/`reset`) | On peut **désactiver** la 2FA par email depuis le mobile, mais pas activer l'authentification par application, ni revoir ses codes de secours. Un interrupteur qui ne va que dans un sens. | Ensuite : c'est un manque de symétrie, pas un blocage. |
 | **Consentements** (`GET /v1/accounts/me/consents`) | On ne peut pas relire ce qu'on a accepté. Preuve légale (loi n° 29-2019) que l'intéressé ne voit pas. | En dernier des quatre, mais à faire : une preuve qu'on ne peut pas consulter protège mal. |

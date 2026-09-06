@@ -10,6 +10,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {Pressable, SafeAreaView, ScrollView, Share, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Avatar, Badge, Banner, Card, IconButton, PrimaryButton, VerifiedBadge, VerifiedTag} from '../components/ui';
 import {AvatarViewer} from '../components/AvatarViewer';
+import {FeuilleSignalement} from '../components/FeuilleSignalement';
 import {useDialog} from '../components/Dialog';
 import {ErrorState, LoadingState} from '../components/ScreenState';
 import {Grain} from '../components/Grain';
@@ -33,6 +34,7 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
   const [alerting, setAlerting] = useState(false);
   const [initiating, setInitiating] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [signaler, setSignaler] = useState(false);
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -199,6 +201,23 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
             <Banner tone="info" title="Poignée de main avant paiement">
               Aucun franc n'est débité tant que le soignant n'a pas confirmé être prêt. Remboursement automatique en cas de défaillance.
             </Banner>
+
+            {/*
+              ── Signaler ce soignant (chantier 59, 06/09/2026) ─────────────────────────────────
+
+              En BAS de la fiche, et volontairement discret : ce n'est pas ce qu'on vient y faire.
+              Mais quand on en a besoin, il faut le trouver sans chercher — et sur cet écran, tout
+              ce qu'il y a à savoir de la personne est déjà lu.
+
+              Il n'est PAS dans l'en-tête : les deux boutons qui s'y trouvent — revenir, partager —
+              sont ceux pour lesquels on vient, et un troisième les serre. Dans une SESSION, où le
+              drapeau est en en-tête, il n'existe aucun autre chemin ; ici, la fiche entière est
+              devant nous.
+            */}
+            <Pressable onPress={() => setSignaler(true)} style={styles.signalerRow} accessibilityRole="button">
+              <Icon name="flag" size={14} color={colors.textTertiary} />
+              <Text style={styles.signalerText}>Signaler ce soignant</Text>
+            </Pressable>
           </ScrollView>
 
           {/* Footer collant */}
@@ -216,6 +235,13 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
         </>
       )}
       {doctor && <AvatarViewer visible={avatarOpen} uri={null} name={doctor.name} onClose={() => setAvatarOpen(false)} />}
+      <FeuilleSignalement
+        visible={signaler}
+        onClose={() => setSignaler(false)}
+        cible="PROFILE"
+        cibleId={id}
+        quoi="ce soignant"
+      />
     </SafeAreaView>
   );
 }
@@ -261,6 +287,8 @@ const makeStyles = (colors: Palette) =>
     borderBottomColor: colors.borderSubtle,
   },
   headerTitle: {flex: 1, fontFamily: fonts.displayBold, fontSize: 16, letterSpacing: -0.3, color: colors.textPrimary},
+  signalerRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 14},
+  signalerText: {fontFamily: fonts.body, fontSize: 12.5, fontWeight: '600', color: colors.textTertiary},
 
   content: {padding: 16, gap: 14, paddingBottom: 110},
 

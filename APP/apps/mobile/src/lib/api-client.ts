@@ -18,6 +18,8 @@ import {
   ChangePasswordRequest,
   ChangePasswordResponse,
   ClaimByCodeRequest,
+  CreateReportRequest,
+  CreateReportResponse,
   ClaimSubProfileRequest,
   ClaimSubProfileResponse,
   CreateSubProfileRequest,
@@ -28,6 +30,7 @@ import {
   Reminder,
   ReminderListResponse,
   REMINDER_ROUTES,
+  REPORT_ROUTES,
   PublicParameter,
   StartClaimResponse,
   SubProfile,
@@ -316,6 +319,21 @@ export class ApiClient {
   }
   revokeSession(id: string): Promise<void> {
     return this.request('DELETE', ACCOUNT_ROUTES.session(id), undefined, true);
+  }
+
+  /**
+   * Signaler une personne ou un message (M04, EF-04-05) — chantier 59.
+   *
+   * Deux garanties du SERVEUR que l'écran doit annoncer, parce que ce sont elles qui décident
+   * quelqu'un à remplir le formulaire :
+   *
+   *  • `redactReportForAdmin` (RM-04-04) retire l'identité du signaleur AVANT que l'administration
+   *    ne voie quoi que ce soit — le nom n'est montré ni à la personne signalée, ni à l'équipe ;
+   *  • quand l'équipe tranche, le serveur notifie l'auteur (`m04.report.resolved`) : la réponse
+   *    revient dans l'application, ce qui distingue un formulaire d'un trou noir.
+   */
+  createReport(dto: CreateReportRequest): Promise<CreateReportResponse> {
+    return this.request('POST', REPORT_ROUTES.create, dto, true);
   }
 
   /**

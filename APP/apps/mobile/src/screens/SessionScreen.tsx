@@ -39,10 +39,12 @@ import {api, getAuthToken} from '../services/api';
 import {PickedImage, pickSessionImageAssets, sessionMediaUrl} from '../services/media';
 import {cancelRecording, fileToBase64, startRecording, stopRecording} from '../services/audio';
 import {ChatActionSheet} from '../components/ChatActionSheet';
+import {FeuilleSignalement} from '../components/FeuilleSignalement';
 import {MediaPreview} from '../components/MediaPreview';
 import {MediaViewer} from '../components/MediaViewer';
 import {VoiceNotePlayer} from '../components/VoiceNotePlayer';
 import {MessageReaction, MessageView, SessionView} from '../lib/contracts';
+import {peutSignalerMessage} from '../lib/signalement';
 import {useAbandonGuard} from '../state/useAbandonGuard';
 import {uuidv4} from '../lib/uuid';
 import {fonts, Palette, radius, shadow} from '../theme';
@@ -66,6 +68,9 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
   const [remaining, setRemaining] = useState(0);
   const [load, setLoad] = useState<'loading' | 'ready' | 'error'>('loading');
   const [actionMsg, setActionMsg] = useState<MessageView | null>(null);
+  /* Signalement (chantier 59) : soit un message précis, soit le soignant lui-même. */
+  const [msgSignale, setMsgSignale] = useState<string | null>(null);
+  const [signalerSoignant, setSignalerSoignant] = useState(false);
   const [replyTarget, setReplyTarget] = useState<MessageView | null>(null);
   const [editMsg, setEditMsg] = useState<MessageView | null>(null);
   // Citation cliquable (défilement + surbrillance temporaire) et bouton flottant « revenir en bas ».
@@ -299,6 +304,22 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
             <Text style={styles.delayText}>retard {mmss(session.professionalDelaySec)}</Text>
           </View>
         )}
+        {/*
+          ── Signaler le soignant (chantier 59, 06/09/2026) ────────────────────────────────────
+
+          Ici, et pas seulement sur sa fiche d'annuaire : après une consultation qui s'est mal
+          passée, le SEUL chemin vers cette fiche était de revenir à l'accueil et de retrouver la
+          personne dans la liste — où elle peut très bien ne plus apparaître (hors ligne, filtrée).
+          Demander à quelqu'un de rechercher celui qu'il veut signaler, c'est lui demander d'y
+          renoncer.
+        */}
+        <IconButton
+          icon="flag"
+          onPress={() => setSignalerSoignant(true)}
+          variant="tile"
+          size={16}
+          accessibilityLabel="Signaler ce soignant"
+        />
         {!ended && (
           <View style={[styles.timer, remaining < 120 && styles.timerWarn]}>
             <Icon name="clock" size={12} color={remaining < 120 ? colors.error : colors.accent} />
@@ -391,6 +412,7 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
         visible={!!actionMsg}
         canEdit={!!actionMsg && isMine(actionMsg) && actionMsg.kind === 'TEXT' && within15(actionMsg.createdAt)}
         canDeleteForEveryone={!!actionMsg && isMine(actionMsg) && within15(actionMsg.createdAt)}
+        canReport={peutSignalerMessage(actionMsg, session.patientAccountId)}
         onReact={emoji => actionMsg && reactToMsg(actionMsg, emoji)}
         onReply={() => {
           setReplyTarget(actionMsg);
@@ -402,7 +424,30 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
         }}
         onDeleteForMe={() => actionMsg && deleteMsg(actionMsg, false)}
         onDeleteForEveryone={() => actionMsg && deleteMsg(actionMsg, true)}
+        onReport={() => {
+          setMsgSignale(actionMsg?.id ?? null);
+          setActionMsg(null);
+        }}
         onClose={() => setActionMsg(null)}
+      />
+
+      {/*
+        Les deux feuilles vivent ICI, au niveau de l'écran, et non dans chaque bulle : une feuille
+        par message en monterait autant qu'il y a de messages, pour n'en montrer qu'une.
+      */}
+      <FeuilleSignalement
+        visible={msgSignale !== null}
+        onClose={() => setMsgSignale(null)}
+        cible="SESSION_MESSAGE"
+        cibleId={msgSignale ?? ''}
+        quoi="ce message"
+      />
+      <FeuilleSignalement
+        visible={signalerSoignant}
+        onClose={() => setSignalerSoignant(false)}
+        cible="PROFILE"
+        cibleId={session.professionalId}
+        quoi="ce soignant"
       />
     </SafeAreaView>
   );

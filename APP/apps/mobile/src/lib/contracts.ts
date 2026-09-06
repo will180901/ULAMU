@@ -815,6 +815,65 @@ export const PRESCRIPTION_ROUTES = {
   one: (id: string): string => `/v1/prescriptions/${encodeURIComponent(id)}`,
 } as const;
 
+
+/*
+  ── M04 « Signaler » — chantier 59, 06/09/2026 (EF-04-05 ; CU-04-03) ──────────────────────────
+
+  `POST /v1/reports` existe depuis le premier jour. Le WEB l'appelle depuis le chantier 41 ; cette
+  application, non — **un patient n'avait aucun bouton pour signaler quoi que ce soit.**
+
+  ⚠️ Ce n'est pas une fonctionnalité manquante parmi d'autres : c'est **la voie de recours**. Toute
+  la modération est construite derrière (file triée par gravité, décision motivée, avertissement,
+  transmission) et n'avait, côté patient, aucune porte d'entrée.
+*/
+
+/**
+ * Ce qu'on peut signaler.
+ *
+ * ⚠️ Le serveur en accepte un TROISIÈME, `FACILITY`. Il n'est pas déclaré ici, et ce n'est pas un
+ * oubli : les structures sont sorties du produit le 02/09 (D-051). La valeur reste au serveur parce
+ * qu'elle décrit des lignes qui peuvent exister en base ; l'offrir serait offrir une porte qui ne
+ * mène nulle part. Le web a tranché pareil.
+ */
+export type ReportTargetType = 'PROFILE' | 'SESSION_MESSAGE';
+
+/**
+ * Les six motifs (EF-04-05) — liste FERMÉE, côté serveur comme ici.
+ *
+ * Le texte libre existe (`reasonText`), mais il ne remplace jamais le code : c'est le CODE qui
+ * décide de l'ordre de traitement dans la file de modération — le harcèlement passe devant le spam.
+ * Un signalement sans code serait un signalement sans priorité, donc traité en dernier.
+ */
+export const REPORT_REASON_CODES = [
+  'INAPPROPRIATE_BEHAVIOR',
+  'MISLEADING_INFORMATION',
+  'SUSPECTED_FAKE_PROFILE',
+  'HARASSMENT',
+  'SPAM',
+  'OTHER',
+] as const;
+export type ReportReasonCode = (typeof REPORT_REASON_CODES)[number];
+
+export interface CreateReportRequest {
+  targetType: ReportTargetType;
+  targetId: string;
+  reasonCode: ReportReasonCode;
+  /** Facultatif ; le serveur plafonne à 1000 caractères (`@MaxLength(1000)`). */
+  reasonText?: string;
+}
+
+/** Accusé de réception immédiat — le signalement entre en file de modération au statut OPEN. */
+export interface CreateReportResponse {
+  reportId: string;
+}
+
+export const REPORT_ROUTES = {
+  create: '/v1/reports',
+} as const;
+
+/** Le serveur refuse au-delà — l'écran le dit AVANT d'être refusé. */
+export const REPORT_TEXT_MAX = 1000;
+
 /*
   ── M12 « Recherche & dévoilement-réservation » est RETIRÉ (02/09/2026, chantier 26) ───────────
 

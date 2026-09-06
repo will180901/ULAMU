@@ -29,6 +29,7 @@ export type IconName =
   | 'check-circle'
   | 'message'
   | 'shield-check'
+  | 'flag'
   | 'search'
   | 'calendar'
   | 'map-pin'
@@ -69,7 +70,7 @@ const ICON_TONE_MAP: Partial<Record<IconName, ToneName>> = {
   // indigo — communication
   phone: 'indigo', send: 'indigo', mail: 'indigo', message: 'indigo', share: 'indigo', mic: 'indigo', image: 'indigo',
   // rose — attention/favoris
-  bell: 'rose', star: 'rose',
+  bell: 'rose', star: 'rose', flag: 'rose',
   // magenta — lieu/paiement
   'map-pin': 'magenta', 'credit-card': 'magenta',
 };
@@ -220,6 +221,13 @@ function render(name: IconName, p: object): React.ReactNode {
         <>
           <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" {...p} />
           <Polyline points="9 12 11 14 15 10" {...p} />
+        </>
+      );
+    case 'flag':
+      return (
+        <>
+          <Path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" {...p} />
+          <Line x1="4" y1="22" x2="4" y2="15" {...p} />
         </>
       );
     case 'search':
