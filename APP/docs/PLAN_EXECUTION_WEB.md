@@ -630,6 +630,77 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **51** | **Relecture de M06 — la chaîne de soin** — 06/09. Le chemin de l'argent du patient est **solide** : `pay` re-vérifie « peut exercer » avant de débiter, et le webhook rembourse automatiquement un paiement qui n'ouvre aucune session. ⚠️ **Le trou est ailleurs, et il est double.** `uploadMedia` stocke un fichier et rend sa clé ; c'est un **SECOND appel HTTP** qui l'attache à un message — entre les deux, l'utilisateur renonce, le réseau tombe, et **rien ne vient jamais chercher le fichier** : aucun balayage, aucune purge, aucune durée de vie. Ce sont des photos et des vocaux MÉDICAUX conservés sans propriétaire. 📌 **Et en le mesurant, un second défaut, celui-là RÉALISÉ** : `scripts/menage-comptes-demo.ts` supprimait les pièces justificatives et **laissait leurs fichiers** — trois pièces d'identité et un diplôme chiffrés dorment en base depuis le **24/08/2026**, sans propriétaire et sans règle de rétention. Livré : un balayage quotidien dont **le défaut est de ne rien faire** — un préfixe inconnu n'est JAMAIS effacé, un fichier référencé non plus, un fichier de moins de 24 h non plus. Et le script corrigé. **api 554 ✓ (546 + 8) · lint 0 · build propre · 162 routes.** | ⏸ en attente | ⏸ |
 
+| **52** | **Relecture de M07 — le Carnet de santé** — 06/09. Le module le plus sensible du projet, et **le contrôle d'accès y est étanche** : `resolveScope` est le seul point d'entrée, refuse tout compte non-patient, exige la tutelle pour un sous-profil, et **coupe l'accès du tuteur après transfert**. Le 404 est volontairement indistinct (anti-énumération). L'accès du médecin passe par M06, se referme sur les deux chemins de clôture, et est tracé sans contenu médical. ⚠️ **Le défaut trouvé est le mien, et il date de deux jours.** Une consultation réservée POUR une personne à charge, dont le Carnet est transféré avant le dépôt du compte-rendu, rendait ce dépôt **IMPOSSIBLE** — le chemin refusait « écrivez via son compte patient ». Or le compte-rendu est obligatoire (PM-30, puis gains gelés) et **les gains ne sont crédités qu'à son dépôt** (RM-06-04) : le médecin n'aurait jamais été payé, le patient n'aurait jamais reçu son compte-rendu. Le cas était inatteignable avant le chantier 48 — **je l'ai ouvert moi-même**. Corrigé : l'écriture **suit** le Carnet vers son nouveau titulaire, qui est aussi celui qu'on notifie. **api 559 ✓ (554 + 5) · lint 0 · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 52 (le Carnet transféré) a appris
+
+*06/09/2026 — relecture de M07, le module des données médicales.*
+
+#### Le module le plus sensible était le mieux gardé
+
+On entre dans M07 en cherchant une fuite : un patient qui lirait le Carnet d'un autre, un
+professionnel qui lirait hors session. Rien.
+
+`resolveScope` est le **seul** point d'entrée des routes « me », et il tient tout : compte non-patient
+refusé, tutelle exigée pour un sous-profil, 404 volontairement indistinct entre « n'existe pas » et
+« pas le vôtre », et **accès coupé au tuteur dès le transfert**. Côté médecin, la lecture passe par
+M06, exige une session ACTIVE, se referme sur les deux chemins de clôture, et se trace sans jamais
+journaliser un contenu médical.
+
+*Un module bien gardé se reconnaît à ceci : la règle est écrite une fois, et toutes les portes y
+passent.*
+
+#### Le défaut trouvé est le mien, et il datait de deux jours
+
+Le chantier 48 a rendu possible le transfert d'un Carnet à la majorité. Deux jours plus tard, ce
+chemin devient atteignable :
+
+1. un tuteur réserve une consultation **pour** sa personne à charge — la session porte son
+   `subProfileId` ;
+2. celle-ci atteint sa majorité et revendique son Carnet ;
+3. le médecin dépose son compte-rendu → **refusé**.
+
+Et le refus ne s'arrêtait pas à un message d'erreur. Le compte-rendu est **obligatoire** — relances
+PM-30, puis « gains gelés » passé le délai — et **les gains ne sont crédités qu'à son dépôt**
+(RM-06-04). Le médecin n'aurait jamais été payé pour une consultation qu'il a réellement menée, et
+le patient n'aurait jamais reçu le compte-rendu de sa propre consultation.
+
+*Le chantier 48 écrivait déjà, dans ce journal : « un geste nouveau produit des états nouveaux ». Je
+l'ai écrit pour l'écran de la liste, et je ne l'ai pas poussé jusqu'aux modules voisins.*
+
+#### Suivre plutôt que refuser, parce que c'est le même Carnet
+
+Le réflexe était de renvoyer le médecin vers « le compte patient du titulaire ». Il n'a aucun moyen
+de le connaître, et ce n'était de toute façon pas la bonne réponse.
+
+`claim` ne recopie pas le Carnet : il en **change le propriétaire** — `patientAccountId` posé,
+`subProfileId` libéré. Écrire « via le sous-profil » après coup désigne donc le **même Carnet**, qui
+a seulement changé de nom. On le suit. On n'en crée jamais un second (RM-07-01), et c'est le
+titulaire qu'on notifie, plus le tuteur qui n'y a plus accès.
+
+#### Refuser reste la bonne réponse quand la donnée est incohérente
+
+Un sous-profil marqué transféré **sans** titulaire enregistré ne permet aucune déduction. Deviner un
+propriétaire y écrirait un compte-rendu médical dans le Carnet de quelqu'un.
+
+Ce cas-là refuse, et le dit — « contactez le support ». La différence avec le refus qu'on vient de
+retirer : celui-ci porte sur une **incohérence**, l'autre portait sur une situation **normale**.
+
+*Tous les refus ne se valent pas. Celui qui protège d'une donnée douteuse doit rester ; celui qui
+punit un utilisateur d'avoir eu dix-huit ans doit partir.*
+
+#### Trois relectures, trois défauts, aucun visible à l'écran
+
+M13 : un retrait débité que rien ne rattrapait. M06 : des fichiers médicaux sans propriétaire.
+M07 : un compte-rendu devenu impossible à déposer.
+
+Aucun des trois n'apparaît dans un test, dans une route, ou sur un écran. Les trois se voient en
+lisant une suite d'opérations et en se demandant **ce qui arrive si l'ordinaire se produit** — un
+redémarrage, un utilisateur qui renonce, un anniversaire.
+
+*Les défauts qui coûtent le plus cher ne sont pas ceux qu'on n'a pas codés : ce sont ceux qu'on a
+codés en supposant que rien ne bougerait entre deux lignes.*
+
 ### Ce que le chantier 51 (les fichiers sans propriétaire) a appris
 
 *06/09/2026 — relecture de M06, la chaîne de soin.*

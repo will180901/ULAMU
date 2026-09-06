@@ -115,12 +115,43 @@ export class HealthRecordWriterService {
     if (!subProfile) {
       throw new BadRequestException("Sous-profil introuvable (EF-07-09)");
     }
-    // Après transfert, le Carnet appartient au nouveau compte : écrire « via le sous-profil »
-    // recréerait un second Carnet — interdit (RM-07-01, RM-07-06).
+    /*
+      ── Après un transfert, l'écriture SUIT le Carnet (chantier 52, 06/09/2026) ────────────────
+
+      Ce chemin refusait tout net : « écrivez via son compte patient ». C'était sans conséquence
+      tant que **aucun client ne savait transférer un Carnet** — et le chantier 48 l'a rendu
+      possible le 06/09. Le cas est devenu atteignable le jour même :
+
+        1. un tuteur réserve une consultation POUR sa personne à charge — la session porte son
+           `subProfileId` ;
+        2. celle-ci atteint sa majorité et revendique son Carnet (CU-07-05) ;
+        3. le professionnel dépose son compte-rendu → refusé.
+
+      Ce que ce refus coûtait, et ce n'est pas une gêne d'écran : **le compte-rendu est obligatoire**
+      (relances PM-30, puis « gains gelés » passé le délai), et **les gains ne sont crédités qu'au
+      dépôt** (RM-06-04). Le professionnel n'aurait donc jamais été payé, et le patient n'aurait
+      jamais reçu le compte-rendu de sa propre consultation.
+
+      Suivre le transfert est aussi ce qui est JUSTE : `claim` ne recopie pas le Carnet, il en
+      **change le propriétaire** (`patientAccountId` posé, `subProfileId` libéré). Écrire « via le
+      sous-profil » après coup désigne donc le MÊME Carnet — il a seulement changé de nom. On le
+      suit ; on n'en crée pas un second (RM-07-01).
+
+      Le titulaire est notifié à la place du tuteur : c'est son Carnet, et le tuteur n'y a plus accès.
+    */
     if (subProfile.status !== SubProfileStatus.DEPENDENT) {
-      throw new BadRequestException(
-        "Ce Carnet a été transféré à son titulaire — écrivez via son compte patient (RM-07-06)",
-      );
+      if (!subProfile.transferredToId) {
+        // Transféré sans destinataire : incohérence de données, on ne devine pas de propriétaire.
+        throw new BadRequestException(
+          "Ce Carnet a été transféré sans titulaire identifiable — contactez le support (RM-07-06)",
+        );
+      }
+      const record = await tx.healthRecord.upsert({
+        where: { patientAccountId: subProfile.transferredToId },
+        create: { patientAccountId: subProfile.transferredToId },
+        update: {},
+      });
+      return { record, notifyAccountId: subProfile.transferredToId };
     }
     const record = await tx.healthRecord.upsert({
       where: { subProfileId },
