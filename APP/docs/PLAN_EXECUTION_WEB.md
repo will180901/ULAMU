@@ -636,6 +636,83 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **54** | **Relecture de M04 — le journal qui prouve tout le reste** — 06/09. Le chaînage est **bien construit** : transaction sérialisée, rejeu sur conflit, entrée de quarantaine pour un payload illisible plutôt qu'une file bloquée. ⚠️ **Mais le journal de production contient 99 entrées numérotées de 356 à 454** : `seq` est un auto-incrément, les **355 premières ont existé puis ont disparu** — l'effacement du 23/08/2026, dont le compteur de séquence a survécu. Et la vérification répondait **« chaîne intacte »**, à juste titre : la première entrée survivante a été écrite table vide, donc depuis le hash d'origine. Tout est cohérent ; tout est aussi incomplet. ⚠️ **Ce n'est pas qu'un accident : c'est une propriété du mécanisme.** Un chaînage ne peut pas distinguer « ce journal commence ici » de « quelqu'un a vidé la table » — seul le NUMÉRO du premier maillon les sépare. Livré : `firstSeq` et `startsAtOrigin` remontés par la vérification, et l'écran qui dit **« Ce qui reste est intact ; ce n'est pas la même chose que complet. »** 📌 **Un test existant est tombé** — celui qui compare l'horloge du navigateur à celle du serveur : le chantier 53 avait déplacé la constante, et **je n'avais pas relancé la suite web**. **api 566 ✓ · web 655 ✓ (651 + 4) · mobile 29 ✓ · lint 0 · build propre.** | ⏸ en attente | ⏸ |
 
+| **55** | **Relecture de M14 — les notifications** — 06/09, **dernier module non relu**. Le renvoi des critiques est **remarquablement soigné** : il rattrape même les lignes restées QUEUED après un crash entre le commit et la transition (D-047) — exactement le défaut trouvé dans M13, déjà corrigé ici. ⚠️ **Mais au bout des cinq essais, la « livraison GARANTIE » s'arrêtait en silence** : `m14.delivery.failed` était émis et **rien ne s'y abonnait**, la seule trace étant une ligne d'audit — que personne ne lit spontanément. Une panne d'identifiants FCM ferait tomber TOUS les push critiques, pour tout le monde, sans réveiller personne. ⚠️ **À nuancer, et c'est important** : la notification existe toujours dans le centre in-app, qui naît `SENT` — ce qui est perdu, c'est **l'interruption**, précisément l'objet d'une critique. Livré : l'abandon prévient chaque super-administrateur, par le centre in-app (alerter par push que le push est en panne ne servirait à rien). 📌 **Et une question posée à qui branchera FCM** : `DevPushGateway` réussit toujours sans consulter les appareils — d'où **19 push « envoyés » pour zéro appareil enregistré** en production. Avec un vrai FCM, réussir ou échouer sur un compte sans appareil sont deux réponses également mauvaises. **api 570 ✓ (566 + 4) · web 655 ✓ · mobile 29 ✓ · lint 0 · 162 routes.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 55 (la garantie qui s'arrêtait en silence) a appris
+
+*06/09/2026 — relecture de M14, dernier module du serveur.*
+
+#### Le module avait déjà corrigé le défaut que je venais de trouver ailleurs
+
+`retryFailedCritical` ne rattrape pas seulement les push `FAILED` : il rattrape aussi les `QUEUED`
+**rassis** — ceux dont le processus est mort entre le commit de la ligne et sa transition. C'est
+mot pour mot le trou trouvé dans M13 au chantier 50, et il est traité ici depuis D-047.
+
+*Lire un module avec le défaut d'un autre en tête est une bonne méthode. Parfois elle apprend qu'on
+avait déjà raison, ailleurs, avant.*
+
+#### « Garantie » s'arrêtait à cinq essais, sans réveiller personne
+
+EF-14-08 s'appelle **livraison garantie des critiques**. Passé la cinquième tentative, le serveur
+émettait `m14.delivery.failed`… et **rien ne s'y abonnait**. Le seul témoin était une ligne d'audit.
+
+Or personne ne lit un journal d'audit spontanément — c'est exactement à cela que servent les
+alertes. M04 le fait pour une rupture de chaîne, M13 pour un virement en échec. M14 ne le faisait pas.
+
+Et le risque n'est pas individuel : des identifiants FCM expirés, un quota dépassé, et **tous** les
+push critiques tombent en même temps, pour tout le monde. Le silence serait total.
+
+#### Ce que l'abandon coûte vraiment — et il faut être juste
+
+La notification **existe toujours** dans le centre in-app du destinataire : celui-ci naît `SENT`, la
+création EST la livraison (EF-14-07). Rien n'est perdu du message.
+
+Ce qui est perdu, c'est **l'interruption** : le téléphone ne sonne pas. Pour une notification
+critique — « un patient vous attend », « votre séance commence » — c'est précisément tout l'objet.
+
+*Un défaut se raconte à sa juste taille. « Le patient ne reçoit rien » aurait été faux, et l'aurait
+rendu suspect ; « le patient n'est pas alerté » est vrai, et suffit à le corriger.*
+
+#### Une alerte par le canal qui marche encore
+
+Prévenir par push que le push est en panne ne servirait à rien. L'alerte passe donc par le centre
+in-app — le canal que les administrateurs consultent depuis le web, et qui ne dépend d'aucune
+passerelle.
+
+#### Dix-neuf push « envoyés », zéro appareil enregistré
+
+Constaté en mesurant : `DevPushGateway` **ne consulte jamais** la table des appareils. Elle réussit
+toujours. En développement, c'est sans conséquence — et c'est documenté (ADR-08).
+
+Mais le jour où un vrai FCM sera branché, la question deviendra vive : **que vaut un compte sans
+aucun appareil ?**
+
+* **Réussir** — « rien à envoyer, donc rien n'a échoué » : la notification est marquée `SENT`, le
+  renvoi ne la reverra jamais, et un patient qui n'a pas installé l'application est « alerté » dans
+  les registres sans l'être dans la vie.
+* **Échouer** — le renvoi s'enclenche cinq fois pour rien, puis l'abandon alerte l'administration
+  pour chaque compte sans appareil. L'alerte devient du bruit, et le bruit tue l'alerte.
+
+La bonne réponse est probablement une troisième — un état distinct, ni succès ni échec. Ce n'est pas
+au développeur de la trancher seul : la question est écrite dans l'interface de la passerelle, à
+l'endroit exact où elle se posera.
+
+*Une décision qu'on ne peut pas prendre se laisse là où on la rencontrera, pas dans un journal
+qu'on ne rouvrira pas.*
+
+#### Six modules relus, six défauts, aucun visible
+
+M13, M06, M07, M01, M04, M14. Six modules, six défauts — **aucun n'apparaissait dans un test, une
+route ou un écran**.
+
+Cinq des six ont la même forme : *quelque chose est fait paresseusement, ou abandonné en silence, et
+laisse derrière lui un état que plus personne ne regarde.* Un retrait débité sans issue. Un fichier
+médical sans propriétaire. Un compte-rendu impossible à déposer. Une session morte affichée vivante.
+Un journal amputé présenté comme intact. Une garantie qui renonce sans le dire.
+
+*On ne trouve pas ces défauts en cherchant des erreurs. On les trouve en demandant, à chaque étape :
+« et si ça s'arrête ici, qui le saura ? »*
+
 ### Ce que le chantier 54 (le journal amputé) a appris
 
 *06/09/2026 — relecture de M04, l'audit.*

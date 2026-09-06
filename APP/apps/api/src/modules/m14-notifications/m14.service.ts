@@ -193,8 +193,44 @@ export class NotificationsService {
             resource: `notification:${notificationId}`,
             context: { template: row.template, accountId, attempts: row.attempts },
           });
+          await this.alerterAbandon(tx, row.template);
         });
       }
+    }
+  }
+
+  /**
+   * ── Un abandon doit réveiller un humain (chantier 55, 06/09/2026) ──────────────────────────
+   *
+   * EF-14-08 s'appelle « livraison **garantie** des critiques ». Passé cinq tentatives, le serveur
+   * renonçait, émettait `m14.delivery.failed` — **et rien ne s'y abonnait** — puis écrivait une
+   * ligne d'audit. Or personne ne lit un journal d'audit spontanément : c'est à cela que servent
+   * les alertes. La garantie s'arrêtait donc en silence.
+   *
+   * ⚠️ **Ce que l'abandon coûte vraiment, et il faut être juste** : la notification EXISTE toujours
+   * dans le centre in-app du destinataire — celui-ci naît `SENT`, la création EST la livraison
+   * (EF-14-07). Ce qui est perdu, c'est **l'interruption** : le téléphone ne sonne pas. Pour une
+   * critique — « un patient vous attend », « votre séance commence » — c'est précisément l'objet.
+   *
+   * ⚠️ Et l'échec est rarement individuel : des identifiants FCM expirés, un quota dépassé, et
+   * **tous** les push critiques tombent en même temps, pour tout le monde. C'est exactement ce
+   * qu'une alerte doit attraper.
+   *
+   * On prévient donc le super-administrateur, comme M04 le fait pour une rupture de chaîne. Par
+   * le centre in-app : alerter par push que le push est en panne ne servirait à rien.
+   *
+   * 📌 **Aujourd'hui ce chemin ne peut pas se déclencher** : `DevPushGateway` réussit toujours
+   * (ADR-08 — le vrai FCM viendra plus tard). Il est écrit maintenant parce que le jour où FCM
+   * sera branché sera précisément celui où les push commenceront à échouer, et où personne ne
+   * pensera à vérifier.
+   */
+  private async alerterAbandon(tx: Prisma.TransactionClient, template: string): Promise<void> {
+    const superAdmins = await tx.adminRoleAssignment.findMany({ where: { role: "SUPER_ADMIN" } });
+    for (const admin of superAdmins) {
+      await this.outbox.emit(tx, {
+        type: "notify.request",
+        payload: { accountId: admin.accountId, template: "m14.delivery.abandoned", modele: template },
+      });
     }
   }
 

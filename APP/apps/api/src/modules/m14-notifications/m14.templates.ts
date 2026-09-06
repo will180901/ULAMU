@@ -123,6 +123,28 @@ export const TEMPLATE_CATALOG: Record<string, NotificationTemplate> = {
     },
   },
 
+  /*
+    L'abandon d'une notification CRITIQUE (chantier 55, 06/09/2026).
+
+    EF-14-08 s'appelle « livraison garantie des critiques ». Passé cinq tentatives, le serveur
+    renonçait — il émettait `m14.delivery.failed` **que personne n'écoutait**, et écrivait une ligne
+    d'audit que personne ne lit spontanément. La garantie s'arrêtait donc en silence.
+
+    ⚠️ Ce message ne dit PAS quelle notification a échoué au destinataire : il alerte
+    l'administration, et le contenu médical n'a rien à y faire (RM-14-03). Le modèle et le compte
+    concerné suffisent à enquêter ; ils sont dans le journal d'audit, pas dans ce texte.
+  */
+  "m14.delivery.abandoned": {
+    category: "system",
+    title: () => "Une notification critique n'a pas pu être remise",
+    body: (p) => {
+      const modele = str(p.template);
+      return modele
+        ? `Après plusieurs tentatives, une notification critique (${modele}) n'a pas atteint son destinataire. Le message reste visible dans son centre de notifications, mais il n'a pas été alerté.`
+        : "Après plusieurs tentatives, une notification critique n'a pas atteint son destinataire. Le message reste visible dans son centre de notifications, mais il n'a pas été alerté.";
+    },
+  },
+
   // ── M04 — Audit & Signalements ─────────────────────────────────────────────
   "m04.report.resolved": {
     category: "system",

@@ -597,3 +597,110 @@ describe("M14 · getPreferences — ce que les deux écrans reçoivent", () => {
     expect(nonAjustables).toEqual([]);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  L'abandon d'une notification critique — chantier 55, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  EF-14-08 s'appelle « livraison **garantie** des critiques ». Passé cinq tentatives, le serveur
+  renonçait : il émettait `m14.delivery.failed` — **que rien n'écoutait** — et écrivait une ligne
+  d'audit. Or personne ne lit un journal d'audit spontanément ; c'est à cela que servent les
+  alertes. La garantie s'arrêtait donc en silence.
+
+  ⚠️ **Et il faut être juste sur ce que l'abandon coûte** : la notification EXISTE toujours dans le
+  centre in-app du destinataire — celui-ci naît `SENT` (EF-14-07). Ce qui est perdu, c'est
+  l'INTERRUPTION. Pour une critique — « un patient vous attend », « votre séance commence » — c'est
+  précisément l'objet.
+
+  ⚠️ Et l'échec est rarement individuel : des identifiants FCM expirés, un quota dépassé, et **tous**
+  les push critiques tombent en même temps, pour tout le monde.
+
+  📌 Ce chemin ne peut pas se déclencher aujourd'hui : `DevPushGateway` réussit toujours (ADR-08).
+  Il est éprouvé maintenant parce que le jour où FCM sera branché sera précisément celui où les
+  push commenceront à échouer — et où personne ne pensera à vérifier.
+*/
+describe("M14 · l'abandon d'une critique alerte le super-administrateur (chantier 55)", () => {
+  /** Doublure centrée sur l'abandon : le push échoue, la ligne a épuisé ses essais. */
+  function serviceQuiAbandonne(attempts: number, roles: Array<{ accountId: string }>) {
+    const emis: Array<{ type: string; payload: Record<string, unknown> }> = [];
+    const prisma = {
+      notification: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+        findUnique: jest.fn(async () => ({ attempts, template: "m06.handshake.initiated" })),
+      },
+      adminRoleAssignment: { findMany: jest.fn(async () => roles) },
+      $transaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({
+        adminRoleAssignment: { findMany: jest.fn(async () => roles) },
+      })),
+    } as unknown as PrismaService;
+    const outbox = {
+      emit: jest.fn(async (_tx: unknown, e: { type: string; payload: Record<string, unknown> }) => void emis.push(e)),
+    } as unknown as OutboxService;
+    const audit = { emit: jest.fn(async () => undefined) } as unknown as AuditEmitter;
+    const push = { send: jest.fn(async () => { throw new Error("FCM indisponible"); }) } as unknown as PushGateway;
+    const params = { getInt: jest.fn(async () => 30) } as unknown as ParamsService;
+    const svc = new NotificationsService(prisma, params, outbox, audit, push);
+    return { svc, emis };
+  }
+
+  /** `attemptPush` est privée : on l'atteint par le renvoi, qui est son seul appelant public. */
+  async function tenter(svc: NotificationsService) {
+    await (svc as unknown as {
+      attemptPush: (id: string, acc: string, cat: string, pri: string, t: string, b: string) => Promise<void>;
+    }).attemptPush("notif-1", "compte-1", "care", "critical", "Titre", "Corps");
+  }
+
+  /*
+    ── LE test du chantier ───────────────────────────────────────────────────────────────────
+
+    Sans lui, une panne de push généralisée — identifiants expirés, quota dépassé — ne réveille
+    personne : les patients cessent d'être alertés, et le seul témoin est une ligne d'audit.
+  */
+  it("prévient CHAQUE super-administrateur quand les essais sont épuisés", async () => {
+    const { svc, emis } = serviceQuiAbandonne(5, [{ accountId: "admin-1" }, { accountId: "admin-2" }]);
+
+    await tenter(svc);
+
+    const alertes = emis.filter((e) => e.payload.template === "m14.delivery.abandoned");
+    expect(alertes.map((a) => a.payload.accountId).sort()).toEqual(["admin-1", "admin-2"]);
+  });
+
+  it("émet aussi l'événement destiné au module demandeur", async () => {
+    const { svc, emis } = serviceQuiAbandonne(5, [{ accountId: "admin-1" }]);
+
+    await tenter(svc);
+
+    expect(emis.some((e) => e.type === "m14.delivery.failed")).toBe(true);
+  });
+
+  /*
+    Tant qu'un renvoi reste possible, rien n'est abandonné — et alerter à chaque échec noierait
+    l'administration sous des alertes qui se résoudront toutes seules au passage suivant.
+  */
+  it("n'alerte PAS tant que des essais restent", async () => {
+    const { svc, emis } = serviceQuiAbandonne(2, [{ accountId: "admin-1" }]);
+
+    await tenter(svc);
+
+    expect(emis.some((e) => e.payload.template === "m14.delivery.abandoned")).toBe(false);
+    expect(emis.some((e) => e.type === "m14.delivery.failed")).toBe(false);
+  });
+
+  /*
+    RM-14-03 : une notification ne porte jamais de contenu médical. Celle-ci s'adresse en plus à
+    quelqu'un qui n'est PAS le destinataire d'origine — le compte concerné reste dans le journal
+    d'audit, pas dans un message lisible par l'administration.
+  */
+  it("l'alerte ne transporte que le modèle, jamais le compte du destinataire", async () => {
+    const { svc, emis } = serviceQuiAbandonne(5, [{ accountId: "admin-1" }]);
+
+    await tenter(svc);
+
+    const alerte = emis.find((e) => e.payload.template === "m14.delivery.abandoned");
+    expect(alerte?.payload.modele).toBe("m06.handshake.initiated");
+    expect(JSON.stringify(alerte?.payload)).not.toContain("compte-1");
+  });
+});
