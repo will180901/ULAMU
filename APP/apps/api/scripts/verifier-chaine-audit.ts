@@ -96,12 +96,22 @@ async function main(): Promise<void> {
       : `  ⚠️ Depuis le premier maillon survivant : rupture au seq ${rows[depuisSurvivant]!.seq}.`,
   );
 
-  titre("4. Ce qu'un administrateur verrait à l'écran");
-  console.log(
-    depuisGenese === -1
-      ? `  « Chaîne intacte : les ${rows.length} entrées vérifiées se succèdent sans rupture. »`
-      : `  « Rupture détectée à l'entrée ${rows[depuisGenese]!.seq}. Le journal a été altéré. »`,
-  );
+  titre("4. Ce qu'un administrateur voit à l'écran");
+  /*
+    ⚠️ Cette section disait l'ANCIEN écran jusqu'au 06/09/2026 — celui qui s'arrêtait à « chaîne
+    intacte ». Le chantier 54 lui a ajouté l'avertissement d'amputation ; un script de constat qui
+    montre moins que l'écran qu'il décrit dit, à sa façon, la même demi-vérité.
+  */
+  if (depuisGenese !== -1) {
+    console.log(`  « Rupture détectée à l'entrée ${rows[depuisGenese]!.seq}. Le journal a été altéré. »`);
+  } else {
+    console.log(`  « Chaîne intacte : les ${rows.length} entrées vérifiées se succèdent sans rupture. »`);
+    if (premier.seq !== 1n) {
+      console.log(`  « Le journal ne commence pas à son origine. Sa première entrée porte le numéro`);
+      console.log(`     ${premier.seq} : les entrées antérieures ont disparu. Ce qui reste est intact ;`);
+      console.log(`     ce n'est pas la même chose que complet. »`);
+    }
+  }
 }
 
 main()
