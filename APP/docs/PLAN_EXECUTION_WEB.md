@@ -632,6 +632,61 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **52** | **Relecture de M07 — le Carnet de santé** — 06/09. Le module le plus sensible du projet, et **le contrôle d'accès y est étanche** : `resolveScope` est le seul point d'entrée, refuse tout compte non-patient, exige la tutelle pour un sous-profil, et **coupe l'accès du tuteur après transfert**. Le 404 est volontairement indistinct (anti-énumération). L'accès du médecin passe par M06, se referme sur les deux chemins de clôture, et est tracé sans contenu médical. ⚠️ **Le défaut trouvé est le mien, et il date de deux jours.** Une consultation réservée POUR une personne à charge, dont le Carnet est transféré avant le dépôt du compte-rendu, rendait ce dépôt **IMPOSSIBLE** — le chemin refusait « écrivez via son compte patient ». Or le compte-rendu est obligatoire (PM-30, puis gains gelés) et **les gains ne sont crédités qu'à son dépôt** (RM-06-04) : le médecin n'aurait jamais été payé, le patient n'aurait jamais reçu son compte-rendu. Le cas était inatteignable avant le chantier 48 — **je l'ai ouvert moi-même**. Corrigé : l'écriture **suit** le Carnet vers son nouveau titulaire, qui est aussi celui qu'on notifie. **api 559 ✓ (554 + 5) · lint 0 · build propre.** | ⏸ en attente | ⏸ |
 
+| **53** | **Relecture de M01 — la porte d'entrée** — 06/09. Les chemins critiques sont **solides** : la réinitialisation de mot de passe consomme l'OTP dans la transaction, **révoque toutes les sessions**, et ne distingue pas « compte inconnu » de « pas de code » ; le compteur anti-force brute survit au rollback (D-048) ; `OTP_ECHO` porte un garde-fou dur contre la production. ⚠️ **Et je dois corriger ce que j'avais affirmé le 04/09** : j'avais noté « 17 sessions ouvertes, rien ne les expire côté serveur ». **C'était faux** — `AuthGuard` révoque bien à l'inactivité (30 min en web, PM-20 en mobile). Mais **paresseusement, à l'usage** : celles dont personne ne se sert restent « non révoquées », et l'écran « Mes appareils » les montrait comme actives. **Mesuré en production : 28 sessions listées, 26 DÉJÀ MORTES** — dont dix-huit sur un seul compte, pas une utilisable. Un écran de sécurité qui montre dix-huit appareils sans accès noie la seule session suspecte, et fait cliquer dans un tas de cadavres — le bouton de révocation n'ayant aucune confirmation, **c'est exactement l'erreur que j'ai commise le 04/09**. Corrigé : la règle sort de la garde, et la liste **révoque les mortes avant de montrer**. **api 566 ✓ (559 + 7) · lint 0 · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 53 (l'écran de sécurité qui mentait) a appris
+
+*06/09/2026 — relecture de M01, la porte d'entrée.*
+
+#### Ce que j'avais affirmé le 04/09 était faux
+
+J'avais noté, après un incident : *« 17 sessions ouvertes, 11 de plus de trois jours, rien ne les
+expire côté serveur »*. La deuxième moitié est fausse.
+
+`AuthGuard` **révoque bien** à l'inactivité — trente minutes en web (ENF-07), PM-20 en mobile. Un
+jeton volé cesse de servir. Il n'y avait pas de trou de sécurité, et je l'ai laissé écrit deux jours
+dans un journal que je relis pour décider.
+
+*Une note prise pendant un incident est une hypothèse. Elle vaut ce que vaut sa vérification — et je
+ne l'avais pas faite.*
+
+#### Le vrai défaut était à côté, et il était mesurable
+
+La garde révoque **paresseusement** : au moment où quelqu'un se sert du jeton. Les sessions dont
+personne ne se sert jamais restent donc « non révoquées » en base — et l'écran « Mes appareils » les
+listait comme des appareils connectés.
+
+Mesuré en production : **28 sessions listées, 26 déjà mortes.** Dont **dix-huit sur un seul compte,
+et pas une seule utilisable**.
+
+Ce n'est pas cosmétique. Un écran de sécurité sert à répondre à une question : *qui a accès à mon
+compte ?* Dix-huit lignes dont aucune n'a accès **noient la seule qui compterait**. Et celui qui
+« fait le ménage » clique dans un tas de cadavres — sur un bouton qui n'a **aucune confirmation**.
+
+*C'est très exactement l'erreur que j'ai commise le 04/09, en révoquant par mégarde une session du
+porteur. Je l'avais mise sur le compte de mon inattention. Elle venait aussi de l'écran.*
+
+#### La garde et la liste doivent dire la même chose
+
+La règle vivait en ligne dans la garde. La recopier dans la liste aurait créé la divergence
+classique : deux bornes pour une même question, et un jour la liste révoque ce que la garde accepte
+— l'utilisateur serait déconnecté **pour avoir consulté ses appareils**.
+
+Elle est donc sortie dans un fichier, pure et injectée (PM-20 en paramètre, jamais lu là), et un
+test garde la borne **à la seconde près** : à trente minutes pile, la session vit encore, des deux
+côtés.
+
+#### Trois relectures de plus, et le motif se répète
+
+M13, M06, M07, M01 : quatre modules, quatre défauts, **aucun visible à l'écran ni dans un test**.
+
+Et trois d'entre eux ont la même forme : *un travail fait paresseusement, au moment de l'usage,
+laisse derrière lui un état que plus personne ne regarde* — un retrait débité sans issue, un fichier
+sans propriétaire, une session morte affichée comme vivante.
+
+*Le paresseux est presque toujours le bon choix pour la performance. Il demande, en échange, qu'on
+se souvienne de ce qu'il laisse traîner.*
+
 ### Ce que le chantier 52 (le Carnet transféré) a appris
 
 *06/09/2026 — relecture de M07, le module des données médicales.*

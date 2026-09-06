@@ -18,6 +18,7 @@ import { OtpPurpose, Prisma } from "@prisma/client";
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { hashSessionToken } from "../../common/auth/auth.guard";
+import { sessionIsExpired } from "../../common/auth/session-expiry";
 import { hashPassword, verifyPassword } from "../../common/crypto/password";
 import { openSecret, sealSecret } from "../../common/crypto/secretbox";
 import { generateTotpSecret, provisioningUri, verifyTotp } from "../../common/crypto/totp";
@@ -555,10 +556,38 @@ export class M01Service {
     accountId: string,
     currentSessionId?: string,
   ): Promise<Array<{ id: string; client: string; deviceLabel: string | null; lastActiveAt: Date; current: boolean }>> {
-    const sessions = await this.prisma.loginSession.findMany({
+    const brutes = await this.prisma.loginSession.findMany({
       where: { accountId, revokedAt: null },
       orderBy: { lastActiveAt: "desc" },
     });
+
+    /*
+      ── Les sessions MORTES ne sont plus montrées comme vivantes (chantier 53, 06/09/2026) ─────
+
+      `AuthGuard` révoque une session inactive — mais seulement quand quelqu'un s'en sert. Celles
+      dont personne ne se sert jamais restaient donc « non révoquées » en base, et cet écran les
+      affichait comme des appareils connectés.
+
+      ⚠️ **Mesuré en production le 06/09 : 28 sessions listées, 26 déjà mortes** — dont dix-huit sur
+      un seul compte, toutes inutilisables. Un écran de sécurité qui montre dix-huit appareils dont
+      aucun n'a accès ne protège plus personne : la seule session réellement suspecte y serait
+      noyée, et celui qui « fait le ménage » clique dans un tas de cadavres — le bouton de
+      révocation n'ayant, lui, aucune confirmation.
+
+      On les révoque donc ICI, avec la règle EXACTE de la garde (`sessionIsExpired`) : la liste ne
+      ment plus, et la base dit la vérité que la garde aurait établie au premier usage.
+    */
+    const pm20 = await this.params.getInt("PM-20");
+    const maintenant = Date.now();
+    const mortes = brutes.filter((s) => sessionIsExpired(s.client, s.lastActiveAt.getTime(), maintenant, pm20));
+    if (mortes.length > 0) {
+      await this.prisma.loginSession.updateMany({
+        where: { id: { in: mortes.map((s) => s.id) }, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+    const idsMortes = new Set(mortes.map((s) => s.id));
+    const sessions = brutes.filter((s) => !idsMortes.has(s.id));
     // CU-01-06 : marque la session du token courant — l'UI masque alors son bouton de révocation
     // (on ne se déconnecte pas soi-même par mégarde) et affiche « cet appareil ».
     return sessions.map((s) => ({ id: s.id, client: s.client, deviceLabel: s.deviceLabel, lastActiveAt: s.lastActiveAt, current: s.id === currentSessionId }));
