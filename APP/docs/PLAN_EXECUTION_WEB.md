@@ -640,6 +640,68 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **56** | **Ce que la machine fait la nuit** — 06/09, retour aux écrans. Les deux plans étant soldés, le fil se reprend en MESURANT : les six relectures ont ajouté trois balayages automatiques qui **décident seuls** — recréditer de l'argent, effacer des données médicales — et **aucun écran ne disait ce qu'ils avaient fait**. ⚠️ **Pire, un défaut de mon propre chantier 51** : le balayage des fichiers supprimait des photos, des vocaux et des pièces d'identité chiffrées **en ne laissant qu'une ligne de log** — aucune trace au journal, sur une plateforme dont le principe est « le pouvoir sans trace n'existe pas » (RM-16-03). Il allait effacer trois pièces d'identité cette nuit, en silence. Livré : la trace (**comptes par type, jamais les clés** — RM-04-03), et une carte « Entretien automatique » dans E5 qui lit ces traces. Elle distingue **trois** états, pas deux : « jamais » (bonne nouvelle, rien à réparer) ne se dit pas comme « lecture impossible ». **api 574 ✓ (570 + 4) · web 659 ✓ (655 + 4) · mobile 29 ✓ · lint 0 · build propre.** | ⏸ en attente | ⏸ |
 
+| **57** | **Les balayages ne tournaient qu'une nuit sur onze** — 06/09. En relançant le script des fichiers, le porteur a posé sans le savoir la bonne question. ⚠️ **Les `@Cron` ne s'exécutent que si le processus est VIVANT à l'instant dit — et Render endort le service après 15 min d'inactivité.** Preuve trouvée au journal d'audit : `m13.reconciliation.done` par `m16.scheduler` le **04/09 à 00:00:00 UTC, une seule fois sur 11,4 jours**. Les trois balayages livrés aujourd'hui — recréditer un retrait, effacer des données médicales, constater qu'une notification critique n'arrivera jamais — auraient donc tourné **une nuit sur onze**, au hasard de la présence d'un utilisateur. Livré : le déclencheur cesse d'être l'HEURE et devient l'ANCIENNETÉ. Une table `SchedulerRun` porte le dernier passage ; le tick d'une minute — qui part dès le réveil, donc à la première requête venue — rattrape ce qui est dû, sous **écriture conditionnelle** pour que le `@Cron` et le rattrapage ne fassent jamais le travail deux fois. **api 579 ✓ (574 + 5) · lint 0 · migration additive · 162 routes.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 57 (une nuit sur onze) a appris
+
+*06/09/2026 — trouvé parce que le porteur a relancé un script deux fois.*
+
+#### La bonne question est venue d'une relance, pas d'une relecture
+
+Le porteur a relancé le script des fichiers orphelins. Rien n'avait changé — c'était attendu, le
+balayage passe à minuit et il était 10 h 40.
+
+Mais cette relance a fait poser la question suivante, qui ne l'avait pas été : **est-ce que ce
+balayage tournera seulement ?**
+
+*Six relectures de modules n'avaient pas vu ce que deux exécutions du même script ont montré. Lire
+le code dit ce qu'il ferait ; seule l'exécution dit ce qu'il fait.*
+
+#### Un `@Cron` ne s'exécute que si quelqu'un est là pour le voir
+
+`@Cron(EVERY_DAY_AT_MIDNIGHT)` déclenche à minuit **si le processus est vivant à minuit**. Le plan
+gratuit de Render endort le service après ~15 minutes d'inactivité ; un service endormi ne déclenche
+rien, et se réveille à la première requête — pas à l'heure dite.
+
+La preuve était dans le journal d'audit, à une ligne près :
+
+```
+2026-09-04T00:00:00.085Z  m13.reconciliation.done  admin m16.scheduler
+```
+
+**Une seule fois, sur 11,4 jours.** Le seul minuit où quelqu'un utilisait la plateforme.
+
+Et les trois balayages livrés le jour même — recréditer un retrait débité, effacer des données
+médicales, constater qu'une notification critique n'arrivera jamais — auraient donc tourné environ
+**une nuit sur onze**.
+
+*Le code était juste. L'hébergement ne tenait pas la promesse que le code supposait. Rien dans les
+579 tests ne pouvait le dire.*
+
+#### Le déclencheur cesse d'être l'heure ; il devient l'ancienneté
+
+C'est déjà l'idiome de ce projet, et il est employé partout ailleurs : `settle()` ne dépend d'aucune
+horloge — il fait ses transitions **au moment de la lecture**, en regardant depuis quand elles sont
+dues.
+
+Le tick d'une minute part, lui, dès que le service est éveillé — donc à la première requête venue.
+Il regarde donc si les balayages plus lents sont **en retard**, et rattrape.
+
+Les `@Cron` restent en place. Le jour où l'hébergement gardera le processus vivant, ils feront le
+travail à l'heure et le rattrapage ne trouvera jamais rien à faire. Les deux chemins passent par la
+**même écriture conditionnelle**, donc jamais deux fois.
+
+*Une solution qui rend l'autre inutile sans l'empêcher n'a pas à choisir entre les deux.*
+
+#### « Jamais tourné » vaut « dû tout de suite »
+
+La table est vide au premier déploiement. Si un balayage jamais lancé n'était pas dû, il attendrait
+un jour entier avant son premier passage — sur une installation neuve comme sur celle-ci, où les
+trois pièces d'identité orphelines attendent depuis le 24 août.
+
+*Le cas limite le plus facile à oublier est toujours le premier passage : celui où il n'y a encore
+rien à comparer.*
+
 ### Ce que le chantier 56 (l'entretien visible) a appris
 
 *06/09/2026 — retour aux écrans, les deux plans étant soldés.*

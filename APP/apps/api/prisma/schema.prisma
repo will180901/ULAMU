@@ -1483,6 +1483,23 @@ model SupportRequest {
 /// ⚠️ Mettre des fichiers dans une base n'est pas ce qu'on fait à grande échelle. C'est assumé pour
 /// ce périmètre — quelques dizaines de méga-octets, quota Neon de 0,5 Go — et l'abstraction par CLÉ
 /// de `StorageService` garde ouverte la bascule vers un stockage objet sans toucher aux appelants.
+/// Dernier passage réussi d'un balayage périodique (chantier 57, 06/09/2026).
+///
+/// ⚠️ **Les `@Cron` ne suffisent pas sur ce plan d'hébergement.** Render endort le service après
+/// ~15 min d'inactivité, et un service endormi n'exécute aucune tâche planifiée. Mesuré le
+/// 06/09/2026 : sur 11,4 jours de journal, le balayage QUOTIDIEN n'a tourné **qu'une seule fois**
+/// (le 04/09 à minuit — le seul moment où quelqu'un utilisait la plateforme à cette heure-là).
+///
+/// Cette table porte la date du dernier passage de chaque balayage. Le tick d'une minute — qui,
+/// lui, se déclenche dès que le service est éveillé — vérifie le RETARD et rattrape ce qui est dû.
+/// Le déclencheur n'est plus l'heure, c'est l'ancienneté.
+model SchedulerRun {
+  /// Nom du balayage : "daily", "hourly".
+  name      String   @id
+  lastRunAt DateTime
+  updatedAt DateTime @updatedAt
+}
+
 model StoredFile {
   /// `<préfixe>_<uuid>.<ext>` — `av_` avatar, `vd_` pièce justificative, `sm_` média de session.
   key       String   @id

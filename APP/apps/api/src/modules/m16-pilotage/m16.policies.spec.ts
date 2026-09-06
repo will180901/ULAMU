@@ -12,6 +12,8 @@ import {
   KPI_TARGET_LIST,
   KPI_TARGETS,
   rate,
+  SWEEP_INTERVALS_MS,
+  sweepIsDue,
 } from "./m16.policies";
 
 describe("Cibles des KPIs du pilote (EF-16-05, plan_releases §3)", () => {
@@ -124,5 +126,66 @@ describe("Machine d'états des sanctions (EF-16-03/07)", () => {
     ["REVERSED", "EXECUTED", false], // terminal
   ] as const)("%s → %s : %s", (from, to, ok) => {
     expect(canTransitionSanction(from, to)).toBe(ok);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Rattrapage des balayages périodiques — chantier 57, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Le constat qui a produit cette règle ──────────────────────────────────────────────────────
+
+  Les `@Cron` ne s'exécutent que si le processus est vivant à l'instant dit. Le plan gratuit de
+  Render endort le service après ~15 minutes d'inactivité — un service endormi ne déclenche rien.
+
+  ⚠️ **Mesuré en production le 06/09/2026, sur 11,4 jours de journal d'audit** : le balayage
+  QUOTIDIEN a tourné **une seule fois** (04/09 à 00:00 UTC — le seul instant où quelqu'un utilisait
+  la plateforme à cette heure-là). L'horaire, une fois. Les balayages ne tournaient que par hasard.
+
+  Or trois d'entre eux décident : recréditer un retrait, effacer des données médicales, constater
+  qu'une notification critique n'arrivera jamais. Ils auraient tourné **une nuit sur onze**.
+
+  Le déclencheur cesse donc d'être l'HEURE et devient l'ANCIENNETÉ — l'idiome que ce projet emploie
+  déjà partout : `settle()` fait ses transitions au moment de la lecture, sans dépendre d'aucune
+  horloge.
+*/
+describe("Rattrapage des balayages (chantier 57)", () => {
+  const HEURE = 60 * 60 * 1000;
+  const JOUR = 24 * HEURE;
+  const MAINTENANT = 1_757_000_000_000;
+
+  /*
+    Un balayage qui n'a JAMAIS tourné est dû tout de suite. Sans cela, un premier déploiement
+    attendrait un jour entier avant son premier passage — et la table étant vide au départ, c'est
+    exactement le cas de toute nouvelle installation.
+  */
+  it("un balayage qui n'a jamais tourné est dû immédiatement", () => {
+    expect(sweepIsDue(null, MAINTENANT, JOUR)).toBe(true);
+  });
+
+  it("il n'est pas dû avant son intervalle", () => {
+    expect(sweepIsDue(MAINTENANT - 23 * HEURE, MAINTENANT, JOUR)).toBe(false);
+  });
+
+  it("il l'est à l'intervalle pile, et au-delà", () => {
+    expect(sweepIsDue(MAINTENANT - JOUR, MAINTENANT, JOUR)).toBe(true);
+    expect(sweepIsDue(MAINTENANT - 11 * JOUR, MAINTENANT, JOUR)).toBe(true);
+  });
+
+  /*
+    LE cas mesuré : onze jours sans passage, parce que le service dormait à chaque minuit. Au
+    premier réveil, le rattrapage doit partir — sinon les fichiers sans propriétaire et les
+    retraits débités attendent un douzième jour.
+  */
+  it("onze jours de sommeil : au réveil, c'est dû", () => {
+    expect(sweepIsDue(MAINTENANT - 11.4 * JOUR, MAINTENANT, JOUR)).toBe(true);
+    expect(sweepIsDue(MAINTENANT - 11.4 * JOUR, MAINTENANT, HEURE)).toBe(true);
+  });
+
+  it("les deux cadences sont déclarées, et dans le bon ordre de grandeur", () => {
+    expect(SWEEP_INTERVALS_MS.hourly).toBe(HEURE);
+    expect(SWEEP_INTERVALS_MS.daily).toBe(JOUR);
+    expect(SWEEP_INTERVALS_MS.daily).toBeGreaterThan(SWEEP_INTERVALS_MS.hourly!);
   });
 });

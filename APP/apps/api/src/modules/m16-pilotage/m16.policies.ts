@@ -128,3 +128,41 @@ const SANCTION_TRANSITIONS: Record<SanctionStatusCode, readonly SanctionStatusCo
 export function canTransitionSanction(from: SanctionStatusCode, to: SanctionStatusCode): boolean {
   return (SANCTION_TRANSITIONS[from] ?? []).includes(to);
 }
+
+// ── Rattrapage des balayages périodiques (chantier 57) ───────────────────────
+
+/**
+ * ── Pourquoi ce rattrapage existe ─────────────────────────────────────────────
+ *
+ * Les `@Cron` ne s'exécutent que si le processus est vivant à l'instant dit. Le plan gratuit de
+ * Render endort le service après ~15 minutes d'inactivité, et un service endormi ne déclenche rien.
+ *
+ * ⚠️ **Mesuré en production le 06/09/2026, sur 11,4 jours de journal** : le balayage QUOTIDIEN a
+ * tourné **une seule fois** (le 04/09 à 00:00 UTC — le seul moment où quelqu'un utilisait la
+ * plateforme à cette heure-là). Les balayages ne tournaient donc que par hasard.
+ *
+ * Le déclencheur cesse d'être l'HEURE ; il devient l'ANCIENNETÉ. Le tick d'une minute — qui, lui,
+ * part dès que le service est éveillé, donc à la première requête venue — regarde depuis quand
+ * chaque balayage n'a pas tourné, et rattrape ce qui est dû.
+ *
+ * C'est l'idiome que ce projet emploie déjà partout : `settle()` fait ses transitions au moment de
+ * la lecture, sans dépendre d'aucune horloge.
+ */
+export const SWEEP_INTERVALS_MS: Record<string, number> = {
+  hourly: 60 * 60 * 1000,
+  daily: 24 * 60 * 60 * 1000,
+};
+
+/**
+ * Ce balayage est-il dû ?
+ *
+ * `null` = il n'a jamais tourné : on le lance. Un premier démarrage ne doit pas attendre un jour
+ * pour faire son premier passage — et c'est aussi le cas au tout premier déploiement.
+ *
+ * La comparaison est `>=` : à l'intervalle pile, c'est dû. Un balayage lancé une seconde trop tôt
+ * ne coûte rien ; une seconde trop tard, répétée, décale tout d'un cran à chaque passage.
+ */
+export function sweepIsDue(lastRunAtMs: number | null, nowMs: number, intervalMs: number): boolean {
+  if (lastRunAtMs === null) return true;
+  return nowMs - lastRunAtMs >= intervalMs;
+}
