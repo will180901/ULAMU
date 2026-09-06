@@ -641,6 +641,79 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **56** | **Ce que la machine fait la nuit** — 06/09, retour aux écrans. Les deux plans étant soldés, le fil se reprend en MESURANT : les six relectures ont ajouté trois balayages automatiques qui **décident seuls** — recréditer de l'argent, effacer des données médicales — et **aucun écran ne disait ce qu'ils avaient fait**. ⚠️ **Pire, un défaut de mon propre chantier 51** : le balayage des fichiers supprimait des photos, des vocaux et des pièces d'identité chiffrées **en ne laissant qu'une ligne de log** — aucune trace au journal, sur une plateforme dont le principe est « le pouvoir sans trace n'existe pas » (RM-16-03). Il allait effacer trois pièces d'identité cette nuit, en silence. Livré : la trace (**comptes par type, jamais les clés** — RM-04-03), et une carte « Entretien automatique » dans E5 qui lit ces traces. Elle distingue **trois** états, pas deux : « jamais » (bonne nouvelle, rien à réparer) ne se dit pas comme « lecture impossible ». **api 574 ✓ (570 + 4) · web 659 ✓ (655 + 4) · mobile 29 ✓ · lint 0 · build propre.** | ⏸ en attente | ⏸ |
 
 | **57** | **Les balayages ne tournaient qu'une nuit sur onze** — 06/09. En relançant le script des fichiers, le porteur a posé sans le savoir la bonne question. ⚠️ **Les `@Cron` ne s'exécutent que si le processus est VIVANT à l'instant dit — et Render endort le service après 15 min d'inactivité.** Preuve trouvée au journal d'audit : `m13.reconciliation.done` par `m16.scheduler` le **04/09 à 00:00:00 UTC, une seule fois sur 11,4 jours**. Les trois balayages livrés aujourd'hui — recréditer un retrait, effacer des données médicales, constater qu'une notification critique n'arrivera jamais — auraient donc tourné **une nuit sur onze**, au hasard de la présence d'un utilisateur. Livré : le déclencheur cesse d'être l'HEURE et devient l'ANCIENNETÉ. Une table `SchedulerRun` porte le dernier passage ; le tick d'une minute — qui part dès le réveil, donc à la première requête venue — rattrape ce qui est dû, sous **écriture conditionnelle** pour que le `@Cron` et le rattrapage ne fassent jamais le travail deux fois. **api 579 ✓ (574 + 5) · lint 0 · migration additive · 162 routes.** | ⏸ en attente | ⏸ |
+| **58** | **Changer son mot de passe sur mobile — et ne plus être mis dehors quand on se trompe** — 06/09. En mesurant ce que le serveur sait faire pour un patient et que l'application n'appelle pas : `POST /v1/accounts/me/password` existait **depuis le premier jour**, le web l'appelait, le mobile non — un patient devait se **déconnecter** puis passer par « mot de passe oublié ». ⚠️ En branchant l'écran, un défaut bien plus grave est apparu : **les deux clients traitent un `401` sur une requête authentifiée comme « ton jeton est mort » et effacent la session** — or l'API répondait `401` quand la session était valide et que seule la **preuve envoyée dans le corps** était fausse. **Une faute de frappe déconnectait**, sur douze routes : changement de mot de passe, désactivation de 2FA, fermeture de compte, signature du contrat soignant, et l'**exécution d'un retrait d'argent**. Corrigé au SERVEUR (une correction cliente n'atteindrait pas les téléphones déjà installés) : `ProofRefusedException` → 403, et `preuveEnSession()` pour les codes à usage unique consommés depuis une session ouverte. `401` ne veut plus dire qu'une chose. **api 587 ✓ (579 + 8) · mobile 32 ✓ (29 + 3) · web 659 ✓ · lint 0 erreur · 162 routes · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 58 (une faute de frappe qui déconnectait) a appris
+
+*06/09/2026 — trouvé en branchant un écran, pas en relisant le module qui le sert.*
+
+#### Le défaut n'était visible d'aucun des deux côtés pris séparément
+
+Côté serveur, `401` pour un mot de passe faux est défendable et se lit très bien. Côté client,
+« un 401 sur une requête authentifiée veut dire que le jeton est mort, on déconnecte » se lit très
+bien aussi. Six relectures de modules ont croisé ce code sans rien voir, et 579 tests le tenaient.
+
+**Le défaut ne vivait ni dans l'un ni dans l'autre : il vivait dans l'écart entre les deux.** Il n'a
+été visible qu'en écrivant la phrase que l'écran allait afficher — « et si la personne se trompe en
+tapant son mot de passe, qu'est-ce qu'elle voit ? »
+
+*Une intention n'existe qu'aux deux bouts à la fois. Chaque bout, relu seul, était juste.*
+
+#### Le journal l'avait déjà écrit, sans le voir
+
+Le 28/08, un test web appelait la production par accident : `onUnauthorized` déconnectait la session
+en plein test, et le message d'échec accusait un bouton parfaitement correct. Le journal a consigné
+la gêne — et la parade, couper le réseau en test.
+
+La même mécanique frappait de vrais utilisateurs, et personne n'a fait le pas de côté. **Le problème
+avait été rencontré comme une nuisance d'outillage, jamais comme un comportement de produit.**
+
+*Quand une gêne interne se laisse contourner, on range la parade et on oublie la cause.*
+
+#### La correction va là où sont les utilisateurs, pas là où est le code le plus simple
+
+Corriger dans les clients aurait été plus court : deux fichiers, une condition. Mais **l'application
+mobile est installée sur des téléphones**. Une correction cliente n'aurait protégé que ceux qui
+mettent à jour, un jour, peut-être. Le serveur, lui, protège tout le monde à la seconde du
+déploiement — y compris la version d'aujourd'hui, déjà installée.
+
+*Le bon endroit pour corriger n'est pas le plus proche du symptôme, c'est celui qui atteint tous
+ceux qui subissent le défaut.*
+
+#### Le pire moment pour déconnecter quelqu'un est celui où il se protège
+
+Les douze routes touchées ne sont pas quelconques : ce sont exactement les gestes de sécurité. On
+change son mot de passe quand on craint que quelqu'un d'autre connaisse l'ancien ; se retrouver
+dehors à la première faute de frappe est **l'inverse exact du but recherché** — on lâche le seul
+accès dont on est sûr, pendant que l'autre, lui, reste connecté. Et sur l'exécution d'un retrait, on
+se retrouve dehors sans savoir si l'argent est parti.
+
+*Un mécanisme de sécurité qui se retourne contre l'utilisateur au moment où il s'en sert vaut moins
+que son absence : il punit précisément le bon réflexe.*
+
+#### Un `replace` sans ancre a failli coûter deux régressions
+
+En retirant une faute injectée volontairement, un `replace` sans compteur a modifié **deux autres
+endroits** portant le même fragment de code : la liste « Mes appareils » a cessé d'afficher
+l'appareil courant, et la fermeture de compte a cessé de fermer la session courante. TypeScript
+n'aurait attrapé que la seconde ; la relecture du diff a attrapé les deux.
+
+*Défaire une modification est une modification. Elle mérite la même ancre, et le même diff relu.*
+
+#### Ce qui reste sur l'application patient, mesuré le 06/09
+
+La même mesure a listé 44 routes candidates ; vérifiées une par une, **quatre sont de vrais manques**
+(le reste est du faux positif — l'outil résout mal les constantes de route). Rangées par ce qu'elles
+coûtent à quelqu'un qui en a besoin :
+
+| Manque | Ce que ça fait à l'utilisateur | Ma recommandation |
+|---|---|---|
+| **Signaler** (`POST /v1/reports`) | Un patient qui subit un comportement grave **n'a aucun bouton**. C'est la moitié mobile de l'écart A, déjà livré côté web. | À faire en premier : c'est le seul des quatre où l'absence peut laisser quelqu'un sans recours. |
+| **Support** (`/v1/support-requests`) | Aucun moyen d'écrire à quelqu'un depuis l'application ; le seul chemin est de sortir et de chercher un contact. | Juste après : c'est aussi le filet quand tout le reste échoue. |
+| **TOTP** (`setup`/`confirm`/`backup-codes`/`reset`) | On peut **désactiver** la 2FA par email depuis le mobile, mais pas activer l'authentification par application, ni revoir ses codes de secours. Un interrupteur qui ne va que dans un sens. | Ensuite : c'est un manque de symétrie, pas un blocage. |
+| **Consentements** (`GET /v1/accounts/me/consents`) | On ne peut pas relire ce qu'on a accepté. Preuve légale (loi n° 29-2019) que l'intéressé ne voit pas. | En dernier des quatre, mais à faire : une preuve qu'on ne peut pas consulter protège mal. |
+
+
 
 ### Ce que le chantier 57 (une nuit sur onze) a appris
 

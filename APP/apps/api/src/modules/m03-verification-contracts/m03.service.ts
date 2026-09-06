@@ -15,7 +15,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { Prisma, VerificationStatus } from "@prisma/client";
 import { createHash } from "node:crypto";
@@ -23,6 +22,7 @@ import { StorageService } from "../../common/storage.service";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
+import { ProofRefusedException } from "../../common/auth/proof-refused";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
 import { AddDocumentDto, DecideDto, SignAgreementDto, UploadDocumentDto } from "./m03.dto";
@@ -806,7 +806,7 @@ export class M03Service {
     const subject = this.subjectOf(c);
     const version = this.requireSignableVersion(c);
     if (!(await this.m01.verifyAccountPassword(actor.accountId, dto.password))) {
-      throw new UnauthorizedException("Mot de passe incorrect");
+      throw new ProofRefusedException("Mot de passe incorrect");
     }
     const now = new Date();
     return this.prisma.$transaction(async (tx) => {

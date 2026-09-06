@@ -20,6 +20,7 @@ import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { AGGREGATOR_GATEWAY, AggregatorGateway } from "../../common/momo/aggregator.gateway";
 import { OutboxService } from "../../common/outbox.service";
 import { ParamsService } from "../../common/params.service";
+import { ProofRefusedException } from "../../common/auth/proof-refused";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
 import { ConfirmWithdrawalDto, EarningsMeQueryDto, StartWithdrawalDto } from "./m13.dto";
@@ -289,7 +290,7 @@ export class EarningsService {
     }
 
     const passwordOk = await this.m01.verifyAccountPassword(actor.accountId, dto.password);
-    if (!passwordOk) throw new UnauthorizedException("Mot de passe incorrect");
+    if (!passwordOk) throw new ProofRefusedException("Mot de passe incorrect");
 
     // OTP consommé dans sa PROPRE transaction, AVANT le débit (D-047) : un code faux y incrémente
     // attempts de façon durable (le rollback de la tx de débit n'efface plus le compteur) —

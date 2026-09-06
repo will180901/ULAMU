@@ -19,6 +19,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {MeResponse, SessionInfo} from '../lib/contracts';
+import {isAcceptablePassword} from '../lib/validation';
 import {useAbandonGuard} from '../state/useAbandonGuard';
 import {fonts, Palette, radius} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -44,6 +45,7 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [disableOpen, setDisableOpen] = useState(false);
   const [enableOpen, setEnableOpen] = useState(false);
+  const [mdpOpen, setMdpOpen] = useState(false);
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -139,6 +141,20 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
           {/* Compte */}
           <Text style={styles.section}>COMPTE</Text>
           <View style={styles.card}>
+            {/*
+              ── Changer son mot de passe (chantier 58, 06/09/2026) ─────────────────────────
+
+              La route existait depuis le premier jour et le web l'appelait ; cette application,
+              non. Un patient qui soupçonnait son mot de passe connu n'avait qu'un détour : se
+              déconnecter, puis « mot de passe oublié », et attendre un code par email.
+
+              ⚠️ **C'est exactement l'inverse de ce qu'il faut faire dans ce moment-là.** Se
+              déconnecter volontairement quand on craint que quelqu'un d'autre soit dans son compte,
+              c'est renoncer au seul accès dont on est sûr. Le geste juste se fait CONNECTÉ : le
+              serveur ferme alors les autres appareils et garde celui-ci.
+            */}
+            <Row icon="lock" title="Changer mon mot de passe" sub="Ferme les autres appareils connectés" chevron onPress={() => setMdpOpen(true)} />
+            <View style={styles.rowBorder} />
             <Row icon="phone" title="Changer de numéro" sub={me.phone ?? undefined} chevron onPress={() => navigation.navigate('PhoneChange')} />
             <View style={styles.rowBorder} />
             <Row icon="log-out" title="Clôturer mon compte" sub="Action définitive après 30 jours" danger chevron onPress={() => navigation.navigate('CloseAccount')} />
@@ -157,6 +173,7 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
           load();
         }}
       />
+      <ChangePasswordSheet visible={mdpOpen} onClose={() => setMdpOpen(false)} />
       <DisableEmailTwoFactorModal visible={disableOpen} onClose={() => setDisableOpen(false)} onDone={() => {
         setDisableOpen(false);
         load();
@@ -320,6 +337,103 @@ function DisableEmailTwoFactorModal({visible, onClose, onDone}: {visible: boolea
           <Text style={styles.sheetSub}>Confirmez avec votre mot de passe. Vous n'aurez plus de code à saisir à la connexion.</Text>
           <PasswordField value={password} onChangeText={setPassword} placeholder="Votre mot de passe" />
           <PrimaryButton title="Désactiver la 2FA" loading={busy} disabled={!password} onPress={submit} />
+          <Pressable onPress={dismiss} style={styles.sheetCancel}>
+            <Text style={styles.sheetCancelText}>Annuler</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/**
+ * Changer son mot de passe en étant connecté — chantier 58, 06/09/2026 (CU-01-04).
+ *
+ * ── Ce qui manquait ────────────────────────────────────────────────────────────────────────────
+ *
+ * `POST /v1/accounts/me/password` existait depuis le premier jour, et le web l'appelait. Cette
+ * application, non : un patient qui soupçonnait son mot de passe connu devait **se déconnecter**,
+ * puis passer par « mot de passe oublié » et attendre un code.
+ *
+ * ⚠️ **C'est l'inverse du bon geste.** Quand on craint que quelqu'un d'autre soit dans son compte,
+ * se déconnecter volontairement revient à lâcher le seul accès dont on est sûr. Fait CONNECTÉ, le
+ * serveur ferme les autres appareils et garde celui-ci.
+ *
+ * ── Ce que l'écran dit avant, et pas après ────────────────────────────────────────────────────
+ *
+ * Le nombre d'appareils fermés n'est connu qu'APRÈS. Mais qu'ils vont l'être se sait AVANT, et
+ * c'est ce qui décide quelqu'un à le faire — ou à attendre d'être au calme. La feuille l'annonce
+ * donc en tête, pas dans le message de réussite.
+ */
+function ChangePasswordSheet({visible, onClose}: {visible: boolean; onClose: () => void}) {
+  const {alert} = useDialog();
+  const styles = useThemedStyles(makeStyles);
+  const [actuel, setActuel] = useState('');
+  const [nouveau, setNouveau] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const dismiss = useAbandonGuard({
+    dirty: actuel.length > 0 || nouveau.length > 0,
+    title: 'Abandonner ?',
+    message: 'Le mot de passe saisi sera effacé.',
+    onLeave: () => {
+      setActuel('');
+      setNouveau('');
+      onClose();
+    },
+  });
+
+  const submit = async () => {
+    /*
+      On vérifie la FORME ici — mêmes règles que le serveur (RM-01-02, `isAcceptablePassword`) —
+      pour dire « huit caractères, une lettre et un chiffre » tout de suite, plutôt que d'envoyer
+      un mot de passe au réseau pour se le faire refuser. Le serveur reste le juge.
+    */
+    if (!isAcceptablePassword(nouveau)) {
+      await alert({
+        title: 'Mot de passe trop faible',
+        message: 'Au moins 8 caractères, avec une lettre et un chiffre.',
+      });
+      return;
+    }
+    if (nouveau === actuel) {
+      // Le serveur le refuse aussi : sans ce contrôle, resaisir le même fermerait les autres
+      // appareils sans rien avoir changé — le pire des deux mondes.
+      await alert({title: 'Aucun changement', message: 'Le nouveau mot de passe doit être différent de l’actuel.'});
+      return;
+    }
+    setBusy(true);
+    try {
+      const {otherSessionsClosed} = await api.changePassword({currentPassword: actuel, newPassword: nouveau});
+      setActuel('');
+      setNouveau('');
+      await alert({
+        title: 'Mot de passe modifié',
+        message:
+          otherSessionsClosed > 0
+            ? `Vos ${otherSessionsClosed} autres appareils connectés ont été déconnectés. Celui-ci reste ouvert.`
+            : 'Aucun autre appareil n’était connecté. Celui-ci reste ouvert.',
+      });
+      onClose();
+    } catch (e) {
+      await alert({title: 'Changement impossible', message: e instanceof ApiError ? e.message : 'Réessayez dans un moment.'});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={dismiss}>
+      <Pressable style={styles.backdrop} onPress={dismiss}>
+        <Pressable style={styles.sheet} onPress={() => {}}>
+          <Text style={styles.sheetTitle}>Changer mon mot de passe</Text>
+          <Text style={styles.sheetSub}>
+            Vos autres appareils connectés seront déconnectés. Celui-ci restera ouvert.
+          </Text>
+          <PasswordField value={actuel} onChangeText={setActuel} placeholder="Mot de passe actuel" returnKeyType="next" />
+          <PasswordField value={nouveau} onChangeText={setNouveau} placeholder="Nouveau mot de passe" onSubmitEditing={submit} />
+          <Text style={styles.sheetSub}>Au moins 8 caractères, avec une lettre et un chiffre.</Text>
+          <PrimaryButton title="Changer le mot de passe" iconRight="check" loading={busy} disabled={!actuel || !nouveau} onPress={submit} />
           <Pressable onPress={dismiss} style={styles.sheetCancel}>
             <Text style={styles.sheetCancelText}>Annuler</Text>
           </Pressable>

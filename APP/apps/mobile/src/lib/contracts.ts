@@ -497,6 +497,23 @@ export interface SubProfile {
   status: string;
   createdAt: string;
 }
+/**
+ * Changer son mot de passe en étant connecté (CU-01-04).
+ *
+ * ⚠️ **`currentPassword` n'est pas une formalité.** Sur un téléphone prêté ou laissé déverrouillé,
+ * une session ouverte ne doit pas suffire à voler le compte : on prouve qu'on est bien celui qui
+ * connaît le mot de passe, pas seulement celui qui tient l'appareil.
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** Le serveur ferme les AUTRES appareils, jamais celui d'où l'on agit. */
+export interface ChangePasswordResponse {
+  otherSessionsClosed: number;
+}
+
 export interface CreateSubProfileRequest {
   firstName: string;
   lastName: string;
@@ -574,6 +591,14 @@ export const ACCOUNT_ROUTES = {
   phoneChangeConfirm: '/v1/accounts/me/phone-change/confirm',
   closeRequestOtp: '/v1/accounts/me/close/request-otp',
   close: '/v1/accounts/me/close',
+  /*
+    Changement de mot de passe depuis une session ouverte (chantier 58, 06/09/2026).
+
+    ⚠️ La route existait depuis le premier jour et le WEB l'appelait ; l'application patient, non.
+    Un patient qui soupçonnait son mot de passe connu n'avait qu'un détour : se déconnecter, puis
+    « mot de passe oublié » et attendre un code. Une échappatoire n'est pas une fonction.
+  */
+  password: '/v1/accounts/me/password',
   totpDisable: '/v1/accounts/me/totp/disable',
   // 2FA par email (mobile) — remplace le TOTP, réservé au web.
   twoFactorEmailRequest: '/v1/accounts/me/2fa/email/request',

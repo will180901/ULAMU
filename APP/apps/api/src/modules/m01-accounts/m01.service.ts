@@ -17,6 +17,7 @@ import {
 import { OtpPurpose, Prisma } from "@prisma/client";
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { AuditEmitter } from "../../common/audit.emitter";
+import { preuveEnSession, ProofRefusedException } from "../../common/auth/proof-refused";
 import { hashSessionToken } from "../../common/auth/auth.guard";
 import { sessionIsExpired } from "../../common/auth/session-expiry";
 import { hashPassword, verifyPassword } from "../../common/crypto/password";
@@ -487,7 +488,7 @@ export class M01Service {
     const account = await this.prisma.account.findUnique({ where: { id: accountId }, select: { email: true } });
     if (!account?.email) throw new BadRequestException("Aucune adresse email sur ce compte");
     await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, { email: account.email as string }, "LOGIN_2FA", otpCode);
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { email: account.email as string }, "LOGIN_2FA", otpCode));
       await tx.account.update({ where: { id: accountId }, data: { emailTwoFactorEnabled: true } });
     });
     await this.auditSystem("m01.2fa_email.enabled", `account:${accountId}`, {});
@@ -499,7 +500,7 @@ export class M01Service {
     const account = await this.prisma.account.findUnique({ where: { id: accountId } });
     if (!account) throw new UnauthorizedException("Compte introuvable");
     if (!(await verifyPassword(password, account.passwordHash))) {
-      throw new UnauthorizedException("Mot de passe incorrect");
+      throw new ProofRefusedException("Mot de passe incorrect");
     }
     await this.prisma.account.update({ where: { id: accountId }, data: { emailTwoFactorEnabled: false } });
     await this.auditSystem("m01.2fa_email.disabled", `account:${accountId}`, {});
@@ -800,8 +801,8 @@ export class M01Service {
     const oldPhone = account.phone;
     await this.prisma.$transaction(async (tx) => {
       // OTP sur l'ANCIEN ET le NOUVEAU numéro (EF-01-07 — parade T-01).
-      await this.consumeOtpOrThrow(tx, { phone: oldPhone }, OtpPurpose.PHONE_CHANGE_OLD, oldPhoneCode);
-      await this.consumeOtpOrThrow(tx, { phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW, newPhoneCode);
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: oldPhone }, OtpPurpose.PHONE_CHANGE_OLD, oldPhoneCode));
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW, newPhoneCode));
       await tx.account.update({ where: { id: accountId }, data: { phone: newPhone } });
       await this.audit.emit(tx, {
         actorId: accountId,
@@ -891,7 +892,7 @@ export class M01Service {
 
   async closeAccount(accountId: string, password: string, otpCode: string): Promise<void> {
     const account = await this.requireAccount(accountId);
-    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    if (!(await verifyPassword(password, account.passwordHash))) throw new ProofRefusedException("Mot de passe incorrect");
     // Relus au dernier moment : entre l'affichage de l'écran et le clic, une consultation a pu démarrer.
     const bloquants = (await this.closePrerequisites(accountId)).filter((p) => !p.ok);
     if (bloquants.length > 0) {
@@ -900,7 +901,7 @@ export class M01Service {
     await this.prisma.$transaction(async (tx) => {
       // Même cible qu'à l'envoi, sans quoi le code reçu par email serait cherché côté téléphone.
       const cible = account.email ? { email: account.email } : { phone: account.phone };
-      await this.consumeOtpOrThrow(tx, cible, OtpPurpose.SENSITIVE_ACTION, otpCode);
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, cible, OtpPurpose.SENSITIVE_ACTION, otpCode));
       await tx.account.update({ where: { id: accountId }, data: { status: "CLOSED", closedAt: new Date() } });
       await tx.loginSession.updateMany({ where: { accountId, revokedAt: null }, data: { revokedAt: new Date() } });
       // Le Carnet est conservé selon M07/PM-31 — rien n'est supprimé ici.
@@ -937,7 +938,7 @@ export class M01Service {
     } catch (e) {
       this.logger.error(`Secret TOTP illisible à la confirmation (compte ${accountId}) : ${(e as Error).message}`);
     }
-    if (!valide) throw new UnauthorizedException("Code invalide — rescannez le QR");
+    if (!valide) throw new ProofRefusedException("Code invalide — rescannez le QR");
     const backupCodes = Array.from({ length: 10 }, () => randomBytes(5).toString("hex"));
     await this.prisma.$transaction(async (tx) => {
       await tx.totpSecret.update({ where: { accountId }, data: { enabled: true, enabledAt: new Date() } });
@@ -958,10 +959,10 @@ export class M01Service {
        (application d'authentification ou code de secours). Désactiver un second facteur est
        précisément le geste qu'un voleur de session voudrait faire — il demande donc de prouver deux
        fois qu'on est bien le titulaire. */
-    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    if (!(await verifyPassword(password, account.passwordHash))) throw new ProofRefusedException("Mot de passe incorrect");
     const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
     if (!row?.enabled) throw new BadRequestException("TOTP non activé");
-    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new UnauthorizedException("Code invalide");
+    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new ProofRefusedException("Code invalide");
     await this.prisma.$transaction(async (tx) => {
       await tx.totpBackupCode.deleteMany({ where: { accountId } });
       await tx.totpSecret.delete({ where: { accountId } });
@@ -1043,7 +1044,7 @@ export class M01Service {
   ): Promise<{ otherSessionsClosed: number }> {
     const account = await this.requireAccount(accountId);
     if (!(await verifyPassword(currentPassword, account.passwordHash))) {
-      throw new UnauthorizedException("Mot de passe actuel incorrect");
+      throw new ProofRefusedException("Mot de passe actuel incorrect");
     }
     this.ensurePasswordOk(newPassword);
     // Sans cette vérification, resaisir le même mot de passe répondrait « c'est fait » et fermerait les
@@ -1090,12 +1091,12 @@ export class M01Service {
    */
   async regenerateBackupCodes(accountId: string, password: string, code: string): Promise<{ backupCodes: string[] }> {
     const account = await this.requireAccount(accountId);
-    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    if (!(await verifyPassword(password, account.passwordHash))) throw new ProofRefusedException("Mot de passe incorrect");
     const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
     if (!row?.enabled) throw new BadRequestException("Aucune double authentification active — les codes de secours n'existent qu'avec elle");
     // Accepte un code de l'application OU un code de secours encore valide : celui qui régénère est
     // souvent précisément celui qui n'a plus que ça.
-    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new UnauthorizedException("Code invalide");
+    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new ProofRefusedException("Code invalide");
     const backupCodes = Array.from({ length: 10 }, () => randomBytes(5).toString("hex"));
     await this.prisma.$transaction(async (tx) => {
       await tx.totpBackupCode.deleteMany({ where: { accountId } });
@@ -1120,10 +1121,10 @@ export class M01Service {
    */
   async resetTotp(accountId: string, password: string, code: string): Promise<{ secret: string; provisioningUri: string }> {
     const account = await this.requireAccount(accountId);
-    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException("Mot de passe incorrect");
+    if (!(await verifyPassword(password, account.passwordHash))) throw new ProofRefusedException("Mot de passe incorrect");
     const row = await this.prisma.totpSecret.findUnique({ where: { accountId } });
     if (!row?.enabled) throw new BadRequestException("Aucune double authentification active — utilisez la configuration initiale");
-    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new UnauthorizedException("Code invalide");
+    if (!(await this.checkTotpOrBackup(accountId, row.encryptedSecret, code))) throw new ProofRefusedException("Code invalide");
     const secret = generateTotpSecret();
     await this.prisma.$transaction(async (tx) => {
       await tx.totpSecret.update({ where: { accountId }, data: { encryptedSecret: sealSecret(secret), enabled: false, enabledAt: null } });
@@ -1166,8 +1167,8 @@ export class M01Service {
     const ancienne = account.email;
     if (ancienne && !oldEmailCode) throw new BadRequestException("Code reçu à l'ancienne adresse requis");
     await this.prisma.$transaction(async (tx) => {
-      await this.consumeOtpOrThrow(tx, { email: newEmail }, OtpPurpose.EMAIL_CHANGE_NEW, newEmailCode);
-      if (ancienne) await this.consumeOtpOrThrow(tx, { email: ancienne }, OtpPurpose.EMAIL_CHANGE_OLD, oldEmailCode as string);
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { email: newEmail }, OtpPurpose.EMAIL_CHANGE_NEW, newEmailCode));
+      if (ancienne) await preuveEnSession(() => this.consumeOtpOrThrow(tx, { email: ancienne }, OtpPurpose.EMAIL_CHANGE_OLD, oldEmailCode as string));
       await tx.account.update({ where: { id: accountId }, data: { email: newEmail } });
       await this.audit.emit(tx, {
         actorId: accountId,
@@ -1202,7 +1203,7 @@ export class M01Service {
   /** Consomme un OTP « action sensible » dans la transaction appelante. Jette si invalide. */
   async verifySensitiveActionOtp(tx: Prisma.TransactionClient, accountId: string, code: string): Promise<void> {
     const account = await this.requireAccount(accountId);
-    await this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, code);
+    await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, code));
   }
 
   /** Vérifie le mot de passe d'un compte (signature de contrat CU-03-03). */

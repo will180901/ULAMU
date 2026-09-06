@@ -15,6 +15,8 @@ import {
   CloseAccountRequest,
   ConfirmPhoneChangeRequest,
   CreateReminderRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   ClaimByCodeRequest,
   ClaimSubProfileRequest,
   ClaimSubProfileResponse,
@@ -314,6 +316,18 @@ export class ApiClient {
   }
   revokeSession(id: string): Promise<void> {
     return this.request('DELETE', ACCOUNT_ROUTES.session(id), undefined, true);
+  }
+
+  /**
+   * Changer son mot de passe en étant connecté (CU-01-04, chantier 58).
+   *
+   * Le serveur **ferme toutes les autres sessions** et garde celle-ci — c'est tout l'intérêt du
+   * geste : quelqu'un d'autre est peut-être connecté, et on le met dehors sans se déconnecter
+   * soi-même. Il prévient aussi par email, seul signal que recevrait le vrai titulaire si ce
+   * n'était pas lui.
+   */
+  changePassword(dto: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    return this.request('POST', ACCOUNT_ROUTES.password, dto, true);
   }
   /** Révoque la session COURANTE côté serveur (déconnexion réelle, pas seulement locale). */
   logout(): Promise<void> {
