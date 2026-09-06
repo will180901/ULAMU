@@ -18,6 +18,30 @@ export interface ChainVerificationResult {
   brokenAtSeq?: string;
   /** Dernier seq contrôlé — pour chaîner les passes (les seq ont des trous). */
   lastCheckedSeq?: string;
+  /**
+   * ── Le journal commence-t-il à son origine ? (chantier 54, 06/09/2026) ──────────────────────
+   *
+   * `ok` ne répond qu'à « ce qui reste a-t-il été altéré ? ». Il ne dit rien de ce qui MANQUE — et
+   * une chaîne peut être parfaitement cohérente **et pourtant amputée de son début**.
+   *
+   * ⚠️ **Constaté en production le 06/09/2026** : le journal contient 99 entrées, numérotées de 356
+   * à 454. `seq` est un auto-incrément PostgreSQL : il ne saute pas de 1 à 356 tout seul. Les 355
+   * premières ont donc existé, puis ont disparu — l'effacement de la base du 23/08/2026, dont le
+   * compteur de séquence, lui, a survécu.
+   *
+   * Et la vérification répondait « chaîne intacte », **à juste titre** : la première entrée
+   * survivante a été écrite alors que la table était vide, donc avec le hash d'origine. Tout est
+   * cohérent. Tout est aussi incomplet.
+   *
+   * ⚠️ **Ce n'est pas qu'un accident historique, c'est une propriété du mécanisme** : un chaînage
+   * ne peut pas distinguer « ce journal commence ici » de « quelqu'un a vidé la table et la
+   * numérotation a continué ». Les deux produisent la même chaîne, parfaitement valide. La seule
+   * chose qui les sépare est le NUMÉRO du premier maillon — c'est pourquoi il est rendu ici, et
+   * affiché à l'écran.
+   */
+  firstSeq?: string;
+  /** `false` = des entrées antérieures ont disparu. Voir `firstSeq`. */
+  startsAtOrigin?: boolean;
 }
 
 @Injectable()
@@ -85,6 +109,14 @@ export class AuditChainService {
     });
     if (rows.length === 0) return { ok: true, checked: 0 };
 
+    /*
+      Le PREMIER maillon du journal entier — pas celui du segment lu. Un `seq` supérieur à 1 dit
+      que des entrées ont disparu : RM-04-01 les interdit pourtant de disparaître.
+    */
+    const origine = await this.prisma.auditEvent.findFirst({ orderBy: { seq: "asc" }, select: { seq: true } });
+    const origineSeq = origine?.seq ?? rows[0]!.seq;
+    const startsAtOrigin = origineSeq === 1n;
+
     const firstSeq = rows[0].seq;
     const previous = await this.prisma.auditEvent.findFirst({
       where: { seq: { lt: firstSeq } },
@@ -105,9 +137,10 @@ export class AuditChainService {
     }));
     const brokenIndex = findChainBreak(stored, expectedPrev);
     const lastCheckedSeq = rows[rows.length - 1]!.seq.toString();
-    if (brokenIndex === -1) return { ok: true, checked: rows.length, lastCheckedSeq };
+    const socle = { checked: rows.length, lastCheckedSeq, firstSeq: origineSeq.toString(), startsAtOrigin };
+    if (brokenIndex === -1) return { ok: true, ...socle };
     // Rupture de chaîne = altération, insertion ou suppression (RM-04-01) — alerte critique (EF-04-02).
-    return { ok: false, checked: rows.length, brokenAtSeq: rows[brokenIndex].seq.toString(), lastCheckedSeq };
+    return { ok: false, ...socle, brokenAtSeq: rows[brokenIndex].seq.toString() };
   }
 
   /**

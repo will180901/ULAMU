@@ -634,6 +634,62 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **53** | **Relecture de M01 — la porte d'entrée** — 06/09. Les chemins critiques sont **solides** : la réinitialisation de mot de passe consomme l'OTP dans la transaction, **révoque toutes les sessions**, et ne distingue pas « compte inconnu » de « pas de code » ; le compteur anti-force brute survit au rollback (D-048) ; `OTP_ECHO` porte un garde-fou dur contre la production. ⚠️ **Et je dois corriger ce que j'avais affirmé le 04/09** : j'avais noté « 17 sessions ouvertes, rien ne les expire côté serveur ». **C'était faux** — `AuthGuard` révoque bien à l'inactivité (30 min en web, PM-20 en mobile). Mais **paresseusement, à l'usage** : celles dont personne ne se sert restent « non révoquées », et l'écran « Mes appareils » les montrait comme actives. **Mesuré en production : 28 sessions listées, 26 DÉJÀ MORTES** — dont dix-huit sur un seul compte, pas une utilisable. Un écran de sécurité qui montre dix-huit appareils sans accès noie la seule session suspecte, et fait cliquer dans un tas de cadavres — le bouton de révocation n'ayant aucune confirmation, **c'est exactement l'erreur que j'ai commise le 04/09**. Corrigé : la règle sort de la garde, et la liste **révoque les mortes avant de montrer**. **api 566 ✓ (559 + 7) · lint 0 · build propre.** | ⏸ en attente | ⏸ |
 
+| **54** | **Relecture de M04 — le journal qui prouve tout le reste** — 06/09. Le chaînage est **bien construit** : transaction sérialisée, rejeu sur conflit, entrée de quarantaine pour un payload illisible plutôt qu'une file bloquée. ⚠️ **Mais le journal de production contient 99 entrées numérotées de 356 à 454** : `seq` est un auto-incrément, les **355 premières ont existé puis ont disparu** — l'effacement du 23/08/2026, dont le compteur de séquence a survécu. Et la vérification répondait **« chaîne intacte »**, à juste titre : la première entrée survivante a été écrite table vide, donc depuis le hash d'origine. Tout est cohérent ; tout est aussi incomplet. ⚠️ **Ce n'est pas qu'un accident : c'est une propriété du mécanisme.** Un chaînage ne peut pas distinguer « ce journal commence ici » de « quelqu'un a vidé la table » — seul le NUMÉRO du premier maillon les sépare. Livré : `firstSeq` et `startsAtOrigin` remontés par la vérification, et l'écran qui dit **« Ce qui reste est intact ; ce n'est pas la même chose que complet. »** 📌 **Un test existant est tombé** — celui qui compare l'horloge du navigateur à celle du serveur : le chantier 53 avait déplacé la constante, et **je n'avais pas relancé la suite web**. **api 566 ✓ · web 655 ✓ (651 + 4) · mobile 29 ✓ · lint 0 · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 54 (le journal amputé) a appris
+
+*06/09/2026 — relecture de M04, l'audit.*
+
+#### Le journal de production a perdu ses 355 premières entrées
+
+Il en contient 99, numérotées **de 356 à 454**. `seq` est un auto-incrément PostgreSQL : il ne saute
+pas de 1 à 356 tout seul. Ces entrées ont existé.
+
+Elles ont disparu le **23/08/2026**, avec l'effacement de la base — l'incident déjà connu. Ce qu'on
+ne savait pas : le compteur de séquence, lui, a survécu, et c'est **la seule trace qu'il en reste**.
+
+#### Et la vérification répondait « chaîne intacte » — à juste titre
+
+Ce n'est pas un défaut du chaînage. La première entrée survivante a été écrite alors que la table
+était vide : `findFirst` n'a rien trouvé, le `prevHash` est donc le hash d'origine, et la chaîne
+repart proprement de là.
+
+Tout est cohérent. Tout est aussi incomplet. **L'écran disait le premier et taisait le second.**
+
+*« Intact » répond à « a-t-on modifié ce qui est là ? ». « Complet » répond à « est-ce tout ce qui a
+eu lieu ? ». Un journal d'audit doit répondre aux deux, et le chaînage ne sait répondre qu'à la
+première.*
+
+#### Ce n'est pas un accident, c'est une propriété du mécanisme
+
+Un chaînage par empreinte **ne peut pas distinguer** deux situations :
+
+* « ce journal commence ici, c'est sa première entrée » ;
+* « quelqu'un a vidé la table, et la numérotation a continué ».
+
+Les deux produisent une chaîne parfaitement valide, partant du hash d'origine. La seule chose qui
+les sépare est le **numéro** du premier maillon — une donnée que le mécanisme cryptographique ne
+protège pas, et que personne ne regardait.
+
+C'est pourquoi `firstSeq` et `startsAtOrigin` remontent désormais jusqu'à l'écran. Pas comme une
+alerte de rupture — il n'y en a pas — mais comme la phrase qui manquait : *« Ce qui reste est
+intact ; ce n'est pas la même chose que complet. »*
+
+#### Un test existant est tombé, et il avait raison
+
+`inactivite.test.tsx` compare l'horloge du navigateur à celle du serveur, en **lisant le fichier du
+serveur**. Le chantier 53 a déplacé `WEB_IDLE_SECONDS` vers `session-expiry.ts` ; le test cherchait
+encore dans `auth.guard.ts`, ne trouvait plus la valeur, et l'a dit.
+
+Il ne s'est pas contenté d'échouer : il portait un message — « WEB_IDLE_SECONDS introuvable » — au
+lieu de comparer dans le vide et de passer.
+
+⚠️ **Et je ne l'ai découvert qu'aujourd'hui, parce que je n'avais lancé que la suite API hier.**
+Trois applications, trois suites : les lancer toutes coûte quatre minutes, et en sauter une coûte un
+jour de retard sur une régression que j'ai moi-même introduite.
+
+*Un test qui échoue en NOMMANT ce qu'il ne trouve plus vaut dix tests qui passent en silence.*
+
 ### Ce que le chantier 53 (l'écran de sécurité qui mentait) a appris
 
 *06/09/2026 — relecture de M01, la porte d'entrée.*

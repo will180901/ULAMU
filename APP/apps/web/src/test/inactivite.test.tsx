@@ -1,13 +1,18 @@
 /**
  * Expiration par inactivité — ENF-07 / CU-01-03.
  *
- * Le serveur reste seul juge : `auth.guard.ts` refuse toute requête dont la session dort depuis plus
- * de `WEB_IDLE_SECONDS`. Le minuteur du navigateur ne protège pas les données — il protège l'ÉCRAN,
+ * Le serveur reste seul juge : il refuse toute requête dont la session dort depuis plus de
+ * `WEB_IDLE_SECONDS`. Le minuteur du navigateur ne protège pas les données — il protège l'ÉCRAN,
  * qui sinon continue d'afficher un dossier patient sur un poste d'officine laissé sans surveillance.
  *
  * D'où le dernier test, le plus important des trois : les deux horloges doivent afficher la même
  * durée. Si un jour quelqu'un change `WEB_IDLE_SECONDS` côté serveur sans toucher au client, l'écran
  * resterait allumé après la fermeture de la session — exactement le trou qu'on vient de boucher.
+ *
+ * ⚠️ **Ce test est tombé le 06/09/2026, et il avait raison.** Le chantier 53 a sorti la constante de
+ * `auth.guard.ts` vers `session-expiry.ts`, pour que la garde qui REFUSE et la liste des appareils
+ * qui MONTRE disent la même chose. Le test lisait encore l'ancien fichier : il ne trouvait plus la
+ * valeur et le disait, au lieu de comparer dans le vide. Il suit désormais la constante.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -80,12 +85,13 @@ describe('expiration par inactivité (ENF-07)', () => {
   })
 
   it('affiche la MÊME durée que la garde serveur', () => {
-    const garde = readFileSync(
-      resolve(__dirname, '../../../api/src/common/auth/auth.guard.ts'),
+    // La constante vit dans `session-expiry.ts` depuis le chantier 53 — voir l'en-tête.
+    const regle = readFileSync(
+      resolve(__dirname, '../../../api/src/common/auth/session-expiry.ts'),
       'utf8',
     )
-    const m = garde.match(/WEB_IDLE_SECONDS\s*=\s*(\d+)\s*\*\s*(\d+)/)
-    expect(m, 'WEB_IDLE_SECONDS introuvable dans auth.guard.ts').not.toBeNull()
+    const m = regle.match(/WEB_IDLE_SECONDS\s*=\s*(\d+)\s*\*\s*(\d+)/)
+    expect(m, 'WEB_IDLE_SECONDS introuvable dans session-expiry.ts').not.toBeNull()
 
     const secondesServeur = Number(m![1]) * Number(m![2])
     expect(DELAI_INACTIVITE_MS).toBe(secondesServeur * 1000)

@@ -265,6 +265,27 @@ export function PilotagePage() {
                       Chaîne intacte : les {nombre(integrite.data.checked)} entrées vérifiées se
                       succèdent sans rupture.
                     </Avis>
+                    {/*
+                      ── « Intacte » ne veut pas dire « complète » (chantier 54, 06/09/2026) ────
+
+                      Le chaînage prouve que rien n'a été altéré depuis la première entrée présente.
+                      Il ne dit rien de ce qui manque AVANT elle — et il ne peut pas le dire : une
+                      table vidée puis réalimentée produit une chaîne parfaitement valide qui
+                      recommence à l'origine.
+
+                      Le seul indice est le NUMÉRO du premier maillon. Il vaut 356 en production :
+                      355 entrées ont disparu le 23/08/2026 avec l'effacement de la base. Le taire
+                      laisserait croire ce journal complet — sur une plateforme de santé, la
+                      différence entre « intact » et « complet » est tout le sujet.
+                    */}
+                    {integrite.data.startsAtOrigin === false ? (
+                      <Avis ton="alerte">
+                        <strong className="font-semibold">Le journal ne commence pas à son origine.</strong> Sa
+                        première entrée porte le numéro {nombre(Number(integrite.data.firstSeq ?? 0))} : les
+                        entrées antérieures ont disparu. Ce qui reste est intact ; ce n'est pas la même
+                        chose que complet.
+                      </Avis>
+                    ) : null}
                     <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
                       Chaque entrée porte l'empreinte de la précédente : en retirer une casserait la
                       chaîne de façon visible et irréparable.

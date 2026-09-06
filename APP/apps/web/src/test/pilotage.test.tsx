@@ -85,7 +85,7 @@ const FILE: VerificationQueue = {
 function monter(
   kpis: PilotKpi[] = KPIS,
   couverture = COUVERTURE,
-  integrite: AuditIntegrity = { ok: true, checked: 48_912 },
+  integrite: AuditIntegrity = { ok: true, checked: 48_912, firstSeq: '1', startsAtOrigin: true },
   file: VerificationQueue = FILE,
 ) {
   vi.spyOn(api, 'pilotKpis').mockResolvedValue(kpis)
@@ -340,5 +340,63 @@ describe('E5 — exporter le journal d’audit (écart E)', () => {
     await utilisateur.click(await screen.findByRole('button', { name: /Exporter le journal/ }))
 
     expect(await screen.findByText(/1 entrée exportée/)).toBeInTheDocument()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  « Intacte » n'est pas « complète » — chantier 54, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  Le chaînage prouve que rien n'a été altéré **depuis la première entrée présente**. Il ne dit rien
+  de ce qui manque AVANT elle — et il ne peut pas le dire : une table vidée puis réalimentée produit
+  une chaîne parfaitement valide, qui recommence à l'origine.
+
+  ⚠️ **Constaté en production le 06/09/2026** : le journal contient 99 entrées numérotées de 356 à
+  454. Les 355 premières ont disparu avec l'effacement de la base du 23/08. La vérification
+  répondait « chaîne intacte » — à juste titre — et l'écran s'arrêtait là.
+
+  Sur une plateforme de santé dont le journal est une pièce légale, la différence entre « intact »
+  et « complet » est tout le sujet. Ces tests gardent la phrase qui la dit.
+*/
+describe('E5 — le journal amputé de son début (chantier 54)', () => {
+  it('prévient quand le journal ne commence pas à son origine', async () => {
+    monter(KPIS, COUVERTURE, { ok: true, checked: 99, firstSeq: '356', startsAtOrigin: false })
+
+    expect(await screen.findByText(/ne commence pas à son origine/)).toBeInTheDocument()
+    expect(screen.getByText(/356/)).toBeInTheDocument()
+    // LA phrase : elle dit exactement ce que le chaînage prouve, et ce qu'il ne prouve pas.
+    expect(screen.getByText(/Ce qui reste est intact ; ce n'est pas la même\s+chose que complet/)).toBeInTheDocument()
+  })
+
+  /*
+    L'avertissement ne remplace pas le constat d'intégrité : les deux sont vrais en même temps, et
+    les confondre ferait croire à une altération là où il n'y en a pas.
+  */
+  it('dit AUSSI que la chaîne est intacte — les deux sont vrais', async () => {
+    monter(KPIS, COUVERTURE, { ok: true, checked: 99, firstSeq: '356', startsAtOrigin: false })
+
+    expect(await screen.findByText(/Chaîne intacte/)).toBeInTheDocument()
+    expect(screen.queryByText(/Rupture détectée/)).not.toBeInTheDocument()
+  })
+
+  it('ne dit RIEN quand le journal part bien de sa première entrée', async () => {
+    monter(KPIS, COUVERTURE, { ok: true, checked: 48_912, firstSeq: '1', startsAtOrigin: true })
+
+    await screen.findByText(/Chaîne intacte/)
+    expect(screen.queryByText(/ne commence pas à son origine/)).not.toBeInTheDocument()
+  })
+
+  /*
+    Un serveur plus ancien ne renvoie pas encore ces champs. L'écran ne doit alors rien inventer —
+    afficher un avertissement sur une donnée absente serait pire que de se taire.
+  */
+  it('se tait si le serveur ne dit rien de l’origine', async () => {
+    monter(KPIS, COUVERTURE, { ok: true, checked: 99 })
+
+    await screen.findByText(/Chaîne intacte/)
+    expect(screen.queryByText(/ne commence pas à son origine/)).not.toBeInTheDocument()
   })
 })

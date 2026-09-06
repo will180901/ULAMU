@@ -900,6 +900,22 @@ export interface AuditIntegrity {
   ok: boolean
   checked: number
   brokenAtSeq?: number | null
+  /**
+   * ── Le journal commence-t-il à son origine ? (chantier 54, 06/09/2026) ─────────────────────
+   *
+   * `ok` ne répond qu'à « ce qui reste a-t-il été altéré ? ». Il ne dit rien de ce qui MANQUE — et
+   * une chaîne peut être parfaitement cohérente **et pourtant amputée de son début**.
+   *
+   * ⚠️ Constaté en production : le journal contient 99 entrées numérotées **de 356 à 454**. Les 355
+   * premières ont existé, puis ont disparu (effacement de la base du 23/08/2026, dont le compteur
+   * de séquence a survécu). La vérification répondait « chaîne intacte » — à juste titre, et sans
+   * jamais dire que le début manquait.
+   *
+   * ⚠️ Ce n'est pas qu'un accident : **un chaînage ne peut pas distinguer** « ce journal commence
+   * ici » de « quelqu'un a vidé la table ». Seul le NUMÉRO du premier maillon les sépare.
+   */
+  firstSeq?: string | null
+  startsAtOrigin?: boolean | null
 }
 
 /** Signalement d'utilisateur en attente de modération (M04, CU-04-04). */
