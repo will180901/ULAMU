@@ -17,6 +17,7 @@ import { ReportService } from "../m06-handshake-session/m06.report.service";
 import { SessionService } from "../m06-handshake-session/m06.session.service";
 import { PrescriptionService } from "../m09-prescriptions/m09.prescription.service";
 import { ReconciliationService } from "../m13-payments/m13.reconciliation.service";
+import { StorageService } from "../../common/storage.service";
 import { EarningsService } from "../m13-payments/m13.earnings.service";
 import { NotificationsService } from "../m14-notifications/m14.service";
 
@@ -34,6 +35,7 @@ export class SchedulerService {
     private readonly prescriptions: PrescriptionService,
     private readonly reconciliation: ReconciliationService,
     private readonly earnings: EarningsService,
+    private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -95,6 +97,9 @@ export class SchedulerService {
     return this.collect({
       "m13.reconciliation.runDaily": () => this.reconciliation.runDaily("m16.scheduler"),
       "m14.purgeExpired": () => this.notifications.purgeExpired(),
+      /* Chantier 51 : les fichiers que plus aucune ligne ne désigne. Quotidien — un orphelin ne
+         fait de mal à personne dans la journée, et la lecture des références coûte cinq requêtes. */
+      "storage.sweepOrphans": () => this.storage.sweepOrphans(),
     });
   }
 

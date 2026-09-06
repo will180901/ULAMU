@@ -81,6 +81,66 @@ function looksLikeExecutable(buf: Buffer): boolean {
   return EXECUTABLE_SIGNATURES.some((sig) => buf.length >= sig.length && buf.subarray(0, sig.length).equals(sig));
 }
 
+/**
+ * ── Les fichiers sans propriétaire (chantier 51, 06/09/2026) ────────────────────────────────────
+ *
+ * Un fichier stocké est toujours censé être DÉSIGNÉ par une ligne : un avatar par un profil, une
+ * pièce par un document de vérification, un média par un message de session. Trois chemins peuvent
+ * rompre ce lien :
+ *
+ *  1. **M06 téléverse en DEUX appels HTTP** — `uploadMedia` rend une clé, puis un second appel
+ *     attache cette clé à un message. Entre les deux, l'utilisateur renonce, le réseau tombe,
+ *     l'application se ferme : le fichier reste, et rien ne vient jamais le chercher.
+ *  2. **Un script de maintenance efface des lignes sans leurs fichiers.** Constaté :
+ *     `scripts/menage-comptes-demo.ts` supprimait les pièces justificatives des comptes de
+ *     démonstration et laissait leurs fichiers — trois pièces d'identité et un diplôme, chiffrés,
+ *     conservés sans propriétaire depuis le 24/08/2026.
+ *  3. **Le processus meurt entre l'écriture du fichier et celle de la ligne** (M01, M03) — la
+ *     fenêtre est de quelques millisecondes, mais Render redémarre le service à la demande.
+ *
+ * Ce n'est pas seulement de la place perdue : ce sont des **photos, des vocaux et des pièces
+ * d'identité médicales** conservés sans propriétaire et sans règle de rétention.
+ */
+
+/** Les préfixes CONNUS et l'endroit où leur clé est référencée. Voir `orphanIsSweepable`. */
+export const KNOWN_STORAGE_PREFIXES = ["av_", "vd_", "sm_"] as const;
+
+/**
+ * Délai de grâce avant qu'un fichier non référencé soit considéré comme abandonné.
+ *
+ * ⚠️ Il protège le cas 1 ci-dessus : entre le téléversement d'une photo et l'envoi du message qui
+ * la porte, l'utilisateur peut prendre son temps — écrire une légende, être interrompu, revenir.
+ * Vingt-quatre heures dépassent très largement toute rédaction ; les couper serait effacer la photo
+ * de quelqu'un qui est en train de la commenter.
+ *
+ * Ce n'est pas un paramètre métier : aucune règle n'est opposée à personne, et un PM-xx neuf serait
+ * de toute façon ABSENT en production (Render ne joue jamais le seed).
+ */
+export const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Ce fichier peut-il être effacé sans risque ?
+ *
+ * ⚠️ **La règle la plus importante est la première : un préfixe INCONNU n'est jamais balayé.**
+ * Le jour où un module ajoutera un quatrième type de fichier, il l'écrira avant que ce balayage
+ * n'apprenne où ses clés sont référencées — et un balayage qui « nettoie » ce qu'il ne comprend pas
+ * détruirait des données médicales en usage. Le défaut de ce balayage est donc de NE RIEN FAIRE.
+ *
+ * `referenced` doit contenir TOUTES les clés citées quelque part. L'appelant l'assemble depuis les
+ * cinq champs qui en portent (`PatientProfile`, `ProfessionalProfile`, `FacilityMemberProfile`
+ * .avatarKey ; `SupportingDocument.fileKey` ; `SessionMessage.fileKey` et `.mediaKeys`).
+ */
+export function orphanIsSweepable(
+  key: string,
+  referenced: ReadonlySet<string>,
+  ageMs: number,
+  graceMs: number,
+): boolean {
+  if (!KNOWN_STORAGE_PREFIXES.some((p) => key.startsWith(p))) return false;
+  if (referenced.has(key)) return false;
+  return ageMs >= graceMs;
+}
+
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
@@ -175,6 +235,49 @@ export class StorageService {
     }
     const ext = key.split(".").pop() ?? "";
     return { buffer, contentType: row.mime || CONTENT_TYPE_BY_EXT[ext] || "application/octet-stream" };
+  }
+
+  /**
+   * Efface les fichiers que plus aucune ligne ne désigne — voir `orphanIsSweepable` pour le
+   * pourquoi et pour la garde des préfixes inconnus.
+   *
+   * ⚠️ **Les cinq sources de références sont lues à chaque passage, jamais mises en cache.** Un
+   * ensemble incomplet ferait effacer des fichiers en usage : c'est la seule façon dont ce balayage
+   * peut nuire, et elle est irréversible.
+   *
+   * Balayage QUOTIDIEN et non horaire : un fichier orphelin ne fait de mal à personne dans la
+   * journée, et la lecture des références coûte cinq requêtes.
+   */
+  async sweepOrphans(): Promise<{ examines: number; effaces: number; octetsLiberes: number }> {
+    const [patients, pros, membres, pieces, messages, fichiers] = await Promise.all([
+      this.prisma.patientProfile.findMany({ where: { avatarKey: { not: null } }, select: { avatarKey: true } }),
+      this.prisma.professionalProfile.findMany({ where: { avatarKey: { not: null } }, select: { avatarKey: true } }),
+      this.prisma.facilityMemberProfile.findMany({ where: { avatarKey: { not: null } }, select: { avatarKey: true } }),
+      this.prisma.supportingDocument.findMany({ select: { fileKey: true } }),
+      this.prisma.sessionMessage.findMany({ select: { fileKey: true, mediaKeys: true } }),
+      this.prisma.storedFile.findMany({ select: { key: true, sizeBytes: true, createdAt: true } }),
+    ]);
+
+    const referenced = new Set<string>();
+    for (const p of [...patients, ...pros, ...membres]) if (p.avatarKey) referenced.add(p.avatarKey);
+    for (const d of pieces) referenced.add(d.fileKey);
+    for (const m of messages) {
+      if (m.fileKey) referenced.add(m.fileKey);
+      for (const k of m.mediaKeys) referenced.add(k);
+    }
+
+    const maintenant = Date.now();
+    const aEffacer = fichiers.filter((f) =>
+      orphanIsSweepable(f.key, referenced, maintenant - f.createdAt.getTime(), ORPHAN_GRACE_MS),
+    );
+    if (aEffacer.length === 0) return { examines: fichiers.length, effaces: 0, octetsLiberes: 0 };
+
+    const octetsLiberes = aEffacer.reduce((s, f) => s + f.sizeBytes, 0);
+    await this.prisma.storedFile.deleteMany({ where: { key: { in: aEffacer.map((f) => f.key) } } });
+    this.logger.warn(
+      `Fichiers sans propriétaire effacés : ${aEffacer.length} sur ${fichiers.length} (${octetsLiberes} octets)`,
+    );
+    return { examines: fichiers.length, effaces: aEffacer.length, octetsLiberes };
   }
 
   async remove(key: string | null | undefined): Promise<void> {

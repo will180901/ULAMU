@@ -628,6 +628,84 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **50** | **Relecture de M13 — l'argent** — 06/09. Objectif annoncé : chercher des routes que rien n'appelle. **Résultat : il n'y en a aucune** sur 162 — les 17 candidates de mon outil étaient TOUTES des faux positifs (il ne suivait ni les constantes de route du mobile, ni les gabarits mêlant constante et chaîne de requête). ⚠️ **La lecture, elle, a trouvé bien pire qu'une route morte.** `confirmWithdrawal` débite le solde en TX 1, appelle l'agrégateur **hors transaction**, conclut en TX 2. **Si le processus meurt entre les deux — et Render endort le service toutes les 15 min — l'argent est débité et RIEN ne le sait** : l'utilisateur ne peut plus réessayer (`aggregatorRef` posé), la réconciliation ne lit que les `EXECUTED`, aucune route d'administration ne débloque, et le retrait **empêche même la clôture du compte**. Mesuré en production : **0 retrait, 0 compte de gains** — le défaut est **latent**, pas réalisé. Livré : un balayage horaire qui **ne devine rien** — il lit le relevé de l'agrégateur, solde si le virement est parti, re-crédite sinon, et **attend** si le relevé est illisible. ⚠️ **Le câblage Nest manquait et TypeScript ne disait rien** : l'API n'aurait pas démarré en production — trouvé en montant l'arbre. **api 546 ✓ (536 + 10) · lint 0 · build propre · 162 routes.** | ⏸ en attente | ⏸ |
 
+| **51** | **Relecture de M06 — la chaîne de soin** — 06/09. Le chemin de l'argent du patient est **solide** : `pay` re-vérifie « peut exercer » avant de débiter, et le webhook rembourse automatiquement un paiement qui n'ouvre aucune session. ⚠️ **Le trou est ailleurs, et il est double.** `uploadMedia` stocke un fichier et rend sa clé ; c'est un **SECOND appel HTTP** qui l'attache à un message — entre les deux, l'utilisateur renonce, le réseau tombe, et **rien ne vient jamais chercher le fichier** : aucun balayage, aucune purge, aucune durée de vie. Ce sont des photos et des vocaux MÉDICAUX conservés sans propriétaire. 📌 **Et en le mesurant, un second défaut, celui-là RÉALISÉ** : `scripts/menage-comptes-demo.ts` supprimait les pièces justificatives et **laissait leurs fichiers** — trois pièces d'identité et un diplôme chiffrés dorment en base depuis le **24/08/2026**, sans propriétaire et sans règle de rétention. Livré : un balayage quotidien dont **le défaut est de ne rien faire** — un préfixe inconnu n'est JAMAIS effacé, un fichier référencé non plus, un fichier de moins de 24 h non plus. Et le script corrigé. **api 554 ✓ (546 + 8) · lint 0 · build propre · 162 routes.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 51 (les fichiers sans propriétaire) a appris
+
+*06/09/2026 — relecture de M06, la chaîne de soin.*
+
+#### Le module où l'argent circule était le plus solide
+
+On lit M06 en cherchant le défaut du chantier 50 : une transaction, un appel réseau, une seconde
+transaction. Le chemin du paiement l'a — et il est traité :
+
+* `pay` re-vérifie « peut exercer » **au paiement**, pas seulement à la confirmation : un
+  professionnel suspendu entre les deux n'est jamais payé ;
+* le webhook rembourse **automatiquement** un paiement qui n'ouvre aucune session — poignée expirée
+  entre-temps, ou paiement excédentaire sur un second ordre ;
+* l'annulation patient laisse une trace d'audit si l'ordre de remboursement échoue, et la
+  réconciliation reste le filet.
+
+*Chercher un défaut connu dans un module neuf est une bonne méthode, même quand on ne le trouve
+pas : on en sort en sachant ce qui est tenu.*
+
+#### Le trou n'était pas dans l'argent, il était dans les fichiers
+
+`uploadMedia` stocke le fichier et rend sa clé. **C'est un second appel HTTP qui l'attache à un
+message.** Entre les deux, tout peut s'arrêter — l'utilisateur renonce, le réseau tombe,
+l'application se ferme.
+
+Le fichier reste alors référencé par rien. Et rien ne vient le chercher : **aucun balayage, aucune
+purge, aucune durée de vie**. Sur une plateforme de santé, ce sont des photos et des messages vocaux
+médicaux conservés sans propriétaire et hors de toute règle de rétention.
+
+M03 fait pourtant la chose juste — il efface le fichier si le rattachement échoue. Il le peut :
+chez lui, les deux étapes tiennent dans **un seul appel**. M06 ne le peut pas.
+
+*La même faute se corrige dans un module et pas dans l'autre, non par négligence, mais parce que la
+forme de l'appel a changé. Un motif de code ne se copie pas ; il se re-décide.*
+
+#### En mesurant, on a trouvé le défaut déjà réalisé — ailleurs
+
+Avant d'écrire le correctif : un script de comptage, en lecture seule, sur la production. Zéro média
+de session — le défaut de M06 est **latent**.
+
+Mais la même mesure a montré **trois pièces justificatives sur trois sans propriétaire**. Origine
+retrouvée : `scripts/menage-comptes-demo.ts` supprimait les lignes `SupportingDocument` des comptes
+de démonstration **sans effacer les fichiers**. Deux pièces d'identité et un diplôme, chiffrés,
+dorment en base depuis le 24 août.
+
+*On était venu vérifier une hypothèse ; c'est la mesure qui a trouvé le vrai cas. Compter avant de
+corriger ne sert pas seulement à chiffrer l'urgence — cela change parfois ce qu'on corrige.*
+
+#### Le remède pouvait détruire ce qu'il protégeait
+
+Un balayage de fichiers qui se trompe efface des photos, des vocaux et des pièces d'identité
+**médicales**, sans retour possible. C'est le geste le plus dangereux écrit depuis le début de ce
+journal.
+
+La règle est donc construite pour que **son défaut soit de ne rien faire** :
+
+* un **préfixe inconnu n'est jamais effacé**. Le jour où un module ajoutera un quatrième type de
+  fichier, il l'écrira avant que ce balayage n'apprenne où ses clés sont référencées ;
+* les cinq sources de références sont relues **à chaque passage**, jamais mises en cache : un
+  ensemble incomplet est la seule façon dont ce balayage peut nuire ;
+* un délai de grâce de 24 h protège celui qui téléverse une photo puis prend son temps pour écrire
+  la légende du message qui la portera.
+
+*Quand le remède peut détruire, on n'écrit pas la règle qui nettoie le mieux : on écrit celle qui se
+trompe le moins mal.*
+
+#### Réparer le balayage ne dispense pas de réparer le script
+
+Le balayage quotidien ramassera les trois pièces orphelines. Le script de ménage a quand même été
+corrigé pour effacer les fichiers avec les lignes.
+
+Laisser un script sale en s'appuyant sur un balayage, c'est déplacer la responsabilité vers un
+mécanisme qui n'était pas là pour ça — et qui, lui, attend vingt-quatre heures.
+
+*Un script qui sait ce qu'il supprime ne doit pas s'en remettre à un ramasseur.*
+
 ### Ce que le chantier 50 (la relecture de M13) a appris
 
 *06/09/2026 — relecture d'un module entier, à la recherche de routes mortes.*

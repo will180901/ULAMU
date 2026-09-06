@@ -142,7 +142,19 @@ async function main(): Promise<void> {
     const idsDossiers = dossiers.map((d) => d.id);
     await tx.agreementVersion.deleteMany({ where: { agreement: { caseId: { in: idsDossiers } } } });
     await tx.digitalAgreement.deleteMany({ where: { caseId: { in: idsDossiers } } });
+    /*
+      ⚠️ Les FICHIERS partent avec les lignes (corrigé le 06/09/2026, chantier 51).
+      Ce `deleteMany` effaçait les pièces justificatives et laissait leurs fichiers chiffrés en
+      base : trois pièces d'identité et un diplôme de comptes supprimés y dormaient depuis le
+      24/08, sans propriétaire et sans règle de rétention. Le balayage quotidien les ramasse
+      désormais, mais un script qui sait ce qu'il supprime ne doit pas s'en remettre à lui.
+    */
+    const piecesASupprimer = await tx.supportingDocument.findMany({
+      where: { caseId: { in: idsDossiers } },
+      select: { fileKey: true },
+    });
     await tx.supportingDocument.deleteMany({ where: { caseId: { in: idsDossiers } } });
+    await tx.storedFile.deleteMany({ where: { key: { in: piecesASupprimer.map((p) => p.fileKey) } } });
     await tx.verificationDecision.deleteMany({ where: { caseId: { in: idsDossiers } } });
     await tx.verificationCase.deleteMany({ where: { id: { in: idsDossiers } } });
 
