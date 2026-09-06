@@ -5,12 +5,15 @@
  */
 import {
   canSupersede,
+  CLAIM_CODE_ALPHABET,
   clampRecordPageSize,
   computeSummary,
   declaredPayloadSizeOk,
+  formatClaimCode,
   isOwnerAdult,
   isPatientDeclarable,
   MAX_DECLARED_PAYLOAD_BYTES,
+  normalizeClaimCode,
   PATIENT_DECLARABLE_TYPES,
   RECORD_ENTRY_TYPES,
   RECORD_PAGE_DEFAULT,
@@ -198,5 +201,71 @@ describe("declaredPayloadSizeOk", () => {
     const cyclic: Record<string, unknown> = {};
     cyclic["self"] = cyclic;
     expect(declaredPayloadSizeOk(cyclic)).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Le code de transfert dictable — dette n°26, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  Le chantier 48 a livré le transfert d'un Carnet à la majorité. Pour revendiquer, le majeur devait
+  connaître `subProfileId` ET `intentId` : **73 caractères d'UUID**, que son tuteur devait lui faire
+  parvenir par écrit — alors que, le plus souvent, les deux personnes sont dans la même pièce.
+
+  Ce code se dicte. Tout le reste en découle :
+
+  **1. L'alphabet n'a AUCUNE paire douteuse.** Ni 0/O, ni 1/I/L, ni U — et les DEUX membres de chaque
+  paire sont exclus, pas seulement l'un. Garder « O » en écartant « 0 » laisserait celui qui écoute
+  hésiter quand même, et sa faute serait alors silencieuse.
+
+  **2. Tolérant sur la forme, strict sur le fond.** On l'aura écrit avec un tiret, un espace, en
+  minuscules — rien de tout cela ne change le code. Mais un signe hors alphabet est une faute
+  d'écoute : le taire enverrait au serveur un code qui reviendrait « aucun transfert », et les deux
+  personnes chercheraient le défaut dans le transfert plutôt que dans la dictée.
+*/
+describe("Code de transfert dictable (dette n°26)", () => {
+  it("l'alphabet ne contient aucune paire confondable à l'oral ni à l'œil", () => {
+    for (const douteux of ["0", "O", "1", "I", "L", "U"]) {
+      expect(CLAIM_CODE_ALPHABET.includes(douteux)).toBe(false);
+    }
+    // Et il reste assez large pour que le code ne se devine pas : 30⁸ ≈ 6,5 × 10¹¹.
+    expect(CLAIM_CODE_ALPHABET.length).toBeGreaterThanOrEqual(30);
+    expect(new Set(CLAIM_CODE_ALPHABET).size).toBe(CLAIM_CODE_ALPHABET.length); // aucun doublon
+  });
+
+  it.each([
+    ["tel quel", "ABCD2345"],
+    ["avec le tiret d'affichage", "ABCD-2345"],
+    ["en minuscules", "abcd2345"],
+    ["avec des espaces", " ABCD 2345 "],
+    ["écrit sous la dictée, tiret et minuscules", "abcd-2345"],
+  ])("accepte un code %s", (_cas, brut) => {
+    expect(normalizeClaimCode(brut)).toBe("ABCD2345");
+  });
+
+  /*
+    Le cas qui compte. Un signe hors alphabet ne peut venir que d'une erreur d'écoute ou de saisie :
+    le refuser ICI donne « répétez », le laisser passer donnerait « ce transfert n'existe pas ».
+  */
+  it.each([
+    ["il contient un zéro", "ABCD2340"],
+    ["il contient un O", "ABCDO345"],
+    ["il contient un I", "ABCDI345"],
+    ["il contient un U", "ABCDU345"],
+    ["il est trop court", "ABCD234"],
+    ["il est trop long", "ABCD23456"],
+    ["il est vide", ""],
+    ["ce n'est pas un code", "bonjour !"],
+  ])("refuse quand %s", (_cas, brut) => {
+    expect(normalizeClaimCode(brut)).toBeNull();
+  });
+
+  it("s'affiche par groupes de quatre — on ne dicte pas huit signes d'affilée", () => {
+    expect(formatClaimCode("ABCD2345")).toBe("ABCD-2345");
+    // Et ce qui est affiché se relit : la boucle est fermée.
+    expect(normalizeClaimCode(formatClaimCode("ABCD2345"))).toBe("ABCD2345");
   });
 });

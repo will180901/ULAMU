@@ -1,97 +1,108 @@
 /**
  * @format
- * Le code de transfert d'un Carnet à la majorité — chantier 48, 06/09/2026 (écart D).
+ * Le code de transfert d'un Carnet à la majorité — chantier 48, puis dette n°26 le 06/09/2026.
  *
- * ── Ce que ce fichier défend ──────────────────────────────────────────────────────────────────
+ * ── Ce que ce fichier défendait hier, et ce qu'il défend aujourd'hui ─────────────────────────
  *
- * `POST /sub-profiles/:id/claim` exige du majeur un `subProfileId` ET un `intentId`, deux UUID qu'il
- * ne possède pas et ne peut pas deviner. Son tuteur les lui transmet — par SMS, par WhatsApp, de
- * vive voix : **deux personnes, deux téléphones**.
+ * Hier : que deux UUID réunis en une chaîne survivent à une messagerie. C'était juste, et
+ * insuffisant — **73 caractères ne se dictent pas**, alors que le cas le plus fréquent est que le
+ * tuteur et le majeur soient dans la même pièce.
  *
- * Tout ce qui peut arriver à une chaîne qui traverse une messagerie arrive donc ici :
+ * Aujourd'hui le serveur émet **huit signes**, et tout ce fichier tourne autour d'une seule idée :
+ * ce code passe par une OREILLE.
  *
- * **1. Elle est décorée.** Espaces, retours à la ligne, majuscule automatique en début de message.
- * Rien de tout cela ne change les identifiants — refuser un code pour un espace ferait accuser le
- * tuteur d'une faute qu'il n'a pas commise.
+ * **1. L'alphabet n'a aucune paire douteuse.** Ni 0/O, ni 1/I/L, ni U — et les DEUX membres de
+ * chaque paire sont exclus. Garder « O » en écartant « 0 » laisserait celui qui écoute hésiter
+ * quand même, et sa faute serait alors silencieuse.
  *
- * **2. Elle est coupée.** Et c'est le cas dangereux : un UUID tronqué reste *plausible*. Envoyé au
- * serveur, il revient « sous-profil introuvable » — et le majeur, comme le tuteur, cherchera un
- * défaut du côté du transfert alors que le message a simplement été tronqué. On refuse donc AVANT
- * l'appel, avec une phrase qui désigne la vraie cause.
+ * **2. Tolérant sur la forme, strict sur le fond.** Écrit sous la dictée, un code arrive avec un
+ * tiret, des espaces, en minuscules. Rien de cela ne le change. Un signe hors alphabet, en
+ * revanche, ne peut venir que d'une erreur d'écoute : le laisser passer ferait répondre au serveur
+ * « aucun transfert avec ce code », et chercher le défaut dans le transfert plutôt que dans la
+ * dictée.
  *
- * **3. Elle n'est pas un secret.** Ce code désigne, il n'autorise pas : sans l'OTP à six chiffres,
- * reçu par le tuteur sur son propre téléphone, le serveur refuse. Le message partagé ne doit donc
- * jamais le contenir — un dernier test s'en assure.
+ * **3. Le code désigne, l'OTP autorise.** Le message partagé ne porte jamais les six chiffres.
  */
 import {describe, expect, it} from '@jest/globals';
-import {composerCode, lireCode, messageDePartage} from '../src/lib/transfert-carnet';
+import {formaterCode, lireCode, LONGUEUR_CODE, messageDePartage} from '../src/lib/transfert-carnet';
 
-const SOUS_PROFIL = '3f1a6c2e-8b4d-4a9f-9e10-7c5b2d4e6a81';
-const INTENTION = 'a7e3d901-2c4b-4f68-b5a2-91d0e8c3b47f';
-const CODE = `${SOUS_PROFIL}.${INTENTION}`;
+const CODE = 'ABCD2345';
 
-describe('Composer le code', () => {
-  it('joint les deux identifiants que le serveur réclame', () => {
-    expect(composerCode({subProfileId: SOUS_PROFIL, intentId: INTENTION})).toBe(CODE);
-  });
-
-  it('ce qui est composé se relit à l’identique', () => {
-    const relu = lireCode(composerCode({subProfileId: SOUS_PROFIL, intentId: INTENTION}));
-
-    expect(relu).toEqual({subProfileId: SOUS_PROFIL, intentId: INTENTION});
-  });
-});
-
-describe('Relire un code qui a traversé une messagerie', () => {
+describe('Relire un code écrit sous la dictée', () => {
   it.each([
     ['tel quel', CODE],
-    ['avec des espaces autour', `  ${CODE}  `],
-    ['coupé sur deux lignes', `${SOUS_PROFIL}.\n${INTENTION}`],
-    ['en majuscules', CODE.toUpperCase()],
-    ['avec des espaces au milieu', `${SOUS_PROFIL} . ${INTENTION}`],
+    ['avec le tiret d’affichage', 'ABCD-2345'],
+    ['en minuscules', 'abcd2345'],
+    ['avec des espaces', '  ABCD 2345 '],
+    ['tiret et minuscules, comme on l’écrit vite', 'abcd-2345'],
   ])('accepte un code %s', (_cas, brut) => {
-    expect(lireCode(brut)).toEqual({subProfileId: SOUS_PROFIL, intentId: INTENTION});
+    expect(lireCode(brut)).toBe(CODE);
   });
 });
 
-describe('Refuser un code qui ne tient pas debout', () => {
+describe('Refuser ce qui ne peut venir que d’une erreur d’écoute', () => {
   /*
-    LE cas de ce fichier. Un UUID amputé de sa fin ressemble encore à un UUID : c'est exactement ce
-    que produit un message coupé au partage. Laisser passer enverrait un identifiant inexistant, et
-    la réponse « introuvable » ferait chercher au mauvais endroit — chez le tuteur, ou dans le
-    serveur, jamais dans le collage.
+    Les six signes exclus de l'alphabet sont exactement ceux qu'on confond en écoutant ou en
+    relisant. Les voir apparaître dans un code veut dire que la transmission s'est mal passée — et
+    le dire tout de suite évite de faire porter le doute sur le transfert lui-même.
   */
   it.each([
-    ['le second identifiant est tronqué', `${SOUS_PROFIL}.a7e3d901-2c4b-4f68`],
-    ['le premier identifiant est tronqué', `3f1a6c2e-8b4d.${INTENTION}`],
-    ['il manque une moitié', SOUS_PROFIL],
-    ['il y a une moitié de trop', `${CODE}.${INTENTION}`],
-    ['ce n’est pas un code du tout', 'bonjour, voici le code'],
-    ['la chaîne est vide', ''],
-    ['le séparateur est seul', '.'],
-  ])('refuse quand %s', (_cas, brut) => {
+    ['un zéro', 'ABCD2340'],
+    ['un O', 'ABCDO345'],
+    ['un un', 'ABCD2341'],
+    ['un I', 'ABCDI345'],
+    ['un L', 'ABCDL345'],
+    ['un U', 'ABCDU345'],
+  ])('refuse un code contenant %s', (_cas, brut) => {
     expect(lireCode(brut)).toBeNull();
+  });
+
+  it.each([
+    ['trop court', 'ABCD234'],
+    ['trop long', 'ABCD23456'],
+    ['vide', ''],
+    ['pas un code du tout', 'bonjour !'],
+    ['seulement le tiret', '-'],
+  ])('refuse un code %s', (_cas, brut) => {
+    expect(lireCode(brut)).toBeNull();
+  });
+});
+
+describe('La mise en forme', () => {
+  it('groupe par quatre — on ne dicte pas huit signes d’affilée', () => {
+    expect(formaterCode(CODE)).toBe('ABCD-2345');
+  });
+
+  /* La boucle doit être fermée : ce qu'on affiche, on doit pouvoir le retaper tel quel. */
+  it('ce qui est affiché se relit', () => {
+    expect(lireCode(formaterCode(CODE))).toBe(CODE);
+  });
+
+  it('la longueur annoncée est bien celle qu’on exige', () => {
+    expect(CODE).toHaveLength(LONGUEUR_CODE);
+    expect(lireCode('A'.repeat(LONGUEUR_CODE - 1))).toBeNull();
   });
 });
 
 describe('Le message que le tuteur partage', () => {
   const message = messageDePartage('Mireille', CODE);
 
-  it('porte le code et dit quoi en faire', () => {
-    expect(message).toContain(CODE);
+  it('porte le code lisible et dit quoi en faire', () => {
+    expect(message).toContain('ABCD-2345');
     expect(message).toContain('Récupérer mon Carnet');
     expect(message).toContain('Mireille');
   });
 
   /*
-    Le code désigne, l'OTP autorise. Les mettre tous deux dans la même conversation en ferait un
-    sésame complet pour qui la lirait — et une conversation partagée se relit longtemps après.
+    Le code désigne le transfert, l'OTP l'autorise. Les mettre dans le même message en ferait un
+    sésame complet — et ce message restera des mois dans une conversation, sur un téléphone prêté,
+    revendu, ou simplement relu par quelqu'un d'autre.
   */
   it('ne contient AUCUN code à six chiffres', () => {
-    expect(message).not.toMatch(/\b\d{6}\b/);
+    expect(message).not.toMatch(/\d{6}/);
   });
 
-  it('annonce que le code à six chiffres arrivera séparément', () => {
+  it('annonce que les six chiffres arriveront séparément', () => {
     expect(message).toContain('séparément');
   });
 });

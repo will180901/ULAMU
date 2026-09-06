@@ -15,6 +15,7 @@ import {
   CloseAccountRequest,
   ConfirmPhoneChangeRequest,
   CreateReminderRequest,
+  ClaimByCodeRequest,
   ClaimSubProfileRequest,
   ClaimSubProfileResponse,
   CreateSubProfileRequest,
@@ -25,6 +26,7 @@ import {
   Reminder,
   ReminderListResponse,
   REMINDER_ROUTES,
+  PublicParameter,
   StartClaimResponse,
   SubProfile,
   UpdateProfileRequest,
@@ -37,6 +39,7 @@ import {
   SessionInfo,
   StartPhoneChangeRequest,
   HEALTH_ROUTES,
+  PARAMETER_ROUTES,
   HealthSummary,
   HANDSHAKE_ROUTES,
   HandshakeView,
@@ -281,6 +284,28 @@ export class ApiClient {
    */
   claimSubProfile(subProfileId: string, dto: ClaimSubProfileRequest): Promise<ClaimSubProfileResponse> {
     return this.request('POST', HEALTH_ROUTES.claim(subProfileId), dto, true);
+  }
+
+  /**
+   * Étape 2 par le seul CODE DICTÉ (dette n°26) — c'est ce chemin que l'écran emploie.
+   *
+   * `claimSubProfile` ci-dessus reste, et reste servi : une application déjà installée continue de
+   * fonctionner. Mais elle exigeait du majeur deux UUID, donc un message écrit ; celle-ci se
+   * contente de huit signes lus à voix haute.
+   */
+  claimSubProfileByCode(dto: ClaimByCodeRequest): Promise<ClaimSubProfileResponse> {
+    return this.request('POST', HEALTH_ROUTES.claimByCode, dto, true);
+  }
+
+  /**
+   * Les paramètres métier que le serveur accepte de montrer (dette n°27) — liste blanche, lecture
+   * seule, sans authentification : l'âge minimum est opposé au visiteur AVANT toute session.
+   *
+   * ⚠️ Une clé absente de la réponse veut dire « je ne sais pas », jamais « zéro ». L'écran qui ne
+   * trouve pas sa valeur doit se taire, pas inventer.
+   */
+  publicParameters(): Promise<{items: PublicParameter[]}> {
+    return this.request('GET', PARAMETER_ROUTES.publics, undefined, false);
   }
 
   // ── M01 — compte avancé (authentifié) ─────────────────────────────────────

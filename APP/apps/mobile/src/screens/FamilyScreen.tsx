@@ -33,7 +33,7 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
 import {Sex, SubProfile} from '../lib/contracts';
-import {composerCode, lireCode, messageDePartage} from '../lib/transfert-carnet';
+import {formaterCode, lireCode, messageDePartage} from '../lib/transfert-carnet';
 import {isValidOtp} from '../lib/validation';
 import {useAbandonGuard} from '../state/useAbandonGuard';
 import {fonts, Palette, radius} from '../theme';
@@ -274,6 +274,43 @@ function TransfertModal({visible, dependants, onClose}: {visible: boolean; depen
   const [busy, setBusy] = useState<string | null>(null);
   const [remise, setRemise] = useState<{prenom: string; code: string} | null>(null);
 
+  /*
+    ── L'âge requis vient du SERVEUR (dette n°27) ────────────────────────────────────────────
+
+    Le transfert n'est possible qu'à partir de PM-16. Jusqu'au 06/09/2026, aucun client ne pouvait
+    lire ce paramètre : l'écran proposait donc le geste à tout le monde et laissait le serveur
+    refuser — l'utilisateur découvrait la règle par un refus.
+
+    ⚠️ **L'écrire en dur aurait été pire** : l'application mentirait le jour où le paramètre change.
+    Il est donc LU, et `null` tant qu'on ne l'a pas.
+
+    ⚠️ Et s'il reste `null` — lecture en échec, clé absente — **on ne bloque rien**. Une lecture qui
+    échoue n'est ni un zéro ni un « non » : on laisse le serveur trancher, comme avant.
+  */
+  const [ageRequis, setAgeRequis] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    let vivant = true;
+    api
+      .publicParameters()
+      .then(({items}) => {
+        const pm16 = items.find(p => p.key === 'PM-16');
+        const n = pm16 ? Number(pm16.value) : Number.NaN;
+        if (vivant && Number.isInteger(n) && n > 0) {
+          setAgeRequis(n);
+        }
+      })
+      .catch(() => {
+        /* On ne sait pas : on ne bloque pas. Le serveur reste l'arbitre. */
+      });
+    return () => {
+      vivant = false;
+    };
+  }, [visible]);
+
   const fermer = () => {
     setRemise(null);
     onClose();
@@ -282,8 +319,8 @@ function TransfertModal({visible, dependants, onClose}: {visible: boolean; depen
   const lancer = async (sp: SubProfile) => {
     setBusy(sp.id);
     try {
-      const {intentId} = await api.startSubProfileClaim(sp.id);
-      setRemise({prenom: sp.firstName, code: composerCode({subProfileId: sp.id, intentId})});
+      const {shortCode} = await api.startSubProfileClaim(sp.id);
+      setRemise({prenom: sp.firstName, code: shortCode});
     } catch (e) {
       /*
         Le refus le plus fréquent est « pas encore l'âge requis », et le serveur y met l'âge exact
@@ -316,12 +353,27 @@ function TransfertModal({visible, dependants, onClose}: {visible: boolean; depen
               {dependants.length === 0 ? (
                 <Text style={styles.sheetIntro}>Aucune personne à charge à transférer.</Text>
               ) : (
-                dependants.map(sp => (
-                  <Pressable key={sp.id} onPress={() => lancer(sp)} disabled={busy !== null} style={styles.choix}>
-                    <Text style={styles.choixNom}>{sp.firstName} {sp.lastName}</Text>
-                    <Text style={styles.choixSub}>{busy === sp.id ? 'Envoi du code…' : `${ageOf(sp.birthDate)} ans`}</Text>
-                  </Pressable>
-                ))
+                dependants.map(sp => {
+                  const age = ageOf(sp.birthDate);
+                  /* `ageRequis === null` = on ne sait pas encore : on laisse faire, le serveur dira. */
+                  const tropJeune = ageRequis !== null && age < ageRequis;
+                  return (
+                    <Pressable
+                      key={sp.id}
+                      onPress={() => lancer(sp)}
+                      disabled={busy !== null || tropJeune}
+                      style={[styles.choix, tropJeune && styles.choixInactif]}>
+                      <Text style={styles.choixNom}>{sp.firstName} {sp.lastName}</Text>
+                      <Text style={styles.choixSub}>
+                        {busy === sp.id
+                          ? 'Envoi du code…'
+                          : tropJeune
+                            ? `${age} ans — le transfert est possible à partir de ${ageRequis} ans`
+                            : `${age} ans`}
+                      </Text>
+                    </Pressable>
+                  );
+                })
               )}
             </>
           ) : (
@@ -333,11 +385,16 @@ function TransfertModal({visible, dependants, onClose}: {visible: boolean; depen
                 sésame complet pour qui lirait par-dessus l'épaule.
               */}
               <Text style={styles.sheetIntro}>
-                Envoyez-lui ce code d’identification. Le code à 6 chiffres que vous venez de recevoir,
+                Dictez-lui ce code, ou envoyez-le. Le code à 6 chiffres que vous venez de recevoir,
                 donnez-le-lui <Text style={styles.gras}>autrement</Text> — de vive voix, par exemple.
               </Text>
-              <Text style={styles.code} selectable>{remise.code}</Text>
-              <PrimaryButton title="Partager le code" iconRight="share" onPress={partager} />
+              {/*
+                Huit signes, par groupes de quatre, en gros et bien espacés : ce code est fait pour
+                être LU À VOIX HAUTE. Son alphabet ne contient ni 0 ni O, ni 1 ni I ni L, ni U — les
+                deux membres de chaque paire douteuse sont exclus, pas seulement l'un.
+              */}
+              <Text style={styles.code} selectable>{formaterCode(remise.code)}</Text>
+              <PrimaryButton title="Envoyer le code" iconRight="share" onPress={partager} />
               <Text style={styles.sheetNote}>
                 Le transfert ne se fera que lorsque {remise.prenom} l’aura confirmé depuis son propre
                 compte. Rien n’a encore changé.
@@ -385,9 +442,14 @@ function RecuperationModal({visible, onClose, onDone}: {visible: boolean; onClos
     */
     const lu = lireCode(code);
     if (!lu) {
+      /*
+        On relit AVANT d'appeler. Un code mal entendu partirait sinon au serveur, qui répondrait
+        « aucun transfert avec ce code » — et les deux personnes chercheraient le défaut dans le
+        transfert alors qu'il est dans la dictée. « Répétez » vaut mieux que « ça n'existe pas ».
+      */
       await alert({
         title: 'Code non reconnu',
-        message: 'Ce code semble incomplet. Demandez à votre proche de le renvoyer en entier.',
+        message: 'Huit signes attendus. Faites-le répéter — il ne contient ni 0, ni 1, ni I, ni L, ni O, ni U.',
       });
       return;
     }
@@ -397,7 +459,7 @@ function RecuperationModal({visible, onClose, onDone}: {visible: boolean; onClos
     }
     setBusy(true);
     try {
-      await api.claimSubProfile(lu.subProfileId, {intentId: lu.intentId, otpCode: otp.trim()});
+      await api.claimSubProfileByCode({code: lu, otpCode: otp.trim()});
       setCode('');
       setOtp('');
       await alert({
@@ -418,18 +480,18 @@ function RecuperationModal({visible, onClose, onDone}: {visible: boolean; onClos
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Récupérer mon Carnet</Text>
           <Text style={styles.sheetIntro}>
-            Votre proche doit d’abord lancer la remise depuis son compte. Il vous transmet alors un
-            code d’identification, puis un code à 6 chiffres.
+            Votre proche doit d’abord lancer la remise depuis son compte. Il vous donne alors un code
+            à 8 signes, puis un code à 6 chiffres.
           </Text>
           <TextInput
             style={[styles.input, styles.inputCode]}
             value={code}
             onChangeText={setCode}
-            placeholder="Collez le code reçu"
+            placeholder="Code à 8 signes"
             placeholderTextColor={colors.textDisabled}
-            autoCapitalize="none"
+            autoCapitalize="characters"
             autoCorrect={false}
-            multiline
+            maxLength={12}
           />
           <TextInput
             style={styles.input}
@@ -486,11 +548,13 @@ const makeStyles = (colors: Palette) =>
     sheetNote: {fontFamily: fonts.body, fontSize: 12, color: colors.textTertiary, lineHeight: 17},
     gras: {fontWeight: '700', color: colors.textPrimary},
     choix: {borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.field, padding: 13, backgroundColor: colors.bg},
+    choixInactif: {opacity: 0.5},
     choixNom: {fontFamily: fonts.body, fontWeight: '600', fontSize: 14, color: colors.textPrimary},
     choixSub: {fontFamily: fonts.body, fontSize: 12, color: colors.textTertiary, marginTop: 1},
     /* Le code est long et se lit caractère par caractère : chasse fixe, et sélectionnable. */
-    code: {fontFamily: 'monospace', fontSize: 12.5, color: colors.textPrimary, backgroundColor: colors.bgMuted, borderRadius: radius.field, padding: 12, lineHeight: 19},
-    inputCode: {minHeight: 72, paddingTop: 12, textAlignVertical: 'top'},
+    /* Fait pour être lu à voix haute : grand, espacé, centré. */
+    code: {fontFamily: 'monospace', fontSize: 30, letterSpacing: 3, textAlign: 'center', color: colors.textPrimary, backgroundColor: colors.bgMuted, borderRadius: radius.field, paddingVertical: 18},
+    inputCode: {fontFamily: 'monospace', fontSize: 17, letterSpacing: 2},
 
     cancel: {alignItems: 'center', paddingVertical: 6},
     cancelText: {fontFamily: fonts.body, fontSize: 13, fontWeight: '600', color: colors.textTertiary},

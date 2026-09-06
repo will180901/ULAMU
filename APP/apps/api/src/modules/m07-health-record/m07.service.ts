@@ -18,7 +18,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma, RecordEntryType, RecordProvenance, SubProfileStatus } from "@prisma/client";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { canonicalJson } from "../../common/crypto/hash-chain";
@@ -27,7 +27,15 @@ import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
 import { ClaimSubProfileDto, CreateSubProfileDto, DeclareEntryDto } from "./m07.dto";
-import { declaredPayloadSizeOk, HealthSummary, isOwnerAdult, MAX_DECLARED_PAYLOAD_BYTES } from "./m07.policies";
+import {
+  CLAIM_CODE_ALPHABET,
+  CLAIM_CODE_LENGTH,
+  declaredPayloadSizeOk,
+  HealthSummary,
+  isOwnerAdult,
+  MAX_DECLARED_PAYLOAD_BYTES,
+  normalizeClaimCode,
+} from "./m07.policies";
 import { FullRecordPage, HealthRecordReaderService, RecordOwner } from "./m07.reader.service";
 import { HealthRecordWriterService } from "./m07.writer.service";
 
@@ -285,7 +293,10 @@ export class M07Service {
    * Étape 1 — lancée par le TUTEUR : envoie l'OTP « action sensible » sur SON téléphone
    * (M01). Il le communique au majeur qui revendique depuis son propre compte.
    */
-  async startClaim(actor: AuthenticatedActor, subProfileId: string): Promise<{ intentId: string; expiresInSeconds: number }> {
+  async startClaim(
+    actor: AuthenticatedActor,
+    subProfileId: string,
+  ): Promise<{ intentId: string; shortCode: string; expiresInSeconds: number }> {
     if (actor.accountType !== "PATIENT") {
       throw new ForbiddenException("Seul le tuteur (compte patient) peut lancer le transfert (CU-07-05)");
     }
@@ -303,11 +314,74 @@ export class M07Service {
     // D-048 : intention PERSISTÉE liée à CE sous-profil (même motif que M02) — l'OTP « action
     // sensible » du tuteur ne pourra confirmer QUE ce transfert, pas une autre action sensible.
     const ttlSeconds = await this.params.getInt("PM-17");
-    const intent = await this.prisma.subProfileClaimIntent.create({
-      data: { subProfileId, guardianAccountId: actor.accountId, expiresAt: new Date(Date.now() + ttlSeconds * 1000) },
-    });
+    const intent = await this.creerIntention(subProfileId, actor.accountId, ttlSeconds);
     const otp = await this.m01.requestSensitiveActionOtp(actor.accountId); // OTP au tuteur (EF-07-09)
-    return { intentId: intent.id, expiresInSeconds: otp.expiresInSeconds };
+    return { intentId: intent.id, shortCode: intent.shortCode ?? "", expiresInSeconds: otp.expiresInSeconds };
+  }
+
+  /**
+   * Crée l'intention avec son code dictable (dette n°26), en réessayant si le tirage tombe sur un
+   * code déjà vivant.
+   *
+   * La collision est très improbable — 30⁸ combinaisons pour des codes qui vivent quelques minutes —
+   * mais « très improbable » n'est pas « impossible », et l'index unique transformerait le hasard en
+   * erreur 500 devant un tuteur qui n'y peut rien. Trois essais suffisent largement ; au-delà, c'est
+   * que quelque chose d'autre ne va pas, et l'erreur doit remonter.
+   */
+  private async creerIntention(subProfileId: string, guardianAccountId: string, ttlSeconds: number) {
+    for (let essai = 0; essai < 3; essai++) {
+      const shortCode = this.tirerCode();
+      try {
+        return await this.prisma.subProfileClaimIntent.create({
+          data: {
+            subProfileId,
+            guardianAccountId,
+            shortCode,
+            expiresAt: new Date(Date.now() + ttlSeconds * 1000),
+          },
+        });
+      } catch (err) {
+        const collision = err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+        if (!collision || essai === 2) throw err;
+      }
+    }
+    /* Inatteignable : la boucle rend ou jette. Présent pour le typage. */
+    throw new ConflictException("Code de transfert indisponible — réessayez");
+  }
+
+  /** Huit signes tirés de l'alphabet sans paire douteuse (`m07.policies`). */
+  private tirerCode(): string {
+    const octets = randomBytes(CLAIM_CODE_LENGTH);
+    let code = "";
+    for (const o of octets) code += CLAIM_CODE_ALPHABET[o % CLAIM_CODE_ALPHABET.length];
+    return code;
+  }
+
+  /**
+   * Revendication par le seul CODE DICTABLE (dette n°26) — c'est ce qui rend le geste utilisable
+   * quand le tuteur et le majeur sont dans la même pièce.
+   *
+   * ⚠️ Ce n'est pas un second chemin de décision : la méthode ne fait que **retrouver** le transfert
+   * désigné, puis passe la main à `claim`. Toutes les gardes — âge, statut, OTP du tuteur, transition
+   * conditionnelle, Carnet déjà alimenté — restent au même endroit. Dupliquer cette logique pour un
+   * confort de saisie serait le meilleur moyen de la voir diverger.
+   *
+   * Le code seul n'autorise rien : sans l'OTP reçu par le tuteur, `claim` refuse.
+   */
+  async claimByCode(actor: AuthenticatedActor, rawCode: string, otpCode: string) {
+    const code = normalizeClaimCode(rawCode);
+    if (!code) {
+      throw new BadRequestException("Code de transfert invalide — huit signes attendus, sans 0, 1, I, L, O ni U");
+    }
+    const intent = await this.prisma.subProfileClaimIntent.findFirst({
+      where: { shortCode: code, consumedAt: null, expiresAt: { gt: new Date() } },
+    });
+    if (!intent) {
+      // Même phrase pour « inconnu » et « expiré » : distinguer les deux dirait à qui essaie des
+      // codes au hasard lesquels ont existé.
+      throw new NotFoundException("Aucun transfert en cours avec ce code — demandez à votre proche de le relancer");
+    }
+    return this.claim(actor, intent.subProfileId, { intentId: intent.id, otpCode });
   }
 
   /**
@@ -357,7 +431,9 @@ export class M07Service {
       }
       const consumed = await tx.subProfileClaimIntent.updateMany({
         where: { id: intent.id, consumedAt: null },
-        data: { consumedAt: new Date() },
+        // `shortCode: null` (dette n°26) : un code servi cesse d'exister. Il ne peut plus être
+        // rejoué, et l'index unique reste creux — seuls les transferts vivants y figurent.
+        data: { consumedAt: new Date(), shortCode: null },
       });
       if (consumed.count !== 1) throw new ConflictException("Ce transfert a déjà été confirmé");
       // Confirmation par OTP du TUTEUR (EF-07-09) — consommé dans la transaction : si la

@@ -499,9 +499,9 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | 25 | **Un soignant révoqué par erreur ne peut plus jamais être rétabli (née le 04/09, chantier 42).** Constaté en construisant le bouton de révocation : `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — le statut est **terminal** — et `VerificationCase.professionalId` est `@unique`, donc un professionnel n'a **qu'un dossier, à vie**. Une révocation prononcée à tort ferme donc définitivement l'accès de ce soignant à la plateforme : il ne peut ni re-déposer, ni ouvrir un nouveau dossier, ni être vérifié de nouveau. **La seule issue serait une écriture directe en base.** ⚠️ Ce n'est pas un défaut de code — le serveur fait exactement ce qui a été spécifié (EF-03-08). C'est une **absence de voie de recours** sur une décision humaine, et les humains se trompent. L'écran l'annonce désormais en toutes lettres avant le clic, et exige une confirmation tapée : c'est tout ce que l'interface peut faire. **Deux issues** : (a) **ouvrir la transition `REVOKED → IN_REVIEW`** dans `m03.policies.ts`, réservée au super-administrateur, avec motif et journal — ~3 h, et le dossier reprend son cours normal ; (b) **assumer l'irréversibilité** et le documenter comme une garantie (une révocation est définitive, c'est ce qui lui donne son poids). **Recommandation : (a)**, parce qu'une plateforme de santé ne peut pas faire dépendre la carrière d'un soignant de l'absence d'erreur d'un administrateur. | ✅ **soldée le 04/09 (chantier 43)** — l'issue (a) est appliquée : `REVOKED → IN_REVIEW`, `POST /admin/verification/:id/reinstate` **réservée au SUPER_ADMIN** (l'examinateur qui révoque ne se dédit pas lui-même), motif obligatoire, notification et journal. **Elle ne rend pas le badge** — elle remet le dossier en examen, et l'écran le dit. ⚠️ **Deux phrases du chantier 42 sont devenues fausses le jour même** (« aucun moyen de le rétablir ») : corrigées, et c'est un test qui l'a signalé en tombant seul de toute la suite. |
 
-| 26 | **Le code de transfert d'un Carnet ne peut pas se dicter (née le 06/09, chantier 48).** Pour revendiquer son Carnet à sa majorité, le majeur doit recevoir de son tuteur **deux UUID** (`subProfileId` et `intentId`, 73 caractères réunis) puis un OTP à six chiffres. Le mobile les réduit à une seule chaîne partageable, et ça marche — **par SMS ou WhatsApp**. Mais le cas le plus fréquent est que les deux personnes soient **dans la même pièce**, et 73 caractères ne se dictent pas. **Issue** : que `claim/start` émette en plus un **code court** (8 caractères, durée de vie PM-17), stocké sur `SubProfileClaimIntent` et accepté par `claim` à la place de l'`intentId` — migration additive, ~2 h. **Recommandation : le faire**, c'est ce qui rend le geste utilisable sans réseau tiers. | 🟡 **à faire, chiffré** |
+| 26 | **Le code de transfert d'un Carnet ne peut pas se dicter (née le 06/09, chantier 48).** Pour revendiquer son Carnet à sa majorité, le majeur doit recevoir de son tuteur **deux UUID** (`subProfileId` et `intentId`, 73 caractères réunis) puis un OTP à six chiffres. Le mobile les réduit à une seule chaîne partageable, et ça marche — **par SMS ou WhatsApp**. Mais le cas le plus fréquent est que les deux personnes soient **dans la même pièce**, et 73 caractères ne se dictent pas. **Issue** : que `claim/start` émette en plus un **code court** (8 caractères, durée de vie PM-17), stocké sur `SubProfileClaimIntent` et accepté par `claim` à la place de l'`intentId` — migration additive, ~2 h. **Recommandation : le faire**, c'est ce qui rend le geste utilisable sans réseau tiers. | ✅ **soldée le 06/09 (chantier 49)** — `SubProfileClaimIntent.shortCode`, huit signes d'un alphabet **sans aucune paire douteuse** (ni 0/O, ni 1/I/L, ni U — les DEUX membres de chaque paire exclus), migration additive, et une route `POST /sub-profiles/claim-by-code` **où le sous-profil n'est plus dans l'URL** : le code le désigne à lui seul. Le code est **effacé à la consommation** — un code servi cesse d'exister. Le chemin d'origine reste servi. |
 
-| 27 | **Aucun client ne peut lire un paramètre métier (née le 06/09, chantier 48).** Les PM-xx ne sortent que par `GET /v1/admin/parameters`, réservé au super-administrateur. Conséquence constatée sur l'écran du Carnet familial : l'application **ne peut pas savoir à quel âge un transfert devient possible** (PM-16). Elle propose donc le geste à tous et laisse le serveur refuser en nommant l'âge — correct, mais l'utilisateur découvre la règle par un refus. ⚠️ **Recopier la valeur serait pire** : l'écran mentirait le jour où le paramètre change, et c'est exactement la dérive que le projet combat. **Issue** : une route publique en LECTURE SEULE sur une **liste blanche** de paramètres non sensibles (PM-16 l'âge, PM-13 l'échelle de notation, PM-07 le délai de confirmation) — ~1 h. **Recommandation : le faire** ; d'autres écrans buteront sur la même chose. | 🟡 **à faire, chiffré** |
+| 27 | **Aucun client ne peut lire un paramètre métier (née le 06/09, chantier 48).** Les PM-xx ne sortent que par `GET /v1/admin/parameters`, réservé au super-administrateur. Conséquence constatée sur l'écran du Carnet familial : l'application **ne peut pas savoir à quel âge un transfert devient possible** (PM-16). Elle propose donc le geste à tous et laisse le serveur refuser en nommant l'âge — correct, mais l'utilisateur découvre la règle par un refus. ⚠️ **Recopier la valeur serait pire** : l'écran mentirait le jour où le paramètre change, et c'est exactement la dérive que le projet combat. **Issue** : une route publique en LECTURE SEULE sur une **liste blanche** de paramètres non sensibles (PM-16 l'âge, PM-13 l'échelle de notation, PM-07 le délai de confirmation) — ~1 h. **Recommandation : le faire** ; d'autres écrans buteront sur la même chose. | ✅ **soldée le 06/09 (chantier 49)** — `GET /v1/parameters`, publique, en lecture seule, bornée à une **liste blanche de trois clés ouvertes une par une avec leur raison** (PM-16, PM-13, PM-07). Publique et non authentifiée à dessein : l'âge minimum est opposé au visiteur AVANT toute session. **Employée aussitôt** là où la dette est née — l'écran du Carnet familial lit l'âge requis et grise les personnes trop jeunes ; si la lecture échoue, **il ne bloque rien** et laisse le serveur trancher. |
 
 ### Trois dérives documentaires jamais arbitrées
 
@@ -623,6 +623,84 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **47** | **Les raccourcis clavier, et la garde qui les rend acceptables** — 05/09. Ctrl+K existait depuis la veille et **personne ne pouvait le deviner** : un raccourci sans endroit où le lire est un secret entre le code et celui qui l'a écrit. Livré : `?` ouvre un **panneau d'aide** qui rend `RACCOURCIS`, la seule liste — y compris les raccourcis du composeur de consultation, implémentés bien avant, parce qu'on cherche « les raccourcis », pas « ceux de tel module ». `/` ouvre aussi la recherche. ⚠️ **Le cœur du chantier est la garde de saisie** : `/` et `?` sont des CARACTÈRES — sans elle, écrire « 20/09 » dans un motif de refus de 2 000 caractères ouvrirait la recherche au milieu du mot et perdrait la saisie. Ctrl+K reste l'exception, à dessein. ⚠️ **`e.key` et jamais `e.code`** : les utilisateurs sont en **AZERTY**, où `/` est Maj+: et `?` Maj+, — `e.code` aurait désigné une autre touche sur chaque disposition. **Deux défauts trouvés par mes propres tests** : la garde ratait les zones `contenteditable` imbriquées (corrigé par `closest`), et l'écouteur se réabonnait **à chaque rendu** faute de référence — le fichier promettait « un seul écouteur » et en posait un par rendu. L'écouteur de Ctrl+K du chantier 46 a été **déplacé** ici : deux écouteurs auraient donné deux gardes à tenir d'accord. **web 651 ✓ (638 + 13) · lint 0 erreur · build propre.** | ⏸ en attente | ⏸ |
 
 | **48** | **Le Carnet qui revient à son majeur** — 06/09, écart D, **premier chantier mobile depuis le 30/08**. `claim/start` et `claim` existaient depuis le premier jour et **aucun client ne les appelait** : un proche devenu adulte ne pouvait jamais récupérer son propre Carnet de santé. ⚠️ **L'écart annonçait un écran ; le serveur imposait une chorégraphie à deux personnes sur deux téléphones** — le majeur doit recevoir deux UUID *et* l'OTP reçu par le tuteur. D'où un code unique (`lib/transfert-carnet`, pur et éprouvé) et le partage natif, déjà l'idiome de l'application. ⚠️ **Un défaut que le chantier aurait CRÉÉ en s'arrêtant au bouton** : un Carnet transféré reste dans la liste du tuteur, qui n'y a plus accès (RM-07-06) — la ligne aurait mené à un refus. **PM-16 n'est servi à aucun client** : l'écran ne filtre donc pas par âge et laisse le serveur nommer la règle. 📌 **Deux suites chiffrées ouvertes** (n°26 le code dictable, n°27 les paramètres lisibles). **mobile 24 ✓ (7 + 17) · types et lint propres.** | ⏸ en attente | ⏸ |
+
+| **49** | **Un code qui se dicte, et des règles qui se lisent** — 06/09, dettes n°26 et n°27, ouvertes la veille. **n°26** : revendiquer son Carnet exigeait 73 caractères d'UUID, alors que le cas le plus fréquent est que les deux personnes soient **dans la même pièce**. ⚠️ **Un code court ne suffisait pas** : tant que `subProfileId` restait dans l'URL, le majeur devait encore le connaître — d'où une route où **le sous-profil n'est plus dans le chemin**, `claim-by-code`, qui retrouve tout depuis huit signes. Ces signes viennent d'un alphabet **sans aucune paire douteuse**, et les DEUX membres de chaque paire sont exclus : garder « O » en écartant « 0 » laisserait celui qui écoute hésiter quand même. Le code est **effacé à la consommation**. `claimByCode` ne re-décide rien — il résout, puis passe la main à `claim` : toutes les gardes restent à un seul endroit. **n°27** : `GET /v1/parameters`, liste blanche de trois clés, **employée aussitôt** sur l'écran où la dette est née. **api 536 ✓ (521 + 15) · web 651 ✓ · mobile 29 ✓ · lint 0 · builds propres · 162 routes.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 49 (le code dicté) a appris
+
+*06/09/2026 — les deux dettes ouvertes la veille, soldées le lendemain.*
+
+#### Un code court ne raccourcit rien si l'identifiant reste dans l'URL
+
+La dette disait : « que `claim/start` émette un code court ». En l'écrivant, l'évidence a sauté aux
+yeux — `POST /sub-profiles/:id/claim` porte le sous-profil **dans son chemin**. Un code court à côté
+n'aurait rien changé : le majeur aurait toujours dû connaître l'UUID du sous-profil.
+
+Il a donc fallu une route où **le sous-profil n'est pas dans l'URL**. Le code ne raccourcit pas la
+transmission : il la remplace.
+
+*Une dette chiffrée la veille reste une hypothèse. Le devis se refait en ouvrant le fichier.*
+
+#### Les deux membres de chaque paire douteuse, pas seulement l'un
+
+L'alphabet du code exclut `0` **et** `O`, `1` **et** `I` **et** `L`, ainsi que `U`.
+
+Le réflexe est d'en garder un des deux — « on enlève le zéro, on garde le O ». C'est une erreur :
+celui qui écoute « o » ne sait toujours pas lequel écrire, et s'il se trompe, **sa faute est
+silencieuse** — le code semble valide et le serveur répond « aucun transfert ».
+
+En retirant les deux, une erreur d'écoute devient un signe hors alphabet, donc un refus immédiat,
+donc un « répétez ».
+
+*Un code fait pour l'oreille ne se conçoit pas comme un code fait pour l'œil.*
+
+#### Résoudre n'est pas re-décider
+
+`claimByCode` retrouve l'intention par son code, puis **appelle `claim`**. Elle ne re-vérifie ni
+l'âge, ni le statut, ni l'OTP, ni la course sur la transition.
+
+La tentation était d'écrire une seconde méthode complète — c'était plus direct à lire. C'était aussi
+le meilleur moyen d'avoir un jour deux règles de transfert, dont une seule aurait été corrigée.
+
+*Un confort de saisie ne justifie jamais un second exemplaire d'une règle.*
+
+#### Une règle recopiée, assumée et bornée
+
+L'alphabet est écrit **deux fois** : côté serveur pour tirer le code, côté mobile pour le relire.
+C'est exactement ce que ce projet traque partout ailleurs.
+
+Elle est assumée, et la raison est écrite dans le fichier : le contrôle côté mobile sert à dire
+« répétez » **avant** l'appel. Ne pas recopier voudrait dire ne rien vérifier, et laisser le serveur
+répondre « aucun transfert avec ce code » — ce qui ferait chercher le défaut dans le transfert plutôt
+que dans la dictée.
+
+Et la divergence possible est bornée **dans le bon sens** : un alphabet élargi côté serveur ferait
+refuser localement un code pourtant valide — une gêne, jamais un trou.
+
+*Toutes les copies ne se valent pas. Celle qu'on peut nommer, justifier et borner n'est pas celle
+qu'on découvre trois mois plus tard dans un troisième fichier.*
+
+#### Une route publique se justifie clé par clé
+
+`GET /v1/parameters` aurait pu servir tous les PM-xx : une ligne de code de moins.
+
+Elle en sert **trois**, chacune ouverte avec sa raison écrite au-dessus. Le critère retenu : le
+paramètre décrit-il une règle que l'utilisateur **rencontre de toute façon** ? L'âge minimum lui est
+opposé à l'inscription, l'échelle de notation s'affiche sous chaque étoile, le délai de confirmation
+court sous ses yeux. Les publier ne révèle rien.
+
+Les plafonds de retrait, les seuils d'alerte et les seuils de fiabilité restent où ils sont.
+
+#### Une dette qu'on solde doit servir le jour même
+
+La n°27 est née d'un écran précis : le Carnet familial, qui ne pouvait pas savoir à quel âge un
+transfert devient possible.
+
+La route a donc été **employée là, aussitôt** — l'écran lit l'âge requis et grise les personnes trop
+jeunes en disant pourquoi. Et si la lecture échoue, **il ne bloque rien** : le serveur reste
+l'arbitre, exactement comme avant.
+
+*Une route qu'on ouvre sans l'appeler est une route morte le jour de sa naissance.*
 
 ### Ce que le chantier 48 (le Carnet rendu) a appris
 

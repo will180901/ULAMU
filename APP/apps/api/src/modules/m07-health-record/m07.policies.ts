@@ -149,6 +149,55 @@ export function computeSummary(entries: ReadonlyArray<SummaryEntryInput>): Healt
   return { bloodType, activeAllergies, chronicDiseases };
 }
 
+// ── Le code de transfert, dictable (CU-07-05, dette n°26) ────────────────────
+
+/**
+ * ── Pourquoi un code court existe ─────────────────────────────────────────────
+ *
+ * Le chantier 48 a livré le transfert d'un Carnet à la majorité, et a buté sur ceci : pour
+ * revendiquer, le majeur doit connaître `subProfileId` ET `intentId` — **73 caractères d'UUID**.
+ * Le mobile les réunit en une chaîne partageable, ce qui marche par SMS ou WhatsApp.
+ *
+ * Mais le cas le plus fréquent est que le tuteur et le majeur soient **dans la même pièce**, et
+ * 73 caractères ne se dictent pas. D'où ce code : huit signes, lus à voix haute en quelques
+ * secondes, qui désignent à eux seuls le transfert — `claimByCode` retrouve le reste.
+ *
+ * ── L'alphabet, et ce qu'il exclut ────────────────────────────────────────────
+ *
+ * Ni `0` ni `O`, ni `1` ni `I` ni `L`, ni `U` (qui s'entend comme « you » et se confond avec V à
+ * l'oral en français comme en lingala). **Les deux membres de chaque paire douteuse sont retirés**,
+ * pas seulement l'un : garder `O` en écartant `0` laisserait celui qui écoute hésiter quand même,
+ * et sa faute serait alors silencieuse.
+ *
+ * 30 signes puissance 8 ≈ 6,5 × 10¹¹ combinaisons, pour des codes qui vivent quelques minutes
+ * (PM-17). La collision n'est pas le risque ; la dictée l'est.
+ */
+export const CLAIM_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** Huit signes : assez pour ne pas se deviner, assez court pour se dicter d'un souffle. */
+export const CLAIM_CODE_LENGTH = 8;
+
+/**
+ * Met un code reçu sous sa forme canonique, ou rend `null` s'il n'en est pas un.
+ *
+ * Tolérant sur la FORME — on l'aura écrit avec un tiret, un espace, en minuscules — et strict sur
+ * le FOND : un signe hors alphabet est une faute d'écoute, et la taire enverrait au serveur un code
+ * qui reviendrait « introuvable ». Mieux vaut « répétez » que « ce transfert n'existe pas ».
+ */
+export function normalizeClaimCode(raw: string): string | null {
+  const compact = raw.replace(/[\s-]/g, "").toUpperCase();
+  if (compact.length !== CLAIM_CODE_LENGTH) return null;
+  for (const c of compact) {
+    if (!CLAIM_CODE_ALPHABET.includes(c)) return null;
+  }
+  return compact;
+}
+
+/** « ABCD-EFGH » : on dicte par groupes de quatre, on ne dicte pas huit signes d'affilée. */
+export function formatClaimCode(code: string): string {
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
 // ── Majorité du sous-profil (EF-07-09, PM-16) ─────────────────────────────────
 
 /**

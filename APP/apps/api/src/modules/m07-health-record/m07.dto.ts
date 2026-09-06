@@ -67,3 +67,16 @@ export class ClaimSubProfileDto {
   @IsUUID(undefined, { message: "Identifiant d'intention de transfert invalide" }) intentId!: string;
   @IsString() @Length(6, 6, { message: "Code OTP à 6 chiffres requis" }) otpCode!: string;
 }
+
+/**
+ * Revendication par le seul CODE DICTABLE (dette n°26) — le chemin utilisable quand le tuteur et le
+ * majeur sont dans la même pièce.
+ *
+ * La longueur n'est pas contrainte ici : `normalizeClaimCode` accepte les tirets, les espaces et les
+ * minuscules avant de juger. Valider la forme brute rejetterait « abcd-efgh », qui est pourtant
+ * exactement ce qu'on aura écrit sous la dictée.
+ */
+export class ClaimByCodeDto {
+  @IsString() @IsNotEmpty({ message: "Code de transfert requis" }) @MaxLength(32) code!: string;
+  @IsString() @Length(6, 6, { message: "Code OTP à 6 chiffres requis" }) otpCode!: string;
+}

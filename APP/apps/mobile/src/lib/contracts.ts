@@ -517,6 +517,13 @@ export interface CreateSubProfileRequest {
 export interface StartClaimResponse {
   /** Désigne CETTE intention de transfert (D-048) : un OTP seul ne suffit plus à revendiquer. */
   intentId: string;
+  /**
+   * Le code DICTABLE de huit signes (dette n°26) — la seule chose que le majeur doit connaître.
+   *
+   * Il remplace les 73 caractères d'UUID que le tuteur devait faire parvenir par écrit : le cas le
+   * plus fréquent est que les deux personnes soient dans la même pièce.
+   */
+  shortCode: string;
   expiresInSeconds: number;
 }
 
@@ -524,6 +531,25 @@ export interface ClaimSubProfileRequest {
   intentId: string;
   /** Six chiffres, reçus par le TUTEUR — c'est lui qui autorise, depuis son propre téléphone. */
   otpCode: string;
+}
+
+/** Revendication par le seul code dicté (dette n°26) — le sous-profil n'est pas dans l'URL. */
+export interface ClaimByCodeRequest {
+  code: string;
+  otpCode: string;
+}
+
+/**
+ * Un paramètre métier lisible sans être administrateur (dette n°27).
+ *
+ * Les PM-xx ne sortaient que par la route d'administration : aucun écran ne pouvait connaître une
+ * règle chiffrée du métier, et devait donc soit la recopier — donc mentir un jour — soit laisser
+ * l'utilisateur la découvrir par un refus.
+ */
+export interface PublicParameter {
+  key: string;
+  value: string;
+  description: string;
 }
 
 export interface ClaimSubProfileResponse {
@@ -721,6 +747,13 @@ export const HEALTH_ROUTES = {
      majeur ne peut pas connaître autrement : le tuteur le lui transmet (voir `transfert-carnet`). */
   startClaim: (id: string): string => `/v1/health-record/sub-profiles/${encodeURIComponent(id)}/claim/start`,
   claim: (id: string): string => `/v1/health-record/sub-profiles/${encodeURIComponent(id)}/claim`,
+  /* Le sous-profil n'est PAS dans l'URL : le code de huit signes le désigne à lui seul (n°26). */
+  claimByCode: '/v1/health-record/sub-profiles/claim-by-code',
+} as const;
+
+/** Paramètres métier en lecture publique — liste blanche côté serveur (dette n°27). */
+export const PARAMETER_ROUTES = {
+  publics: '/v1/parameters',
 } as const;
 
 // ── M09 — Ordonnance & délivrance (EF-09-09, CU-09-01) ───────────────────────

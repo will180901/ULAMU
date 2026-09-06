@@ -4,6 +4,7 @@ import { M06HandshakeSessionModule } from "../m06-handshake-session/m06.module";
 import { M09PrescriptionsModule } from "../m09-prescriptions/m09.module";
 import { M13PaymentsModule } from "../m13-payments/m13.module";
 import { M14NotificationsModule } from "../m14-notifications/m14.module";
+import { M16ParametresPublicsController } from "./m16.parameters-publics.controller";
 import { M16AdminController } from "./m16.admin.controller";
 import { AdminService } from "./m16.admin.service";
 import { DashboardService } from "./m16.dashboard.service";
@@ -47,7 +48,7 @@ import { SupportProcedureService } from "./m16.support.service";
     M09PrescriptionsModule,
     M14NotificationsModule,
   ],
-  controllers: [M16ReadController, M16AdminController],
+  controllers: [M16ReadController, M16AdminController, M16ParametresPublicsController],
   providers: [
     PilotKpiService,
     DashboardService,

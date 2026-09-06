@@ -7,7 +7,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
-import { ClaimSubProfileDto, CreateSubProfileDto, DeclareEntryDto, OwnerScopeQueryDto, RecordQueryDto } from "./m07.dto";
+import { ClaimByCodeDto, ClaimSubProfileDto, CreateSubProfileDto, DeclareEntryDto, OwnerScopeQueryDto, RecordQueryDto } from "./m07.dto";
 import { M07Service } from "./m07.service";
 
 @Controller("v1/health-record")
@@ -68,5 +68,21 @@ export class M07Controller {
   @HttpCode(200)
   claim(@Actor() actor: AuthenticatedActor, @Param("id") id: string, @Body() dto: ClaimSubProfileDto) {
     return this.service.claim(actor, id, dto);
+  }
+
+  /**
+   * Étape 2, par le seul CODE DICTABLE (dette n°26, 06/09/2026).
+   *
+   * ⚠️ **Le sous-profil n'est PAS dans l'URL, et c'est tout l'intérêt.** La route ci-dessus oblige le
+   * majeur à connaître `subProfileId` *et* `intentId` — 73 caractères d'UUID que son tuteur doit lui
+   * faire parvenir par écrit. Or les deux personnes sont le plus souvent dans la même pièce. Ici, le
+   * code de huit signes désigne le transfert à lui seul, et le serveur retrouve le reste.
+   *
+   * Le chemin d'origine reste servi : une application déjà déployée continue de fonctionner.
+   */
+  @Post("sub-profiles/claim-by-code")
+  @HttpCode(200)
+  claimByCode(@Actor() actor: AuthenticatedActor, @Body() dto: ClaimByCodeDto) {
+    return this.service.claimByCode(actor, dto.code, dto.otpCode);
   }
 }

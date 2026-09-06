@@ -497,6 +497,17 @@ model SubProfileClaimIntent {
   expiresAt         DateTime
   consumedAt        DateTime?
   createdAt         DateTime  @default(now())
+  /// Code DICTABLE de huit signes (dette n°26) — la seule chose que le majeur doit connaître.
+  ///
+  /// Sans lui, revendiquer exigeait `subProfileId` ET `intentId`, soit 73 caractères d'UUID : le
+  /// tuteur devait les faire parvenir par écrit alors que, le plus souvent, les deux personnes sont
+  /// dans la même pièce.
+  ///
+  /// `@unique` parce que `claimByCode` retrouve le transfert PAR LUI : deux intentions vivantes
+  /// portant le même code rendraient la résolution ambiguë. Nullable pour deux raisons — les
+  /// intentions écrites avant cette migration n'en ont pas, et le code est **effacé à la
+  /// consommation**, ce qui garde l'index creux et interdit tout rejeu d'un code déjà servi.
+  shortCode         String?   @unique
 
   @@index([subProfileId, consumedAt])
 }
