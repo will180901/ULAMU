@@ -18,7 +18,9 @@
  * est donc écrite pour que son défaut soit de NE RIEN FAIRE — et c'est ce que ces tests gardent,
  * bien plus que sa capacité à nettoyer.
  */
-import { orphanIsSweepable, ORPHAN_GRACE_MS, KNOWN_STORAGE_PREFIXES } from "./storage.service";
+import { AuditEmitter } from "./audit.emitter";
+import { PrismaService } from "./prisma.service";
+import { KNOWN_STORAGE_PREFIXES, ORPHAN_GRACE_MS, orphanIsSweepable, StorageService } from "./storage.service";
 
 const VIDE: ReadonlySet<string> = new Set();
 const JOUR = 24 * 60 * 60 * 1000;
@@ -82,5 +84,105 @@ describe("Les préfixes connus", () => {
 
   it("le délai de grâce dépasse largement la rédaction d'un message", () => {
     expect(ORPHAN_GRACE_MS).toBeGreaterThanOrEqual(JOUR);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Le balayage laisse une trace — chantier 56, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  Le balayage livré au chantier 51 supprimait des photos, des messages vocaux et des pièces
+  d'identité — chiffrés, mais médicaux — **en ne laissant qu'une ligne de log**. Sur une plateforme
+  dont le principe est « le pouvoir sans trace n'existe pas » (RM-16-03) et dont le journal est une
+  pièce légale (loi n° 29-2019), c'était le trou que ce journal existe pour empêcher.
+
+  ⚠️ **La trace journalise des COMPTES, jamais les clés.** Une clé ne porte pas de contenu médical,
+  mais elle nomme un fichier : y verser trois cents identifiants ferait du journal un index de
+  fichiers, quand RM-04-03 demande l'inverse.
+*/
+describe("Le balayage des fichiers laisse une trace (chantier 56)", () => {
+  const JOUR = 24 * 60 * 60 * 1000;
+
+  /** Base réduite à ce que `sweepOrphans` lit : cinq sources de références, et les fichiers. */
+  function service(fichiers: Array<{ key: string; sizeBytes: number; createdAt: Date }>) {
+    const supprimes: unknown[] = [];
+    const emis: Array<{ action: string; context?: Record<string, unknown> }> = [];
+    const vide = { findMany: jest.fn(async () => []) };
+    const prisma = {
+      patientProfile: vide,
+      professionalProfile: vide,
+      facilityMemberProfile: vide,
+      supportingDocument: vide,
+      sessionMessage: vide,
+      storedFile: {
+        findMany: jest.fn(async () => fichiers),
+        deleteMany: jest.fn(async (a: unknown) => {
+          supprimes.push(a);
+          return { count: fichiers.length };
+        }),
+      },
+    } as unknown as PrismaService;
+    const audit = {
+      emit: jest.fn(async (_tx: unknown, e: { action: string; context?: Record<string, unknown> }) => void emis.push(e)),
+    } as unknown as AuditEmitter;
+    return { svc: new StorageService(prisma, audit), emis, supprimes };
+  }
+
+  const vieux = (key: string, sizeBytes = 1024) => ({
+    key,
+    sizeBytes,
+    createdAt: new Date(Date.now() - 3 * JOUR),
+  });
+
+  /*
+    ── LE test du chantier ───────────────────────────────────────────────────────────────────
+
+    Sans lui, la machine efface des pièces d'identité chaque nuit et personne ne peut dire, six mois
+    plus tard, ce qu'elle a supprimé ni quand.
+  */
+  it("journalise ce qu'il a effacé", async () => {
+    const { svc, emis } = service([vieux("vd_a.pdf", 2048), vieux("sm_b.jpg", 1024)]);
+
+    await svc.sweepOrphans();
+
+    const trace = emis.find((e) => e.action === "storage.orphans.swept");
+    expect(trace).toBeDefined();
+    expect(trace?.context).toMatchObject({ effaces: 2, examines: 2, octetsLiberes: 3072 });
+  });
+
+  it("compte par TYPE de fichier — deux pièces effacées ne se disent pas comme deux photos", async () => {
+    const { svc, emis } = service([vieux("vd_a.pdf"), vieux("vd_b.pdf"), vieux("sm_c.jpg")]);
+
+    await svc.sweepOrphans();
+
+    const trace = emis.find((e) => e.action === "storage.orphans.swept");
+    expect(trace?.context?.parPrefixe).toEqual({ vd_: 2, sm_: 1 });
+  });
+
+  /*
+    Une clé nomme un fichier. Trois cents clés dans une entrée d'audit feraient du journal un index
+    de fichiers — RM-04-03 demande le contraire, et le décompte suffit à enquêter.
+  */
+  it("ne verse AUCUNE clé de fichier dans le journal", async () => {
+    const { svc, emis } = service([vieux("vd_secret-du-patient.pdf")]);
+
+    await svc.sweepOrphans();
+
+    const trace = emis.find((e) => e.action === "storage.orphans.swept");
+    expect(JSON.stringify(trace)).not.toContain("secret-du-patient");
+  });
+
+  /* Un passage qui n'efface rien n'a rien à raconter — journaliser le vide noierait le vrai. */
+  it("ne journalise rien quand il n'y a rien à effacer", async () => {
+    const { svc, emis, supprimes } = service([]);
+
+    const bilan = await svc.sweepOrphans();
+
+    expect(bilan.effaces).toBe(0);
+    expect(supprimes).toHaveLength(0);
+    expect(emis).toHaveLength(0);
   });
 });

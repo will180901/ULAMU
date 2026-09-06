@@ -638,6 +638,71 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **55** | **Relecture de M14 — les notifications** — 06/09, **dernier module non relu**. Le renvoi des critiques est **remarquablement soigné** : il rattrape même les lignes restées QUEUED après un crash entre le commit et la transition (D-047) — exactement le défaut trouvé dans M13, déjà corrigé ici. ⚠️ **Mais au bout des cinq essais, la « livraison GARANTIE » s'arrêtait en silence** : `m14.delivery.failed` était émis et **rien ne s'y abonnait**, la seule trace étant une ligne d'audit — que personne ne lit spontanément. Une panne d'identifiants FCM ferait tomber TOUS les push critiques, pour tout le monde, sans réveiller personne. ⚠️ **À nuancer, et c'est important** : la notification existe toujours dans le centre in-app, qui naît `SENT` — ce qui est perdu, c'est **l'interruption**, précisément l'objet d'une critique. Livré : l'abandon prévient chaque super-administrateur, par le centre in-app (alerter par push que le push est en panne ne servirait à rien). 📌 **Et une question posée à qui branchera FCM** : `DevPushGateway` réussit toujours sans consulter les appareils — d'où **19 push « envoyés » pour zéro appareil enregistré** en production. Avec un vrai FCM, réussir ou échouer sur un compte sans appareil sont deux réponses également mauvaises. **api 570 ✓ (566 + 4) · web 655 ✓ · mobile 29 ✓ · lint 0 · 162 routes.** | ⏸ en attente | ⏸ |
 
+| **56** | **Ce que la machine fait la nuit** — 06/09, retour aux écrans. Les deux plans étant soldés, le fil se reprend en MESURANT : les six relectures ont ajouté trois balayages automatiques qui **décident seuls** — recréditer de l'argent, effacer des données médicales — et **aucun écran ne disait ce qu'ils avaient fait**. ⚠️ **Pire, un défaut de mon propre chantier 51** : le balayage des fichiers supprimait des photos, des vocaux et des pièces d'identité chiffrées **en ne laissant qu'une ligne de log** — aucune trace au journal, sur une plateforme dont le principe est « le pouvoir sans trace n'existe pas » (RM-16-03). Il allait effacer trois pièces d'identité cette nuit, en silence. Livré : la trace (**comptes par type, jamais les clés** — RM-04-03), et une carte « Entretien automatique » dans E5 qui lit ces traces. Elle distingue **trois** états, pas deux : « jamais » (bonne nouvelle, rien à réparer) ne se dit pas comme « lecture impossible ». **api 574 ✓ (570 + 4) · web 659 ✓ (655 + 4) · mobile 29 ✓ · lint 0 · build propre.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 56 (l'entretien visible) a appris
+
+*06/09/2026 — retour aux écrans, les deux plans étant soldés.*
+
+#### Reprendre un fil vide, c'est mesurer
+
+Le plan des écrans du soignant est entièrement soldé (A à G), les chantiers web aussi. Il n'y avait
+donc plus de fil ÉCRIT à reprendre — et inventer un écran parce qu'il faut bien en faire un est
+exactement ce que ce projet s'interdit.
+
+La règle n°1 du plan sert justement à ça : *la référence est le site en ligne.* On mesure, et on
+regarde ce que la mesure montre.
+
+Ce qu'elle a montré : les six relectures du serveur ont ajouté **trois balayages automatiques**, et
+aucun écran ne dit ce qu'ils font.
+
+#### Une machine qui décide seule doit rendre des comptes
+
+Ces balayages ne rangent pas : ils **décident**. Ils recréditent de l'argent sur le solde d'un
+soignant, ils effacent des photos et des pièces d'identité, ils constatent qu'une notification
+critique n'atteindra jamais son destinataire.
+
+Ils s'exécutent à minuit, seuls, et jusqu'ici **personne ne pouvait dire ce qu'ils avaient fait** —
+sinon en me demandant de lancer un script.
+
+*Automatiser un geste conséquent sans l'exposer, c'est déplacer le pouvoir hors de portée de celui
+qui en répond.*
+
+#### Le défaut le plus grave était dans mon propre chantier de la veille
+
+`sweepOrphans` supprimait des fichiers médicaux chiffrés en ne laissant **qu'une ligne de log**.
+Aucune entrée au journal d'audit.
+
+Sur une plateforme dont le principe est *« le pouvoir sans trace n'existe pas »* (RM-16-03) et dont
+le journal est une pièce légale (loi n° 29-2019), c'est précisément le trou que ce journal existe
+pour empêcher. Et le balayage allait effacer trois pièces d'identité cette nuit, en silence.
+
+*J'ai écrit au chantier 51 que le remède pouvait détruire ce qu'il protège, et j'ai construit trois
+gardes pour qu'il se trompe le moins mal possible. Je n'ai pas pensé à la quatrième : qu'il dise ce
+qu'il a fait.*
+
+#### Journaliser des comptes, jamais des clés
+
+La trace porte le nombre de fichiers, les octets libérés, et le décompte **par type** — « deux
+pièces justificatives, une photo ». Pas les clés.
+
+Une clé ne contient aucun contenu médical, mais elle **nomme** un fichier : trois cents identifiants
+dans une entrée d'audit feraient du journal un index de fichiers, quand RM-04-03 demande l'inverse.
+Le décompte répond à la question qu'on se posera — « qu'a effacé la machine cette nuit ? » — et le
+reste s'enquête sur la base.
+
+#### Trois états, pas deux — encore
+
+La carte pouvait n'en montrer que deux : une date, ou rien. Elle en montre trois, et c'est le test
+le plus important du chantier.
+
+**« Jamais intervenu »** est une bonne nouvelle : le balayage n'a rien eu à réparer.
+**« Lecture impossible »** veut dire qu'on n'en sait rien.
+
+Les confondre ferait conclure à un administrateur que la nuit s'est bien passée alors que personne
+ne le sait. C'est la même règle que partout — *une lecture qui échoue n'est ni un zéro ni un « non »*
+— et c'est au moins la sixième fois qu'elle décide de la forme d'un écran.
+
 ### Ce que le chantier 55 (la garantie qui s'arrêtait en silence) a appris
 
 *06/09/2026 — relecture de M14, dernier module du serveur.*

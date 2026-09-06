@@ -22,6 +22,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import { looksSealed, openBuffer, sealBuffer } from "./crypto/secretbox";
+import { AuditEmitter } from "./audit.emitter";
 import { PrismaService } from "./prisma.service";
 
 /** MIME accepté → extension. On borne aux types attendus (images + audio court). */
@@ -145,7 +146,17 @@ export function orphanIsSweepable(
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  /*
+    ⚠️ `AuditEmitter` est arrivé le 06/09/2026 (chantier 56) pour une raison précise : le balayage
+    des fichiers sans propriétaire **supprimait des données médicales chiffrées en ne laissant
+    qu'une ligne de log**. Sur une plateforme dont le principe est « le pouvoir sans trace n'existe
+    pas » (RM-16-03), et dont le journal est une pièce légale (loi n° 29-2019), c'était le trou que
+    ce journal existe précisément pour empêcher.
+  */
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditEmitter,
+  ) {}
 
   /**
    * Plafond par fichier : 8 Mo après décodage.
@@ -274,6 +285,35 @@ export class StorageService {
 
     const octetsLiberes = aEffacer.reduce((s, f) => s + f.sizeBytes, 0);
     await this.prisma.storedFile.deleteMany({ where: { key: { in: aEffacer.map((f) => f.key) } } });
+
+    /*
+      ── La trace (chantier 56) ────────────────────────────────────────────────────────────────
+
+      Ce balayage efface des photos, des messages vocaux et des pièces d'identité — chiffrés, mais
+      médicaux. Le faire sans trace serait exactement ce que le journal d'audit existe pour
+      empêcher : « le pouvoir sans trace n'existe pas » (RM-16-03).
+
+      ⚠️ **On journalise les COMPTES, pas les clés.** Une clé ne porte pas de contenu médical, mais
+      elle nomme un fichier : mettre trois cents identifiants dans une entrée d'audit transformerait
+      le journal en index de fichiers, et RM-04-03 demande l'inverse. Le décompte par préfixe dit
+      ce qu'il faut savoir — « la machine a effacé deux pièces justificatives cette nuit » — et le
+      reste s'enquête sur la base.
+
+      L'émission passe par le client racine (pas de transaction ouverte ici) : l'audit ne doit pas
+      faire échouer une suppression déjà commise, il doit la RACONTER.
+    */
+    const parPrefixe: Record<string, number> = {};
+    for (const f of aEffacer) {
+      const p = f.key.slice(0, 3);
+      parPrefixe[p] = (parPrefixe[p] ?? 0) + 1;
+    }
+    await this.audit.emit(this.prisma, {
+      actorType: "system",
+      action: "storage.orphans.swept",
+      resource: "storedFile",
+      context: { effaces: aEffacer.length, examines: fichiers.length, octetsLiberes, parPrefixe },
+    });
+
     this.logger.warn(
       `Fichiers sans propriétaire effacés : ${aEffacer.length} sur ${fichiers.length} (${octetsLiberes} octets)`,
     );

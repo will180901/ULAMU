@@ -19,7 +19,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PilotagePage } from '@/modules/admin/pages/PilotagePage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type AuditIntegrity, type MeResponse, type PilotKpi, type VerificationQueue } from '@/lib/api'
+import { api, type AuditEntry, type AuditIntegrity, type MeResponse, type PilotKpi, type VerificationQueue } from '@/lib/api'
 
 const ADMIN: MeResponse = {
   accountId: 'adm-1',
@@ -398,5 +398,83 @@ describe('E5 — le journal amputé de son début (chantier 54)', () => {
 
     await screen.findByText(/Chaîne intacte/)
     expect(screen.queryByText(/ne commence pas à son origine/)).not.toBeInTheDocument()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Entretien automatique — chantier 56, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Ce que ces tests défendent ────────────────────────────────────────────────────────────────
+
+  Six relectures du serveur ont ajouté trois balayages automatiques : les retraits débités sans
+  issue, les fichiers sans propriétaire, le renvoi des notifications critiques. Ils s'exécutent
+  seuls et **prennent des décisions conséquentes** — recréditer de l'argent, effacer des données
+  médicales.
+
+  Et personne ne pouvait dire ce qu'ils avaient fait. Ils laissent une trace au journal d'audit,
+  mais personne ne lit un journal d'audit spontanément — c'est la leçon du chantier 55, et elle vaut
+  aussi pour ce qu'on écrit soi-même.
+
+  ⚠️ **Le test qui compte est celui des TROIS états.** « Jamais intervenu » et « je n'ai pas pu
+  lire » se ressemblent à l'écran et ne veulent pas du tout dire la même chose : le premier signifie
+  que la plateforme n'a rien eu à réparer, le second qu'on n'en sait rien.
+*/
+describe('E5 — entretien automatique (chantier 56)', () => {
+  /** Doublure du journal : une entrée par action, ou aucune, ou un échec. */
+  function journal(reponses: Record<string, { items: AuditEntry[] } | 'echec'>) {
+    vi.spyOn(api, 'auditLog').mockImplementation(async (q = {}) => {
+      const r = reponses[q.action ?? ''] ?? { items: [] }
+      if (r === 'echec') throw new Error('réseau')
+      return { ...r, nextCursor: null }
+    })
+  }
+
+  const entree = (iso: string): AuditEntry =>
+    ({ id: 'a1', actorType: 'system', action: 'x', resource: null, createdAt: iso }) as unknown as AuditEntry
+
+  it('annonce les trois balayages, et ce qu’ils font', async () => {
+    journal({})
+    monter()
+
+    expect(await screen.findByText(/Entretien automatique/)).toBeInTheDocument()
+    expect(screen.getByText(/Fichiers sans propriétaire effacés/)).toBeInTheDocument()
+    expect(screen.getByText(/Retraits débités sans issue, repris/)).toBeInTheDocument()
+    expect(screen.getByText(/Notifications critiques abandonnées/)).toBeInTheDocument()
+  })
+
+  it('dit quand le balayage est passé pour la dernière fois', async () => {
+    journal({ 'storage.orphans.swept': { items: [entree(new Date(Date.now() - 2 * 3600e3).toISOString())] } })
+    monter()
+
+    expect(await screen.findByText(/il y a 2 h/)).toBeInTheDocument()
+  })
+
+  /*
+    « Jamais » est une BONNE nouvelle : le balayage n'a rien eu à réparer. Il ne faut donc ni
+    l'alarmer ni le cacher — seulement le dire.
+  */
+  it('dit « jamais » quand le serveur a répondu, et n’a rien à montrer', async () => {
+    journal({})
+    monter()
+
+    await screen.findByText(/Entretien automatique/)
+    expect(screen.getAllByText('jamais')).toHaveLength(3)
+  })
+
+  /*
+    ── LE test de ce bloc ────────────────────────────────────────────────────────────────────
+
+    Conclure « rien à signaler » d'une requête tombée laisserait croire à un administrateur que la
+    nuit s'est bien passée. Une lecture qui échoue n'est ni un zéro ni un « non ».
+  */
+  it('ne dit JAMAIS « jamais » quand la lecture a échoué', async () => {
+    journal({ 'storage.orphans.swept': 'echec' })
+    monter()
+
+    expect(await screen.findByText(/lecture impossible/)).toBeInTheDocument()
+    // Les deux autres ont bien répondu : eux disent « jamais ».
+    expect(screen.getAllByText('jamais')).toHaveLength(2)
   })
 })

@@ -38,11 +38,12 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Activity, AlertTriangle, CheckCircle2, Inbox, MapPin, ShieldCheck } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, Inbox, MapPin, ShieldCheck, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Avis, Carte, Pilule } from '@/components/ulamu/parts'
-import { api, type PilotKpi } from '@/lib/api'
+import { api, type AuditEntry, type PilotKpi } from '@/lib/api'
+import { depuis } from '@/lib/temps'
 import { SqueletteTuiles } from '@/components/ulamu/Squelette'
 import { messageErreur } from '@/lib/message-erreur'
 
@@ -94,12 +95,85 @@ function Indicateur({ kpi }: { kpi: PilotKpi }) {
   )
 }
 
+/**
+ * Une ligne d'entretien : ce que ce balayage a fait la dernière fois, ou rien.
+ *
+ * ⚠️ **Trois états, jamais deux.** « Jamais intervenu » et « je n'ai pas pu lire » se ressemblent à
+ * l'écran et ne veulent pas du tout dire la même chose : le premier signifie que la plateforme n'a
+ * rien eu à réparer, le second qu'on n'en sait rien. Les confondre ferait conclure à un
+ * administrateur que la nuit s'est bien passée alors que personne ne le sait.
+ */
+function LigneEntretien({
+  libelle,
+  aide,
+  requete,
+}: {
+  libelle: string
+  aide: string
+  requete: { isPending: boolean; isError: boolean; data?: { items: AuditEntry[] } }
+}) {
+  const dernier = requete.data?.items[0]
+  return (
+    <div className="flex flex-col gap-0.5 border-b border-border pb-2 last:border-0 last:pb-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 text-[13px] leading-[1.5] text-foreground">{libelle}</span>
+        <span className="shrink-0 text-[12px] font-medium">
+          {requete.isPending ? (
+            <span className="text-[var(--texte-tertiaire)]">…</span>
+          ) : requete.isError ? (
+            /* Une lecture qui échoue n'est ni un zéro ni un « non ». */
+            <span className="text-[var(--erreur-texte)]">lecture impossible</span>
+          ) : dernier ? (
+            <span className="text-foreground">{depuis(dernier.createdAt)}</span>
+          ) : (
+            <span className="text-[var(--texte-tertiaire)]">jamais</span>
+          )}
+        </span>
+      </div>
+      <span className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">{aide}</span>
+    </div>
+  )
+}
+
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 export function PilotagePage() {
   const kpis = useQuery({ queryKey: ['pilot-kpis'], queryFn: () => api.pilotKpis(), retry: false })
   const couverture = useQuery({ queryKey: ['coverage'], queryFn: () => api.coverage(), retry: false })
   const integrite = useQuery({ queryKey: ['audit-integrity'], queryFn: () => api.auditIntegrity(), retry: false })
+
+  /*
+    ── Ce que la machine fait pendant la nuit (chantier 56, 06/09/2026) ──────────────────────
+
+    Six relectures du serveur ont ajouté trois balayages automatiques : les retraits débités sans
+    issue (n°50), les fichiers sans propriétaire (n°51), et le renvoi des notifications critiques.
+    Ils s'exécutent seuls, à l'heure ou à minuit, et **prennent des décisions conséquentes** —
+    recréditer de l'argent, effacer des données médicales.
+
+    ⚠️ **Et personne ne pouvait dire ce qu'ils avaient fait.** Ils laissent une trace au journal
+    d'audit, mais personne ne lit un journal d'audit spontanément : c'est la leçon du chantier 55,
+    et elle vaut aussi pour ce qu'on écrit soi-même.
+
+    On lit donc ces traces ici, à l'endroit où l'on vient déjà demander « est-ce que tout va bien ? ».
+    Trois lectures séparées : la route filtre sur UNE action exacte.
+  */
+  const entretien = {
+    fichiers: useQuery({
+      queryKey: ['audit', 'storage.orphans.swept'],
+      queryFn: () => api.auditLog({ action: 'storage.orphans.swept', limit: 1 }),
+      retry: false,
+    }),
+    retraits: useQuery({
+      queryKey: ['audit', 'm13.withdrawal.orphan.executed'],
+      queryFn: () => api.auditLog({ action: 'm13.withdrawal.orphan.executed', limit: 1 }),
+      retry: false,
+    }),
+    notifications: useQuery({
+      queryKey: ['audit', 'm14.critical.delivery_failed'],
+      queryFn: () => api.auditLog({ action: 'm14.critical.delivery_failed', limit: 1 }),
+      retry: false,
+    }),
+  }
 
   /*
     ── Exporter le journal (écart E, 05/09/2026) ────────────────────────────────────────────
@@ -345,6 +419,37 @@ export function PilotagePage() {
                   et « suppressions tentées » supposerait qu'on enregistre des tentatives qui n'ont
                   aucun chemin pour se produire.
                 */}
+              </Carte>
+
+              {/*
+                ── Entretien automatique (chantier 56) ────────────────────────────────────────
+
+                Chaque ligne dit UNE chose : la dernière fois que ce balayage a agi. « Jamais » est
+                une bonne nouvelle, pas un manque — cela veut dire qu'il n'a rien eu à réparer.
+
+                ⚠️ Une lecture en échec ne dit PAS « jamais ». C'est la règle du projet, et elle
+                compte doublement ici : conclure « rien à signaler » d'une requête tombée
+                laisserait croire à un administrateur que la nuit s'est bien passée.
+              */}
+              <Carte icone={Wrench} titre="Entretien automatique" sousTitre="Ce que la plateforme répare seule, et quand">
+                <LigneEntretien
+                  libelle="Fichiers sans propriétaire effacés"
+                  aide="Chaque nuit — photos, vocaux et pièces qu'aucune ligne ne désigne plus."
+                  requete={entretien.fichiers}
+                />
+                <LigneEntretien
+                  libelle="Retraits débités sans issue, repris"
+                  aide="Chaque heure — solde recrédité, ou virement constaté chez l'opérateur."
+                  requete={entretien.retraits}
+                />
+                <LigneEntretien
+                  libelle="Notifications critiques abandonnées"
+                  aide="Après cinq tentatives. Le message reste dans le centre du destinataire."
+                  requete={entretien.notifications}
+                />
+                <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                  Chaque passage est inscrit au journal d'audit, sous le compte « système ».
+                </p>
               </Carte>
 
               <Carte icone={Inbox} titre="Respect des délais" sousTitre="Ce qui est réellement mesuré">

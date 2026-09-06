@@ -12,6 +12,7 @@ import { InternalServerErrorException, Logger } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
 import { sealBuffer } from "./crypto/secretbox";
 import { PrismaService } from "./prisma.service";
+import { AuditEmitter } from "./audit.emitter";
 import { StorageService } from "./storage.service";
 
 const CLE_A = randomBytes(32).toString("base64");
@@ -35,6 +36,15 @@ function scelleAvec(cle: string, clair: Buffer): Buffer {
   }
 }
 
+/**
+ * Doublure d'audit —  en prend un depuis le 06/09/2026 (chantier 56) : le balayage
+ * des fichiers sans propriétaire doit laisser une trace. Ces tests-ci n'éprouvent pas le balayage,
+ * seulement le chiffrement : l'émetteur est donc muet.
+ */
+function auditMuet(): AuditEmitter {
+  return { emit: jest.fn(async () => undefined) } as unknown as AuditEmitter;
+}
+
 describe("StorageService.read — clé de chiffrement", () => {
   const cleInitiale = process.env.SECRETBOX_KEY;
   let journal: jest.SpyInstance;
@@ -52,7 +62,7 @@ describe("StorageService.read — clé de chiffrement", () => {
   it("même clé : la pièce revient exactement telle qu'elle a été déposée", async () => {
     const enBase = scelleAvec(CLE_A, PDF);
     process.env.SECRETBOX_KEY = CLE_A;
-    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }));
+    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }), auditMuet());
 
     const lu = await service.read(CLE_FICHIER);
 
@@ -64,7 +74,7 @@ describe("StorageService.read — clé de chiffrement", () => {
   it("clé différente : lève, et ne sert JAMAIS le chiffré à la place du fichier", async () => {
     const enBase = scelleAvec(CLE_A, PDF);
     process.env.SECRETBOX_KEY = CLE_B;
-    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }));
+    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }), auditMuet());
 
     // Ni 200 avec du charabia, ni 404 « introuvable » : la pièce existe, c'est le serveur qui échoue.
     await expect(service.read(CLE_FICHIER)).rejects.toBeInstanceOf(InternalServerErrorException);
@@ -73,7 +83,7 @@ describe("StorageService.read — clé de chiffrement", () => {
   it("clé différente : le journal nomme SECRETBOX_KEY, pour que l'incident soit diagnosticable", async () => {
     const enBase = scelleAvec(CLE_A, PDF);
     process.env.SECRETBOX_KEY = CLE_B;
-    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }));
+    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }), auditMuet());
 
     await expect(service.read(CLE_FICHIER)).rejects.toThrow();
     expect(journal).toHaveBeenCalledTimes(1);
@@ -83,14 +93,14 @@ describe("StorageService.read — clé de chiffrement", () => {
   it("variable absente alors que le fichier a été scellé : lève aussi (repli codé en dur ≠ vraie clé)", async () => {
     const enBase = scelleAvec(CLE_A, PDF);
     delete process.env.SECRETBOX_KEY;
-    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }));
+    const service = new StorageService(prismaAvec({ data: enBase, mime: "application/pdf" }), auditMuet());
 
     await expect(service.read(CLE_FICHIER)).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it("fichier d'AVANT le chiffrement au repos : toujours servi en clair (rétrocompatibilité)", async () => {
     process.env.SECRETBOX_KEY = CLE_A;
-    const service = new StorageService(prismaAvec({ data: PDF, mime: "application/pdf" }));
+    const service = new StorageService(prismaAvec({ data: PDF, mime: "application/pdf" }), auditMuet());
 
     const lu = await service.read(CLE_FICHIER);
 
@@ -100,7 +110,7 @@ describe("StorageService.read — clé de chiffrement", () => {
 
   it("clé de stockage absente en base : null (404 côté appelants), sans rien journaliser", async () => {
     process.env.SECRETBOX_KEY = CLE_A;
-    const service = new StorageService(prismaAvec(null));
+    const service = new StorageService(prismaAvec(null), auditMuet());
 
     expect(await service.read(CLE_FICHIER)).toBeNull();
     expect(journal).not.toHaveBeenCalled();
@@ -108,7 +118,7 @@ describe("StorageService.read — clé de chiffrement", () => {
 
   it("clé de stockage non sûre : null, sans même interroger la base (anti-traversal)", async () => {
     const prisma = prismaAvec({ data: PDF, mime: "application/pdf" });
-    const service = new StorageService(prisma);
+    const service = new StorageService(prisma, auditMuet());
 
     expect(await service.read("../../etc/passwd")).toBeNull();
     expect(prisma.storedFile.findUnique).not.toHaveBeenCalled();
