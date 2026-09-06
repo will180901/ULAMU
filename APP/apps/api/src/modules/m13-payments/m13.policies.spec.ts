@@ -8,6 +8,8 @@ import {
   canTransitionPayment,
   chargeResultTarget,
   computeSplit,
+  decideOrphanWithdrawal,
+  isOrphanWithdrawal,
   needsSecondApproval,
   operatorIsValid,
   receiptNumber,
@@ -176,5 +178,85 @@ describe("Remboursement manuel : double validation (EF-13-10, RM-13-06, PM-35)",
     expect(canSecondApprove("admin-a", "admin-b")).toBe(true);
     expect(canSecondApprove("admin-a", "admin-a")).toBe(false);
     expect(canSecondApprove("admin-a", "")).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//  Retraits orphelins — chantier 50, 06/09/2026.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/*
+  ── Le trou que ces tests gardent ─────────────────────────────────────────────────────────────
+
+  `confirmWithdrawal` débite le solde dans une transaction, appelle l'agrégateur HORS transaction
+  (RM-13-03 — on ne tient pas une transaction ouverte pendant un appel réseau), puis conclut dans
+  une seconde. **Si le processus meurt entre les deux, l'argent est débité et rien ne le sait.**
+
+  Le retrait reste `PENDING` avec son `aggregatorRef` posé, et rien ne le rattrapait : l'utilisateur
+  ne peut pas réessayer (la revendication exige `aggregatorRef: null`), la réconciliation ne lit que
+  les `EXECUTED`, aucune route d'administration ne débloque, et le retrait **empêche même la clôture
+  du compte**. Le plan gratuit de Render endort le service après ~15 min : un redémarrage suffit.
+
+  ⚠️ **Le danger du remède est pire que le mal.** Re-créditer un retrait dont le virement est
+  effectivement parti paierait DEUX FOIS — et personne ne le verrait avant la réconciliation du
+  lendemain, voire jamais. C'est ce que la seconde règle interdit, et c'est LE test de ce bloc.
+*/
+describe("Retraits orphelins — repérage (chantier 50)", () => {
+  const QUART_HEURE = 15 * 60 * 1000;
+  const MAINTENANT = 1_757_000_000_000;
+
+  it("un retrait revendiqué et vieux est orphelin", () => {
+    expect(isOrphanWithdrawal("PENDING", "ref-1", MAINTENANT - QUART_HEURE, MAINTENANT, QUART_HEURE)).toBe(true);
+  });
+
+  /*
+    LA distinction qui vaut de l'argent. Un `PENDING` SANS `aggregatorRef` n'a **rien débité** : il
+    attend le mot de passe et l'OTP de son propriétaire. Le ramasser annulerait un retrait que
+    personne n'a abandonné — et le soignant verrait sa demande disparaître sans explication.
+  */
+  it("un retrait PENDING sans référence n’a rien débité : jamais orphelin", () => {
+    expect(isOrphanWithdrawal("PENDING", null, MAINTENANT - 10 * QUART_HEURE, MAINTENANT, QUART_HEURE)).toBe(false);
+  });
+
+  /* Le délai protège un `confirmWithdrawal` encore en vol : l'appel agrégateur dure des secondes. */
+  it("un retrait revendiqué à l’instant n’est pas encore orphelin", () => {
+    expect(isOrphanWithdrawal("PENDING", "ref-1", MAINTENANT - 1_000, MAINTENANT, QUART_HEURE)).toBe(false);
+  });
+
+  it.each(["EXECUTED", "FAILED"])("un retrait déjà soldé (%s) n’est pas orphelin", (statut) => {
+    expect(isOrphanWithdrawal(statut, "ref-1", MAINTENANT - 10 * QUART_HEURE, MAINTENANT, QUART_HEURE)).toBe(false);
+  });
+});
+
+describe("Retraits orphelins — décision (chantier 50)", () => {
+  /*
+    ── LE test du chantier ───────────────────────────────────────────────────────────────────
+
+    Le virement EST parti. Re-créditer paierait le soignant deux fois : une fois par l'agrégateur,
+    une fois par le solde. C'est le relevé — et lui seul — qui l'interdit.
+  */
+  it("le virement est au relevé : on SOLDE, on ne re-crédite pas", () => {
+    expect(decideOrphanWithdrawal("ref-1", ["ref-1", "ref-2"])).toBe("SOLDER");
+  });
+
+  it("le virement est absent du relevé : l’argent revient au soignant", () => {
+    expect(decideOrphanWithdrawal("ref-1", ["ref-2", "ref-3"])).toBe("RECREDITER");
+  });
+
+  it("relevé vide : rien n’est parti, donc on re-crédite", () => {
+    expect(decideOrphanWithdrawal("ref-1", [])).toBe("RECREDITER");
+  });
+
+  /*
+    Le cas qu'on oublie, et le seul où ne rien faire est la bonne réponse. Sans relevé, les deux
+    décisions sont dangereuses : solder à tort vole le soignant, re-créditer à tort le paie deux
+    fois. On attend le prochain passage — le retrait reste visible dans `scripts/etat-retraits.ts`.
+  */
+  it("relevé illisible : on n’en décide RIEN", () => {
+    expect(decideOrphanWithdrawal("ref-1", null)).toBe("ATTENDRE");
+  });
+
+  it("sans référence, il n’y a rien à décider", () => {
+    expect(decideOrphanWithdrawal(null, ["ref-1"])).toBe("ATTENDRE");
   });
 });

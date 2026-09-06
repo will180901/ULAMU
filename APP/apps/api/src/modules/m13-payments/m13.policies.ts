@@ -137,6 +137,59 @@ export function canSecondApprove(requestedBy: string, approverId: string): boole
   return requestedBy !== approverId && approverId.length > 0;
 }
 
+// ── Retraits orphelins (chantier 50) ─────────────────────────────────────────
+
+/**
+ * ── Le trou que ces deux règles bouchent ──────────────────────────────────────
+ *
+ * `confirmWithdrawal` débite le solde dans une première transaction, appelle l'agrégateur HORS
+ * transaction (RM-13-03 — on ne tient pas une transaction ouverte pendant un appel réseau), puis
+ * conclut dans une seconde. **Si le processus meurt entre les deux, l'argent est débité et rien ne
+ * le sait** : le retrait reste `PENDING` avec son `aggregatorRef` posé, l'utilisateur ne peut plus
+ * réessayer, la réconciliation ne lit que les `EXECUTED`, et aucune route ne débloque.
+ *
+ * Le plan gratuit de Render endort le service après ~15 min et le redémarre à la demande.
+ */
+
+/**
+ * Ce retrait est-il orphelin — c'est-à-dire débité, mais jamais soldé ?
+ *
+ * La signature est précise, et la distinction vaut de l'argent : un `PENDING` **sans**
+ * `aggregatorRef` n'a rien débité, il attend seulement le mot de passe et l'OTP de son propriétaire.
+ * Le ramasser serait annuler un retrait que personne n'a abandonné.
+ *
+ * Le délai n'est pas une politesse : il évite d'attraper un `confirmWithdrawal` encore en vol.
+ */
+export function isOrphanWithdrawal(
+  status: string,
+  aggregatorRef: string | null,
+  requestedAtMs: number,
+  nowMs: number,
+  delayMs: number,
+): boolean {
+  return status === "PENDING" && aggregatorRef !== null && nowMs - requestedAtMs >= delayMs;
+}
+
+/**
+ * Que faire d'un retrait orphelin ? **On ne devine pas : on lit le relevé de l'agrégateur.**
+ *
+ * Re-créditer un retrait dont le virement est effectivement parti paierait DEUX FOIS le soignant —
+ * et personne ne s'en apercevrait avant la réconciliation du lendemain, voire jamais si le montant
+ * se noie dans le flux. La présence d'une ligne `PAYOUT` portant cette référence est donc la SEULE
+ * chose qui autorise à solder sans re-créditer.
+ *
+ * `"ATTENDRE"` quand le relevé est illisible : ne rien faire est le seul choix sûr, et le prochain
+ * passage réessaiera.
+ */
+export function decideOrphanWithdrawal(
+  aggregatorRef: string | null,
+  payoutRefs: readonly string[] | null,
+): "SOLDER" | "RECREDITER" | "ATTENDRE" {
+  if (payoutRefs === null) return "ATTENDRE"; // relevé indisponible : on ne décide pas sans lui
+  if (aggregatorRef === null) return "ATTENDRE"; // pas orphelin, rien à décider
+  return payoutRefs.includes(aggregatorRef) ? "SOLDER" : "RECREDITER";
+}
+
 // ── Titulaires de gains (EF-13-06) ───────────────────────────────────────────
 
 /**

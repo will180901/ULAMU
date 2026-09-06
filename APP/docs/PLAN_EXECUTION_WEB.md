@@ -626,6 +626,95 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | **49** | **Un code qui se dicte, et des règles qui se lisent** — 06/09, dettes n°26 et n°27, ouvertes la veille. **n°26** : revendiquer son Carnet exigeait 73 caractères d'UUID, alors que le cas le plus fréquent est que les deux personnes soient **dans la même pièce**. ⚠️ **Un code court ne suffisait pas** : tant que `subProfileId` restait dans l'URL, le majeur devait encore le connaître — d'où une route où **le sous-profil n'est plus dans le chemin**, `claim-by-code`, qui retrouve tout depuis huit signes. Ces signes viennent d'un alphabet **sans aucune paire douteuse**, et les DEUX membres de chaque paire sont exclus : garder « O » en écartant « 0 » laisserait celui qui écoute hésiter quand même. Le code est **effacé à la consommation**. `claimByCode` ne re-décide rien — il résout, puis passe la main à `claim` : toutes les gardes restent à un seul endroit. **n°27** : `GET /v1/parameters`, liste blanche de trois clés, **employée aussitôt** sur l'écran où la dette est née. **api 536 ✓ (521 + 15) · web 651 ✓ · mobile 29 ✓ · lint 0 · builds propres · 162 routes.** | ⏸ en attente | ⏸ |
 
+| **50** | **Relecture de M13 — l'argent** — 06/09. Objectif annoncé : chercher des routes que rien n'appelle. **Résultat : il n'y en a aucune** sur 162 — les 17 candidates de mon outil étaient TOUTES des faux positifs (il ne suivait ni les constantes de route du mobile, ni les gabarits mêlant constante et chaîne de requête). ⚠️ **La lecture, elle, a trouvé bien pire qu'une route morte.** `confirmWithdrawal` débite le solde en TX 1, appelle l'agrégateur **hors transaction**, conclut en TX 2. **Si le processus meurt entre les deux — et Render endort le service toutes les 15 min — l'argent est débité et RIEN ne le sait** : l'utilisateur ne peut plus réessayer (`aggregatorRef` posé), la réconciliation ne lit que les `EXECUTED`, aucune route d'administration ne débloque, et le retrait **empêche même la clôture du compte**. Mesuré en production : **0 retrait, 0 compte de gains** — le défaut est **latent**, pas réalisé. Livré : un balayage horaire qui **ne devine rien** — il lit le relevé de l'agrégateur, solde si le virement est parti, re-crédite sinon, et **attend** si le relevé est illisible. ⚠️ **Le câblage Nest manquait et TypeScript ne disait rien** : l'API n'aurait pas démarré en production — trouvé en montant l'arbre. **api 546 ✓ (536 + 10) · lint 0 · build propre · 162 routes.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 50 (la relecture de M13) a appris
+
+*06/09/2026 — relecture d'un module entier, à la recherche de routes mortes.*
+
+#### Il n'y avait aucune route morte — et c'est mon outil qui mentait, deux fois
+
+Le balayage a d'abord annoncé **17 routes sans appelant**. Aucune n'en était une.
+
+Deux causes, et les deux étaient dans l'outil : il ne lisait que le client web — or le mobile sert le
+PATIENT, à qui appartient la moitié des routes — et il ne suivait pas les **constantes de route** du
+mobile, qui vivent dans `contracts.ts` et non sur le site d'appel. Corrigé, il restait 17 candidates ;
+vérifiées une par une, **toutes fausses** : celles qui mêlent une constante et une chaîne de requête
+(`${AUTH_ROUTES.emailAvailable}?email=...`) lui échappent encore.
+
+*C'est la deuxième fois en deux jours que cet outil se trompe, et la deuxième fois qu'une
+vérification à la main le rattrape. Un outil de balayage propose ; il ne conclut pas.*
+
+#### Ce que la lecture a trouvé, et qu'aucun balayage n'aurait vu
+
+`confirmWithdrawal` fait trois choses, et il a raison de les séparer :
+
+1. **TX 1** — revendication, **débit du solde**, mouvement, audit ;
+2. **appel réseau** à l'agrégateur, hors transaction (RM-13-03 : on ne tient pas une transaction
+   ouverte pendant un appel réseau) ;
+3. **TX 2** — `EXECUTED`, ou `FAILED` avec re-crédit intégral.
+
+**Si le processus meurt entre 1 et 3, l'argent est débité et personne ne le sait.** Et quatre portes
+se ferment d'un coup :
+
+* l'utilisateur ne peut pas réessayer — la revendication exige `aggregatorRef: null`, il reçoit
+  « déjà en cours de traitement », **pour toujours** ;
+* la réconciliation quotidienne ne le voit pas : elle ne lit que les retraits `EXECUTED` ;
+* aucune route d'administration ne peut le débloquer ;
+* et il **empêche la clôture du compte** — `m01` compte les `PENDING` parmi les prérequis. Le
+  soignant ne peut donc même pas partir.
+
+Le plan gratuit de Render endort le service après ~15 minutes et le redémarre à la demande. Un
+déploiement pendant cette fenêtre suffit.
+
+*Un défaut de ce genre ne se voit ni dans les tests, ni dans les routes, ni à l'écran. Il se voit en
+lisant trois transactions à la suite et en se demandant ce qui arrive si le courant tombe entre deux.*
+
+#### Le remède était plus dangereux que le mal
+
+Le réflexe est de re-créditer tout retrait bloqué. **Ce serait payer deux fois** le soignant dont le
+virement est effectivement parti — une fois par l'agrégateur, une fois par le solde. Et personne ne
+le verrait avant la réconciliation du lendemain, voire jamais si le montant se noie dans le flux.
+
+Le balayage ne décide donc pas : il **demande à l'agrégateur** (`listConfirmed`, le relevé qui sert
+déjà à la réconciliation). Ligne `PAYOUT` présente → on solde sans rien re-créditer. Absente → on
+re-crédite. **Relevé illisible → on ne fait rien**, et le prochain passage réessaiera.
+
+*Devant de l'argent, « je ne sais pas » est une décision valide, et souvent la seule qui ne coûte rien.*
+
+#### Mesurer avant de dramatiser
+
+Avant d'écrire une ligne de correctif : `scripts/etat-retraits.ts`, en lecture seule, sur la
+production. Réponse : **zéro retrait, zéro compte de gains**.
+
+Le défaut est donc **latent**. Il n'a volé personne, et il ne le pourra pas avant le premier vrai
+retrait — c'est-à-dire avant qu'un agrégateur réel soit choisi (ADR-09, ouvert). Cela ne le rend pas
+moins réel ; cela dit seulement qu'on le corrige **avant**, et non **après**.
+
+#### TypeScript compilait, et l'API n'aurait pas démarré
+
+Le balayage vit dans M13 et s'appelle depuis M16. TypeScript n'a rien dit — il ne connaît pas
+l'injection de dépendances de Nest. C'est en montant l'arbre complet (`relever-routes.ts`, avec un
+Prisma bouchonné) que l'erreur est apparue : *« Nest can't resolve dependencies of the
+SchedulerService »*. `EarningsService` n'était pas exporté par son module.
+
+**En production, l'API n'aurait pas démarré du tout.**
+
+*Le compilateur vérifie les types, pas le câblage. Monter l'arbre coûte trente secondes et couvre
+exactement ce que les 546 tests unitaires ne regardent jamais.*
+
+#### Une constante technique n'est pas un paramètre métier
+
+Le délai au-delà duquel un retrait est déclaré orphelin — quinze minutes — n'est **pas** un PM-xx, et
+c'est délibéré : il ne décrit aucune règle opposable à un utilisateur, seulement une marge technique.
+
+Il y avait une seconde raison, plus pratique : **Render ne joue jamais le seed**. Un PM-xx neuf
+serait donc ABSENT de la base de production, et `params.getInt` jette sur une clé manquante — le
+balayage serait mort à chaque passage, silencieusement.
+
+*Toute règle chiffrée ne mérite pas un paramètre. Et tout paramètre neuf demande une écriture en
+base que personne ne pense à faire.*
+
 ### Ce que le chantier 49 (le code dicté) a appris
 
 *06/09/2026 — les deux dettes ouvertes la veille, soldées le lendemain.*

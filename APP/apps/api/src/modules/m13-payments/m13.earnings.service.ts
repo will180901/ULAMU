@@ -24,7 +24,20 @@ import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
 import { ConfirmWithdrawalDto, EarningsMeQueryDto, StartWithdrawalDto } from "./m13.dto";
 import { PaymentsService } from "./m13.payments.service";
-import { withdrawalFee } from "./m13.policies";
+import { decideOrphanWithdrawal, withdrawalFee } from "./m13.policies";
+
+/**
+ * Depuis combien de temps un retrait revendiqué doit être en attente pour qu'on le déclare orphelin.
+ *
+ * ⚠️ **Ce n'est PAS un paramètre métier**, et c'est pourquoi il n'est pas un PM-xx : il ne décrit
+ * aucune règle opposable à un utilisateur, seulement une marge technique — le temps au-delà duquel
+ * un `confirmWithdrawal` encore en vol ne peut plus l'être. Le poser trop court couperait un
+ * virement en cours ; quinze minutes dépassent largement tout appel d'agrégateur.
+ *
+ * *(Et un PM-xx neuf poserait un autre problème : Render ne joue jamais le seed, la clé serait donc
+ * ABSENTE en production et `params.getInt` jetterait — le balayage mourrait à chaque passage.)*
+ */
+const DELAI_RETRAIT_ORPHELIN_MS = 15 * 60 * 1000;
 
 @Injectable()
 export class EarningsService {
@@ -365,6 +378,104 @@ export class EarningsService {
 
     const fresh = await this.prisma.withdrawal.findUniqueOrThrow({ where: { id: withdrawal.id } });
     return { withdrawalId: fresh.id, status: fresh.status, amountXaf: fresh.amountXaf, failReason: fresh.failReason };
+  }
+
+  /**
+   * ── Les retraits ORPHELINS : débités, sans issue (chantier 50, 06/09/2026) ──────────────────
+   *
+   * `confirmWithdrawal` procède en trois temps, et il le doit : **TX 1** débite le solde, puis
+   * l'appel réseau à l'agrégateur se fait HORS transaction (RM-13-03 — on ne tient pas une
+   * transaction ouverte pendant un appel réseau), puis **TX 2** conclut.
+   *
+   * ⚠️ **Si le processus meurt entre 1 et 3, l'argent est débité et personne ne le sait.** Le
+   * retrait reste `PENDING` avec son `aggregatorRef` posé, et rien ne le rattrape :
+   *
+   *   • l'utilisateur ne peut pas réessayer — la revendication exige `aggregatorRef: null`, il
+   *     reçoit « déjà en cours de traitement », pour toujours ;
+   *   • la réconciliation quotidienne ne le voit pas : elle ne lit que les retraits `EXECUTED` ;
+   *   • aucune route d'administration ne peut le débloquer ;
+   *   • et il **empêche la clôture du compte** (`m01` compte les `PENDING` parmi les prérequis).
+   *
+   * Le plan gratuit de Render endort le service après ~15 min et le redémarre à la demande : un
+   * déploiement, un redémarrage, ou un délai d'agrégateur qui survit au processus suffisent.
+   *
+   * ── Pourquoi ce balayage ne DEVINE rien ──────────────────────────────────────────────────────
+   *
+   * Re-créditer un retrait dont le virement est effectivement parti paierait DEUX FOIS. Le
+   * balayage ne décide donc pas : il **demande à l'agrégateur** (`listConfirmed`, le même relevé
+   * que la réconciliation) si une ligne `PAYOUT` porte cette référence.
+   *
+   *   • ligne trouvée  → le virement a eu lieu : on solde en `EXECUTED`, rien n'est re-crédité ;
+   *   • ligne absente  → il n'a pas eu lieu : `failAndRecredit`, le soignant retrouve son argent.
+   *
+   * Dans les deux cas l'administration Finance est prévenue : un processus mort au milieu d'un
+   * mouvement d'argent ne doit jamais rester silencieux, même quand il se répare tout seul.
+   */
+  async sweepStuckWithdrawals(): Promise<{ examines: number; executes: number; recredites: number }> {
+    const limite = new Date(Date.now() - DELAI_RETRAIT_ORPHELIN_MS);
+    const orphelins = await this.prisma.withdrawal.findMany({
+      // Cette clause EST `isOrphanWithdrawal`, écrite en SQL : la règle et sa mise en base disent
+      // la même chose, et c'est la règle que le .spec éprouve.
+      where: { status: WithdrawalStatus.PENDING, aggregatorRef: { not: null }, requestedAt: { lt: limite } },
+      include: { account: true },
+    });
+    if (orphelins.length === 0) return { examines: 0, executes: 0, recredites: 0 };
+
+    /*
+      Le relevé de l'agrégateur est l'ARBITRE. S'il est illisible — réseau, agrégateur endormi —
+      on ne touche à rien : décider sans lui, c'est risquer de payer deux fois. Le prochain passage
+      réessaiera, et le retrait reste visible dans `scripts/etat-retraits.ts`.
+    */
+    let virements: string[] | null = null;
+    try {
+      const releve = await this.gateway.listConfirmed();
+      virements = releve.filter((l) => l.kind === "PAYOUT").map((l) => l.aggregatorRef);
+    } catch (err) {
+      this.logger.error(`Retraits orphelins non traités — relevé agrégateur illisible : ${(err as Error).message}`);
+      return { examines: orphelins.length, executes: 0, recredites: 0 };
+    }
+
+    const pm02 = await this.params.getInt("PM-02");
+    let executes = 0;
+    let recredites = 0;
+
+    for (const w of orphelins) {
+      const feeXaf = withdrawalFee(w.amountXaf, pm02);
+      const netXaf = w.amountXaf - feeXaf;
+      /*
+        La décision ne se prend pas ici : elle vit dans `m13.policies` avec son pourquoi, et le
+        .spec l'éprouve. Ce service ne fait que l'appliquer.
+      */
+      const decision = decideOrphanWithdrawal(w.aggregatorRef, virements);
+      if (decision === "ATTENDRE") continue;
+      if (decision === "SOLDER") {
+        // Le virement est parti : on ne re-crédite RIEN, on ne fait que constater.
+        await this.prisma.$transaction(async (tx) => {
+          const { count } = await tx.withdrawal.updateMany({
+            where: { id: w.id, status: WithdrawalStatus.PENDING },
+            data: { status: WithdrawalStatus.EXECUTED, executedAt: new Date(), netXaf, feeXaf },
+          });
+          if (count === 0) return; // un autre passage l'a soldé entre-temps
+          await this.audit.emit(tx, {
+            actorType: "system",
+            action: "m13.withdrawal.orphan.executed",
+            resource: `withdrawal:${w.id}`,
+            context: { amountXaf: w.amountXaf, netXaf, raison: "virement confirmé par l'agrégateur" },
+          });
+          await this.payments.notifyFinanceAdmins(tx, "m13.withdrawal.failed", { withdrawalId: w.id });
+        });
+        executes += 1;
+      } else {
+        // Aucun virement chez l'agrégateur : l'argent doit revenir au soignant.
+        await this.failAndRecredit(w, "Interrompu avant l'exécution — montant recrédité", "m16.scheduler");
+        recredites += 1;
+      }
+    }
+
+    this.logger.warn(
+      `Retraits orphelins : ${orphelins.length} examiné(s), ${executes} soldé(s), ${recredites} recrédité(s)`,
+    );
+    return { examines: orphelins.length, executes, recredites };
   }
 
   /** CU-13-04 : échec opérateur → re-crédit automatique INTÉGRAL + alerte — tout dans la même tx. */

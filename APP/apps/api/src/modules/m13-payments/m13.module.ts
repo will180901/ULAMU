@@ -24,7 +24,9 @@ import { ReconciliationService } from "./m13.reconciliation.service";
   controllers: [M13Controller, M13AdminController],
   providers: [PaymentsService, EarningsService, ReconciliationService, ManualRefundsService],
   // M16 cadence la réconciliation quotidienne (EF-13-09) via ReconciliationService.runDaily.
-  exports: [PaymentsService, ReconciliationService],
+  /* EarningsService est exporté depuis le 06/09/2026 (chantier 50) : le balayage horaire de M16
+     rattrape les retraits orphelins, et c'est ici que vit `failAndRecredit`. */
+  exports: [PaymentsService, ReconciliationService, EarningsService],
 })
 export class M13PaymentsModule implements OnModuleInit {
   constructor(

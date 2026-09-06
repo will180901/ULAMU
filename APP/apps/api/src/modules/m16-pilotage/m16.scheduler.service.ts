@@ -17,6 +17,7 @@ import { ReportService } from "../m06-handshake-session/m06.report.service";
 import { SessionService } from "../m06-handshake-session/m06.session.service";
 import { PrescriptionService } from "../m09-prescriptions/m09.prescription.service";
 import { ReconciliationService } from "../m13-payments/m13.reconciliation.service";
+import { EarningsService } from "../m13-payments/m13.earnings.service";
 import { NotificationsService } from "../m14-notifications/m14.service";
 
 /** Récapitulatif d'un tick : pour chaque étape, son résultat ou son erreur. */
@@ -32,6 +33,7 @@ export class SchedulerService {
     private readonly reports: ReportService,
     private readonly prescriptions: PrescriptionService,
     private readonly reconciliation: ReconciliationService,
+    private readonly earnings: EarningsService,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -59,7 +61,15 @@ export class SchedulerService {
 
   // ── Balayages horaires ────────────────────────────────────────────────────────
 
-  /** PM-30 : relances de compte-rendu manquant ; EF-14-08 : reprise des notifications critiques. */
+  /**
+   * PM-30 : relances de compte-rendu manquant ; EF-14-08 : reprise des notifications critiques ;
+   * et depuis le 06/09/2026 le rattrapage des **retraits orphelins** (chantier 50).
+   *
+   * ⚠️ Ce dernier est le seul balayage qui touche à de l'ARGENT DÉJÀ DÉBITÉ. Il est ici et pas dans
+   * le tick d'une minute à dessein : un retrait en cours de confirmation ne doit jamais être
+   * ramassé par erreur, et le balayage ne regarde de toute façon que ceux qui traînent depuis un
+   * quart d'heure.
+   */
   @Cron(CronExpression.EVERY_HOUR)
   async runHourly(): Promise<void> {
     await this.tickHourly();
@@ -69,6 +79,7 @@ export class SchedulerService {
     return this.collect({
       "m06.report.remindMissingReports": () => this.reports.remindMissingReports(),
       "m14.retryFailedCritical": () => this.notifications.retryFailedCritical(),
+      "m13.sweepStuckWithdrawals": () => this.earnings.sweepStuckWithdrawals(),
     });
   }
 
