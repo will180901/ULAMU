@@ -14,7 +14,7 @@
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { AtSign, Camera, KeyRound, Lock, MailCheck, ShieldCheck } from 'lucide-react'
+import { AtSign, Camera, KeyRound, Lock, MailCheck, Phone, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { Input } from '@/components/ui/input'
@@ -115,6 +115,181 @@ function BlocPhoto({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
           </div>
         </div>
       </div>
+      {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+    </Carte>
+  )
+}
+
+// ── Numéro de téléphone ─────────────────────────────────────────────────────
+
+/**
+ * Le numéro de téléphone — chantier 67, 07/09/2026 (EF-01-07, parade T-01).
+ *
+ * ── Pourquoi ce bloc ne pouvait pas rester absent ─────────────────────────────────────────────
+ *
+ * `startPhoneChange` et `confirmPhoneChange` étaient déclarés côté client et **aucun écran ne les
+ * appelait** : le web n'offrait aucun moyen de changer de numéro. On aurait pu croire à un choix —
+ * le patient le fait depuis l'application mobile.
+ *
+ * ⚠️ **Sauf que le retrait d'argent part sur le numéro DU COMPTE** (`m13.earnings.service.ts` :
+ * `phone: actorAccount.phone`). Un soignant qui change de ligne et ne peut pas le mettre à jour
+ * verrait ses gains virés vers un numéro qu'il ne contrôle plus — ou vers la personne à qui
+ * l'opérateur l'a réattribué. Et le soignant, lui, n'a PAS d'application mobile : le web est son
+ * seul écran.
+ *
+ * Ce n'était donc pas un choix, c'était un trou, et il touchait l'argent.
+ *
+ * ── Deux codes, et c'est la protection ────────────────────────────────────────────────────────
+ *
+ * Le serveur exige un code sur l'ANCIEN et sur le NOUVEAU numéro (EF-01-07). Sans preuve sur
+ * l'ancien, une session volée suffirait à détourner la ligne — puis les virements. On le dit avant,
+ * plutôt que de laisser découvrir qu'il faut deux codes une fois le premier reçu.
+ */
+function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeResponse) => void }) {
+  const [etape, setEtape] = useState<'repos' | 'codes'>('repos')
+  const [numero, setNumero] = useState('')
+  const [codeAncien, setCodeAncien] = useState('')
+  const [codeNouveau, setCodeNouveau] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [fait, setFait] = useState(false)
+
+  const demarrer = useMutation({
+    mutationFn: () => api.startPhoneChange({ newPhone: numero.trim() }),
+    onSuccess: () => {
+      setEtape('codes')
+      setErreur(null)
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  const confirmer = useMutation({
+    mutationFn: () =>
+      api.confirmPhoneChange({
+        newPhone: numero.trim(),
+        oldPhoneCode: codeAncien.trim(),
+        newPhoneCode: codeNouveau.trim(),
+      }),
+    onSuccess: async () => {
+      setFait(true)
+      setEtape('repos')
+      setNumero('')
+      setCodeAncien('')
+      setCodeNouveau('')
+      rafraichir(await api.me())
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  return (
+    <Carte icone={Phone} titre="Numéro de téléphone" sousTitre="C'est sur ce numéro que partent vos retraits">
+      <p className="text-[13px] font-medium text-foreground">{me.phone}</p>
+
+      {/*
+        La conséquence, dite ici et pas ailleurs : c'est le seul endroit où l'on change ce numéro, et
+        le seul moment où l'on peut prévenir que l'argent le suit.
+      */}
+      <Avis ton="info">
+        Vos gains sont virés sur ce numéro. S'il change et que vous ne le mettez pas à jour ici, les
+        virements partiront vers une ligne que vous ne contrôlez plus.
+      </Avis>
+
+      {/*
+        La conséquence, dite ici et pas ailleurs : c'est le seul endroit où l'on change ce numéro, et
+        le seul moment où l'on peut prévenir que l'argent le suit.
+      */}
+
+
+      {etape === 'repos' ? (
+        <>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-0 flex-1 basis-64">
+              <Label htmlFor="nouveau-numero" className="mb-1.5 block text-[13px]">
+                Nouveau numéro
+              </Label>
+              <Input
+                id="nouveau-numero"
+                type="tel"
+                autoComplete="tel"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="+242 06 000 00 00"
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                setErreur(null)
+                setFait(false)
+                demarrer.mutate()
+              }}
+              disabled={numero.trim().length < 9 || demarrer.isPending}
+            >
+              {demarrer.isPending ? 'Envoi…' : 'Envoyer les codes'}
+            </Button>
+          </div>
+          <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+            Deux codes seront envoyés : un sur votre numéro actuel, un sur le nouveau. Les deux codes
+            sont exigés — sans preuve sur l'ancien numéro, une session volée suffirait à détourner vos
+            virements.
+          </p>
+          {fait ? <Avis ton="succes">Numéro enregistré.</Avis> : null}
+        </>
+      ) : (
+        <>
+          <Avis ton="info">
+            Deux codes ont été envoyés : un sur {me.phone}, un sur {numero}.
+          </Avis>
+          <div className="flex flex-wrap gap-3">
+            <div className="min-w-0 flex-1 basis-40">
+              <Label htmlFor="code-ancien-tel" className="mb-1.5 block text-[13px]">
+                Code reçu sur l'ancien numéro
+              </Label>
+              <Input
+                id="code-ancien-tel"
+                inputMode="numeric"
+                maxLength={6}
+                value={codeAncien}
+                onChange={(e) => setCodeAncien(e.target.value)}
+              />
+            </div>
+            <div className="min-w-0 flex-1 basis-40">
+              <Label htmlFor="code-nouveau-tel" className="mb-1.5 block text-[13px]">
+                Code reçu sur le nouveau
+              </Label>
+              <Input
+                id="code-nouveau-tel"
+                inputMode="numeric"
+                maxLength={6}
+                value={codeNouveau}
+                onChange={(e) => setCodeNouveau(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => confirmer.mutate()}
+              disabled={codeAncien.trim().length < 6 || codeNouveau.trim().length < 6 || confirmer.isPending}
+            >
+              {confirmer.isPending ? 'Vérification…' : 'Confirmer le changement'}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setEtape('repos')
+                setCodeAncien('')
+                setCodeNouveau('')
+                setErreur(null)
+              }}
+              disabled={confirmer.isPending}
+            >
+              Revenir
+            </Button>
+          </div>
+        </>
+      )}
+
       {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
     </Carte>
   )
@@ -808,6 +983,8 @@ export function SectionSecurite({ me, rafraichir }: { me: MeResponse; rafraichir
   return (
     <div className="flex flex-col gap-4">
       <BlocEmail me={me} rafraichir={rafraichir} />
+
+      <BlocTelephone me={me} rafraichir={rafraichir} />
       <BlocMotDePasse />
       <BlocDeuxFacteurs me={me} rafraichir={rafraichir} />
       <BlocDeuxFacteursEmail me={me} rafraichir={rafraichir} />

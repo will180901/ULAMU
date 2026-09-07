@@ -16,13 +16,13 @@
  *     Un administrateur qui croirait le contraire laisserait la personne sans rien.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ComptesPage } from '@/modules/admin/pages/ComptesPage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type AdminAccount, type MeResponse, type SupportProcedure } from '@/lib/api'
+import { api, type AdminAccount, type MeResponse, type Sanction, type SupportProcedure } from '@/lib/api'
 
 const ADMIN: MeResponse = {
   accountId: 'adm-1',
@@ -68,9 +68,17 @@ const procedure = (over: Partial<SupportProcedure> = {}): SupportProcedure => ({
   ...over,
 })
 
-function monter(comptes: AdminAccount[] = [], procedures: SupportProcedure[] = []) {
+function monter(
+  comptes: AdminAccount[] = [],
+  procedures: SupportProcedure[] = [],
+  /* La file des bannissements est lue au montage depuis le chantier 67 : sans doublure, l'écran
+     partirait vers une API que le harnais a coupée, et l'échec accuserait un bouton correct. */
+  options: { sanctions?: Sanction[]; sanctionsEnPanne?: boolean } = {},
+) {
   vi.spyOn(api, 'searchAccounts').mockResolvedValue(comptes)
   vi.spyOn(api, 'supportProcedures').mockResolvedValue(procedures)
+  if (options.sanctionsEnPanne) vi.spyOn(api, 'adminSanctions').mockRejectedValue(new Error('réseau'))
+  else vi.spyOn(api, 'adminSanctions').mockResolvedValue(options.sanctions ?? [])
   // Ajoutée le 01/09 : sans ce double, l'écran part vers une API que le harnais a coupée, et
   // l'échec accuse un bouton parfaitement correct.
   if (!vi.isMockFunction(api.adminSupportRequests)) vi.spyOn(api, 'adminSupportRequests').mockResolvedValue([])
@@ -369,5 +377,142 @@ describe('E7 — les procédures support', () => {
     expect(await screen.findByText('Numéro perdu, identité vérifiée au guichet.')).toBeInTheDocument()
     const bloc = screen.getByRole('region', { name: 'Procédures support' })
     expect(within(bloc).getByText('Identité vérifiée par pièce justificative')).toBeInTheDocument()
+  })
+})
+
+describe('E-comptes — les seconds temps qui n’existaient pas (chantier 67)', () => {
+  /*
+    ⚠️ Deux gestes en DEUX temps dont le second n'avait aucun bouton :
+
+      • « Bannir » dépose une DEMANDE qu'un autre administrateur doit approuver — et aucun écran ne
+        permettait de voir ces demandes, ni de les trancher. Elles restaient dans un état que rien
+        ne pouvait résoudre, et le compte visé restait actif ;
+      • une procédure support s'ouvrait, et ne se fermait jamais.
+
+    Un premier temps sans second temps ne laisse pas les choses en l'état : il fabrique un état que
+    rien ne résout. Trouvés en balayant les capacités du client web qu'aucun écran n'appelle.
+  */
+  const DEMANDE: Sanction = {
+    sanctionId: 'sanc-1',
+    accountId: 'acc-9',
+    accountName: 'Jean Loemba',
+    accountStatus: 'ACTIVE',
+    reason: 'Propos menaçants répétés après avertissement.',
+    status: 'PENDING_SECOND_APPROVAL',
+    requestedBy: 'autre-admin',
+    requestedByName: 'Sylvie Ngouabi',
+    approvedBy: null,
+    createdAt: '2026-09-05T10:00:00.000Z',
+    decidedAt: null,
+  }
+
+  it('montre les demandes de bannissement en attente, avec les DEUX noms', async () => {
+    await monter([], [], { sanctions: [DEMANDE] })
+
+    expect(await screen.findByText('Jean Loemba')).toBeInTheDocument()
+    // Sans le demandeur, on approuverait une exclusion définitive sans savoir qui l'a réclamée.
+    expect(screen.getByText(/Demandé par Sylvie Ngouabi/)).toBeInTheDocument()
+    expect(screen.getByText(/Propos menaçants/)).toBeInTheDocument()
+  })
+
+  it('approuve une demande déposée par quelqu’un d’autre', async () => {
+    const utilisateur = userEvent.setup()
+    const approuver = vi.spyOn(api, 'approveBan').mockResolvedValue(undefined)
+    await monter([], [], { sanctions: [DEMANDE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Approuver le bannissement/i }))
+
+    expect(approuver).toHaveBeenCalledWith('sanc-1')
+  })
+
+  /*
+    La règle du serveur, dite AVANT le clic : l'approbateur doit être un administrateur DIFFÉRENT du
+    demandeur. Le serveur refuse et trace la tentative comme un événement de sécurité ; laisser le
+    bouton actif ferait découvrir la règle par un refus, sur un geste qu'on croyait acquis.
+  */
+  it('interdit d’approuver SA PROPRE demande, et dit pourquoi', async () => {
+    await monter([], [], { sanctions: [{ ...DEMANDE, requestedBy: ADMIN.accountId, requestedByName: 'Moi' }] })
+
+    expect(await screen.findByText(/C'est vous qui avez demandé ce bannissement/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Approuver le bannissement/i })).toBeDisabled()
+  })
+
+  /*
+    Le rejet, lui, reste ouvert au demandeur : se raviser sur sa propre demande n'est pas un
+    contournement du double contrôle, c'est son contraire.
+  */
+  it('laisse le demandeur REJETER sa propre demande', async () => {
+    const utilisateur = userEvent.setup()
+    const rejeter = vi.spyOn(api, 'rejectBan').mockResolvedValue(undefined)
+    await monter([], [], { sanctions: [{ ...DEMANDE, requestedBy: ADMIN.accountId, requestedByName: 'Moi' }] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /^Rejeter$/i }))
+
+    expect(rejeter).toHaveBeenCalledWith('sanc-1')
+  })
+
+  it('dit clairement quand aucune demande n’attend', async () => {
+    await monter([], [], { sanctions: [] })
+    expect(await screen.findByText(/Aucune demande de bannissement en attente/)).toBeInTheDocument()
+  })
+
+  /*
+    Un cadre vide se prend pour « rien à faire ». Sur une exclusion définitive en attente, c'est le
+    pire malentendu possible.
+  */
+  it('distingue « rien en attente » de « je n’ai pas pu lire »', async () => {
+    await monter([], [], { sanctionsEnPanne: true })
+
+    expect(await screen.findByText(/La file n'a pas pu être lue/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Aucune demande de bannissement en attente/)
+  })
+
+  it('clôt une procédure support en enregistrant ce qui a été fait', async () => {
+    const utilisateur = userEvent.setup()
+    const clore = vi.spyOn(api, 'completeSupportProcedure').mockResolvedValue({ id: 'proc-1', status: 'COMPLETED' })
+    await monter([], [procedure()])
+
+    await utilisateur.click(await screen.findByRole('button', { name: /^Clore$/i }))
+    fireEvent.change(screen.getByLabelText(/Ce que vous avez fait/i), {
+      target: { value: 'Numéro remplacé après vérification.' },
+    })
+    await utilisateur.click(screen.getByRole('button', { name: /Clore la procédure/i }))
+
+    expect(clore).toHaveBeenCalledWith('proc-1', [{ label: 'Numéro remplacé après vérification.' }])
+  })
+
+  it('annule une procédure en enregistrant le motif', async () => {
+    const utilisateur = userEvent.setup()
+    const annuler = vi.spyOn(api, 'cancelSupportProcedure').mockResolvedValue({ id: 'proc-1', status: 'CANCELLED' })
+    await monter([], [procedure()])
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Annuler la procédure/i }))
+    fireEvent.change(screen.getByLabelText(/Pourquoi vous l'annulez/i), {
+      target: { value: 'Le demandeur a retrouvé son accès.' },
+    })
+    await utilisateur.click(screen.getByRole('button', { name: /Confirmer l’annulation/i }))
+
+    expect(annuler).toHaveBeenCalledWith('proc-1', 'Le demandeur a retrouvé son accès.')
+  })
+
+  /*
+    Le serveur horodate et signe chaque étape : clore sans dire ce qu'on a fait produirait une trace
+    vide — c'est-à-dire pas une trace.
+  */
+  it('refuse de clore sans écrire ce qui a été fait', async () => {
+    const utilisateur = userEvent.setup()
+    await monter([], [procedure()])
+
+    await utilisateur.click(await screen.findByRole('button', { name: /^Clore$/i }))
+
+    expect(screen.getByRole('button', { name: /Clore la procédure/i })).toBeDisabled()
+    expect(screen.getByText(/horodaté, signé de votre nom/)).toBeInTheDocument()
+  })
+
+  it('n’offre ces gestes que sur une procédure OUVERTE', async () => {
+    await monter([], [procedure({ status: 'COMPLETED' })])
+    await screen.findByText(/Procédures support/)
+
+    expect(screen.queryByRole('button', { name: /^Clore$/i })).not.toBeInTheDocument()
   })
 })

@@ -650,6 +650,53 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **64** | **De l'argent immobilisé que personne ne regardait** — 07/09, première mesure de bout en bout du parcours de l'argent. La chaîne elle-même **tient** : aucun paiement sans confirmation, aucun solde faux, aucun retrait orphelin (sonde `parcours-argent.ts`, lecture seule). Mais une session du 28/08 y est apparue : **5 000 XAF payés, consultation tenue, aucun compte-rendu**. À l'échéance PM-30 le balayage a fait exactement son travail — professionnel ET super-administrateurs notifiés, en application et en push, trace au journal. ⚠️ Puis **rien pendant neuf jours** : l'argent n'est ni chez le soignant, ni revenu au patient. Le mécanisme n'a pas échoué, c'est le SUIVI qui n'existait pas — une notification est un ÉVÉNEMENT, l'argent immobilisé est un ÉTAT. Livré : `GET /v1/admin/finance/frozen-earnings` et l'onglet « Argent immobilisé » de l'écran Finance, qui montre le total, l'ancienneté, les deux parties, et **dit qu'aucune règle n'existe encore pour trancher**. **api 629 ✓ (619 + 10) · web 677 ✓ (671 + 6) · mobile 63 ✓ · lint 0 · 166 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **65** | **Le seul soignant de l'annuaire était injoignable, et l'écran disait « Sur devis »** — 07/09, mesure de bout en bout du côté OFFRE (sonde `vie-du-soignant.ts`). L'entonnoir en production : `inscrits 1 → dossiers 1 → vérifiés 1 → visibles 1 → **avec offre 0** → ont consulté 1 → payés 0`. ⚠️ Le seul soignant a ses **deux offres désactivées** : la fiche affichait « Sur devis » — un mécanisme qui **n'existe pas** dans ULAMU — et proposait « Initier la consultation », bouton qui ne peut pas aboutir. Trois corrections : la fiche dit la vérité et n'offre plus l'impasse ; **la cloche d'alerte ne sonne plus que si le soignant est RÉSERVABLE** (sa notification promet « vous pouvez initier une consultation ») ; et « Ma vitrine » annonce la CONSÉQUENCE — « aucun patient ne peut vous solliciter » — au lieu d'un « 0 offre active » qui se lit comme un détail. Trouvé au passage et corrigé : le mobile prenait **n'importe quelle offre** à défaut de STANDARD, donc vendait une consultation au tarif de SUIVI. **api 634 ✓ (629 + 5) · mobile 67 ✓ (63 + 4) · web 677 ✓ · lint 0 · 166 routes · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **66** | **Une offre désactivée ne pouvait plus jamais être rallumée** — 07/09, **trouvé par le porteur** sur son propre écran. Le serveur sait tout faire (`PATCH /v1/offers/:id` modifie ET réactive) et le client web déclarait même `api.updateOffer` : **aucun écran ne l'appelait**. La ligne n'offrait qu'un bouton, et seulement sur une offre active — la désactiver. ⚠️ Conséquence mesurée : le seul soignant de la plateforme avait ses deux offres éteintes et **aucun moyen de revenir en arrière**, sinon en créer d'autres jusqu'au plafond PM-25. Livré : modifier en ligne (le net se recalcule sous les doigts, car c'est là que le prix se décide) et réactiver. **web 684 ✓ (677 + 7) · lint 0 · build ✓ · 3 fautes injectées, 3 détectées.** Balayage complémentaire : sur **123 capacités déclarées par le client web, 6 n'ont aucun bouton** — dont `approveBan`/`rejectBan` et `completeSupportProcedure`/`cancelSupportProcedure`, seconds temps de gestes qu'on peut déclencher sans jamais les conclure. | ⏸ en attente | ⏸ |
+| **67** | **Les seconds temps qui n'existaient pas** — 07/09, étape 2 du plan de refonte. Trois gestes se déclenchaient sans jamais pouvoir se conclure. ⚠️ **Bannissement** : « Bannir » dépose une DEMANDE qu'un second admin doit approuver — et **aucune route ne permettait de découvrir ces demandes**, ni de les trancher. Sur l'acte le plus lourd de la plateforme, la demande restait dans un état que rien ne résolvait et le compte visé restait actif. Livré : `GET /v1/admin/sanctions` + la file dans E7, qui dit AVANT le clic qu'on n'approuve pas la sienne. ⚠️ **Procédures support** : on pouvait en ouvrir, jamais les clore — clore/annuler ajoutés, avec le texte qui devient une trace horodatée et signée. ⚠️ **Numéro de téléphone sur le web** : absent, et ce n'était pas un choix — **le retrait d'argent part sur le numéro DU COMPTE**, et le soignant n'a pas d'application mobile. Sans ce bloc, un changement de ligne envoyait les gains vers un numéro perdu. **api 641 ✓ (634 + 7) · web 699 ✓ (684 + 15) · lint 0 · 167 routes · builds ✓ · 8 fautes injectées, 8 détectées.** Le balayage retombe de **11 à 6 capacités sans bouton**, dont 3 faux positifs vérifiés. | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 67 (les seconds temps) a appris
+
+*07/09/2026 — étape 2 du plan : fermer la famille de défauts que le porteur avait ouverte.*
+
+#### Un premier temps sans second temps fabrique un état que rien ne résout
+
+Trois gestes de la plateforme se déclenchaient sans pouvoir se conclure :
+
+| Geste | Premier temps | Second temps |
+|---|---|---|
+| Bannir un compte | ✅ demander | ❌ approuver / rejeter |
+| Ouvrir une procédure support | ✅ ouvrir | ❌ clore / annuler |
+| Changer de numéro (web) | ❌ rien | ❌ rien |
+
+⚠️ Ce n'est pas « il manque une fonctionnalité ». **La double validation, qui est une protection, se
+transformait en blocage** : une demande de bannissement déposée ne pouvait ni aboutir ni être
+retirée, et le compte visé restait actif indéfiniment. Une protection qu'on ne peut pas lever n'est
+plus une protection, c'est une impasse.
+
+#### Le trou du téléphone touchait l'argent, et on aurait pu le croire volontaire
+
+L'absence de changement de numéro sur le web se défendait : le patient le fait depuis l'application
+mobile. Il a fallu suivre le fil pour voir que non — **`m13.earnings.service.ts` vire les retraits
+sur `actorAccount.phone`**, le numéro du COMPTE. Et le soignant, lui, n'a pas d'application mobile :
+le web est son seul écran.
+
+Un soignant changeant de ligne verrait donc ses gains partir vers un numéro qu'il ne contrôle plus —
+ou vers la personne à qui l'opérateur l'a réattribué.
+
+*Une absence qui se justifie par un raisonnement plausible mérite d'être vérifiée quand même.
+Celle-ci tenait, jusqu'à ce qu'on regarde où part l'argent.*
+
+#### Le balayage remplace la chance
+
+Onze capacités sans bouton au départ, six à l'arrivée — dont trois faux positifs vérifiés à la main
+(`logout` passe par le magasin de session, `handshake` et `searchDirectory` appartiennent à l'app
+patient). Il reste `deleteNotifications`, mineur.
+
+Ce balayage prend dix secondes. Les six défauts qu'il révèle avaient été trouvés un par un, au
+hasard des chantiers, sur une semaine entière — et le dernier l'a été par le porteur lui-même en
+regardant son écran.
+
+*Un outil qui existe pour un client et pas pour l'autre ne coûte rien à pointer ailleurs. Ne pas
+l'avoir fait a coûté une semaine de découvertes fortuites.*
+
 
 ### Ce que le chantier 66 (le bouton qui n'existait pas) a appris
 

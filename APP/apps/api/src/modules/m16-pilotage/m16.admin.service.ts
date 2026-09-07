@@ -11,7 +11,7 @@
  * - D-046 : transitions par updateMany CONDITIONNEL + test du count (anti-TOCTOU).
  */
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma, SanctionStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { OutboxService } from "../../common/outbox.service";
 import { PrismaService } from "../../common/prisma.service";
@@ -25,6 +25,26 @@ export interface AccountSearchHit {
   type: string;
   status: string;
   displayName: string;
+}
+
+/**
+ * Une demande de bannissement telle que l'administration doit la voir pour la trancher.
+ *
+ * ⚠️ Le NOM du compte visé et celui du demandeur, pas seulement leurs identifiants : approuver une
+ * exclusion DÉFINITIVE en ne lisant qu'un uuid tronqué n'est pas une décision, c'est un clic.
+ */
+export interface SanctionListItem {
+  sanctionId: string;
+  accountId: string;
+  accountName: string | null;
+  accountStatus: string | null;
+  reason: string;
+  status: string;
+  requestedBy: string;
+  requestedByName: string | null;
+  approvedBy: string | null;
+  createdAt: string;
+  decidedAt: string | null;
 }
 
 @Injectable()
@@ -208,6 +228,69 @@ export class AdminService {
   // ── EF-16-07 : bannissement définitif (double validation) ────────────────────
 
   /** Demande de bannissement : SanctionCompte(BAN, PENDING_SECOND_APPROVAL) + alerte aux Super Admin. */
+  /**
+   * Les demandes de bannissement, et d'abord celles qui attendent un second accord.
+   *
+   * ── Le défaut (chantier 67, 07/09/2026) ────────────────────────────────────────────────────────
+   *
+   * `approveBan` et `rejectBan` agissent sur un **identifiant de sanction** — et **aucune route ne
+   * permettait de le découvrir**. La double validation EF-16-07 était donc inapplicable en
+   * pratique : le second administrateur ne pouvait pas savoir qu'on l'attendait, ni sur quoi.
+   *
+   * ⚠️ C'est exactement le trou qu'avait la file des remboursements manuels avant qu'on l'ouvre, et
+   * il porte ici sur l'acte le plus lourd de la plateforme : **exclure quelqu'un définitivement**.
+   * Une demande déposée restait dans un état que rien ne pouvait résoudre — ni approuver, ni
+   * rejeter, et le compte visé restait actif indéfiniment.
+   *
+   * Trouvé en balayant les capacités du client web qu'aucun écran n'appelle — le même outil qui
+   * avait servi au mobile au chantier 58, et qu'on n'avait jamais pointé sur le web.
+   *
+   * ── Ce que la file porte ──────────────────────────────────────────────────────────────────────
+   *
+   * Le NOM du compte visé et celui du demandeur : sans eux, on approuverait une exclusion définitive
+   * en ne lisant que des identifiants. Et `requestedBy`, parce que la règle de double validation
+   * l'exige — l'approbateur doit être un autre administrateur, et l'écran doit pouvoir le dire
+   * AVANT le clic plutôt que de laisser le serveur refuser après.
+   */
+  async listSanctions(status?: SanctionStatus): Promise<SanctionListItem[]> {
+    const lignes = await this.prisma.accountSanction.findMany({
+      where: { type: "BAN", ...(status ? { status } : {}) },
+      // Les demandes en attente d'abord, les plus anciennes en tête : quelqu'un attend une décision,
+      // et un compte reste actif pendant ce temps.
+      orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+      take: 200,
+    });
+    if (lignes.length === 0) return [];
+
+    const ids = [...new Set(lignes.flatMap((s) => [s.accountId, s.requestedBy, s.approvedBy].filter(Boolean) as string[]))];
+    const comptes = await this.prisma.account.findMany({
+      where: { id: { in: ids } },
+      include: { patientProfile: true, professionalProfile: true, facilityMemberProfile: true },
+    });
+    const nomDe = new Map(
+      comptes.map((c) => {
+        const p = c.patientProfile ?? c.professionalProfile ?? c.facilityMemberProfile;
+        return [c.id, p ? `${p.firstName} ${p.lastName}`.trim() : "(compte sans profil)"];
+      }),
+    );
+    const statutDe = new Map(comptes.map((c) => [c.id, c.status]));
+
+    return lignes.map((s) => ({
+      sanctionId: s.id,
+      accountId: s.accountId,
+      accountName: nomDe.get(s.accountId) ?? null,
+      /** L'état ACTUEL du compte visé : une demande peut viser un compte déjà suspendu. */
+      accountStatus: statutDe.get(s.accountId) ?? null,
+      reason: s.reason,
+      status: s.status,
+      requestedBy: s.requestedBy,
+      requestedByName: nomDe.get(s.requestedBy) ?? null,
+      approvedBy: s.approvedBy,
+      createdAt: s.createdAt.toISOString(),
+      decidedAt: s.decidedAt ? s.decidedAt.toISOString() : null,
+    }));
+  }
+
   async requestBan(adminId: string, accountId: string, reason: string): Promise<{ sanctionId: string }> {
     const account = await this.prisma.account.findUnique({ where: { id: accountId } });
     if (!account) throw new NotFoundException("Compte introuvable");

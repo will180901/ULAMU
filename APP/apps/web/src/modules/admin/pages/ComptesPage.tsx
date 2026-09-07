@@ -45,8 +45,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Ban, ClipboardCheck, LifeBuoy, Plus, Search, ShieldOff, UserCheck, Users } from 'lucide-react'
+import { AlertTriangle, Ban, ClipboardCheck, Gavel, LifeBuoy, Plus, Search, ShieldOff, UserCheck, Users } from 'lucide-react'
+import { useSessionStore } from '@/state/session.store'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -368,6 +370,257 @@ function NouvelleProcedure({ onFini }: { onFini: () => void }) {
   )
 }
 
+/**
+ * Clore ou annuler une procédure support — chantier 67, 07/09/2026 (EF-16-03, CU-16-04).
+ *
+ * ── Ce qui manquait ────────────────────────────────────────────────────────────────────────────
+ *
+ * On pouvait OUVRIR une procédure, et jamais la clore. `completeSupportProcedure` et
+ * `cancelSupportProcedure` étaient déclarés côté client — **aucun écran ne les appelait**. Une
+ * procédure ouverte restait ouverte pour toujours, et l'onglet « Ouvertes » accumulait des dossiers
+ * dont personne ne pouvait dire s'ils étaient traités.
+ *
+ * ⚠️ C'est le **second temps** d'un geste en deux temps, exactement comme l'approbation d'un
+ * bannissement. Un premier temps sans second temps ne laisse pas les choses en l'état : il fabrique
+ * un état que rien ne résout.
+ *
+ * ── Pourquoi clore demande d'écrire ce qui a été fait ─────────────────────────────────────────
+ *
+ * Le serveur horodate et signe chaque étape ajoutée (RM-16-01 : M16 guide et journalise, il n'agit
+ * pas). Clore sans dire ce qu'on a fait produirait une trace vide — c'est-à-dire pas une trace.
+ */
+function CloreProcedure({ procedure, onFini }: { procedure: SupportProcedure; onFini: () => void }) {
+  const [mode, setMode] = useState<'aucun' | 'clore' | 'annuler'>('aucun')
+  const [texte, setTexte] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const agir = useMutation({
+    mutationFn: () =>
+      mode === 'clore'
+        ? api.completeSupportProcedure(procedure.id, [{ label: texte.trim() }])
+        : api.cancelSupportProcedure(procedure.id, texte.trim()),
+    onSuccess: () => {
+      setMode('aucun')
+      setTexte('')
+      setErreur(null)
+      onFini()
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  // Le serveur exige un contenu ; l'annoncer ici évite un aller-retour pour l'apprendre.
+  const assezEcrit = texte.trim().length >= 3
+
+  if (mode === 'aucun') {
+    return (
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button type="button" size="sm" onClick={() => setMode('clore')}>
+          Clore
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setMode('annuler')}>
+          Annuler la procédure
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2 rounded-md border border-dashed border-border p-2.5">
+      <Label htmlFor={`cloture-${procedure.id}`} className="text-[12px]">
+        {mode === 'clore' ? 'Ce que vous avez fait' : "Pourquoi vous l'annulez"}
+      </Label>
+      <Textarea
+        id={`cloture-${procedure.id}`}
+        rows={2}
+        maxLength={500}
+        value={texte}
+        onChange={(e) => setTexte(e.target.value)}
+        placeholder={
+          mode === 'clore'
+            ? 'Numéro remplacé après vérification de la pièce d’identité.'
+            : 'Le demandeur a retrouvé son accès entre-temps.'
+        }
+      />
+      {/*
+        Le serveur HORODATE et SIGNE chaque étape ajoutée : ce texte devient une trace définitive,
+        pas une note de travail. Le dire évite d'y écrire au brouillon.
+      */}
+      <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        Ce texte est horodaté, signé de votre nom et conservé dans la procédure. Il ne se modifie pas
+        après coup.
+      </p>
+      {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === 'annuler' ? 'destructive' : 'default'}
+          disabled={!assezEcrit || agir.isPending}
+          onClick={() => agir.mutate()}
+        >
+          {agir.isPending ? <Spinner className="size-4" /> : null}
+          {mode === 'clore' ? 'Clore la procédure' : 'Confirmer l’annulation'}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={agir.isPending}
+          onClick={() => {
+            setMode('aucun')
+            setTexte('')
+            setErreur(null)
+          }}
+        >
+          Revenir
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * La file des demandes de bannissement — chantier 67, 07/09/2026 (EF-16-07).
+ *
+ * ── Ce que cette vue répare ────────────────────────────────────────────────────────────────────
+ *
+ * « Bannir » n'est pas un bouton qui bannit : c'est une DEMANDE, qu'un second administrateur doit
+ * approuver. L'écran le disait déjà, honnêtement — et **aucun écran ne permettait de la voir, ni de
+ * l'approuver, ni de la rejeter**. `approveBan` et `rejectBan` n'existaient que par identifiant de
+ * sanction, que rien ne permettait de découvrir.
+ *
+ * ⚠️ Sur l'acte le plus lourd de la plateforme, une demande restait donc dans un état que **rien ne
+ * pouvait résoudre** : ni exécutée, ni rejetée, et le compte visé restait actif indéfiniment. La
+ * double validation, qui est une protection, se transformait en blocage.
+ *
+ * C'est exactement le trou qu'avait la file des remboursements manuels avant qu'on l'ouvre — la
+ * sixième occurrence en une semaine du même motif : *une capacité sans chemin pour l'atteindre.*
+ *
+ * ── Ce que l'écran dit avant le clic ──────────────────────────────────────────────────────────
+ *
+ * Que vous ne pouvez pas approuver votre propre demande. Le serveur le refuse (et trace la
+ * tentative comme un événement de sécurité) ; le dire avant évite de découvrir la règle par un
+ * refus, sur un geste qu'on croyait acquis.
+ */
+function FileBannissements({ monId }: { monId: string | null }) {
+  const qc = useQueryClient()
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const attente = useQuery({
+    queryKey: ['admin-sanctions', 'PENDING_SECOND_APPROVAL'],
+    queryFn: () => api.adminSanctions('PENDING_SECOND_APPROVAL'),
+    retry: false,
+  })
+
+  const trancher = useMutation({
+    mutationFn: (v: { id: string; approuver: boolean }) =>
+      v.approuver ? api.approveBan(v.id) : api.rejectBan(v.id),
+    onSuccess: () => {
+      setErreur(null)
+      void qc.invalidateQueries({ queryKey: ['admin-sanctions'] })
+      void qc.invalidateQueries({ queryKey: ['admin-accounts'] })
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  const lignes = attente.data ?? []
+
+  return (
+    <Carte
+      icone={Gavel}
+      titre="Bannissements à trancher"
+      sousTitre="Demandés par un administrateur, en attente d'un second — les plus anciens d'abord"
+    >
+      {attente.isPending ? (
+        <SqueletteCartes nombre={2} hauteur={96} libelle="Lecture de la file…" />
+      ) : attente.isError ? (
+        <div className="flex flex-col gap-2 py-2">
+          <Avis ton="erreur">
+            La file n'a pas pu être lue. Aucune demande n'a été tranchée, et aucun compte n'a bougé :
+            cet écran ne fait que lire. ({messageErreur(attente.error)})
+          </Avis>
+          <div>
+            <Button type="button" onClick={() => attente.refetch()}>
+              Réessayer
+            </Button>
+          </div>
+        </div>
+      ) : lignes.length === 0 ? (
+        <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
+          Aucune demande de bannissement en attente. Celles qui sont déposées apparaissent ici jusqu'à
+          ce qu'un second administrateur les tranche.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {lignes.map((s) => {
+            // La règle du serveur, dite AVANT le clic : l'approbateur doit être quelqu'un d'autre.
+            const maDemande = monId !== null && s.requestedBy === monId
+            return (
+              <li key={s.sanctionId} className="rounded-lg border border-border bg-card p-3">
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="min-w-0 flex-1 text-[13px] font-medium text-foreground">
+                    {s.accountName ?? '(compte sans profil)'}
+                  </span>
+                  {s.accountStatus && s.accountStatus !== 'ACTIVE' ? (
+                    <Pilule ton="alerte">compte {s.accountStatus}</Pilule>
+                  ) : (
+                    <Pilule ton="neutre">compte encore actif</Pilule>
+                  )}
+                </p>
+                <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
+                  Demandé par {s.requestedByName ?? '(inconnu)'} le {dateFr(s.createdAt)}
+                </p>
+                <p className="mt-1.5 text-[12px] leading-[1.55] whitespace-pre-wrap text-[var(--texte-secondaire)]">
+                  {s.reason}
+                </p>
+
+                {maDemande ? (
+                  <Avis ton="info">
+                    C'est vous qui avez demandé ce bannissement. Un <strong>autre</strong> administrateur
+                    doit l'approuver — c'est ce qui rend le double contrôle réel.
+                  </Avis>
+                ) : null}
+
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={maDemande || trancher.isPending}
+                    onClick={() => trancher.mutate({ id: s.sanctionId, approuver: true })}
+                  >
+                    Approuver le bannissement
+                  </Button>
+                  {/*
+                    Le rejet, lui, est ouvert au demandeur : se raviser sur sa propre demande n'est
+                    pas un contournement du double contrôle, c'est son contraire.
+                  */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={trancher.isPending}
+                    onClick={() => trancher.mutate({ id: s.sanctionId, approuver: false })}
+                  >
+                    Rejeter
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+
+      <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
+        Un bannissement est <strong className="text-foreground">définitif</strong> : le compte ne revient
+        pas. Une suspension, elle, se lève.
+      </p>
+    </Carte>
+  )
+}
+
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 /**
@@ -550,6 +803,8 @@ export function ComptesPage() {
   const [recherche, setRecherche] = useState(termeInitial)
   const [cible, setCible] = useState<{ compte: AdminAccount; action: 'suspend' | 'reactivate' | 'ban' } | null>(null)
   const [ongletProc, setOngletProc] = useState<SupportProcedure['status']>('OPEN')
+  /* La double validation d'un bannissement exige de savoir QUI regarde : on n'approuve pas la sienne. */
+  const monId = useSessionStore((st) => st.me?.accountId ?? null)
   const qc = useQueryClient()
 
   const comptes = useQuery({
@@ -746,6 +1001,17 @@ export function ComptesPage() {
         </Carte>
       </div>
 
+      {/*
+        ── La file des bannissements (chantier 67, 07/09/2026) ────────────────────────────────
+
+        « Bannir » n'est pas un bouton qui bannit : c'est une DEMANDE. Cet écran le disait déjà — et
+        aucun écran ne permettait de VOIR ces demandes, ni de les trancher. Elles restaient dans un
+        état que rien ne pouvait résoudre, et le compte visé restait actif.
+      */}
+      <div className="mt-4">
+        <FileBannissements monId={monId} />
+      </div>
+
       <div className="mt-4">
         <DemandesDeSupport />
       </div>
@@ -808,6 +1074,18 @@ export function ComptesPage() {
                             </li>
                           ))}
                         </ul>
+                      ) : null}
+
+                      {/*
+                        Le SECOND temps, qui n'existait pas : on pouvait ouvrir une procédure et
+                        jamais la clore. L'onglet « Ouvertes » accumulait des dossiers dont personne
+                        ne pouvait dire s'ils étaient traités.
+                      */}
+                      {p.status === 'OPEN' ? (
+                        <CloreProcedure
+                          procedure={p}
+                          onFini={() => void qc.invalidateQueries({ queryKey: ['support-procedures'] })}
+                        />
                       ) : null}
                     </li>
                   )

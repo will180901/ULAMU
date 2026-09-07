@@ -1111,6 +1111,27 @@ export interface GainGele {
   refundRequestStatus: string | null
 }
 
+/**
+ * Une demande de bannissement, telle qu'il faut la voir pour la trancher (chantier 67).
+ *
+ * ⚠️ Le NOM du compte visé et celui du demandeur, pas seulement des identifiants : approuver une
+ * exclusion DÉFINITIVE en ne lisant qu'un uuid tronqué n'est pas une décision, c'est un clic.
+ */
+export interface Sanction {
+  sanctionId: string
+  accountId: string
+  accountName: string | null
+  accountStatus: string | null
+  reason: string
+  status: string
+  /** Le demandeur : la double validation exige que l'approbateur soit quelqu'un d'autre. */
+  requestedBy: string
+  requestedByName: string | null
+  approvedBy: string | null
+  createdAt: string
+  decidedAt: string | null
+}
+
 /** La même, vue de l'administration : sans le nom ni le numéro, on ne peut pas traiter. */
 export interface AdminSupportRequest extends SupportRequest {
   requesterId: string
@@ -1929,6 +1950,16 @@ export const api = {
    */
   requestBan: (id: string, reason: string) =>
     request<{ sanctionId: string }>('POST', `/v1/admin/accounts/${id}/ban`, { reason }, true),
+  /**
+   * La file des demandes de bannissement (chantier 67, 07/09/2026).
+   *
+   * ⚠️ Cette route manquait, exactement comme celle des remboursements avant elle : `approveBan` et
+   * `rejectBan` n'existaient que par identifiant, et **rien ne permettait de découvrir les demandes
+   * en attente**. La double validation était donc inapplicable — le second administrateur ne
+   * pouvait pas savoir qu'on l'attendait, sur l'acte le plus lourd de la plateforme.
+   */
+  adminSanctions: (status?: string) =>
+    request<Sanction[]>('GET', `/v1/admin/sanctions${status ? `?status=${status}` : ''}`, undefined, true),
   approveBan: (sanctionId: string) => request<void>('POST', `/v1/admin/sanctions/${sanctionId}/approve`, undefined, true),
   rejectBan: (sanctionId: string) => request<void>('POST', `/v1/admin/sanctions/${sanctionId}/reject`, undefined, true),
 

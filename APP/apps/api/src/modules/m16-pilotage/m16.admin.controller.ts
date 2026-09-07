@@ -70,6 +70,28 @@ export class M16AdminController {
     return this.admin.requestBan(actor.accountId, id, dto.reason);
   }
 
+  /**
+   * La file des demandes de bannissement (chantier 67, 07/09/2026).
+   *
+   * ⚠️ **Cette route manquait**, exactement comme celle des remboursements manuels avant elle :
+   * `approve` et `reject` n'existaient que par identifiant, et **rien ne permettait de découvrir
+   * les demandes en attente**. La double validation EF-16-07 était donc inapplicable — le second
+   * administrateur ne pouvait pas savoir qu'on l'attendait.
+   *
+   * Sur l'acte le plus lourd de la plateforme — exclure quelqu'un définitivement — une demande
+   * restait dans un état que rien ne pouvait résoudre, et le compte visé restait actif.
+   *
+   * `status` est optionnel : sans filtre on rend l'historique récent, ce qui permet de vérifier une
+   * décision passée sans ouvrir la base.
+   */
+  @AdminOnly(AdminRole.ADMIN_VERIFICATION, AdminRole.ADMIN_MAP)
+  @Get("sanctions")
+  listSanctions(@Query("status") status?: string) {
+    const connus = ["PENDING_SECOND_APPROVAL", "EXECUTED", "REJECTED"] as const;
+    const filtre = connus.find((x) => x === status);
+    return this.admin.listSanctions(filtre as never);
+  }
+
   /** EF-16-07 : seconde approbation par un admin DISTINCT du demandeur. */
   @AdminOnly(AdminRole.ADMIN_VERIFICATION, AdminRole.ADMIN_MAP)
   @Post("sanctions/:id/approve")

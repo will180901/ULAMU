@@ -18,13 +18,13 @@
  *   GET /v1/notifications/me/preferences    → { preferences: [...] }
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type MeResponse } from '@/lib/api'
+import { api, ApiError, type MeResponse } from '@/lib/api'
 import { usePreferencesStore } from '@/state/preferences.store'
 import { useThemeStore, watchSystemTheme } from '@/state/theme.store'
 import { readFileSync } from 'node:fs'
@@ -635,3 +635,86 @@ describe('B3 — la 2FA par email est enfin réglable', () => {
   })
 })
 
+describe('B3 — le numéro de téléphone (chantier 67)', () => {
+  /*
+    ⚠️ `startPhoneChange` et `confirmPhoneChange` étaient déclarés côté client et AUCUN écran ne les
+    appelait : le web n'offrait aucun moyen de changer de numéro. On pouvait croire à un choix — le
+    patient le fait depuis l'application mobile.
+
+    Sauf que le RETRAIT D'ARGENT part sur le numéro DU COMPTE (`phone: actorAccount.phone`). Un
+    soignant qui change de ligne sans pouvoir le mettre à jour verrait ses gains virés vers un numéro
+    qu'il ne contrôle plus — ou vers la personne à qui l'opérateur l'a réattribué. Et le soignant n'a
+    pas d'application mobile : le web est son seul écran.
+
+    Ce n'était pas un choix, c'était un trou, et il touchait l'argent.
+  */
+  it('affiche le numéro du compte et dit que les retraits y partent', async () => {
+    monter('securite')
+
+    expect(await screen.findByText(BASE_MOI.phone)).toBeInTheDocument()
+    // La conséquence, dite là où l'on change le numéro — le seul endroit où elle sert.
+    expect(screen.getByText(/Vos gains sont virés sur ce numéro/)).toBeInTheDocument()
+  })
+
+  it('demande les deux codes, et dit pourquoi avant de les envoyer', async () => {
+    const utilisateur = userEvent.setup()
+    const demarrer = vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+    monter('securite')
+
+    // La règle est annoncée AVANT le premier code, pas découverte après.
+    expect(await screen.findByText(/Les deux codes\s+sont exigés/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+
+    expect(demarrer).toHaveBeenCalledWith({ newPhone: '+242060000001' })
+  })
+
+  it('confirme avec le code de l’ancien ET celui du nouveau numéro', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+    const confirmer = vi.spyOn(api, 'confirmPhoneChange').mockResolvedValue({ ...BASE_MOI, phone: '+242060000001' })
+    vi.spyOn(api, 'me').mockResolvedValue({ ...BASE_MOI, phone: '+242060000001' })
+    monter('securite')
+
+    fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+
+    fireEvent.change(await screen.findByLabelText(/Code reçu sur l'ancien numéro/i), { target: { value: '111111' } })
+    fireEvent.change(screen.getByLabelText(/Code reçu sur le nouveau/i), { target: { value: '222222' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Confirmer le changement/i }))
+
+    expect(confirmer).toHaveBeenCalledWith({
+      newPhone: '+242060000001',
+      oldPhoneCode: '111111',
+      newPhoneCode: '222222',
+    })
+  })
+
+  it('n’envoie rien tant qu’il manque un des deux codes', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+    const confirmer = vi.spyOn(api, 'confirmPhoneChange')
+    monter('securite')
+
+    fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+    fireEvent.change(await screen.findByLabelText(/Code reçu sur l'ancien numéro/i), { target: { value: '111111' } })
+
+    expect(screen.getByRole('button', { name: /Confirmer le changement/i })).toBeDisabled()
+    expect(confirmer).not.toHaveBeenCalled()
+  })
+
+  it('affiche le refus du serveur tel quel', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'startPhoneChange').mockRejectedValue(
+      new ApiError(409, 'CONFLICT', 'Ce numéro est déjà enregistré sur un autre compte'),
+    )
+    monter('securite')
+
+    fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+
+    expect(await screen.findByText(/déjà enregistré sur un autre compte/)).toBeInTheDocument()
+  })
+})
