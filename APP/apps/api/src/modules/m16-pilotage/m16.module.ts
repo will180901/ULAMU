@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { M03VerificationContractsModule } from "../m03-verification-contracts/m03.module";
 import { M06HandshakeSessionModule } from "../m06-handshake-session/m06.module";
 import { M09PrescriptionsModule } from "../m09-prescriptions/m09.module";
+import { M01AccountsModule } from "../m01-accounts/m01.module";
 import { M13PaymentsModule } from "../m13-payments/m13.module";
 import { M14NotificationsModule } from "../m14-notifications/m14.module";
 import { M16ParametresPublicsController } from "./m16.parameters-publics.controller";
@@ -42,6 +43,8 @@ import { SupportProcedureService } from "./m16.support.service";
  */
 @Module({
   imports: [
+    /* M01 : la preuve d'identité sans session, pour le recours d'un compte suspendu (chantier 63). */
+    M01AccountsModule,
     M13PaymentsModule,
     M03VerificationContractsModule,
     M06HandshakeSessionModule,

@@ -39,8 +39,15 @@ export const bearer = (token: string): string => `Bearer ${token}`;
 export type AccountType = 'PATIENT' | 'PROFESSIONAL' | 'ADMIN';
 export type Sex = 'M' | 'F';
 export type ClientKind = 'mobile' | 'web';
-/** OTP SMS : uniquement vérif du téléphone (inscription) + récupération. PAS la connexion. */
-export type PublicOtpPurpose = 'REGISTRATION' | 'PASSWORD_RESET';
+/**
+ * Les usages de code accessibles SANS session.
+ *
+ * `SUPPORT_ACCESS` rejoint la liste le 07/09/2026 (chantier 63) : c'est le code qui permet à un
+ * compte suspendu ou clôturé d'écrire au support — seul recours qui lui reste une fois que la garde
+ * refuse chacune de ses requêtes. Usage DÉDIÉ : partagé avec `PASSWORD_RESET`, une demande de
+ * support mangerait le code de réinitialisation (le quota PM-19 est compté par usage).
+ */
+export type PublicOtpPurpose = 'REGISTRATION' | 'PASSWORD_RESET' | 'SUPPORT_ACCESS';
 
 /** 2026-07 : le code OTP inscription/réinitialisation part par EMAIL (plus par SMS). */
 export interface RequestOtpRequest {
@@ -915,9 +922,24 @@ export interface SupportRequestView {
   answeredAt: string | null;
 }
 
+/**
+ * Écrire au support SANS session — le recours d'un compte suspendu ou clôturé (chantier 63).
+ *
+ * ⚠️ L'identité se prouve par un code envoyé à l'adresse DU COMPTE, jamais par une session : un
+ * jeton valide pour un compte suspendu retirerait à la suspension le sens qu'elle a.
+ */
+export interface CreateSupportRequestWithoutSessionRequest {
+  email: string;
+  otpCode: string;
+  subject: SupportSubject;
+  body: string;
+}
+
 export const SUPPORT_ROUTES = {
   create: '/v1/support-requests',
   mine: '/v1/support-requests/mine',
+  /** Publique : c'est le seul chemin qui reste à quelqu'un qui ne peut plus se connecter. */
+  public: '/v1/support-requests/public',
 } as const;
 
 /** Bornes du serveur (`CreateSupportRequestDto`) — annoncées ici plutôt qu'apprises par un refus. */

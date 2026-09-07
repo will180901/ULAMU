@@ -25,6 +25,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { ApiError } from '@/lib/api'
+import { proposerLeRecours } from '@/lib/recours'
 import { usePageAccueil } from '@/hooks/usePageAccueil'
 import { useSessionStore } from '@/state/session.store'
 import { useLoginMutation, useLoadMeMutation } from '../hooks/useLogin'
@@ -75,6 +76,8 @@ export function LoginPage() {
   /** Bascule vers le code de secours : dix caractères libres au lieu des six cases. */
   const [modeSecours, setModeSecours] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /* La seule porte qui reste à un compte suspendu ou clôturé — voir `lib/recours.ts`. */
+  const [recoursPossible, setRecoursPossible] = useState(false)
 
   const login = useLoginMutation()
   const loadMe = useLoadMeMutation()
@@ -117,6 +120,16 @@ export function LoginPage() {
       setError("La connexion n'a pas abouti et le serveur n'a pas dit pourquoi. Réessayez, puis signalez-le si cela persiste.")
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Connexion impossible — réessayez.')
+      /*
+        ── Le recours d'un compte exclu (chantier 63, 07/09/2026) ────────────────────────────────
+
+        ⚠️ Le serveur invite un compte suspendu à « contacter le support pour connaître le motif et
+        les voies de recours » — puis la garde refuse chacune de ses requêtes, et la seule voie de
+        support exigeait une session. L'invitation était écrite et impraticable.
+
+        C'est ICI qu'il faut ouvrir la porte : c'est la dernière page que cette personne atteint.
+      */
+      setRecoursPossible(proposerLeRecours(err))
     }
   }
 
@@ -304,6 +317,20 @@ export function LoginPage() {
         )}
 
         {error ? <Erreur>{error}</Erreur> : null}
+
+        {/*
+          Proposé seulement quand le refus vient du COMPTE (403) — pas d'un mot de passe faux (401)
+          ni d'un réseau coupé. Un faux positif coûte un lien de trop ; un faux négatif coûte à
+          quelqu'un sa seule voie de recours.
+        */}
+        {recoursPossible ? (
+          <p className="text-center text-[12px] text-muted-foreground">
+            Votre compte est bloqué ?{' '}
+            <Link to="/recours" className="font-medium text-foreground underline underline-offset-2">
+              Écrire à l’administration
+            </Link>
+          </p>
+        ) : null}
 
         <Button type="submit" size="lg" disabled={occupe} className="w-full">
           {occupe ? <Spinner /> : null}

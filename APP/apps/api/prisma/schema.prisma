@@ -179,6 +179,10 @@ enum OtpPurpose {
   /// 2e facteur à la connexion, par email (mobile). Aussi utilisé pour confirmer l'ACTIVATION de cette
   /// option : dans les deux cas il s'agit de prouver qu'on relève bien l'adresse du compte.
   LOGIN_2FA
+  /// Écrire au support SANS session (chantier 63, 07/09/2026) — le recours d'un compte suspendu ou
+  /// clôturé, qui ne peut plus rien atteindre dans l'application. Usage DÉDIÉ : partagé avec
+  /// PASSWORD_RESET, une demande de support mangerait le code de réinitialisation, et inversement.
+  SUPPORT_ACCESS
 }
 
 /// Code OTP — usage unique, jamais stocké en clair (RM-01 / menaces T-11). Canal = phone (SMS) OU

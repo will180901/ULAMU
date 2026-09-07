@@ -180,7 +180,12 @@ export interface MeResponse {
  */
 export interface RequestOtpRequest {
   email: string
-  purpose: 'REGISTRATION' | 'PASSWORD_RESET'
+  /*
+    `SUPPORT_ACCESS` rejoint la liste le 07/09/2026 (chantier 63) : le code qui permet à un compte
+    suspendu ou clôturé d'écrire au support. Usage DÉDIÉ — partagé avec `PASSWORD_RESET`, une demande
+    de support mangerait le code de réinitialisation (quota PM-19 compté par usage).
+  */
+  purpose: 'REGISTRATION' | 'PASSWORD_RESET' | 'SUPPORT_ACCESS'
 }
 export interface RequestOtpResponse {
   expiresInSeconds: number
@@ -1836,6 +1841,22 @@ export const api = {
   // Administration — signalements (M04) et comptes (M16)
   reports: (status?: string) =>
     request<{ items: UserReport[] }>('GET', `/v1/admin/reports${status ? `?status=${status}` : ''}`, undefined, true),
+  /**
+   * Écrire au support SANS session — le recours d'un compte suspendu ou clôturé (chantier 63).
+   *
+   * ⚠️ **Sans jeton, et c'est le point.** La garde refuse chaque requête d'un compte non actif,
+   * pendant que la notification de suspension l'invite à « contacter le support pour connaître le
+   * motif et les voies de recours ». L'identité se prouve par un code envoyé à l'adresse DU COMPTE
+   * (`purpose: 'SUPPORT_ACCESS'`), jamais par une session — qu'on ne délivre pas à un compte
+   * suspendu : ce serait lui retirer le sens qu'il a.
+   */
+  createSupportRequestWithoutSession: (dto: {
+    email: string
+    otpCode: string
+    subject: SupportProcedureType
+    body: string
+  }) => request<{ requestId: string }>('POST', '/v1/support-requests/public', dto),
+
   /**
    * De QUI parle ce signalement (chantier 60).
    *

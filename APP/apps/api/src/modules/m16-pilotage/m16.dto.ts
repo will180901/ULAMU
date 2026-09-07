@@ -4,7 +4,7 @@
  * paramètre, procédure support).
  */
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsIn, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUUID, Length, MaxLength, MinLength } from "class-validator";
 
 /** Recherche de comptes (EF-16-03) — par téléphone OU nom, jamais de donnée médicale. */
 export class SearchAccountsQueryDto {
@@ -65,6 +65,19 @@ export class CompleteSupportProcedureDto {
  * personne ne lit, et une demande qu'on ne lit pas ne sert à rien.
  */
 export class CreateSupportRequestDto {
+  @IsIn(SUPPORT_PROCEDURE_TYPES) subject!: SupportProcedureTypeCode;
+  @IsString() @IsNotEmpty({ message: "Décrivez votre demande" }) @MinLength(10, { message: "Décrivez votre demande en quelques mots (10 caractères minimum)" }) @MaxLength(2000) body!: string;
+}
+
+/**
+ * Écrire au support SANS session (chantier 63, 07/09/2026) — le recours d'un compte suspendu.
+ *
+ * Mêmes bornes que la demande ordinaire : ce qui change est la PREUVE d'identité — un code envoyé à
+ * l'adresse du compte, et non un jeton de session qu'on ne délivre pas à un compte suspendu.
+ */
+export class CreateSupportRequestWithoutSessionDto {
+  @IsEmail() email!: string;
+  @IsString() @Length(6, 6) otpCode!: string;
   @IsIn(SUPPORT_PROCEDURE_TYPES) subject!: SupportProcedureTypeCode;
   @IsString() @IsNotEmpty({ message: "Décrivez votre demande" }) @MinLength(10, { message: "Décrivez votre demande en quelques mots (10 caractères minimum)" }) @MaxLength(2000) body!: string;
 }

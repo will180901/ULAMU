@@ -25,10 +25,12 @@
  * l'effet réel passe par la procédure du module propriétaire (RM-16-01), exactement comme pour
  * `SupportProcedure`. Cette table est un canal de parole, pas un pouvoir de plus.
  */
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { SupportProcedureType, SupportRequestStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
+import { EMAIL_GATEWAY, EmailGateway, avisSecuriteTemplate } from "../../common/email/email.service";
+import { M01Service } from "../m01-accounts/m01.service";
 import { OutboxService } from "../../common/outbox.service";
 import { PrismaService } from "../../common/prisma.service";
 import { auditActorType } from "../m04-audit-reports/m04.policies";
@@ -52,10 +54,14 @@ export interface AdminSupportRequestView extends SupportRequestView {
 
 @Injectable()
 export class SupportRequestService {
+  private readonly logger = new Logger(SupportRequestService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditEmitter,
     private readonly outbox: OutboxService,
+    private readonly m01: M01Service,
+    @Inject(EMAIL_GATEWAY) private readonly email: EmailGateway,
   ) {}
 
   // ── Côté utilisateur ────────────────────────────────────────────────────────
@@ -105,6 +111,49 @@ export class SupportRequestService {
       answer: r.answer,
       answeredAt: r.answeredAt,
     }));
+  }
+
+  /**
+   * Écrire au support SANS session — le recours d'un compte suspendu ou clôturé (chantier 63).
+   *
+   * ⚠️ **Ce chemin existe parce que l'autre est fermé.** Un compte suspendu reçoit « contactez le
+   * support pour connaître le motif et les voies de recours », puis la garde refuse chacune de ses
+   * requêtes : l'invitation était écrite et impraticable.
+   *
+   * L'identité est prouvée par un code envoyé à l'adresse DU COMPTE — pas par une session, qu'on ne
+   * délivre pas : un jeton valide pour un compte suspendu retirerait à la suspension le sens même
+   * qu'elle a. Et cela n'ouvre aucun pouvoir nouveau, puisque qui relève cette boîte pouvait déjà
+   * réinitialiser le mot de passe.
+   *
+   * La demande entre dans **la même file**, avec la même trace : l'administration la traite comme
+   * les autres, et sait seulement qu'elle est venue par ce chemin-là.
+   */
+  async createWithoutSession(
+    rawEmail: string,
+    otpCode: string,
+    dto: { subject: SupportProcedureType; body: string },
+  ): Promise<{ requestId: string }> {
+    const cree = await this.prisma.$transaction(async (tx) => {
+      const compte = await this.m01.consumeSupportAccessOtp(tx, rawEmail, otpCode);
+      const r = await tx.supportRequest.create({
+        data: { requesterId: compte.accountId, subject: dto.subject, body: dto.body },
+      });
+      /*
+        Le corps ne part pas au journal, seulement le sujet (RM-04-03) — comme pour une demande
+        déposée depuis l'application. `sansSession` est en revanche une information utile : elle dit
+        que la personne n'avait aucun autre moyen d'écrire, et c'est ce qui explique la réponse par
+        email plus loin.
+      */
+      await this.audit.emit(tx, {
+        actorId: compte.accountId,
+        actorType: auditActorType(compte.accountType),
+        action: "m16.support_request.created",
+        resource: `support-request:${r.id}`,
+        context: { subject: dto.subject, sansSession: true, statutDuCompte: compte.status },
+      });
+      return r;
+    });
+    return { requestId: cree.id };
   }
 
   // ── Côté administration ─────────────────────────────────────────────────────
@@ -196,6 +245,35 @@ export class SupportRequestService {
         payload: { accountId: existante.requesterId, template: "m16.support_request.answered", subject: existante.subject },
       });
     });
+
+    /*
+      ── Et par email si la personne ne peut pas ouvrir l'application (chantier 63) ─────────────
+
+      La notification vit DANS l'application. Un compte suspendu ou clôturé ne peut plus s'y
+      connecter : la réponse qu'il attend lui serait déposée dans un endroit qu'il ne peut pas
+      atteindre — exactement le défaut qu'on vient de corriger côté écriture.
+
+      ⚠️ Cet email porte le TEXTE de la réponse, contrairement à la notification. C'est délibéré et
+      c'est l'exception : la notification s'affiche sur un écran verrouillé que d'autres voient,
+      l'email arrive dans la boîte du titulaire — celle-là même où partent déjà ses codes et ses
+      avis de sécurité. Sans le texte, cet email ne serait qu'un avis d'aller lire là où il ne peut
+      pas aller.
+
+      Hors transaction et sans jeter : une panne du fournisseur d'email n'a pas à annuler une
+      réponse déjà enregistrée.
+    */
+    const demandeur = await this.prisma.account.findUnique({ where: { id: existante.requesterId } });
+    if (demandeur && demandeur.status !== "ACTIVE" && demandeur.email) {
+      await this.email
+        .send(
+          demandeur.email,
+          "Réponse à votre demande d'aide ULAMU",
+          avisSecuriteTemplate("L'administration a répondu à votre demande", texte),
+        )
+        .catch((err) =>
+          this.logger.error(`Réponse de support non envoyée par email (demande ${id}) : ${String(err)}`),
+        );
+    }
 
     return { id, status: "ANSWERED" };
   }

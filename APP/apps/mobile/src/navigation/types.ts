@@ -9,6 +9,9 @@ export type AuthStackParamList = {
   LoginOtp: {username: string; password: string; debugCode?: string}; // 2e facteur à la connexion : code par email (2FA du mobile)
   TotpChallenge: {username: string; password: string}; // 2e facteur TOTP — web uniquement, jamais atteint sur mobile
   Success: undefined; // fin d'INSCRIPTION uniquement — la connexion entre directement dans l'app
+  /* Écrire à l'administration SANS pouvoir se connecter (chantier 63) — le recours d'un compte
+     suspendu ou clôturé, à qui la garde refuse désormais chaque requête. */
+  Recours: {email?: string} | undefined;
 };
 
 /** Onglets patient (coque de navigation — maquette tabs.jsx). */

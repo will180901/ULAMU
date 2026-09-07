@@ -11,6 +11,7 @@ import {View} from 'react-native';
 import {AuthPage} from '../components/AuthPage';
 import {ErrorBanner, Field, FieldLabel, FieldStatus, FootLink, PasswordField, PrimaryButton} from '../components/ui';
 import {ApiError} from '../lib/api-client';
+import {proposerLeRecours} from '../lib/recours';
 import {isValidEmail, isValidUsername, normalizeEmail, normalizeUsername} from '../lib/validation';
 import {AuthStackParamList} from '../navigation/types';
 import {useAuth} from '../state/AuthContext';
@@ -23,6 +24,16 @@ export function LoginScreen({navigation}: Props) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /*
+    ── Le recours d'un compte exclu (chantier 63, 07/09/2026) ────────────────────────────────────
+
+    ⚠️ Le serveur invite un compte suspendu à « contacter le support pour connaître le motif et les
+    voies de recours » — puis la garde refuse chacune de ses requêtes, et la seule voie de support
+    exigeait une session. L'invitation était écrite et impraticable.
+
+    C'est ICI qu'il faut ouvrir la porte : c'est le dernier écran que cette personne atteint.
+  */
+  const [recoursPossible, setRecoursPossible] = useState(false);
   const [busy, setBusy] = useState(false);
   const slow = useSlowRequest(busy);
 
@@ -34,6 +45,7 @@ export function LoginScreen({navigation}: Props) {
 
   async function onSubmit() {
     setError(null);
+    setRecoursPossible(false);
     const id = looksLikeEmail ? normalizeEmail(identifier) : normalizeUsername(identifier);
     setBusy(true);
     try {
@@ -50,6 +62,7 @@ export function LoginScreen({navigation}: Props) {
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Connexion impossible. Vérifiez votre réseau et réessayez.');
+      setRecoursPossible(proposerLeRecours(err));
     } finally {
       setBusy(false);
     }
@@ -86,6 +99,19 @@ export function LoginScreen({navigation}: Props) {
             repartir. Sans ce message, l'utilisateur ne voit qu'un rond qui tourne et referme l'app. */}
         {slow ? <FieldStatus tone="hint">Le serveur se réveille — cela peut prendre jusqu'à une minute.</FieldStatus> : null}
       </View>
+
+      {/*
+        Proposé seulement quand le refus vient du COMPTE (403) — pas d'un mot de passe faux (401) ni
+        d'un réseau coupé. Voir `lib/recours.ts` : la règle y vit pour être éprouvée, et parce que le
+        web devra dire exactement la même chose.
+      */}
+      {recoursPossible ? (
+        <FootLink
+          prefix="Votre compte est bloqué ?"
+          action="Écrire à l'administration"
+          onPress={() => navigation.navigate('Recours', {email: looksLikeEmail ? normalizeEmail(identifier) : undefined})}
+        />
+      ) : null}
 
       <FootLink prefix="Mot de passe oublié ?" action="Réinitialiser" onPress={() => navigation.navigate('Forgot')} />
       <FootLink prefix="Nouveau sur ULAMU ?" action="Créer un compte" onPress={() => navigation.navigate('Register')} />

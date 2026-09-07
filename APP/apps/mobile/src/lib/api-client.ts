@@ -25,6 +25,7 @@ import {
   ClaimSubProfileResponse,
   CreateSubProfileRequest,
   CreateSupportRequestRequest,
+  CreateSupportRequestWithoutSessionRequest,
   DeclareEntryRequest,
   DisableEmailTwoFactorRequest,
   DisableTotpRequest,
@@ -380,6 +381,16 @@ export class ApiClient {
    * qui envoie sans jamais rien rendre est PIRE qu'une adresse qui ne répond pas — au moins, avec
    * une adresse, on sait qu'on n'a pas eu de réponse.
    */
+  /**
+   * Écrire au support SANS session (chantier 63) — le recours d'un compte suspendu ou clôturé.
+   *
+   * Aucun jeton : l'identité vient du code reçu à l'adresse du compte. La réponse arrivera par
+   * email, puisque la personne ne peut pas ouvrir l'application pour la lire.
+   */
+  createSupportRequestWithoutSession(dto: CreateSupportRequestWithoutSessionRequest): Promise<{requestId: string}> {
+    return this.request('POST', SUPPORT_ROUTES.public, dto);
+  }
+
   mySupportRequests(): Promise<SupportRequestView[]> {
     return this.request('GET', SUPPORT_ROUTES.mine, undefined, true);
   }

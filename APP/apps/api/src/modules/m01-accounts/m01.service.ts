@@ -1203,6 +1203,47 @@ export class M01Service {
     await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: account.phone }, OtpPurpose.SENSITIVE_ACTION, code));
   }
 
+  /**
+   * Consomme un code « accès au support sans session » et rend le compte qu'il désigne.
+   *
+   * ── Le seul chemin qui reste à quelqu'un qu'on vient d'exclure (chantier 63, 07/09/2026) ──────
+   *
+   * Un compte suspendu ou clôturé reçoit « contactez le support pour connaître le motif et les
+   * voies de recours » — et la garde refuse ensuite chacune de ses requêtes. La seule voie de
+   * support existante exigeant une session, l'invitation était **écrite mais impraticable**.
+   *
+   * On ne lui délivre pas de jeton pour autant : ce serait retirer à la suspension le sens même
+   * qu'elle a. On lui demande une PREUVE — un code envoyé à l'adresse du compte, que seul son
+   * titulaire relève.
+   *
+   * ⚠️ **Aucun pouvoir nouveau n'est ouvert ici** : qui relève cette boîte pouvait déjà
+   * réinitialiser le mot de passe du compte (`POST /v1/auth/password-reset`). Cette méthode donne
+   * seulement le droit d'écrire, et de lire la réponse.
+   *
+   * ── L'ordre des deux opérations n'est pas indifférent ─────────────────────────────────────────
+   *
+   * On consomme le code AVANT de chercher le compte. Chercher d'abord ferait répondre « compte
+   * introuvable » à une adresse inconnue et « code incorrect » à une adresse connue : deux réponses
+   * différentes, donc un moyen d'énumérer les comptes. Ici, les deux cas rendent le même refus.
+   *
+   * Le statut du compte n'est PAS vérifié : le limiter aux comptes non actifs répondrait
+   * différemment selon le statut, et l'apprendrait à qui pose la question. Un compte actif qui
+   * emprunte ce chemin ne gagne rien — il a déjà l'écran d'aide dans l'application.
+   */
+  async consumeSupportAccessOtp(
+    tx: Prisma.TransactionClient,
+    rawEmail: string,
+    code: string,
+  ): Promise<{ accountId: string; accountType: string; status: string; email: string | null }> {
+    const email = this.normalizeEmailOrThrow(rawEmail);
+    await this.consumeOtpOrThrow(tx, { email }, OtpPurpose.SUPPORT_ACCESS, code);
+    const account = await tx.account.findFirst({ where: { email } });
+    // Même refus que ci-dessus : un compte effacé entre l'envoi et l'usage ne se distingue pas d'un
+    // code faux.
+    if (!account) throw new UnauthorizedException("Aucun code en attente — redemandez un code");
+    return { accountId: account.id, accountType: account.type, status: account.status, email: account.email };
+  }
+
   /** Vérifie le mot de passe d'un compte (signature de contrat CU-03-03). */
   async verifyAccountPassword(accountId: string, password: string): Promise<boolean> {
     const account = await this.requireAccount(accountId);

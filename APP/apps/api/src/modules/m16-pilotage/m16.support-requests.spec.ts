@@ -46,8 +46,10 @@ const ligne = (o: Partial<Ligne> = {}): Ligne => ({
   ...o,
 });
 
+const BON_CODE = "123456";
+
 /** Un faux Prisma : une table en mémoire, et la transaction rend le même client. */
-function monterService(depart: Ligne[] = []) {
+function monterService(depart: Ligne[] = [], statutDuCompte: "ACTIVE" | "SUSPENDED" | "CLOSED" = "ACTIVE") {
   const table = [...depart];
   const journal: Array<{ action: string; context?: unknown }> = [];
 
@@ -72,6 +74,7 @@ function monterService(depart: Ligne[] = []) {
       },
     },
     account: {
+      findUnique: async () => ({ id: "compte-1", status: statutDuCompte, email: "titulaire@exemple.cg" }),
       findMany: async () => [
         {
           id: "compte-1",
@@ -99,11 +102,30 @@ function monterService(depart: Ligne[] = []) {
     emit: async (_tx: unknown, e: { type: string; payload: Record<string, unknown> }) => void notifications.push(e),
   };
 
+  /*
+    Depuis le 07/09 (chantier 63), répondre à quelqu'un qui ne peut PLUS ouvrir l'application lui
+    envoie aussi la réponse par email : sinon elle serait déposée dans un endroit qu'il ne peut pas
+    atteindre. On capte donc les envois.
+  */
+  const courriels: Array<{ to: string; sujet: string; corps: string }> = [];
+  const email = {
+    send: async (to: string, sujet: string, corps: string) => void courriels.push({ to, sujet, corps }),
+  };
+
+  /* M01 : seule `consumeSupportAccessOtp` est utilisée ici — la preuve d'identité sans session. */
+  const m01 = {
+    consumeSupportAccessOtp: async (_tx: unknown, mail: string, code: string) => {
+      if (code !== BON_CODE) throw new Error("Code incorrect");
+      return { accountId: "compte-1", accountType: "PATIENT", status: statutDuCompte, email: mail };
+    },
+  };
+
   return {
-    service: new SupportRequestService(client as never, audit as never, outbox as never),
+    service: new SupportRequestService(client as never, audit as never, outbox as never, m01 as never, email as never),
     table,
     journal,
     notifications,
+    courriels,
   };
 }
 
@@ -242,5 +264,91 @@ describe("Demandes de support — prévenir que la réponse est arrivée (chanti
 
     await expect(service.answer("adm-1", "req-1", "Seconde réponse.")).rejects.toBeInstanceOf(ForbiddenException);
     expect(notifications).toHaveLength(0);
+  });
+});
+
+describe("Écrire au support SANS session — le recours d'un compte suspendu (chantier 63)", () => {
+  /*
+    ⚠️ Ce chemin existe parce que l'autre est fermé. Un compte suspendu reçoit « contactez le support
+    pour connaître le motif et les voies de recours », puis la garde refuse chacune de ses requêtes :
+    l'invitation était écrite et impraticable.
+  */
+  it("dépose la demande pour le compte que le code désigne", async () => {
+    const { service, table } = monterService([], "SUSPENDED");
+
+    const { requestId } = await service.createWithoutSession("titulaire@exemple.cg", BON_CODE, {
+      subject: "OTHER",
+      body: "Mon compte est suspendu et je ne comprends pas pourquoi.",
+    });
+
+    expect(requestId).toBeTruthy();
+    expect(table).toHaveLength(1);
+    expect(table[0].requesterId).toBe("compte-1");
+    expect(table[0].status).toBe("OPEN");
+  });
+
+  it("refuse un code faux, et n'écrit rien", async () => {
+    const { service, table, journal } = monterService([], "SUSPENDED");
+
+    await expect(
+      service.createWithoutSession("titulaire@exemple.cg", "000000", { subject: "OTHER", body: "Bonjour l'équipe." }),
+    ).rejects.toThrow();
+    expect(table).toHaveLength(0);
+    expect(journal).toHaveLength(0);
+  });
+
+  /*
+    `sansSession` dit à l'administration que la personne n'avait aucun autre moyen d'écrire — c'est
+    ce qui explique la réponse par email. Le CORPS, lui, ne part pas au journal (RM-04-03) : une
+    demande de support porte souvent ce qui va mal dans la vie de quelqu'un, et le journal ne
+    s'efface jamais.
+  */
+  it("trace le chemin emprunté, jamais le contenu", async () => {
+    const { service, journal } = monterService([], "SUSPENDED");
+    await service.createWithoutSession("titulaire@exemple.cg", BON_CODE, {
+      subject: "PHONE_CHANGE",
+      body: "J'ai perdu ma ligne et je ne peux plus me connecter.",
+    });
+
+    const entree = journal[0] as { action: string; context?: Record<string, unknown> };
+    expect(entree.action).toBe("m16.support_request.created");
+    expect(entree.context).toMatchObject({ subject: "PHONE_CHANGE", sansSession: true, statutDuCompte: "SUSPENDED" });
+    expect(JSON.stringify(entree)).not.toContain("perdu ma ligne");
+  });
+});
+
+describe("La réponse atteint quelqu'un qui ne peut plus ouvrir l'application (chantier 63)", () => {
+  /*
+    La notification vit DANS l'application. Un compte suspendu ne peut plus s'y connecter : sans
+    email, la réponse serait déposée dans un endroit qu'il ne peut pas atteindre — exactement le
+    défaut qu'on vient de corriger côté écriture.
+  */
+  it("envoie la réponse par email à un compte suspendu, avec son texte", async () => {
+    const { service, courriels } = monterService([ligne()], "SUSPENDED");
+    await service.answer("adm-1", "req-1", "Votre compte a été suspendu après un signalement. Voici la marche à suivre.");
+
+    expect(courriels).toHaveLength(1);
+    expect(courriels[0].to).toBe("titulaire@exemple.cg");
+    // ⚠️ Le TEXTE, contrairement à la notification : sans lui, cet email n'inviterait qu'à aller
+    // lire là où la personne ne peut pas aller.
+    expect(courriels[0].corps).toContain("Voici la marche à suivre");
+  });
+
+  it("envoie aussi à un compte clôturé — la contestation est le seul recours qui lui reste", async () => {
+    const { service, courriels } = monterService([ligne()], "CLOSED");
+    await service.answer("adm-1", "req-1", "Votre demande a été examinée.");
+    expect(courriels).toHaveLength(1);
+  });
+
+  /*
+    Un compte ACTIF, lui, lit la réponse dans l'application : lui écrire en plus reviendrait à
+    déplacer par email une conversation que la plateforme garde volontairement chez elle.
+  */
+  it("n'envoie AUCUN email à un compte actif", async () => {
+    const { service, courriels, notifications } = monterService([ligne()], "ACTIVE");
+    await service.answer("adm-1", "req-1", "Passez au guichet avec votre pièce d'identité.");
+
+    expect(courriels).toHaveLength(0);
+    expect(notifications).toHaveLength(1);
   });
 });

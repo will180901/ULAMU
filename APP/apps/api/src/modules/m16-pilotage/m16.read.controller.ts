@@ -4,11 +4,12 @@
  * serveur (chacun ne voit que le sien). Les KPIs du pilote sont réservés à l'Équipe ULAMU.
  */
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AdminGuard, AdminOnly } from "../../common/auth/admin.guard";
-import { AuthenticatedActor } from "../../common/auth/auth.guard";
+import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
 import { DashboardService } from "./m16.dashboard.service";
-import { CreateSupportRequestDto } from "./m16.dto";
+import { CreateSupportRequestDto, CreateSupportRequestWithoutSessionDto } from "./m16.dto";
 import { PilotKpiService } from "./m16.kpi.service";
 import { SupportRequestService } from "./m16.support-requests.service";
 
@@ -36,6 +37,26 @@ export class M16ReadController {
   @HttpCode(201)
   createSupportRequest(@Actor() actor: AuthenticatedActor, @Body() dto: CreateSupportRequestDto) {
     return this.supportRequests.create(actor, dto);
+  }
+
+  /**
+   * Écrire au support SANS session — le recours d'un compte suspendu ou clôturé (chantier 63).
+   *
+   * ⚠️ **Publique, et c'est tout le point.** La garde refuse chaque requête d'un compte non actif,
+   * pendant que la notification de suspension l'invite à « contacter le support pour connaître le
+   * motif et les voies de recours ». L'invitation était écrite et impraticable.
+   *
+   * L'identité se prouve par un code envoyé à l'adresse DU COMPTE (`purpose: SUPPORT_ACCESS`), pas
+   * par une session — qu'on ne délivre pas : un jeton valide pour un compte suspendu retirerait à
+   * la suspension le sens qu'elle a. Le quota horaire PM-19, la durée de vie PM-17 et le compteur
+   * d'essais durci (D-048) protègent déjà ce mécanisme ; il n'y a pas de rempart neuf à tenir.
+   */
+  @Public()
+  @Post("support-requests/public")
+  @HttpCode(201)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  createSupportRequestWithoutSession(@Body() dto: CreateSupportRequestWithoutSessionDto) {
+    return this.supportRequests.createWithoutSession(dto.email, dto.otpCode, { subject: dto.subject, body: dto.body });
   }
 
   /** Mes demandes ET leurs réponses — la réponse se lit ici, c'est tout l'intérêt. */

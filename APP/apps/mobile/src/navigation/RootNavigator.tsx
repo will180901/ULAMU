@@ -22,6 +22,7 @@ import {PayScreen} from '../screens/PayScreen';
 import {PhoneChangeScreen} from '../screens/PhoneChangeScreen';
 import {SessionScreen} from '../screens/SessionScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
+import {RecoursScreen} from '../screens/RecoursScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
 import {SuccessScreen} from '../screens/SuccessScreen';
 import {TotpChallengeScreen} from '../screens/TotpChallengeScreen';
@@ -90,6 +91,7 @@ export function RootNavigator() {
             <AuthStack.Screen name="LoginOtp" component={LoginOtpScreen} options={transparentScreen} />
             <AuthStack.Screen name="TotpChallenge" component={TotpChallengeScreen} />
             <AuthStack.Screen name="Success" component={SuccessScreen} />
+            <AuthStack.Screen name="Recours" component={RecoursScreen} options={transparentScreen} />
           </AuthStack.Navigator>
         </View>
       )}

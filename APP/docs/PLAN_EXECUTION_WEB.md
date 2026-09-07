@@ -646,6 +646,68 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **60** | **Une file de modération qui ne s'instruisait pas** — 07/09. L'écran d'administration affichait `SESSION_MESSAGE · A3F91C2B` et demandait quand même de trancher : pour un profil on pouvait recouper à la main, pour un message **rien nulle part ne disait qui l'avait écrit**. Mesuré d'abord : la file est **vide** (0 signalement, PM-23 = 48 h) — donc rien à rattraper, le bon moment. Livré : `GET /v1/admin/reports/:id/context` résout la cible (l'auteur, sa nature, sa session), l'écran la nomme. ⚠️ **Et jamais le contenu du message** : `SessionMessage.body` est chiffré au repos (RM-06-06) et peut porter les données de santé d'un patient qui n'a rien signalé — ma propre recommandation de la veille disait « son texte », elle était fausse. Acte audité (`m04.report.context.viewed`, RM-16-03), signaleur toujours caviardé (RM-04-04). **api 596 ✓ (587 + 9) · web 665 ✓ (659 + 6) · mobile 43 ✓ · lint 0 · 163 routes · builds ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **61** | **Le patient n'avait aucun moyen d'écrire à personne** — 07/09. `POST /v1/support-requests` et `GET /…/mine` existent depuis le 01/09 et le web les appelle ; l'application patient, non — et il n'y avait rien à trouver en sortant de l'application, `support@ulamu.cg` portant un domaine qui n'appartient pas au projet, pourtant inscrit dans les mentions légales **acceptées à l'inscription**. Livré : l'écran `Aide` (formulaire + « Mes demandes » avec les réponses), atteignable depuis Réglages ; règles hors du JSX (`lib/support.ts`), `OWNER_UNREACHABLE` non offert (D-051 : personne n'administre plus de structure). ⚠️ **Et le serveur PRÉVIENT désormais quand la réponse arrive** : « la réponse se lit ici » était vrai et incomplet — rien ne disait qu'elle était là. La notification porte le sujet, jamais la demande ni la réponse (RM-14-03). **mobile 52 ✓ (43 + 9) · api 599 ✓ (596 + 3) · web 665 ✓ · lint 0 · 163 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **62** | **On faisait accepter des documents que l'application ne montrait pas** — 07/09. Parti pour « pouvoir relire ses consentements », le chantier a trouvé bien pire : la case d'inscription du mobile disait *« J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants que je consulte »* — une phrase sur le chiffrement — pendant que le serveur enregistrait, sur sa foi, un consentement aux **CGU v1.0** et à la **politique de confidentialité v1.0**, ligne que le modèle qualifie de *preuve légale, immuable* (EF-01-08, loi n° 29-2019). Et **aucun des deux textes n'existait dans l'application**. Livré : les textes quittent les écrans et deviennent une source unique côté serveur (`legal.documents.ts`), servie par `GET /v1/legal/documents` (**publique** — on lit avant d'avoir un compte) ; les lignes de `ConsentRecord` sont désormais **fabriquées à partir des documents**, plus écrites à côté. Mobile : écran `MentionsLegales` + la case nomme les documents et leur version, avec une feuille pour les lire. Web : `SectionLegal` et l'inscription lisent la même route, et l'inscription gagne « Lire les deux documents avant d'accepter ». **api 606 ✓ (599 + 7) · mobile 57 ✓ (52 + 5) · web 665 ✓ · lint 0 · 164 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **63** | **Un compte suspendu n'avait aucun recours** — 07/09, décision du porteur (voie D). Cinq maillons justes formaient une impasse : la notification invite à « contacter le support pour connaître le motif et les voies de recours », la connexion répond « Compte suspendu », la garde refuse **toute** requête d'un compte non actif, la seule voie de support exige une session, et `support@ulamu.cg` n'existe pas. ⚠️ **Une personne exclue était invitée par écrit à exercer un recours qu'aucun chemin ne lui permettait d'exercer.** Livré : `POST /v1/support-requests/public`, identité prouvée par un code d'usage **dédié** (`SUPPORT_ACCESS`) envoyé à l'adresse du compte — **aucun jeton n'est délivré**, ce qui laisse à la suspension le sens qu'elle a. La demande entre dans la même file, auditée ; la réponse part **par email** quand le compte ne peut pas ouvrir l'application. Porte ouverte depuis les DEUX écrans de connexion, sur le statut 403 et jamais sur le message. **api 619 ✓ (606 + 13) · web 671 ✓ (665 + 6) · mobile 63 ✓ (57 + 6) · lint 0 · 165 routes · migration additive (PG 18.6 vérifié) · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 63 (le recours d'un exclu) a appris
+
+*07/09/2026 — une décision du porteur, et un test qui a corrigé ma propre conception.*
+
+#### Le pire défaut de la semaine ne cassait aucun test
+
+Chaque maillon était juste, isolément. La notification dit la vérité, la connexion dit la vérité, la
+garde fait son travail, le support exige une session à bon droit. **L'impasse ne vivait dans aucun
+d'eux : elle vivait dans leur enchaînement.**
+
+Aucune relecture de module ne pouvait la voir, puisqu'aucun module n'était en cause. Elle est
+apparue en posant une question de bout en bout : *cette personne, à cet instant, peut-elle faire ce
+qu'on lui demande de faire ?*
+
+#### Ma première recommandation était la plus dangereuse des trois
+
+J'avais recommandé une **session restreinte** : un jeton délivré au compte suspendu, filtré dans la
+garde. En allant vérifier avant de la défendre, deux faits l'ont écartée :
+
+- envoyer un email **fonctionne déjà** (les codes, les avis de sécurité partent tous les jours) — ce
+  qui manque est une adresse pour *recevoir*, pas pour écrire ;
+- un compte suspendu **peut déjà recevoir un code** : `requestOtp` ne regarde pas le statut, et le
+  quota, la durée de vie et le compteur d'essais sont déjà durcis.
+
+La voie retenue ne demande donc **aucun mécanisme neuf**, et surtout : elle ne touche pas à la
+garde. Un jeton valide pour un compte suspendu aurait retiré à la suspension le sens même qu'elle a.
+
+*Une recommandation donnée en trois lignes n'a été confrontée à rien. Il faut la vérifier avant de
+la défendre, pas après l'avoir construite.*
+
+#### Le test a corrigé ma conception, pas l'inverse
+
+J'avais écrit un test exigeant que l'adresse inconnue et le code faux donnent **le même message**,
+au nom de l'anti-énumération. Il est tombé — et en cherchant pourquoi, la conception s'est révélée
+mal cadrée, pas le code.
+
+Les quatre refus de `consumeOtpOrThrow` — pas de code, expiré, trop d'essais, incorrect — doivent
+rester **distincts** : ils s'adressent à quelqu'un de légitime qui a besoin de savoir s'il doit
+redemander un code. Et aucun chemin ne révèle l'existence d'un compte sans le BON code, donc sans
+accès à la boîte — c'est-à-dire sans un pouvoir qui permettait déjà de réinitialiser le mot de passe.
+
+Le test a été réécrit sur la propriété qui compte réellement : **le refus ne parle jamais du
+compte**. Il mord toujours — remettre « Aucun compte ULAMU pour cette adresse » le fait tomber.
+
+*Un test qui échoue ne dit pas toujours que le code est faux. Parfois il dit qu'on a mal nommé ce
+qu'on voulait défendre.*
+
+#### Une route sans chemin pour y arriver n'existe pas
+
+À mi-parcours, la route publique était écrite, testée, servie — et **personne n'aurait pu
+l'atteindre** : l'application refuse la connexion à un compte suspendu, donc il n'aurait jamais vu
+d'écran d'où l'appeler.
+
+D'où la porte ouverte sur les deux écrans de connexion, sur le **statut 403** et jamais sur le
+message français : une reformulation ferait dériver la règle en silence, et ce serait le recours qui
+disparaîtrait sans que rien ne le signale.
+
+*C'est la leçon de « un interrupteur qui ne change rien est pire qu'un interrupteur absent », prise
+par l'autre bout : un mécanisme qu'aucun chemin n'atteint n'a pas été livré.*
+
 
 ### Ce que le chantier 62 (une preuve qui ne prouvait rien) a appris
 
@@ -779,6 +841,12 @@ le risque, pas le code :
 
 **Ma recommandation : A**, et C en complément si le domaine est acheté un jour. A garde la trace
 (la demande entre dans la même file, auditée), tandis que C sort du système et ne laisse rien.
+
+> ✅ **Fait le 07/09 (chantier 63) — mais par une QUATRIÈME voie, et j'avais tort de recommander A.**
+> Vérification faite : envoyer un email fonctionne déjà, et un compte suspendu peut déjà recevoir un
+> code. La voie retenue prouve l'identité par un code d'usage dédié, **sans délivrer aucun jeton** —
+> elle ne touche donc pas à la garde, et laisse à la suspension le sens qu'elle a. A aurait donné un
+> jeton valide à un compte suspendu, avec la garde de toute la plateforme comme seul filtre.
 
 *C'est le porteur qui décide : la question n'est pas « comment le coder » mais « que doit ULAMU à
 quelqu'un qu'elle vient d'exclure ».*

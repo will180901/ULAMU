@@ -31,6 +31,7 @@ import { FileVerificationPage } from '@/modules/admin/pages/FileVerificationPage
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { RegisterPage } from '@/modules/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
+import { RecoursPage } from '@/modules/auth/pages/RecoursPage'
 import { TotpSetupPage } from '@/modules/auth/pages/TotpSetupPage'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useSessionStore } from '@/state/session.store'
@@ -87,6 +88,8 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+          {/* Le recours d'un compte suspendu ou clôturé : PUBLIQUE, c'est le seul chemin qui lui reste. */}
+          <Route path="/recours" element={<RecoursPage />} />
           {isAuthenticated ? (
             <>
               {/* Hors coquille : cet écran a sa propre mise en page, carte centrée sans navigation. */}

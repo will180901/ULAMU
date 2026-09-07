@@ -21,7 +21,14 @@ export const USERNAME_MSG = "Nom d'utilisateur invalide (3 à 30 caractères : l
  * Twilio trial limité à 5 numéros vérifiés, inutilisable en conditions réelles pour la soutenance). */
 export class RequestOtpDto {
   @IsEmail() email!: string;
-  @IsIn(["REGISTRATION", "PASSWORD_RESET"]) purpose!: "REGISTRATION" | "PASSWORD_RESET";
+  /*
+    `SUPPORT_ACCESS` rejoint la liste le 07/09/2026 (chantier 63) : c'est le code qui permet à un
+    compte suspendu ou clôturé d'écrire au support, seul recours qui lui reste une fois que la garde
+    refuse toutes ses requêtes. Usage DÉDIÉ — partagé avec `PASSWORD_RESET`, une demande de support
+    mangerait le code de réinitialisation, et inversement (quota PM-19 compté par usage).
+  */
+  @IsIn(["REGISTRATION", "PASSWORD_RESET", "SUPPORT_ACCESS"])
+  purpose!: "REGISTRATION" | "PASSWORD_RESET" | "SUPPORT_ACCESS";
 }
 
 export class CheckUsernameDto {

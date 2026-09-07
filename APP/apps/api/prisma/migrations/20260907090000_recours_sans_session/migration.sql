@@ -1,0 +1,36 @@
+-- Un compte suspendu peut enfin exercer le recours qu'on lui promet (chantier 63, 07/09/2026).
+--
+-- ⚠️ LE DÉFAUT, en cinq maillons dont chacun est juste :
+--
+--   1. un compte suspendu reçoit « Contactez le support pour connaître le motif et les voies de
+--      recours » (m14.templates.ts → m16.account.suspended) ;
+--   2. à la connexion il lit « Compte suspendu (RM-01-05) » — et un compte clôturé lit même
+--      « contactez le support (PM-21) » ;
+--   3. mais la garde refuse TOUTE requête d'un compte dont le statut n'est pas ACTIVE
+--      (auth.guard.ts) ;
+--   4. et la seule voie de support qui existe exige une session ;
+--   5. l'adresse des mentions légales, support@ulamu.cg, n'existe pas — domaine jamais acheté.
+--
+-- Une personne suspendue était donc invitée PAR ÉCRIT à exercer un recours qu'aucun chemin ne lui
+-- permettait d'exercer. Sur une plateforme de santé, et au regard de la loi n° 29-2019 acceptée à
+-- l'inscription, ce n'est pas un défaut d'ergonomie.
+--
+-- ── La voie retenue : prouver son identité, sans obtenir de session ────────────────────────────
+--
+-- On NE délivre PAS de jeton à un compte suspendu — ce serait retirer à la suspension le sens même
+-- qu'elle a. On demande une preuve : un code envoyé à l'adresse DU COMPTE, que seul son titulaire
+-- relève. Le quota horaire (PM-19), la durée de vie (PM-17) et le compteur d'essais durci contre la
+-- force brute (D-048) s'appliquent déjà à ce mécanisme : rien de neuf à protéger.
+--
+-- ⚠️ Cette voie ne donne AUCUN pouvoir nouveau : qui relève cette boîte pouvait déjà réinitialiser
+-- le mot de passe du compte. Elle donne seulement le droit d'écrire — et de lire la réponse.
+--
+-- ── Pourquoi un usage DÉDIÉ, et pas la réutilisation de PASSWORD_RESET ─────────────────────────
+--
+-- Le quota PM-19 est compté PAR USAGE, et `consumeOtpOrThrow` cherche le dernier code non consommé
+-- POUR CET USAGE. Partager l'usage ferait qu'une demande de support mange le code de
+-- réinitialisation que la personne venait de demander — et inversement. Deux gestes, deux codes.
+--
+-- ⚠️ Purement ADDITIVE : une valeur d'énumération de plus. Aucune ligne existante n'est touchée,
+-- aucune colonne n'est modifiée, et le code déployé aujourd'hui ignore simplement cette valeur.
+ALTER TYPE "OtpPurpose" ADD VALUE 'SUPPORT_ACCESS';
