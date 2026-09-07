@@ -24,7 +24,7 @@
  *     et les « 318 vues de fiche » que rien ne compte.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -32,6 +32,7 @@ import { VitrinePage } from '@/modules/vitrine/pages/VitrinePage'
 import { useSessionStore } from '@/state/session.store'
 import {
   api,
+  ApiError,
   type DirectoryProfile,
   type MeResponse,
   type Offer,
@@ -351,5 +352,132 @@ describe('C2 — l’identité', () => {
 
     expect(bio.value).toHaveLength(400)
     expect(screen.getByText(/promesses de résultat/)).toBeInTheDocument()
+  })
+})
+
+describe('Ma vitrine — modifier et réactiver une offre (chantier 66)', () => {
+  /*
+    ⚠️ Ces deux gestes n'existaient PAS. La ligne n'offrait qu'un bouton, et seulement sur une offre
+    ACTIVE : la désactiver. Une fois éteinte, l'offre devenait un objet mort — impossible de la
+    rallumer, impossible de corriger un prix.
+
+    Le serveur, lui, sait tout faire depuis toujours (`PATCH /v1/offers/:id`), et le client web
+    déclarait même `api.updateOffer` : aucun écran ne l'appelait.
+
+    Mesuré en production le 07/09/2026 : le seul soignant de la plateforme avait ses deux offres
+    désactivées et aucun moyen de revenir en arrière. Sa fiche était visible, et il était
+    injoignable.
+  */
+  const ETEINTE: Offer = { ...OFFRE, id: 'o-eteinte', label: 'Consultation', active: false }
+
+  /**
+   * Le champ d'un formulaire d'ÉDITION, désigné par son identifiant.
+   *
+   * ⚠️ Nécessaire : sur un dossier vérifié — le seul état réaliste pour éditer une offre — le
+   * formulaire d'AJOUT est affiché lui aussi, avec les mêmes libellés. Un `getByLabelText` nu
+   * trouverait les deux, et le test passerait ou échouerait selon l'ordre du DOM.
+   */
+  const champ = (quoi: 'label' | 'duree' | 'prix', id: string) =>
+    screen.getByLabelText(quoi === 'prix' ? /Prix patient/i : quoi === 'duree' ? /Durée/i : /Libellé/i, {
+      selector: `#edit-${quoi}-${id}`,
+    })
+
+  it('propose de RÉACTIVER une offre désactivée — le geste qui manquait', async () => {
+    const utilisateur = userEvent.setup()
+    const patch = vi.spyOn(api, 'updateOffer').mockResolvedValue({ ...ETEINTE, active: true })
+    await monter({ dossier: DOSSIER_OK, offres: [ETEINTE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Réactiver Consultation/i }))
+
+    expect(patch).toHaveBeenCalledWith('o-eteinte', { active: true })
+  })
+
+  it('n’offre pas « Réactiver » sur une offre déjà active — le bouton n’aurait rien à faire', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+    // On attend un repère UNIQUE : « Consultation » est aussi le libellé du type dans le formulaire
+    // d'ajout, affiché lui aussi dès que le dossier est vérifié.
+    await screen.findByRole('button', { name: /Désactiver Consultation/i })
+
+    expect(screen.queryByRole('button', { name: /Réactiver/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Désactiver Consultation/i })).toBeInTheDocument()
+  })
+
+  it('permet de corriger le libellé, la durée et le prix', async () => {
+    const utilisateur = userEvent.setup()
+    const patch = vi.spyOn(api, 'updateOffer').mockResolvedValue({ ...OFFRE, priceXaf: 7000 })
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Modifier Consultation/i }))
+    fireEvent.change(champ('prix', 'o1'), { target: { value: '7000' } })
+    await utilisateur.click(screen.getByRole('button', { name: /^Enregistrer$/i }))
+
+    expect(patch).toHaveBeenCalledWith('o1', { label: 'Consultation', durationMin: 30, priceXaf: 7000 })
+  })
+
+  /*
+    Le net se recalcule PENDANT la saisie : le prix est la décision économique de l'écran, et c'est
+    au moment où on le change qu'il faut voir ce qu'on touchera. Le montrer seulement après
+    enregistrement ferait décider à l'aveugle.
+  */
+  it('recalcule le net pendant la saisie, avant d’enregistrer', async () => {
+    const utilisateur = userEvent.setup()
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Modifier Consultation/i }))
+    fireEvent.change(champ('prix', 'o1'), { target: { value: '20000' } })
+
+    /*
+      20 000 − 10 % (le taux du contrat SIGNÉ) = 18 000, affiché avant tout enregistrement.
+
+      ⚠️ Expression régulière et non chaîne exacte : `Intl` sépare les milliers par une espace
+      insécable étroite (U+202F), que la bibliothèque de test normalise en espace ordinaire dans le
+      DOM — mais pas dans la chaîne cherchée. Comparer deux « 18 000 » d'apparence identique
+      échouait sur cet octet invisible.
+    */
+    expect(await screen.findByText(/18\s?000/)).toBeInTheDocument()
+  })
+
+  /*
+    Annuler doit remettre les valeurs du SERVEUR. Sans cela, rouvrir l'édition montrerait le
+    brouillon abandonné comme s'il avait été enregistré — et on croirait avoir changé un prix.
+  */
+  it('annuler efface le brouillon, sans rien envoyer', async () => {
+    const utilisateur = userEvent.setup()
+    const patch = vi.spyOn(api, 'updateOffer')
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Modifier Consultation/i }))
+    fireEvent.change(champ('prix', 'o1'), { target: { value: '99000' } })
+    await utilisateur.click(screen.getByRole('button', { name: /^Annuler$/i }))
+
+    expect(patch).not.toHaveBeenCalled()
+    await utilisateur.click(screen.getByRole('button', { name: /Modifier Consultation/i }))
+    expect(champ('prix', 'o1')).toHaveValue(10000)
+  })
+
+  /*
+    Le plancher de prix vient du serveur (`GET /v1/offers/limits`) : on refuse AVANT d'envoyer,
+    plutôt que de laisser découvrir la règle par un refus après coup.
+  */
+  it('refuse d’enregistrer sous le plancher servi par le serveur', async () => {
+    const utilisateur = userEvent.setup()
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE], bornes: { priceFloorXaf: 5000 } })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Modifier Consultation/i }))
+    fireEvent.change(champ('prix', 'o1'), { target: { value: '100' } })
+
+    expect(screen.getByRole('button', { name: /^Enregistrer$/i })).toBeDisabled()
+  })
+
+  it('affiche le refus du serveur tel quel — le plafond d’offres actives est le sien', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'updateOffer').mockRejectedValue(
+      new ApiError(409, 'CONFLICT', 'Maximum d’offres actives atteint (PM-25)'),
+    )
+    await monter({ dossier: DOSSIER_OK, offres: [ETEINTE] })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Réactiver Consultation/i }))
+
+    expect(await screen.findByText(/Maximum d’offres actives atteint/)).toBeInTheDocument()
   })
 })

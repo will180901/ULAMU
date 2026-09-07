@@ -50,7 +50,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Camera, Check, Eye, Loader2, Plus, ShieldCheck, Star, Store, Tag, Trash2, Users } from 'lucide-react'
+import { Camera, Check, Eye, Loader2, Pencil, Plus, ShieldCheck, Star, Store, Tag, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
@@ -155,37 +155,132 @@ function Enregistrement({ etat }: { etat: EtatEnregistrement }) {
 
 // ── Les offres ──────────────────────────────────────────────────────────────
 
+/**
+ * Une offre, et les trois gestes qu'on peut faire dessus — chantier 66, 07/09/2026.
+ *
+ * ── Ce qui manquait, et ce que ça coûtait ─────────────────────────────────────────────────────
+ *
+ * Cette ligne n'offrait qu'UN geste, et seulement sur une offre active : la désactiver. Une fois
+ * éteinte, l'offre devenait un objet mort — **impossible de la rallumer, impossible de corriger un
+ * prix, une durée ou un libellé.**
+ *
+ * ⚠️ Le serveur, lui, sait tout faire depuis toujours : `PATCH /v1/offers/:id` modifie ET réactive,
+ * avec les mêmes garde-fous qu'une création (droit d'exercer, plafond PM-25). Le client web déclare
+ * même `api.updateOffer` — **et aucun écran ne l'appelait.**
+ *
+ * Conséquence mesurée en production le 07/09 : le seul soignant de la plateforme avait ses deux
+ * offres désactivées et **aucun moyen de les réactiver**. Sa fiche était visible et il était
+ * injoignable, sans recours autre que créer une offre de plus — jusqu'au plafond.
+ *
+ * *Une capacité sans chemin pour l'atteindre n'a pas été livrée. C'est la sixième fois de la
+ * semaine que ce motif apparaît.*
+ *
+ * ── Pourquoi la modification se fait ICI, en ligne, et non dans une boîte ─────────────────────
+ *
+ * Le prix est la décision économique de l'écran, et il se lit « brut − commission = net ». Ouvrir
+ * une boîte de dialogue arracherait ce calcul du contexte au moment précis où on le change. On
+ * édite donc à sa place, et le net se recalcule sous les doigts.
+ */
 function LigneOffre({
   offre,
   commissionPct,
+  bornes,
   onDesactiver,
+  onModifier,
+  onReactiver,
   enCours,
 }: {
   offre: Offer
   commissionPct: number
+  /** Bornes du serveur — la ligne les annonce au lieu de laisser découvrir un refus. */
+  bornes: OfferLimits | null
   onDesactiver: () => void
+  onModifier: (dto: { label: string; durationMin: number; priceXaf: number }) => void
+  onReactiver: () => void
   enCours: boolean
 }) {
-  const commission = Math.round((offre.priceXaf * commissionPct) / 100)
-  const net = offre.priceXaf - commission
+  const [edition, setEdition] = useState(false)
+  const [label, setLabel] = useState(offre.label)
+  const [duree, setDuree] = useState(String(offre.durationMin))
+  const [prix, setPrix] = useState(String(offre.priceXaf))
+
+  const prixAffiche = edition ? Number(prix) || 0 : offre.priceXaf
+  const commission = Math.round((prixAffiche * commissionPct) / 100)
+  const net = prixAffiche - commission
+
+  const plancher = bornes?.priceFloorXaf ?? 0
+  const valide = label.trim().length > 0 && Number(duree) > 0 && Number(prix) >= plancher
+
+  /*
+    Repartir en arrière remet les valeurs du serveur. Sans cela, rouvrir l'édition après une
+    annulation montrerait le brouillon abandonné comme s'il avait été enregistré.
+  */
+  const annuler = () => {
+    setLabel(offre.label)
+    setDuree(String(offre.durationMin))
+    setPrix(String(offre.priceXaf))
+    setEdition(false)
+  }
 
   return (
     <li className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-3">
-      <span className="min-w-0 flex-1 basis-44">
-        <span className="block text-[13px] font-medium text-foreground">{offre.label}</span>
-        <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">
-          {offre.durationMin} min · {offre.kind === 'FOLLOW_UP' ? 'suivi' : 'consultation'}
-          {offre.active ? '' : ' · désactivée'}
+      {edition ? (
+        <div className="grid flex-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
+          <span className="grid gap-1">
+            <Label htmlFor={`edit-label-${offre.id}`} className="text-[11px]">
+              Libellé
+            </Label>
+            <Input id={`edit-label-${offre.id}`} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={120} />
+          </span>
+          <span className="grid gap-1">
+            <Label htmlFor={`edit-duree-${offre.id}`} className="text-[11px]">
+              Durée
+            </Label>
+            <Input
+              id={`edit-duree-${offre.id}`}
+              type="number"
+              inputMode="numeric"
+              value={duree}
+              onChange={(e) => setDuree(e.target.value)}
+              min={bornes?.durationMinMinutes}
+              max={bornes?.durationMaxMinutes}
+              className="w-24"
+            />
+          </span>
+          <span className="grid gap-1">
+            <Label htmlFor={`edit-prix-${offre.id}`} className="text-[11px]">
+              Prix patient
+            </Label>
+            <Input
+              id={`edit-prix-${offre.id}`}
+              type="number"
+              inputMode="numeric"
+              value={prix}
+              onChange={(e) => setPrix(e.target.value)}
+              min={plancher}
+              step={100}
+              className="w-32"
+            />
+          </span>
+        </div>
+      ) : (
+        <span className="min-w-0 flex-1 basis-44">
+          <span className="block text-[13px] font-medium text-foreground">{offre.label}</span>
+          <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">
+            {offre.durationMin} min · {offre.kind === 'FOLLOW_UP' ? 'suivi' : 'consultation'}
+            {offre.active ? '' : ' · désactivée'}
+          </span>
         </span>
-      </span>
+      )}
 
       {/*
         Brut → commission → net, sur une seule ligne. La maquette posait un champ et une mention de
         commission ailleurs, laissant le médecin faire le calcul. Or c'est LA décision économique de
-        l'écran : il doit voir ce qu'il touche sans sortir une calculatrice.
+        l'écran : il doit voir ce qu'il touche sans sortir une calculatrice. En édition, le net suit
+        la saisie — c'est le moment où il compte le plus.
       */}
       <span className="flex shrink-0 items-center gap-2 font-mono text-[11px] text-[var(--texte-tertiaire)]">
-        <span>{xaf(offre.priceXaf)}</span>
+        <span>{xaf(prixAffiche)}</span>
         <span aria-hidden="true">−</span>
         <span>{xaf(commission)}</span>
         <span aria-hidden="true">=</span>
@@ -199,11 +294,67 @@ function LigneOffre({
         </span>
       </span>
 
-      {offre.active ? (
-        <Button type="button" size="sm" variant="ghost" onClick={onDesactiver} disabled={enCours} aria-label={`Désactiver ${offre.label}`}>
-          <Trash2 size={14} strokeWidth={1.6} aria-hidden="true" />
-        </Button>
-      ) : null}
+      <span className="flex shrink-0 items-center gap-1">
+        {edition ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!valide || enCours}
+              onClick={() => {
+                onModifier({ label: label.trim(), durationMin: Number(duree), priceXaf: Number(prix) })
+                setEdition(false)
+              }}
+            >
+              Enregistrer
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={annuler} disabled={enCours}>
+              Annuler
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setEdition(true)}
+              disabled={enCours}
+              aria-label={`Modifier ${offre.label}`}
+            >
+              <Pencil size={14} strokeWidth={1.6} aria-hidden="true" />
+            </Button>
+            {offre.active ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onDesactiver}
+                disabled={enCours}
+                aria-label={`Désactiver ${offre.label}`}
+              >
+                <Trash2 size={14} strokeWidth={1.6} aria-hidden="true" />
+              </Button>
+            ) : (
+              /*
+                Le geste qui manquait complètement. Le serveur applique à la réactivation les mêmes
+                garde-fous qu'à une création — droit d'exercer, plafond d'offres actives — et refuse
+                avec son motif, que l'écran affiche tel quel.
+              */
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onReactiver}
+                disabled={enCours}
+                aria-label={`Réactiver ${offre.label}`}
+              >
+                Réactiver
+              </Button>
+            )}
+          </>
+        )}
+      </span>
     </li>
   )
 }
@@ -392,6 +543,28 @@ export function VitrinePage() {
   })
   const desactiverOffre = useMutation({
     mutationFn: (id: string) => api.deactivateOffer(id),
+    onSuccess: rafraichirOffres,
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+  /*
+    ── Les deux gestes qui manquaient (chantier 66, 07/09/2026) ──────────────────────────────────
+
+    `api.updateOffer` était déclaré et **aucun écran ne l'appelait**. Une offre désactivée ne pouvait
+    donc plus jamais être rallumée, ni un prix corrigé. Mesuré en production : le seul soignant de la
+    plateforme avait ses deux offres éteintes, sans aucun moyen de revenir en arrière — sinon en
+    créer d'autres, jusqu'au plafond.
+
+    Le serveur applique à la réactivation les mêmes garde-fous qu'à une création — droit d'exercer,
+    plafond PM-25 d'offres actives — et son refus arrive avec son motif, qu'on affiche tel quel.
+  */
+  const modifierOffre = useMutation({
+    mutationFn: (v: { id: string; dto: { label: string; durationMin: number; priceXaf: number } }) =>
+      api.updateOffer(v.id, v.dto),
+    onSuccess: rafraichirOffres,
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+  const reactiverOffre = useMutation({
+    mutationFn: (id: string) => api.updateOffer(id, { active: true }),
     onSuccess: rafraichirOffres,
     onError: (e) => setErreur(messageErreur(e)),
   })
@@ -602,8 +775,11 @@ export function VitrinePage() {
                       key={o.id}
                       offre={o}
                       commissionPct={commissionPct ?? 0}
+                      bornes={bornes.data ?? null}
                       onDesactiver={() => desactiverOffre.mutate(o.id)}
-                      enCours={desactiverOffre.isPending}
+                      onModifier={(dto) => modifierOffre.mutate({ id: o.id, dto })}
+                      onReactiver={() => reactiverOffre.mutate(o.id)}
+                      enCours={desactiverOffre.isPending || modifierOffre.isPending || reactiverOffre.isPending}
                     />
                   ))}
                 </ul>

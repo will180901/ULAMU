@@ -649,6 +649,57 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **63** | **Un compte suspendu n'avait aucun recours** — 07/09, décision du porteur (voie D). Cinq maillons justes formaient une impasse : la notification invite à « contacter le support pour connaître le motif et les voies de recours », la connexion répond « Compte suspendu », la garde refuse **toute** requête d'un compte non actif, la seule voie de support exige une session, et `support@ulamu.cg` n'existe pas. ⚠️ **Une personne exclue était invitée par écrit à exercer un recours qu'aucun chemin ne lui permettait d'exercer.** Livré : `POST /v1/support-requests/public`, identité prouvée par un code d'usage **dédié** (`SUPPORT_ACCESS`) envoyé à l'adresse du compte — **aucun jeton n'est délivré**, ce qui laisse à la suspension le sens qu'elle a. La demande entre dans la même file, auditée ; la réponse part **par email** quand le compte ne peut pas ouvrir l'application. Porte ouverte depuis les DEUX écrans de connexion, sur le statut 403 et jamais sur le message. **api 619 ✓ (606 + 13) · web 671 ✓ (665 + 6) · mobile 63 ✓ (57 + 6) · lint 0 · 165 routes · migration additive (PG 18.6 vérifié) · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **64** | **De l'argent immobilisé que personne ne regardait** — 07/09, première mesure de bout en bout du parcours de l'argent. La chaîne elle-même **tient** : aucun paiement sans confirmation, aucun solde faux, aucun retrait orphelin (sonde `parcours-argent.ts`, lecture seule). Mais une session du 28/08 y est apparue : **5 000 XAF payés, consultation tenue, aucun compte-rendu**. À l'échéance PM-30 le balayage a fait exactement son travail — professionnel ET super-administrateurs notifiés, en application et en push, trace au journal. ⚠️ Puis **rien pendant neuf jours** : l'argent n'est ni chez le soignant, ni revenu au patient. Le mécanisme n'a pas échoué, c'est le SUIVI qui n'existait pas — une notification est un ÉVÉNEMENT, l'argent immobilisé est un ÉTAT. Livré : `GET /v1/admin/finance/frozen-earnings` et l'onglet « Argent immobilisé » de l'écran Finance, qui montre le total, l'ancienneté, les deux parties, et **dit qu'aucune règle n'existe encore pour trancher**. **api 629 ✓ (619 + 10) · web 677 ✓ (671 + 6) · mobile 63 ✓ · lint 0 · 166 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **65** | **Le seul soignant de l'annuaire était injoignable, et l'écran disait « Sur devis »** — 07/09, mesure de bout en bout du côté OFFRE (sonde `vie-du-soignant.ts`). L'entonnoir en production : `inscrits 1 → dossiers 1 → vérifiés 1 → visibles 1 → **avec offre 0** → ont consulté 1 → payés 0`. ⚠️ Le seul soignant a ses **deux offres désactivées** : la fiche affichait « Sur devis » — un mécanisme qui **n'existe pas** dans ULAMU — et proposait « Initier la consultation », bouton qui ne peut pas aboutir. Trois corrections : la fiche dit la vérité et n'offre plus l'impasse ; **la cloche d'alerte ne sonne plus que si le soignant est RÉSERVABLE** (sa notification promet « vous pouvez initier une consultation ») ; et « Ma vitrine » annonce la CONSÉQUENCE — « aucun patient ne peut vous solliciter » — au lieu d'un « 0 offre active » qui se lit comme un détail. Trouvé au passage et corrigé : le mobile prenait **n'importe quelle offre** à défaut de STANDARD, donc vendait une consultation au tarif de SUIVI. **api 634 ✓ (629 + 5) · mobile 67 ✓ (63 + 4) · web 677 ✓ · lint 0 · 166 routes · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+| **66** | **Une offre désactivée ne pouvait plus jamais être rallumée** — 07/09, **trouvé par le porteur** sur son propre écran. Le serveur sait tout faire (`PATCH /v1/offers/:id` modifie ET réactive) et le client web déclarait même `api.updateOffer` : **aucun écran ne l'appelait**. La ligne n'offrait qu'un bouton, et seulement sur une offre active — la désactiver. ⚠️ Conséquence mesurée : le seul soignant de la plateforme avait ses deux offres éteintes et **aucun moyen de revenir en arrière**, sinon en créer d'autres jusqu'au plafond PM-25. Livré : modifier en ligne (le net se recalcule sous les doigts, car c'est là que le prix se décide) et réactiver. **web 684 ✓ (677 + 7) · lint 0 · build ✓ · 3 fautes injectées, 3 détectées.** Balayage complémentaire : sur **123 capacités déclarées par le client web, 6 n'ont aucun bouton** — dont `approveBan`/`rejectBan` et `completeSupportProcedure`/`cancelSupportProcedure`, seconds temps de gestes qu'on peut déclencher sans jamais les conclure. | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 66 (le bouton qui n'existait pas) a appris
+
+*07/09/2026 — trouvé par le porteur, sur son propre écran, en regardant ses offres.*
+
+#### Il l'a vu en trois secondes ; six relectures ne l'avaient pas vu
+
+Le porteur regarde « Mes offres », voit deux lignes marquées « désactivée », et pose la seule
+question qui compte : *pourquoi je ne peux ni supprimer ni modifier ?*
+
+Aucune relecture de module ne pouvait répondre : côté serveur, tout est là. Aucun test ne pouvait
+tomber : rien n'était cassé. **Le défaut n'était pas une erreur, c'était une absence** — et une
+absence ne se voit qu'en cherchant à faire le geste.
+
+*Celui qui utilise le produit trouve en trois secondes ce qu'aucune relecture de code ne peut voir.*
+
+#### Le motif, pour la sixième fois
+
+Une capacité existe côté serveur ; aucun chemin n'y mène côté écran. En une semaine :
+
+| Où | Ce qui manquait |
+|---|---|
+| File des remboursements | découvrir les demandes en attente (corrigé avant) |
+| Signalements | savoir de qui l'on parle (chantier 60) |
+| Argent gelé | voir qu'il y en a (chantier 64) |
+| Compte suspendu | un chemin vers le recours (chantier 63) |
+| Fiche soignant | dire qu'il n'y a pas d'offre (chantier 65) |
+| **Mes offres** | **modifier, réactiver** (celui-ci) |
+
+La cause est structurelle et vaut d'être nommée : **l'API a été construite d'abord et complètement ;
+les écrans ont été faits d'après les maquettes.** Ce qu'aucune maquette ne montrait n'a jamais eu de
+bouton — quelle que soit la qualité du serveur derrière.
+
+#### Le balayage qui aurait dû exister depuis longtemps
+
+Comparer les 123 capacités déclarées par le client web à ce que les écrans appellent réellement
+prend dix secondes et rend **six manques**, dont deux graves : `approveBan`/`rejectBan` et
+`completeSupportProcedure`/`cancelSupportProcedure` — des **seconds temps** de gestes qu'on peut
+déclencher sans jamais les conclure. On peut demander un bannissement définitif ; personne ne peut
+l'approuver ni le rejeter.
+
+*Le même outil existait déjà pour le mobile depuis le chantier 58. Ne pas l'avoir pointé sur le web
+a coûté six défauts trouvés un par un, au hasard des chantiers.*
+
+#### Modifier là où l'on décide
+
+L'édition se fait EN LIGNE, à la place de l'offre, et le net se recalcule sous les doigts. Une boîte
+de dialogue aurait arraché le calcul « brut − commission = net » de son contexte au moment précis où
+on change le prix — c'est-à-dire au moment où il compte.
+
 
 ### Ce que le chantier 65 (la vie d'un soignant) a appris
 
