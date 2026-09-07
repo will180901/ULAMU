@@ -184,8 +184,32 @@ export class PresenceService {
    * conditionnelle (updateMany where notifiedAt: null, anti-double-envoi D-046) puis
    * notify.request (C4) — le tout DANS la transaction du changement de présence.
    * RM-14-03 : le payload ne contient aucune donnée médicale (identifiants seulement).
+   *
+   * ── Être en ligne ne suffit pas : encore faut-il être RÉSERVABLE (chantier 65, 07/09/2026) ────
+   *
+   * La notification dit, mot pour mot : *« Vous pouvez initier une consultation depuis
+   * l'annuaire. »* Sans offre active, c'est faux — le serveur exige un `offerId`, et le patient
+   * rappelé par la cloche se heurte à une impasse.
+   *
+   * ⚠️ Mesuré en production le 07/09 : le SEUL soignant de l'annuaire est dans ce cas, ses deux
+   * offres étant désactivées. La cloche aurait donc rappelé des patients vers un mur.
+   *
+   * L'alerte n'est PAS consommée dans ce cas : `notifiedAt` reste nul, et elle sonnera au prochain
+   * retour en ligne — quand une offre existera.
+   *
+   * **Limite connue et assumée** : rouvrir une offre en ÉTANT déjà en ligne ne sonne pas la cloche,
+   * puisque rien ne change côté présence. Elle sonnera au prochain passage hors ligne puis en
+   * ligne. Chaîner l'activation d'offre à la cloche ajouterait une écriture de notification dans la
+   * transaction d'un geste métier fréquent, pour gagner quelques heures : le prix n'en vaut pas la
+   * peine, et le dire vaut mieux que de le taire.
    */
   private async fireAvailabilityAlerts(tx: Prisma.TransactionClient, professionalId: string, now: Date): Promise<void> {
+    const offreActive = await tx.careOffer.findFirst({
+      where: { professionalId, active: true, kind: "STANDARD" },
+      select: { id: true },
+    });
+    if (!offreActive) return;
+
     const candidates = await tx.availabilityAlert.findMany({
       where: { professionalId, notifiedAt: null, expiresAt: { gt: now } },
       select: { id: true, patientId: true },

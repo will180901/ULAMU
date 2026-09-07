@@ -432,6 +432,27 @@ export function VitrinePage() {
             */}
             {!verif.isSuccess ? (
               'Visibilité inconnue tant que votre dossier n’a pas pu être lu'
+            ) : peutExercer && offresActives.length === 0 ? (
+              /*
+                ── Visible, et pourtant injoignable (chantier 65, 07/09/2026) ────────────────────
+
+                Cette ligne disait « Visible dans l'annuaire · 0 offre active » : exact, et lu comme
+                une bonne nouvelle avec un détail. ⚠️ **Sans offre active, aucun patient ne peut
+                initier de consultation** — le serveur exige un `offerId`. Le soignant est donc dans
+                l'annuaire, et commercialement éteint, sans que rien ne le lui dise.
+
+                Mesuré en production le 07/09 : le SEUL soignant de la plateforme était exactement
+                dans ce cas, ses deux offres désactivées, depuis des jours.
+
+                On énonce la CONSÉQUENCE, pas seulement l'état. Un chiffre ne se lit pas tout seul.
+              */
+              <>
+                Visible dans l’annuaire{me?.district ? ` de ${me.district}` : ''}, mais{' '}
+                <strong className="font-semibold text-[var(--erreur-texte)]">
+                  aucun patient ne peut vous solliciter
+                </strong>{' '}
+                : il vous faut au moins une offre active.
+              </>
             ) : peutExercer ? (
               <>
                 Visible dans l’annuaire{me?.district ? ` de ${me.district}` : ''} · {offresActives.length} offre

@@ -138,14 +138,31 @@ const meta: CategoryMeta = CATEGORY_META[item.category] ?? {label: item.category
 
 export function toDoctorProfileVM(p: DirectoryProfile): DoctorProfileVM {
   const base = toDoctorVM(p);
-  const standard = p.offers.find(o => o.kind === 'STANDARD') ?? p.offers[0] ?? null;
+  /*
+    ── Une offre de SUIVI n'est pas une consultation (chantier 65, 07/09/2026) ──────────────────
+
+    Cette ligne se lisait `find(STANDARD) ?? p.offers[0]` : à défaut d'offre standard, elle prenait
+    **n'importe quelle offre**, y compris une offre de suivi.
+
+    ⚠️ Or le suivi a un rôle précis : il « déclenche la proposition automatique après un
+    compte-rendu ». C'est le tarif de quelqu'un qu'on suit DÉJÀ. Le présenter comme une première
+    consultation vendait 2 500 XAF ce qui en vaut 5 000 — et le serveur ne s'y oppose pas, puisqu'il
+    accepte toute offre active (à raison : c'est ainsi que la proposition de suivi démarre sa
+    session).
+
+    Le repli est donc retiré : sans offre STANDARD active, il n'y a pas de consultation à vendre, et
+    l'écran le dit.
+  */
+  const standard = p.offers.find(o => o.kind === 'STANDARD') ?? null;
   const follow = p.offers.find(o => o.kind === 'FOLLOW_UP') ?? null;
   return {
     ...base,
     bio: p.biography,
     consultOfferId: standard?.id ?? null,
-    consultPrice: standard?.priceXaf ?? base.price,
-    consultDurationMin: standard?.durationMin ?? base.durationMin,
+    // `base.price` est l'offre la MOINS CHÈRE, tous types confondus : s'en servir ici afficherait le
+    // tarif de suivi comme prix de consultation. Sans offre standard, il n'y a pas de prix.
+    consultPrice: standard?.priceXaf ?? null,
+    consultDurationMin: standard?.durationMin ?? null,
     followOfferId: follow?.id ?? null,
     followPrice: follow?.priceXaf ?? null,
   };

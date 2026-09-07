@@ -648,6 +648,73 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **62** | **On faisait accepter des documents que l'application ne montrait pas** — 07/09. Parti pour « pouvoir relire ses consentements », le chantier a trouvé bien pire : la case d'inscription du mobile disait *« J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants que je consulte »* — une phrase sur le chiffrement — pendant que le serveur enregistrait, sur sa foi, un consentement aux **CGU v1.0** et à la **politique de confidentialité v1.0**, ligne que le modèle qualifie de *preuve légale, immuable* (EF-01-08, loi n° 29-2019). Et **aucun des deux textes n'existait dans l'application**. Livré : les textes quittent les écrans et deviennent une source unique côté serveur (`legal.documents.ts`), servie par `GET /v1/legal/documents` (**publique** — on lit avant d'avoir un compte) ; les lignes de `ConsentRecord` sont désormais **fabriquées à partir des documents**, plus écrites à côté. Mobile : écran `MentionsLegales` + la case nomme les documents et leur version, avec une feuille pour les lire. Web : `SectionLegal` et l'inscription lisent la même route, et l'inscription gagne « Lire les deux documents avant d'accepter ». **api 606 ✓ (599 + 7) · mobile 57 ✓ (52 + 5) · web 665 ✓ · lint 0 · 164 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **63** | **Un compte suspendu n'avait aucun recours** — 07/09, décision du porteur (voie D). Cinq maillons justes formaient une impasse : la notification invite à « contacter le support pour connaître le motif et les voies de recours », la connexion répond « Compte suspendu », la garde refuse **toute** requête d'un compte non actif, la seule voie de support exige une session, et `support@ulamu.cg` n'existe pas. ⚠️ **Une personne exclue était invitée par écrit à exercer un recours qu'aucun chemin ne lui permettait d'exercer.** Livré : `POST /v1/support-requests/public`, identité prouvée par un code d'usage **dédié** (`SUPPORT_ACCESS`) envoyé à l'adresse du compte — **aucun jeton n'est délivré**, ce qui laisse à la suspension le sens qu'elle a. La demande entre dans la même file, auditée ; la réponse part **par email** quand le compte ne peut pas ouvrir l'application. Porte ouverte depuis les DEUX écrans de connexion, sur le statut 403 et jamais sur le message. **api 619 ✓ (606 + 13) · web 671 ✓ (665 + 6) · mobile 63 ✓ (57 + 6) · lint 0 · 165 routes · migration additive (PG 18.6 vérifié) · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **64** | **De l'argent immobilisé que personne ne regardait** — 07/09, première mesure de bout en bout du parcours de l'argent. La chaîne elle-même **tient** : aucun paiement sans confirmation, aucun solde faux, aucun retrait orphelin (sonde `parcours-argent.ts`, lecture seule). Mais une session du 28/08 y est apparue : **5 000 XAF payés, consultation tenue, aucun compte-rendu**. À l'échéance PM-30 le balayage a fait exactement son travail — professionnel ET super-administrateurs notifiés, en application et en push, trace au journal. ⚠️ Puis **rien pendant neuf jours** : l'argent n'est ni chez le soignant, ni revenu au patient. Le mécanisme n'a pas échoué, c'est le SUIVI qui n'existait pas — une notification est un ÉVÉNEMENT, l'argent immobilisé est un ÉTAT. Livré : `GET /v1/admin/finance/frozen-earnings` et l'onglet « Argent immobilisé » de l'écran Finance, qui montre le total, l'ancienneté, les deux parties, et **dit qu'aucune règle n'existe encore pour trancher**. **api 629 ✓ (619 + 10) · web 677 ✓ (671 + 6) · mobile 63 ✓ · lint 0 · 166 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **65** | **Le seul soignant de l'annuaire était injoignable, et l'écran disait « Sur devis »** — 07/09, mesure de bout en bout du côté OFFRE (sonde `vie-du-soignant.ts`). L'entonnoir en production : `inscrits 1 → dossiers 1 → vérifiés 1 → visibles 1 → **avec offre 0** → ont consulté 1 → payés 0`. ⚠️ Le seul soignant a ses **deux offres désactivées** : la fiche affichait « Sur devis » — un mécanisme qui **n'existe pas** dans ULAMU — et proposait « Initier la consultation », bouton qui ne peut pas aboutir. Trois corrections : la fiche dit la vérité et n'offre plus l'impasse ; **la cloche d'alerte ne sonne plus que si le soignant est RÉSERVABLE** (sa notification promet « vous pouvez initier une consultation ») ; et « Ma vitrine » annonce la CONSÉQUENCE — « aucun patient ne peut vous solliciter » — au lieu d'un « 0 offre active » qui se lit comme un détail. Trouvé au passage et corrigé : le mobile prenait **n'importe quelle offre** à défaut de STANDARD, donc vendait une consultation au tarif de SUIVI. **api 634 ✓ (629 + 5) · mobile 67 ✓ (63 + 4) · web 677 ✓ · lint 0 · 166 routes · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 65 (la vie d'un soignant) a appris
+
+*07/09/2026 — le côté OFFRE, jamais mesuré de bout en bout jusqu'ici.*
+
+#### L'entonnoir se lit d'un coup d'œil, et il s'arrête net
+
+```
+inscrits 1 → dossiers 1 → vérifiés 1 → visibles 1 → avec offre 0 → ont consulté 1 → payés 0
+```
+
+Chaque étape de la chaîne administrative fonctionne : le compte existe, le dossier a été déposé et
+vérifié, le contrat est signé, la fiche est dans l'annuaire. **Et le soignant n'a aucune offre
+active.** Il est visible, et commercialement éteint.
+
+*Un entonnoir sans le motif de chaque perte ne dit pas quoi corriger. Celui-ci nomme la première
+condition qui bloque, soignant par soignant — c'est ce qui a rendu le trou visible en dix secondes.*
+
+#### « Sur devis » décrivait un mécanisme qui n'existe pas
+
+Sans offre active, la fiche affichait **« Sur devis »** et proposait quand même « Initier la
+consultation ». Or ULAMU n'a aucune notion de devis : un prix est une offre active, ou rien. Le mot
+invitait à attendre une négociation qui n'aurait jamais lieu, et le bouton menait à une impasse — le
+serveur exige un `offerId`.
+
+⚠️ Ce n'était pas un cas de coin : c'est ce que voyait **tout patient ouvrant l'application**, le
+seul soignant de l'annuaire étant précisément dans ce cas.
+
+*Un mot d'interface qui décrit un mécanisme inexistant est un mensonge, même s'il sonne bien. « Sur
+devis » sonnait professionnel ; il ne renvoyait à rien.*
+
+#### La cloche promettait ce qu'elle ne pouvait pas tenir
+
+« M'avertir quand il est disponible » sonne au retour EN LIGNE. Sa notification dit, mot pour mot :
+*« Vous pouvez initier une consultation depuis l'annuaire. »*
+
+Sans offre active, c'est faux — et la cloche aurait rappelé des patients vers le même mur, en leur
+faisant croire que quelque chose avait changé. Elle ne sonne désormais que si le soignant est
+réellement **réservable**, et l'alerte **reste armée** dans le cas contraire : une alerte brûlée pour
+rien serait pire que pas d'alerte du tout, le patient ayant attendu pour ne rien recevoir.
+
+#### Un chiffre exact qui se lit comme une bonne nouvelle
+
+« Ma vitrine » affichait : *« Visible dans l'annuaire · 0 offre active »*. Exact — et lu comme une
+information avec un détail, pas comme une alarme. Le soignant ne pouvait pas deviner que ce zéro
+signifiait « personne ne peut vous joindre ».
+
+L'écran énonce maintenant la conséquence, pas l'état.
+
+*Un chiffre ne se lit pas tout seul. « 0 offre active » et « aucun patient ne peut vous solliciter »
+disent la même chose ; une seule des deux fait agir.*
+
+#### Trouvé au passage : une consultation vendue au tarif du suivi
+
+Le mobile résolvait l'offre par `find(STANDARD) ?? offers[0]` — à défaut de standard, **n'importe
+quelle offre**, y compris une offre de suivi. Or le suivi a un rôle précis : il déclenche la
+proposition automatique après un compte-rendu, et c'est le tarif de quelqu'un qu'on suit déjà.
+
+Un soignant ayant désactivé son offre standard mais gardé son suivi aurait donc vendu 2 500 XAF ce
+qui en vaut 5 000 — et le serveur ne s'y oppose pas, à raison : il doit accepter l'offre de suivi,
+c'est ainsi que la proposition d'après-consultation démarre sa session. **La distinction appartient
+au client, et il l'avait perdue dans un repli.**
+
+*Un `??` est une décision. Celui-ci disait « à défaut, n'importe laquelle » sur une question de
+tarif.*
+
 
 ### Ce que le chantier 64 (l'argent immobilisé) a appris
 

@@ -220,13 +220,36 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
             </Pressable>
           </ScrollView>
 
-          {/* Footer collant */}
+          {/*
+            ── « Sur devis » était un mensonge (chantier 65, 07/09/2026) ───────────────────────
+
+            Quand un soignant n'a **aucune offre active**, cet écran affichait « Sur devis » et
+            proposait quand même « Initier la consultation ». Le bouton menait à une impasse — le
+            serveur exige un `offerId` —, et surtout : **il n'existe aucun mécanisme de devis dans
+            ULAMU.** Un prix est une offre active, ou rien. « Sur devis » invitait à attendre une
+            négociation qui n'aura jamais lieu.
+
+            ⚠️ Mesuré en production le 07/09 : le SEUL soignant de l'annuaire est exactement dans ce
+            cas — ses deux offres sont désactivées. C'est donc ce que voit aujourd'hui n'importe quel
+            patient qui ouvre l'application.
+
+            L'écran dit maintenant ce qui est vrai, et propose le seul geste qui ait un sens : être
+            prévenu. *Un bouton qui ne peut pas aboutir est pire qu'un bouton absent.*
+          */}
           <View style={styles.footer}>
             <View style={styles.flex}>
-              <Text style={styles.footerPrice}>{doctor.consultPrice != null ? formatXaf(doctor.consultPrice) : 'Sur devis'}</Text>
-              <Text style={styles.footerSub}>{doctor.online ? 'débité après la poignée de main' : 'indisponible pour le moment'}</Text>
+              <Text style={styles.footerPrice}>
+                {doctor.consultPrice != null ? formatXaf(doctor.consultPrice) : 'Pas de consultation'}
+              </Text>
+              <Text style={styles.footerSub}>
+                {doctor.consultOfferId === null
+                  ? 'ce soignant ne propose pas de consultation en ce moment'
+                  : doctor.online
+                    ? 'débité après la poignée de main'
+                    : 'indisponible pour le moment'}
+              </Text>
             </View>
-            {doctor.online ? (
+            {doctor.online && doctor.consultOfferId !== null ? (
               <PrimaryButton title="Initier la consultation" iconLeft="stethoscope" loading={initiating} onPress={onInitiate} />
             ) : (
               <PrimaryButton title="M'avertir" iconLeft="bell" loading={alerting} onPress={onAlert} />
