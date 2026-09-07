@@ -29,6 +29,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { SupportProcedureType, SupportRequestStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
+import { OutboxService } from "../../common/outbox.service";
 import { PrismaService } from "../../common/prisma.service";
 import { auditActorType } from "../m04-audit-reports/m04.policies";
 
@@ -54,6 +55,7 @@ export class SupportRequestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditEmitter,
+    private readonly outbox: OutboxService,
   ) {}
 
   // ── Côté utilisateur ────────────────────────────────────────────────────────
@@ -174,6 +176,24 @@ export class SupportRequestService {
         action: "m16.support_request.answered",
         resource: `support-request:${id}`,
         context: { subject: existante.subject },
+      });
+
+      /*
+        ── Prévenir le demandeur (chantier 61, 07/09/2026) ────────────────────────────────────
+
+        « La réponse se lit ICI » était vrai, et incomplet : **rien ne disait qu'elle était
+        arrivée.** Quelqu'un qui écrit parce que plus rien ne marche devait revenir consulter un
+        écran de réglages, au hasard, jusqu'à trouver. Une réponse que personne ne sait lire vaut
+        l'adresse morte qu'on avait remplacée.
+
+        ⚠️ La notification ne porte NI la réponse, NI la demande — seulement le sujet, comme
+        l'audit. Une demande de support contient souvent ce qui va mal dans la vie de quelqu'un
+        (RM-14-03) ; on annonce qu'il y a une réponse, on ne la recopie pas dans une bannière que
+        le téléphone affichera peut-être écran verrouillé.
+      */
+      await this.outbox.emit(tx, {
+        type: "notify.request",
+        payload: { accountId: existante.requesterId, template: "m16.support_request.answered", subject: existante.subject },
       });
     });
 

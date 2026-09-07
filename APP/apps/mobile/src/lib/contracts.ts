@@ -874,6 +874,56 @@ export const REPORT_ROUTES = {
 /** Le serveur refuse au-delà — l'écran le dit AVANT d'être refusé. */
 export const REPORT_TEXT_MAX = 1000;
 
+
+/*
+  ── M16 « Écrire à l'administration » — chantier 61, 07/09/2026 (dette 8quater, CU-16-04) ──────
+
+  Les deux routes existent depuis le 01/09 et le web les appelle. Cette application, non : **un
+  patient n'avait aucun moyen d'écrire à qui que ce soit.**
+
+  ⚠️ Elles remplacent `support@ulamu.cg`, une adresse dont le domaine n'appartient pas au projet —
+  ni achetée, ni relevée — et qui figurait dans les mentions légales **acceptées à l'inscription,
+  donc valant preuve**. Une voie de contact qui ne mène nulle part est pire qu'aucune : elle est
+  crue, et on attend une réponse qui ne viendra jamais.
+
+  Aucun sous-rôle, aucune condition : tout compte authentifié écrit. C'est précisément quand plus
+  rien d'autre ne marche qu'on a besoin d'écrire.
+*/
+
+/**
+ * Le sujet d'une demande — les mêmes valeurs que les procédures support déjà outillées côté
+ * administration (`SupportProcedureType`). Une demande « j'ai perdu mon numéro » désigne ainsi
+ * directement la procédure guidée qui la traitera : les deux moitiés parlent la même langue.
+ *
+ * ⚠️ `OWNER_UNREACHABLE` existe côté serveur mais n'est PAS offert (voir `SUJETS_OFFERTS`).
+ */
+export type SupportSubject = 'PHONE_CHANGE' | 'OWNER_UNREACHABLE' | 'RECORD_TRANSFER' | 'OTHER';
+
+export interface CreateSupportRequestRequest {
+  subject: SupportSubject;
+  body: string;
+}
+
+export interface SupportRequestView {
+  id: string;
+  subject: SupportSubject;
+  body: string;
+  status: 'OPEN' | 'ANSWERED';
+  createdAt: string;
+  /** La réponse se lit ICI — jamais dans un courriel. C'est toute la raison d'être de cet objet. */
+  answer: string | null;
+  answeredAt: string | null;
+}
+
+export const SUPPORT_ROUTES = {
+  create: '/v1/support-requests',
+  mine: '/v1/support-requests/mine',
+} as const;
+
+/** Bornes du serveur (`CreateSupportRequestDto`) — annoncées ici plutôt qu'apprises par un refus. */
+export const SUPPORT_BODY_MIN = 10;
+export const SUPPORT_BODY_MAX = 2000;
+
 /*
   ── M12 « Recherche & dévoilement-réservation » est RETIRÉ (02/09/2026, chantier 26) ───────────
 

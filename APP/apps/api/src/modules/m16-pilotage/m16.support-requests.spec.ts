@@ -89,7 +89,22 @@ function monterService(depart: Ligne[] = []) {
     emit: async (_tx: unknown, e: { action: string; context?: unknown }) => void journal.push(e),
   };
 
-  return { service: new SupportRequestService(client as never, audit as never), table, journal };
+  /*
+    Depuis le 07/09 (chantier 61), répondre PRÉVIENT le demandeur : « la réponse se lit ici » était
+    vrai, et incomplet — rien ne disait qu'elle était arrivée. On capte donc ce qui part, pour
+    pouvoir éprouver que la notification ne recopie ni la demande ni la réponse.
+  */
+  const notifications: Array<{ type: string; payload: Record<string, unknown> }> = [];
+  const outbox = {
+    emit: async (_tx: unknown, e: { type: string; payload: Record<string, unknown> }) => void notifications.push(e),
+  };
+
+  return {
+    service: new SupportRequestService(client as never, audit as never, outbox as never),
+    table,
+    journal,
+    notifications,
+  };
 }
 
 const ACTEUR = { accountId: "compte-1", accountType: "PROFESSIONAL", sessionId: "s", client: "web" } as never;
@@ -187,5 +202,45 @@ describe("Demandes de support — la file d'administration", () => {
     const ouvertes = await service.list("OPEN" as never);
 
     expect(ouvertes.map((r) => r.id)).toEqual(["req-1"]);
+  });
+});
+
+describe("Demandes de support — prévenir que la réponse est arrivée (chantier 61)", () => {
+  /*
+    « La réponse se lit ICI » était vrai, et incomplet : **rien ne disait qu'elle était arrivée.**
+    Quelqu'un qui écrit parce que plus rien ne marche devait revenir consulter un écran de réglages,
+    au hasard, jusqu'à trouver. Une réponse que personne ne sait lire vaut l'adresse morte qu'on
+    avait remplacée.
+  */
+  it("prévient le DEMANDEUR, et lui seul", async () => {
+    const { service, notifications } = monterService([ligne()]);
+    await service.answer("adm-1", "req-1", "Passez au guichet avec votre pièce d'identité.");
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("notify.request");
+    expect(notifications[0].payload.accountId).toBe("compte-1");
+    expect(notifications[0].payload.template).toBe("m16.support_request.answered");
+  });
+
+  /*
+    ⚠️ Une notification s'affiche sur un écran verrouillé, que d'autres voient. Une demande de
+    support porte souvent ce qui va mal dans la vie de quelqu'un (RM-14-03) : on annonce qu'il y a
+    une réponse, on ne la recopie pas — ni elle, ni la demande.
+  */
+  it("ne recopie NI la demande NI la réponse dans la notification", async () => {
+    const { service, notifications } = monterService([ligne()]);
+    await service.answer("adm-1", "req-1", "Votre dossier est rouvert, rappelez le 06 00 00 00 00.");
+
+    const parti = JSON.stringify(notifications[0]);
+    expect(parti).not.toContain("rouvert");
+    expect(parti).not.toContain("06 00 00 00 00");
+    expect(parti).not.toContain("perdu mon téléphone");
+  });
+
+  it("ne prévient personne quand la réponse est refusée", async () => {
+    const { service, notifications } = monterService([ligne({ status: "ANSWERED", answer: "Déjà répondu." })]);
+
+    await expect(service.answer("adm-1", "req-1", "Seconde réponse.")).rejects.toBeInstanceOf(ForbiddenException);
+    expect(notifications).toHaveLength(0);
   });
 });

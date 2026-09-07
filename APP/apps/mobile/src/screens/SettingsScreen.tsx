@@ -160,6 +160,30 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
             <Row icon="log-out" title="Clôturer mon compte" sub="Action définitive après 30 jours" danger chevron onPress={() => navigation.navigate('CloseAccount')} />
           </View>
 
+          {/* Aide */}
+          <Text style={styles.section}>AIDE</Text>
+          <View style={styles.card}>
+            {/*
+              ── Écrire à l'administration (chantier 61, 07/09/2026) ────────────────────────
+
+              Les deux routes existent depuis le 01/09 et le web les appelle ; cette application,
+              non — **un patient n'avait aucun moyen d'écrire à qui que ce soit**, et il n'y avait
+              rien à trouver en sortant de l'application : `support@ulamu.cg` porte un domaine qui
+              n'appartient pas au projet.
+
+              Le sous-titre annonce ce qui compte le plus : la réponse revient ICI. Un formulaire
+              qui envoie sans jamais rien rendre est pire qu'une adresse morte — au moins, avec une
+              adresse, on sait qu'on n'a pas eu de réponse.
+            */}
+            <Row
+              icon="message"
+              title="Écrire à l’administration"
+              sub="La réponse arrive dans l’application, pas par email"
+              chevron
+              onPress={() => navigation.navigate('Aide')}
+            />
+          </View>
+
           <Text style={styles.footNote}>Compte {me.username ? `@${me.username}` : ''} · ULAMU</Text>
         </ScrollView>
       )}

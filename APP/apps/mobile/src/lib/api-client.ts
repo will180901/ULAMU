@@ -23,6 +23,7 @@ import {
   ClaimSubProfileRequest,
   ClaimSubProfileResponse,
   CreateSubProfileRequest,
+  CreateSupportRequestRequest,
   DeclareEntryRequest,
   DisableEmailTwoFactorRequest,
   DisableTotpRequest,
@@ -34,6 +35,8 @@ import {
   PublicParameter,
   StartClaimResponse,
   SubProfile,
+  SUPPORT_ROUTES,
+  SupportRequestView,
   UpdateProfileRequest,
   UpdateAvatarRequest,
   RegisterDeviceRequest,
@@ -334,6 +337,27 @@ export class ApiClient {
    */
   createReport(dto: CreateReportRequest): Promise<CreateReportResponse> {
     return this.request('POST', REPORT_ROUTES.create, dto, true);
+  }
+
+  /**
+   * Écrire à l'administration (M16, dette 8quater) — chantier 61.
+   *
+   * Aucune condition : tout compte authentifié écrit. C'est précisément quand plus rien d'autre ne
+   * marche — un dossier bloqué, un numéro perdu — qu'on a besoin d'écrire.
+   */
+  createSupportRequest(dto: CreateSupportRequestRequest): Promise<{requestId: string}> {
+    return this.request('POST', SUPPORT_ROUTES.create, dto, true);
+  }
+
+  /**
+   * Mes demandes ET leurs réponses.
+   *
+   * ⚠️ C'est cette route qui fait la différence avec l'adresse morte qu'on remplace : un formulaire
+   * qui envoie sans jamais rien rendre est PIRE qu'une adresse qui ne répond pas — au moins, avec
+   * une adresse, on sait qu'on n'a pas eu de réponse.
+   */
+  mySupportRequests(): Promise<SupportRequestView[]> {
+    return this.request('GET', SUPPORT_ROUTES.mine, undefined, true);
   }
 
   /**

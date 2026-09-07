@@ -644,6 +644,83 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **58** | **Changer son mot de passe sur mobile — et ne plus être mis dehors quand on se trompe** — 06/09. En mesurant ce que le serveur sait faire pour un patient et que l'application n'appelle pas : `POST /v1/accounts/me/password` existait **depuis le premier jour**, le web l'appelait, le mobile non — un patient devait se **déconnecter** puis passer par « mot de passe oublié ». ⚠️ En branchant l'écran, un défaut bien plus grave est apparu : **les deux clients traitent un `401` sur une requête authentifiée comme « ton jeton est mort » et effacent la session** — or l'API répondait `401` quand la session était valide et que seule la **preuve envoyée dans le corps** était fausse. **Une faute de frappe déconnectait**, sur douze routes : changement de mot de passe, désactivation de 2FA, fermeture de compte, signature du contrat soignant, et l'**exécution d'un retrait d'argent**. Corrigé au SERVEUR (une correction cliente n'atteindrait pas les téléphones déjà installés) : `ProofRefusedException` → 403, et `preuveEnSession()` pour les codes à usage unique consommés depuis une session ouverte. `401` ne veut plus dire qu'une chose. **api 587 ✓ (579 + 8) · mobile 32 ✓ (29 + 3) · web 659 ✓ · lint 0 erreur · 162 routes · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **59** | **Le patient n'avait aucun bouton pour signaler** — 06/09, moitié mobile de l'écart A. `POST /v1/reports` existe depuis le premier jour ; le web l'appelle depuis le chantier 41, l'application patient **non**. ⚠️ Ce n'est pas une fonctionnalité manquante parmi d'autres : c'est **la voie de recours**. Toute la modération était construite derrière — file triée par gravité, décision motivée, avertissement, transmission — sans porte d'entrée côté patient. Livré : la feuille `FeuilleSignalement` (les six motifs du serveur, la garantie d'anonymat annoncée AVANT le formulaire, l'accusé qui redit que la réponse reviendra dans les notifications), branchée à **deux endroits** — « Signaler ce message » à l'appui long, et « Signaler ce soignant » depuis la session ET depuis la fiche. Les règles sortent du JSX (`lib/signalement.ts`), l'icône `flag` rejoint le jeu d'icônes. **mobile 43 ✓ (32 + 11) · api 587 ✓ · web 659 ✓ · lint 0 erreur · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **60** | **Une file de modération qui ne s'instruisait pas** — 07/09. L'écran d'administration affichait `SESSION_MESSAGE · A3F91C2B` et demandait quand même de trancher : pour un profil on pouvait recouper à la main, pour un message **rien nulle part ne disait qui l'avait écrit**. Mesuré d'abord : la file est **vide** (0 signalement, PM-23 = 48 h) — donc rien à rattraper, le bon moment. Livré : `GET /v1/admin/reports/:id/context` résout la cible (l'auteur, sa nature, sa session), l'écran la nomme. ⚠️ **Et jamais le contenu du message** : `SessionMessage.body` est chiffré au repos (RM-06-06) et peut porter les données de santé d'un patient qui n'a rien signalé — ma propre recommandation de la veille disait « son texte », elle était fausse. Acte audité (`m04.report.context.viewed`, RM-16-03), signaleur toujours caviardé (RM-04-04). **api 596 ✓ (587 + 9) · web 665 ✓ (659 + 6) · mobile 43 ✓ · lint 0 · 163 routes · builds ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
+| **61** | **Le patient n'avait aucun moyen d'écrire à personne** — 07/09. `POST /v1/support-requests` et `GET /…/mine` existent depuis le 01/09 et le web les appelle ; l'application patient, non — et il n'y avait rien à trouver en sortant de l'application, `support@ulamu.cg` portant un domaine qui n'appartient pas au projet, pourtant inscrit dans les mentions légales **acceptées à l'inscription**. Livré : l'écran `Aide` (formulaire + « Mes demandes » avec les réponses), atteignable depuis Réglages ; règles hors du JSX (`lib/support.ts`), `OWNER_UNREACHABLE` non offert (D-051 : personne n'administre plus de structure). ⚠️ **Et le serveur PRÉVIENT désormais quand la réponse arrive** : « la réponse se lit ici » était vrai et incomplet — rien ne disait qu'elle était là. La notification porte le sujet, jamais la demande ni la réponse (RM-14-03). **mobile 52 ✓ (43 + 9) · api 599 ✓ (596 + 3) · web 665 ✓ · lint 0 · 163 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 61 (le filet de dernier recours) a appris
+
+*07/09/2026 — le troisième écran mobile d'affilée dont le serveur était prêt depuis des jours.*
+
+#### « La réponse se lit ici » était vrai, et incomplet
+
+Le service disait, à juste titre : la réponse revient dans l'application, sans domaine à acheter ni
+boîte à relever. Ce qu'il ne disait pas — parce que personne ne l'avait demandé — c'est **comment on
+apprend qu'elle est arrivée**.
+
+Réponse : on ne l'apprenait pas. Il fallait revenir consulter un écran de réglages, au hasard,
+jusqu'à trouver. Sur le web on y passe ; sur un téléphone, on n'ouvre pas ses réglages sans raison.
+
+*Une réponse que personne ne sait lire vaut l'adresse morte qu'on avait remplacée.* Le serveur émet
+désormais une notification — le sujet, jamais le texte : une notification s'affiche sur un écran
+verrouillé, que d'autres voient, et une demande de support porte souvent ce qui va mal dans la vie
+de quelqu'un.
+
+#### Trois écrans de suite, le même motif
+
+Chantiers 58, 59, 61 : mot de passe, signalement, support. **Trois fois, la route existait depuis
+des jours ou des mois, le web l'appelait, et l'application patient non.**
+
+Ce n'est pas trois oublis, c'est un angle mort de méthode : les vérifications se faisaient sur le
+**bundle web déployé**, seul artefact que Render sert. Le mobile n'y apparaît jamais. Le chantier 30
+l'avait déjà noté le 02/09 ; la mesure « ce que le serveur sait faire et que le mobile n'appelle
+pas » aurait dû devenir un réflexe ce jour-là.
+
+*Un outil de vérification ne couvre que ce qu'il peut atteindre. Ce qu'il n'atteint pas ne remonte
+jamais comme un manque — seulement comme un silence.*
+
+#### Le sujet qu'on n'offre plus, mais qu'on sait encore nommer
+
+`OWNER_UNREACHABLE` (« titulaire de structure injoignable ») n'est pas proposé : plus personne
+n'administre de structure depuis D-051, et la procédure guidée qui traitait ces demandes a été
+retirée le même jour. **Une case qui mène à une file morte est une promesse de réponse qu'on ne
+tiendra pas.**
+
+Mais le libellé reste, parce que des demandes déposées avant le 02/09 le portent : sans lui,
+« Mes demandes » afficherait un code technique à quelqu'un qui a écrit en français.
+
+*On cesse d'offrir un choix ; on n'efface pas ce que d'autres ont déjà choisi.*
+
+#### Trouvé au passage, et celui-là est pour le porteur : un compte suspendu n'a AUCUN recours
+
+En vérifiant qui peut atteindre le support, la chaîne suivante est apparue — chaque maillon est
+juste, et l'ensemble ne l'est pas :
+
+| Ce que fait la plateforme | Où c'est écrit |
+|---|---|
+| Un compte suspendu reçoit une notification : *« Contactez le support pour connaître le motif et les voies de recours »* | `m14.templates.ts` → `m16.account.suspended` |
+| À la connexion, il lit : *« Compte suspendu (RM-01-05) »* — un compte clôturé lit même *« contactez le support »* | `m01.service.ts:393-394` |
+| Mais la garde refuse **toute** requête d'un compte dont le statut n'est pas `ACTIVE` | `auth.guard.ts:54` |
+| Et la seule voie de support qui existe exige une session | `POST /v1/support-requests` |
+| L'adresse des mentions légales, `support@ulamu.cg`, n'existe pas | dette 8quater, 01/09 |
+
+⚠️ **Une personne suspendue est donc invitée par écrit à exercer un recours qu'aucun chemin ne lui
+permet d'exercer.** Sur une plateforme de santé, et au regard de la loi n° 29-2019 acceptée à
+l'inscription, ce n'est pas un défaut d'ergonomie.
+
+**Ce n'est pas à moi de le trancher** — les trois issues possibles engagent le produit, l'argent ou
+le risque, pas le code :
+
+| Issue | Ce qu'elle coûte | Ce qu'elle risque |
+|---|---|---|
+| **A. Session restreinte** — un compte suspendu s'authentifie, mais n'atteint QUE les routes de support | ~1 jour : la garde doit distinguer deux niveaux, et chaque route doit déclarer si elle survit à la suspension | Élargir un accès par accident. C'est le risque à surveiller, mais il est cernable : la liste des routes ouvertes est courte et se teste |
+| **B. Route publique de support** — écrire sans session, avec preuve par code | ~1 jour + un rempart anti-abus | Un formulaire public non authentifié est un canal de spam, et il faut le tenir |
+| **C. Une vraie adresse de courriel** relevée par une personne | l'achat du domaine + quelqu'un qui relève | Aucun risque technique ; c'est un engagement humain à tenir dans la durée |
+
+**Ma recommandation : A**, et C en complément si le domaine est acheté un jour. A garde la trace
+(la demande entre dans la même file, auditée), tandis que C sort du système et ne laisse rien.
+
+*C'est le porteur qui décide : la question n'est pas « comment le coder » mais « que doit ULAMU à
+quelqu'un qu'elle vient d'exclure ».*
+
 
 ### Ce que le chantier 60 (instruire un signalement) a appris
 
@@ -835,7 +912,7 @@ coûtent à quelqu'un qui en a besoin :
 | Manque | Ce que ça fait à l'utilisateur | Ma recommandation |
 |---|---|---|
 | ~~**Signaler** (`POST /v1/reports`)~~ | ~~Un patient qui subit un comportement grave **n'a aucun bouton**.~~ | ✅ **Livré au chantier 59** (06/09) — feuille de signalement, branchée sur le message et sur le soignant. |
-| **Support** (`/v1/support-requests`) | Aucun moyen d'écrire à quelqu'un depuis l'application ; le seul chemin est de sortir et de chercher un contact. | Juste après : c'est aussi le filet quand tout le reste échoue. |
+| ~~**Support** (`/v1/support-requests`)~~ | ~~Aucun moyen d'écrire à quelqu'un depuis l'application.~~ | ✅ **Livré au chantier 61** (07/09) — écran `Aide`, et le serveur prévient quand la réponse arrive. |
 | **TOTP** (`setup`/`confirm`/`backup-codes`/`reset`) | On peut **désactiver** la 2FA par email depuis le mobile, mais pas activer l'authentification par application, ni revoir ses codes de secours. Un interrupteur qui ne va que dans un sens. | Ensuite : c'est un manque de symétrie, pas un blocage. |
 | **Consentements** (`GET /v1/accounts/me/consents`) | On ne peut pas relire ce qu'on a accepté. Preuve légale (loi n° 29-2019) que l'intéressé ne voit pas. | En dernier des quatre, mais à faire : une preuve qu'on ne peut pas consulter protège mal. |
 

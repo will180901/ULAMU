@@ -161,6 +161,19 @@ export const TEMPLATE_CATALOG: Record<string, NotificationTemplate> = {
       }
     },
   },
+  /*
+    ── M16 — Réponse à une demande de support (chantier 61, 07/09/2026) ────────────────────────
+
+    ⚠️ Ni la demande, ni la réponse : seulement le fait qu'il y en a une. Une demande de support
+    porte souvent ce qui va mal dans la vie de quelqu'un — et une notification s'affiche sur un
+    écran verrouillé, que d'autres voient (RM-14-03).
+  */
+  "m16.support_request.answered": {
+    category: "system",
+    title: () => "Votre demande a reçu une réponse",
+    body: () =>
+      "L'administration a répondu à votre demande d'aide. Ouvrez « Aide » dans vos réglages pour la lire.",
+  },
   "m04.report.warning": {
     category: "system",
     title: () => "Avertissement de modération",

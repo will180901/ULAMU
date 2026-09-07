@@ -37,4 +37,5 @@ export type AppStackParamList = {
   Settings: undefined; // réglages compte & sécurité (M01)
   PhoneChange: undefined; // changement de numéro (OTP ancien + nouveau)
   CloseAccount: undefined; // clôture de compte
+  Aide: undefined; // écrire à l'administration et lire sa réponse (M16, chantier 61)
 };
