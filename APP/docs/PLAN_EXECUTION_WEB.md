@@ -647,6 +647,62 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **61** | **Le patient n'avait aucun moyen d'écrire à personne** — 07/09. `POST /v1/support-requests` et `GET /…/mine` existent depuis le 01/09 et le web les appelle ; l'application patient, non — et il n'y avait rien à trouver en sortant de l'application, `support@ulamu.cg` portant un domaine qui n'appartient pas au projet, pourtant inscrit dans les mentions légales **acceptées à l'inscription**. Livré : l'écran `Aide` (formulaire + « Mes demandes » avec les réponses), atteignable depuis Réglages ; règles hors du JSX (`lib/support.ts`), `OWNER_UNREACHABLE` non offert (D-051 : personne n'administre plus de structure). ⚠️ **Et le serveur PRÉVIENT désormais quand la réponse arrive** : « la réponse se lit ici » était vrai et incomplet — rien ne disait qu'elle était là. La notification porte le sujet, jamais la demande ni la réponse (RM-14-03). **mobile 52 ✓ (43 + 9) · api 599 ✓ (596 + 3) · web 665 ✓ · lint 0 · 163 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **62** | **On faisait accepter des documents que l'application ne montrait pas** — 07/09. Parti pour « pouvoir relire ses consentements », le chantier a trouvé bien pire : la case d'inscription du mobile disait *« J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants que je consulte »* — une phrase sur le chiffrement — pendant que le serveur enregistrait, sur sa foi, un consentement aux **CGU v1.0** et à la **politique de confidentialité v1.0**, ligne que le modèle qualifie de *preuve légale, immuable* (EF-01-08, loi n° 29-2019). Et **aucun des deux textes n'existait dans l'application**. Livré : les textes quittent les écrans et deviennent une source unique côté serveur (`legal.documents.ts`), servie par `GET /v1/legal/documents` (**publique** — on lit avant d'avoir un compte) ; les lignes de `ConsentRecord` sont désormais **fabriquées à partir des documents**, plus écrites à côté. Mobile : écran `MentionsLegales` + la case nomme les documents et leur version, avec une feuille pour les lire. Web : `SectionLegal` et l'inscription lisent la même route, et l'inscription gagne « Lire les deux documents avant d'accepter ». **api 606 ✓ (599 + 7) · mobile 57 ✓ (52 + 5) · web 665 ✓ · lint 0 · 164 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **63** | **Un compte suspendu n'avait aucun recours** — 07/09, décision du porteur (voie D). Cinq maillons justes formaient une impasse : la notification invite à « contacter le support pour connaître le motif et les voies de recours », la connexion répond « Compte suspendu », la garde refuse **toute** requête d'un compte non actif, la seule voie de support exige une session, et `support@ulamu.cg` n'existe pas. ⚠️ **Une personne exclue était invitée par écrit à exercer un recours qu'aucun chemin ne lui permettait d'exercer.** Livré : `POST /v1/support-requests/public`, identité prouvée par un code d'usage **dédié** (`SUPPORT_ACCESS`) envoyé à l'adresse du compte — **aucun jeton n'est délivré**, ce qui laisse à la suspension le sens qu'elle a. La demande entre dans la même file, auditée ; la réponse part **par email** quand le compte ne peut pas ouvrir l'application. Porte ouverte depuis les DEUX écrans de connexion, sur le statut 403 et jamais sur le message. **api 619 ✓ (606 + 13) · web 671 ✓ (665 + 6) · mobile 63 ✓ (57 + 6) · lint 0 · 165 routes · migration additive (PG 18.6 vérifié) · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **64** | **De l'argent immobilisé que personne ne regardait** — 07/09, première mesure de bout en bout du parcours de l'argent. La chaîne elle-même **tient** : aucun paiement sans confirmation, aucun solde faux, aucun retrait orphelin (sonde `parcours-argent.ts`, lecture seule). Mais une session du 28/08 y est apparue : **5 000 XAF payés, consultation tenue, aucun compte-rendu**. À l'échéance PM-30 le balayage a fait exactement son travail — professionnel ET super-administrateurs notifiés, en application et en push, trace au journal. ⚠️ Puis **rien pendant neuf jours** : l'argent n'est ni chez le soignant, ni revenu au patient. Le mécanisme n'a pas échoué, c'est le SUIVI qui n'existait pas — une notification est un ÉVÉNEMENT, l'argent immobilisé est un ÉTAT. Livré : `GET /v1/admin/finance/frozen-earnings` et l'onglet « Argent immobilisé » de l'écran Finance, qui montre le total, l'ancienneté, les deux parties, et **dit qu'aucune règle n'existe encore pour trancher**. **api 629 ✓ (619 + 10) · web 677 ✓ (671 + 6) · mobile 63 ✓ · lint 0 · 166 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 64 (l'argent immobilisé) a appris
+
+*07/09/2026 — la première mesure de bout en bout d'un parcours entier, plutôt que d'un module.*
+
+#### La bonne nouvelle d'abord : la chaîne tient
+
+La sonde éprouve les invariants derrière les promesses écrites à l'écran : aucun paiement sans
+confirmation préalable, aucun solde différent de la somme de ses mouvements, aucun retrait débité
+sans issue, aucun crédit en double. **Zéro écart.**
+
+Ce n'est pas rien à dire : ces invariants sont ceux qui, faux, coûtent de l'argent réel à quelqu'un.
+
+#### Ce qu'aucun test ne pouvait voir : un état qui dure
+
+Une session du 28/08 : le patient paie 5 000 XAF, la consultation a lieu, le soignant ne dépose
+jamais son compte-rendu. À l'échéance, tout fonctionne comme prévu — gains gelés, professionnel
+notifié, super-administrateurs notifiés, trace au journal d'audit.
+
+Puis **neuf jours de silence**. L'argent n'est ni versé, ni rendu.
+
+⚠️ **Le mécanisme n'a pas échoué.** Il a fait exactement ce qu'on lui demandait : prévenir. Ce qui
+manquait, c'est ce qui vient après.
+
+*Une notification est un ÉVÉNEMENT : elle passe, on la lit ou on la rate, et elle ne revient jamais.
+De l'argent immobilisé est un ÉTAT : il dure. Un état ne se surveille pas avec une alerte — il se
+surveille avec une liste qui montre encore le cas le lendemain.*
+
+#### C'est exactement le défaut que la file des remboursements avait déjà eu
+
+`approve` et `reject` savaient agir sur un identifiant, et **aucune route ne permettait de découvrir
+les demandes en attente** : la double validation était inapplicable, le second administrateur ne
+pouvant pas savoir qu'on l'attendait. Ce trou-là avait été bouché.
+
+Celui-ci est le même, un cran plus tôt : les cas que **personne n'a encore transformés en demande**.
+Une capacité d'agir sans moyen de découvrir sur quoi agir ne sert à rien — deux fois au même endroit,
+en quelques semaines.
+
+#### Et une question qui n'est pas la mienne : que devient cet argent ?
+
+Le gel sanctionne le soignant, c'est écrit (CU-06-03, RM-06-04). Mais **rien ne dit ce que devient
+la somme**. Trois lectures se défendent :
+
+| Issue | L'argument pour | L'argument contre |
+|---|---|---|
+| **Rembourser le patient** | son Carnet reste vide : il n'a pas eu tout ce qu'il a payé | il a bien eu sa consultation |
+| **Verser au soignant quand même** | il a travaillé | la sanction perd tout effet, et le compte-rendu ne viendra jamais |
+| **ULAMU conserve** | c'est l'état actuel, par défaut | aucune règle ne l'autorise — ce n'est pas une décision, c'est une absence de décision |
+
+L'écran pose donc la question au lieu d'y répondre à la place du porteur. Afficher un bouton
+« Rembourser » comme s'il allait de soi inventerait une règle que personne n'a écrite.
+
+*Un écran d'administration qui tranche une question que la spécification laisse ouverte ne fait pas
+gagner du temps : il fait prendre une décision sans que personne ne s'aperçoive qu'il en prenait une.*
+
 
 ### Ce que le chantier 63 (le recours d'un exclu) a appris
 

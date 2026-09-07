@@ -1081,6 +1081,36 @@ export interface SupportRequest {
   answeredAt: string | null
 }
 
+/**
+ * De l'argent immobilisé : une session payée, consultée, dont le compte-rendu n'a jamais été déposé
+ * à temps (chantier 64, 07/09/2026).
+ *
+ * ⚠️ **Mesuré en production** : une session du 28/08, 5 000 XAF, consultation tenue, aucun
+ * compte-rendu. À l'échéance, le balayage a fait son travail — professionnel et super-admins
+ * notifiés, trace au journal. Puis plus rien : neuf jours plus tard, l'argent n'était ni chez le
+ * soignant, ni revenu au patient. Le mécanisme n'a pas échoué ; c'est le SUIVI qui n'existait pas.
+ *
+ * Une notification est un événement, elle passe. De l'argent immobilisé est un état, il dure.
+ */
+export interface GainGele {
+  sessionId: string
+  orderRef: string
+  paymentId: string | null
+  amountXaf: number | null
+  netXaf: number | null
+  commissionXaf: number | null
+  paymentStatus: string | null
+  professionalId: string
+  professionalName: string | null
+  patientName: string | null
+  endedAt: string
+  /** Instant où le dépôt est devenu impossible (fin + PM-30). */
+  frozenSince: string
+  frozenDays: number
+  /** Une demande de remboursement déjà déposée pour ce paiement, s'il y en a une. */
+  refundRequestStatus: string | null
+}
+
 /** La même, vue de l'administration : sans le nom ni le numéro, on ne peut pas traiter. */
 export interface AdminSupportRequest extends SupportRequest {
   requesterId: string
@@ -1870,6 +1900,14 @@ export const api = {
    */
   reportContext: (id: string) =>
     request<ContexteSignalement>('GET', `/v1/admin/reports/${id}/context`, undefined, true),
+
+  /**
+   * L'argent immobilisé, faute de compte-rendu (chantier 64).
+   *
+   * C'est l'autre moitié de la file des remboursements : celle-ci liste les demandes DÉJÀ déposées,
+   * celle-là les cas que personne n'a encore transformés en demande.
+   */
+  frozenEarnings: () => request<GainGele[]>('GET', '/v1/admin/finance/frozen-earnings', undefined, true),
 
   /** CU-04-04 : toute décision est motivée, y compris un rejet. */
   decideReport: (id: string, dto: { decision: ReportDecision; reasons: string }) =>

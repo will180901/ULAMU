@@ -16,7 +16,7 @@
  *     vide ne veut pas dire « aucun écart », et l'écran doit le dire.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -27,6 +27,7 @@ import {
   type MeResponse,
   type PlatformParameter,
   type ReconciliationReport,
+  type GainGele,
   type RefundRequest,
 } from '@/lib/api'
 
@@ -299,5 +300,100 @@ describe('E2 — le rapprochement', () => {
     expect(await screen.findByText(/déjà au journal d'audit/)).toBeInTheDocument()
     const detail = screen.getByText('AGG-77').closest('li') as HTMLElement
     expect(within(detail).getByText(/base 12 500 XAF · relevé 12 000 XAF/)).toBeInTheDocument()
+  })
+})
+
+describe('E-finance — l’argent immobilisé (chantier 64)', () => {
+  /*
+    Mesuré en production le 07/09/2026 : une session du 28/08, 5 000 XAF, consultation tenue, aucun
+    compte-rendu. Le balayage a fait son travail à l'échéance — professionnel et super-admins
+    notifiés, trace au journal. Puis plus rien : neuf jours plus tard, l'argent n'était ni chez le
+    soignant, ni revenu au patient.
+
+    Le mécanisme n'a pas échoué : c'est le SUIVI qui n'existait pas. Une notification est un
+    événement, elle passe ; de l'argent immobilisé est un état, il dure.
+  */
+  const gele = (over: Partial<GainGele> = {}): GainGele => ({
+    sessionId: 'sess-1',
+    orderRef: 'handshake:abc',
+    paymentId: 'pay-1',
+    amountXaf: 5000,
+    netXaf: 4500,
+    commissionXaf: 500,
+    paymentStatus: 'SUCCEEDED',
+    professionalId: 'pro-1',
+    professionalName: 'Awa Mbemba',
+    patientName: 'Jean Loemba',
+    endedAt: '2026-08-28T14:07:56.000Z',
+    frozenSince: '2026-08-29T14:07:56.000Z',
+    frozenDays: 9,
+    refundRequestStatus: null,
+    ...over,
+  })
+
+  /**
+   * Ouvre l'onglet des gels.
+   *
+   * ⚠️ `fireEvent.click` et non `userEvent.click` : changer d'onglet est de la MISE EN PLACE, pas ce
+   * qu'on éprouve. `userEvent` rejoue toute une séquence de pointeur avec ses délais, et sous
+   * exécution parallèle des 42 fichiers, ces tests dépassaient parfois le délai de 2,5 s — un échec
+   * une fois sur plusieurs. *Un test qui échoue par intermittence est pire qu'un test absent : on
+   * finit par ignorer ses alertes.* On supprime donc la cause plutôt que de relever la limite.
+   */
+  async function ouvrirGels(lignes: GainGele[]) {
+    vi.spyOn(api, 'frozenEarnings').mockResolvedValue(lignes)
+    monter()
+    fireEvent.click(await screen.findByRole('button', { name: /Argent immobilisé/i }))
+  }
+
+  it('montre le total AVANT la liste — c’est lui qui dit s’il faut s’en occuper', async () => {
+    await ouvrirGels([gele(), gele({ sessionId: 'sess-2', orderRef: 'handshake:def' })])
+
+    expect(await screen.findByText(/2 sessions · 10 000 XAF/)).toBeInTheDocument()
+  })
+
+  it('nomme les deux parties et dit depuis combien de temps', async () => {
+    await ouvrirGels([gele()])
+
+    expect(await screen.findByText(/Awa Mbemba/)).toBeInTheDocument()
+    expect(screen.getByText(/Jean Loemba/)).toBeInTheDocument()
+    expect(screen.getByText(/immobilisé depuis 9 jours/)).toBeInTheDocument()
+  })
+
+  /*
+    L'écran ne tranche pas, et il le DIT. Rien dans la spécification ne dit ce que devient cet
+    argent : le gel sanctionne le soignant, mais aucune règle ne choisit entre rembourser le patient
+    — qui a eu sa consultation, mais dont le Carnet reste vide — et conserver la somme. Afficher un
+    bouton « Rembourser » comme s'il allait de soi inventerait une règle que personne n'a écrite.
+  */
+  it('dit qu’aucune règle n’existe encore pour trancher', async () => {
+    await ouvrirGels([gele()])
+
+    expect(await screen.findByText(/aucune règle\s+n'existe encore pour trancher/i)).toBeInTheDocument()
+  })
+
+  it('signale une demande de remboursement déjà déposée', async () => {
+    await ouvrirGels([gele({ refundRequestStatus: 'PENDING_SECOND_APPROVAL' })])
+
+    expect(await screen.findByText(/Une demande de remboursement existe déjà/)).toBeInTheDocument()
+  })
+
+  it('dit clairement quand rien n’est immobilisé', async () => {
+    await ouvrirGels([])
+
+    expect(await screen.findByText(/Aucun montant immobilisé/)).toBeInTheDocument()
+  })
+
+  /*
+    Un cadre vide se prend pour « rien à signaler ». Sur de l'argent, c'est le pire malentendu
+    possible : on veut savoir qu'on N'A PAS PU lire, pas croire qu'il n'y a rien.
+  */
+  it('distingue « rien à signaler » de « je n’ai pas pu lire »', async () => {
+    vi.spyOn(api, 'frozenEarnings').mockRejectedValue(new Error('réseau'))
+    monter()
+    fireEvent.click(await screen.findByRole('button', { name: /Argent immobilisé/i }))
+
+    expect(await screen.findByText(/La liste n'a pas pu être lue/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Aucun montant immobilisé/)
   })
 })

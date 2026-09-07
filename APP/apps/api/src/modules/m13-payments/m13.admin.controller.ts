@@ -48,6 +48,27 @@ export class M13AdminController {
     return this.manualRefunds.list(filtre as never);
   }
 
+  /**
+   * L'argent immobilisé : sessions payées, consultées, sans compte-rendu déposé à temps.
+   *
+   * ⚠️ **Mesuré en production le 07/09/2026** : une session du 28/08, 5 000 XAF, consultation
+   * tenue, aucun compte-rendu. Le balayage a fait son travail à l'échéance — professionnel et
+   * super-administrateurs notifiés, trace au journal. Puis plus rien : neuf jours plus tard,
+   * l'argent n'était ni chez le soignant, ni revenu au patient.
+   *
+   * Le mécanisme n'a pas échoué ; c'est le SUIVI qui n'existait pas. Une notification est un
+   * événement, elle passe ; de l'argent immobilisé est un état, il dure. Un état se surveille avec
+   * une liste, pas avec une alerte ponctuelle.
+   *
+   * C'est l'autre moitié de la file des remboursements : celle-ci liste les demandes déjà déposées,
+   * celle-là les cas que personne n'a encore transformés en demande.
+   */
+  @AdminOnly(AdminRole.ADMIN_FINANCE)
+  @Get("frozen-earnings")
+  listFrozenEarnings() {
+    return this.manualRefunds.listFrozenEarnings();
+  }
+
   /** Remboursement manuel (EF-13-10) : direct sous PM-35, double validation au-delà (RM-13-06). */
   @AdminOnly(AdminRole.ADMIN_FINANCE)
   @Post("refunds")

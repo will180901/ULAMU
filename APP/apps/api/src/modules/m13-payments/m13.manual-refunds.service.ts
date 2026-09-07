@@ -5,7 +5,7 @@
  * second admin n'a pas approuvé.
  */
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { ManualRefundStatus, PaymentStatus } from "@prisma/client";
+import { CareSessionStatus, ManualRefundStatus, PaymentStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
@@ -34,6 +34,32 @@ export interface ManualRefundListItem {
   /** `null` seulement si le paiement a disparu — cas anormal, affiché tel quel plutôt que masqué. */
   amountXaf: number | null;
   payerId: string | null;
+}
+
+/**
+ * Une session dont les gains sont gelés — de l'argent immobilisé qui attend une décision.
+ *
+ * ⚠️ Les champs `null` signalent un paiement introuvable : anomalie rare, montrée telle quelle
+ * plutôt que masquée. Un cadre vide se prend pour « rien à signaler » ; ici il y a bien quelque
+ * chose, et c'est même plus grave.
+ */
+export interface FrozenEarningsItem {
+  sessionId: string;
+  orderRef: string;
+  paymentId: string | null;
+  amountXaf: number | null;
+  netXaf: number | null;
+  commissionXaf: number | null;
+  paymentStatus: string | null;
+  professionalId: string;
+  professionalName: string | null;
+  patientName: string | null;
+  endedAt: string;
+  /** Instant où le dépôt est devenu impossible (fin + PM-30). */
+  frozenSince: string;
+  frozenDays: number;
+  /** Une demande de remboursement déjà déposée pour ce paiement, s'il y en a une. */
+  refundRequestStatus: string | null;
 }
 
 @Injectable()
@@ -214,5 +240,113 @@ export class ManualRefundsService {
     });
 
     return { requestId, paymentId: request.paymentId, status: ManualRefundStatus.REJECTED, requiresSecondApproval: false };
+  }
+
+  // ── L'argent immobilisé, et personne pour le voir (chantier 64, 07/09/2026) ──
+
+  /**
+   * Les sessions dont les gains sont GELÉS : payées, consultées, sans compte-rendu déposé à temps.
+   *
+   * ── Le défaut mesuré le 07/09/2026 ─────────────────────────────────────────────────────────────
+   *
+   * En production : une session du 28/08, 5 000 XAF payés par le patient, consultation tenue,
+   * **aucun compte-rendu**. À l'échéance (PM-30), le balayage a fait exactement son travail — le
+   * professionnel ET les super-administrateurs ont été notifiés, en application et en push, avec
+   * une trace au journal. Puis plus rien : **neuf jours plus tard, l'argent n'est ni chez le
+   * soignant, ni revenu au patient.**
+   *
+   * ⚠️ Le mécanisme n'a pas échoué. C'est le SUIVI qui n'existait pas.
+   *
+   * Une notification est un **événement** : elle passe. De l'argent immobilisé est un **état** : il
+   * dure. Un état ne se surveille pas avec une alerte ponctuelle — il se surveille avec une liste,
+   * qui montre encore le cas le lendemain, la semaine suivante, jusqu'à ce que quelqu'un tranche.
+   *
+   * *C'est le même défaut que la file des remboursements avant qu'elle existe : `approve` et
+   * `reject` savaient agir sur un identifiant, sans qu'aucune route ne permette de DÉCOUVRIR les
+   * demandes en attente. On répare ici l'autre moitié — les cas que personne n'a encore transformés
+   * en demande.*
+   *
+   * ── Ce que cette liste ne décide pas ──────────────────────────────────────────────────────────
+   *
+   * Elle ne dit pas quoi faire. **Rien, dans la spécification, ne dit ce que devient cet argent** :
+   * le gel sanctionne le soignant (RM-06-04, CU-06-03), mais aucune règle ne tranche entre
+   * rembourser le patient — qui a eu sa consultation, mais dont le Carnet reste vide — et garder la
+   * somme. Cette question appartient au porteur ; la liste rend seulement le cas visible, ce sans
+   * quoi aucune décision n'est même possible.
+   */
+  async listFrozenEarnings(): Promise<FrozenEarningsItem[]> {
+    const pm30S = await this.params.getInt("PM-30");
+    const limite = new Date(Date.now() - pm30S * 1000);
+
+    /*
+      La signature : terminée, sans compte-rendu, et l'échéance PM-30 déjà passée. Une session
+      terminée il y a une heure n'est PAS gelée — le soignant a encore le temps d'écrire.
+    */
+    const sessions = await this.prisma.careSession.findMany({
+      where: {
+        status: CareSessionStatus.ENDED,
+        reportDepositedAt: null,
+        endedAt: { not: null, lt: limite },
+      },
+      orderBy: { endedAt: "asc" }, // les plus anciennes d'abord : elles attendent depuis le plus longtemps
+      take: 200,
+      select: { id: true, orderRef: true, endedAt: true, professionalId: true, patientAccountId: true },
+    });
+    if (sessions.length === 0) return [];
+
+    // Les paiements et les noms en deux requêtes, pas deux par ligne.
+    const paiements = await this.prisma.payment.findMany({
+      where: { orderRef: { in: sessions.map((s) => s.orderRef) } },
+      select: { id: true, orderRef: true, amountXaf: true, status: true, split: { select: { netXaf: true, commissionXaf: true } } },
+    });
+    const parRef = new Map(paiements.map((p) => [p.orderRef, p]));
+
+    const comptes = await this.prisma.account.findMany({
+      where: { id: { in: [...new Set(sessions.flatMap((s) => [s.professionalId, s.patientAccountId]))] } },
+      select: {
+        id: true,
+        professionalProfile: { select: { firstName: true, lastName: true } },
+        patientProfile: { select: { firstName: true, lastName: true } },
+      },
+    });
+    const nomDe = new Map(
+      comptes.map((c) => {
+        const p = c.professionalProfile ?? c.patientProfile;
+        return [c.id, p ? `${p.firstName} ${p.lastName}`.trim() : "(compte sans profil)"];
+      }),
+    );
+
+    /*
+      Une demande de remboursement déjà déposée retire le cas de la file « à trancher » : sans cela,
+      deux administrateurs traiteraient le même dossier en croyant chacun être le premier.
+    */
+    const demandes = await this.prisma.manualRefundRequest.findMany({
+      where: { paymentId: { in: paiements.map((p) => p.id) } },
+      select: { paymentId: true, status: true },
+    });
+    const demandeDe = new Map(demandes.map((d) => [d.paymentId, d.status]));
+
+    return sessions.map((s) => {
+      const p = parRef.get(s.orderRef);
+      const echeance = new Date((s.endedAt as Date).getTime() + pm30S * 1000);
+      return {
+        sessionId: s.id,
+        orderRef: s.orderRef,
+        paymentId: p?.id ?? null,
+        // `null` seulement si le paiement a disparu — cas anormal, montré tel quel plutôt que masqué.
+        amountXaf: p?.amountXaf ?? null,
+        netXaf: p?.split?.netXaf ?? null,
+        commissionXaf: p?.split?.commissionXaf ?? null,
+        paymentStatus: p?.status ?? null,
+        professionalId: s.professionalId,
+        professionalName: nomDe.get(s.professionalId) ?? null,
+        patientName: nomDe.get(s.patientAccountId) ?? null,
+        endedAt: (s.endedAt as Date).toISOString(),
+        frozenSince: echeance.toISOString(),
+        /** Depuis combien de jours l'argent est immobilisé — c'est ce qui décide de l'ordre d'examen. */
+        frozenDays: Math.floor((Date.now() - echeance.getTime()) / 86_400_000),
+        refundRequestStatus: p ? (demandeDe.get(p.id) ?? null) : null,
+      };
+    });
   }
 }

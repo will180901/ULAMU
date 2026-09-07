@@ -43,6 +43,7 @@ import {
   Play,
   Scale,
   ShieldCheck,
+  Snowflake,
   UserRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,6 +55,8 @@ import { SqueletteCartes } from '@/components/ulamu/Squelette'
 import { messageErreur } from '@/lib/message-erreur'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+/** Un montant avec son unité — la liste des gels affiche des sommes, pas des nombres nus. */
+const xafAffiche = (n: number) => `${xaf(n)} XAF`
 const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -64,7 +67,7 @@ const ETATS: Record<RefundStatus, { libelle: string; ton: TonPilule }> = {
   EXECUTED: { libelle: 'Versée', ton: 'succes' },
 }
 
-type Onglet = 'a-trancher' | 'historique' | 'rapprochement'
+type Onglet = 'a-trancher' | 'geles' | 'historique' | 'rapprochement'
 
 // ── Une demande de remboursement ───────────────────────────────────────────
 
@@ -281,6 +284,136 @@ function Rapprochement() {
   )
 }
 
+/**
+ * L'argent immobilisé — chantier 64, 07/09/2026.
+ *
+ * ── Ce que cette vue répare ────────────────────────────────────────────────────────────────────
+ *
+ * Mesuré en production le 07/09 : une session du 28/08, **5 000 XAF payés**, consultation tenue,
+ * **aucun compte-rendu**. À l'échéance PM-30 le balayage a fait exactement son travail — le
+ * professionnel et les super-administrateurs notifiés, en application et en push, trace au journal
+ * d'audit. Puis plus rien : **neuf jours plus tard, l'argent n'était ni chez le soignant, ni revenu
+ * au patient.**
+ *
+ * ⚠️ Le mécanisme n'a pas échoué. C'est le SUIVI qui n'existait pas.
+ *
+ * Une notification est un **événement** : elle passe. De l'argent immobilisé est un **état** : il
+ * dure. Un état se surveille avec une liste qui montre encore le cas le lendemain, jusqu'à ce que
+ * quelqu'un tranche — pas avec une alerte ponctuelle qu'on rate une fois et qui ne revient jamais.
+ *
+ * ── Ce que cette vue ne décide pas, et le dit ─────────────────────────────────────────────────
+ *
+ * **Rien, dans la spécification, ne dit ce que devient cet argent.** Le gel sanctionne le soignant
+ * (CU-06-03), mais aucune règle ne tranche entre rembourser le patient — qui a eu sa consultation,
+ * mais dont le Carnet reste vide — et conserver la somme. L'écran pose la question au lieu de faire
+ * semblant d'y répondre : afficher un bouton « Rembourser » comme s'il allait de soi inventerait une
+ * règle que personne n'a écrite.
+ */
+function GainsGeles() {
+  const geles = useQuery({ queryKey: ['admin-frozen-earnings'], queryFn: () => api.frozenEarnings(), retry: false })
+
+  return (
+    <Carte
+      icone={Snowflake}
+      titre="Argent immobilisé"
+      sousTitre="Sessions payées, consultées, sans compte-rendu déposé à temps — les plus anciennes d'abord"
+    >
+      {geles.isPending ? (
+        <SqueletteCartes nombre={2} hauteur={92} libelle="Lecture des sessions gelées…" />
+      ) : geles.isError ? (
+        <div className="flex flex-col gap-2 py-2">
+          <Avis ton="erreur">
+            La liste n'a pas pu être lue. Aucun montant n'a bougé : cet écran ne fait que lire. (
+            {messageErreur(geles.error)})
+          </Avis>
+          <div>
+            <Button type="button" onClick={() => geles.refetch()}>
+              Réessayer
+            </Button>
+          </div>
+        </div>
+      ) : geles.data.length === 0 ? (
+        <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
+          Aucun montant immobilisé. Une session apparaît ici si son compte-rendu n'a pas été déposé
+          dans le délai — l'argent n'est alors ni versé au soignant, ni rendu au patient.
+        </p>
+      ) : (
+        <>
+          {/*
+            Le total AVANT la liste : c'est le chiffre qui dit s'il faut s'en occuper aujourd'hui ou
+            à la fin du mois. Une liste sans total se lit ligne à ligne sans jamais donner l'ampleur.
+          */}
+          <Avis ton="alerte">
+            <strong>
+              {geles.data.length} session{geles.data.length > 1 ? 's' : ''} ·{' '}
+              {xafAffiche(geles.data.reduce((t, g) => t + (g.amountXaf ?? 0), 0))}
+            </strong>{' '}
+            d'argent immobilisé. Ni versé au soignant, ni rendu au patient — et aucune règle
+            n'existe encore pour trancher entre les deux.
+          </Avis>
+
+          <ul className="flex flex-col gap-2">
+            {geles.data.map((g) => (
+              <li key={g.sessionId} className="rounded-md border border-border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[13px] font-medium text-foreground">
+                    {g.amountXaf === null ? 'Montant inconnu' : xafAffiche(g.amountXaf)}
+                  </span>
+                  <Pilule ton={g.frozenDays >= 7 ? 'erreur' : 'alerte'}>
+                    immobilisé depuis {g.frozenDays} jour{g.frozenDays > 1 ? 's' : ''}
+                  </Pilule>
+                </div>
+
+                <p className="mt-1 text-[12px] leading-[1.6] text-[var(--texte-secondaire)]">
+                  Soignant : {g.professionalName ?? '(inconnu)'} · Patient : {g.patientName ?? '(inconnu)'}
+                </p>
+                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                  session terminée le {dateFr(g.endedAt)} · gelée depuis le {dateFr(g.frozenSince)}
+                </p>
+                {g.netXaf !== null ? (
+                  <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
+                    Part du soignant {xafAffiche(g.netXaf)} · commission ULAMU{' '}
+                    {xafAffiche(g.commissionXaf ?? 0)}
+                  </p>
+                ) : null}
+
+                {/*
+                  Une demande déjà déposée sort le dossier de la file « à faire » : sans cette ligne,
+                  deux administrateurs le traitent en croyant chacun être le premier.
+                */}
+                {g.refundRequestStatus ? (
+                  <p className="mt-2 text-[11px] font-medium text-[var(--texte-secondaire)]">
+                    Une demande de remboursement existe déjà ({g.refundRequestStatus}) — à suivre dans
+                    « À trancher ».
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[11px] text-[var(--texte-tertiaire)]">
+                    Aucune demande déposée. Le remboursement se demande depuis la file des
+                    remboursements, avec son motif.
+                  </p>
+                )}
+
+                {g.paymentStatus !== null && g.paymentStatus !== 'SUCCEEDED' ? (
+                  <Avis ton="erreur">
+                    Le paiement de cette session est au statut {g.paymentStatus} — vérifiez avant toute
+                    décision.
+                  </Avis>
+                ) : null}
+                {g.paymentId === null ? (
+                  <Avis ton="erreur">
+                    Aucun paiement n'a été retrouvé pour cette session. C'est une anomalie : elle est
+                    montrée plutôt que masquée.
+                  </Avis>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Carte>
+  )
+}
+
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 export function FinancePage() {
@@ -367,6 +500,9 @@ export function FinancePage() {
              « À trancher 0 » pendant une panne annonce une file vide qu'on n'a pas pu lire. */
           options={[
             { cle: 'a-trancher', label: attente.isSuccess ? `À trancher ${enAttente.length}` : 'À trancher' },
+            /* Sans compte tant qu'on n'a pas lu : « Immobilisé 0 » pendant une panne annoncerait
+               qu'il n'y a rien à faire, ce qui est exactement le contraire de ce qu'on veut dire. */
+            { cle: 'geles', label: 'Argent immobilisé' },
             { cle: 'historique', label: toutes.isSuccess ? `Historique ${historique.length}` : 'Historique' },
             { cle: 'rapprochement', label: 'Rapprochement' },
           ]}
@@ -375,6 +511,8 @@ export function FinancePage() {
 
       {onglet === 'rapprochement' ? (
         <Rapprochement />
+      ) : onglet === 'geles' ? (
+        <GainsGeles />
       ) : onglet === 'a-trancher' ? (
         <Carte icone={Scale} titre="Remboursements à trancher" sousTitre="Les plus anciens en premier — un patient attend">
           {attente.isPending ? (
