@@ -934,6 +934,48 @@ export interface UserReport {
 export type ReportDecision = 'DISMISSED' | 'WARNING' | 'ESCALATED_M16' | 'ESCALATED_M03'
 
 /**
+ * Contexte d'un signalement (chantier 60, 07/09/2026) — de QUI il s'agit, jamais de QUOI.
+ *
+ * ⚠️ **Aucun de ces types ne porte le contenu d'un message, et c'est délibéré.**
+ * `SessionMessage.body` est chiffré au repos (RM-06-06) et n'est déchiffré que pour les
+ * participants d'une consultation : un message peut porter les résultats d'analyse d'un patient qui
+ * n'a rien signalé. Le serveur résout l'AUTEUR ; la décision porte sur la personne, pas la phrase.
+ */
+export interface CompteMinimal {
+  accountId: string
+  phone: string
+  type: string
+  status: string
+  /** « Prénom Nom », ou « (compte sans profil) ». */
+  displayName: string
+}
+
+export type CibleSignalement =
+  | { kind: 'PROFILE'; found: true; account: CompteMinimal }
+  | { kind: 'PROFILE'; found: false }
+  | {
+      kind: 'SESSION_MESSAGE'
+      found: true
+      message: { messageId: string; sessionId: string; kind: string; createdAt: string; edited: boolean; deleted: boolean }
+      author: CompteMinimal | null
+    }
+  | { kind: 'SESSION_MESSAGE'; found: false }
+  | { kind: 'FACILITY'; found: true; facility: { facilityId: string; name: string } }
+  | { kind: 'FACILITY'; found: false }
+  | { kind: 'UNKNOWN'; found: false }
+
+export interface ContexteSignalement {
+  id: string
+  targetType: string
+  targetId: string
+  reasonCode: ReportReasonCode
+  reasonText: string | null
+  status: string
+  createdAt: string
+  target: CibleSignalement
+}
+
+/**
  * Ce qu'on peut signaler — chantier 41, 04/09/2026.
  *
  * ⚠️ Le serveur en accepte un TROISIÈME, `FACILITY`. Il n'est pas déclaré ici, et ce n'est pas un
@@ -1780,6 +1822,20 @@ export const api = {
   // Administration — signalements (M04) et comptes (M16)
   reports: (status?: string) =>
     request<{ items: UserReport[] }>('GET', `/v1/admin/reports${status ? `?status=${status}` : ''}`, undefined, true),
+  /**
+   * De QUI parle ce signalement (chantier 60).
+   *
+   * La file ne sert que `targetType` et `targetId` : sur un message, l'écran affichait un
+   * identifiant tronqué et l'administration n'avait **aucun moyen de savoir qui avait écrit**. Une
+   * file qui ne s'instruit pas est pire qu'une file vide — elle fait croire à un recours.
+   *
+   * ⚠️ Appel séparé, et à la demande : résoudre une cible **révèle une identité** et laisse une
+   * trace au journal (RM-16-03). On ne le fait donc que pour le signalement réellement ouvert, pas
+   * pour chaque ligne de la liste.
+   */
+  reportContext: (id: string) =>
+    request<ContexteSignalement>('GET', `/v1/admin/reports/${id}/context`, undefined, true),
+
   /** CU-04-04 : toute décision est motivée, y compris un rejet. */
   decideReport: (id: string, dto: { decision: ReportDecision; reasons: string }) =>
     request<void>('POST', `/v1/admin/reports/${id}/decide`, dto, true),

@@ -35,6 +35,55 @@ export interface AuditQueryFilters {
 }
 
 /**
+ * Contexte d'un signalement (chantier 60, 07/09/2026) — de QUI il s'agit, jamais de QUOI.
+ *
+ * ⚠️ Aucun de ces types ne porte le contenu d'un message : `SessionMessage.body` est chiffré au
+ * repos (RM-06-06) et n'a pas à être déchiffré pour l'administration. Voir `getReportContext`.
+ */
+export interface MinimalAccount {
+  accountId: string;
+  phone: string;
+  type: string;
+  status: string;
+  /** « Prénom Nom », ou « (compte sans profil) » — jamais une adresse, jamais un identifiant. */
+  displayName: string;
+}
+
+export type ReportTarget =
+  | { kind: "PROFILE"; found: true; account: MinimalAccount }
+  | { kind: "PROFILE"; found: false }
+  | {
+      kind: "SESSION_MESSAGE";
+      found: true;
+      message: {
+        messageId: string;
+        sessionId: string;
+        /** TEXT | PHOTO | VOICE — de quelle NATURE, jamais le contenu. */
+        kind: string;
+        createdAt: string;
+        edited: boolean;
+        deleted: boolean;
+      };
+      /** L'auteur du message : c'est sur lui que porte la décision. `null` si son compte a disparu. */
+      author: MinimalAccount | null;
+    }
+  | { kind: "SESSION_MESSAGE"; found: false }
+  | { kind: "FACILITY"; found: true; facility: { facilityId: string; name: string } }
+  | { kind: "FACILITY"; found: false }
+  | { kind: "UNKNOWN"; found: false };
+
+export interface ReportContext {
+  id: string;
+  targetType: string;
+  targetId: string;
+  reasonCode: ReportReasonCode;
+  reasonText: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  target: ReportTarget;
+}
+
+/**
  * Cloisonnement du journal par domaine (CU-04-02, matrice M02 §5) :
  * chaque sous-rôle ne voit que les actions de son périmètre ; SUPER_ADMIN voit tout.
  */
@@ -221,6 +270,149 @@ export class M04Service {
       });
       return { reportId: report.id };
     });
+  }
+
+  // ── Contexte d'un signalement (chantier 60, 07/09/2026) ────────────────────
+
+  /**
+   * De QUI parle ce signalement — sans jamais dire de QUOI il parle.
+   *
+   * ── Le défaut ─────────────────────────────────────────────────────────────────────────────────
+   *
+   * `listReports` ne renvoie que `targetType` et `targetId`, et l'écran d'administration n'affiche
+   * que les huit premiers caractères de l'identifiant. Pour un `PROFILE`, un administrateur pouvait
+   * encore recouper à la main. Pour un `SESSION_MESSAGE`, il lisait « SESSION_MESSAGE · A3F91C2B »
+   * — et **rien, nulle part, ne permettait de savoir qui avait écrit ce message.**
+   *
+   * ⚠️ Une file de modération dont les entrées ne s'instruisent pas est pire qu'une file vide :
+   * elle fait croire à un recours. Le mobile vient d'ouvrir la porte d'entrée (chantier 59) ; la
+   * file est encore vide (mesurée le 07/09), c'est le moment de l'outiller.
+   *
+   * ── Ce que cette route ne fera JAMAIS : servir le contenu du message ──────────────────────────
+   *
+   * Ma première recommandation au porteur disait « pour un message, son texte, son auteur et sa
+   * session ». **Le texte était de trop, et c'était une erreur.**
+   *
+   * `SessionMessage.body` est **chiffré au repos** (`sealSecret`) et n'est déchiffré que pour les
+   * participants de la session. RM-06-06 scelle le contenu de session précisément pour qu'il ne
+   * soit pas lisible en passant ; RM-04-03 interdit déjà le contenu médical dans l'audit. Un
+   * message de consultation peut parfaitement contenir les résultats d'analyse du patient — celui
+   * qui ne signale rien, et qui n'a rien demandé.
+   *
+   * Alors on résout **l'auteur, jamais le contenu**. Cela suffit à instruire : le modérateur sait
+   * QUI est visé, quand, dans quelle session, et il a déjà le récit du signaleur dans `reasonText`
+   * — c'est à cela que sert ce champ. Ce qu'il décide ensuite porte sur la personne (avertir,
+   * suspendre, transmettre à M03), jamais sur la phrase.
+   *
+   * *Ouvrir le contenu chiffré des consultations à l'administration serait une décision de produit,
+   * pas un détail d'implémentation. Elle appartient au porteur, pas à cette route.*
+   *
+   * ── Le pouvoir sans trace n'existe pas (RM-16-03) ─────────────────────────────────────────────
+   *
+   * Résoudre une cible, c'est révéler une identité à un administrateur. L'acte est donc audité,
+   * comme l'est déjà la consultation du journal (RM-04-02). Et l'audit ne porte ni le signaleur
+   * (RM-04-04) ni la moindre bribe de contenu (RM-04-03).
+   */
+  async getReportContext(adminId: string, reportId: string): Promise<ReportContext> {
+    const report = await this.prisma.userReport.findUnique({ where: { id: reportId } });
+    if (!report) throw new NotFoundException("Signalement introuvable");
+
+    const cible = await this.resolveTarget(report.targetType, report.targetId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.audit.emit(tx, {
+        actorId: adminId,
+        actorType: "admin",
+        action: "m04.report.context.viewed",
+        resource: `report:${reportId}`,
+        // Ni signaleur (RM-04-04), ni contenu (RM-04-03) : de quoi savoir QUI a regardé QUOI.
+        context: { targetType: report.targetType, targetId: report.targetId, resolved: cible.found },
+      });
+    });
+
+    return {
+      // `redactReportForAdmin` retire `reporterId` — la même parade qu'à la file (RM-04-04).
+      ...redactReportForAdmin({
+        reporterId: report.reporterId,
+        id: report.id,
+        targetType: report.targetType,
+        targetId: report.targetId,
+        reasonCode: report.reasonCode as ReportReasonCode,
+        reasonText: report.reasonText,
+        status: report.status,
+        createdAt: report.createdAt.toISOString(),
+      }),
+      target: cible,
+    };
+  }
+
+  /**
+   * Résout la cible en une identité minimale (RM-16-02), ou dit franchement qu'elle est introuvable.
+   *
+   * ⚠️ `found: false` n'est pas une erreur à cacher : un compte fermé, un message effacé, une
+   * structure disparue arrivent. L'écran doit pouvoir dire « cette cible n'existe plus » plutôt que
+   * d'afficher un vide qu'on prend pour un chargement — *une lecture qui échoue n'est ni un zéro ni
+   * un « non »*.
+   */
+  private async resolveTarget(targetType: string, targetId: string): Promise<ReportTarget> {
+    if (targetType === "PROFILE") {
+      const compte = await this.minimalAccount(targetId);
+      return compte ? { kind: "PROFILE", found: true, account: compte } : { kind: "PROFILE", found: false };
+    }
+
+    if (targetType === "SESSION_MESSAGE") {
+      const message = await this.prisma.sessionMessage.findUnique({
+        where: { id: targetId },
+        // `body` n'est PAS sélectionné : il est chiffré, et il n'a rien à faire ici (RM-06-06).
+        select: { id: true, sessionId: true, senderId: true, kind: true, createdAt: true, editedAt: true, deletedAt: true },
+      });
+      if (!message) return { kind: "SESSION_MESSAGE", found: false };
+      return {
+        kind: "SESSION_MESSAGE",
+        found: true,
+        message: {
+          messageId: message.id,
+          sessionId: message.sessionId,
+          kind: message.kind,
+          createdAt: message.createdAt.toISOString(),
+          edited: message.editedAt !== null,
+          deleted: message.deletedAt !== null,
+        },
+        // L'auteur du message : c'est LUI qui est visé, et c'est sur lui que porte la décision.
+        author: await this.minimalAccount(message.senderId),
+      };
+    }
+
+    if (targetType === "FACILITY") {
+      /*
+        Les structures sont sorties du produit (D-051) et aucun client n'offre plus de les signaler.
+        Mais des lignes peuvent exister en base : les taire ferait disparaître un signalement de
+        l'écran sans que personne ne sache pourquoi.
+      */
+      const facility = await this.prisma.facility.findUnique({ where: { id: targetId }, select: { id: true, name: true } });
+      return facility
+        ? { kind: "FACILITY", found: true, facility: { facilityId: facility.id, name: facility.name } }
+        : { kind: "FACILITY", found: false };
+    }
+
+    return { kind: "UNKNOWN", found: false };
+  }
+
+  /** Identité minimale d'un compte pour l'administration (RM-16-02) — même forme qu'`AccountSearchHit`. */
+  private async minimalAccount(accountId: string): Promise<MinimalAccount | null> {
+    const a = await this.prisma.account.findUnique({
+      where: { id: accountId },
+      include: { patientProfile: true, professionalProfile: true, facilityMemberProfile: true },
+    });
+    if (!a) return null;
+    const p = a.patientProfile ?? a.professionalProfile ?? a.facilityMemberProfile;
+    return {
+      accountId: a.id,
+      phone: a.phone,
+      type: a.type,
+      status: a.status,
+      displayName: p ? `${p.firstName} ${p.lastName}`.trim() : "(compte sans profil)",
+    };
   }
 
   // ── File de modération (EF-04-06 ; CU-04-04) ───────────────────────────────

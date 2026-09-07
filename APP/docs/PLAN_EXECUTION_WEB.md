@@ -643,6 +643,74 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **57** | **Les balayages ne tournaient qu'une nuit sur onze** — 06/09. En relançant le script des fichiers, le porteur a posé sans le savoir la bonne question. ⚠️ **Les `@Cron` ne s'exécutent que si le processus est VIVANT à l'instant dit — et Render endort le service après 15 min d'inactivité.** Preuve trouvée au journal d'audit : `m13.reconciliation.done` par `m16.scheduler` le **04/09 à 00:00:00 UTC, une seule fois sur 11,4 jours**. Les trois balayages livrés aujourd'hui — recréditer un retrait, effacer des données médicales, constater qu'une notification critique n'arrivera jamais — auraient donc tourné **une nuit sur onze**, au hasard de la présence d'un utilisateur. Livré : le déclencheur cesse d'être l'HEURE et devient l'ANCIENNETÉ. Une table `SchedulerRun` porte le dernier passage ; le tick d'une minute — qui part dès le réveil, donc à la première requête venue — rattrape ce qui est dû, sous **écriture conditionnelle** pour que le `@Cron` et le rattrapage ne fassent jamais le travail deux fois. **api 579 ✓ (574 + 5) · lint 0 · migration additive · 162 routes.** | ⏸ en attente | ⏸ |
 | **58** | **Changer son mot de passe sur mobile — et ne plus être mis dehors quand on se trompe** — 06/09. En mesurant ce que le serveur sait faire pour un patient et que l'application n'appelle pas : `POST /v1/accounts/me/password` existait **depuis le premier jour**, le web l'appelait, le mobile non — un patient devait se **déconnecter** puis passer par « mot de passe oublié ». ⚠️ En branchant l'écran, un défaut bien plus grave est apparu : **les deux clients traitent un `401` sur une requête authentifiée comme « ton jeton est mort » et effacent la session** — or l'API répondait `401` quand la session était valide et que seule la **preuve envoyée dans le corps** était fausse. **Une faute de frappe déconnectait**, sur douze routes : changement de mot de passe, désactivation de 2FA, fermeture de compte, signature du contrat soignant, et l'**exécution d'un retrait d'argent**. Corrigé au SERVEUR (une correction cliente n'atteindrait pas les téléphones déjà installés) : `ProofRefusedException` → 403, et `preuveEnSession()` pour les codes à usage unique consommés depuis une session ouverte. `401` ne veut plus dire qu'une chose. **api 587 ✓ (579 + 8) · mobile 32 ✓ (29 + 3) · web 659 ✓ · lint 0 erreur · 162 routes · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **59** | **Le patient n'avait aucun bouton pour signaler** — 06/09, moitié mobile de l'écart A. `POST /v1/reports` existe depuis le premier jour ; le web l'appelle depuis le chantier 41, l'application patient **non**. ⚠️ Ce n'est pas une fonctionnalité manquante parmi d'autres : c'est **la voie de recours**. Toute la modération était construite derrière — file triée par gravité, décision motivée, avertissement, transmission — sans porte d'entrée côté patient. Livré : la feuille `FeuilleSignalement` (les six motifs du serveur, la garantie d'anonymat annoncée AVANT le formulaire, l'accusé qui redit que la réponse reviendra dans les notifications), branchée à **deux endroits** — « Signaler ce message » à l'appui long, et « Signaler ce soignant » depuis la session ET depuis la fiche. Les règles sortent du JSX (`lib/signalement.ts`), l'icône `flag` rejoint le jeu d'icônes. **mobile 43 ✓ (32 + 11) · api 587 ✓ · web 659 ✓ · lint 0 erreur · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **60** | **Une file de modération qui ne s'instruisait pas** — 07/09. L'écran d'administration affichait `SESSION_MESSAGE · A3F91C2B` et demandait quand même de trancher : pour un profil on pouvait recouper à la main, pour un message **rien nulle part ne disait qui l'avait écrit**. Mesuré d'abord : la file est **vide** (0 signalement, PM-23 = 48 h) — donc rien à rattraper, le bon moment. Livré : `GET /v1/admin/reports/:id/context` résout la cible (l'auteur, sa nature, sa session), l'écran la nomme. ⚠️ **Et jamais le contenu du message** : `SessionMessage.body` est chiffré au repos (RM-06-06) et peut porter les données de santé d'un patient qui n'a rien signalé — ma propre recommandation de la veille disait « son texte », elle était fausse. Acte audité (`m04.report.context.viewed`, RM-16-03), signaleur toujours caviardé (RM-04-04). **api 596 ✓ (587 + 9) · web 665 ✓ (659 + 6) · mobile 43 ✓ · lint 0 · 163 routes · builds ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 60 (instruire un signalement) a appris
+
+*07/09/2026 — la moitié qui manquait au chantier de la veille.*
+
+#### J'avais recommandé de servir le texte du message. C'était faux.
+
+Hier, en signalant le défaut au porteur, j'ai écrit : *« pour un message, son texte, son auteur et
+sa session »*. En allant l'écrire, une vérification a montré que `SessionMessage.body` est
+**chiffré au repos** (`sealSecret`) et n'est déchiffré que pour les participants de la consultation.
+
+RM-06-06 scelle ce contenu précisément pour qu'il ne soit pas lisible en passant. Et un message de
+consultation peut porter les résultats d'analyse **du patient** — celui qui n'a rien signalé, et à
+qui personne n'a rien demandé. Le signalement de son soignant ne lui retire pas ce droit.
+
+La route résout donc **l'auteur, jamais le contenu**. Cela suffit à instruire : le modérateur sait
+qui est visé, quand, dans quelle session, et il a déjà le récit du signaleur dans `reasonText` —
+c'est à cela que sert ce champ. Ce qu'il décide porte sur la personne, pas sur la phrase.
+
+*Une recommandation faite en trois lignes n'a pas été confrontée au modèle de données. Celle qu'on
+écrit en code l'est forcément — d'où l'écart, et d'où la correction.*
+
+#### Ouvrir un contenu chiffré n'est pas une décision d'implémentation
+
+Servir le texte aurait été facile : deux lignes, `openSecret` existe déjà. Rien dans le code ne
+l'aurait empêché, et aucun test n'aurait protesté.
+
+C'est exactement pour cela qu'il fallait s'arrêter. **Décider que l'administration peut lire les
+consultations est une décision de produit** — elle change ce que la plateforme promet à ses
+patients. Elle appartient au porteur.
+
+*Ce qui est techniquement à portée de main n'est pas pour autant à moi de trancher.*
+
+#### Mesurer d'abord a changé l'urgence, pas la solution
+
+La sonde `etat-signalements.ts` a répondu en dix secondes : **zéro signalement en base**. Rien à
+rattraper, aucune file bloquée, aucun dossier en souffrance.
+
+Ce n'est pas un motif pour repousser — c'est le contraire. Le mobile venait d'ouvrir la porte
+d'entrée la veille ; outiller une file **avant** qu'elle se remplisse coûte une demi-journée, après
+cela coûte une demi-journée **plus** les dossiers qu'on n'a pas su instruire entre-temps.
+
+*Le bon moment pour outiller un mécanisme est juste avant qu'il serve, jamais juste après.*
+
+#### Ce qui est retiré exprès doit se dire
+
+L'écran portait déjà cette idée pour le signaleur anonyme : *« l'identité ne vous est pas transmise,
+et ne peut pas l'être »*, plutôt qu'un champ vide qu'on prendrait pour une donnée manquante.
+
+La même phrase manquait pour le contenu. Sans elle, un modérateur cherche l'extrait, ne le trouve
+pas, et conclut à une panne d'affichage — puis tranche à l'aveugle ou laisse le dossier ouvert.
+L'écran dit donc, en toutes lettres, que le texte n'est pas affiché **et pourquoi**.
+
+*Un vide se comble par une supposition. Une absence expliquée se respecte.*
+
+#### TypeScript a refusé la première faute injectée
+
+En essayant de réintroduire le contenu du message pour vérifier que le test mordait, le compilateur
+a refusé : le type `ReportTarget` ne prévoit pas de champ `body`. Il a fallu **élargir le type
+d'abord** pour que la faute compile.
+
+C'est la meilleure nouvelle du chantier : réintroduire le contenu ne peut pas se faire par accident.
+Il faut le vouloir, en deux endroits, dont un qui porte le commentaire expliquant pourquoi c'est
+interdit.
+
+*Un type bien posé transforme une erreur possible en décision explicite.*
+
 
 ### Ce que le chantier 59 (la voie de recours) a appris
 
@@ -695,6 +763,10 @@ maintenant en produire, et il vaut mieux le dire tant que la file est vide.
 message, son texte, son auteur et sa session ; pour un profil, le compte. Coût estimé : une route,
 une section d'écran, une demi-journée. À faire avant que la file se remplisse de signalements que
 personne ne peut instruire.
+
+> ✅ **Fait le 07/09 (chantier 60) — avec une correction de ma part.** « Son texte » était faux :
+> `SessionMessage.body` est chiffré au repos (RM-06-06) et peut porter les données de santé d'un
+> patient qui n'a rien signalé. La route résout **l'auteur, jamais le contenu**.
 
 
 ### Ce que le chantier 58 (une faute de frappe qui déconnectait) a appris

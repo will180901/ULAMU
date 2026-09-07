@@ -79,6 +79,20 @@ export class M04Controller {
     return this.service.listReports(q.status, q.limit);
   }
 
+  /**
+   * De QUI parle ce signalement (chantier 60, 07/09/2026).
+   *
+   * La file ne donne que `targetType` et `targetId` : sur un `SESSION_MESSAGE`, l'administration
+   * lisait un identifiant tronqué et n'avait **aucun moyen de savoir qui avait écrit**. Cette route
+   * résout la cible — l'auteur, sa nature, sa session — et **jamais le contenu du message**, qui est
+   * chiffré au repos (RM-06-06). Acte audité : révéler une identité laisse une trace (RM-16-03).
+   */
+  @AdminOnly(AdminRole.ADMIN_VERIFICATION)
+  @Get("admin/reports/:id/context")
+  getReportContext(@Actor() actor: AuthenticatedActor, @Param("id") id: string) {
+    return this.service.getReportContext(actor.accountId, id);
+  }
+
   /** Décision motivée — immuable, auditée ; le signaleur est notifié de l'issue (CU-04-03/04). */
   @AdminOnly(AdminRole.ADMIN_VERIFICATION)
   @Post("admin/reports/:id/decide")

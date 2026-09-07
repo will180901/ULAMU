@@ -34,6 +34,18 @@
  *    même personne. Le calculer sur la file affichée donnerait un chiffre partiel présenté comme un
  *    antécédent — c'est-à-dire la pire forme d'approximation sur un écran qui décide de sanctions.
  * 7. **Bouton d'export retiré** (famille 3, groupe D) — l'export ne concerne que le journal d'audit.
+ *
+ * ── Chantier 60 (07/09/2026) : le mis en cause a enfin un nom ─────────────────────────────────
+ *
+ * Cet écran affichait `SESSION_MESSAGE · A3F91C2B` et demandait quand même de trancher. Pour un
+ * profil, un administrateur pouvait recouper à la main ; pour un message, **rien nulle part ne
+ * disait qui l'avait écrit**. `GET /v1/admin/reports/:id/context` résout la cible — et cet écran
+ * la nomme.
+ *
+ * ⚠️ **Le contenu du message, lui, ne sera jamais affiché.** Il est chiffré au repos (RM-06-06) et
+ * n'est lisible que par les participants de la consultation : il peut porter les données de santé
+ * d'un patient qui n'a rien signalé. L'écran l'écrit, au lieu de laisser un vide qu'on prendrait
+ * pour une panne — le même choix que pour le signaleur anonyme.
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -42,7 +54,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
-import { api, type ReportDecision, type UserReport } from '@/lib/api'
+import type { UseQueryResult } from '@tanstack/react-query'
+import { api, type CompteMinimal, type ContexteSignalement, type ReportDecision, type UserReport } from '@/lib/api'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
 import { messageErreur } from '@/lib/message-erreur'
 
@@ -96,7 +109,135 @@ const ISSUES: Array<{ cle: ReportDecision; label: string; effet: string }> = [
   },
 ]
 
+/** La NATURE d'un message — jamais son contenu (voir `CibleResolue`). */
+const NATURE: Record<string, string> = {TEXT: 'texte', PHOTO: 'photo', VOICE: 'note vocale'}
+
+const ROLE: Record<string, string> = {PATIENT: 'patient', PROFESSIONAL: 'soignant', ADMIN: 'administration'}
+
+const ETAT_COMPTE: Record<string, string> = {SUSPENDED: 'compte suspendu', CLOSED: 'compte fermé'}
+
 type Onglet = 'ouverts' | 'traites' | 'tous'
+
+/**
+ * Qui est mis en cause — chantier 60, 07/09/2026.
+ *
+ * ── Ce que cet écran affichait avant ──────────────────────────────────────────────────────────
+ *
+ * `SESSION_MESSAGE · A3F91C2B`. Rien d'autre. Pour un profil, un administrateur pouvait encore
+ * recouper à la main ; pour un message, **il n'existait aucun moyen, nulle part, de savoir qui
+ * l'avait écrit** — et l'écran lui demandait quand même de trancher.
+ *
+ * ⚠️ Une file de modération dont les entrées ne s'instruisent pas est pire qu'une file vide : elle
+ * fait croire à un recours qui n'aboutira pas. Le mobile vient d'ouvrir la porte d'entrée du
+ * signalement côté patient (chantier 59) ; la file était encore vide le 07/09, c'était le moment.
+ *
+ * ── Ce qu'on ne verra jamais ici : le contenu du message ───────────────────────────────────────
+ *
+ * `SessionMessage.body` est **chiffré au repos** (RM-06-06) et n'est déchiffré que pour les
+ * participants de la consultation. Un message peut porter les résultats d'analyse d'un patient —
+ * celui qui n'a rien signalé, et à qui personne n'a rien demandé.
+ *
+ * On dit donc **qui**, **quand**, **de quelle nature** — jamais **quoi**. Et l'écran l'écrit, au
+ * lieu de laisser un vide qu'on prendrait pour une donnée manquante : c'est le même choix que pour
+ * le signaleur anonyme, deux lignes plus bas. *Ce qui est retiré exprès doit se dire.*
+ */
+function CibleResolue({
+  contexte,
+  cibleBrute,
+}: {
+  contexte: UseQueryResult<ContexteSignalement>
+  /** Ce que la file donne à elle seule — le repli quand la résolution échoue. */
+  cibleBrute: string
+}) {
+  if (contexte.isPending) {
+    return <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">Identification en cours…</p>
+  }
+
+  /*
+    Une lecture qui échoue n'est ni un zéro ni un « non » : on retombe sur l'identifiant brut, en
+    disant que c'est un repli. Sans cela, un modérateur croirait que la cible n'existe pas.
+  */
+  if (contexte.isError || !contexte.data) {
+    return (
+      <>
+        <p className="mt-0.5 font-mono text-[13px] text-foreground">{cibleBrute}</p>
+        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+          L'identification n'a pas pu être chargée — seul l'identifiant du signalement est affiché.
+        </p>
+      </>
+    )
+  }
+
+  const cible = contexte.data.target
+
+  if (!cible.found) {
+    return (
+      <>
+        <p className="mt-0.5 font-mono text-[13px] text-foreground">{cibleBrute}</p>
+        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+          Cette cible n'existe plus : compte fermé, message effacé ou session purgée. Le signalement
+          reste instruisible sur la seule foi du récit ci-dessus.
+        </p>
+      </>
+    )
+  }
+
+  if (cible.kind === 'PROFILE') {
+    return <Personne compte={cible.account} quoi="Profil signalé" />
+  }
+
+  if (cible.kind === 'FACILITY') {
+    return (
+      <p className="mt-0.5 text-[13px] text-foreground">
+        Structure « {cible.facility.name} »
+        <span className="ml-1 text-[11px] text-[var(--texte-tertiaire)]">
+          (les structures sont sorties du produit — signalement hérité)
+        </span>
+      </p>
+    )
+  }
+
+  return (
+    <div className="mt-0.5 flex flex-col gap-2">
+      {cible.author ? (
+        <Personne compte={cible.author} quoi="Auteur du message" />
+      ) : (
+        <p className="text-[13px] text-foreground">
+          L'auteur de ce message n'a plus de compte.
+        </p>
+      )}
+      <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
+        Message {NATURE[cible.message.kind] ?? cible.message.kind.toLowerCase()}, envoyé le{' '}
+        {dateHeureFr(cible.message.createdAt)}
+        {cible.message.edited ? ' · modifié depuis' : ''}
+        {cible.message.deleted ? ' · supprimé depuis' : ''}
+      </p>
+      {/*
+        Dit AVANT que le modérateur ne le cherche. Sans cette phrase, il attend un extrait qui ne
+        viendra pas et croit à une panne d'affichage.
+      */}
+      <p className="rounded-md border border-border bg-secondary px-2.5 py-2 text-[11px] leading-[1.5] text-muted-foreground">
+        <strong className="font-semibold text-foreground">Le texte du message n'est pas affiché</strong> — le
+        contenu des consultations est chiffré et n'est lisible que par leurs participants. Une
+        consultation peut contenir les données de santé d'un patient qui n'a rien signalé. Votre
+        décision porte sur la personne, et le récit du signaleur est ci-dessus.
+      </p>
+    </div>
+  )
+}
+
+/** Une personne, en données minimales (RM-16-02) — jamais plus que ce qu'il faut pour agir. */
+function Personne({ compte, quoi }: { compte: CompteMinimal; quoi: string }) {
+  return (
+    <p className="text-[13px] leading-[1.6] text-foreground">
+      <span className="font-medium">{compte.displayName}</span>
+      <span className="ml-1.5 text-[11px] text-[var(--texte-tertiaire)]">
+        {quoi} · {ROLE[compte.type] ?? compte.type} · {compte.phone}
+      </span>
+      {compte.status !== 'ACTIVE' ? <Pilule ton="alerte">{ETAT_COMPTE[compte.status] ?? compte.status}</Pilule> : null}
+    </p>
+  )
+}
 
 // ── Le signalement examiné ─────────────────────────────────────────────────
 
@@ -104,6 +245,17 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
   const [issue, setIssue] = useState<ReportDecision | null>(null)
   const [motif, setMotif] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
+
+  /*
+    Résolue à la demande, et pour le seul signalement OUVERT : chaque appel révèle une identité et
+    laisse une trace au journal (RM-16-03). Résoudre toute la liste ferait autant de traces que de
+    lignes affichées, pour des dossiers que personne n'a encore regardés.
+  */
+  const contexte = useQuery({
+    queryKey: ['report-context', signalement.id],
+    queryFn: () => api.reportContext(signalement.id),
+    retry: false,
+  })
 
   const decider = useMutation({
     mutationFn: () => api.decideReport(signalement.id, { decision: issue as ReportDecision, reasons: motif.trim() }),
@@ -139,13 +291,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
             Mis en cause
           </p>
-          {/*
-            Seul l'identifiant est servi : la file ne joint ni le nom ni la fiche. Le chercher
-            demanderait une requête par ligne sur des comptes, exactement ce que RM-16-02 restreint.
-          */}
-          <p className="mt-0.5 font-mono text-[13px] text-foreground">
-            {signalement.targetType} · {signalement.targetId.slice(0, 8).toUpperCase()}
-          </p>
+          <CibleResolue contexte={contexte} cibleBrute={`${signalement.targetType} · ${signalement.targetId.slice(0, 8).toUpperCase()}`} />
         </div>
 
         {/*

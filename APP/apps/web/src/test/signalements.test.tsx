@@ -23,7 +23,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SignalementsPage } from '@/modules/admin/pages/SignalementsPage'
 import { useSessionStore } from '@/state/session.store'
-import { api, type MeResponse, type UserReport } from '@/lib/api'
+import { api, type CompteMinimal, type ContexteSignalement, type MeResponse, type UserReport } from '@/lib/api'
 
 const ADMIN: MeResponse = {
   accountId: 'adm-1',
@@ -59,8 +59,48 @@ const signalement = (over: Partial<UserReport> = {}): UserReport => ({
   ...over,
 })
 
-function monter(items: UserReport[] = [signalement()]) {
+/** Une personne, en données minimales — ce que RM-16-02 autorise l'administration à voir. */
+const COMPTE: CompteMinimal = {
+  accountId: 'acc-9',
+  phone: '+242060000000',
+  type: 'PROFESSIONAL',
+  status: 'ACTIVE',
+  displayName: 'Awa Mbemba',
+}
+
+/**
+ * Le contexte d'un signalement de MESSAGE.
+ *
+ * ⚠️ Remarquer ce qui n'y est PAS : le texte du message. Le serveur ne le sert jamais — il est
+ * chiffré au repos (RM-06-06) et peut porter les données de santé d'un patient qui n'a rien
+ * signalé. Cette doublure dit la vérité du serveur, pas une commodité de test.
+ */
+const contexteMessage = (): ContexteSignalement => ({
+  id: 'sig-1',
+  targetType: 'SESSION_MESSAGE',
+  targetId: 'msg-9',
+  reasonCode: 'INAPPROPRIATE_BEHAVIOR',
+  reasonText: 'Propos jugés méprisants pendant une téléconsultation.',
+  status: 'OPEN',
+  createdAt: '2026-08-10T14:20:00.000Z',
+  target: {
+    kind: 'SESSION_MESSAGE',
+    found: true,
+    message: {
+      messageId: 'msg-9',
+      sessionId: 'sess-3',
+      kind: 'VOICE',
+      createdAt: '2026-08-10T14:05:00.000Z',
+      edited: false,
+      deleted: false,
+    },
+    author: COMPTE,
+  },
+})
+
+function monter(items: UserReport[] = [signalement()], contexte: ContexteSignalement = contexteMessage()) {
   vi.spyOn(api, 'reports').mockResolvedValue({ items })
+  vi.spyOn(api, 'reportContext').mockResolvedValue(contexte)
   useSessionStore.setState({ token: 'jeton', me: ADMIN, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
@@ -263,5 +303,87 @@ describe('E6 — ce que l’écran n’invente pas', () => {
 
     await screen.findByRole('region', { name: 'File des signalements' })
     expect(screen.queryByRole('button', { name: /Exporter|PDF|CSV/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('E6 — de qui parle ce signalement (chantier 60)', () => {
+  it('nomme l’auteur du message signalé, au lieu d’un identifiant tronqué', async () => {
+    const utilisateur = userEvent.setup()
+    monter([signalement({ targetType: 'SESSION_MESSAGE', targetId: 'msg-9' })], contexteMessage())
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText('Awa Mbemba')).toBeInTheDocument()
+    expect(screen.getByText(/Auteur du message/)).toBeInTheDocument()
+    // L'identifiant tronqué, seul, ne suffisait pas à instruire quoi que ce soit.
+    expect(document.body.textContent).not.toContain('MSG-9')
+  })
+
+  it('dit quand et de quelle nature, sans jamais le contenu', async () => {
+    const utilisateur = userEvent.setup()
+    monter([signalement({ targetType: 'SESSION_MESSAGE', targetId: 'msg-9' })], contexteMessage())
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Message note vocale, envoyé le/)).toBeInTheDocument()
+  })
+
+  /*
+    LE test de ce chantier. Le contenu d'une consultation est chiffré (RM-06-06) et peut porter les
+    données de santé d'un patient qui n'a rien signalé. L'écran doit le DIRE, sinon le modérateur
+    attend un extrait qui ne viendra jamais et croit à une panne.
+  */
+  it('annonce que le texte du message n’est pas affiché, et pourquoi', async () => {
+    const utilisateur = userEvent.setup()
+    monter([signalement({ targetType: 'SESSION_MESSAGE', targetId: 'msg-9' })], contexteMessage())
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Le texte du message n'est pas affiché/)).toBeInTheDocument()
+    expect(screen.getByText(/chiffré et n'est lisible que par leurs participants/)).toBeInTheDocument()
+  })
+
+  it('signale un compte suspendu — cela change ce qu’il reste à décider', async () => {
+    const utilisateur = userEvent.setup()
+    monter(
+      [signalement({ targetType: 'PROFILE', targetId: 'acc-9' })],
+      {
+        ...contexteMessage(),
+        target: { kind: 'PROFILE', found: true, account: { ...COMPTE, status: 'SUSPENDED' } },
+      },
+    )
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText('compte suspendu')).toBeInTheDocument()
+  })
+
+  /*
+    Une lecture qui échoue n'est ni un zéro ni un « non » : une cible disparue se DIT, sinon le
+    modérateur croit à un écran vide et laisse le dossier ouvert indéfiniment.
+  */
+  it('dit franchement quand la cible n’existe plus', async () => {
+    const utilisateur = userEvent.setup()
+    monter([signalement({ targetType: 'SESSION_MESSAGE', targetId: 'msg-9' })], {
+      ...contexteMessage(),
+      target: { kind: 'SESSION_MESSAGE', found: false },
+    })
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Cette cible n'existe plus/)).toBeInTheDocument()
+  })
+
+  it('retombe sur l’identifiant brut si l’identification échoue, en le disant', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'reports').mockResolvedValue({ items: [signalement()] })
+    vi.spyOn(api, 'reportContext').mockRejectedValue(new Error('réseau'))
+    useSessionStore.setState({ token: 'jeton', me: ADMIN, isAuthenticated: true, hasHydrated: true })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <SignalementsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/L'identification n'a pas pu être chargée/)).toBeInTheDocument()
   })
 })
