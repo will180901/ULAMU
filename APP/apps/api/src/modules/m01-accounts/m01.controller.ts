@@ -3,6 +3,7 @@ import { Throttle } from "@nestjs/throttler";
 import { OtpPurpose } from "@prisma/client";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
+import { LEGAL_DOCUMENTS } from "../../common/legal/legal.documents";
 import { secondsUntilNextTotpStep, TOTP_STEP_SECONDS } from "../../common/crypto/totp";
 import {
   ChangePasswordDto,
@@ -217,6 +218,20 @@ export class M01Controller {
   @HttpCode(200)
   confirmPhoneChange(@Actor() actor: AuthenticatedActor, @Body() dto: ConfirmPhoneChangeDto) {
     return this.service.confirmPhoneChange(actor.accountId, dto.newPhone, dto.oldPhoneCode, dto.newPhoneCode);
+  }
+
+  /**
+   * Les textes des CGU et de la politique de confidentialité, avec leur version courante.
+   *
+   * **Publique, et c'est nécessaire** : on doit pouvoir les lire AVANT d'avoir un compte — au
+   * moment précis où l'on décide de les accepter. Les servir depuis le serveur, plutôt que de les
+   * recopier dans chaque client, est ce qui rend vraie la version enregistrée en preuve : le texte
+   * lu et la ligne de `ConsentRecord` viennent désormais du même objet (chantier 62).
+   */
+  @Public()
+  @Get("legal/documents")
+  legalDocuments() {
+    return { documents: LEGAL_DOCUMENTS };
   }
 
   /** Versions des CGU et de la politique acceptées, et quand (EF-01-08 — preuve légale). */

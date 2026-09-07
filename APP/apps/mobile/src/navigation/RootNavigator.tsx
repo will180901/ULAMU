@@ -5,6 +5,7 @@ import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import {AuthMeshBackground} from '../components/AuthCarouselDrawer';
 import {CarnetScreen} from '../screens/CarnetScreen';
 import {AideScreen} from '../screens/AideScreen';
+import {MentionsLegalesScreen} from '../screens/MentionsLegalesScreen';
 import {CloseAccountScreen} from '../screens/CloseAccountScreen';
 import {DoctorScreen} from '../screens/DoctorScreen';
 import {EditProfileScreen} from '../screens/EditProfileScreen';
@@ -69,6 +70,7 @@ export function RootNavigator() {
           <AppStack.Screen name="PhoneChange" component={PhoneChangeScreen} />
           <AppStack.Screen name="CloseAccount" component={CloseAccountScreen} />
           <AppStack.Screen name="Aide" component={AideScreen} />
+          <AppStack.Screen name="MentionsLegales" component={MentionsLegalesScreen} />
         </AppStack.Navigator>
       ) : (
         // Le fond animé est posé UNE fois derrière toute la pile d'authentification : Connexion,

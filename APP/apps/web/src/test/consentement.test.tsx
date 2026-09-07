@@ -25,6 +25,17 @@ import { useSessionStore } from '@/state/session.store'
 import { api } from '@/lib/api'
 
 function monter() {
+  /*
+    Les textes ET leurs versions viennent du SERVEUR depuis le chantier 62 (07/09/2026) : l'écran ne
+    les invente plus. C'est le point de la manœuvre — écrire « v1.0 » en dur dans le libellé faisait
+    dire à l'écran une version que rien ne garantissait être celle qu'on allait enregistrer en preuve.
+  */
+  vi.spyOn(api, 'legalDocuments').mockResolvedValue({
+    documents: [
+      { type: 'CGU', version: '1.0', title: "Conditions générales d'utilisation", paragraphs: ['Texte des CGU.'] },
+      { type: 'PRIVACY', version: '1.0', title: 'Politique de confidentialité', paragraphs: ['Texte de la politique.'] },
+    ],
+  })
   useSessionStore.getState().logout() // sinon la page redirige vers le tableau de bord
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
@@ -123,7 +134,7 @@ describe('consentement à l’inscription (EF-01-08)', () => {
     const libelle = screen.getByRole('checkbox').closest('label')
     expect(libelle).toHaveTextContent(/conditions générales/i)
     expect(libelle).toHaveTextContent(/politique de confidentialité/i)
-    // Les versions doivent correspondre à celles que le serveur enregistre (CGU 1.0 / PRIVACY 1.0).
+    // Les versions viennent du serveur — celui-là même qui les enregistre (CGU 1.0 / PRIVACY 1.0).
     expect(libelle?.textContent?.match(/v1\.0/g) ?? []).toHaveLength(2)
   })
 })

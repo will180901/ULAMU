@@ -6,7 +6,7 @@
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {AuthPage} from '../components/AuthPage';
 import {StepStack} from '../components/StepStack';
 import {
@@ -29,6 +29,7 @@ import {ApiError} from '../lib/api-client';
 import {isAcceptablePassword, isAdultIso, isValidEmail, isValidOtp, isValidUsername, normalizeEmail, normalizePhone, normalizeUsername} from '../lib/validation';
 import {AvailabilityStatus, useAvailability} from '../state/useAvailability';
 import {useAbandonGuard} from '../state/useAbandonGuard';
+import {LegalDocument} from '../lib/contracts';
 import {AuthStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {RegisterProfile, useAuth} from '../state/AuthContext';
@@ -59,6 +60,19 @@ export function RegisterScreen({navigation}: Props) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [agree, setAgree] = useState(false);
+  /*
+    ── Ce qu'on fait accepter (chantier 62, 07/09/2026) ──────────────────────────────────────────
+
+    ⚠️ Cette case disait « J'accepte que mes données de santé soient chiffrées et accessibles aux
+    seuls soignants que je consulte » — une phrase sur le chiffrement. Sur sa foi, le serveur
+    enregistrait un consentement aux **CGU** et à la **politique de confidentialité**, ligne que le
+    modèle qualifie de preuve légale immuable (EF-01-08, loi n° 29-2019). Et l'application ne
+    montrait ni l'un ni l'autre, nulle part.
+
+    Les textes ET leurs versions viennent du serveur — celui-là même qui enregistre la preuve.
+  */
+  const [documents, setDocuments] = useState<LegalDocument[] | null>(null);
+  const [docsOpen, setDocsOpen] = useState(false);
 
   // OTP
   const [otp, setOtp] = useState('');
@@ -68,6 +82,15 @@ export function RegisterScreen({navigation}: Props) {
 
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+
+  // Chargés une fois, sans bloquer l'inscription : la route est publique et ne demande rien.
+  useEffect(() => {
+    api
+      .legalDocuments()
+      .then(r => setDocuments(r.documents))
+      .catch(() => setDocuments(null));
+  }, []);
+  const versionDe = (type: 'CGU' | 'PRIVACY'): string | undefined => documents?.find(d => d.type === type)?.version;
   const busy = state.status === 'authenticating';
 
   // Les TROIS identifiants uniques du compte sont vérifiés pendant la frappe, par le même hook. Le
@@ -383,8 +406,16 @@ export function RegisterScreen({navigation}: Props) {
             <Pressable style={styles.consent} onPress={() => setAgree(a => !a)}>
               <Switch value={agree} onValueChange={setAgree} />
               <Text style={styles.consentText}>
-                J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants que je consulte.
+                J'accepte les <Text style={styles.consentFort}>conditions générales d'utilisation</Text>
+                {versionDe('CGU') ? ` (v${versionDe('CGU')})` : ''} et la{' '}
+                <Text style={styles.consentFort}>politique de confidentialité</Text>
+                {versionDe('PRIVACY') ? ` (v${versionDe('PRIVACY')})` : ''} d'ULAMU, et le traitement de mes données de
+                santé qu'elles décrivent.
               </Text>
+            </Pressable>
+            {/* Lire AVANT d'accepter : sans ce chemin, la case fait accepter un texte introuvable. */}
+            <Pressable onPress={() => setDocsOpen(true)} style={styles.lireLien}>
+              <Text style={styles.lireTexte}>Lire les deux documents</Text>
             </Pressable>
             <PrimaryButton title="Recevoir le code" iconLeft="send" onPress={onSendOtp} disabled={!accountReady} loading={sending} />
             {!accountReady && accountTouched && (
@@ -428,6 +459,43 @@ export function RegisterScreen({navigation}: Props) {
       {/* Même sortie que le bouton retour : ce lien quitte bel et bien l'inscription, il doit donc
           demander confirmation quand quelque chose a déjà été saisi. */}
       {step === 'identity' && <FootLink prefix="Déjà membre ?" action="Se connecter" onPress={leaveRegistration} />}
+
+      {/*
+        Les textes, tels que le SERVEUR les sert — jamais recopiés ici. Recopiés, ils changeraient
+        sans que la version bouge, et les consentements déjà enregistrés se mettraient à désigner un
+        texte qui n'est plus celui qu'on a lu.
+      */}
+      <Modal visible={docsOpen} transparent animationType="slide" onRequestClose={() => setDocsOpen(false)}>
+        <Pressable style={styles.docsFond} onPress={() => setDocsOpen(false)}>
+          <Pressable style={styles.docsFeuille} onPress={() => {}}>
+            <View style={styles.docsPoignee} />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {documents === null ? (
+                <Text style={styles.docsErreur}>
+                  Les documents n'ont pas pu être chargés. Ils restent consultables dans vos réglages après
+                  l'inscription.
+                </Text>
+              ) : (
+                documents.map(d => (
+                  <View key={d.type} style={styles.docsBloc}>
+                    <Text style={styles.docsTitre}>
+                      {d.title} <Text style={styles.docsVersion}>· version {d.version}</Text>
+                    </Text>
+                    {d.paragraphs.map(p => (
+                      <Text key={p.slice(0, 24)} style={styles.docsTexte}>
+                        {p}
+                      </Text>
+                    ))}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+            <Pressable onPress={() => setDocsOpen(false)} style={styles.docsFermer}>
+              <Text style={styles.docsFermerTexte}>Fermer</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </AuthPage>
   );
 }
@@ -493,6 +561,19 @@ const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     uHint: {fontFamily: fonts.body, fontSize: 12, marginTop: 6},
     consent: {flexDirection: 'row', alignItems: 'flex-start', gap: 10},
+    consentFort: {fontWeight: '700', color: colors.textPrimary},
+    lireLien: {alignSelf: 'flex-start', paddingVertical: 4},
+    lireTexte: {fontFamily: fonts.body, fontSize: 12.5, fontWeight: '700', color: colors.accent, textDecorationLine: 'underline'},
+    docsFond: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
+    docsFeuille: {backgroundColor: colors.bgElevated, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, paddingBottom: 24, maxHeight: '82%'},
+    docsPoignee: {width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong, alignSelf: 'center', marginBottom: 12},
+    docsBloc: {marginBottom: 16},
+    docsTitre: {fontFamily: fonts.display, fontSize: 15, letterSpacing: -0.3, color: colors.textPrimary},
+    docsVersion: {fontFamily: fonts.body, fontSize: 11, color: colors.textTertiary},
+    docsTexte: {fontFamily: fonts.body, fontSize: 12.5, color: colors.textSecondary, lineHeight: 19, marginTop: 8},
+    docsErreur: {fontFamily: fonts.body, fontSize: 12.5, color: colors.error, lineHeight: 18},
+    docsFermer: {alignItems: 'center', paddingVertical: 10},
+    docsFermerTexte: {fontFamily: fonts.body, fontSize: 13, fontWeight: '700', color: colors.textTertiary},
     consentText: {flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textSecondary, marginTop: 1},
     sexRow: {flexDirection: 'row', gap: 10},
     sexItem: {flex: 1, height: 48, borderRadius: radius.field, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center'},

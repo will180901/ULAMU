@@ -924,6 +924,42 @@ export const SUPPORT_ROUTES = {
 export const SUPPORT_BODY_MIN = 10;
 export const SUPPORT_BODY_MAX = 2000;
 
+
+/*
+  ── Les textes acceptés à l'inscription — chantier 62, 07/09/2026 (EF-01-08) ────────────────────
+
+  ⚠️ **L'application faisait accepter des documents qu'elle ne montrait pas.** La case d'inscription
+  disait « J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants
+  que je consulte » — une phrase sur le chiffrement. Pendant ce temps le serveur enregistrait, sur
+  la foi de cette case, un consentement aux **CGU v1.0** et à la **politique de confidentialité
+  v1.0** : une ligne que le modèle qualifie de *preuve légale, immuable* (loi n° 29-2019).
+
+  Une preuve fabriquée à partir d'une case qui ne nomme pas ce qu'elle prouve ne prouve rien.
+
+  Les textes sont désormais SERVIS par le serveur — celui-là même qui enregistre la version — et
+  jamais recopiés ici : recopiés, ils changeraient sans que la version bouge, et tous les
+  consentements passés se mettraient à désigner un texte qui n'est plus celui qu'on a lu.
+*/
+export interface LegalDocument {
+  type: 'CGU' | 'PRIVACY';
+  version: string;
+  title: string;
+  paragraphs: string[];
+}
+
+/** Ce à quoi CETTE personne a consenti, et quand — la preuve, enfin lisible par l'intéressé. */
+export interface ConsentRecordView {
+  documentType: string;
+  documentVersion: string;
+  acceptedAt: string;
+}
+
+export const LEGAL_ROUTES = {
+  /** Publique : on doit pouvoir lire AVANT d'avoir un compte, au moment où l'on décide d'accepter. */
+  documents: '/v1/legal/documents',
+  myConsents: '/v1/accounts/me/consents',
+} as const;
+
 /*
   ── M12 « Recherche & dévoilement-réservation » est RETIRÉ (02/09/2026, chantier 26) ───────────
 

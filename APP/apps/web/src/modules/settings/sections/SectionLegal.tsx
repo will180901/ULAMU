@@ -25,47 +25,39 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { Globe, Info, Lock, ScrollText } from 'lucide-react'
-import { api } from '@/lib/api'
+import { api, type LegalDocument } from '@/lib/api'
 import { Avis, Carte } from '@/components/ulamu/parts'
 import { Link } from 'react-router-dom'
 import { ROUTE_AIDE, PAYS_DE_SERVICE } from '@/config/contact.config'
 import { useSessionStore } from '@/state/session.store'
 
 /**
- * Textes de la maquette — ils sont le contenu produit, pas de l'habillage.
- *
- * ⚠️ **Ces textes sont ACCEPTÉS à l'inscription : ils valent preuve.** Une phrase fausse ici expose
- * autant qu'un fait faux ailleurs — c'est la leçon du « hébergées au Congo-Brazzaville » corrigé le
- * 24/08. La mention des officines est retirée le 02/09/2026 (chantier 26) : ULAMU ne met plus en
- * relation que des patients et des professionnels de santé vérifiés.
- */
-const CGU = [
-  "ULAMU met en relation des patients et des professionnels de santé vérifiés au Congo-Brazzaville. Le service ne remplace ni les urgences, ni une consultation présentielle lorsque l'état du patient l'exige.",
-  "Le professionnel s'engage à ne répondre qu'aux demandes relevant de sa compétence et de sa vérification, et à orienter sans délai vers une structure adaptée dans le cas contraire.",
-  'Toute décision médicale prise via la plateforme reste sous la responsabilité du professionnel qui la signe.',
-]
-
-const CONFIDENTIALITE = [
-  'Les données de santé sont traitées conformément à la loi n° 29-2019 sur la protection des données à caractère personnel. Elles sont chiffrées au repos comme en transit, et hébergées sur des serveurs situés en Allemagne (Francfort, Union européenne).',
-  "Seuls les professionnels engagés dans une consultation ont accès au dossier concerné, et chaque accès est inscrit au journal d'audit, consultable par l'administration.",
-  "La clôture d'un compte n'efface pas les comptes-rendus signés : leur conservation est une obligation légale.",
-]
-
-/**
  * La mention de version, lue en base — jamais écrite en dur.
  *
  * C'est la trace de ce à quoi CETTE personne a consenti, à cette date. Un texte figé dans le code
  * dirait la version d'aujourd'hui, pas celle qu'elle a acceptée.
+ *
+ * ⚠️ Chantier 62 : quand la version ACCEPTÉE diffère de la version COURANTE, on le dit. Sans cela,
+ * quelqu'un lit le texte d'aujourd'hui en croyant relire ce qu'il a signé.
  */
-function Acceptation({ type }: { type: 'CGU' | 'PRIVACY' }) {
+function Acceptation({ type, versionCourante }: { type: 'CGU' | 'PRIVACY'; versionCourante?: string }) {
   const consentements = useQuery({ queryKey: ['consents'], queryFn: () => api.myConsents(), retry: false })
   const ligne = consentements.data?.find((c) => c.documentType === type)
   if (!ligne) return null
+  const perimee = versionCourante !== undefined && versionCourante !== ligne.documentVersion
   return (
-    <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
-      Version {ligne.documentVersion} · acceptée le{' '}
-      {new Date(ligne.acceptedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-    </p>
+    <>
+      <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+        Version {ligne.documentVersion} · acceptée le{' '}
+        {new Date(ligne.acceptedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
+      {perimee ? (
+        <Avis ton="info">
+          Vous avez accepté la version {ligne.documentVersion} ; le texte ci-dessous est la version{' '}
+          {versionCourante}, en vigueur aujourd'hui.
+        </Avis>
+      ) : null}
+    </>
   )
 }
 
@@ -81,8 +73,33 @@ function Document({ paragraphes }: { paragraphes: string[] }) {
   )
 }
 
+/**
+ * Un texte servi par le serveur, et ce qu'on dit quand il n'arrive pas.
+ *
+ * Un écran vide se prendrait pour « il n'y a rien à lire » — sur un document qui vaut preuve, c'est
+ * le pire malentendu possible. *Une lecture qui échoue n'est ni un zéro ni un « non ».*
+ */
+function TexteServi({ doc, enCours }: { doc?: LegalDocument; enCours: boolean }) {
+  if (doc) return <Document paragraphes={doc.paragraphs} />
+  if (enCours) return <p className="text-[12px] text-[var(--texte-tertiaire)]">Lecture du document…</p>
+  return (
+    <Avis ton="erreur">
+      Ce document n'a pas pu être chargé. Il n'est pas absent : seul son affichage manque. Réessayez
+      dans un moment.
+    </Avis>
+  )
+}
+
 export function SectionLegal() {
   const moi = useSessionStore((s) => s.me)
+  /*
+    Les textes viennent du SERVEUR depuis le chantier 62 : c'est ce qui rend vraie la version
+    enregistrée en preuve. Recopiés ici, ils pouvaient changer sans que la version bouge — et tous
+    les consentements passés se mettaient alors à désigner un texte qui n'était plus celui qu'on
+    avait lu.
+  */
+  const documents = useQuery({ queryKey: ['legal-documents'], queryFn: () => api.legalDocuments(), retry: false })
+  const docDe = (type: 'CGU' | 'PRIVACY') => documents.data?.documents.find((d) => d.type === type)
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,13 +112,13 @@ export function SectionLegal() {
       </Carte>
 
       <Carte icone={ScrollText} titre="Conditions générales d'utilisation" sousTitre="Acceptées lors de votre inscription">
-        <Acceptation type="CGU" />
-        <Document paragraphes={CGU} />
+        <Acceptation type="CGU" versionCourante={docDe('CGU')?.version} />
+        <TexteServi doc={docDe('CGU')} enCours={documents.isPending} />
       </Carte>
 
       <Carte icone={Lock} titre="Politique de confidentialité" sousTitre="Loi n° 29-2019 sur la protection des données">
-        <Acceptation type="PRIVACY" />
-        <Document paragraphes={CONFIDENTIALITE} />
+        <Acceptation type="PRIVACY" versionCourante={docDe('PRIVACY')?.version} />
+        <TexteServi doc={docDe('PRIVACY')} enCours={documents.isPending} />
       </Carte>
 
       <Carte icone={Info} titre="À propos" sousTitre="Ce que vous utilisez en ce moment">

@@ -182,6 +182,22 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
               chevron
               onPress={() => navigation.navigate('Aide')}
             />
+            <View style={styles.rowBorder} />
+            {/*
+              ── Mentions légales (chantier 62, 07/09/2026) ─────────────────────────────────
+
+              ⚠️ L'application faisait accepter à l'inscription des CGU et une politique de
+              confidentialité **qu'elle ne montrait nulle part**, et le serveur en enregistrait le
+              consentement comme preuve légale (EF-01-08, loi n° 29-2019). Une preuve qu'on ne peut
+              ni lire ni relire ne protège personne.
+            */}
+            <Row
+              icon="file-medical"
+              title="Mentions légales"
+              sub="CGU, confidentialité, et ce que vous avez accepté"
+              chevron
+              onPress={() => navigation.navigate('MentionsLegales')}
+            />
           </View>
 
           <Text style={styles.footNote}>Compte {me.username ? `@${me.username}` : ''} · ULAMU</Text>

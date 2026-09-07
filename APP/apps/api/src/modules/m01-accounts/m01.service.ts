@@ -18,6 +18,7 @@ import { OtpPurpose, Prisma } from "@prisma/client";
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { preuveEnSession, ProofRefusedException } from "../../common/auth/proof-refused";
+import { consentRecordsToStore } from "../../common/legal/legal.documents";
 import { hashSessionToken } from "../../common/auth/auth.guard";
 import { sessionIsExpired } from "../../common/auth/session-expiry";
 import { hashPassword, verifyPassword } from "../../common/crypto/password";
@@ -220,14 +221,12 @@ export class M01Service {
                 district: dto.district,
               },
             },
-            consents: {
-              createMany: {
-                data: [
-                  { documentType: "CGU", documentVersion: "1.0" },
-                  { documentType: "PRIVACY", documentVersion: "1.0" },
-                ],
-              },
-            },
+            /*
+              Les versions viennent des DOCUMENTS eux-mêmes (chantier 62) et ne sont plus écrites
+              ici. Une preuve qui dit « v1.0 » pendant qu'un écran affiche autre chose ne prouve
+              rien : le texte lu et la ligne de preuve doivent avoir la même source.
+            */
+            consents: { createMany: { data: consentRecordsToStore() } },
           },
         });
         const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);
@@ -296,14 +295,12 @@ export class M01Service {
                 specialty: dto.specialty ?? null,
               },
             },
-            consents: {
-              createMany: {
-                data: [
-                  { documentType: "CGU", documentVersion: "1.0" },
-                  { documentType: "PRIVACY", documentVersion: "1.0" },
-                ],
-              },
-            },
+            /*
+              Les versions viennent des DOCUMENTS eux-mêmes (chantier 62) et ne sont plus écrites
+              ici. Une preuve qui dit « v1.0 » pendant qu'un écran affiche autre chose ne prouve
+              rien : le texte lu et la ligne de preuve doivent avoir la même source.
+            */
+            consents: { createMany: { data: consentRecordsToStore() } },
           },
         });
         const token = await this.openSession(tx, account.id, dto.client, dto.deviceLabel);

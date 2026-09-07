@@ -1017,6 +1017,20 @@ export interface AdminAccount {
   displayName: string
 }
 
+/**
+ * Un texte accepté à l'inscription, servi par le serveur (chantier 62, 07/09/2026).
+ *
+ * ⚠️ Ces textes **valent preuve** : ils sont acceptés à l'inscription et `ConsentRecord` en garde la
+ * version. Une phrase fausse ici expose autant qu'un fait faux ailleurs — c'est la leçon du
+ * « hébergées au Congo-Brazzaville » corrigé le 24/08/2026.
+ */
+export interface LegalDocument {
+  type: 'CGU' | 'PRIVACY'
+  version: string
+  title: string
+  paragraphs: string[]
+}
+
 /** Les quatre procédures support prévues par le serveur (EF-16-03, CU-16-04). */
 export type SupportProcedureType = 'PHONE_CHANGE' | 'OWNER_UNREACHABLE' | 'RECORD_TRANSFER' | 'OTHER'
 export type SupportProcedureStatus = 'OPEN' | 'COMPLETED' | 'CANCELLED'
@@ -1900,6 +1914,17 @@ export const api = {
     request<{ id: string; status: SupportProcedureStatus }>('POST', `/v1/admin/support-procedures/${id}/cancel`, { reason }, true),
 
   // M03 — dossier de vérification du déposant
+  /**
+   * Les textes des CGU et de la politique, avec leur version courante (chantier 62).
+   *
+   * ⚠️ **Publique, et servie par le serveur — pas recopiée ici.** C'est ce qui rend vraie la version
+   * enregistrée en preuve : le texte lu et la ligne de `ConsentRecord` viennent du même objet. Tant
+   * qu'ils vivaient chacun de leur côté, une phrase pouvait changer sans que la version bouge, et
+   * tous les consentements passés se mettaient à désigner un texte qui n'était plus celui qu'on
+   * avait lu.
+   */
+  legalDocuments: () => request<{ documents: LegalDocument[] }>('GET', '/v1/legal/documents'),
+
   /** Versions acceptées à l'inscription, et quand (EF-01-08 — la preuve légale, enfin lisible). */
   myConsents: () =>
     request<Array<{ documentType: string; documentVersion: string; acceptedAt: string }>>(

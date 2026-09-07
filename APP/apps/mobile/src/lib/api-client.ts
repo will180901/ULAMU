@@ -18,6 +18,7 @@ import {
   ChangePasswordRequest,
   ChangePasswordResponse,
   ClaimByCodeRequest,
+  ConsentRecordView,
   CreateReportRequest,
   CreateReportResponse,
   ClaimSubProfileRequest,
@@ -50,6 +51,8 @@ import {
   PARAMETER_ROUTES,
   HealthSummary,
   HANDSHAKE_ROUTES,
+  LegalDocument,
+  LEGAL_ROUTES,
   HandshakeView,
   InitiateHandshakeRequest,
   DeleteMessageRequest,
@@ -345,6 +348,27 @@ export class ApiClient {
    * Aucune condition : tout compte authentifié écrit. C'est précisément quand plus rien d'autre ne
    * marche — un dossier bloqué, un numéro perdu — qu'on a besoin d'écrire.
    */
+  /**
+   * Les textes des CGU et de la politique, avec leur version courante (chantier 62).
+   *
+   * **Sans jeton** : on lit ces documents au moment où l'on décide de les accepter, donc avant
+   * d'avoir un compte.
+   */
+  legalDocuments(): Promise<{documents: LegalDocument[]}> {
+    return this.request('GET', LEGAL_ROUTES.documents);
+  }
+
+  /**
+   * Ce à quoi j'ai consenti, et quand (EF-01-08).
+   *
+   * ⚠️ `ConsentRecord` est rempli depuis toujours et le modèle le qualifie de **preuve légale**.
+   * Aucun écran de cette application ne le montrait : une preuve que l'intéressé ne peut pas
+   * consulter le protège mal.
+   */
+  myConsents(): Promise<ConsentRecordView[]> {
+    return this.request('GET', LEGAL_ROUTES.myConsents, undefined, true);
+  }
+
   createSupportRequest(dto: CreateSupportRequestRequest): Promise<{requestId: string}> {
     return this.request('POST', SUPPORT_ROUTES.create, dto, true);
   }

@@ -77,6 +77,29 @@ function monter(
     { documentType: 'PRIVACY', documentVersion: '1.0', acceptedAt: '2026-03-12T10:00:00.000Z' },
   ])
   /*
+    Les textes viennent du SERVEUR depuis le chantier 62 (07/09/2026), et non plus d'un tableau écrit
+    dans le composant : c'est ce qui rend vraie la version enregistrée en preuve. On sert donc ici
+    ce que sert `GET /v1/legal/documents` — la doublure dit ce que dit le serveur.
+  */
+  vi.spyOn(api, 'legalDocuments').mockResolvedValue({
+    documents: [
+      {
+        type: 'CGU',
+        version: '1.0',
+        title: "Conditions générales d'utilisation",
+        paragraphs: ['ULAMU met en relation des patients et des professionnels de santé vérifiés au Congo-Brazzaville.'],
+      },
+      {
+        type: 'PRIVACY',
+        version: '1.0',
+        title: 'Politique de confidentialité',
+        paragraphs: [
+          'Les données de santé sont traitées conformément à la loi n° 29-2019 sur la protection des données à caractère personnel. Elles sont chiffrées au repos comme en transit, et hébergées sur des serveurs situés en Allemagne (Francfort, Union européenne).',
+        ],
+      },
+    ],
+  })
+  /*
     Ce que le serveur sert RÉELLEMENT depuis la dette n°18 (03/09/2026) : quatre catégories, chacune
     avec son intitulé et son aide. « Rappels » n'y est plus — aucun modèle ne l'a jamais portée, et
     c'est désormais COMPTÉ côté serveur plutôt que retiré à la main dans chaque écran.
@@ -330,6 +353,12 @@ describe('B3 — les mentions légales', () => {
    */
   it('dit où les données sont RÉELLEMENT hébergées', async () => {
     monter('legal')
+    /*
+      Le texte vient du SERVEUR depuis le chantier 62 : on attend qu'il arrive. Attendre « Allemagne »
+      ne suffirait pas — le mot figure aussi dans la ligne statique « Hébergement des données », et
+      l'attente se résoudrait sans que le document soit là.
+    */
+    await screen.findByText(/chiffrées au repos comme en transit/)
 
     const texte = document.body.textContent ?? ''
     expect(texte).toContain('Francfort')

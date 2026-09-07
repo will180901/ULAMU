@@ -17,7 +17,7 @@
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { AlertCircle, Info } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { EtapesAuth } from '@/components/auth/EtapesAuth'
@@ -114,6 +114,13 @@ export function RegisterPage() {
    * sont celles que le serveur enregistre réellement (CGU 1.0 / PRIVACY 1.0).
    */
   const [acceptTerms, setAcceptTerms] = useState(false)
+  /*
+    Les textes ET leurs versions viennent du serveur — celui qui enregistre la preuve. Écrire « v1.0 »
+    en dur ici, comme c'était le cas, faisait dire à l'écran une version que rien ne garantissait
+    être celle qu'on allait enregistrer.
+  */
+  const documents = useQuery({ queryKey: ['legal-documents'], queryFn: () => api.legalDocuments(), retry: false })
+  const versionDe = (type: 'CGU' | 'PRIVACY') => documents.data?.documents.find((d) => d.type === type)?.version
   const [otpCode, setOtpCode] = useState('')
   const [otpInfo, setOtpInfo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -364,11 +371,51 @@ export function RegisterPage() {
                 required
               />
               <span className="text-[13px] leading-[1.55] text-muted-foreground">
-                J’accepte les <strong className="text-foreground">conditions générales d’utilisation</strong> (v1.0) et la{' '}
-                <strong className="text-foreground">politique de confidentialité</strong> (v1.0) d’ULAMU, et le traitement
-                de mes données de santé qu’elles décrivent.
+                J’accepte les <strong className="text-foreground">conditions générales d’utilisation</strong>
+                {versionDe('CGU') ? ` (v${versionDe('CGU')})` : ''} et la{' '}
+                <strong className="text-foreground">politique de confidentialité</strong>
+                {versionDe('PRIVACY') ? ` (v${versionDe('PRIVACY')})` : ''} d’ULAMU, et le traitement de mes données de
+                santé qu’elles décrivent.
               </span>
             </label>
+
+            {/*
+              ── Lire avant d'accepter (chantier 62, 07/09/2026) ────────────────────────────────
+
+              La case nommait les documents et leur version, mais **rien ne permettait de les lire** :
+              les textes vivaient dans un écran de réglages, atteignable seulement une fois le compte
+              créé. On faisait donc accepter, en connaissance de cause supposée, un texte qu'aucun
+              chemin ne donnait à voir. Les versions et le texte viennent maintenant du serveur —
+              celui-là même qui enregistre la preuve.
+            */}
+            <details className="rounded-md border border-border bg-card px-3 py-2">
+              <summary className="cursor-pointer text-[12px] text-muted-foreground">
+                Lire les deux documents avant d’accepter
+              </summary>
+              <div className="mt-2 flex flex-col gap-3">
+                {documents.isPending ? (
+                  <p className="text-[12px] text-[var(--texte-tertiaire)]">Lecture des documents…</p>
+                ) : documents.data ? (
+                  documents.data.documents.map((d) => (
+                    <div key={d.type}>
+                      <p className="text-[12px] font-semibold text-foreground">
+                        {d.title} <span className="font-normal text-[var(--texte-tertiaire)]">· version {d.version}</span>
+                      </p>
+                      {d.paragraphs.map((para) => (
+                        <p key={para.slice(0, 24)} className="mt-1 text-[12px] leading-[1.6] text-[var(--texte-secondaire)]">
+                          {para}
+                        </p>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[12px] text-[var(--erreur-texte)]">
+                    Les documents n’ont pas pu être chargés. Ils restent consultables dans vos réglages après
+                    l’inscription.
+                  </p>
+                )}
+              </div>
+            </details>
 
             {error ? <Erreur>{error}</Erreur> : null}
 

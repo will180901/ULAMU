@@ -645,6 +645,68 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **59** | **Le patient n'avait aucun bouton pour signaler** — 06/09, moitié mobile de l'écart A. `POST /v1/reports` existe depuis le premier jour ; le web l'appelle depuis le chantier 41, l'application patient **non**. ⚠️ Ce n'est pas une fonctionnalité manquante parmi d'autres : c'est **la voie de recours**. Toute la modération était construite derrière — file triée par gravité, décision motivée, avertissement, transmission — sans porte d'entrée côté patient. Livré : la feuille `FeuilleSignalement` (les six motifs du serveur, la garantie d'anonymat annoncée AVANT le formulaire, l'accusé qui redit que la réponse reviendra dans les notifications), branchée à **deux endroits** — « Signaler ce message » à l'appui long, et « Signaler ce soignant » depuis la session ET depuis la fiche. Les règles sortent du JSX (`lib/signalement.ts`), l'icône `flag` rejoint le jeu d'icônes. **mobile 43 ✓ (32 + 11) · api 587 ✓ · web 659 ✓ · lint 0 erreur · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **60** | **Une file de modération qui ne s'instruisait pas** — 07/09. L'écran d'administration affichait `SESSION_MESSAGE · A3F91C2B` et demandait quand même de trancher : pour un profil on pouvait recouper à la main, pour un message **rien nulle part ne disait qui l'avait écrit**. Mesuré d'abord : la file est **vide** (0 signalement, PM-23 = 48 h) — donc rien à rattraper, le bon moment. Livré : `GET /v1/admin/reports/:id/context` résout la cible (l'auteur, sa nature, sa session), l'écran la nomme. ⚠️ **Et jamais le contenu du message** : `SessionMessage.body` est chiffré au repos (RM-06-06) et peut porter les données de santé d'un patient qui n'a rien signalé — ma propre recommandation de la veille disait « son texte », elle était fausse. Acte audité (`m04.report.context.viewed`, RM-16-03), signaleur toujours caviardé (RM-04-04). **api 596 ✓ (587 + 9) · web 665 ✓ (659 + 6) · mobile 43 ✓ · lint 0 · 163 routes · builds ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **61** | **Le patient n'avait aucun moyen d'écrire à personne** — 07/09. `POST /v1/support-requests` et `GET /…/mine` existent depuis le 01/09 et le web les appelle ; l'application patient, non — et il n'y avait rien à trouver en sortant de l'application, `support@ulamu.cg` portant un domaine qui n'appartient pas au projet, pourtant inscrit dans les mentions légales **acceptées à l'inscription**. Livré : l'écran `Aide` (formulaire + « Mes demandes » avec les réponses), atteignable depuis Réglages ; règles hors du JSX (`lib/support.ts`), `OWNER_UNREACHABLE` non offert (D-051 : personne n'administre plus de structure). ⚠️ **Et le serveur PRÉVIENT désormais quand la réponse arrive** : « la réponse se lit ici » était vrai et incomplet — rien ne disait qu'elle était là. La notification porte le sujet, jamais la demande ni la réponse (RM-14-03). **mobile 52 ✓ (43 + 9) · api 599 ✓ (596 + 3) · web 665 ✓ · lint 0 · 163 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **62** | **On faisait accepter des documents que l'application ne montrait pas** — 07/09. Parti pour « pouvoir relire ses consentements », le chantier a trouvé bien pire : la case d'inscription du mobile disait *« J'accepte que mes données de santé soient chiffrées et accessibles aux seuls soignants que je consulte »* — une phrase sur le chiffrement — pendant que le serveur enregistrait, sur sa foi, un consentement aux **CGU v1.0** et à la **politique de confidentialité v1.0**, ligne que le modèle qualifie de *preuve légale, immuable* (EF-01-08, loi n° 29-2019). Et **aucun des deux textes n'existait dans l'application**. Livré : les textes quittent les écrans et deviennent une source unique côté serveur (`legal.documents.ts`), servie par `GET /v1/legal/documents` (**publique** — on lit avant d'avoir un compte) ; les lignes de `ConsentRecord` sont désormais **fabriquées à partir des documents**, plus écrites à côté. Mobile : écran `MentionsLegales` + la case nomme les documents et leur version, avec une feuille pour les lire. Web : `SectionLegal` et l'inscription lisent la même route, et l'inscription gagne « Lire les deux documents avant d'accepter ». **api 606 ✓ (599 + 7) · mobile 57 ✓ (52 + 5) · web 665 ✓ · lint 0 · 164 routes · builds ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 62 (une preuve qui ne prouvait rien) a appris
+
+*07/09/2026 — le manque annoncé était le petit ; celui d'à côté était le grand.*
+
+#### « Ne pas pouvoir relire » cachait « ne pas savoir ce qu'on accepte »
+
+La file disait : *« Consentements — on ne peut pas relire ce qu'on a accepté. »* C'était vrai, et
+c'était le moindre des deux problèmes.
+
+En allant écrire l'écran, la case d'inscription du mobile a montré ceci : elle parle de chiffrement
+et de soignants, et **ne nomme ni les CGU ni la politique de confidentialité**. Or c'est cette case
+que l'application envoie au serveur comme `acceptTerms`, et c'est sur elle que se crée une ligne de
+preuve nommant deux documents précis, en version 1.0.
+
+⚠️ **Une preuve fabriquée à partir d'une case qui ne nomme pas ce qu'elle prouve ne prouve rien** —
+et le texte, lui, n'existait nulle part dans l'application.
+
+*On trouve rarement le vrai défaut en lisant l'énoncé du manque. On le trouve en allant faire le
+geste.*
+
+#### La version était une affirmation que rien ne définissait
+
+`ConsentRecord.documentVersion` valait `"1.0"`, écrit en dur dans le service d'inscription. Le texte,
+lui, vivait en dur dans un composant du web. **Rien ne reliait les deux.**
+
+Conséquence, jamais survenue mais toujours possible : le jour où une phrase change dans l'écran, la
+version ne bouge pas — et tous les consentements déjà enregistrés se mettent à désigner un texte qui
+n'est plus celui qui a été lu. Personne ne s'en aperçoit, puisqu'aucun code ne relie l'un à l'autre.
+
+Désormais le texte et sa version sont **le même objet**, et les lignes de preuve sont fabriquées à
+partir de lui. Le test qui mord le plus est celui-là : remplacer la dérivation par une liste
+recopiée à la main le fait tomber.
+
+*Une version n'est pas un numéro : c'est ce qui relie une signature à un texte. Sans ce lien, c'est
+un ornement.*
+
+#### Servir plutôt que recopier : le seul moyen que trois clients disent la même chose
+
+Il aurait été plus court de recopier les six paragraphes dans l'application mobile. Deux copies d'un
+texte qui **vaut preuve**, dans deux dépôts d'écrans, avec un numéro de version censé garantir que
+c'est le même document : la dérive n'aurait pas été un risque, elle aurait été une question de temps.
+
+Les textes sont donc servis par le serveur — celui-là même qui enregistre la version. Une route
+**publique**, parce qu'on lit ces documents au moment où l'on décide de les accepter, donc avant
+d'avoir le moindre compte.
+
+*Le document et la preuve de son acceptation doivent venir du même endroit, ou l'une des deux ment
+tôt ou tard.*
+
+#### Le web aussi faisait accepter sans donner à lire
+
+La case du web, elle, nommait correctement les deux documents et leurs versions. Mais **aucun lien
+ne permettait de les lire** : les textes vivaient dans un écran de réglages, atteignable une fois le
+compte créé. On demandait donc une acceptation éclairée d'un texte qu'aucun chemin ne donnait à
+voir.
+
+Corrigé du même geste — « Lire les deux documents avant d'accepter ». La correction du mobile a
+révélé le défaut du web parce qu'elle a posé la question au bon moment : *où lit-on, à l'instant où
+l'on coche ?*
+
 
 ### Ce que le chantier 61 (le filet de dernier recours) a appris
 
@@ -913,8 +975,37 @@ coûtent à quelqu'un qui en a besoin :
 |---|---|---|
 | ~~**Signaler** (`POST /v1/reports`)~~ | ~~Un patient qui subit un comportement grave **n'a aucun bouton**.~~ | ✅ **Livré au chantier 59** (06/09) — feuille de signalement, branchée sur le message et sur le soignant. |
 | ~~**Support** (`/v1/support-requests`)~~ | ~~Aucun moyen d'écrire à quelqu'un depuis l'application.~~ | ✅ **Livré au chantier 61** (07/09) — écran `Aide`, et le serveur prévient quand la réponse arrive. |
-| **TOTP** (`setup`/`confirm`/`backup-codes`/`reset`) | On peut **désactiver** la 2FA par email depuis le mobile, mais pas activer l'authentification par application, ni revoir ses codes de secours. Un interrupteur qui ne va que dans un sens. | Ensuite : c'est un manque de symétrie, pas un blocage. |
-| **Consentements** (`GET /v1/accounts/me/consents`) | On ne peut pas relire ce qu'on a accepté. Preuve légale (loi n° 29-2019) que l'intéressé ne voit pas. | En dernier des quatre, mais à faire : une preuve qu'on ne peut pas consulter protège mal. |
+| ~~**TOTP** (`setup`/`confirm`/`backup-codes`/`reset`)~~ | ❌ **Ce n'était pas un manque — correction du porteur, 07/09.** Voir ci-dessous. | Rien à faire. |
+| ~~**Consentements** (`GET /v1/accounts/me/consents`)~~ | ~~On ne peut pas relire ce qu'on a accepté.~~ | ✅ **Livré au chantier 62** (07/09) — et le vrai défaut était pire : on faisait accepter des textes que l'application ne montrait pas. |
+
+#### ❌ Le « manque » TOTP n'en était pas un — correction du porteur, 07/09/2026
+
+J'avais rangé `totp/setup`, `confirm`, `backup-codes` et `reset` parmi les manques de l'application
+patient. **Le porteur a corrigé : le TOTP n'a pas sa place sur mobile.**
+
+Sa raison : *on ne peut pas, dans la même application, afficher un QR code et le scanner.* Le
+parcours TOTP suppose deux appareils — un écran qui montre, un téléphone qui scanne. Sur le
+téléphone lui-même, il n'y a plus qu'un seul écran.
+
+**En vérifiant, la raison est encore plus forte que cela : un compte patient ne peut PAS avoir de
+TOTP, par construction.**
+
+| Maillon | Où |
+|---|---|
+| Un patient ne peut pas se connecter au web : *« Compte patient — connectez-vous depuis l'application mobile »* | `m01.service.ts:399` |
+| Activer le TOTP exige une session, sur `POST /v1/accounts/me/totp/setup` | `m01.controller.ts:246` |
+| L'application mobile n'appelle pas ces routes — et ne le doit pas | D-012, D-053 |
+
+Donc aucun chemin, nulle part, ne permet à un compte patient d'activer le TOTP. Les codes de
+secours, qui n'existent qu'avec lui, sont dans le même cas. La 2FA du patient est **le code par
+email**, et elle s'active comme elle se désactive depuis le mobile : mon « interrupteur à sens
+unique » était faux aussi.
+
+*L'outil de mesure compare ce que le serveur SERT à ce que le mobile APPELLE. Il ne sait rien de ce
+qu'un acteur peut atteindre. Une route servie et jamais appelée par le mobile n'est un manque que si
+quelqu'un, sur ce téléphone, pouvait s'en servir — et c'est une question de produit, pas de
+comptage.*
+
 
 
 
