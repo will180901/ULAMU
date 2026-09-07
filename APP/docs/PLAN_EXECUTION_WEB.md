@@ -651,6 +651,56 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **65** | **Le seul soignant de l'annuaire était injoignable, et l'écran disait « Sur devis »** — 07/09, mesure de bout en bout du côté OFFRE (sonde `vie-du-soignant.ts`). L'entonnoir en production : `inscrits 1 → dossiers 1 → vérifiés 1 → visibles 1 → **avec offre 0** → ont consulté 1 → payés 0`. ⚠️ Le seul soignant a ses **deux offres désactivées** : la fiche affichait « Sur devis » — un mécanisme qui **n'existe pas** dans ULAMU — et proposait « Initier la consultation », bouton qui ne peut pas aboutir. Trois corrections : la fiche dit la vérité et n'offre plus l'impasse ; **la cloche d'alerte ne sonne plus que si le soignant est RÉSERVABLE** (sa notification promet « vous pouvez initier une consultation ») ; et « Ma vitrine » annonce la CONSÉQUENCE — « aucun patient ne peut vous solliciter » — au lieu d'un « 0 offre active » qui se lit comme un détail. Trouvé au passage et corrigé : le mobile prenait **n'importe quelle offre** à défaut de STANDARD, donc vendait une consultation au tarif de SUIVI. **api 634 ✓ (629 + 5) · mobile 67 ✓ (63 + 4) · web 677 ✓ · lint 0 · 166 routes · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **66** | **Une offre désactivée ne pouvait plus jamais être rallumée** — 07/09, **trouvé par le porteur** sur son propre écran. Le serveur sait tout faire (`PATCH /v1/offers/:id` modifie ET réactive) et le client web déclarait même `api.updateOffer` : **aucun écran ne l'appelait**. La ligne n'offrait qu'un bouton, et seulement sur une offre active — la désactiver. ⚠️ Conséquence mesurée : le seul soignant de la plateforme avait ses deux offres éteintes et **aucun moyen de revenir en arrière**, sinon en créer d'autres jusqu'au plafond PM-25. Livré : modifier en ligne (le net se recalcule sous les doigts, car c'est là que le prix se décide) et réactiver. **web 684 ✓ (677 + 7) · lint 0 · build ✓ · 3 fautes injectées, 3 détectées.** Balayage complémentaire : sur **123 capacités déclarées par le client web, 6 n'ont aucun bouton** — dont `approveBan`/`rejectBan` et `completeSupportProcedure`/`cancelSupportProcedure`, seconds temps de gestes qu'on peut déclencher sans jamais les conclure. | ⏸ en attente | ⏸ |
 | **67** | **Les seconds temps qui n'existaient pas** — 07/09, étape 2 du plan de refonte. Trois gestes se déclenchaient sans jamais pouvoir se conclure. ⚠️ **Bannissement** : « Bannir » dépose une DEMANDE qu'un second admin doit approuver — et **aucune route ne permettait de découvrir ces demandes**, ni de les trancher. Sur l'acte le plus lourd de la plateforme, la demande restait dans un état que rien ne résolvait et le compte visé restait actif. Livré : `GET /v1/admin/sanctions` + la file dans E7, qui dit AVANT le clic qu'on n'approuve pas la sienne. ⚠️ **Procédures support** : on pouvait en ouvrir, jamais les clore — clore/annuler ajoutés, avec le texte qui devient une trace horodatée et signée. ⚠️ **Numéro de téléphone sur le web** : absent, et ce n'était pas un choix — **le retrait d'argent part sur le numéro DU COMPTE**, et le soignant n'a pas d'application mobile. Sans ce bloc, un changement de ligne envoyait les gains vers un numéro perdu. **api 641 ✓ (634 + 7) · web 699 ✓ (684 + 15) · lint 0 · 167 routes · builds ✓ · 8 fautes injectées, 8 détectées.** Le balayage retombe de **11 à 6 capacités sans bouton**, dont 3 faux positifs vérifiés. | ⏸ en attente | ⏸ |
+| **68** | **Le filet de la refonte** — 07/09, étape 3 du plan, celle qui rend la refonte possible. Le porteur veut refondre tout le design soignant et administration, avec une crainte dite en toutes lettres : *« il ne faut pas qu'on régresse, qu'on retire les choses essentielles »*. Elle est fondée — **six phrases avaient déjà survécu à un nettoyage et étaient parties en production** (chantier 27), une septième à TROIS chantiers (28). Mesure d'abord : sur 22 promesses durement gagnées, **20 étaient déjà protégées** — le codebase était en meilleur état que la crainte ne le suggérait. Livré : `promesses.test.ts` gagne **LE FILET**, 20 écrans et 35 garanties, chacune avec la raison pour laquelle elle a été écrite ; et son jumeau mobile `PromessesTenues.test.ts`. ⚠️ Les motifs ancrent **deux mots-clés séparés par du texte libre** : réécrire reste possible, supprimer l'idée ne l'est pas — *un test qui exige une phrase mot pour mot finit par interdire de mieux la dire*. **web 744 ✓ (699 + 45) · mobile 84 ✓ (67 + 17) · api 641 ✓ · lint 0 · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 68 (le filet) a appris
+
+*07/09/2026 — l'étape qu'on est tenté de sauter, et qui décide de tout ce qui suit.*
+
+#### La crainte du porteur était fondée, et le journal en portait déjà la preuve
+
+*« Il ne faut pas qu'on régresse, qu'on retire les choses essentielles. »*
+
+Ce n'est pas une inquiétude théorique : le chantier 27 a trouvé **six phrases** qui avaient survécu à
+un nettoyage complet et étaient parties en production — le carrousel d'entrée promettait encore de
+réserver des médicaments. Et le chantier 28, le lendemain, en a trouvé une septième qui avait
+survécu à **trois** chantiers de nettoyage, affichée en toutes lettres sur l'écran de connexion.
+
+Une refonte graphique réécrit vingt écrans d'un coup. C'est le même risque, multiplié.
+
+#### Mesurer d'abord a corrigé le diagnostic
+
+Avant d'écrire quoi que ce soit : sur 22 promesses essentielles, **20 étaient déjà éprouvées**
+quelque part, et les 25 écrans sont tous montés par au moins un test. L'état réel était bien
+meilleur que la crainte ne le suggérait.
+
+Le travail n'était donc pas « ajouter des dizaines de tests », mais **rassembler en un seul endroit
+ce qui était éparpillé dans 42 fichiers et dans la tête de celui qui les a écrits.**
+
+*On allait construire un filet ; il en existait déjà un, sans inventaire. Le manque n'était pas la
+protection, c'était la LISTE.*
+
+#### Un test qui exige une phrase mot pour mot interdit de mieux la dire
+
+Le premier jet épinglait les phrases **exactes**. C'était trop rigide : une refonte a le droit de
+reformuler, et un filet qui l'interdit sera contourné — ou supprimé.
+
+Les motifs ancrent donc **deux mots-clés séparés par du texte libre**. « L'identité du signaleur … pas
+transmise » tient, quelle que soit la phrase autour. Supprimer l'idée, en revanche, casse le test.
+
+*C'est le pendant exact de la leçon du chantier 16 : un test qui interdit des mots finit par
+interdire les explications.*
+
+#### Ce que le filet dit quand il casse
+
+Un échec ne dit pas « le code est faux ». Il dit : **une phrase que quelqu'un avait jugée
+indispensable vient de disparaître de cet écran.** Trois réponses, dans cet ordre : la remettre ; ou
+mettre à jour le motif si la refonte l'a REFORMULÉE, en vérifiant que la nouvelle formulation dit le
+même fait ; ou la retirer des deux côtés si le produit a changé — et l'écrire au journal comme une
+décision.
+
+*Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
 
 ### Ce que le chantier 67 (les seconds temps) a appris
 
