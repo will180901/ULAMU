@@ -120,7 +120,22 @@ function BandeauMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] })
           key={m.month}
           className={
             'flex flex-col items-center gap-1 rounded-md border py-2 ' +
-            (m.sessions > 0 ? 'border-[var(--ap-200)] bg-[var(--ap-50)]' : 'border-transparent bg-[var(--fond-surface-2)]')
+            /*
+              ⚠️ Le mois inactif reste sur la surface de la carte, il ne prend PAS `--fond-surface-2`.
+
+              Corrigé le 09/09, quelques minutes après la livraison, en regardant le même écran en
+              thème CLAIR : l'encre tertiaire sur `--fond-surface-2` donnait **4,30:1**, sous le
+              seuil AA de 4,5, sur les dix cellules à zéro. Le thème sombre, lui, passait — j'avais
+              vérifié celui-là et pas l'autre.
+
+              C'est mot pour mot la faute que le chantier 69 venait de corriger chez quelqu'un
+              d'autre : *une correction de couleur portée sur un seul thème est une correction à
+              moitié faite.* Elle se relit dans les deux palettes, ou elle n'est pas relue.
+
+              Sur la surface de la carte : **5,37:1** en clair, **5,28:1** en sombre. La bordure
+              suffit à donner sa forme à la cellule — le fond ne servait qu'à la décorer.
+            */
+            (m.sessions > 0 ? 'border-[var(--ap-200)] bg-[var(--ap-50)]' : 'border-border')
           }
         >
           <span className="ul-surtitre">{nomDuMois(m.month)}</span>
