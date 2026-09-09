@@ -264,7 +264,7 @@ function BlocPiece({
               {depose ? (documents.length > 1 ? `${documents.length} pages` : 'Déposée') : 'À déposer'}
             </Pilule>
           </span>
-          <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{info.aide}</span>
+          <span className="mt-0.5 block ul-aide">{info.aide}</span>
         </span>
         {modifiable ? (
           <span className="shrink-0">
@@ -459,7 +459,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
           */}
           <dl className="flex flex-wrap items-stretch gap-2">
             <div className="min-w-0 flex-1 basis-36 rounded-md border border-border bg-secondary p-2.5">
-              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+              <dt className="ul-surtitre">
                 Ce que vous aviez signé
               </dt>
               <dd className="mt-0.5 text-[19px] font-semibold leading-none text-[var(--texte-tertiaire)] line-through">
@@ -700,7 +700,7 @@ export function VerificationPage() {
           <BadgeCheck size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Ma vérification
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">{etat.aide}</p>
@@ -731,7 +731,7 @@ export function VerificationPage() {
               */}
               {derniereDecision.documentKind ? (
                 <p className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                  <span className="ul-surtitre">
                     Pièce concernée
                   </span>
                   <Pilule ton="alerte">{PIECES[derniereDecision.documentKind].titre}</Pilule>

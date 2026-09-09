@@ -414,7 +414,7 @@ export function GainsPage() {
           <Wallet size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Mes gains</h1>
+          <h1 className="ul-titre-page">Mes gains</h1>
           {/*
             Ni date de versement, ni taux. Le versement mensuel n'existe pas côté serveur, et le taux
             appliqué dépend du contrat signé de chacun — il se lit ligne par ligne, plus bas.

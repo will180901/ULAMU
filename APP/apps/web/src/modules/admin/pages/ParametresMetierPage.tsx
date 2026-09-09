@@ -144,12 +144,12 @@ function Changer({ parametre, onFini }: { parametre: PlatformParameter; onFini: 
           </label>
         </div>
       ) : impact.data?.isRateParameter ? (
-        <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-2 ul-aide">
           Ce taux figure dans les contrats, mais aucun n'est signé pour l'instant : le changement ne
           suspend l'exercice de personne.
         </p>
       ) : (
-        <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-2 ul-aide">
           Ce paramètre n'apparaît pas dans les contrats : le changer ne ré-édite rien et ne suspend
           personne.
         </p>
@@ -168,7 +168,7 @@ function Changer({ parametre, onFini }: { parametre: PlatformParameter; onFini: 
           className="resize-none bg-card"
           onChange={(e) => setMotif(e.target.value)}
         />
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1 ul-aide">
           Il part au journal d'audit avec votre nom, l'ancienne et la nouvelle valeur (RM-16-03).
         </p>
       </div>
@@ -178,7 +178,7 @@ function Changer({ parametre, onFini }: { parametre: PlatformParameter; onFini: 
         REFUSE une date d'effet future — « pour ne pas mentir sur le contrat ». Offrir un sélecteur
         de date produirait une erreur à chaque usage.
       */}
-      <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+      <p className="mt-2 ul-aide">
         Le changement prend effet <strong className="text-foreground">immédiatement</strong> : les
         effets différés ne sont pas gérés, et le serveur refuse une date future.
       </p>
@@ -277,7 +277,7 @@ export function ParametresMetierPage() {
           <SlidersHorizontal size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Paramètres métier
           </h1>
           {/* Compté sur ce que le serveur renvoie — la maquette annonce « 40 en 6 familles ». */}
@@ -342,7 +342,7 @@ export function ParametresMetierPage() {
                       key={t || `action-${i}`}
                       role="columnheader"
                       scope="col"
-                      className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
+                      className="px-3 py-2.5 ul-surtitre"
                     >
                       {t}
                     </th>

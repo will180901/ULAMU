@@ -345,7 +345,7 @@ function LigneNotification({
           </span>
           <span className="mt-0.5 block text-[11.5px] leading-snug text-[var(--texte-tertiaire)]">{n.body}</span>
           <span
-            className="mt-1 block font-mono text-[10px] text-[var(--texte-tertiaire)]"
+            className="mt-1 block t-code-sm text-[var(--texte-tertiaire)]"
             title={dateComplete(n.createdAt)}
           >
             {depuis(n.createdAt)}

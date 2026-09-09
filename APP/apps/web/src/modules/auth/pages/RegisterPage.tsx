@@ -77,7 +77,7 @@ function Libelle({ children }: { children: React.ReactNode }) {
 }
 
 function Aide({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{children}</span>
+  return <span className="ul-aide">{children}</span>
 }
 
 function Erreur({ children }: { children: React.ReactNode }) {

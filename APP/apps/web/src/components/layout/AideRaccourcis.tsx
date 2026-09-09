@@ -44,7 +44,7 @@ export function AideRaccourcis({ ouvert, surChangement }: { ouvert: boolean; sur
         <div className="flex flex-col gap-4">
           {portees.map((portee) => (
             <section key={portee}>
-              <h3 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+              <h3 className="mb-2 ul-surtitre">
                 {portee}
               </h3>
               <dl className="m-0 flex flex-col gap-1.5">

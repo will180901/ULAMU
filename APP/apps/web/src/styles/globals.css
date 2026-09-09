@@ -168,6 +168,30 @@
   --fs-code:        13px; --lh-code:        1.6;
   --fs-code-sm:     11px; --lh-code-sm:     1.5;
 
+  /* ── Les quatre VOIX, et la zone qui les règle — 09/09/2026 ────────────────────────────────────
+     Une « voix » n'est pas un palier de plus : c'est un RÔLE (titre de page, titre de panneau,
+     chiffre héros, texte d'aide) dont la valeur est toujours prise dans les 16 paliers ci-dessus.
+     Le référentiel CG-02 reste donc fermé — on ne crée aucune taille, on nomme des emplois.
+
+     Pourquoi : ces quatre rôles étaient RECOPIÉS à l'identique dans les écrans — 15 fois le titre
+     de page, 24 fois le surtitre, 36 fois le texte d'aide. Or « une règle recopiée est une règle
+     qui dérive » : le titre de « Ma vitrine » était déjà passé à 22px/bold quand les 15 autres
+     étaient à 18px/semibold, sans que personne l'ait décidé.
+
+     La ZONE choisit les valeurs. Elle est décidée par le PRODUIT (l'URL), jamais par l'utilisateur —
+     c'est ce qui la distingue de `data-densite`, qui appartient à l'utilisateur et ne touche, lui,
+     que le serrage vertical. Les deux leviers sont volontairement disjoints : la zone dit la
+     HIÉRARCHIE, la densité dit le SERRAGE. Aucun des deux ne peut annuler l'autre.
+
+     Ci-dessous = les valeurs de la zone « soin » (le médecin : peu d'écrans, peu de décisions, on
+     lit). La zone « administration » (on balaye des files) les resserre plus bas.
+     Elles vivent dans `:root` pour qu'un écran monté HORS de la coquille — l'authentification, un
+     test — ait toujours une voix, même sans attribut de zone. */
+  --voix-titre-page:    var(--fs-display-lg);  /* 24px */
+  --voix-titre-panneau: var(--fs-display-sm);  /* 18px */
+  --voix-chiffre:       var(--fs-display-xl);  /* 32px */
+  --voix-aide:          var(--fs-text-xs);     /* 12px */
+
   /* Noms hérités du port SARIS, REMAPPÉS sur les valeurs CG-02 ci-dessus. Ils restent le temps que les
      composants passent aux classes `.t-*` — migration prévue en tâche 0.2 du plan, qui supprime de
      toute façon les styles inline. Les faire disparaître en deux passes coûterait deux fois le même
@@ -300,7 +324,18 @@
 
   --fond-page: #0D1117; --fond-surface: #161B22; --fond-surface-2: #1C222C; --fond-input: #21262D; --bordure-input: #30363D;
 
-  --texte-primaire: #E6EDF3; --texte-secondaire: #9DA7B3; --texte-tertiaire: #6E7781;
+  /* ⚠️ `--texte-tertiaire` corrigé le 09/09/2026 : #6E7781 → #858F9C.
+     Le même défaut avait été trouvé et corrigé le 20/08 dans le thème CLAIR — le thème sombre
+     n'avait jamais été re-mesuré, et il a gardé le défaut treize jours de plus.
+     Mesuré sur le tableau de bord en production : le texte tertiaire donnait **3,80:1** sur
+     `--fond-surface` et **3,52:1** sur `--fond-surface-2`, sous le seuil AA de 4,5 — et il porte
+     précisément les phrases qui EXPLIQUENT : « XAF · 0 retirable », « Fait baisser votre taux de
+     confirmation », « Une demande laissée expirer compte comme une non-réponse ».
+     Douze textes du seul tableau de bord étaient concernés.
+     Après : **5,28:1** sur `--fond-surface`, **4,87:1** sur `--fond-surface-2` — le pire cas passe.
+     La valeur reste franchement plus calme que `--texte-secondaire` (7,10:1), donc les trois
+     niveaux d'encre restent distincts : primaire 14,6 · secondaire 7,1 · tertiaire 5,3. */
+  --texte-primaire: #E6EDF3; --texte-secondaire: #9DA7B3; --texte-tertiaire: #858F9C;
 
   --bordure-legere: rgba(230, 237, 243, 0.08); --bordure-normale: rgba(230, 237, 243, 0.14); --bordure-forte: rgba(230, 237, 243, 0.26);
 
@@ -351,6 +386,17 @@
      pointe sur les jetons ULAMU ci-dessus, que ce bloc vient de recalculer. Le sombre suit donc
      tout seul. `shadcn init` avait dupliqué ici ses neutres oklch — deux vérités concurrentes pour
      la même couleur, et c'est la seconde qui gagnait. */
+}
+
+/* La zone « administration » — on balaye des files, on ne lit pas un tableau de bord.
+   Chaque voix descend d'un palier, jamais de deux : un écran dense reste le MÊME système, sinon
+   les deux interfaces divergeraient en quelques mois. Le surtitre et le corps ne bougent pas — ils
+   sont déjà au plus bas de ce qui reste lisible. */
+[data-zone='administration'] {
+  --voix-titre-page:    var(--fs-display-md);  /* 24 → 20px */
+  --voix-titre-panneau: var(--fs-text-lg);     /* 18 → 16px */
+  --voix-chiffre:       var(--fs-display-lg);  /* 32 → 24px */
+  --voix-aide:          var(--fs-caption);     /* 12 → 11px */
 }
 
 [data-densite="compact"] {
@@ -471,6 +517,24 @@
 
 .t-code    { font-family: var(--font-mono); font-size: var(--fs-code);    line-height: var(--lh-code);    font-weight: 400; }
 .t-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); line-height: var(--lh-code-sm); font-weight: 500; }
+
+/* ── Les quatre voix, en classes — 09/09/2026 ───────────────────────────────────────────────────
+   Elles remplacent 78 recopies à l'identique dans les écrans. Chacune pose la famille, la taille,
+   l'interlignage, la graisse ET la couleur d'un coup : une voix incomplète n'a pas de sens, et
+   c'est en les prenant séparément qu'on finit avec un titre plus petit que son contenu — ce qui
+   était le cas de « Six derniers mois » (14px) sur un corps à 15px.
+   Leur TAILLE vient de `--voix-*`, donc de la zone. Le reste est constant : ce qui change entre le
+   soin et l'administration, c'est l'échelle, jamais l'identité. */
+.ul-titre-page    { font-family: var(--font-display); font-size: var(--voix-titre-page);    line-height: 1.15; font-weight: 700; letter-spacing: -0.02em;  color: var(--texte-primaire); }
+.ul-titre-panneau { font-family: var(--font-display); font-size: var(--voix-titre-panneau); line-height: 1.25; font-weight: 700; letter-spacing: -0.015em; color: var(--texte-primaire); }
+/* `tabular-nums` : sans lui, une colonne de montants danse d'une ligne à l'autre, les chiffres
+   n'ayant pas tous la même largeur. Sur de l'argent, ça se voit immédiatement. */
+.ul-chiffre       { font-family: var(--font-display); font-size: var(--voix-chiffre);       line-height: 1.05; font-weight: 800; letter-spacing: -0.025em; color: var(--texte-primaire); font-variant-numeric: tabular-nums; }
+/* Le SURTITRE — le micro-intitulé en capitales au-dessus d'un chiffre. Ce rôle existait dans
+   24 écrans et la charte ne lui avait jamais donné de nom : chacun l'a donc réinventé à 10px, une
+   taille que CG-02 ne contient pas. Il prend ici le palier de légende (11px) qui, lui, existe. */
+.ul-surtitre      { font-family: var(--font-mono);    font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texte-tertiaire); }
+.ul-aide          { font-family: var(--font-body);    font-size: var(--voix-aide);  line-height: 1.5;              font-weight: 400; color: var(--texte-tertiaire); }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════════════
    COMPOSANTS FONDAMENTAUX — CG-05

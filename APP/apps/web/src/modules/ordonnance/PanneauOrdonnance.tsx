@@ -225,7 +225,7 @@ function LigneEnCours({
   return (
     <li className="rounded-lg border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+        <span className="ul-surtitre">
           Ligne {index + 1}
         </span>
         {supprimable ? (

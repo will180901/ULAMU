@@ -111,7 +111,7 @@ export function DecompteTotp() {
          phrase consultable à la demande, sans l'imposer. */
       role="status"
       aria-live="off"
-      className="m-0 flex items-center gap-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]"
+      className="m-0 flex items-center gap-2 ul-aide"
     >
       {/* L'anneau est décoratif : la phrase à côté porte toute l'information (CG-11 — jamais la
           couleur ni la forme seules). */}

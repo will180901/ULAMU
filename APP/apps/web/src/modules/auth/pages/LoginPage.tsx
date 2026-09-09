@@ -233,7 +233,7 @@ export function LoginPage() {
                   ceux du TOTP. Le recours de la 2FA par email, c'est l'email lui-même — proposer un
                   code de secours mènerait à un refus du serveur.
                 */}
-                <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                <p className="mt-2 ul-aide">
                   Le code expire au bout de quelques minutes. Sans email, revenez en arrière et
                   réessayez : un nouveau code part à chaque tentative.
                 </p>
@@ -272,7 +272,7 @@ export function LoginPage() {
                 {/* Une seule ligne, et elle est actionnable. La version précédente énonçait le fait
                     (« un code de secours est aussi accepté ») PUIS posait le lien : deux formulations
                     du même message, sur une ligne qui s'enroulait. */}
-                <p className="mt-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                <p className="mt-2 ul-aide">
                   Pas de code ?{' '}
                   <button
                     type="button"
@@ -298,7 +298,7 @@ export function LoginPage() {
                   autoFocus
                   required
                 />
-                <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                <span className="ul-aide">
                   Chaque code ne sert qu'une fois.{' '}
                   <button
                     type="button"

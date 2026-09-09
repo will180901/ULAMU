@@ -95,7 +95,7 @@ function BlocPhoto({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
           )}
         </span>
         <div className="flex min-w-0 flex-1 basis-56 flex-col gap-2">
-          <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">JPEG, PNG ou WebP · 2 Mo maximum.</p>
+          <p className="ul-aide">JPEG, PNG ou WebP · 2 Mo maximum.</p>
           <div className="flex flex-wrap gap-2">
             <input
               ref={champ}
@@ -227,7 +227,7 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
               {demarrer.isPending ? 'Envoi…' : 'Envoyer les codes'}
             </Button>
           </div>
-          <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+          <p className="ul-aide">
             Deux codes seront envoyés : un sur votre numéro actuel, un sur le nouveau. Les deux codes
             sont exigés — sans preuve sur l'ancien numéro, une session volée suffirait à détourner vos
             virements.
@@ -787,7 +787,7 @@ function Formulaire({
     <div className="flex flex-col gap-3 rounded-md border border-border bg-secondary p-3">
       <div>
         <p className="text-[13px] font-medium text-foreground">{titre}</p>
-        <p className="mt-0.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{explication}</p>
+        <p className="mt-0.5 ul-aide">{explication}</p>
       </div>
       <div className="flex flex-wrap gap-3">
         <div className="min-w-0 flex-1 basis-48">

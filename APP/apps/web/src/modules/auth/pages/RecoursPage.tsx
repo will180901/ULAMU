@@ -160,7 +160,7 @@ export function RecoursPage() {
               placeholder="Décrivez votre situation en quelques phrases."
               onChange={(e) => setTexte(e.target.value)}
             />
-            <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+            <p className="ul-aide">
               {texte.trim().length} / 2000 caractères. N’écrivez pas votre mot de passe : l’administration ne vous le
               demandera jamais.
             </p>

@@ -130,14 +130,14 @@ function Tuile({
     ton === 'erreur' ? 'text-[var(--erreur-texte)]' : ton === 'alerte' ? 'text-[var(--alerte-texte)]' : 'text-foreground'
   return (
     <div className="min-w-0 flex-1 basis-52 rounded-[10px] border border-border bg-card p-3.5">
-      <p className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+      <p className="flex items-center gap-1.5 ul-surtitre">
         <Icone size={12} strokeWidth={1.9} aria-hidden="true" />
         {intitule}
       </p>
       <p className={'mt-1 font-[family-name:var(--font-display)] text-[26px] font-bold leading-none ' + couleur}>
         {valeur}
       </p>
-      <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{detail}</p>
+      <p className="mt-1.5 ul-aide">{detail}</p>
     </div>
   )
 }
@@ -260,7 +260,7 @@ export function ConsultationsPage() {
           <ClipboardList size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Consultations
           </h1>
           {/*
@@ -390,7 +390,7 @@ export function ConsultationsPage() {
                     key={t || `action-${i}`}
                     role="columnheader"
                     scope="col"
-                    className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
+                    className="px-3 py-2.5 ul-surtitre"
                   >
                     {t}
                   </th>

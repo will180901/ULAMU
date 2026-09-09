@@ -128,7 +128,7 @@ export function UserMenu({ ouverte }: { ouverte: boolean }) {
           >
             {sombreActif ? <Sun size={13} strokeWidth={1.5} aria-hidden="true" /> : <Moon size={13} strokeWidth={1.5} aria-hidden="true" />}
             <span className="flex-1 text-left">Thème</span>
-            <span className="font-mono text-[10px] text-[var(--texte-tertiaire)]">{LIBELLE_THEME[choix]}</span>
+            <span className="t-code-sm text-[var(--texte-tertiaire)]">{LIBELLE_THEME[choix]}</span>
           </DropdownMenuItem>
 
           {/* Séparateur avant l'action irréversible, et elle vient en dernier (CG-06 §07). */}

@@ -79,7 +79,7 @@ export function Sidebar({
             <span className="block font-[family-name:var(--font-display)] text-sm font-bold leading-[1.1] tracking-[-0.01em] text-foreground">
               ulamu
             </span>
-            <span className="mt-0.5 block font-mono text-[10px] font-semibold uppercase leading-none tracking-[0.07em] text-[var(--texte-tertiaire)]">
+            <span className="mt-0.5 block ul-surtitre">
               {espace}
             </span>
           </span>
@@ -103,7 +103,7 @@ export function Sidebar({
             {/* Au repos, l'intitulé de groupe ne tiendrait pas dans 68 px : un filet le remplace,
                 pour que la séparation reste lisible sans texte tronqué. */}
             {groupe.label && ouverte ? (
-              <p className="mb-1 mt-2 whitespace-nowrap px-3 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--texte-tertiaire)]">
+              <p className="mb-1 mt-2 whitespace-nowrap px-3 ul-surtitre">
                 {groupe.label}
               </p>
             ) : null}

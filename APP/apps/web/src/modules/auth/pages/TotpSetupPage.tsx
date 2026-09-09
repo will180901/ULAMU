@@ -321,7 +321,7 @@ export function TotpSetupPage() {
                     </button>
                   ) : (
                     <div className="ulamu-step-fade">
-                      <p className="m-0 mb-1 flex items-center justify-between gap-2 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                      <p className="m-0 mb-1 flex items-center justify-between gap-2 ul-aide">
                         <span>Saisissez ce code dans votre application :</span>
                         {/* Sans QR fabriqué, ce bouton mènerait à un cadre vide — un cul-de-sac
                             sur un écran dont on ne peut pas sortir autrement. */}
@@ -457,7 +457,7 @@ export function TotpSetupPage() {
           </div>
         </div>
 
-        <p className="m-0 mt-3 text-center text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="m-0 mt-3 text-center ul-aide">
           QR code généré sur votre poste — le secret ne part vers aucun service tiers.
         </p>
 

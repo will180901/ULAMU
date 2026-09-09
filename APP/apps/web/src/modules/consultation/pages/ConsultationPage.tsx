@@ -617,7 +617,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
         </p>
       ) : synthese.data ? (
         <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <p className="ul-surtitre">
             Groupe sanguin
           </p>
           <p className="mt-0.5 text-[13px] font-semibold text-foreground">{synthese.data.bloodType ?? 'Non renseigné'}</p>
@@ -627,7 +627,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
             tuer. Le garde-fou M09 s'en sert déjà pour bloquer une prescription (CU-07-02) — le
             médecin doit la voir avant d'en arriver là.
           */}
-          <p className="mt-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <p className="mt-2.5 ul-surtitre">
             Allergies actives
           </p>
           {synthese.data.activeAllergies.length === 0 ? (
@@ -646,7 +646,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
             </span>
           )}
 
-          <p className="mt-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <p className="mt-2.5 ul-surtitre">
             Maladies chroniques
           </p>
           {synthese.data.chronicDiseases.length === 0 ? (
@@ -1098,7 +1098,7 @@ export function ConsultationPage() {
             chronomètre. À 320 px le titre tombait à 74 px pour 108 nécessaires — « Consultati ».
             Avec un plancher, c'est la pastille qui passe à la ligne, et le titre reste entier. */}
         <span className="min-w-0 flex-1 basis-44">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Consultation</h1>
+          <h1 className="ul-titre-page">Consultation</h1>
           <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[var(--texte-tertiaire)]">
             <Lock size={12} strokeWidth={1.8} aria-hidden="true" />
             Échange chiffré · {s.durationMin} minutes
@@ -1331,14 +1331,14 @@ export function ConsultationPage() {
             {pre ? (
               <>
                 <div>
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                  <p className="ul-surtitre">
                     Symptômes
                   </p>
                   <p className="mt-0.5 text-[13px] leading-[1.55] whitespace-pre-wrap text-foreground">{pre.symptoms}</p>
                 </div>
                 {pre.sinceWhen ? (
                   <div>
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                    <p className="ul-surtitre">
                       Depuis
                     </p>
                     <p className="mt-0.5 text-[13px] text-foreground">{pre.sinceWhen}</p>

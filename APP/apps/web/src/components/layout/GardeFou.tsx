@@ -86,7 +86,7 @@ export class GardeFou extends Component<Props, State> {
             >
               <TriangleAlert size={14} strokeWidth={1.5} />
             </span>
-            <h2 className="font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
+            <h2 className="ul-titre-panneau">
               Cet écran s'est interrompu
             </h2>
           </div>

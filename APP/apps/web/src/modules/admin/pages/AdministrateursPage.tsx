@@ -145,7 +145,7 @@ function ChangerRole({ admin, onFini, onAnnuler }: { admin: PlatformAdmin; onFin
           className="resize-none bg-card"
           onChange={(e) => setMotif(e.target.value)}
         />
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1 ul-aide">
           Il figure au journal des habilitations, avec votre nom. Le serveur l'accepte vide — mais une
           habilitation sans raison est ingérable six mois plus tard.
         </p>
@@ -316,7 +316,7 @@ function JournalHabilitations() {
   return (
     <Carte icone={History} titre="Journal des habilitations" sousTitre="Toute attribution ou révocation est tracée">
       {/* RM-04-02 : consulter le journal s'inscrit AU journal. Le dire, pas le cacher. */}
-      <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+      <p className="ul-aide">
         Ces lignes viennent du journal d'audit, en insertion seule. Ouvrir cet écran y laisse
         elle-même une trace à votre nom.
       </p>
@@ -389,7 +389,7 @@ export function AdministrateursPage() {
           <Users size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Administrateurs
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
@@ -429,13 +429,13 @@ export function AdministrateursPage() {
               const n = liste.filter((a) => a.role === r.cle).length
               return (
                 <div key={r.cle} className="min-w-0 flex-1 basis-48 rounded-[10px] border border-border bg-card p-3.5">
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+                  <p className="ul-surtitre">
                     {r.label}
                   </p>
                   <p className="mt-1 font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
                     {n}
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{r.aide}</p>
+                  <p className="mt-1.5 ul-aide">{r.aide}</p>
                 </div>
               )
             })}
@@ -473,7 +473,7 @@ export function AdministrateursPage() {
                       key={t || `action-${i}`}
                       role="columnheader"
                       scope="col"
-                      className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
+                      className="px-3 py-2.5 ul-surtitre"
                     >
                       {t}
                     </th>

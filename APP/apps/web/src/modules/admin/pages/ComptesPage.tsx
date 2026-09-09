@@ -219,7 +219,7 @@ function ActionCompte({
           className="resize-none bg-card"
           onChange={(e) => setMotif(e.target.value)}
         />
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1 ul-aide">
           Ce motif est inscrit au journal d'audit et <strong>notifié au titulaire</strong> : il le lira.
         </p>
       </div>
@@ -445,7 +445,7 @@ function CloreProcedure({ procedure, onFini }: { procedure: SupportProcedure; on
         Le serveur HORODATE et SIGNE chaque étape ajoutée : ce texte devient une trace définitive,
         pas une note de travail. Le dire évite d'y écrire au brouillon.
       */}
-      <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+      <p className="ul-aide">
         Ce texte est horodaté, signé de votre nom et conservé dans la procédure. Il ne se modifie pas
         après coup.
       </p>
@@ -743,7 +743,7 @@ function DemandesDeSupport() {
                     placeholder="Elle s'affichera telle quelle dans l'application du demandeur."
                   />
                   {/* Une réponse ne se réécrit pas : elle aura été lue. Le dire AVANT l'envoi. */}
-                  <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  <p className="ul-aide">
                     Une fois envoyée, la réponse clôt la demande et ne peut plus être modifiée.
                   </p>
                   {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
@@ -838,7 +838,7 @@ export function ComptesPage() {
           <Users size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Comptes</h1>
+          <h1 className="ul-titre-page">Comptes</h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
             Recherchez le compte concerné · suspension, réactivation, bannissement
           </p>
@@ -904,7 +904,7 @@ export function ComptesPage() {
                         key={t || `action-${i}`}
                         role="columnheader"
                         scope="col"
-                        className="px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]"
+                        className="px-3 py-2.5 ul-surtitre"
                       >
                         {t}
                       </th>

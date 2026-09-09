@@ -97,7 +97,7 @@ export function IndicateurPresence() {
         {/* Le compte n'apparaît que si on le connaît : « 0 sur 3 » au chargement serait un mensonge
             fugace, et le plafond ne vaut que 0 quand le serveur n'a rien pu dire. */}
         {enCours !== null && plafond > 0 ? (
-          <span className="whitespace-nowrap font-mono text-[10px] text-[var(--texte-tertiaire)]">
+          <span className="whitespace-nowrap t-code-sm text-[var(--texte-tertiaire)]">
             {enCours} / {plafond}
           </span>
         ) : null}

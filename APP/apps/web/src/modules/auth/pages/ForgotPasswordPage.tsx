@@ -52,7 +52,7 @@ function Libelle({ children }: { children: React.ReactNode }) {
   return <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">{children}</span>
 }
 function Aide({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{children}</span>
+  return <span className="ul-aide">{children}</span>
 }
 function Bascule({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
@@ -150,7 +150,7 @@ export function ForgotPasswordPage() {
   }
 
   const recours = (
-    <p className="m-0 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+    <p className="m-0 ul-aide">
       Pas de code ?{' '}
       {AUTRES_VOIES[voie].map((v, i) => (
         <span key={v}>
@@ -193,7 +193,7 @@ export function ForgotPasswordPage() {
               {voie === 'email' ? 'Vérification par email' : voie === 'secours' ? 'Vérification par code de secours' : 'Vérification par application d’authentification'}
             </p>
 
-            <p className="m-0 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+            <p className="m-0 ul-aide">
               Autre méthode ?{' '}
               {AUTRES_VOIES[voie].map((v, i) => (
                 <span key={v}>

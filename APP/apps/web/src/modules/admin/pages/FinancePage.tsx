@@ -215,7 +215,7 @@ function Rapprochement() {
           rapport, et en créer une pour l'afficher au chargement dépasse ce chantier. Le dire évite
           qu'on prenne un écran vide pour une absence d'écart.
         */}
-        <p className="mt-1.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1.5 ul-aide">
           Le résultat s'affiche après le lancement : aucun rapport n'est conservé entre deux
           exécutions. Un écran vide ne veut donc pas dire « aucun écart ».
         </p>
@@ -452,7 +452,7 @@ export function FinancePage() {
           <Banknote size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Supervision financière
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">

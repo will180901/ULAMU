@@ -34,20 +34,25 @@ export function CarteKpi({
   aide?: string
   ton?: TonKpi
 }) {
+  // Rembourrage vertical par jeton, horizontal fixe : c'est l'arbitrage déjà posé pour la densité —
+  // resserrer l'horizontal collerait le texte aux bordures. « Compact » fait donc respirer un peu
+  // moins, sans jamais rétrécir la marge latérale.
   return (
-    <div className="ul-grain rounded-[10px] border border-border bg-card p-4">
+    <div className="ul-grain rounded-[10px] border border-border bg-card px-4 py-[var(--espace-5)]">
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className={'flex size-9 shrink-0 items-center justify-center rounded-md ' + TONS[ton]}>
           <Icone size={17} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <span className="block ul-surtitre">
             {label}
           </span>
-          <span className="mt-1 block font-[family-name:var(--font-display)] text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
+          {/* Le blanc AVANT le chiffre est ce qui le fait exister : c'est l'écart, pas la taille
+              seule, qui dit « ceci est le sujet de la carte ». */}
+          <span className="mt-2 block ul-chiffre">
             {valeur}
           </span>
-          {aide ? <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{aide}</span> : null}
+          {aide ? <span className="mt-0.5 block ul-aide">{aide}</span> : null}
         </span>
       </div>
     </div>
@@ -75,7 +80,7 @@ export function Panneau({
           <Icone size={14} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
+          <span className="block ul-titre-panneau">
             {titre}
           </span>
           {sousTitre ? <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">{sousTitre}</span> : null}

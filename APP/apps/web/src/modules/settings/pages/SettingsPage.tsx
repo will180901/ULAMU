@@ -69,7 +69,7 @@ export function SettingsPage() {
           <Settings2 size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Mes paramètres
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">

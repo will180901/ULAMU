@@ -88,8 +88,28 @@ export function AppShell() {
     Le volet de développement n'a pas de barre d'adresse : aucune émulation ne montre ce défaut. Il
     ne se voit que sur un vrai téléphone — ou en lisant l'unité employée.
   */
+  /*
+    La ZONE — posée ici, sur la coquille, et nulle part ailleurs.
+
+    Deux interfaces vivent dans cette application : celle du soignant (peu d'écrans, on LIT) et
+    celle de l'administration (des files, on BALAYE). Elles partagent les mêmes jetons et les mêmes
+    composants ; seule l'échelle de la hiérarchie change. L'attribut règle les quatre voix
+    (`--voix-*` dans `globals.css`) pour tout ce qui est monté en dessous.
+
+    ⚠️ À ne pas confondre avec `data-densite`, posé sur `<html>` : celui-là appartient à
+    l'UTILISATEUR (« Mes paramètres »), et ne touche que le serrage vertical. Deux leviers, deux
+    propriétaires — la zone dit la hiérarchie, la densité dit le serrage, et aucun des deux ne peut
+    annuler l'autre. Reprendre `data-densite` pour la zone aurait confisqué un réglage que
+    l'utilisateur avait le droit de garder.
+
+    Le préfixe d'URL fait foi, et pas la capacité du compte : c'est l'ÉCRAN qu'on regarde qui
+    décide, pas qui le regarde. Un super-administrateur qui ouvre « Mes paramètres » est sur un
+    écran de lecture, pas sur une file.
+  */
+  const zone = pathname.startsWith('/admin') ? 'administration' : 'soin'
+
   return (
-    <div className="relative h-dvh overflow-hidden bg-[var(--fond-page)] saris-grain">
+    <div data-zone={zone} className="relative h-dvh overflow-hidden bg-[var(--fond-page)] saris-grain">
       {/* Sur mobile, la barre sort du flux : translatée hors écran tant qu'on ne l'appelle pas.
           `inert` quand elle est fermée — sans lui, ses liens restent TABULABLES bien qu'invisibles :
           le focus disparaîtrait de l'écran pendant neuf tabulations, sans que rien ne l'explique.

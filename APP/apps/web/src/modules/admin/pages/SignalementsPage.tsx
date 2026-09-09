@@ -161,7 +161,7 @@ function CibleResolue({
     return (
       <>
         <p className="mt-0.5 font-mono text-[13px] text-foreground">{cibleBrute}</p>
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1 ul-aide">
           L'identification n'a pas pu être chargée — seul l'identifiant du signalement est affiché.
         </p>
       </>
@@ -174,7 +174,7 @@ function CibleResolue({
     return (
       <>
         <p className="mt-0.5 font-mono text-[13px] text-foreground">{cibleBrute}</p>
-        <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+        <p className="mt-1 ul-aide">
           Cette cible n'existe plus : compte fermé, message effacé ou session purgée. Le signalement
           reste instruisible sur la seule foi du récit ci-dessus.
         </p>
@@ -277,7 +277,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
         </p>
 
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <p className="ul-surtitre">
             Ce qui est reproché
           </p>
           <p className="mt-0.5 text-[13px] leading-[1.6] whitespace-pre-wrap text-foreground">
@@ -288,7 +288,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
 
       <Carte icone={UserX} titre="Les parties" sousTitre="Ce que l'administration peut voir, et ce qu'elle ne doit pas voir">
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+          <p className="ul-surtitre">
             Mis en cause
           </p>
           <CibleResolue contexte={contexte} cibleBrute={`${signalement.targetType} · ${signalement.targetId.slice(0, 8).toUpperCase()}`} />
@@ -333,7 +333,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
                 />
                 <span className="min-w-0">
                   <span className="block text-[13px] font-medium text-foreground">{i.label}</span>
-                  <span className="block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{i.effet}</span>
+                  <span className="block ul-aide">{i.effet}</span>
                 </span>
               </label>
             ))}
@@ -352,7 +352,7 @@ function Detail({ signalement, onDecide }: { signalement: UserReport; onDecide: 
               className="resize-none"
               onChange={(e) => setMotif(e.target.value)}
             />
-            <p className="mt-1 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+            <p className="mt-1 ul-aide">
               Il est inscrit au journal d'audit à votre nom, et il est <strong>définitif</strong> : ce
               signalement ne pourra plus être rejugé.
             </p>
@@ -406,7 +406,7 @@ export function SignalementsPage() {
           <Flag size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Signalements
           </h1>
           {/*

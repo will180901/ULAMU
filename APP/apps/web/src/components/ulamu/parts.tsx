@@ -54,10 +54,10 @@ export function Carte({
           la hiérarchie est donc juste.
         */}
         <div className="min-w-0 flex-1 basis-40">
-          <h2 className="font-[family-name:var(--font-display)] text-sm font-bold leading-[1.2] tracking-[-0.012em] text-foreground">
+          <h2 className="ul-titre-panneau">
             {titre}
           </h2>
-          {sousTitre ? <p className="mt-0.5 text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{sousTitre}</p> : null}
+          {sousTitre ? <p className="mt-0.5 ul-aide">{sousTitre}</p> : null}
         </div>
         {action ? <span className="ml-auto shrink-0">{action}</span> : null}
       </div>
@@ -119,7 +119,7 @@ export function Reglage({ titre, aide, children }: { titre: string; aide?: strin
     <div className="flex flex-wrap items-center justify-between gap-3">
       <span className="min-w-0 flex-1 basis-52">
         <span className="block text-[13px] font-medium text-foreground">{titre}</span>
-        {aide ? <span className="mt-0.5 block text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">{aide}</span> : null}
+        {aide ? <span className="mt-0.5 block ul-aide">{aide}</span> : null}
       </span>
       <span className="shrink-0">{children}</span>
     </div>

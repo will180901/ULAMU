@@ -300,17 +300,17 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
       <Carte icone={HandshakeIcon} titre="Ce qui est demandé" sousTitre="L'offre choisie par le patient dans votre vitrine">
         <dl className="flex flex-wrap gap-x-8 gap-y-3">
           <div>
-            <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">Offre</dt>
+            <dt className="ul-surtitre">Offre</dt>
             <dd className="mt-0.5 text-[14px] font-medium text-foreground">{h.offerLabel ?? 'Consultation'}</dd>
           </div>
           <div>
-            <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">Durée</dt>
+            <dt className="ul-surtitre">Durée</dt>
             <dd className="mt-0.5 text-[14px] font-medium text-foreground">
               {h.offerDurationMin !== null ? `${h.offerDurationMin} ${accord(h.offerDurationMin, 'minute')}` : '—'}
             </dd>
           </div>
           <div>
-            <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">Montant</dt>
+            <dt className="ul-surtitre">Montant</dt>
             <dd className="mt-0.5 font-[family-name:var(--font-display)] text-[17px] font-bold text-foreground">
               {h.offerPriceXaf !== null ? `${xaf(h.offerPriceXaf)} F` : '—'}
             </dd>
@@ -550,7 +550,7 @@ export function DemandesPage() {
           <HandshakeIcon size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">Demandes</h1>
+          <h1 className="ul-titre-page">Demandes</h1>
           <p className="mt-0.5 text-[13px] text-[var(--texte-tertiaire)]">
             {aDecider.length > 0
               ? `${aDecider.length} demande${aDecider.length > 1 ? 's' : ''} attend${aDecider.length > 1 ? 'ent' : ''} votre réponse`

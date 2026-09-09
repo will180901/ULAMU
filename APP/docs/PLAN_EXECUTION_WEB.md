@@ -652,6 +652,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **66** | **Une offre désactivée ne pouvait plus jamais être rallumée** — 07/09, **trouvé par le porteur** sur son propre écran. Le serveur sait tout faire (`PATCH /v1/offers/:id` modifie ET réactive) et le client web déclarait même `api.updateOffer` : **aucun écran ne l'appelait**. La ligne n'offrait qu'un bouton, et seulement sur une offre active — la désactiver. ⚠️ Conséquence mesurée : le seul soignant de la plateforme avait ses deux offres éteintes et **aucun moyen de revenir en arrière**, sinon en créer d'autres jusqu'au plafond PM-25. Livré : modifier en ligne (le net se recalcule sous les doigts, car c'est là que le prix se décide) et réactiver. **web 684 ✓ (677 + 7) · lint 0 · build ✓ · 3 fautes injectées, 3 détectées.** Balayage complémentaire : sur **123 capacités déclarées par le client web, 6 n'ont aucun bouton** — dont `approveBan`/`rejectBan` et `completeSupportProcedure`/`cancelSupportProcedure`, seconds temps de gestes qu'on peut déclencher sans jamais les conclure. | ⏸ en attente | ⏸ |
 | **67** | **Les seconds temps qui n'existaient pas** — 07/09, étape 2 du plan de refonte. Trois gestes se déclenchaient sans jamais pouvoir se conclure. ⚠️ **Bannissement** : « Bannir » dépose une DEMANDE qu'un second admin doit approuver — et **aucune route ne permettait de découvrir ces demandes**, ni de les trancher. Sur l'acte le plus lourd de la plateforme, la demande restait dans un état que rien ne résolvait et le compte visé restait actif. Livré : `GET /v1/admin/sanctions` + la file dans E7, qui dit AVANT le clic qu'on n'approuve pas la sienne. ⚠️ **Procédures support** : on pouvait en ouvrir, jamais les clore — clore/annuler ajoutés, avec le texte qui devient une trace horodatée et signée. ⚠️ **Numéro de téléphone sur le web** : absent, et ce n'était pas un choix — **le retrait d'argent part sur le numéro DU COMPTE**, et le soignant n'a pas d'application mobile. Sans ce bloc, un changement de ligne envoyait les gains vers un numéro perdu. **api 641 ✓ (634 + 7) · web 699 ✓ (684 + 15) · lint 0 · 167 routes · builds ✓ · 8 fautes injectées, 8 détectées.** Le balayage retombe de **11 à 6 capacités sans bouton**, dont 3 faux positifs vérifiés. | ⏸ en attente | ⏸ |
 | **68** | **Le filet de la refonte** — 07/09, étape 3 du plan, celle qui rend la refonte possible. Le porteur veut refondre tout le design soignant et administration, avec une crainte dite en toutes lettres : *« il ne faut pas qu'on régresse, qu'on retire les choses essentielles »*. Elle est fondée — **six phrases avaient déjà survécu à un nettoyage et étaient parties en production** (chantier 27), une septième à TROIS chantiers (28). Mesure d'abord : sur 22 promesses durement gagnées, **20 étaient déjà protégées** — le codebase était en meilleur état que la crainte ne le suggérait. Livré : `promesses.test.ts` gagne **LE FILET**, 20 écrans et 35 garanties, chacune avec la raison pour laquelle elle a été écrite ; et son jumeau mobile `PromessesTenues.test.ts`. ⚠️ Les motifs ancrent **deux mots-clés séparés par du texte libre** : réécrire reste possible, supprimer l'idée ne l'est pas — *un test qui exige une phrase mot pour mot finit par interdire de mieux la dire*. **web 744 ✓ (699 + 45) · mobile 84 ✓ (67 + 17) · api 641 ✓ · lint 0 · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+| **69** | **La passe 0 de la refonte — une gamme, deux zones** — 09/09, étape 4 du plan, sa première brique : la seule couche qui traverse TOUS les écrans, posée une fois pour que chaque écran puisse ensuite être refait sans toucher aux autres. Mesuré d'abord : les **16 paliers de CG-02 étaient déjà écrits** dans `globals.css` — et utilisés **2 fois** dans 25 écrans, contre **635 tailles en dur**. Le manque n'était pas le système, c'était son adoption. ⚠️ **Ma propre proposition de la veille était fausse** : elle appelait « densité » ce qui devait devenir la zone — or `data-densite` appartient à l'UTILISATEUR depuis le chantier 10, et l'employer par zone aurait confisqué à tout administrateur le droit de choisir « Confort ». Corrigé avant d'écrire une ligne : `data-zone` (l'URL, donc le produit) dit la HIÉRARCHIE, `data-densite` (l'utilisateur) dit le SERRAGE, et aucun des deux ne peut annuler l'autre. ⚠️ **Et le thème sombre portait encore un défaut corrigé dans le clair le 20/08** : mesuré en production sur le tableau de bord, le texte tertiaire donnait **3,80:1** — sous le seuil AA de 4,5 — sur **douze** phrases du seul tableau de bord, et précisément celles qui EXPLIQUENT (« XAF · 0 retirable », « Fait baisser votre taux de confirmation »). Livré : cinq **voix** (`ul-titre-page`, `ul-titre-panneau`, `ul-chiffre`, `ul-surtitre`, `ul-aide`) qui remplacent **83 recopies à l'identique**, la zone posée sur la coquille, et le gris du sombre porté à **5,28:1**. **web 772 ✓ · 113 phrases retenues sur 155 (inchangé) · lint 0 · build ✓ · 635 → 573 tailles en dur.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -700,6 +701,139 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 69 (la passe 0 — la fondation) a appris
+
+*09/09/2026 — la couche qui traverse tout, et qu'on ne repose jamais.*
+
+#### L'échelle existait déjà. Personne ne s'en servait.
+
+Les seize paliers de CG-02 sont écrits dans `globals.css` **depuis le 05/08**, complets : taille,
+graisse et interlignage, exposés en classes `.t-*`. Comptés dans les vingt-cinq écrans : **deux
+usages**. À côté, **635 tailles écrites en dur**, dont 595 entre 10 et 13 px.
+
+Le travail n'était donc pas de concevoir un système typographique : il était de **brancher celui
+qui dormait**. C'est mot pour mot la leçon du chantier 68 la veille — *on allait construire un
+filet ; il en existait déjà un, sans inventaire.*
+
+*Deux fois de suite, ce qui manquait n'était pas l'outil mais son ADOPTION. Ça mérite d'être
+cherché en premier, avant de proposer d'en écrire un.*
+
+#### ⚠️ Un réglage d'utilisateur n'est pas un espace de nommage libre
+
+La passation du 09/09 recommandait « **un système, deux densités** » : `confort` pour le médecin,
+`compact` pour l'administration. La proposition était bonne dans son idée et **fausse dans son
+nom** : `data-densite` existe depuis le **chantier 10**, et c'est un réglage que l'utilisateur
+choisit lui-même dans « Mes paramètres ».
+
+L'employer pour la zone aurait retiré à **tout administrateur** le droit de choisir « Confort » —
+en réutilisant justement l'interrupteur qu'on lui avait donné. Le journal porte déjà la règle :
+*un interrupteur qui ne change rien est pire qu'un interrupteur absent* ; un interrupteur qu'on
+détourne est du même ordre.
+
+D'où **deux leviers volontairement disjoints** :
+
+| Levier | Où | Qui décide | Ce qu'il touche |
+|---|---|---|---|
+| `data-zone` (`soin` / `administration`) | la coquille | le **produit** (l'URL) | la **hiérarchie** — les cinq voix |
+| `data-densite` (`confort` / `compact`) | `<html>` | l'**utilisateur** | le **serrage vertical**, rien d'autre |
+
+Le préfixe d'URL fait foi, **et pas la capacité du compte** : c'est l'écran qu'on regarde qui
+décide, pas qui le regarde. Un super-administrateur dans « Mes paramètres » est sur un écran de
+lecture, pas sur une file.
+
+*Avant de nommer une dimension nouvelle, chercher si le nom est libre. Ici il ne l'était pas, et
+c'est le seul point de tout le chantier qui aurait abîmé quelque chose.*
+
+#### ⚠️ Un défaut corrigé dans un thème reste entier dans l'autre
+
+Le 20/08, la palette CLAIRE avait été retouchée parce que le texte tertiaire y tombait à **2,9:1**,
+sous le seuil AA de 4,5 — « un échec objectif, pas une question de goût », dit le commentaire
+laissé dans le fichier. Le thème **sombre** n'a jamais été re-mesuré. Il a gardé le défaut treize
+jours de plus.
+
+Mesuré le 09/09 **sur le site en ligne**, sur le tableau de bord d'un vrai compte soignant :
+
+| | Avant | Après |
+|---|---|---|
+| Texte tertiaire sur `--fond-surface` | **3,80:1** | **5,28:1** |
+| Texte tertiaire sur `--fond-surface-2` | **3,52:1** | **4,87:1** |
+| Textes sous le seuil sur ce seul écran | **12** | **0** |
+
+Et ce ne sont pas des ornements : ce sont « XAF · 0 retirable », « Fait baisser votre taux de
+confirmation », « Une demande laissée expirer compte comme une non-réponse ». **Les phrases écrites
+pour être comprises étaient celles qu'on voyait le moins bien.**
+
+*Une correction de couleur portée sur un seul thème est une correction à moitié faite. Les deux
+palettes se vérifient ensemble, ou le défaut survit dans celle qu'on n'a pas ouverte.*
+
+#### 83 recopies à l'identique — et une qui avait déjà dérivé
+
+| Voix | Recopies trouvées |
+|---|---|
+| Titre de page | **15**, mot pour mot |
+| Texte d'aide | **36**, mot pour mot |
+| Surtitre (capitales monospace) | **24**, mot pour mot |
+| Titre de panneau | **3** |
+| Micro-intitulés de la coque | **5**, chacun légèrement différent |
+
+La seizième copie du titre de page, celle de « Ma vitrine », était passée à **22 px / bold** quand
+les quinze autres étaient à 18 px / semibold. Personne ne l'avait décidé. *Une règle recopiée est
+une règle qui dérive* — vérifié pour la troisième fois dans ce projet.
+
+Et les cinq micro-intitulés de la coque avaient chacun inventé leur variante : `0.06em`, `0.07em`,
+`0.08em` d'interlettrage, avec ou sans capitales, tous à **10 px** — une taille que CG-02 **ne
+contient pas**. Ce rôle existait dans 24 écrans et la charte ne lui avait jamais donné de nom :
+chacun l'a donc réinventé. Il s'appelle désormais `ul-surtitre` et prend le palier de légende
+(11 px), qui, lui, existe.
+
+*Un rôle sans nom se fait renommer vingt-quatre fois.*
+
+#### Le titre était plus petit que son contenu
+
+« Six derniers mois » était un titre de panneau à **14 px**, posé sur un corps de texte à **15 px**.
+Personne n'a décidé ça. C'est ce qui arrive quand la taille, la graisse et l'interlignage se
+choisissent **séparément**, ligne par ligne : chacun est plausible, l'ensemble ne l'est pas.
+
+Une voix les pose **ensemble**, et l'inversion devient impossible à écrire.
+
+#### Ce qui n'est PAS fait — et pourquoi ce n'est pas un oubli
+
+**573 tailles en dur subsistent** dans les écrans (635 − 62). Elles ne sont pas migrées en bloc,
+pour deux raisons mesurées :
+
+1. **Un remplacement global aurait réinitialisé des graisses en silence.** Les classes `.t-*` et
+   `.ul-*` ne vivent pas dans un `@layer` ; elles l'emportent donc sur les utilitaires Tailwind, et
+   `.t-text-sm` (poids 400) aurait écrasé un `font-semibold` voisin sans que rien ne casse à la
+   compilation. Les 83 recopies traitées ici ont été vérifiées une à une comme n'en portant aucun.
+2. **Renommer 573 nombres ne crée aucune hiérarchie.** La hiérarchie naît du CHOIX de la voix —
+   « ceci est le sujet, cela est l'explication » — et ce choix se fait écran par écran, devant
+   l'écran. C'est exactement l'objet des passes 1 et 2.
+
+*La fondation donne le vocabulaire ; elle ne peut pas écrire les phrases à la place des écrans.*
+
+#### Une dette ouverte, avec sa correction et son coût
+
+La **pastille de la cloche** (le compteur de notifications non lues) affiche **9 px** en blanc sur
+`--erreur-accent` : contraste **4,36**, sous le seuil. Elle n'a pas été touchée ici parce que la
+corriger demande d'agrandir la pastille (15 → 16 px) pour loger 11 px, donc de déplacer un pixel
+dans la barre du haut — un geste de mise en page, pas de fondation.
+
+**Recommandation : le faire au chantier de la coque, en passe 1**, où le déplacement se vérifie à
+l'œil sur l'écran en ligne.
+
+#### La vérification, avant et après
+
+Le rituel du chantier 68 a servi pour la première fois à ce pour quoi il avait été écrit :
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 772 ✓ (42 fichiers) | **772 ✓** |
+| Promesses retenues | 113 / 155 | **113 / 155** |
+| Lint | 0 | **0** |
+
+Aucun texte n'a bougé, donc aucune promesse n'a pu tomber — et le filet le **prouve** au lieu de
+le supposer.
 
 | **68** | **Le filet qui rend la refonte possible** — 09/09, étape 3 du plan. Avant de réécrire vingt écrans, savoir ce qu'ils promettent. Mesuré : **155 phrases** énonçant une limite, un refus ou une garantie sur les écrans du web — et **59 que rien ne retenait**. Ce sont exactement celles qu'une refonte laisse tomber sans que rien ne proteste : « aucun paiement sans confirmation », « vous ne percevrez rien », « ni apparaître dans l'annuaire tant qu'il n'aura pas re-signé », « ils ne seront plus jamais affichés », « cette action ne peut pas être annulée ». Livré : un bloc **« filet de refonte »** dans douze fichiers de test, et l'outil de mesure `promesses-sans-filet.py` à relancer avant et après chaque écran refondu. **web 772 ✓ (699 + 73) · 113 phrases retenues sur 155 · lint 0 · build ✓ · 5 phrases effacées dans les écrans, 5 détectées.** | ⏸ en attente | ⏸ |
 

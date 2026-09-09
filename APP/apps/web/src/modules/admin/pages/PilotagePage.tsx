@@ -61,7 +61,7 @@ function Indicateur({ kpi }: { kpi: PilotKpi }) {
 
   return (
     <div className="min-w-0 flex-1 basis-56 rounded-[10px] border border-border bg-card p-3.5">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--texte-tertiaire)]">
+      <p className="ul-surtitre">
         {kpi.label}
       </p>
       <p className="mt-1 flex items-baseline gap-2">
@@ -235,7 +235,7 @@ export function PilotagePage() {
           <Activity size={18} strokeWidth={1.5} />
         </span>
         <span className="min-w-0 flex-1">
-          <h1 className="font-[family-name:var(--font-display)] text-lg font-semibold leading-[1.2] text-foreground">
+          <h1 className="ul-titre-page">
             Pilotage
           </h1>
           {/*

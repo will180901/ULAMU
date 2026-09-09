@@ -123,7 +123,7 @@ export function SectionAide() {
               setEnvoyee(false)
             }}
           />
-          <p className="text-[11px] leading-[1.45] text-[var(--texte-tertiaire)]">
+          <p className="ul-aide">
             {texte.trim().length} / 2000 caractères. N’écrivez pas votre mot de passe ni un code de
             connexion : l’administration ne vous les demandera jamais.
           </p>
