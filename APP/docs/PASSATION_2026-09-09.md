@@ -22,6 +22,8 @@ Ce sont les mots du porteur. Elles s'appliquent à chaque réponse, pas seulemen
 | « **Explique-moi tout en français simple, avec la raison. Une chose à la fois.** » | Pas de jargon, pas de listes de dix options. Une explication, sa raison, une recommandation. |
 | « **Ne bâcle rien, n'omets rien.** Constater ne suffit pas : **chaque écart doit venir avec une correction proposée, son coût réel et ta recommandation.** » | Signaler un défaut sans proposer le correctif est un travail non fait. |
 | « **La vérité, c'est le site en ligne** : https://ulamu-web.onrender.com » | Un écran se vérifie en ligne, pas en local. Du code non poussé n'est pas vérifiable à l'écran. |
+| ⭐ « **Il est interdit de lancer le serveur local.** Je me charge de me connecter, ensuite tu vérifies. » — *règle posée le 09/09* | La boucle est fixe : **je code → je commit → il pousse → il se connecte → je regarde l'écran moi-même** dans le navigateur intégré, et je remesure (contrastes, tailles) sur le rendu réel. C'est ce qui a permis, dès le premier écran, de voir un bloc de 291 px pour une seule consultation — et une promesse fausse. |
+| ⭐ « **Avant de travailler, dis-moi en bref, non technique, ce que tu vas faire et pourquoi** » | Une explication courte et sans jargon AVANT chaque chantier, pour qu'il sache où on va. Puis on code. |
 | « **C'est moi qui pousse sur GitHub, pas toi.** » | On code, on teste, on documente, on **commit**. On ne pousse jamais. On attend « c'est poussé ». |
 | « **Tu ne saisis jamais de mot de passe.** Pour voir les écrans protégés, utilise les outils de `APP/apps/web/outils/` (lis son `LISEZ-MOI.md`). » | Aucune connexion manuelle, jamais. Conséquence à connaître : **aucun écran authentifié n'a jamais été vu**. Pour voir un écran connecté, il faut une capture d'écran du porteur. |
 | « **Pas de base test neon, tout doit se faire depuis la vraie base neon de l'app. Je ne veux pas de dettes non résolues.** » | Les mesures se font sur la vraie base — **en lecture seule**. |
@@ -49,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **772 ✓** (42 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **778 ✓** (42 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -64,7 +66,7 @@ arbre de travail propre.
 - Lint : **oxlint** sur api et web, **eslint** sur mobile. Référence : **0**.
 - `npm run build` sur les trois.
 - `python outils/promesses-sans-filet.py` (dans `APP/apps/web`) — mesure les phrases d'écran
-  qu'aucun test ne retient. Référence : **113 retenues sur 155**.
+  qu'aucun test ne retient. Référence : **115 retenues sur 156**.
 
 **Structure :** monorepo `APP/apps/{api,web,mobile}`.
 ⚠️ **Le dépôt git est le dossier INTÉRIEUR** : `C:\Users\ADMIN\Desktop\ULAMU\ULAMU`.
@@ -84,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 68
+## 3. Ce qui a été fait — chantiers 58 à 70
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -100,6 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 70 | *(à pousser)* | **B2 — le tableau de bord du soignant**, premier écran de la passe 1. ⚠️ Le vrai défaut n'était pas visuel : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » quand « Ma vitrine » disait, au même instant, « **aucun patient ne peut vous solliciter** » — les deux offres du soignant étaient éteintes. **Septième occurrence** du motif « un fait connu d'un écran, absent d'un autre ». Livré aussi : l'accent conditionnel, la courbe qui cède la place sous deux mois actifs, les comptes qui redeviennent des chiffres. |
+| 69 | `c23d5b0` | **La passe 0 — une gamme, deux zones.** Les 16 paliers de CG-02 étaient déjà écrits et **utilisés 2 fois** ; 83 recopies remplacées par cinq voix. ⚠️ Ma proposition « deux densités » était fausse : `data-densite` appartient à l'utilisateur — d'où `data-zone`, qui appartient au produit. ⚠️ Et le thème sombre portait encore le défaut de contraste corrigé dans le clair le 20/08 : **3,80 → 5,28**, douze textes du tableau de bord sous le seuil ramenés à un. |
 | 68 | `6e77dc8` + `8e354ce` | **Le filet de la refonte.** 155 phrases d'écran énonçant une limite, un refus ou une garantie ; **59 que rien ne retenait**. Un bloc « FILET DE REFONTE » dans **douze fichiers de test** (web) et son jumeau mobile, + l'outil de mesure `promesses-sans-filet.py`. |
 
 ### Le motif qui revient — il faut le connaître avant de continuer
@@ -221,18 +225,40 @@ pas » vérifiable au lieu d'être une intention.
 
 ## 5. La prochaine étape — précise
 
-**Rien ne se code tant que le porteur n'a pas validé.** Dans l'ordre :
+**L'étape 4 est LANCÉE.** Le porteur a validé, et deux chantiers sont faits.
 
-1. **Obtenir sa validation sur trois points :**
-   - (a) « un système, deux densités » — ou bien un rendu identique partout ?
-   - (b) commencer par la **passe 0** (la fondation partagée) — ou attaquer directement un écran ?
-   - (c) l'interface **médecin en premier** (c'est ce qu'il a dit vouloir valider en premier) ?
-2. **Recevoir deux captures d'écran** : le **tableau de bord médecin** et **un écran admin dense**
-   (Comptes ou Signalements). ⚠️ **Nécessaire** : je ne saisis jamais de mot de passe, donc je n'ai
-   **jamais vu un seul écran authentifié**. Sans capture, la refonte se ferait à l'aveugle.
-3. **Exécuter la passe 0, seule**, et la présenter en avant / après.
+### Ce qui est acquis, et qu'on ne rediscute pas
 
----
+| Décidé | Quoi |
+|---|---|
+| **« Un système, deux zones »** | `data-zone` (`soin` / `administration`), posée par la coquille selon l'URL. ⚠️ **Pas « deux densités »** : `data-densite` appartient à l'utilisateur (« Mes paramètres ») et ne touche que le serrage vertical. Les deux leviers sont disjoints, et le rester. |
+| **La passe 0 d'abord** | Faite — chantier 69, commit `c23d5b0`. **La fondation ne se rouvre pas** pour ajuster une valeur ; elle s'étend seulement quand un RÔLE manque (c'est ce qui a justifié `ul-chiffre-ligne` au chantier 70). |
+| **Le médecin en premier** | Passe 1 en cours. |
+
+### Où on en est exactement
+
+- **Passe 1 — le médecin, 10 écrans.** ✅ **B2 Tableau de bord** (chantier 70). Restent : C2 Ma
+  vitrine · C3 Demandes · C1 Ma vérification · C4 Consultations · C5 La consultation ·
+  C6 Mes gains · C7 Ordonnance · B3 Mes paramètres · la coque.
+- **Passe 2 — l'administration, 7 écrans.** Pas commencée.
+
+### Le geste suivant
+
+1. **Faire pousser le chantier 70**, puis demander au porteur de se connecter et **regarder B2 en
+   ligne** — l'avant/après se constate, il ne se raconte pas.
+2. **Enchaîner sur l'écran suivant du médecin**, en gardant la méthode qui a marché :
+   **mesurer en ligne → proposer en français simple avec la raison → faire valider → coder →
+   commit → il pousse → revoir l'écran**.
+
+### Deux choses en attente, qui n'appartiennent qu'au porteur
+
+- ⏳ **Le thème CLAIR n'a jamais été vérifié.** Le défaut corrigé au chantier 69 venait précisément
+  d'une correction faite dans un seul thème. Basculer par la console ne marche pas — l'application
+  remet le thème aussitôt. **Il faut que le porteur passe l'application en Clair une minute** pour
+  qu'on puisse mesurer.
+- ⏳ **La pastille de la cloche** : 9 px, contraste **4,36** (seuil 4,5). La corriger demande
+  d'agrandir la pastille (15 → 16 px), donc de déplacer un pixel dans la barre du haut. **À faire
+  au chantier de la coque**, en passe 1.
 
 ## 6. Ce qui est sur le bureau du porteur — lui seul peut le faire
 

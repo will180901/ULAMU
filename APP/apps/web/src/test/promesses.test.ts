@@ -460,6 +460,16 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
         quoi: 'laisser expirer une demande compte comme une non-réponse aux yeux des patients',
         motif: /laissée expirer compte comme une non-réponse/,
       },
+      /*
+        Ajoutée au chantier 70. L'écran promettait « elles arrivent ici dès qu'un patient vous
+        sollicite » alors que, sans offre active, personne ne PEUT solliciter — vérifié sur le
+        compte du porteur, en production, le 09/09. « Ma vitrine » le disait déjà ; ce tableau de
+        bord faisait patienter devant une porte que rien n'ouvrirait.
+      */
+      {
+        quoi: 'sans offre active, aucune demande ne peut arriver — et l’écran le dit',
+        motif: /Aucun patient ne peut vous solliciter[\s\S]{0,140}offre active/,
+      },
     ],
   },
   {

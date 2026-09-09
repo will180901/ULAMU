@@ -70,7 +70,7 @@ import {
 import { Link } from 'react-router-dom'
 import { CarteKpi, Panneau } from '@/components/ulamu/CarteKpi'
 import { accord } from '@/lib/accord'
-import { CourbeMois } from '@/components/ulamu/CourbeMois'
+import { CourbeMois, nomDuMois } from '@/components/ulamu/CourbeMois'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { api, type ProfessionalDashboard } from '@/lib/api'
@@ -94,15 +94,60 @@ const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
  * aire dégradée, et le comparatif du chantier 9 l'avait pourtant inscrit « conforme ». Le tracé vit
  * désormais dans `components/ulamu/CourbeMois.tsx`, avec la géométrie relevée sur la maquette.
  */
+/**
+ * Les six mois en BANDEAU, quand la courbe n'a pas de quoi tracer une pente — chantier 70.
+ *
+ * ── Pourquoi ce second visage ──────────────────────────────────────────────────────────────────
+ *
+ * Mesuré sur le compte du porteur le 09/09 : le panneau de la courbe faisait **291 px de haut**,
+ * le plus grand bloc de la page, pour **une seule consultation** — un unique pic entouré de vide.
+ *
+ * Un grand graphique presque vide ne se lit pas comme « peu d'activité » : il se lit comme « il y a
+ * un problème d'affichage ». Et il repousse hors de l'écran ce que le soignant est venu voir.
+ *
+ * Le seuil est **deux mois actifs**, et il n'est pas arbitraire : une courbe dit une ÉVOLUTION, et
+ * une évolution demande deux points. En dessous, il n'y a pas de pente à lire — seulement des
+ * quantités, que le bandeau donne en clair et sans échelle à interpréter.
+ *
+ * ⚠️ Le tableau `sr-only` du panneau ne bouge pas : il porte les mêmes chiffres dans les deux
+ * formes. Ce qui change est le dessin, jamais la donnée.
+ */
+function BandeauMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
+  return (
+    <div className="grid grid-cols-6 gap-1 px-4 py-3">
+      {mois.map((m) => (
+        <div
+          key={m.month}
+          className={
+            'flex flex-col items-center gap-1 rounded-md border py-2 ' +
+            (m.sessions > 0 ? 'border-[var(--ap-200)] bg-[var(--ap-50)]' : 'border-transparent bg-[var(--fond-surface-2)]')
+          }
+        >
+          <span className="ul-surtitre">{nomDuMois(m.month)}</span>
+          {/* Le chiffre garde sa voix même à zéro : un mois vide est une information, pas un trou.
+              Seule l'encre s'efface — la taille, elle, dit que c'est bien la même mesure. */}
+          <span className="ul-chiffre-ligne" style={m.sessions === 0 ? { color: 'var(--texte-tertiaire)' } : undefined}>
+            {m.sessions}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function SixMois({ mois }: { mois: ProfessionalDashboard['lastSixMonths'] }) {
   const total = mois.reduce((t, m) => t + m.sessions, 0)
+  // Deux points font une pente ; un seul ne fait qu'un pic. C'est la règle qui décide de la forme.
+  const moisActifs = mois.filter((m) => m.sessions > 0).length
 
   return (
     <Panneau icone={TrendingUp} titre="Six derniers mois" sousTitre={total === 0 ? undefined : `${total} ${accord(total, 'consultation')} au total`}>
       {total === 0 ? (
-        <p className="px-4 py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
+        <p className="px-4 py-6 text-center ul-aide">
           Aucune consultation sur les six derniers mois. Vos premières apparaîtront ici.
         </p>
+      ) : moisActifs < 2 ? (
+        <BandeauMois mois={mois} />
       ) : (
         /*
           ── Une COURBE, et non des barres (chantier 35, 03/09/2026) ─────────────────────────────
@@ -168,8 +213,20 @@ function EnTete({ titre, sousTitre, complement }: { titre: string; sousTitre: st
   )
 }
 
+/*
+  Le rythme vertical — chantier 70.
+
+  Tout l'écran était séparé par le même écart (`mb-4`), du coup on n'y voyait pas trois zones mais
+  **sept blocs** de même importance. L'écart entre ZONES passe donc à `--espace-8`, celui à
+  l'intérieur d'une zone reste à `gap-3` : c'est le contraste entre les deux qui fait apparaître le
+  groupement. Un écart uniforme ne groupe rien.
+
+  Par jeton et non en dur, pour que « Compact » resserre aussi ce rythme-là.
+*/
+const ENTRE_ZONES = 'mb-[var(--espace-8)]'
+
 function Grille({ children }: { children: React.ReactNode }) {
-  return <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
+  return <div className={ENTRE_ZONES + ' grid gap-3 sm:grid-cols-2 xl:grid-cols-4'}>{children}</div>
 }
 
 /*
@@ -266,6 +323,22 @@ const ETATS_DEMANDE: Record<string, { libelle: string; classe: string }> = {
 function TableauSoignant() {
   const bord = useQuery({ queryKey: ['dashboard', 'pro'], queryFn: () => api.professionalDashboard(), retry: false })
   const demandes = useQuery({ queryKey: ['handshakes', 'mine'], queryFn: () => api.myHandshakes(), retry: false })
+  /*
+    ⚠️ Pourquoi le tableau de bord a besoin de savoir combien d'offres sont actives — chantier 70.
+
+    Mesuré sur le compte du porteur le 09/09 : ses deux offres étaient DÉSACTIVÉES. « Ma vitrine »
+    le disait en toutes lettres — *« aucun patient ne peut vous solliciter : il vous faut au moins
+    une offre active »* — pendant que cet écran-ci promettait, au même instant :
+
+        « Aucune demande en attente. Elles arrivent ici dès qu'un patient vous sollicite. »
+
+    **Rien n'allait arriver.** Une page savait la vérité, l'autre l'ignorait — et c'est celle qu'on
+    ouvre en premier le matin. C'est le motif que le chantier 65 avait déjà traité sur la fiche
+    publique : le même fait, absent d'un écran de plus.
+
+    La même clé de cache que « Ma vitrine » (`offer-limits`) : la requête ne part qu'une fois.
+  */
+  const bornes = useQuery({ queryKey: ['offer-limits'], queryFn: () => api.offerLimits(), retry: false })
 
   const toutes = demandes.data?.items ?? []
   // Ce qui attend une réponse OU un paiement : les deux mobilisent une place sur les trois
@@ -302,6 +375,12 @@ function TableauSoignant() {
           ton="ambre"
           label="Demandes en attente"
           valeur={String(enAttente.length)}
+          /*
+            La SEULE tuile de cet écran qui porte une échéance : ces demandes expirent, et une
+            expiration fait baisser un taux que les patients lisent. L'accent ne se pose donc que
+            s'il y en a — sinon la carte redevient une carte, comme les trois autres.
+          */
+          appelle={enAttente.length > 0}
           /* Le chiffre qui fait agir : pas combien il y en a, mais combien vont tomber. */
           aide={
             pressantes.length > 0
@@ -350,7 +429,7 @@ function TableauSoignant() {
         />
       </Grille>
 
-      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className={ENTRE_ZONES + ' grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]'}>
         <SixMois mois={serie} />
 
         <Panneau icone={ClipboardList} titre="Ce que deviennent vos demandes" sousTitre="Sur les cent dernières">
@@ -372,9 +451,13 @@ function TableauSoignant() {
                         ? 'Fait baisser votre taux de confirmation'
                         : ' '
                     }
-                    droite={
-                      <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">{s.n}</span>
-                    }
+                    /*
+                      Le compte est la DONNÉE de cette ligne, son intitulé n'en est que la légende.
+                      Il s'écrivait à 15 px — la taille de sa propre légende (chantier 70). Et
+                      « Expirées sans réponse » est le chiffre qui coûte le plus cher : il fait
+                      baisser un taux que les patients lisent avant de choisir.
+                    */
+                    droite={<span className="ul-chiffre-ligne">{s.n}</span>}
                   />
                 ))}
               </ul>
@@ -436,14 +519,37 @@ function TableauSoignant() {
             <Spinner />
           </div>
         ) : enAttente.length === 0 ? (
-          <Vide
-            texte="Aucune demande en attente. Elles arrivent ici dès qu'un patient vous sollicite."
-            action={
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/vitrine">Compléter ma vitrine</Link>
-              </Button>
-            }
-          />
+          /*
+            ⚠️ Deux vides, parce qu'il y a deux situations — et une seule était dite (chantier 70).
+
+            « Elles arrivent ici dès qu'un patient vous sollicite » est une promesse. Elle est vraie
+            quand le soignant est sollicitable ; elle est FAUSSE quand aucune de ses offres n'est
+            active, puisque l'annuaire ne propose alors aucun moyen de le solliciter. On faisait
+            donc patienter quelqu'un devant une porte que rien n'ouvrira.
+
+            La borne inconnue (lecture en cours ou en échec) garde la phrase d'origine : une lecture
+            qui échoue n'est **ni un zéro ni un non** — annoncer « aucune offre active » sur une
+            réponse absente serait affirmer un fait qu'on ignore.
+          */
+          bornes.data?.activeOffers === 0 ? (
+            <Vide
+              texte="Aucun patient ne peut vous solliciter : il vous faut au moins une offre active. Aucune demande n’arrivera tant qu’il n’y en aura pas."
+              action={
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/vitrine">Activer une offre</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <Vide
+              texte="Aucune demande en attente. Elles arrivent ici dès qu'un patient vous sollicite."
+              action={
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/vitrine">Compléter ma vitrine</Link>
+                </Button>
+              }
+            />
+          )
         ) : (
           <ul className="m-0 list-none p-0">
             {enAttente.slice(0, 5).map((h) => {

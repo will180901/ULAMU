@@ -83,6 +83,15 @@ async function monter(
   lastSixMonths: ProfessionalDashboard['lastSixMonths'] = [],
   // L'assiette du taux (dette n°23) : sur combien de demandes il porte, refus motivés déduits.
   confirmationBase = 25,
+  /*
+    Combien d'offres actives — ajouté au chantier 70.
+
+    ⚠️ Par défaut UNE, et non zéro : c'est le cas ordinaire d'un soignant en activité. Mettre zéro
+    par défaut ferait passer tous les tests existants par la branche « aucune offre active » sans
+    qu'aucun ne le dise, et ils continueraient de passer en ne prouvant plus la même chose — le
+    piège du 24/08, où un leurre confirmait sa propre croyance.
+  */
+  offresActives: number | 'echec' = 1,
 ) {
   vi.spyOn(api, 'professionalDashboard').mockResolvedValue({
     sessionsThisMonth: 6,
@@ -94,6 +103,23 @@ async function monter(
   })
   // ⚠️ La forme RÉELLE : un objet `{ items }`, pas un tableau. C'est tout l'objet de ce fichier.
   vi.spyOn(api, 'myHandshakes').mockResolvedValue({ items: demandes })
+  /*
+    Bornes d'offres — bouchonnées ici DÈS l'ajout de l'appel (chantier 70). Sans ce leurre, la
+    requête partirait pour de bon dans tous les tests de ce fichier : elle échouerait, l'écran
+    prendrait sa branche « borne inconnue », et les assertions continueraient de passer en ne
+    prouvant plus rien de ce qu'elles croient prouver.
+  */
+  if (offresActives === 'echec') {
+    vi.spyOn(api, 'offerLimits').mockRejectedValue(new Error('serveur muet'))
+  } else {
+    vi.spyOn(api, 'offerLimits').mockResolvedValue({
+      durationMinMinutes: 10,
+      durationMaxMinutes: 60,
+      priceFloorXaf: 500,
+      maxActiveOffers: 5,
+      activeOffers: offresActives,
+    })
+  }
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -127,6 +153,56 @@ describe('B2 — soignant', () => {
     await monter([])
     expect(screen.getByText(/Aucune demande en attente/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Compléter ma vitrine/ })).toBeInTheDocument()
+  })
+
+  /*
+    ── Chantier 70 — le chiffre d'une ligne est la donnée, pas la légende ───────────────────────
+
+    Ces comptes s'écrivaient à 15 px, exactement la taille de l'intitulé qu'ils sont censés
+    renseigner. « Expirées sans réponse » est pourtant le chiffre le plus coûteux de l'écran : il
+    fait baisser un taux que les patients lisent avant de choisir.
+
+    ⚠️ La vérification porte sur le NOM de la voix et non sur une taille calculée : jsdom
+    n'applique aucune feuille de style, `getComputedStyle` y renverrait la même valeur pour tout.
+    C'est la contrepartie assumée — le test retient qu'une voix a été choisie, la mesure du rendu
+    se fait à l'écran, en ligne.
+  */
+  it('les comptes d’une liste portent une voix de chiffre, pas celle de leur légende', async () => {
+    await monter([demande('h1', 'PAID'), demande('h2', 'EXPIRED')])
+
+    const bloc = screen.getByText('Ce que deviennent vos demandes').closest('section') as HTMLElement
+    expect(bloc.querySelectorAll('.ul-chiffre-ligne')).toHaveLength(3)
+  })
+
+  /*
+    ── Chantier 70 — la promesse qui ne pouvait pas être tenue ──────────────────────────────────
+
+    Trouvé sur le compte du porteur, en production, le 09/09 : ses deux offres étaient désactivées.
+    « Ma vitrine » disait *« aucun patient ne peut vous solliciter »* ; le tableau de bord, au même
+    instant, promettait que les demandes « arrivent ici dès qu'un patient vous sollicite ».
+
+    Aucune n'allait arriver. Les deux écrans lisaient la même vérité, un seul la disait.
+  */
+  it('sans offre active, l’écran dit la vraie raison au lieu de faire patienter', async () => {
+    await monter([], null, [], 25, 0)
+
+    expect(screen.getByText(/il vous faut au moins une offre active/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Activer une offre/ })).toBeInTheDocument()
+    // Et surtout : la promesse d'origine ne doit PLUS être là, elle serait fausse.
+    expect(screen.queryByText(/dès qu'un patient vous sollicite/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ « Une lecture qui échoue n'est ni un zéro ni un “non” » — la leçon de la cloche, qui
+    annonçait « aucune non lue » quand la lecture ratait. Ici, une borne illisible ne doit surtout
+    pas se lire comme « aucune offre active » : ce serait affirmer un fait qu'on ignore, et envoyer
+    le soignant réparer quelque chose qui n'est peut-être pas cassé.
+  */
+  it('bornes illisibles : l’écran n’invente pas « aucune offre active »', async () => {
+    await monter([], null, [], 25, 'echec')
+
+    expect(screen.getByText(/Aucune demande en attente/)).toBeInTheDocument()
+    expect(screen.queryByText(/il vous faut au moins une offre active/)).not.toBeInTheDocument()
   })
 
   /*
@@ -261,6 +337,44 @@ describe('B2 — les six derniers mois', () => {
 
     const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
     expect(within(bloc).getByText('1 consultation au total')).toBeInTheDocument()
+  })
+
+  /*
+    ── Chantier 70 — la forme suit la matière ───────────────────────────────────────────────────
+
+    Mesuré en ligne le 09/09 : ce panneau faisait 291 px de haut, le plus grand bloc de la page,
+    pour UNE consultation — un pic isolé au milieu du vide. Un grand graphique presque vide ne se
+    lit pas « peu d'activité », il se lit « l'affichage est cassé ».
+
+    Le seuil est deux mois actifs, et il se démontre : une courbe dit une ÉVOLUTION, et une
+    évolution demande deux points. En dessous il n'y a pas de pente — seulement des quantités.
+  */
+  it('un seul mois actif : un bandeau de chiffres, pas une courbe pour un point', async () => {
+    await monter([], null, [
+      { month: '2026-03', sessions: 0, earnedXaf: 0 },
+      { month: '2026-04', sessions: 0, earnedXaf: 0 },
+      { month: '2026-05', sessions: 0, earnedXaf: 0 },
+      { month: '2026-06', sessions: 0, earnedXaf: 0 },
+      { month: '2026-07', sessions: 0, earnedXaf: 0 },
+      { month: '2026-08', sessions: 1, earnedXaf: 5000 },
+    ])
+
+    const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
+    // On observe la FORME, comme le test des six points ci-dessus : aucun tracé, six valeurs.
+    expect(bloc.querySelectorAll('circle')).toHaveLength(0)
+    expect(bloc.querySelectorAll('.ul-chiffre-ligne')).toHaveLength(6)
+    // Et les six mois gardent leur place, y compris ceux à zéro : un mois vide est une information.
+    expect(within(bloc).getByText('août')).toBeInTheDocument()
+  })
+
+  it('dès deux mois actifs, la courbe reprend sa place — il y a une pente à lire', async () => {
+    await monter([], null, [
+      { month: '2026-07', sessions: 2, earnedXaf: 10000 },
+      { month: '2026-08', sessions: 5, earnedXaf: 25000 },
+    ])
+
+    const bloc = screen.getByText('Six derniers mois').closest('section') as HTMLElement
+    expect(bloc.querySelectorAll('circle')).toHaveLength(2)
   })
 
   it('sans aucune consultation, il dit son vide au lieu de dessiner une ligne plate', async () => {

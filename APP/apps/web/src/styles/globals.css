@@ -191,6 +191,11 @@
   --voix-titre-panneau: var(--fs-display-sm);  /* 18px */
   --voix-chiffre:       var(--fs-display-xl);  /* 32px */
   --voix-aide:          var(--fs-text-xs);     /* 12px */
+  /* Le chiffre d'une LIGNE de liste — ajouté au chantier 70. Distinct du chiffre héros : dans une
+     liste, la valeur doit dominer son intitulé sans écraser la ligne voisine. Sans cette voix,
+     chaque liste réinventait sa taille — le tableau de bord écrivait ses comptes à 15 px, soit
+     exactement celle de leur propre légende. */
+  --voix-chiffre-ligne: var(--fs-display-md);  /* 20px */
 
   /* Noms hérités du port SARIS, REMAPPÉS sur les valeurs CG-02 ci-dessus. Ils restent le temps que les
      composants passent aux classes `.t-*` — migration prévue en tâche 0.2 du plan, qui supprime de
@@ -397,6 +402,7 @@
   --voix-titre-panneau: var(--fs-text-lg);     /* 18 → 16px */
   --voix-chiffre:       var(--fs-display-lg);  /* 32 → 24px */
   --voix-aide:          var(--fs-caption);     /* 12 → 11px */
+  --voix-chiffre-ligne: var(--fs-display-sm);  /* 20 → 18px */
 }
 
 [data-densite="compact"] {
@@ -535,6 +541,9 @@
    taille que CG-02 ne contient pas. Il prend ici le palier de légende (11px) qui, lui, existe. */
 .ul-surtitre      { font-family: var(--font-mono);    font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texte-tertiaire); }
 .ul-aide          { font-family: var(--font-body);    font-size: var(--voix-aide);  line-height: 1.5;              font-weight: 400; color: var(--texte-tertiaire); }
+/* Le chiffre d'une ligne : en MONOSPACE, contrairement au chiffre héros. Dans une colonne de
+   valeurs, c'est l'alignement qui fait lire — une chasse fixe range les unités sous les unités. */
+.ul-chiffre-ligne { font-family: var(--font-mono);    font-size: var(--voix-chiffre-ligne); line-height: 1; font-weight: 700; color: var(--texte-primaire); font-variant-numeric: tabular-nums; }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════════════
    COMPOSANTS FONDAMENTAUX — CG-05

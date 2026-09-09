@@ -653,6 +653,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **67** | **Les seconds temps qui n'existaient pas** — 07/09, étape 2 du plan de refonte. Trois gestes se déclenchaient sans jamais pouvoir se conclure. ⚠️ **Bannissement** : « Bannir » dépose une DEMANDE qu'un second admin doit approuver — et **aucune route ne permettait de découvrir ces demandes**, ni de les trancher. Sur l'acte le plus lourd de la plateforme, la demande restait dans un état que rien ne résolvait et le compte visé restait actif. Livré : `GET /v1/admin/sanctions` + la file dans E7, qui dit AVANT le clic qu'on n'approuve pas la sienne. ⚠️ **Procédures support** : on pouvait en ouvrir, jamais les clore — clore/annuler ajoutés, avec le texte qui devient une trace horodatée et signée. ⚠️ **Numéro de téléphone sur le web** : absent, et ce n'était pas un choix — **le retrait d'argent part sur le numéro DU COMPTE**, et le soignant n'a pas d'application mobile. Sans ce bloc, un changement de ligne envoyait les gains vers un numéro perdu. **api 641 ✓ (634 + 7) · web 699 ✓ (684 + 15) · lint 0 · 167 routes · builds ✓ · 8 fautes injectées, 8 détectées.** Le balayage retombe de **11 à 6 capacités sans bouton**, dont 3 faux positifs vérifiés. | ⏸ en attente | ⏸ |
 | **68** | **Le filet de la refonte** — 07/09, étape 3 du plan, celle qui rend la refonte possible. Le porteur veut refondre tout le design soignant et administration, avec une crainte dite en toutes lettres : *« il ne faut pas qu'on régresse, qu'on retire les choses essentielles »*. Elle est fondée — **six phrases avaient déjà survécu à un nettoyage et étaient parties en production** (chantier 27), une septième à TROIS chantiers (28). Mesure d'abord : sur 22 promesses durement gagnées, **20 étaient déjà protégées** — le codebase était en meilleur état que la crainte ne le suggérait. Livré : `promesses.test.ts` gagne **LE FILET**, 20 écrans et 35 garanties, chacune avec la raison pour laquelle elle a été écrite ; et son jumeau mobile `PromessesTenues.test.ts`. ⚠️ Les motifs ancrent **deux mots-clés séparés par du texte libre** : réécrire reste possible, supprimer l'idée ne l'est pas — *un test qui exige une phrase mot pour mot finit par interdire de mieux la dire*. **web 744 ✓ (699 + 45) · mobile 84 ✓ (67 + 17) · api 641 ✓ · lint 0 · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **69** | **La passe 0 de la refonte — une gamme, deux zones** — 09/09, étape 4 du plan, sa première brique : la seule couche qui traverse TOUS les écrans, posée une fois pour que chaque écran puisse ensuite être refait sans toucher aux autres. Mesuré d'abord : les **16 paliers de CG-02 étaient déjà écrits** dans `globals.css` — et utilisés **2 fois** dans 25 écrans, contre **635 tailles en dur**. Le manque n'était pas le système, c'était son adoption. ⚠️ **Ma propre proposition de la veille était fausse** : elle appelait « densité » ce qui devait devenir la zone — or `data-densite` appartient à l'UTILISATEUR depuis le chantier 10, et l'employer par zone aurait confisqué à tout administrateur le droit de choisir « Confort ». Corrigé avant d'écrire une ligne : `data-zone` (l'URL, donc le produit) dit la HIÉRARCHIE, `data-densite` (l'utilisateur) dit le SERRAGE, et aucun des deux ne peut annuler l'autre. ⚠️ **Et le thème sombre portait encore un défaut corrigé dans le clair le 20/08** : mesuré en production sur le tableau de bord, le texte tertiaire donnait **3,80:1** — sous le seuil AA de 4,5 — sur **douze** phrases du seul tableau de bord, et précisément celles qui EXPLIQUENT (« XAF · 0 retirable », « Fait baisser votre taux de confirmation »). Livré : cinq **voix** (`ul-titre-page`, `ul-titre-panneau`, `ul-chiffre`, `ul-surtitre`, `ul-aide`) qui remplacent **83 recopies à l'identique**, la zone posée sur la coquille, et le gris du sombre porté à **5,28:1**. **web 772 ✓ · 113 phrases retenues sur 155 (inchangé) · lint 0 · build ✓ · 635 → 573 tailles en dur.** | ⏸ en attente | ⏸ |
+| **70** | **Le tableau de bord du soignant — la forme suit la matière** — 09/09, passe 1, premier des dix écrans du médecin. Premier chantier mené selon la nouvelle méthode du porteur : **on regarde l'écran EN LIGNE, connecté, avant de proposer**. Ce que la mesure a donné : quatre tuiles identiques dont **une seule porte une échéance** ; le panneau de la courbe à **291 px de haut, le plus grand bloc de la page, pour UNE consultation** ; et le compte d'une ligne écrit à **15 px — la taille exacte de sa propre légende**. ⚠️ **Mais le vrai défaut n'était pas visuel** : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » pendant que « Ma vitrine », au même instant, disait « **aucun patient ne peut vous solliciter** : il vous faut au moins une offre active ». Les deux offres du seul soignant de la plateforme étaient éteintes : **rien n'allait arriver**, et l'écran qu'on ouvre en premier le matin faisait patienter devant une porte que rien n'ouvrirait. Septième occurrence du motif « un fait connu d'un écran, absent d'un autre ». Livré : l'accent qui **ne se dépense que s'il y a un geste à faire**, la courbe qui cède la place à un bandeau **sous deux mois actifs** (une évolution demande deux points), les comptes qui reprennent une voix de chiffre, le rythme vertical par zones, et la phrase vraie — avec sa garde : une **borne illisible n'est ni un zéro ni un non**. **web 778 ✓ (772 + 6) · 156 promesses, 115 retenues (113 avant, sur 155) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -701,6 +702,146 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 70 (B2 — le tableau de bord du soignant) a appris
+
+*09/09/2026 — le premier écran refait, et le premier regardé en ligne avant d'être touché.*
+
+#### La méthode a changé, et elle a immédiatement payé
+
+Le porteur a posé une règle nouvelle : **jamais de serveur local**, il se connecte lui-même, et je
+regarde l'écran réel dans le navigateur intégré. Jusqu'ici, **aucun écran authentifié n'avait jamais
+été vu** — tout se déduisait du code.
+
+Le premier regard a rapporté quatre chiffres qu'aucune lecture de code n'aurait donnés :
+
+| Ce qu'on voit | Mesure |
+|---|---|
+| Le plus grand bloc de la page | le panneau de la courbe, **291 px** |
+| Ce qu'il contient | **une** consultation |
+| Le compte d'une ligne de liste | **15 px** — la taille de sa propre légende |
+| Hauteur totale | **1 140 px** pour quatre nombres et trois lignes |
+
+*Un écran se juge à l'écran. On peut lire un fichier pendant une heure sans jamais voir qu'un bloc
+occupe le tiers de la page pour un seul chiffre.*
+
+#### ⚠️ Le vrai défaut n'était pas visuel — et il n'était pas cherché
+
+Parti pour redessiner, le chantier a trouvé une **promesse que rien ne pouvait tenir**.
+
+Le tableau de bord disait :
+
+> « Aucune demande en attente. **Elles arrivent ici dès qu'un patient vous sollicite.** »
+
+« Ma vitrine », au même instant, sur le même compte, disait :
+
+> « Visible dans l'annuaire de Moungali, mais **aucun patient ne peut vous solliciter** : il vous
+> faut au moins une offre active. » — *0 sur 5 offres actives.*
+
+Les deux offres du seul soignant de la plateforme étaient éteintes depuis le chantier 65. **Rien
+n'allait arriver.** Et c'est l'écran d'accueil — celui qu'on ouvre le matin — qui faisait patienter.
+
+C'est la **septième occurrence** du motif nommé au chantier 68 : *un fait connu d'un écran, absent
+d'un autre.* Il ne s'agissait plus d'une capacité sans bouton, mais d'une **vérité sans relais** —
+la même cause, une forme de plus.
+
+*Quand deux écrans lisent la même donnée et qu'un seul la dit, ce n'est pas un manque
+d'information : c'est une contradiction que l'utilisateur découvrira tout seul, et au pire moment.*
+
+#### La forme doit suivre la matière — et le seuil doit se démontrer
+
+La courbe des six mois s'affichait toujours à la même taille, avec un point ou avec cinquante. Pour
+une seule consultation, elle donnait un pic isolé au milieu du vide : **ça ne se lit pas « peu
+d'activité », ça se lit « l'affichage est cassé ».**
+
+Le seuil retenu est **deux mois actifs**, et il n'est pas un réglage de goût :
+
+> Une courbe dit une **évolution**. Une évolution demande **deux points**. En dessous, il n'y a pas
+> de pente à lire — seulement des quantités, que le bandeau donne en clair, sans échelle à
+> interpréter.
+
+Le tableau `sr-only` ne bouge dans aucune des deux formes : **c'est le dessin qui change, jamais la
+donnée**.
+
+#### L'accent est une dépense, pas un décor
+
+Quatre tuiles identiques, et **une seule qui porte une échéance** : les demandes en attente
+expirent, et une expiration fait baisser un taux que les patients lisent avant de choisir.
+
+L'accent est donc **conditionnel** : la carte le prend s'il y a des demandes, et redevient une carte
+ordinaire dès qu'il n'y en a plus. Une tuile accentuée en permanence redevient un fond d'écran en
+trois jours.
+
+Et jamais la couleur seule (CG-11) : la valeur et sa ligne d'aide disent déjà **combien** et **sous
+quel délai**.
+
+#### ⚠️ Le piège du `@layer`, rencontré pour de vrai cette fois
+
+Le chantier 69 l'avait signalé en théorie ; il s'est présenté en pratique. Écrire
+`className="ul-aide text-[var(--alerte-texte)] font-medium"` **n'a aucun effet** : `.ul-aide` fixe
+déjà `color` et `font-weight`, et vit hors d'un `@layer` — elle l'emporte donc sur les utilitaires
+Tailwind, silencieusement, sans erreur de compilation.
+
+La surcharge passe par un **style inline consommant le jeton**, qui est le motif documenté du
+système depuis l'origine.
+
+*Un système de classes qui bat les utilitaires est un choix — mais il faut alors savoir par où on le
+surcharge, sinon on écrit des classes qui ne font rien et on ne s'en aperçoit pas.*
+
+#### ⚠️ Une lecture qui échoue n'est ni un zéro ni un « non » — troisième rappel
+
+L'écran ne dit « aucune offre active » que si le serveur l'a **dit**. Si la lecture des bornes échoue
+ou n'a pas abouti, il garde la phrase d'origine.
+
+Sans cette garde, une panne réseau d'une seconde enverrait un soignant réparer une vitrine qui n'a
+rien. C'est la leçon de la cloche — qui annonçait « aucune non lue » quand la lecture ratait —
+rejouée une troisième fois, et **un test la retient maintenant**.
+
+#### Une sixième voix ajoutée à la fondation, et pourquoi ce n'est pas la rouvrir
+
+Le chantier 69 disait : *on touche la fondation une fois, et plus jamais pendant les passes.* Une
+voix a pourtant été ajoutée — `ul-chiffre-ligne`, le chiffre d'une **ligne de liste**.
+
+Le refus aurait été pire : sans elle, l'écran réinventait une taille, ce qui est exactement le
+défaut que la fondation venait d'éliminer. La règle se précise donc :
+
+> **La fondation ne se rouvre pas pour ajuster une valeur ; elle s'étend quand un RÔLE manque.**
+> Un rôle non nommé se fait renommer dans chaque écran — le surtitre l'avait été vingt-quatre fois.
+
+La voix suit la zone comme les autres (20 px en soin, 18 px en administration) et sa taille vient
+d'un palier existant : **aucune taille nouvelle n'a été créée.**
+
+#### Ce que le filet a fait, cette fois-ci pour de bon
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 772 ✓ | **778 ✓** |
+| Promesses inventoriées | 155 | **156** |
+| Promesses retenues par un test | 113 | **115** |
+| Promesses nues | 42 | **41** |
+
+Cinq fautes injectées — la phrase retirée, le seuil de la courbe abaissé, la borne illisible
+transformée en zéro, l'accent supprimé, le chiffre ramené à la taille de sa légende — **cinq
+détectées**, chacune par le test qui la vise. Fichiers restaurés et comparés à l'octet près.
+
+*Le chantier 68 avait construit le filet ; c'est le premier écran où il sert vraiment. Et il a
+attrapé, au passage, une promesse que personne ne cherchait.*
+
+#### 📌 Un piège d'outillage à connaître : la suite complète ment sous charge
+
+La première exécution complète a rendu **3 échecs dans 2 fichiers** — dont `ordonnance.test.tsx`,
+qui n'avait pas été touché. Relancé **seul**, ce fichier passe ; relancée **seule**, la suite entière
+passe (778 ✓).
+
+C'est le défaut `userEvent` déjà noté dans la passation : sous charge parallèle, les séquences de
+pointeur dépassent leur délai de 2,5 s. Ici la charge venait de moi — une autre commande tournait
+en même temps.
+
+**La règle :** une suite complète se lance **seule**, sans rien d'autre en parallèle. Et un échec
+dans un fichier qu'on n'a pas touché se **reproduit isolément avant** d'être cru.
+
+*(Deux exécutions concurrentes de `vitest` échouent aussi au démarrage, sur le serveur Vite.
+Et `--reporter=basic` n'existe plus en vitest 4 : il fait échouer le lancement, pas les tests.)*
 
 ### Ce que le chantier 69 (la passe 0 — la fondation) a appris
 

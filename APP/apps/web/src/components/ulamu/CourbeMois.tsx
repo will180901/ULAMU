@@ -57,8 +57,14 @@ const X1 = 614
 const Y_BASE = 168
 const Y_SOMMET = 6
 
-/** « 2026-04 » → « avr. » — trois lettres, comme la maquette. */
-function nomDuMois(iso: string): string {
+/**
+ * « 2026-04 » → « avr. » — trois lettres, comme la maquette.
+ *
+ * Exporté depuis le chantier 70 : le bandeau compact du tableau de bord affiche les mêmes six
+ * mois. Le recopier là-bas aurait fait deux règles pour un seul nom de mois — et *une règle
+ * recopiée est une règle qui dérive*.
+ */
+export function nomDuMois(iso: string): string {
   const [a, m] = iso.split('-')
   const d = new Date(Number(a), Number(m) - 1, 1)
   return d.toLocaleDateString('fr-FR', { month: 'short' })
