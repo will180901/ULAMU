@@ -366,3 +366,47 @@ describe('C3 — ce qui se passe ensuite', () => {
     expect(detail().queryByText(/Ce qui se passe ensuite/)).not.toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ **Ce bloc existe pour la refonte visuelle qui vient.** Une refonte réécrit les écrans ; c'est
+  précisément là que les phrases durement gagnées disparaissent — celles qui disent ce que la
+  plateforme NE fait pas, corrigent une maquette, ou annoncent une limite qu'on préférerait taire.
+
+  Elles ne sont pas de l'habillage : chacune a coûté une mesure, une correction ou une décision. Un
+  écran plus beau qui les aurait perdues serait une régression, même si tout « marche » encore.
+
+  *Mesuré le 09/09/2026 : 155 phrases de ce genre sur les écrans du web, 59 que rien ne retenait.*
+*/
+describe('C3 — filet de refonte : ce que cet écran promet sur l’argent', () => {
+  /*
+    L’invariant n° 1 de la liste rouge : jamais de paiement sans confirmation valide. C’est aussi ce
+    que la fiche du soignant promet au patient. Le soignant doit savoir qu’en confirmant il n’engage
+    encore aucun débit — sinon il hésite, et son taux de confirmation tombe.
+  */
+  it('dit que RIEN n’est débité avant la confirmation (D-007)', async () => {
+    await monter([demande()])
+    expect(await screen.findByText(/aucun paiement sans confirmation/)).toBeInTheDocument()
+  })
+
+  it('dit que sans confirmation, le patient ne PEUT PAS payer', async () => {
+    await monter([demande()])
+    expect(await screen.findByText(/Sans confirmation, le patient ne peut pas payer/)).toBeInTheDocument()
+  })
+
+  it('dit ce qui arrive faute de paiement : la demande expire, le soignant est libéré', async () => {
+    await monter([demande({ status: 'CONFIRMED', windowRemainingSeconds: 120 })])
+    /*
+      L’écran s’ouvre sur « En attente » : une demande déjà confirmée n’y figure pas, et le détail
+      reste vide. Il faut donc changer d’onglet — c’est l’état réel dans lequel un soignant lit cette
+      phrase, celui où il attend le paiement.
+    */
+    await userEvent.click(await file().findByRole('button', { name: 'Confirmées · 1' }))
+    // `findAll` : l'écran rend la phrase à deux endroits selon la largeur. Ce qui compte est qu'elle
+    // soit là, pas combien de fois.
+    expect((await detail().findAllByText(/la demande expire et vous êtes libéré/)).length).toBeGreaterThan(0)
+  })
+})

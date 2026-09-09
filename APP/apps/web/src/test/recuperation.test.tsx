@@ -98,3 +98,40 @@ describe('A3 — récupération du mot de passe', () => {
     expect(cases()).toBe(6)
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — la phrase que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+*/
+describe('A3 — filet de refonte : ce que le silence du serveur signifie', () => {
+  /*
+    ⚠️ Le serveur envoie un code même quand l'adresse n'a aucun compte — c'est une PARADE
+    anti-énumération : répondre « inconnue » livrerait la liste des inscrits à qui la demande.
+
+    Sans cette phrase, celui qui s'est trompé d'adresse attend indéfiniment un code qui ne viendra
+    pas, en croyant que la plateforme est en panne. Elle transforme une protection invisible en
+    information utile — sans rien révéler.
+  */
+  it('dit que le code part même si l’adresse n’a aucun compte', async () => {
+    vi.spyOn(api, 'requestOtp').mockResolvedValue({ expiresInSeconds: 300 })
+    vi.spyOn(api, 'resetPasswordByEmail').mockRejectedValue(new Error('Aucun code en attente'))
+    const u = monter()
+
+    /*
+      La phrase n'apparaît qu'au REFUS, et sur la voie email seulement — c'est exactement le moment
+      où l'on se demande pourquoi le code reçu ne marche pas. On refait donc le parcours complet
+      jusqu'à l'échec, plutôt que d'éprouver une phrase hors de son contexte.
+    */
+    await u.click(screen.getByRole('button', { name: /recevoir un code par email/i }))
+    fireEvent.change(await screen.findByLabelText(/email du compte/i), { target: { value: 'inconnue@exemple.cg' } })
+    await continuer(u)
+    fireEvent.change(document.querySelector('input[data-slot="input-otp"]') as HTMLInputElement, {
+      target: { value: '123456' },
+    })
+    fireEvent.change(await screen.findByLabelText(/nouveau mot de passe/i), { target: { value: 'motdepasse1' } })
+    await u.click(screen.getByRole('button', { name: /Réinitialiser/i }))
+
+    expect(await screen.findByText(/Le code arrive même si l’adresse n’est rattachée à aucun compte/)).toBeInTheDocument()
+  })
+})

@@ -790,3 +790,36 @@ describe('C5 — signaler après la fin de la séance (chantier 41 ter)', () => 
     )
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ C'est l'écran où le soignant travaille, et où son argent se joue. Ses phrases disent ce qui
+  arrive s'il ne répond pas, et à partir de quand le décompte tourne. Les perdre coûterait de
+  l'argent à quelqu'un, silencieusement.
+*/
+describe('C4 — filet de refonte : ce que le silence coûte', () => {
+  /*
+    D-008 : une consultation sans un seul message est INTÉGRALEMENT remboursée au patient, et le
+    soignant ne perçoit rien. C'est l'avertissement le plus cher de la plateforme — il vaut plusieurs
+    milliers de francs par séance, et il n'apparaît qu'ici, au moment où l'on peut encore agir.
+  */
+  it('prévient qu’une séance sans un seul message n’est pas payée (D-008)', async () => {
+    await monter(seance({ status: 'ACTIVE' }))
+
+    expect(await screen.findByText(/vous ne percevrez rien/)).toBeInTheDocument()
+  })
+
+  /*
+    Le décompte ne démarre pas au paiement mais à la transmission de la pré-consultation — ou
+    automatiquement dix minutes après. Sans cette phrase, le soignant croit perdre du temps payé
+    alors que rien ne tourne encore.
+  */
+  it('dit quand le décompte démarre vraiment', async () => {
+    await monter(seance({ status: 'PREPARING' }))
+
+    expect(await screen.findByText(/automatiquement dix minutes après le paiement/)).toBeInTheDocument()
+  })
+})

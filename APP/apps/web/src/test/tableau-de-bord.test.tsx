@@ -433,3 +433,25 @@ describe('B2 — ce que deviennent les demandes', () => {
     expect(await screen.findByText('Sur les cent dernières')).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — la phrase que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+*/
+describe('C1 — filet de refonte : ce que le taux de confirmation compte vraiment', () => {
+  /*
+    ⚠️ Le taux ne monte QUE sur une confirmation. Un refus motivé sort du dénominateur ; une
+    expiration, elle, compte contre le soignant. Sans cette phrase, un médecin croit protéger son
+    taux en ne répondant pas — c'est exactement l'inverse.
+
+    Le compteur a été recalculé sur la vraie base au chantier 49 : la règle affichée ici est celle
+    que le serveur applique, pas une approximation d'écran.
+  */
+  it('dit que seule une confirmation fait monter le taux', async () => {
+    // La phrase accompagne la FILE des demandes : sans demande, il n'y a pas de taux à expliquer.
+    await monter([demande('h1', 'INITIATED')])
+
+    expect(await screen.findByText(/Seule une confirmation le fait monter/)).toBeInTheDocument()
+  })
+})

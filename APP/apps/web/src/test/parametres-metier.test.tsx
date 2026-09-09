@@ -265,3 +265,43 @@ describe('E3 — ce que l’écran n’invente pas', () => {
     expect(await screen.findByText(/Jamais modifié depuis l'installation/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — la phrase que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ **C'est peut-être la phrase la plus lourde de toute la plateforme.** Changer le taux de
+  commission émet un avenant, et un contrat non re-signé retire le soignant de l'annuaire : il ne
+  peut plus ni être trouvé, ni recevoir de demande, jusqu'à ce qu'il signe.
+
+  Autrement dit : **un super-administrateur qui change ce taux peut éteindre toute l'offre de la
+  plateforme d'un seul geste**, et le seul endroit où quelqu'un peut l'apprendre est cet écran-là,
+  avant de valider.
+
+  Vérifié le 07/09 dans `m05.directory.service.ts` : l'annuaire exige « au moins une version signée
+  ET aucune version non signée ».
+*/
+describe('E3 — filet de refonte : ce qu’un changement de taux déclenche', () => {
+  it('dit qu’un contrat non re-signé retire le soignant de l’annuaire', async () => {
+    const utilisateur = userEvent.setup()
+    monter([PM01, PM30], { key: 'PM-01', isRateParameter: true, signedAgreements: 3 })
+    // L'avertissement vit dans le formulaire de modification : c'est là qu'on décide.
+    await modifier(utilisateur, 'PM-01')
+
+    expect(await screen.findByText(/ni apparaître dans l'annuaire, ni recevoir de demande/)).toBeInTheDocument()
+    expect(screen.getByText(/tant qu'il n'aura pas re-signé/)).toBeInTheDocument()
+  })
+
+  /*
+    Et l'inverse, qui compte autant : sans aucun contrat signé, le changement ne suspend personne.
+    Annoncer une catastrophe qui n'aura pas lieu ferait renoncer à un réglage parfaitement anodin.
+  */
+  it('dit aussi quand le changement ne suspend l’exercice de personne', async () => {
+    const utilisateur = userEvent.setup()
+    monter([PM01, PM30], { key: 'PM-01', isRateParameter: true, signedAgreements: 0 })
+    await modifier(utilisateur, 'PM-01')
+
+    expect(await screen.findByText(/le changement ne suspend l'exercice de personne/)).toBeInTheDocument()
+  })
+})

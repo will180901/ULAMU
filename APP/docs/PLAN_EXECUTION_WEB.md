@@ -701,6 +701,63 @@ décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
 
+| **68** | **Le filet qui rend la refonte possible** — 09/09, étape 3 du plan. Avant de réécrire vingt écrans, savoir ce qu'ils promettent. Mesuré : **155 phrases** énonçant une limite, un refus ou une garantie sur les écrans du web — et **59 que rien ne retenait**. Ce sont exactement celles qu'une refonte laisse tomber sans que rien ne proteste : « aucun paiement sans confirmation », « vous ne percevrez rien », « ni apparaître dans l'annuaire tant qu'il n'aura pas re-signé », « ils ne seront plus jamais affichés », « cette action ne peut pas être annulée ». Livré : un bloc **« filet de refonte »** dans douze fichiers de test, et l'outil de mesure `promesses-sans-filet.py` à relancer avant et après chaque écran refondu. **web 772 ✓ (699 + 73) · 113 phrases retenues sur 155 · lint 0 · build ✓ · 5 phrases effacées dans les écrans, 5 détectées.** | ⏸ en attente | ⏸ |
+
+### Ce que le chantier 68 (le filet de refonte) a appris
+
+*09/09/2026 — le travail qu'il fallait faire AVANT de toucher au design.*
+
+#### Ce qu'une refonte fait disparaître n'est pas ce qu'on croit
+
+Une refonte casse rarement une fonction : le bouton reste, l'appel part, le test passe. Ce qu'elle
+emporte, ce sont les **phrases** — celles qui disent ce que la plateforme NE fait pas, corrigent une
+maquette, ou annoncent une limite qu'on préférerait taire.
+
+Elles n'ont l'air de rien. Elles ont toutes coûté quelque chose :
+
+| Phrase | Ce qu'elle a coûté |
+|---|---|
+| « aucun paiement sans confirmation » | l'invariant n° 1 de la liste rouge |
+| « vous ne percevrez rien » | D-008 — plusieurs milliers de francs par séance |
+| « ni apparaître dans l'annuaire tant qu'il n'aura pas re-signé » | la découverte du 07/09 : un taux changé peut éteindre toute l'offre |
+| « ils ne seront plus jamais affichés » | quelqu'un qui perd son téléphone et reste dehors |
+| « cette action ne peut pas être annulée » | la seule action dont on ne revient jamais |
+
+*Un écran plus beau qui les aurait perdues serait une régression — et tout continuerait de
+« marcher ».*
+
+#### Mesurer d'abord, ici aussi
+
+155 phrases de ce genre sur les écrans du web. **59 que rien ne retenait.** Sans ce comptage, la
+question « est-ce qu'on protège assez ? » n'a pas de réponse : on protège ce à quoi on pense, c'est
+tout.
+
+⚠️ Et le premier comptage était **faux** : il cherchait le début de chaque phrase, alors qu'un test
+en cite presque toujours un fragment du milieu. Il annonçait 150 phrases nues au lieu de 90, puis 59
+une fois la fenêtre de recherche corrigée. *Un outil de mesure qui n'a pas été éprouvé mesure sa
+propre erreur — et il l'annonce avec la même assurance.*
+
+#### Le filet dit POURQUOI, pas seulement QUOI
+
+Chaque bloc explique ce que la phrase a coûté. C'est délibéré : un test qui dit seulement
+« cette chaîne doit être présente » se fait supprimer par le premier qui trouve la phrase encombrante.
+Un test qui dit *« sans elle, quelqu'un perd son téléphone et reste enfermé dehors »* se fait lire.
+
+#### Deux doublons évités, et la raison de ne pas les garder
+
+Deux phrases étaient déjà retenues ailleurs. Les épingler une seconde fois aurait donné **l'illusion
+de deux protections** : le jour où l'une tombe, on croit l'autre superflue et on la retire aussi. Le
+filet dit donc, à leur place, où la protection existe déjà.
+
+#### Ma propre erreur, la même qu'au chantier 58
+
+En retirant une phrase effacée exprès pour vérifier que le filet mordait, un `replace` sans ancre a
+frappé la mauvaise occurrence — le tiret d'un commentaire d'en-tête au lieu de celui de la phrase.
+`git checkout` a réparé en une seconde, et le diff l'a montré immédiatement.
+
+*Défaire une modification est une modification. C'est la deuxième fois en dix jours ; la règle
+s'écrit ici pour ne pas avoir à la réapprendre une troisième.*
+
 
 ### Ce que le chantier 67 (les seconds temps) a appris
 

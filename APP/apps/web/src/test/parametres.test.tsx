@@ -66,8 +66,12 @@ function monter(
   prerequis = PREREQUIS_OK,
   /** Les préférences servies. Passées ici et non doublées après coup : la requête part au montage. */
   preferences?: LignePref[],
+  /* Le filet de refonte a besoin d'éprouver l'état de PANNE : la liste des appareils illisible
+     interdit toute déconnexion à distance, et l'écran doit le dire. */
+  options: { sessionsEnPanne?: boolean } = {},
 ) {
-  vi.spyOn(api, 'sessions').mockResolvedValue([
+  if (options.sessionsEnPanne) vi.spyOn(api, 'sessions').mockRejectedValue(new Error('réseau'))
+  else vi.spyOn(api, 'sessions').mockResolvedValue([
     { id: 's1', client: 'web', deviceLabel: 'Chrome · Windows', lastActiveAt: new Date().toISOString(), current: true },
     { id: 's2', client: 'mobile', deviceLabel: 'Tecno Camon', lastActiveAt: new Date(Date.now() - 3600e3).toISOString(), current: false },
   ])
@@ -716,5 +720,74 @@ describe('B3 — le numéro de téléphone (chantier 67)', () => {
     await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
 
     expect(await screen.findByText(/déjà enregistré sur un autre compte/)).toBeInTheDocument()
+  })
+})
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que ces réglages ne doivent pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ Ces phrases disent ce qu'on perd en cliquant : des codes qu'on ne reverra plus, une clôture
+  qu'on n'annule pas, une protection qu'on retire. Sur un écran de sécurité, une phrase manquante
+  n'est pas une gêne — c'est quelqu'un qui découvre trop tard.
+*/
+describe('B3 — filet de refonte : ce qu’un réglage de sécurité coûte', () => {
+  /*
+    Les codes de secours ne sont montrés QU'UNE FOIS. Perdre cette phrase, c'est quelqu'un qui ferme
+    la fenêtre en pensant les retrouver — et qui se retrouve enfermé dehors le jour où il perd son
+    téléphone.
+  */
+  it('dit que les codes de secours ne seront plus jamais affichés', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'regenerateBackupCodes').mockResolvedValue({ backupCodes: ['aaaa-1111', 'bbbb-2222'] })
+    monter('securite', { totpEnabled: true })
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Régénérer les codes/i }))
+    /*
+      Les champs sont désignés par leur identifiant : « Mot de passe » apparaît aussi dans le bloc
+      voisin de changement de mot de passe, et un `getByLabelText` nu trouverait les deux.
+    */
+    fireEvent.change(document.getElementById('preuve-mdp') as HTMLElement, { target: { value: 'motdepasse1' } })
+    fireEvent.change(document.getElementById('preuve-code') as HTMLElement, { target: { value: '123456' } })
+    await utilisateur.click(screen.getByRole('button', { name: /^Régénérer$/i }))
+
+    expect(await screen.findByText(/ils ne seront plus jamais affichés/)).toBeInTheDocument()
+  })
+
+  /*
+    Désactiver la double authentification DÉTRUIT les codes de secours. Ce n'est pas un détail : on
+    croit rendre la connexion plus simple, on supprime aussi le seul secours qui restait.
+  */
+  it('dit que désactiver la 2FA détruit les codes de secours', async () => {
+    const utilisateur = userEvent.setup()
+    monter('securite', { totpEnabled: true })
+    // L'avertissement vit dans le formulaire de désactivation : c'est là qu'on décide.
+    await utilisateur.click(await screen.findByRole('button', { name: /^Désactiver$/i }))
+
+    expect(await screen.findByText(/vos codes de secours seront détruits/)).toBeInTheDocument()
+  })
+
+  /*
+    Une clôture de compte ne s'annule pas. C'est la seule action de la plateforme dont on ne revient
+    jamais, et cette phrase est le dernier endroit où l'on peut encore s'arrêter.
+  */
+  it('dit qu’une clôture de compte ne peut pas être annulée', async () => {
+    const utilisateur = userEvent.setup()
+    monter('sessions')
+
+    await utilisateur.click(await screen.findByRole('button', { name: /Clôturer mon compte/i }))
+    expect(await screen.findByText(/Cette action ne peut pas être annulée/)).toBeInTheDocument()
+  })
+
+  /*
+    Quand la liste des appareils n'a pas pu être lue, on ne PEUT PAS déconnecter à distance. Le dire
+    évite de croire une session révoquée alors que rien n'a bougé — sur un poste partagé, c'est la
+    différence entre être protégé et croire l'être.
+  */
+  it('dit qu’une liste d’appareils non chargée interdit toute déconnexion à distance', async () => {
+    monter('sessions', {}, PREREQUIS_OK, undefined, { sessionsEnPanne: true })
+
+    expect(await screen.findByText(/Aucune déconnexion à distance n'est possible/)).toBeInTheDocument()
   })
 })

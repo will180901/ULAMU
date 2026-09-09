@@ -481,3 +481,41 @@ describe('Ma vitrine — modifier et réactiver une offre (chantier 66)', () => 
     expect(await screen.findByText(/Maximum d’offres actives atteint/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ C'est l'écran où un soignant règle ce que les patients voient de lui. Ses phrases disent ce
+  qu'une case change vraiment — et, depuis le 07/09, ce qu'un zéro coûte.
+*/
+describe('C7 — filet de refonte : ce que la vitrine dit au soignant', () => {
+  /*
+    Mesuré en production le 07/09 : le seul soignant de la plateforme avait ses deux offres
+    désactivées, restait visible dans l'annuaire, et personne ne pouvait le solliciter. L'écran
+    disait « 0 offre active » — exact, et lu comme un détail. Il énonce désormais la CONSÉQUENCE.
+  */
+  it('dit qu’un soignant sans offre active ne peut être sollicité par personne', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
+
+    expect(await screen.findByText(/aucun patient ne peut vous solliciter/)).toBeInTheDocument()
+  })
+
+  /*
+    Et l'inverse : avec au moins une offre active, l'écran ne doit PAS crier au loup. Une alarme qui
+    reste allumée quand tout va bien cesse d'être lue.
+  */
+  it('se tait quand au moins une offre est active', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+    await screen.findByText(/offre active/)
+
+    expect(screen.queryByText(/aucun patient ne peut vous solliciter/)).not.toBeInTheDocument()
+  })
+
+  it('dit que le quartier est la seule information de lieu visible des patients', async () => {
+    await monter({ dossier: DOSSIER_OK })
+
+    expect(await screen.findByText(/seule information de lieu visible des patients/)).toBeInTheDocument()
+  })
+})

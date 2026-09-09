@@ -404,3 +404,34 @@ describe('C4 — la panne', () => {
     expect(screen.getByText(/restent intacts côté serveur/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ Une refonte réécrit les écrans ; c'est précisément là que disparaissent les phrases qui disent
+  ce que la plateforme NE fait pas. Chacune a coûté une mesure ou une correction — un écran plus
+  beau qui les aurait perdues serait une régression, même si tout « marche » encore.
+*/
+describe('C5 — filet de refonte : la limite d’affichage est dite', () => {
+  /*
+    Une liste plafonnée qui ne dit pas qu’elle l’est fait croire qu’on voit tout. Sur un historique
+    de consultations, c’est la différence entre « je n’ai eu que cinq séances » et « je n’en vois
+    que les cent dernières ».
+  */
+  it('annonce que seules les cent dernières consultations sont affichées', async () => {
+    /*
+      La phrase n’apparaît qu’à CENT séances, et c’est juste : en dessous, elle serait du bruit ; à
+      cent, se taire ferait croire à un registre complet. Le filet doit donc monter cent séances,
+      pas zéro — sinon il éprouverait une phrase que l’écran n’a aucune raison d’afficher.
+    */
+    await monter(Array.from({ length: 100 }, (_, i) => seance({ id: `s-${i}`, orderRef: `ord-${i}` })))
+    expect(await screen.findByText(/cent consultations les plus récentes/)).toBeInTheDocument()
+  })
+
+  it('se tait quand la liste n’est pas plafonnée', async () => {
+    await monter([seance()])
+    expect(screen.queryByText(/cent consultations les plus récentes/)).not.toBeInTheDocument()
+  })
+})

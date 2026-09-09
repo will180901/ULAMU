@@ -397,3 +397,30 @@ describe('E-finance — l’argent immobilisé (chantier 64)', () => {
     expect(document.body.textContent).not.toMatch(/Aucun montant immobilisé/)
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ C'est l'écran de l'argent. Ses phrases disent qui peut décider quoi, et ce qu'on ne sait pas
+  encore trancher. Les perdre ferait rembourser à l'aveugle, ou croire une règle là où il n'y en a
+  pas.
+*/
+describe('E-finance — filet de refonte : qui décide, et ce qu’on ne sait pas', () => {
+  /*
+    RM-13-06 : au-delà du seuil, deux administrateurs DISTINCTS. La phrase dit la règle avant le
+    clic ; sans elle, le second approbateur découvre le refus du serveur et croit à une panne.
+  */
+  it('dit que la double validation exige deux administrateurs différents', async () => {
+    monter()
+    expect(await screen.findByText(/deux administrateurs, jamais le même deux fois/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ « aucune règle n'existe encore pour trancher » (l'argent immobilisé, chantier 64) est DÉJÀ
+    retenue par le test « dit qu'aucune règle n'existe encore pour trancher ». On ne la double pas :
+    deux tests pour une même phrase donnent l'illusion de deux protections, et le jour où l'un tombe
+    on croit l'autre superflu.
+  */
+})

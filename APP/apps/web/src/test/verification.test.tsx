@@ -539,3 +539,21 @@ describe('C1 — ce que la maquette promettait et qui n’existe pas', () => {
     expect(await screen.findByText(/Commission de 15 %/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — la phrase que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+*/
+describe('C2 — filet de refonte : ce que le soignant attend, et pourquoi', () => {
+  /*
+    Un dossier vérifié ne suffit pas : il faut encore un contrat, que l'administration établit
+    ENSUITE. Sans cette phrase, le soignant vérifié croit son parcours fini et attend un contrat
+    qu'il ne sait pas devoir attendre.
+  */
+  it('dit qu’un contrat n’existe qu’après la vérification des pièces', async () => {
+    await monter({ status: 'VERIFIED', canPractice: false, agreement: null })
+
+    expect(await screen.findByText(/L'administration l'établit après avoir vérifié vos pièces/)).toBeInTheDocument()
+  })
+})

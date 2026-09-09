@@ -387,3 +387,50 @@ describe('E6 — de qui parle ce signalement (chantier 60)', () => {
     expect(await screen.findByText(/L'identification n'a pas pu être chargée/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ Un écran de modération dit à l'administrateur ce que chaque issue PRODUIT. Deux des quatre ne
+  tranchent pas, elles transmettent ; une troisième n'entraîne aucune restriction. Perdre ces
+  phrases ferait croire des dossiers réglés qui ne le sont pas.
+*/
+describe('E6 — filet de refonte : ce que chaque issue produit vraiment', () => {
+  /*
+    L'avertissement se lit comme une sanction, et n'en est pas une : la personne continue d'exercer.
+    Un modérateur qui l'ignore croit avoir protégé quelqu'un.
+  */
+  it('dit qu’un avertissement n’entraîne AUCUNE restriction d’accès', async () => {
+    const utilisateur = userEvent.setup()
+    monter()
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Aucune restriction d'accès : la personne continue d'exercer/)).toBeInTheDocument()
+  })
+
+  /*
+    Classer sans suite n'est pas un silence : le signaleur en est informé — sans que son identité
+    soit jamais révélée. C'est ce qui distingue un rejet motivé d'un dossier oublié.
+  */
+  it('dit que le signaleur est informé, même d’un classement sans suite', async () => {
+    const utilisateur = userEvent.setup()
+    monter()
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Le signaleur est informé de l'issue, sans que son identité soit révélée/)).toBeInTheDocument()
+  })
+
+  /*
+    La cible d'un signalement peut avoir disparu — compte fermé, message effacé. Le dire permet
+    d'instruire sur la seule foi du récit, au lieu de laisser croire à une panne d'affichage.
+  */
+  it('dit qu’une cible disparue n’empêche pas d’instruire', async () => {
+    const utilisateur = userEvent.setup()
+    monter([signalement()], { ...contexteMessage(), target: { kind: 'SESSION_MESSAGE', found: false } })
+    await ouvrir(utilisateur)
+
+    expect(await screen.findByText(/Le signalement reste instruisible sur la seule foi du récit/)).toBeInTheDocument()
+  })
+})

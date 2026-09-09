@@ -516,3 +516,55 @@ describe('E-comptes — les seconds temps qui n’existaient pas (chantier 67)',
     expect(screen.queryByRole('button', { name: /^Clore$/i })).not.toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ Une refonte réécrit les écrans ; c'est précisément là que disparaissent les phrases qui disent
+  ce que la plateforme NE fait pas. Sur un écran qui SUSPEND, BANNIT et RÉACTIVE des comptes, ces
+  phrases ne sont pas de l'habillage : elles décident de ce qu'un administrateur croit être en train
+  de faire.
+*/
+describe('E7 — filet de refonte : ce qu’une sanction fait, et ne fait pas', () => {
+  /*
+    La différence la plus lourde de l’écran, et la seule qui ne se rattrape pas. Un administrateur
+    qui confond les deux exclut quelqu’un pour toujours en croyant le mettre à pied.
+  */
+  it('dit qu’un bannissement est définitif, et qu’une suspension se lève', async () => {
+    await monter()
+    expect(await screen.findByText(/le compte ne revient pas. Une suspension, elle, se lève/)).toBeInTheDocument()
+  })
+
+  /*
+    « Bannir » n’est pas un bouton qui bannit : c’est une DEMANDE (EF-16-07). Perdre cette phrase
+    ferait croire l’acte accompli, et l’administrateur n’irait jamais chercher le second accord —
+    celui-là même dont la file, ajoutée au chantier 67, permet enfin de s’occuper.
+  */
+  it('dit que « Bannir » DEMANDE le bannissement, il ne l’applique pas', async () => {
+    const utilisateur = userEvent.setup()
+    await monter([compte()])
+    await chercher(utilisateur)
+    await utilisateur.click(await screen.findByRole('button', { name: /Bannir/i }))
+
+    expect(await screen.findByText(/Ceci n'applique pas le bannissement/)).toBeInTheDocument()
+    expect(screen.getByText(/Un second\s+administrateur, différent de vous, devra l'approuver/)).toBeInTheDocument()
+  })
+
+  /*
+    RM-16-01 : M16 guide et journalise, il n’AGIT pas. Une procédure support enregistre ce qu’un
+    administrateur a fait par ailleurs — elle ne change ni un numéro, ni un dossier. Perdre cette
+    phrase transformerait un registre en illusion de pouvoir.
+  */
+  it('dit qu’une procédure trace l’intervention, elle ne l’exécute pas', async () => {
+    await monter()
+    expect(await screen.findByText(/Elle trace votre intervention, elle ne l'exécute pas/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ « Une réponse ne se réécrit pas » est DÉJÀ retenue par le test « répond, et prévient AVANT que
+    la réponse soit définitive ». On ne la double pas ici : deux tests pour une même phrase donnent
+    l'illusion de deux protections, et le jour où l'un tombe on croit l'autre superflu.
+  */
+})

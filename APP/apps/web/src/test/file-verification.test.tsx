@@ -684,3 +684,39 @@ describe('E1 — rééditer le contrat d’adhésion (écart C)', () => {
     expect(await screen.findByText(/Une erreur est survenue/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ⚠️ C'est l'écran qui décide si quelqu'un a le droit d'exercer. Ses phrases ne décorent pas : elles
+  disent à l'administrateur ce qu'il est en train de faire, et à quel point c'est irréversible.
+
+  *« Aucune décision n'est enregistrable hors ligne » est déjà retenue par le test « une panne dit
+  pourquoi rien ne se décide hors ligne » — on ne la double pas ici.*
+*/
+describe('E4 — filet de refonte : ce que la décision engage', () => {
+  /*
+    Le motif n'est pas une note interne : il part TEL QUEL au soignant. Un motif qui n'indique pas
+    quoi corriger produit un aller-retour complet — dossier renvoyé, support sollicité, dossier
+    revenu inchangé. Le dire au moment où l'on écrit est la seule façon de l'éviter.
+  */
+  it('dit que le soignant lira le motif TEL QUEL', async () => {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
+    await monter()
+
+    expect(await screen.findByText(/Le soignant lira ce texte tel quel/)).toBeInTheDocument()
+  })
+
+  /*
+    RM-03-02 : les décisions sont en insertion seule. Perdre cette phrase ferait croire qu'on peut
+    revenir sur un rejet — et l'administrateur trancherait plus vite qu'il ne le devrait.
+  */
+  it('dit que la décision est définitive, motivée et attribuée à son auteur', async () => {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier())
+    await monter()
+
+    expect(await screen.findByText(/définitive, motivée, et attribuée à votre compte/)).toBeInTheDocument()
+  })
+})
