@@ -483,6 +483,92 @@ describe('C6 — l’argent qui peut disparaître', () => {
     expect(screen.queryByText(/intégralement remboursée au patient/)).not.toBeInTheDocument()
   })
 
+  /*
+    ══════════════════════════════════════════════════════════════════════════════════════════════
+    CHANTIER 72 — l'argent en attente ne se vaut pas tout entier
+    ══════════════════════════════════════════════════════════════════════════════════════════════
+
+    L'écran disait, pour TOUTE somme en attente : « Cet argent devient retirable dès leur dépôt. »
+    Faux dès qu'une échéance était passée : le serveur refuse alors le dépôt (« Délai de dépôt
+    dépassé — gains gelés »), et cette somme-là ne sera jamais débloquée par un geste du soignant.
+
+    La donnée était déjà servie — `reportDueAt`, avec le commentaire qui dit exactement ça. L'écran
+    ne la lisait pas. Huitième occurrence du motif « un fait connu d'un écran, absent d'un autre »,
+    et la première qui porte sur de l'argent que quelqu'un attend.
+  */
+  const seanceLe = (id: string, echeance: string | null): SessionListItem => ({
+    id,
+    status: 'ENDED',
+    patientAccountId: 'pat-1',
+    professionalId: 'pro-1',
+    subProfileId: null,
+    durationMin: 30,
+    paidAt: '2026-08-20T08:00:00.000Z',
+    endsAt: '2026-08-20T08:30:00.000Z',
+    endedAt: '2026-08-20T08:30:00.000Z',
+    remainingSeconds: 0,
+    reportDepositedAt: null,
+    reportDueAt: echeance,
+    orderRef: `ord-${id}`,
+  })
+
+  it('une échéance dépassée : l’écran dit que le dépôt ne débloquera plus rien', async () => {
+    // Le 20/08 + 24 h : largement passé, quelle que soit l'heure à laquelle le test tourne.
+    await monter(gains({ pendingXaf: 4_500 }), [seanceLe('s1', '2026-08-21T08:30:00.000Z')])
+
+    expect(await screen.findByText(/dépassé le délai de dépôt/)).toBeInTheDocument()
+    expect(screen.getByText(/ne les débloquera plus/)).toBeInTheDocument()
+    // ⚠️ Et surtout : la promesse d'origine ne doit PLUS être là, elle serait fausse.
+    expect(screen.queryByText(/devient retirable dès leur dépôt/)).not.toBeInTheDocument()
+  })
+
+  it('une échéance encore ouverte : la promesse tient, et le délai est dit', async () => {
+    const dans6h = new Date(Date.now() + 6 * 3600_000).toISOString()
+    await monter(gains({ pendingXaf: 4_500 }), [seanceLe('s1', dans6h)])
+
+    expect(await screen.findByText(/1 compte-rendu à déposer/)).toBeInTheDocument()
+    expect(screen.getByText(/Il vous reste 6 heures pour le plus urgent/)).toBeInTheDocument()
+    expect(screen.queryByText(/dépassé le délai de dépôt/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ `reportDueAt` à `null` n'est PAS une échéance dépassée : c'est une séance qui n'est pas encore
+    close, et c'est le cas ordinaire. Traiter l'absence comme un dépassement gèlerait à l'écran de
+    l'argent parfaitement vivant — l'exacte symétrie de la faute qu'on corrige.
+  */
+  it('sans échéance servie, rien n’est déclaré gelé', async () => {
+    await monter(gains({ pendingXaf: 4_500 }), [seanceLe('s1', null)])
+
+    expect(await screen.findByText(/1 compte-rendu à déposer/)).toBeInTheDocument()
+    expect(screen.queryByText(/dépassé le délai de dépôt/)).not.toBeInTheDocument()
+  })
+
+  /*
+    Le NUMÉRO sur lequel part l'argent. Il s'écrivait 14 px — plus petit que le titre du panneau qui
+    le coiffe — alors qu'un chiffre faux ici envoie un retrait chez quelqu'un d'autre.
+
+    Comme ailleurs, la voix se vérifie par son NOM : jsdom n'applique aucune feuille de style, une
+    taille calculée y vaudrait la même chose pour tout.
+  */
+  it('le numéro de retrait porte une voix de chiffre, pas du texte d’aide', async () => {
+    await monter(gains({ pendingXaf: 0 }))
+    await screen.findByText('Le numéro de votre compte ULAMU')
+
+    const numero = screen.getByText(/^\+242/)
+    expect(numero).toHaveClass('ul-chiffre-ligne')
+  })
+
+  it('les deux à la fois : chacune sa phrase, aucune pour l’autre', async () => {
+    const dans6h = new Date(Date.now() + 6 * 3600_000).toISOString()
+    await monter(gains({ pendingXaf: 9_000 }), [
+      seanceLe('s1', dans6h),
+      seanceLe('s2', '2026-08-21T08:30:00.000Z'),
+    ])
+
+    expect(await screen.findByText(/1 compte-rendu à déposer/)).toBeInTheDocument()
+    expect(screen.getByText(/1 consultation a dépassé le délai de dépôt/)).toBeInTheDocument()
+  })
+
   it('compte les comptes-rendus qui retiennent l’argent', async () => {
     const seance = (id: string): SessionListItem => ({
       id,

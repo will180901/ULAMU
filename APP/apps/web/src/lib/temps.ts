@@ -97,3 +97,37 @@ export function dateComplete(iso: string): string {
     minute: '2-digit',
   })
 }
+
+/**
+ * Le temps qui RESTE avant une échéance — chantier 72.
+ *
+ * ── Pourquoi ce n'est pas `depuis()` à l'envers ───────────────────────────────────────────────
+ *
+ * `depuis()` rabat tout futur sur « à l'instant », et c'est volontaire : une notification datée
+ * dans le futur vient d'une horloge de poste qui avance, pas d'un événement à venir. Ici c'est
+ * l'inverse — l'échéance EST dans le futur, et c'est précisément ce qu'on veut dire.
+ *
+ * ── Ce qu'il rend, et ce qu'il ne rend pas ────────────────────────────────────────────────────
+ *
+ * `null` quand l'échéance est passée ou illisible. L'appelant doit alors dire autre chose — « c'est
+ * fini » n'est pas « il reste 0 » : sur un délai de dépôt de compte-rendu, la première phrase dit
+ * que l'argent est gelé, la seconde laisserait croire qu'on peut encore courir.
+ *
+ * Les seuils suivent ceux de `depuis()`, pour que l'application ne parle pas deux langues du temps.
+ */
+export function restant(iso: string, maintenant: Date = new Date()): string | null {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  const ms = d.getTime() - maintenant.getTime()
+  if (ms <= 0) return null
+  if (ms < HEURE) {
+    const min = Math.max(1, Math.round(ms / MINUTE))
+    return `${min} ${accord(min, 'minute')}`
+  }
+  if (ms < JOUR) {
+    const h = Math.round(ms / HEURE)
+    return `${h} ${accord(h, 'heure')}`
+  }
+  const j = Math.round(ms / JOUR)
+  return `${j} ${accord(j, 'jour')}`
+}

@@ -68,6 +68,8 @@ import { api, type Earnings, type MomoOperator, type WithdrawalQuote } from '@/l
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteCartes } from '@/components/ulamu/Squelette'
 import { messageErreur } from '@/lib/message-erreur'
+import { accord } from '@/lib/accord'
+import { restant } from '@/lib/temps'
 
 const xaf = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -284,12 +286,14 @@ function Histogramme({ mois, tronque }: { mois: Array<{ cle: string; label: stri
       <div className="flex h-40 items-end gap-2" role="img" aria-label="Honoraires nets par mois">
         {mois.map((m) => (
           <span key={m.cle} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-            <span className="text-[10px] tabular-nums text-[var(--texte-tertiaire)]">{m.net > 0 ? xaf(m.net) : ''}</span>
+            {/* 10 px n'existe pas dans CG-02 : le palier de légende (11 px) le remplace, comme
+                sur le bandeau des six mois du tableau de bord. */}
+            <span className="t-caption tabular-nums text-[var(--texte-tertiaire)]">{m.net > 0 ? xaf(m.net) : ''}</span>
             <span
               className="w-full rounded-t-[3px] bg-[var(--ap-400)]"
               style={{ height: `${Math.max(2, (m.net / max) * 100)}%` }}
             />
-            <span className="text-[10px] text-[var(--texte-tertiaire)]">{m.label}</span>
+            <span className="t-caption text-[var(--texte-tertiaire)]">{m.label}</span>
           </span>
         ))}
       </div>
@@ -323,7 +327,39 @@ export function GainsPage() {
    * seul (`pendingXaf`) laisse un médecin devant une somme bloquée sans savoir ce qui la débloque.
    */
   const seances = useQuery({ queryKey: ['sessions', 'mine'], queryFn: () => api.mySessions(), retry: false })
-  const aSigner = (seances.data?.items ?? []).filter((s) => s.status === 'ENDED' && !s.reportDepositedAt).length
+
+  /*
+    ── ⚠️ Toutes les consultations sans compte-rendu ne se valent PAS — chantier 72 ──────────────
+
+    Cet écran comptait « les séances closes sans compte-rendu », et en concluait : *« Cet argent
+    devient retirable dès leur dépôt. »* C'était faux pour une partie d'entre elles.
+
+    Le serveur REFUSE le dépôt passé l'échéance : `« Délai de dépôt dépassé (PM-30) : gains gelés —
+    contactez le support »`. Et chaque séance porte déjà `reportDueAt`, dont le commentaire dit en
+    toutes lettres : *« Au-delà, le dépôt est REFUSÉ et les gains gelés »*. **L'écran ne consultait
+    jamais ce champ.**
+
+    Mesuré au chantier 64 : 5 000 XAF payés le 28/08, consultation tenue, aucun compte-rendu — PM-30
+    valant 24 h, la fenêtre s'est fermée le 29/08. L'écran d'administration « Argent immobilisé » le
+    savait ; celui du soignant lui promettait un versement à un geste près.
+
+    Huitième occurrence du motif « un fait connu d'un écran, absent d'un autre » — la première qui
+    porte sur de l'argent que quelqu'un attend.
+
+    ⚠️ `reportDueAt` à `null` n'est PAS une échéance dépassée : c'est une séance qui n'est pas encore
+    close. Elle reste déposable, et c'est le cas ordinaire.
+  */
+  const maintenant = Date.now()
+  const sansCompteRendu = (seances.data?.items ?? []).filter((s) => s.status === 'ENDED' && !s.reportDepositedAt)
+  const encoreDeposables = sansCompteRendu.filter((s) => !s.reportDueAt || new Date(s.reportDueAt).getTime() > maintenant)
+  const gelees = sansCompteRendu.filter((s) => s.reportDueAt && new Date(s.reportDueAt).getTime() <= maintenant)
+  const aSigner = encoreDeposables.length
+
+  /** La plus proche échéance encore ouverte — celle qui décide de l'urgence affichée. */
+  const prochaineEcheance = encoreDeposables
+    .map((s) => (s.reportDueAt ? new Date(s.reportDueAt).getTime() : null))
+    .filter((t): t is number => t !== null)
+    .sort((a, b) => a - b)[0]
 
   const entries = useMemo(() => gains.data?.entries ?? [], [gains.data])
 
@@ -425,51 +461,119 @@ export function GainsPage() {
         </span>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      {/*
+        ── La rangée cesse de s'étirer — chantier 72 ────────────────────────────────────────────
+
+        Mesuré en ligne : les trois tuiles faisaient toutes **269 px** pour des contenus de 51, 264
+        et 57 caractères. Deux sur trois étaient aux quatre cinquièmes vides, étirées pour s'aligner
+        sur la troisième, qui portait seule deux paragraphes d'explication.
+
+        Les explications descendent donc SOUS la rangée. Chaque tuile n'y garde que ce qu'elle est :
+        un intitulé et un montant. C'est aussi ce qui rend les trois montants comparables d'un coup
+        d'œil — ce qu'on vient chercher sur un écran d'argent.
+      */}
+      <div className="mb-3 grid gap-3 sm:grid-cols-3">
         <Carte icone={Banknote} titre="Disponible au retrait" sousTitre="À tout moment, sans minimum">
-          <p className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
-            {xaf(g.availableXaf)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
+          {/* La voix de chiffre héros, celle du tableau de bord. Elle remplace un 26 px qui
+              n'existait dans aucun palier et se tenait à deux pixels du titre de la page. */}
+          <p className="ul-chiffre">
+            {xaf(g.availableXaf)} <span className="ul-aide inline">F</span>
           </p>
         </Carte>
 
         <Carte icone={Hourglass} titre="En attente" sousTitre="Consultations honorées, compte-rendu manquant">
-          <p className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
-            {xaf(g.pendingXaf)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
+          <p className="ul-chiffre">
+            {xaf(g.pendingXaf)} <span className="ul-aide inline">F</span>
           </p>
-          {/*
-            La chose la plus utile que cet écran puisse dire. RM-06-04 : « gains crédités uniquement
-            après dépôt du compte-rendu — qualité avant trésorerie ». Un médecin qui voit de l'argent
-            bloqué sans savoir pourquoi accuse la plateforme ; celui qui sait va écrire son rapport.
-          */}
-          {g.pendingXaf > 0 ? (
-            <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
-              {aSigner > 0
-                ? `${aSigner} compte${aSigner > 1 ? 's' : ''}-rendu${aSigner > 1 ? 's' : ''} à déposer. Cet argent devient retirable dès leur dépôt.`
-                : 'Cet argent devient retirable dès le dépôt du compte-rendu de la consultation correspondante.'}
-            </p>
-          ) : null}
-          {/*
-            D-008, invariant n°9. Ce n'est pas la même chose que le compte-rendu manquant : là, la
-            somme attend ; ici, elle peut disparaître entièrement. Dit près du montant en attente,
-            parce que c'est cet argent-là qui est en jeu.
-          */}
-          {g.pendingXaf > 0 ? (
-            <p className="text-[11px] leading-[1.5] text-[var(--alerte-texte)]">
-              Une consultation terminée sans un seul message de votre part est intégralement
-              remboursée au patient : elle ne sera jamais créditée.
-            </p>
-          ) : null}
         </Carte>
 
         <Carte icone={History} titre="Ce mois-ci" sousTitre="Depuis le 1er du mois">
-          <p className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none text-foreground">
-            {xaf(moisEnCours.net)} <span className="text-[13px] font-normal text-[var(--texte-tertiaire)]">F</span>
+          <p className="ul-chiffre">
+            {xaf(moisEnCours.net)} <span className="ul-aide inline">F</span>
           </p>
-          <p className="text-[11px] text-[var(--texte-tertiaire)]">
-            {moisEnCours.nombre} consultation{moisEnCours.nombre > 1 ? 's' : ''} créditée{moisEnCours.nombre > 1 ? 's' : ''}
+          <p className="mt-1 ul-aide">
+            {moisEnCours.nombre} {accord(moisEnCours.nombre, 'consultation')}{' '}
+            {accord(moisEnCours.nombre, 'créditée')}
           </p>
         </Carte>
       </div>
+
+      {/*
+        ⚠️ Ce que l'argent en attente attend VRAIMENT — chantier 72.
+
+        L'écran disait, pour toute somme en attente : « Cet argent devient retirable dès leur
+        dépôt. » C'était faux dès qu'une échéance était passée : le serveur refuse alors le dépôt
+        (« Délai de dépôt dépassé — gains gelés »), et cette somme-là ne sera jamais créditée par un
+        geste du soignant.
+
+        Trois situations, trois phrases — et jamais l'une pour l'autre :
+        RM-06-04 (« qualité avant trésorerie ») explique celles qui attendent ; CU-06-03 explique
+        celles qui sont gelées.
+      */}
+      {g.pendingXaf > 0 ? (
+        <div className="mb-4 grid gap-2">
+          {/*
+            ⚠️ La formulation d'origine est CONSERVÉE mot pour mot — « N comptes-rendus à déposer.
+            Cet argent devient retirable dès leur dépôt. » Elle était juste pour ce cas-là, et deux
+            tests la retenaient. Ce qui s'y ajoute est le DÉLAI, quand le serveur en donne un.
+
+            Et le cas `aSigner === 0` reste servi : de l'argent peut attendre alors qu'aucune séance
+            close n'est sans compte-rendu — une séance encore active, ou une liste illisible. Je
+            l'avais laissé tomber en réécrivant ce bloc ; c'est un test existant qui l'a rattrapé.
+          */}
+          {aSigner > 0 ? (
+            <Avis ton="alerte">
+              {aSigner} {accord(aSigner, 'compte-rendu', 'comptes-rendus')} à déposer. Cet argent devient
+              retirable dès leur dépôt.
+              {prochaineEcheance
+                ? (() => {
+                    const reste = restant(new Date(prochaineEcheance).toISOString())
+                    return reste ? ` Il vous reste ${reste} pour le plus urgent.` : ''
+                  })()
+                : ''}{' '}
+              <Link to="/consultations" className="underline underline-offset-2">
+                Voir mes consultations
+              </Link>
+            </Avis>
+          ) : gelees.length === 0 ? (
+            <Avis ton="alerte">
+              Cet argent devient retirable dès le dépôt du compte-rendu de la consultation correspondante.
+            </Avis>
+          ) : null}
+
+          {/*
+            ⚠️ La phrase qui manquait complètement. Sans elle, un soignant attend indéfiniment un
+            versement qu'aucun geste de sa part ne déclenchera — et l'écran d'administration, lui,
+            sait déjà que cette somme est immobilisée.
+
+            On ne promet PAS de dénouement : au 10/09, aucune règle n'existe pour trancher le sort de
+            cet argent (chantier 64). Dire « le support vous répondra sous X » serait inventer. On dit
+            ce qui est vrai — le dépôt ne débloquera plus rien — et par où passer.
+          */}
+          {gelees.length > 0 ? (
+            <Avis ton="erreur">
+              {gelees.length} {accord(gelees.length, 'consultation')} {accord(gelees.length, 'a', 'ont')} dépassé le
+              délai de dépôt : {accord(gelees.length, 'ses gains sont gelés', 'leurs gains sont gelés')} et un
+              compte-rendu déposé maintenant ne les débloquera plus. Le sort de cet argent se décide avec
+              l’administration.{' '}
+              <Link to="/parametres?section=aide" className="underline underline-offset-2">
+                Écrire à l’administration
+              </Link>
+            </Avis>
+          ) : null}
+
+          {/*
+            D-008, invariant n°9. Ce n'est pas la même chose que le compte-rendu manquant : là, la
+            somme attend ; ici, elle peut disparaître entièrement. Elle passe en AVIS — elle était
+            écrite à 11 px, le plus petit palier de l'écran, alors qu'elle dit qu'on peut perdre
+            l'intégralité d'une consultation.
+          */}
+          <Avis ton="alerte">
+            Une consultation terminée sans un seul message de votre part est intégralement remboursée au
+            patient : elle ne sera jamais créditée.
+          </Avis>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
         <section aria-label="Journal des gains" className="flex min-w-0 flex-1 flex-col gap-4">
@@ -560,7 +664,7 @@ export function GainsPage() {
                             d'un médecin à l'autre (RM-13-07).
                           */}
                           {e.grossXaf !== null && e.commissionXaf !== null ? (
-                            <span className="block text-[10px] text-[var(--texte-tertiaire)]">
+                            <span className="block t-caption text-[var(--texte-tertiaire)]">
                               brut {xaf(e.grossXaf)} · commission {xaf(e.commissionXaf)} (
                               {Math.round((e.commissionXaf / Math.max(1, e.grossXaf)) * 100)} %)
                             </span>
@@ -609,7 +713,12 @@ export function GainsPage() {
           <Retrait gains={g} telephone={moi?.phone ?? ''} onFini={rafraichir} />
 
           <Carte icone={Smartphone} titre="Où part l'argent" sousTitre="Le numéro de votre compte ULAMU">
-            <p className="font-mono text-[14px] font-semibold text-foreground">{masquer(moi?.phone ?? '')}</p>
+            {/*
+              ⚠️ 14 px auparavant — plus petit que le titre qui le coiffe. C'est pourtant LE numéro
+              sur lequel part un retrait : un chiffre faux ici envoie l'argent chez quelqu'un
+              d'autre. Il prend la voix de chiffre de ligne, déjà en chasse fixe.
+            */}
+            <p className="ul-chiffre-ligne">{masquer(moi?.phone ?? '')}</p>
             {/*
               La maquette montrait un « compte de versement » enregistré, « Vérifié », avec un bouton
               « Changer de compte ». Rien de tel n'existe : aucun modèle en base, et le retrait part

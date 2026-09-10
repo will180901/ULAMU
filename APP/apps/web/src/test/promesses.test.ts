@@ -345,6 +345,23 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
         quoi: 'une demande refusée ou expirée ne produit aucun gain',
         motif: /refusée ou expirée n'en produit aucun/,
       },
+      /*
+        Ajoutée au chantier 72. L'écran promettait, pour TOUTE somme en attente, qu'elle « devient
+        retirable dès leur dépôt ». Faux passé l'échéance : le serveur refuse alors le dépôt et les
+        gains sont gelés (CU-06-03). Sans cette phrase, un soignant attend indéfiniment un versement
+        qu'aucun geste de sa part ne déclenchera — pendant que l'écran d'administration sait déjà
+        que cet argent est immobilisé.
+      */
+      {
+        quoi: 'passé le délai, un compte-rendu déposé ne débloque plus les gains gelés',
+        /*
+          ⚠️ `\s+` entre « le » et « délai » : dans le fichier, la phrase est COUPÉE par un retour
+          à la ligne au milieu. C'est la leçon du chantier 71, réapprise le lendemain — chercher une
+          phrase dans un source, c'est chercher une phrase MISE EN FORME. Le premier motif écrit ici
+          exigeait l'espace simple et ne trouvait rien.
+        */
+        motif: /dépassé le\s+délai de dépôt[\s\S]{0,200}ne les débloquera plus/,
+      },
     ],
   },
   {

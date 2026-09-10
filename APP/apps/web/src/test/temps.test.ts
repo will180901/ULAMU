@@ -6,7 +6,7 @@
  * auquel cas « hier » est juste et « il y a 1 jour » ne l'est pas).
  */
 import { describe, expect, it } from 'vitest'
-import { dateComplete, depuis } from '@/lib/temps'
+import { dateComplete, depuis, restant } from '@/lib/temps'
 
 /** Un instant fixe, pour que rien ne dépende de l'heure à laquelle le test tourne. */
 const MAINTENANT = new Date(2026, 8, 3, 14, 30, 0) // 3 septembre 2026, 14 h 30, heure locale
@@ -92,5 +92,58 @@ describe('Le temps écoulé', () => {
 
   it('donne la date complète pour l’infobulle', () => {
     expect(dateComplete(new Date(2026, 8, 3, 14, 7).toISOString())).toContain('3 septembre 2026')
+  })
+})
+
+/**
+ * `restant()` — le temps qui reste AVANT une échéance (chantier 72).
+ *
+ * Écrit pour « Mes gains » : le délai de dépôt d'un compte-rendu, au-delà duquel les gains sont
+ * gelés. Ce n'est pas `depuis()` à l'envers — `depuis()` rabat tout futur sur « à l'instant »,
+ * parce qu'un futur y vient d'une horloge de poste qui avance. Ici, le futur est le sujet.
+ */
+describe('Le temps qui reste avant une échéance', () => {
+  const T0 = new Date(2026, 8, 10, 12, 0, 0)
+  const dans = (ms: number) => new Date(T0.getTime() + ms).toISOString()
+
+  it('dit les minutes sous l’heure, et accorde', () => {
+    expect(restant(dans(60_000), T0)).toBe('1 minute')
+    expect(restant(dans(25 * 60_000), T0)).toBe('25 minutes')
+  })
+
+  it('dit les heures sous le jour, et accorde', () => {
+    expect(restant(dans(3_600_000), T0)).toBe('1 heure')
+    expect(restant(dans(6 * 3_600_000), T0)).toBe('6 heures')
+  })
+
+  it('dit les jours au-delà', () => {
+    expect(restant(dans(3 * 24 * 3_600_000), T0)).toBe('3 jours')
+  })
+
+  /*
+    ⚠️ LE point de ce module, et la faute qu'il doit rendre impossible.
+
+    Une échéance passée renvoie `null`, jamais « 0 minute ». Sur un délai de dépôt, « il reste
+    0 minute » laisserait croire qu'on peut encore courir, alors que le serveur refuse déjà le
+    dépôt et que les gains sont gelés. **« C'est fini » n'est pas « il reste zéro ».**
+
+    L'appelant est donc OBLIGÉ de dire autre chose — et c'est exactement ce qu'on veut de lui.
+  */
+  it('une échéance passée ne rend pas « 0 » : elle rend null', () => {
+    expect(restant(dans(-1), T0)).toBeNull()
+    expect(restant(dans(-3 * 24 * 3_600_000), T0)).toBeNull()
+    expect(restant(dans(0), T0)).toBeNull()
+  })
+
+  it('une date illisible rend null, jamais « Invalid Date »', () => {
+    expect(restant('pas-une-date', T0)).toBeNull()
+  })
+
+  /*
+    Sous la minute, on arrondit à 1 et non à 0 : il reste vraiment quelque chose, et l'afficher à
+    zéro ferait exactement l'erreur que le test précédent interdit.
+  */
+  it('sous la minute, il reste « 1 minute » — pas zéro', () => {
+    expect(restant(dans(20_000), T0)).toBe('1 minute')
   })
 })

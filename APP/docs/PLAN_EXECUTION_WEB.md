@@ -655,6 +655,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **69** | **La passe 0 de la refonte — une gamme, deux zones** — 09/09, étape 4 du plan, sa première brique : la seule couche qui traverse TOUS les écrans, posée une fois pour que chaque écran puisse ensuite être refait sans toucher aux autres. Mesuré d'abord : les **16 paliers de CG-02 étaient déjà écrits** dans `globals.css` — et utilisés **2 fois** dans 25 écrans, contre **635 tailles en dur**. Le manque n'était pas le système, c'était son adoption. ⚠️ **Ma propre proposition de la veille était fausse** : elle appelait « densité » ce qui devait devenir la zone — or `data-densite` appartient à l'UTILISATEUR depuis le chantier 10, et l'employer par zone aurait confisqué à tout administrateur le droit de choisir « Confort ». Corrigé avant d'écrire une ligne : `data-zone` (l'URL, donc le produit) dit la HIÉRARCHIE, `data-densite` (l'utilisateur) dit le SERRAGE, et aucun des deux ne peut annuler l'autre. ⚠️ **Et le thème sombre portait encore un défaut corrigé dans le clair le 20/08** : mesuré en production sur le tableau de bord, le texte tertiaire donnait **3,80:1** — sous le seuil AA de 4,5 — sur **douze** phrases du seul tableau de bord, et précisément celles qui EXPLIQUENT (« XAF · 0 retirable », « Fait baisser votre taux de confirmation »). Livré : cinq **voix** (`ul-titre-page`, `ul-titre-panneau`, `ul-chiffre`, `ul-surtitre`, `ul-aide`) qui remplacent **83 recopies à l'identique**, la zone posée sur la coquille, et le gris du sombre porté à **5,28:1**. **web 772 ✓ · 113 phrases retenues sur 155 (inchangé) · lint 0 · build ✓ · 635 → 573 tailles en dur.** | ⏸ en attente | ⏸ |
 | **70** | **Le tableau de bord du soignant — la forme suit la matière** — 09/09, passe 1, premier des dix écrans du médecin. Premier chantier mené selon la nouvelle méthode du porteur : **on regarde l'écran EN LIGNE, connecté, avant de proposer**. Ce que la mesure a donné : quatre tuiles identiques dont **une seule porte une échéance** ; le panneau de la courbe à **291 px de haut, le plus grand bloc de la page, pour UNE consultation** ; et le compte d'une ligne écrit à **15 px — la taille exacte de sa propre légende**. ⚠️ **Mais le vrai défaut n'était pas visuel** : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » pendant que « Ma vitrine », au même instant, disait « **aucun patient ne peut vous solliciter** : il vous faut au moins une offre active ». Les deux offres du seul soignant de la plateforme étaient éteintes : **rien n'allait arriver**, et l'écran qu'on ouvre en premier le matin faisait patienter devant une porte que rien n'ouvrirait. Septième occurrence du motif « un fait connu d'un écran, absent d'un autre ». Livré : l'accent qui **ne se dépense que s'il y a un geste à faire**, la courbe qui cède la place à un bandeau **sous deux mois actifs** (une évolution demande deux points), les comptes qui reprennent une voix de chiffre, le rythme vertical par zones, et la phrase vraie — avec sa garde : une **borne illisible n'est ni un zéro ni un non**. **web 778 ✓ (772 + 6) · 156 promesses, 115 retenues (113 avant, sur 155) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **71** | **C2 — Ma vitrine : un fait dit une fois, et l'argent qui se voit** — 10/09, deuxième écran de la passe 1. Mesuré en ligne d'abord : l'état de la vitrine était dit **trois fois et jamais fort** (sous-titre 13 px, carte du rail, compteur d'offres) ; le mot « désactivée » — la CAUSE de tout le reste — était noyé dans un gris de 11 px ; et le **net d'une offre, seule ligne de l'écran qui touche un compte en banque, s'écrivait 16 px avec son libellé à 9 px**. Livré : un bandeau d'état unique qui dit la conséquence et le geste, la pastille sur l'offre éteinte, les voix de chiffre sur l'argent et sur les trois chiffres publics, et les neuf tailles hors charte ramenées sur la gamme — dont la date d'un avis, seul texte de l'écran sous le seuil (**3,49:1**). ⚠️ **Et l'assiette du taux**, vérifiée avant d'être branchée : les deux écrans appellent la même fonction `confirmRate()`, seul l'arrondi diffère. Elle est dite SOUS les chiffres publics, jamais collée au taux — ce panneau promet « c'est ce qu'un patient lit », et les patients ne voient pas ce nombre. 📌 **Deux tests ne mordaient pas** : l'un passait parce que le rendu PLANTAIT, l'autre n'existait pas. Trouvés par l'injection, corrigés. **web 799 ✓ (791 + 8) · 157 promesses, 116 retenues (156/115 avant) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
+| **72** | **C6 — Mes gains : l'argent en attente ne se vaut pas tout entier** — 10/09, troisième écran de la passe 1. ⚠️ **Le défaut n'était pas visuel, et il portait sur de l'argent.** L'écran affirmait, pour TOUTE somme en attente, qu'elle « devient retirable dès leur dépôt ». Or le serveur REFUSE le dépôt passé l'échéance — *« Délai de dépôt dépassé (PM-30) : gains gelés »* — et chaque séance porte **déjà** `reportDueAt`, dont le commentaire dit en toutes lettres *« Au-delà, le dépôt est REFUSÉ et les gains gelés »*. **L'écran ne consultait jamais ce champ.** Les 4 500 F affichés sont le net de la consultation du 28/08 trouvée immobilisée au chantier 64 : la fenêtre s'est fermée le 29/08, et l'écran d'administration le savait pendant que celui du soignant promettait un versement à un geste près. **Huitième occurrence** du motif, la première qui porte sur de l'argent que quelqu'un attend. Livré aussi : les trois montants passés de **26 px hors charte** à la voix de chiffre héros, la rangée qui cesse de s'étirer (269 px pour 51, 264 et 57 caractères), le **numéro sur lequel part l'argent de 14 → 20 px**, l'avertissement « jamais créditée » sorti du 11 px, et `restant()` dans `lib/temps.ts`. 📌 **Deux fautes injectées n'ont réveillé personne** — le numéro et le rabattement d'un futur à zéro — trouvées et corrigées. **web 811 ✓ (799 + 12) · 157 promesses, 116 retenues · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -703,6 +704,99 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 72 (C6 — Mes gains) a appris
+
+*10/09/2026 — le troisième écran, et le premier où le défaut coûtait de l'argent.*
+
+#### ⚠️ « Cet argent devient retirable dès leur dépôt » était faux
+
+L'écran comptait les consultations closes sans compte-rendu, et en concluait que le versement était
+à un geste près. Il ne regardait jamais **l'échéance**.
+
+Le serveur, lui, la regarde :
+
+> `throw new ConflictException("Délai de dépôt dépassé (PM-30) : gains gelés — contactez le support")`
+
+Et le champ existait **déjà**, servi sur chaque séance, avec ce commentaire à côté :
+
+> *« Au-delà, le dépôt est **REFUSÉ** et les gains gelés : l'écran doit décompter, pas écrire
+> “24 heures” en dur. »*
+
+Quelqu'un avait donc écrit, dans le type même de la donnée, exactement ce que l'écran devait en
+faire. **Personne ne l'avait fait.**
+
+Les 4 500 F affichés sont le net de la consultation du 28/08 que le chantier 64 avait trouvée
+immobilisée. PM-30 valant 24 h, la fenêtre s'est fermée le 29/08 : au 10/09, l'écran d'administration
+« Argent immobilisé » listait cette somme comme gelée pendant que « Mes gains » promettait au
+soignant qu'un compte-rendu la débloquerait.
+
+*C'est la huitième occurrence du motif « un fait connu d'un écran, absent d'un autre » — et la
+première qui porte sur de l'argent que quelqu'un attend. Le motif ne se résorbe pas tout seul : il
+faut le CHERCHER, écran par écran.*
+
+#### Trois situations, trois phrases, et jamais l'une pour l'autre
+
+| État | Ce que l'écran dit maintenant |
+|---|---|
+| Échéance encore ouverte | « N comptes-rendus à déposer… **Il vous reste 6 heures pour le plus urgent.** » |
+| Échéance dépassée | « …**ont dépassé le délai de dépôt** : leurs gains sont gelés et un compte-rendu déposé maintenant **ne les débloquera plus**. » |
+| Aucune échéance servie | la phrase d'origine — la séance n'est pas close, elle reste déposable |
+
+⚠️ **`reportDueAt` à `null` n'est pas une échéance dépassée.** Traiter l'absence comme un
+dépassement gèlerait à l'écran de l'argent parfaitement vivant : la faute exactement symétrique de
+celle qu'on corrige. Un test la retient.
+
+Et l'écran **ne promet aucun dénouement** : au 10/09, aucune règle n'existe pour trancher le sort de
+cet argent (chantier 64). Écrire « le support vous répondra sous X » serait inventer. Il dit ce qui
+est vrai — le dépôt ne débloquera plus rien — et par où passer.
+
+#### ⚠️ « C'est fini » n'est pas « il reste zéro »
+
+`restant()` rend **`null`** quand l'échéance est passée, jamais « 0 minute ». Sur un délai de dépôt,
+« il reste 0 minute » laisserait croire qu'on peut encore courir.
+
+Rendre `null` **oblige** l'appelant à dire autre chose — et c'est précisément ce qu'on veut de lui.
+C'est le pendant exact de `depuis()`, qui rabat tout futur sur « à l'instant » : les deux fonctions
+refusent d'afficher un nombre qui ferait croire à une situation qui n'existe pas.
+
+*Une valeur de retour peut interdire une phrase fausse. C'est moins cher qu'un test.*
+
+#### Deux fautes injectées n'ont réveillé personne — encore
+
+Sur cinq fautes posées, trois sont tombées immédiatement. Les deux autres ont montré des trous :
+
+- **le numéro sur lequel part l'argent** n'était défendu par aucun test. Il s'écrivait 14 px — plus
+  petit que le titre du panneau qui le coiffe — alors qu'un chiffre faux y envoie un retrait chez
+  quelqu'un d'autre ;
+- **le rabattement d'un futur à zéro** dans `restant()` : la fonction était neuve, `temps.test.ts`
+  ne la connaissait pas.
+
+*Deux chantiers de suite, l'injection a trouvé des tests absents ou complaisants. Ce n'est pas un
+accident de parcours : c'est la seule chose qui distingue un filet d'une intention.*
+
+#### La leçon d'hier, réapprise le lendemain
+
+Le motif du filet ne trouvait pas la nouvelle phrase. Raison : dans le fichier, elle est **coupée par
+un retour à la ligne** au milieu — « dépassé le ⏎ délai de dépôt ». Le motif exigeait l'espace simple.
+
+C'est mot pour mot ce que le chantier 71 avait écrit vingt-quatre heures plus tôt : *chercher une
+phrase dans un source, c'est chercher une phrase MISE EN FORME.* Le motif tolère désormais `\s+`.
+
+*Une leçon écrite au journal n'est pas une leçon apprise. Celle-ci a coûté deux fois.*
+
+#### Le reste : de la forme, mesurée
+
+| | Avant | Après |
+|---|---|---|
+| Les trois montants | **26 px** (hors charte) | voix de chiffre héros |
+| Hauteur des trois tuiles | **269 px** chacune, pour 51 / 264 / 57 caractères | à leur contenu |
+| Le numéro de retrait | 14 px | **20 px** |
+| « elle ne sera jamais créditée » | 11 px, le plus petit palier | un **avis**, avec son icône |
+| Tailles hors charte | 10 | **1** (la pastille de la cloche) |
+
+Les explications sont sorties des tuiles : la rangée ne porte plus que trois intitulés et trois
+montants, comparables d'un coup d'œil — ce qu'on vient chercher sur un écran d'argent.
 
 ### Ce que le chantier 71 (C2 — Ma vitrine) a appris
 
