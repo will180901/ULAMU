@@ -309,8 +309,19 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
     fichier: 'modules/vitrine/pages/VitrinePage.tsx',
     promesses: [
       {
+        /*
+          ⚠️ Motif rendu insensible à la casse au chantier 71, et c'est une DÉCISION, pas un
+          contournement. La phrase n'a pas changé d'un mot : elle a quitté un sous-titre pour
+          devenir le titre du bandeau d'état, donc sa première lettre a pris une majuscule.
+
+          C'est exactement le cas prévu par le chantier 68 — « mettre à jour le motif si la refonte
+          l'a REFORMULÉE, en vérifiant que la nouvelle formulation dit le même fait ». Ici le fait
+          est identique et il est même dit PLUS fort qu'avant.
+
+          Le filet ne perd rien : les sept mots doivent toujours être là, dans cet ordre.
+        */
         quoi: 'sans offre active, AUCUN patient ne peut solliciter — même vérifié et sous contrat',
-        motif: /aucun patient ne peut vous solliciter/,
+        motif: /aucun patient ne peut vous solliciter/i,
       },
       {
         quoi: 'la visibilité est INCONNUE quand le dossier n’a pas pu être lu — jamais « invisible »',

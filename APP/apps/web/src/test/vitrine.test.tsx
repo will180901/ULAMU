@@ -138,9 +138,17 @@ async function monter(
     offres?: Offer[]
     bornes?: Partial<OfferLimits>
     publique?: DirectoryProfile | null
+    /** L'assiette du taux, lue sur la route du soignant — chantier 71. `null` = lecture en échec. */
+    assiette?: number | null
+    /** Le dossier ne répond pas : la visibilité devient INCONNUE, jamais « invisible ». */
+    dossierIllisible?: boolean
   } = {},
 ) {
-  vi.spyOn(api, 'verificationMine').mockResolvedValue({ ...BASE_DOSSIER, ...opts.dossier })
+  if (opts.dossierIllisible) {
+    vi.spyOn(api, 'verificationMine').mockRejectedValue(new Error('serveur muet'))
+  } else {
+    vi.spyOn(api, 'verificationMine').mockResolvedValue({ ...BASE_DOSSIER, ...opts.dossier })
+  }
   vi.spyOn(api, 'myOffers').mockResolvedValue(opts.offres ?? [OFFRE])
   vi.spyOn(api, 'offerLimits').mockResolvedValue({ ...BORNES, ...opts.bornes })
   vi.spyOn(api, 'directoryProfile').mockImplementation(async () => {
@@ -148,6 +156,23 @@ async function monter(
     if (!p) throw new Error('introuvable')
     return p
   })
+  /*
+    ⚠️ Bouchonné DÈS l'ajout de l'appel (chantier 71). Un nouvel appel non bouchonné fait basculer
+    silencieusement les tests existants dans la branche d'erreur : ils passent encore, et ne prouvent
+    plus la même chose. C'est le piège relevé au chantier 70.
+  */
+  if (opts.assiette === null) {
+    vi.spyOn(api, 'professionalDashboard').mockRejectedValue(new Error('serveur muet'))
+  } else {
+    vi.spyOn(api, 'professionalDashboard').mockResolvedValue({
+      sessionsThisMonth: 0,
+      earnings: { availableXaf: 0, pendingXaf: 0 },
+      averageRating: 3,
+      confirmationRatePct: 100,
+      confirmationBase: opts.assiette ?? 2,
+      lastSixMonths: [],
+    })
+  }
 
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -204,6 +229,7 @@ describe('C2 — un dossier illisible n’est pas un dossier refusé', () => {
     vi.spyOn(api, 'myOffers').mockResolvedValue([])
     vi.spyOn(api, 'offerLimits').mockRejectedValue(new Error('Erreur interne du serveur'))
     vi.spyOn(api, 'directoryProfile').mockRejectedValue(new Error('Erreur interne du serveur'))
+    vi.spyOn(api, 'professionalDashboard').mockRejectedValue(new Error('Erreur interne du serveur'))
 
     useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -484,6 +510,143 @@ describe('Ma vitrine — modifier et réactiver une offre (chantier 66)', () => 
 
 /*
   ══════════════════════════════════════════════════════════════════════════════════════════════
+  CHANTIER 71 — ce que la refonte de cet écran doit continuer de faire
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+*/
+describe('C2 — la refonte du 10/09', () => {
+  /*
+    L'état de la vitrine était dit TROIS fois en petit : sous-titre, carte du rail, compteur
+    d'offres. Il l'est désormais une seule fois et en grand, dans un bandeau — et l'alerte qui le
+    répétait dans « Êtes-vous visible ? » a été retirée. Ce test défend le contraire du bavardage :
+    la phrase existe **une** fois.
+  */
+  it('la conséquence est dite une seule fois, plus en triple', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
+    await screen.findByText(/aucun patient ne peut vous solliciter/i)
+
+    expect(screen.getAllByText(/aucun patient ne peut vous solliciter/i)).toHaveLength(1)
+    // La carte du rail garde ce qu'elle seule sait dire : LEQUEL des trois verrous est fermé.
+    expect(screen.getByText('Au moins une offre active')).toBeInTheDocument()
+  })
+
+  /*
+    Le bandeau propose le geste qui débloque, et il pointe vers les offres de CETTE page — envoyer
+    ailleurs pour revenir aussitôt ferait perdre le formulaire en cours de saisie.
+  */
+  it('le bandeau mène aux offres, sur place', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
+
+    const lien = await screen.findByRole('link', { name: /Activer une offre/i })
+    expect(lien).toHaveAttribute('href', '#mes-offres')
+  })
+
+  /*
+    ⚠️ « Pas visible » est une AFFIRMATION : elle ne peut se dire que si le serveur a répondu. La
+    correction du 01/09 est reprise dans le bandeau, elle ne doit pas s'y perdre — une panne réseau
+    ne déclare pas un médecin en règle invisible des patients.
+  */
+  it('lecture en échec : le bandeau dit qu’il ne sait pas, jamais qu’on est invisible', async () => {
+    await monter({ dossierIllisible: true, offres: [{ ...OFFRE, active: false }] })
+
+    expect(await screen.findByText(/Visibilité inconnue/)).toBeInTheDocument()
+    expect(screen.queryByText(/aucun patient ne peut vous solliciter/i)).not.toBeInTheDocument()
+    /*
+      Et il RASSURE, ce qui n'est pas décoratif : sans cette phrase, un médecin en règle qui tombe
+      sur une panne réseau croit que quelque chose s'est cassé dans son dossier.
+    */
+    expect(screen.getByText(/Rien n’a changé côté serveur/)).toBeInTheDocument()
+  })
+
+  /*
+    Le mot « désactivée » vivait au milieu de « 30 min · consultation · désactivée », en gris clair.
+    C'est pourtant la CAUSE de tout le reste de l'écran. Il devient une pastille — et rien n'est
+    affiché pour une offre active, sinon la pastille redeviendrait du bruit.
+  */
+  it('une offre éteinte porte une pastille', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
+
+    expect(await screen.findByText('Désactivée')).toBeInTheDocument()
+  })
+
+  /*
+    Le pendant, et il compte autant : une pastille sur CHAQUE ligne redeviendrait du bruit, et c'est
+    l'exception qu'on doit repérer d'un coup d'œil. Deux tests plutôt qu'un remontage au milieu :
+    monter deux fois dans le même `it` laisse deux arbres en mémoire, et les requêtes deviennent
+    ambiguës sans rien apprendre de plus.
+  */
+  it('une offre active n’en porte pas', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+    await screen.findByText('Ce que les patients voient')
+
+    expect(screen.queryByText('Désactivée')).not.toBeInTheDocument()
+  })
+
+  /*
+    ── L'assiette du taux ────────────────────────────────────────────────────────────────────────
+
+    La règle est écrite dans le serveur, au-dessus de `confirmDenominator()` : un pourcentage sans
+    son assiette ne se vérifie pas. Le tableau de bord la respectait, cet écran non.
+
+    ⚠️ Et elle est dite SOUS les chiffres publics, jamais collée au taux : ce panneau promet « c'est
+    ce qu'un patient lit », et les patients ne voient pas ce nombre.
+  */
+  it('dit sur combien de demandes porte le taux, et que les patients ne le voient pas', async () => {
+    await monter({ dossier: DOSSIER_OK, assiette: 2 })
+
+    expect(await screen.findByText(/Votre taux porte sur/)).toBeInTheDocument()
+    expect(screen.getByText('2 demandes')).toBeInTheDocument()
+    expect(screen.getByText(/Les patients voient le pourcentage, pas ce détail/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Une lecture qui échoue n'est ni un zéro ni un « non » — troisième rappel de la leçon de la
+    cloche. Annoncer « votre taux porte sur 0 demande » sur une panne réseau serait un mensonge
+    produit par le réseau, et il ferait douter d'un chiffre juste.
+  */
+  it('assiette illisible : rien n’est affirmé, et le reste du panneau tient', async () => {
+    await monter({ dossier: DOSSIER_OK, assiette: null })
+
+    /*
+      ⚠️ L'assertion d'ABSENCE ne suffit pas, et ce test l'a prouvé de la pire façon : en injectant
+      la faute (`{true ?` au lieu de `{bord.data ?`), le rendu plantait sur `undefined`, le texte
+      était donc absent — et le test passait. **Il passait pour la mauvaise raison.**
+
+      On vérifie donc d'abord que le panneau s'est rendu ENTIÈREMENT, en cherchant la phrase qui
+      suit immédiatement le bloc d'assiette. Si le rendu s'arrête avant, elle manque et le test
+      tombe. Ensuite seulement, l'absence a un sens.
+
+      *Une absence ne prouve quelque chose que si l'on a montré que la présence était possible.*
+    */
+    expect(await screen.findByText(/même une réponse négative vaut mieux/)).toBeInTheDocument()
+    expect(screen.queryByText(/Votre taux porte sur/)).not.toBeInTheDocument()
+  })
+
+  /*
+    L'argent : le net est la seule ligne de cet écran qui a une conséquence sur un compte en banque,
+    et c'est le soignant qui la fixe. Il s'écrivait 16 px avec son libellé à 9 px — plus petit que
+    le titre d'un panneau. Comme sur le tableau de bord, la voix se vérifie par son NOM : jsdom
+    n'applique aucune feuille de style, une taille calculée y vaudrait la même chose pour tout.
+  */
+  it('le net porte la voix de chiffre, pas celle d’une note de bas de page', async () => {
+    await monter({ dossier: DOSSIER_OK, offres: [OFFRE] })
+    // Pas `OFFRE.label` : « Consultation » apparaît aussi dans l'aperçu et dans la liste des types.
+    await screen.findByText('Ce que les patients voient')
+
+    /*
+      On part du LIBELLÉ « net pour vous » et on remonte au montant qu'il coiffe : le test ne
+      dépend donc d'aucun montant écrit en dur — changer le prix du leurre ne le casse pas.
+    */
+    const libelle = screen.getByText('net pour vous')
+    expect(libelle).toHaveClass('ul-surtitre')
+
+    const montant = libelle.parentElement?.querySelector('.ul-chiffre-ligne')
+    expect(montant, 'le net doit porter la voix de chiffre').toBeTruthy()
+    expect(montant?.textContent?.trim()).not.toHaveLength(0)
+  })
+})
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
   FILET DE REFONTE — les phrases que cet écran ne doit pas perdre (chantier 68, 09/09/2026)
   ══════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -499,7 +662,7 @@ describe('C7 — filet de refonte : ce que la vitrine dit au soignant', () => {
   it('dit qu’un soignant sans offre active ne peut être sollicité par personne', async () => {
     await monter({ dossier: DOSSIER_OK, offres: [{ ...OFFRE, active: false }] })
 
-    expect(await screen.findByText(/aucun patient ne peut vous solliciter/)).toBeInTheDocument()
+    expect(await screen.findByText(/aucun patient ne peut vous solliciter/i)).toBeInTheDocument()
   })
 
   /*

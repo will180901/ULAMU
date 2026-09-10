@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **778 ✓** (42 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **799 ✓** (42 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -66,7 +66,7 @@ arbre de travail propre.
 - Lint : **oxlint** sur api et web, **eslint** sur mobile. Référence : **0**.
 - `npm run build` sur les trois.
 - `python outils/promesses-sans-filet.py` (dans `APP/apps/web`) — mesure les phrases d'écran
-  qu'aucun test ne retient. Référence : **115 retenues sur 156**.
+  qu'aucun test ne retient. Référence : **116 retenues sur 157**.
 
 **Structure :** monorepo `APP/apps/{api,web,mobile}`.
 ⚠️ **Le dépôt git est le dossier INTÉRIEUR** : `C:\Users\ADMIN\Desktop\ULAMU\ULAMU`.
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 70
+## 3. Ce qui a été fait — chantiers 58 à 71
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,7 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
-| 70 | *(à pousser)* | **B2 — le tableau de bord du soignant**, premier écran de la passe 1. ⚠️ Le vrai défaut n'était pas visuel : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » quand « Ma vitrine » disait, au même instant, « **aucun patient ne peut vous solliciter** » — les deux offres du soignant étaient éteintes. **Septième occurrence** du motif « un fait connu d'un écran, absent d'un autre ». Livré aussi : l'accent conditionnel, la courbe qui cède la place sous deux mois actifs, les comptes qui redeviennent des chiffres. |
+| 71 | *(à pousser)* | **C2 — Ma vitrine.** Un fait dit trois fois et jamais fort, devenu un bandeau d'état unique ; l'offre éteinte qui se voit ; l'argent et les chiffres publics qui prennent leur voix ; l'assiette du taux, **vérifiée avant d'être branchée**. 📌 Deux tests ne mordaient pas — l'un passait parce que le rendu PLANTAIT — trouvés par l'injection et corrigés. |
+| 70 | `60afca4` + `2e41c4d` | **B2 — le tableau de bord du soignant**, premier écran de la passe 1. ⚠️ Le vrai défaut n'était pas visuel : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » quand « Ma vitrine » disait, au même instant, « **aucun patient ne peut vous solliciter** » — les deux offres du soignant étaient éteintes. **Septième occurrence** du motif « un fait connu d'un écran, absent d'un autre ». Livré aussi : l'accent conditionnel, la courbe qui cède la place sous deux mois actifs, les comptes qui redeviennent des chiffres. |
 | 69 | `c23d5b0` | **La passe 0 — une gamme, deux zones.** Les 16 paliers de CG-02 étaient déjà écrits et **utilisés 2 fois** ; 83 recopies remplacées par cinq voix. ⚠️ Ma proposition « deux densités » était fausse : `data-densite` appartient à l'utilisateur — d'où `data-zone`, qui appartient au produit. ⚠️ Et le thème sombre portait encore le défaut de contraste corrigé dans le clair le 20/08 : **3,80 → 5,28**, douze textes du tableau de bord sous le seuil ramenés à un. |
 | 68 | `6e77dc8` + `8e354ce` | **Le filet de la refonte.** 155 phrases d'écran énonçant une limite, un refus ou une garantie ; **59 que rien ne retenait**. Un bloc « FILET DE REFONTE » dans **douze fichiers de test** (web) et son jumeau mobile, + l'outil de mesure `promesses-sans-filet.py`. |
 
@@ -237,8 +238,8 @@ pas » vérifiable au lieu d'être une intention.
 
 ### Où on en est exactement
 
-- **Passe 1 — le médecin, 10 écrans.** ✅ **B2 Tableau de bord** (chantier 70). Restent : C2 Ma
-  vitrine · C3 Demandes · C1 Ma vérification · C4 Consultations · C5 La consultation ·
+- **Passe 1 — le médecin, 10 écrans.** ✅ **B2 Tableau de bord** (70) · ✅ **C2 Ma vitrine** (71).
+  Restent : C3 Demandes · C1 Ma vérification · C4 Consultations · C5 La consultation ·
   C6 Mes gains · C7 Ordonnance · B3 Mes paramètres · la coque.
 - **Passe 2 — l'administration, 7 écrans.** Pas commencée.
 
@@ -252,10 +253,10 @@ pas » vérifiable au lieu d'être une intention.
 
 ### Deux choses en attente, qui n'appartiennent qu'au porteur
 
-- ⏳ **Le thème CLAIR n'a jamais été vérifié.** Le défaut corrigé au chantier 69 venait précisément
-  d'une correction faite dans un seul thème. Basculer par la console ne marche pas — l'application
-  remet le thème aussitôt. **Il faut que le porteur passe l'application en Clair une minute** pour
-  qu'on puisse mesurer.
+- ✅ **Le thème CLAIR a été vérifié le 10/09** (le porteur avait basculé). Il est sain : un seul
+  texte sous le seuil sur les deux écrans, corrigé au chantier 71. Et `charte.test.tsx` calcule
+  désormais les contrastes **dans les deux thèmes** à partir des jetons — plus personne n'a besoin
+  de penser à regarder l'autre palette.
 - ⏳ **La pastille de la cloche** : 9 px, contraste **4,36** (seuil 4,5). La corriger demande
   d'agrandir la pastille (15 → 16 px), donc de déplacer un pixel dans la barre du haut. **À faire
   au chantier de la coque**, en passe 1.

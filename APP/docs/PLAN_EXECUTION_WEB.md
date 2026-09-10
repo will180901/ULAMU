@@ -654,6 +654,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **68** | **Le filet de la refonte** — 07/09, étape 3 du plan, celle qui rend la refonte possible. Le porteur veut refondre tout le design soignant et administration, avec une crainte dite en toutes lettres : *« il ne faut pas qu'on régresse, qu'on retire les choses essentielles »*. Elle est fondée — **six phrases avaient déjà survécu à un nettoyage et étaient parties en production** (chantier 27), une septième à TROIS chantiers (28). Mesure d'abord : sur 22 promesses durement gagnées, **20 étaient déjà protégées** — le codebase était en meilleur état que la crainte ne le suggérait. Livré : `promesses.test.ts` gagne **LE FILET**, 20 écrans et 35 garanties, chacune avec la raison pour laquelle elle a été écrite ; et son jumeau mobile `PromessesTenues.test.ts`. ⚠️ Les motifs ancrent **deux mots-clés séparés par du texte libre** : réécrire reste possible, supprimer l'idée ne l'est pas — *un test qui exige une phrase mot pour mot finit par interdire de mieux la dire*. **web 744 ✓ (699 + 45) · mobile 84 ✓ (67 + 17) · api 641 ✓ · lint 0 · builds ✓ · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **69** | **La passe 0 de la refonte — une gamme, deux zones** — 09/09, étape 4 du plan, sa première brique : la seule couche qui traverse TOUS les écrans, posée une fois pour que chaque écran puisse ensuite être refait sans toucher aux autres. Mesuré d'abord : les **16 paliers de CG-02 étaient déjà écrits** dans `globals.css` — et utilisés **2 fois** dans 25 écrans, contre **635 tailles en dur**. Le manque n'était pas le système, c'était son adoption. ⚠️ **Ma propre proposition de la veille était fausse** : elle appelait « densité » ce qui devait devenir la zone — or `data-densite` appartient à l'UTILISATEUR depuis le chantier 10, et l'employer par zone aurait confisqué à tout administrateur le droit de choisir « Confort ». Corrigé avant d'écrire une ligne : `data-zone` (l'URL, donc le produit) dit la HIÉRARCHIE, `data-densite` (l'utilisateur) dit le SERRAGE, et aucun des deux ne peut annuler l'autre. ⚠️ **Et le thème sombre portait encore un défaut corrigé dans le clair le 20/08** : mesuré en production sur le tableau de bord, le texte tertiaire donnait **3,80:1** — sous le seuil AA de 4,5 — sur **douze** phrases du seul tableau de bord, et précisément celles qui EXPLIQUENT (« XAF · 0 retirable », « Fait baisser votre taux de confirmation »). Livré : cinq **voix** (`ul-titre-page`, `ul-titre-panneau`, `ul-chiffre`, `ul-surtitre`, `ul-aide`) qui remplacent **83 recopies à l'identique**, la zone posée sur la coquille, et le gris du sombre porté à **5,28:1**. **web 772 ✓ · 113 phrases retenues sur 155 (inchangé) · lint 0 · build ✓ · 635 → 573 tailles en dur.** | ⏸ en attente | ⏸ |
 | **70** | **Le tableau de bord du soignant — la forme suit la matière** — 09/09, passe 1, premier des dix écrans du médecin. Premier chantier mené selon la nouvelle méthode du porteur : **on regarde l'écran EN LIGNE, connecté, avant de proposer**. Ce que la mesure a donné : quatre tuiles identiques dont **une seule porte une échéance** ; le panneau de la courbe à **291 px de haut, le plus grand bloc de la page, pour UNE consultation** ; et le compte d'une ligne écrit à **15 px — la taille exacte de sa propre légende**. ⚠️ **Mais le vrai défaut n'était pas visuel** : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » pendant que « Ma vitrine », au même instant, disait « **aucun patient ne peut vous solliciter** : il vous faut au moins une offre active ». Les deux offres du seul soignant de la plateforme étaient éteintes : **rien n'allait arriver**, et l'écran qu'on ouvre en premier le matin faisait patienter devant une porte que rien n'ouvrirait. Septième occurrence du motif « un fait connu d'un écran, absent d'un autre ». Livré : l'accent qui **ne se dépense que s'il y a un geste à faire**, la courbe qui cède la place à un bandeau **sous deux mois actifs** (une évolution demande deux points), les comptes qui reprennent une voix de chiffre, le rythme vertical par zones, et la phrase vraie — avec sa garde : une **borne illisible n'est ni un zéro ni un non**. **web 778 ✓ (772 + 6) · 156 promesses, 115 retenues (113 avant, sur 155) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **71** | **C2 — Ma vitrine : un fait dit une fois, et l'argent qui se voit** — 10/09, deuxième écran de la passe 1. Mesuré en ligne d'abord : l'état de la vitrine était dit **trois fois et jamais fort** (sous-titre 13 px, carte du rail, compteur d'offres) ; le mot « désactivée » — la CAUSE de tout le reste — était noyé dans un gris de 11 px ; et le **net d'une offre, seule ligne de l'écran qui touche un compte en banque, s'écrivait 16 px avec son libellé à 9 px**. Livré : un bandeau d'état unique qui dit la conséquence et le geste, la pastille sur l'offre éteinte, les voix de chiffre sur l'argent et sur les trois chiffres publics, et les neuf tailles hors charte ramenées sur la gamme — dont la date d'un avis, seul texte de l'écran sous le seuil (**3,49:1**). ⚠️ **Et l'assiette du taux**, vérifiée avant d'être branchée : les deux écrans appellent la même fonction `confirmRate()`, seul l'arrondi diffère. Elle est dite SOUS les chiffres publics, jamais collée au taux — ce panneau promet « c'est ce qu'un patient lit », et les patients ne voient pas ce nombre. 📌 **Deux tests ne mordaient pas** : l'un passait parce que le rendu PLANTAIT, l'autre n'existait pas. Trouvés par l'injection, corrigés. **web 799 ✓ (791 + 8) · 157 promesses, 116 retenues (156/115 avant) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -702,6 +703,109 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 71 (C2 — Ma vitrine) a appris
+
+*10/09/2026 — le deuxième écran, et deux tests qui ne servaient à rien.*
+
+#### ⚠️ Un test peut passer parce que le code PLANTE
+
+L'injection de fautes a rendu son verdict le plus utile depuis qu'elle existe. Sur six fautes
+posées, **deux ne réveillaient personne** :
+
+**La première passait pour la mauvaise raison.** Le test « assiette illisible : rien n'est affirmé »
+vérifiait l'ABSENCE d'une phrase. La faute injectée (`{true ?` au lieu de `{bord.data ?`) faisait
+planter le rendu sur un `undefined` — la phrase était donc bien absente, et le test passait. Vitest
+range ce plantage dans « Unhandled Errors », un compteur séparé qui **ne fait pas échouer la suite**.
+
+*Une absence ne prouve quelque chose que si l'on a d'abord montré que la présence était possible.*
+Le test vérifie désormais que la phrase SUIVANTE est là — si le rendu s'arrête avant, elle manque
+et le test tombe.
+
+**La seconde n'existait pas.** Rien ne défendait la taille du net d'une offre. Écrite après coup,
+elle part du LIBELLÉ « net pour vous » et remonte au montant qu'il coiffe : aucun montant en dur, le
+leurre peut changer de prix sans casser le test.
+
+*Un test qu'on n'a pas vu échouer n'est pas un test, c'est une intention.*
+
+#### Le fait le plus important de l'écran était dit trois fois, en petit
+
+| Où | Comment |
+|---|---|
+| Sous le titre | « aucun patient ne peut vous solliciter » — **13 px** |
+| Carte « Êtes-vous visible ? » | troisième bloc du rail de droite |
+| Sous les offres | « 0 sur 5 offres actives » |
+
+Trois endroits pour un seul fait — et celui qui décide si le soignant existe commercialement. Il est
+désormais énoncé **une fois**, en haut, avec le geste qui débloque ; la carte du rail garde ce
+qu'elle seule sait dire : **lequel** des trois verrous est fermé.
+
+*Un fait répété trois fois en petit se lit moins bien qu'énoncé une fois clairement.*
+
+⚠️ **Et j'ai recréé un doublon sans le voir**, dans le même chantier : la phrase de réassurance
+« Rien n'a changé côté serveur — seul cet affichage manque » se retrouvait dans le bandeau ET dans
+la carte. Elle m'a échappé à la relecture parce qu'elle est **coupée sur deux lignes** dans le
+fichier : `grep` sur la phrase entière ne la trouvait qu'une fois. C'est l'outil de mesure des
+promesses qui l'a signalée, en comptant une promesse nue de plus.
+
+*Chercher une phrase dans un fichier, c'est chercher une phrase MISE EN FORME. Le retour à la ligne
+est un endroit où l'on ne regarde pas.*
+
+#### La cause doit être plus visible que la conséquence
+
+Le mot « désactivée » vivait au milieu de « 30 min · consultation · désactivée », en 11 px gris.
+C'est pourtant à cause de lui que le bandeau s'allume en haut et que personne ne peut solliciter.
+
+Il devient une pastille — et **rien n'est affiché pour une offre active** : une pastille sur chaque
+ligne redeviendrait du bruit, et c'est l'exception qu'on doit repérer d'un coup d'œil.
+
+Le trait discontinu plutôt qu'un fond ou une opacité, et pour une raison mesurée : un fond
+réintroduirait le piège du chantier 70 (l'encre tertiaire tombe à 4,30:1 sur `--fond-surface-2` en
+clair), et baisser l'opacité ferait passer **toute** la ligne sous le seuil, montant compris.
+
+#### Vérifier avant de brancher — l'assiette du taux
+
+La vitrine affichait « 100 % » sans dire sur combien. Le tableau de bord dit « sur 2 demandes ». La
+règle est pourtant écrite dans le serveur lui-même, au-dessus de `confirmDenominator()` : *un
+pourcentage sans son assiette ne se vérifie pas.*
+
+**Vérifié avant d'écrire une ligne** — coller une assiette à un pourcentage qui n'est pas le sien
+serait pire que le silence :
+
+- les deux écrans appellent **la même fonction** `confirmRate()` sur les mêmes `ProfessionalStats` ;
+- seul l'arrondi diffère : entier côté public, dixième côté tableau de bord. « 67 % » et « 66,7 % »
+  sont donc le même taux, pas une contradiction — et c'est écrit dans le code.
+
+⚠️ **Et elle est dite SOUS les chiffres publics, jamais collée au taux.** Ce panneau promet « c'est
+littéralement ce qu'un patient lit » ; glisser « sur 2 demandes » à côté du pourcentage ferait mentir
+cette promesse. La phrase dit donc explicitement qui voit quoi.
+
+#### Une majuscule a fait tomber le filet — et c'était le bon comportement
+
+La phrase « aucun patient ne peut vous solliciter » a quitté un sous-titre pour devenir le titre du
+bandeau. Sa première lettre a pris une majuscule. **Deux tests sont tombés**, dont le filet.
+
+C'est exactement le cas prévu au chantier 68 : *mettre à jour le motif si la refonte l'a REFORMULÉE,
+en vérifiant que la nouvelle formulation dit le même fait.* Le motif devient insensible à la casse ;
+les sept mots doivent toujours être là, dans cet ordre. Le filet ne perd rien, et le fait est
+maintenant dit **plus fort** qu'avant.
+
+*Un filet qui tombe sur une majuscule n'est pas trop strict : il a fait exactement son travail, qui
+est de forcer quelqu'un à regarder.*
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 791 ✓ | **799 ✓** |
+| Promesses inventoriées | 156 | **157** |
+| Promesses retenues | 115 | **116** |
+| Promesses nues | 41 | **41** |
+| Tailles hors charte sur C2 | 9 | **0** |
+| Textes sous le seuil sur C2 | 1 (3,49:1) | **0** |
+
+Six fautes injectées, six détectées — dont deux seulement **après** avoir réparé les tests que
+l'injection avait démasqués.
 
 ### Ce que le chantier 70 (B2 — le tableau de bord du soignant) a appris
 

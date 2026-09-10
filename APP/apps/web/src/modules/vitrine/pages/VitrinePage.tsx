@@ -223,7 +223,25 @@ function LigneOffre({
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-3">
+    /*
+      ⚠️ Une offre éteinte doit se VOIR — chantier 71.
+
+      Le mot « désactivée » vivait au milieu de « 30 min · consultation · désactivée », en 11 px
+      gris. Or c'est la CAUSE de tout le reste de l'écran : c'est parce qu'une offre est éteinte
+      qu'aucun patient ne peut solliciter, et que le bandeau d'état s'allume en haut. La cause était
+      écrite plus discrètement que sa conséquence.
+
+      Le trait discontinu plutôt qu'un fond ou une opacité : un fond réintroduirait le piège du
+      chantier 70 (l'encre tertiaire tombe à 4,30:1 sur `--fond-surface-2` en clair), et baisser
+      l'opacité ferait passer TOUTE la ligne sous le seuil — y compris le montant. Une bordure ne
+      touche à aucun contraste de texte.
+    */
+    <li
+      className={
+        'flex flex-wrap items-center gap-3 rounded-md border bg-card p-3 ' +
+        (offre.active ? 'border-border' : 'border-dashed border-[var(--bordure-normale)]')
+      }
+    >
       {edition ? (
         <div className="grid flex-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
           <span className="grid gap-1">
@@ -265,10 +283,19 @@ function LigneOffre({
         </div>
       ) : (
         <span className="min-w-0 flex-1 basis-44">
-          <span className="block text-[13px] font-medium text-foreground">{offre.label}</span>
-          <span className="mt-0.5 block text-[11px] text-[var(--texte-tertiaire)]">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-[13px] font-medium text-foreground">{offre.label}</span>
+            {/*
+              L'état devient une pastille — le composant qui sert déjà partout ailleurs à dire un
+              statut. Jamais la couleur seule (CG-11) : c'est le mot « Désactivée » qui porte
+              l'information, la teinte ne fait que la répéter. Rien n'est affiché pour une offre
+              active : une pastille « Active » sur chaque ligne redeviendrait du bruit, et c'est
+              l'exception qu'on doit repérer.
+            */}
+            {offre.active ? null : <Pilule ton="neutre">Désactivée</Pilule>}
+          </span>
+          <span className="mt-0.5 block ul-aide">
             {offre.durationMin} min · {offre.kind === 'FOLLOW_UP' ? 'suivi' : 'consultation'}
-            {offre.active ? '' : ' · désactivée'}
           </span>
         </span>
       )}
@@ -279,19 +306,26 @@ function LigneOffre({
         l'écran : il doit voir ce qu'il touche sans sortir une calculatrice. En édition, le net suit
         la saisie — c'est le moment où il compte le plus.
       */}
-      <span className="flex shrink-0 items-center gap-2 font-mono text-[11px] text-[var(--texte-tertiaire)]">
+      {/*
+        ⚠️ Les trois nombres n'ont PAS le même poids — corrigé au chantier 71.
+
+        Ils s'écrivaient 11 px, 11 px et 16 px, avec « net pour vous » à **9 px**. Or les deux
+        premiers EXPLIQUENT et le troisième DÉCIDE : c'est la seule ligne de cet écran qui a une
+        conséquence sur un compte en banque, et c'est le soignant qui la fixe. Le calcul restait
+        juste, mais l'œil ne trouvait pas où il aboutissait.
+
+        Le brut et la commission gardent donc l'encre discrète du palier de code ; le net prend la
+        voix de chiffre, et son libellé le surtitre — 11 px au lieu de 9, une taille qui existe.
+      */}
+      <span className="flex shrink-0 items-center gap-2 t-code-sm text-[var(--texte-tertiaire)]">
         <span>{xaf(prixAffiche)}</span>
         <span aria-hidden="true">−</span>
         <span>{xaf(commission)}</span>
         <span aria-hidden="true">=</span>
       </span>
       <span className="shrink-0 text-right">
-        <span className="block font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
-          {xaf(net)}
-        </span>
-        <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
-          net pour vous
-        </span>
+        <span className="block ul-chiffre-ligne">{xaf(net)}</span>
+        <span className="mt-1 block ul-surtitre">net pour vous</span>
       </span>
 
       <span className="flex shrink-0 items-center gap-1">
@@ -495,6 +529,112 @@ function AjoutOffre({
 
 // ── Écran ───────────────────────────────────────────────────────────────────
 
+/**
+ * Le bandeau d'état — chantier 71.
+ *
+ * ── Ce qu'il corrige ──────────────────────────────────────────────────────────────────────────
+ *
+ * L'état de la vitrine était dit **trois fois**, et jamais fort : dans le sous-titre de la page
+ * (13 px), dans la carte « Êtes-vous visible ? » du rail de droite, et sous les offres
+ * (« 0 sur 5 offres actives »). Trois endroits pour un seul fait — et le fait le plus important
+ * de l'écran, celui qui décide si le soignant existe commercialement ou non.
+ *
+ * *Un fait répété trois fois en petit se lit moins bien qu'énoncé une fois clairement.*
+ *
+ * ── Trois états, pas deux ─────────────────────────────────────────────────────────────────────
+ *
+ * La distinction héritée du 01/09 est conservée telle quelle : **« pas visible » est une
+ * AFFIRMATION**, elle ne peut se dire que si le serveur a répondu. Quand la lecture échoue, on dit
+ * qu'on ne sait pas — une panne réseau ne doit pas annoncer à un médecin en règle qu'il est
+ * invisible des patients.
+ *
+ * ── Ce qu'il n'est pas ────────────────────────────────────────────────────────────────────────
+ *
+ * Ce n'est pas une alerte de plus : la carte « Êtes-vous visible ? » garde ses trois critères, qui
+ * disent le DÉTAIL. Le bandeau dit la conséquence et le geste ; la carte dit lequel des trois
+ * verrous est fermé. Le doublon supprimé est l'alerte qui répétait la conséquence dans la carte.
+ */
+function BandeauEtat({
+  lectureFaite,
+  peutExercer,
+  offresActives,
+}: {
+  lectureFaite: boolean
+  peutExercer: boolean
+  offresActives: number
+}) {
+  // Tout va bien : pas de bandeau. Un bandeau permanent redevient un décor, et la seule chose
+  // qu'on remarquerait alors, c'est son absence.
+  if (lectureFaite && peutExercer && offresActives > 0) return null
+
+  const inconnu = !lectureFaite
+  const titre = inconnu
+    ? 'Visibilité inconnue tant que votre dossier n’a pas pu être lu'
+    : !peutExercer
+      ? 'Votre fiche n’est pas encore visible des patients'
+      : 'Aucun patient ne peut vous solliciter'
+
+  return (
+    <section
+      // `status` et non `alert` : l'information est vraie en permanence, elle ne survient pas.
+      // `alert` interromprait le lecteur d'écran à chaque frappe dans le formulaire.
+      role="status"
+      className={
+        'flex flex-wrap items-start gap-3 rounded-[10px] border px-4 py-[var(--espace-5)] ' +
+        (inconnu
+          ? 'border-[var(--info-bordure)] bg-[var(--info-fond)]'
+          : 'border-[var(--alerte-bordure)] bg-[var(--alerte-fond)]')
+      }
+    >
+      <span
+        aria-hidden="true"
+        className={
+          'flex size-9 shrink-0 items-center justify-center rounded-md ' +
+          (inconnu ? 'text-[var(--info-accent)]' : 'text-[var(--alerte-accent)]')
+        }
+      >
+        <ShieldCheck size={20} strokeWidth={1.5} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block ul-surtitre">Votre vitrine</span>
+        <h2 className="mt-1 ul-titre-panneau">{titre}</h2>
+        {/*
+          En style inline plutôt qu'en utilitaire : `.ul-aide` fixe déjà `color` et vit hors d'un
+          `@layer`, elle l'emporterait sur `text-[…]` sans que rien ne le signale (piège du
+          chantier 70). L'encre sémantique se lit sur son propre fond, l'encre tertiaire non.
+        */}
+        <p
+          className="mt-1 ul-aide"
+          style={{ color: inconnu ? 'var(--info-texte)' : 'var(--alerte-texte)' }}
+        >
+          {inconnu
+            ? 'Rien n’a changé côté serveur — seul cet affichage manque. Rechargez la page dans un instant.'
+            : !peutExercer
+              ? 'Tant que votre dossier n’est pas vérifié et votre contrat signé, votre fiche n’apparaît pas dans l’annuaire — quel que soit le soin apporté à cette page.'
+              : 'Vous êtes vérifié et sous contrat, mais sans offre active un patient n’a aucun moyen de vous solliciter.'}
+        </p>
+      </span>
+      {inconnu ? null : (
+        <span className="shrink-0">
+          {!peutExercer ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/verification">Voir mon dossier</Link>
+            </Button>
+          ) : (
+            /*
+              Une ancre, pas une navigation : les offres sont sur CETTE page, plus bas. Envoyer
+              ailleurs pour revenir aussitôt ferait perdre le formulaire en cours de saisie.
+            */
+            <Button variant="outline" size="sm" asChild>
+              <a href="#mes-offres">Activer une offre</a>
+            </Button>
+          )}
+        </span>
+      )}
+    </section>
+  )
+}
+
 export function VitrinePage() {
   const qc = useQueryClient()
   const me = useSessionStore((s) => s.me)
@@ -508,6 +648,26 @@ export function VitrinePage() {
   const verif = useQuery({ queryKey: ['verification'], queryFn: () => api.verificationMine(), retry: false })
   const offres = useQuery({ queryKey: ['offers'], queryFn: () => api.myOffers() })
   const bornes = useQuery({ queryKey: ['offer-limits'], queryFn: () => api.offerLimits() })
+  /*
+    ── L'ASSIETTE du taux de confirmation — chantier 71 ──────────────────────────────────────────
+
+    La règle est déjà écrite dans le serveur, au-dessus de `confirmDenominator()` : *« un pourcentage
+    sans son assiette ne se vérifie pas : 100 % sur deux demandes et 100 % sur deux cents ne disent
+    pas la même chose »*. Le tableau de bord la respecte — « 100 % · sur 2 demandes ». Cet écran-ci
+    affichait le pourcentage seul.
+
+    ⚠️ Vérifié avant de le brancher, parce que coller une assiette à un pourcentage qui n'est pas le
+    sien serait pire que le silence : les deux écrans appellent **la même fonction** `confirmRate()`
+    sur les mêmes compteurs `ProfessionalStats`. Seul l'arrondi diffère — la route publique arrondit
+    à l'entier, le tableau de bord au dixième. Sur un même compte, les deux peuvent donc afficher
+    « 67 % » et « 66,7 % » : c'est le même taux, pas une contradiction.
+
+    La route publique, elle, ne sert PAS le dénominateur, et il n'a pas été demandé qu'elle le fasse :
+    ce chiffre dit combien de sollicitations le soignant a reçues, et c'est son affaire, pas celle des
+    patients. Il est donc lu sur SA route à lui — même clé de cache que le tableau de bord, la
+    requête ne part qu'une fois.
+  */
+  const bord = useQuery({ queryKey: ['dashboard', 'pro'], queryFn: () => api.professionalDashboard(), retry: false })
 
   /**
    * « Ce que les patients voient » n'est pas une reconstitution : on appelle la VRAIE route publique
@@ -595,49 +755,38 @@ export function VitrinePage() {
           <h1 className="ul-titre-page">
             Ma vitrine
           </h1>
+          {/*
+            ⚠️ Ce sous-titre portait le VERDICT de l'écran — « aucun patient ne peut vous
+            solliciter » — en 13 px, au milieu d'une phrase de contexte. Il est monté dans
+            `BandeauEtat` au chantier 71 ; ce qui reste ici est le fait neutre : où la fiche est
+            visible, et combien d'offres tournent.
+
+            Les trois états sont conservés : « pas visible » est une AFFIRMATION, qui ne peut se
+            dire que si le serveur a répondu. C'est la correction du 01/09/2026 — `canPractice`
+            valait `false` par défaut, et une panne réseau annonçait à un médecin en règle qu'il
+            était invisible des patients.
+          */}
           <p className="mt-1 text-[13px] text-[var(--texte-secondaire)]">
-            {/*
-              Trois états, pas deux. « Pas encore visible » est une AFFIRMATION : elle ne peut se
-              dire que si le serveur a répondu. Quand la lecture échoue, `canPractice` valait
-              `false` par défaut et l'écran annonçait à un médecin en règle qu'il était invisible
-              des patients — un mensonge produit par une panne réseau. Constaté le 01/09/2026
-              pendant la relecture visuelle, en servant des 500 à l'écran.
-            */}
             {!verif.isSuccess ? (
-              'Visibilité inconnue tant que votre dossier n’a pas pu être lu'
-            ) : peutExercer && offresActives.length === 0 ? (
-              /*
-                ── Visible, et pourtant injoignable (chantier 65, 07/09/2026) ────────────────────
-
-                Cette ligne disait « Visible dans l'annuaire · 0 offre active » : exact, et lu comme
-                une bonne nouvelle avec un détail. ⚠️ **Sans offre active, aucun patient ne peut
-                initier de consultation** — le serveur exige un `offerId`. Le soignant est donc dans
-                l'annuaire, et commercialement éteint, sans que rien ne le lui dise.
-
-                Mesuré en production le 07/09 : le SEUL soignant de la plateforme était exactement
-                dans ce cas, ses deux offres désactivées, depuis des jours.
-
-                On énonce la CONSÉQUENCE, pas seulement l'état. Un chiffre ne se lit pas tout seul.
-              */
-              <>
-                Visible dans l’annuaire{me?.district ? ` de ${me.district}` : ''}, mais{' '}
-                <strong className="font-semibold text-[var(--erreur-texte)]">
-                  aucun patient ne peut vous solliciter
-                </strong>{' '}
-                : il vous faut au moins une offre active.
-              </>
+              'Votre dossier n’a pas pu être lu'
             ) : peutExercer ? (
               <>
                 Visible dans l’annuaire{me?.district ? ` de ${me.district}` : ''} · {offresActives.length} offre
                 {offresActives.length > 1 ? 's' : ''} active{offresActives.length > 1 ? 's' : ''}
               </>
             ) : (
-              'Votre fiche n’est pas encore visible des patients'
+              'Fiche non publiée dans l’annuaire'
             )}
           </p>
         </div>
         <Enregistrement etat={etatProfil} />
       </header>
+
+      <BandeauEtat
+        lectureFaite={verif.isSuccess}
+        peutExercer={peutExercer}
+        offresActives={offresActives.length}
+      />
 
       {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
 
@@ -717,7 +866,7 @@ export function VitrinePage() {
                   <Label htmlFor="bio" className="text-[11px]">
                     Présentation
                   </Label>
-                  <span className="font-mono text-[10px] text-[var(--texte-tertiaire)]">
+                  <span className="t-code-sm text-[var(--texte-tertiaire)]">
                     {bio.length} / {BIO_MAX}
                   </span>
                 </span>
@@ -751,6 +900,10 @@ export function VitrinePage() {
             </div>
           </Carte>
 
+          {/* La cible de « Activer une offre » du bandeau d'état. `scroll-mt` réserve la hauteur de
+              la barre du haut : sans elle, l'ancre poserait le titre du panneau SOUS la barre, et on
+              arriverait sur un écran qui semble n'avoir pas bougé. */}
+          <div id="mes-offres" className="scroll-mt-[var(--layout-topbar-height)]">
           <Carte
             icone={Tag}
             titre="Mes offres"
@@ -805,6 +958,7 @@ export function VitrinePage() {
               </p>
             </div>
           </Carte>
+          </div>
 
         </div>
 
@@ -874,29 +1028,29 @@ export function VitrinePage() {
           >
             <div className="grid gap-2">
               {!verif.isSuccess ? (
-                <Avis ton="info">
-                  Votre dossier n’a pas pu être lu : ces trois conditions restent inconnues. Rien n’a
-                  changé côté serveur — seul cet affichage manque.
-                </Avis>
+                /*
+                  ⚠️ « Rien n'a changé côté serveur — seul cet affichage manque » a été retiré d'ici
+                  au chantier 71 : le bandeau d'état le dit désormais, en haut de l'écran. Le garder
+                  aux deux endroits aurait recréé le doublon que ce chantier supprime — et je l'avais
+                  recréé sans le voir, la phrase étant coupée sur deux lignes dans le fichier.
+
+                  Cette carte garde ce qu'elle seule sait dire : que ce sont ces TROIS conditions-là
+                  qui restent inconnues.
+                */
+                <Avis ton="info">Votre dossier n’a pas pu être lu : ces trois conditions restent inconnues.</Avis>
               ) : null}
               <Critere ok={verif.data?.status === 'VERIFIED'} label="Dossier vérifié par l’administration" />
               <Critere ok={!!verif.data?.agreement?.signedAt} label="Contrat de partenariat signé" />
               <Critere ok={offresActives.length > 0} label="Au moins une offre active" />
 
-              {!verif.isSuccess ? null : !peutExercer ? (
-                <Avis ton="alerte">
-                  Tant que ces conditions ne sont pas réunies, votre fiche n’apparaît pas dans l’annuaire — quel que
-                  soit le soin apporté à cette page.{' '}
-                  <Link to="/verification" className="underline underline-offset-2">
-                    Voir mon dossier
-                  </Link>
-                </Avis>
-              ) : offresActives.length === 0 ? (
-                <Avis ton="alerte">
-                  Vous êtes vérifié et sous contrat, mais sans offre active un patient n’a aucun moyen de vous
-                  solliciter.
-                </Avis>
-              ) : null}
+              {/*
+                ⚠️ Les deux alertes qui vivaient ici ont été RETIRÉES au chantier 71, et non
+                perdues : elles disaient la conséquence, que `BandeauEtat` dit maintenant une seule
+                fois, en haut de l'écran et en grand. Cette carte garde ce qu'elle seule sait dire —
+                LEQUEL des trois verrous est fermé.
+
+                *Un fait répété trois fois en petit se lit moins bien qu'énoncé une fois clairement.*
+              */}
             </div>
           </Carte>
 
@@ -917,34 +1071,48 @@ export function VitrinePage() {
               <div className="grid gap-3">
                 <div className="grid gap-2.5">
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                    <span className="ul-surtitre">
                       Note moyenne
                     </span>
                     <span className="flex items-baseline gap-1.5">
                       <Star size={12} strokeWidth={1.8} aria-hidden="true" className="translate-y-px text-[var(--ton-ambre-icone)]" />
-                      <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
-                        {publique.data.rating.avg ?? '—'}
-                      </strong>
+                      <strong className="ul-chiffre-ligne">{publique.data.rating.avg ?? '—'}</strong>
                       <span className="text-[11px] text-[var(--texte-tertiaire)]">{publique.data.rating.count} avis</span>
                     </span>
                   </span>
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                    <span className="ul-surtitre">
                       Taux de confirmation
                     </span>
-                    <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
-                      {publique.data.reactivity.confirmRatePct ?? '—'} %
-                    </strong>
+                    <strong className="ul-chiffre-ligne">{publique.data.reactivity.confirmRatePct ?? '—'} %</strong>
                   </span>
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--texte-tertiaire)]">
+                    <span className="ul-surtitre">
                       Délai moyen
                     </span>
-                    <strong className="font-[family-name:var(--font-display)] text-[16px] font-bold leading-none text-foreground">
-                      {delaiHumain(publique.data.reactivity.avgConfirmDelayS) ?? '—'}
-                    </strong>
+                    <strong className="ul-chiffre-ligne">{delaiHumain(publique.data.reactivity.avgConfirmDelayS) ?? '—'}</strong>
                   </span>
                 </div>
+
+                {/*
+                  ⚠️ L'assiette est dite SOUS les chiffres publics, et non collée au pourcentage.
+
+                  Ce panneau promet « c'est littéralement ce qu'un patient lit ». Glisser « sur
+                  2 demandes » à côté du taux ferait mentir cette promesse : les patients ne voient
+                  pas ce nombre. La phrase dit donc explicitement qui voit quoi.
+
+                  Et rien ne s'affiche si la lecture n'a pas abouti : une assiette absente n'est pas
+                  une assiette de zéro.
+                */}
+                {bord.data ? (
+                  <p className="t-caption text-[var(--texte-tertiaire)]">
+                    Votre taux porte sur{' '}
+                    <strong className="text-foreground">
+                      {bord.data.confirmationBase} {accord(bord.data.confirmationBase, 'demande')}
+                    </strong>{' '}
+                    — les refus motivés n’y comptent pas. Les patients voient le pourcentage, pas ce détail.
+                  </p>
+                ) : null}
 
                 <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
                   Le taux baisse quand une demande expire sans réponse — même une réponse négative vaut mieux
@@ -956,9 +1124,17 @@ export function VitrinePage() {
                   <ul className="grid gap-1.5 border-t border-border pt-2.5">
                     {publique.data.latestComments.slice(0, 3).map((c, i) => (
                       <li key={i}>
-                        <span className="flex items-baseline gap-1.5 text-[10px] text-[var(--ton-ambre-icone)]">
+                        {/*
+                          ⚠️ La date d'un avis était le SEUL texte de cet écran sous le seuil de
+                          lisibilité : 10 px, encre tertiaire, **3,49:1** mesuré en thème clair sur
+                          le site en ligne. Elle passe au palier de légende (11 px) et à l'encre
+                          secondaire, qui tient dans les deux thèmes.
+                          Les étoiles gardent leur teinte : elles ne portent pas de texte à lire,
+                          et le score est déjà dit par leur nombre.
+                        */}
+                        <span className="flex items-baseline gap-1.5 t-caption text-[var(--ton-ambre-icone)]">
                           {'★'.repeat(c.score)}
-                          <span className="text-[var(--texte-tertiaire)]">
+                          <span className="text-[var(--texte-secondaire)]">
                             {new Date(c.createdAt).toLocaleDateString('fr-FR')}
                           </span>
                         </span>
