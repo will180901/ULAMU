@@ -791,3 +791,31 @@ describe('B3 — filet de refonte : ce qu’un réglage de sécurité coûte', (
     expect(await screen.findByText(/Aucune déconnexion à distance n'est possible/)).toBeInTheDocument()
   })
 })
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  CHANTIER 73 — l'ancre du bloc téléphone, et pourquoi elle est testée ICI
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  « Mes gains » porte un bouton « Modifier mon numéro » qui pointe sur
+  `/parametres?section=securite&bloc=telephone`. Ce lien a DEUX moitiés, et elles vivent dans deux
+  fichiers différents : l'adresse dans C6, la cible dans cette section-ci.
+
+  Le test de C6 défend l'adresse. Il ne voit RIEN si quelqu'un renomme la cible — vérifié en
+  injectant exactement cette faute : le lien pointait dans le vide et les 76 tests passaient.
+
+  *Une règle qui vit en deux endroits doit être tenue par un test qui les regarde tous les deux.*
+
+  Ce test-ci défend la cible. Les deux ensemble rendent le lien indéformable.
+*/
+describe('B3 — la cible du lien « Modifier mon numéro » (chantier 73)', () => {
+  it('le bloc du téléphone porte l’ancre que C6 vise', async () => {
+    monter('securite')
+    await screen.findByText('Numéro de téléphone')
+
+    const cible = document.getElementById('bloc-telephone')
+    expect(cible, 'C6 pointe sur #bloc-telephone : cette ancre doit exister').not.toBeNull()
+    // Et c'est BIEN le bloc du téléphone qu'elle désigne, pas un voisin.
+    expect(cible?.textContent).toContain('Numéro de téléphone')
+  })
+})

@@ -732,7 +732,12 @@ export function GainsPage() {
             </p>
             <div>
               <Button asChild size="sm" variant="outline">
-                <Link to="/parametres?section=securite">Modifier mon numéro</Link>
+                {/*
+                  ⚠️ `&bloc=telephone` — chantier 73. Sans lui, ce bouton déposait le visiteur en
+                  haut de la page Sécurité, devant « Adresse email ». Le porteur a cliqué, vu un
+                  écran sans rapport, et conclu que la modification n'existait pas.
+                */}
+                <Link to="/parametres?section=securite&bloc=telephone">Modifier mon numéro</Link>
               </Button>
             </div>
           </Carte>

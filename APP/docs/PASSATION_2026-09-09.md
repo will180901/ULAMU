@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **811 ✓** (42 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **813 ✓** (42 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 72
+## 3. Ce qui a été fait — chantiers 58 à 73
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,7 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
-| 72 | *(à pousser)* | **C6 — Mes gains.** ⚠️ L'écran promettait que TOUT l'argent en attente « devient retirable dès leur dépôt » — faux passé l'échéance, où le serveur refuse le dépôt et gèle les gains. La donnée (`reportDueAt`) était servie depuis toujours, avec le commentaire qui dit exactement ça ; l'écran ne la lisait pas. **Huitième occurrence** du motif, la première sur de l'argent. Plus : les montants hors charte, la rangée qui s'étirait, le numéro de retrait à 14 px. |
+| 73 | *(à pousser)* | ⚠️ **Trouvé par le porteur** : « Modifier mon numéro » menait à la bonne PAGE mais pas au bon ENDROIT — il déposait en haut de Sécurité, devant « Adresse email ». Il en a conclu que la fonction n'existait pas ; elle existait depuis le chantier 67. 📌 Et la faute qui renomme l'ANCRE n'a réveillé personne : une règle qui vit en deux fichiers a besoin d'un test de chaque côté. |
+| 72 | `5c76586` | **C6 — Mes gains.** ⚠️ L'écran promettait que TOUT l'argent en attente « devient retirable dès leur dépôt » — faux passé l'échéance, où le serveur refuse le dépôt et gèle les gains. La donnée (`reportDueAt`) était servie depuis toujours, avec le commentaire qui dit exactement ça ; l'écran ne la lisait pas. **Huitième occurrence** du motif, la première sur de l'argent. Plus : les montants hors charte, la rangée qui s'étirait, le numéro de retrait à 14 px. |
 | 71 | `87fa15c` | **C2 — Ma vitrine.** Un fait dit trois fois et jamais fort, devenu un bandeau d'état unique ; l'offre éteinte qui se voit ; l'argent et les chiffres publics qui prennent leur voix ; l'assiette du taux, **vérifiée avant d'être branchée**. 📌 Deux tests ne mordaient pas — l'un passait parce que le rendu PLANTAIT — trouvés par l'injection et corrigés. |
 | 70 | `60afca4` + `2e41c4d` | **B2 — le tableau de bord du soignant**, premier écran de la passe 1. ⚠️ Le vrai défaut n'était pas visuel : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » quand « Ma vitrine » disait, au même instant, « **aucun patient ne peut vous solliciter** » — les deux offres du soignant étaient éteintes. **Septième occurrence** du motif « un fait connu d'un écran, absent d'un autre ». Livré aussi : l'accent conditionnel, la courbe qui cède la place sous deux mois actifs, les comptes qui redeviennent des chiffres. |
 | 69 | `c23d5b0` | **La passe 0 — une gamme, deux zones.** Les 16 paliers de CG-02 étaient déjà écrits et **utilisés 2 fois** ; 83 recopies remplacées par cinq voix. ⚠️ Ma proposition « deux densités » était fausse : `data-densite` appartient à l'utilisateur — d'où `data-zone`, qui appartient au produit. ⚠️ Et le thème sombre portait encore le défaut de contraste corrigé dans le clair le 20/08 : **3,80 → 5,28**, douze textes du tableau de bord sous le seuil ramenés à un. |

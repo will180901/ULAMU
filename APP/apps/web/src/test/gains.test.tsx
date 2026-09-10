@@ -218,10 +218,17 @@ describe('C6 — le compte de versement, qui n’existe pas', () => {
     expect(texte).not.toContain('Configurer mon compte de versement')
   })
 
+  /*
+    ⚠️ La destination s'est PRÉCISÉE au chantier 73 — elle n'a pas changé de nature.
+
+    Elle visait la page ; elle vise maintenant le bloc (`&bloc=telephone`). Le fait défendu par ce
+    test est le même — « ce bouton mène là où le numéro se change vraiment » — et il est mieux tenu
+    qu'avant. Le test suit, il ne s'oppose pas.
+  */
   it('renvoie là où le numéro se change VRAIMENT', async () => {
     await monter(gains())
     const lien = await screen.findByRole('link', { name: /Modifier mon numéro/ })
-    expect(lien).toHaveAttribute('href', '/parametres?section=securite')
+    expect(lien).toHaveAttribute('href', '/parametres?section=securite&bloc=telephone')
   })
 
   it('le numéro est masqué : reconnaissable, pas lisible par-dessus l’épaule', async () => {
@@ -550,6 +557,24 @@ describe('C6 — l’argent qui peut disparaître', () => {
     Comme ailleurs, la voix se vérifie par son NOM : jsdom n'applique aucune feuille de style, une
     taille calculée y vaudrait la même chose pour tout.
   */
+  /*
+    ⚠️ Trouvé par le PORTEUR, sur son propre écran — chantier 73.
+
+    « Modifier mon numéro » menait à la bonne page mais pas au bon endroit : il déposait le visiteur
+    en haut de Sécurité, devant « Adresse email ». Le bloc du téléphone est plus bas. Il a cliqué,
+    vu un écran sans rapport, et conclu que la modification n'existait pas — elle existait depuis le
+    chantier 67.
+
+    *Un lien qui arrive à la bonne PAGE mais pas au bon ENDROIT se lit comme un lien cassé.* Et
+    c'est un défaut que je ne peux pas voir : je ne clique pas dans les écrans du porteur.
+  */
+  it('« Modifier mon numéro » vise le bloc du téléphone, pas le haut de la page', async () => {
+    await monter(gains({ pendingXaf: 0 }))
+
+    const lien = await screen.findByRole('link', { name: /Modifier mon numéro/i })
+    expect(lien).toHaveAttribute('href', '/parametres?section=securite&bloc=telephone')
+  })
+
   it('le numéro de retrait porte une voix de chiffre, pas du texte d’aide', async () => {
     await monter(gains({ pendingXaf: 0 }))
     await screen.findByText('Le numéro de votre compte ULAMU')

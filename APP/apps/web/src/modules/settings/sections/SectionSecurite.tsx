@@ -984,7 +984,21 @@ export function SectionSecurite({ me, rafraichir }: { me: MeResponse; rafraichir
     <div className="flex flex-col gap-4">
       <BlocEmail me={me} rafraichir={rafraichir} />
 
-      <BlocTelephone me={me} rafraichir={rafraichir} />
+      {/*
+        ⚠️ Cette ancre existe pour une raison précise — chantier 73, trouvée par le porteur.
+
+        « Mes gains » porte un bouton « Modifier mon numéro » qui mène ici. Il déposait le visiteur
+        **en haut de la page**, c'est-à-dire devant « Adresse email » — un bloc qui parle d'autre
+        chose. Le bloc du téléphone est plus bas ; il fallait le chercher.
+
+        Le porteur a donc cliqué, vu un écran sans rapport, et conclu que la modification n'existait
+        pas. Elle existait depuis le chantier 67.
+
+        *Un lien qui arrive à la bonne PAGE mais pas au bon ENDROIT se lit comme un lien cassé.*
+      */}
+      <div id="bloc-telephone" className="scroll-mt-4">
+        <BlocTelephone me={me} rafraichir={rafraichir} />
+      </div>
       <BlocMotDePasse />
       <BlocDeuxFacteurs me={me} rafraichir={rafraichir} />
       <BlocDeuxFacteursEmail me={me} rafraichir={rafraichir} />

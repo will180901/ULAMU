@@ -656,6 +656,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **70** | **Le tableau de bord du soignant — la forme suit la matière** — 09/09, passe 1, premier des dix écrans du médecin. Premier chantier mené selon la nouvelle méthode du porteur : **on regarde l'écran EN LIGNE, connecté, avant de proposer**. Ce que la mesure a donné : quatre tuiles identiques dont **une seule porte une échéance** ; le panneau de la courbe à **291 px de haut, le plus grand bloc de la page, pour UNE consultation** ; et le compte d'une ligne écrit à **15 px — la taille exacte de sa propre légende**. ⚠️ **Mais le vrai défaut n'était pas visuel** : l'écran promettait « elles arrivent ici dès qu'un patient vous sollicite » pendant que « Ma vitrine », au même instant, disait « **aucun patient ne peut vous solliciter** : il vous faut au moins une offre active ». Les deux offres du seul soignant de la plateforme étaient éteintes : **rien n'allait arriver**, et l'écran qu'on ouvre en premier le matin faisait patienter devant une porte que rien n'ouvrirait. Septième occurrence du motif « un fait connu d'un écran, absent d'un autre ». Livré : l'accent qui **ne se dépense que s'il y a un geste à faire**, la courbe qui cède la place à un bandeau **sous deux mois actifs** (une évolution demande deux points), les comptes qui reprennent une voix de chiffre, le rythme vertical par zones, et la phrase vraie — avec sa garde : une **borne illisible n'est ni un zéro ni un non**. **web 778 ✓ (772 + 6) · 156 promesses, 115 retenues (113 avant, sur 155) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **71** | **C2 — Ma vitrine : un fait dit une fois, et l'argent qui se voit** — 10/09, deuxième écran de la passe 1. Mesuré en ligne d'abord : l'état de la vitrine était dit **trois fois et jamais fort** (sous-titre 13 px, carte du rail, compteur d'offres) ; le mot « désactivée » — la CAUSE de tout le reste — était noyé dans un gris de 11 px ; et le **net d'une offre, seule ligne de l'écran qui touche un compte en banque, s'écrivait 16 px avec son libellé à 9 px**. Livré : un bandeau d'état unique qui dit la conséquence et le geste, la pastille sur l'offre éteinte, les voix de chiffre sur l'argent et sur les trois chiffres publics, et les neuf tailles hors charte ramenées sur la gamme — dont la date d'un avis, seul texte de l'écran sous le seuil (**3,49:1**). ⚠️ **Et l'assiette du taux**, vérifiée avant d'être branchée : les deux écrans appellent la même fonction `confirmRate()`, seul l'arrondi diffère. Elle est dite SOUS les chiffres publics, jamais collée au taux — ce panneau promet « c'est ce qu'un patient lit », et les patients ne voient pas ce nombre. 📌 **Deux tests ne mordaient pas** : l'un passait parce que le rendu PLANTAIT, l'autre n'existait pas. Trouvés par l'injection, corrigés. **web 799 ✓ (791 + 8) · 157 promesses, 116 retenues (156/115 avant) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **72** | **C6 — Mes gains : l'argent en attente ne se vaut pas tout entier** — 10/09, troisième écran de la passe 1. ⚠️ **Le défaut n'était pas visuel, et il portait sur de l'argent.** L'écran affirmait, pour TOUTE somme en attente, qu'elle « devient retirable dès leur dépôt ». Or le serveur REFUSE le dépôt passé l'échéance — *« Délai de dépôt dépassé (PM-30) : gains gelés »* — et chaque séance porte **déjà** `reportDueAt`, dont le commentaire dit en toutes lettres *« Au-delà, le dépôt est REFUSÉ et les gains gelés »*. **L'écran ne consultait jamais ce champ.** Les 4 500 F affichés sont le net de la consultation du 28/08 trouvée immobilisée au chantier 64 : la fenêtre s'est fermée le 29/08, et l'écran d'administration le savait pendant que celui du soignant promettait un versement à un geste près. **Huitième occurrence** du motif, la première qui porte sur de l'argent que quelqu'un attend. Livré aussi : les trois montants passés de **26 px hors charte** à la voix de chiffre héros, la rangée qui cesse de s'étirer (269 px pour 51, 264 et 57 caractères), le **numéro sur lequel part l'argent de 14 → 20 px**, l'avertissement « jamais créditée » sorti du 11 px, et `restant()` dans `lib/temps.ts`. 📌 **Deux fautes injectées n'ont réveillé personne** — le numéro et le rabattement d'un futur à zéro — trouvées et corrigées. **web 811 ✓ (799 + 12) · 157 promesses, 116 retenues · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **73** | **Un lien qui arrive à la bonne page mais pas au bon endroit** — 10/09, **trouvé par le porteur** sur son propre écran. Le bouton « Modifier mon numéro » de C6 le déposait **en haut** de Réglages → Sécurité, devant « Adresse email » — le bloc du téléphone est plus bas. Il a cliqué, vu un écran sans rapport, et conclu que **la modification n'existait pas**. Elle existait depuis le chantier 67. Livré : `&bloc=telephone`, l'ancre sur le bloc, et le saut à l'arrivée. 📌 **Et la leçon du chantier** : la faute qui renomme l'ANCRE n'a réveillé personne — le lien pointait dans le vide et 76 tests passaient. Les deux moitiés de la règle vivent dans deux fichiers ; il fallait un test de chaque côté. **web 813 ✓ (811 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées après correction du filet.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -704,6 +705,50 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 73 (le lien de « Modifier mon numéro ») a appris
+
+*10/09/2026 — trois lignes de code, et deux leçons qui valent plus que ça.*
+
+#### ⚠️ Un lien qui arrive à la bonne PAGE mais pas au bon ENDROIT se lit comme un lien cassé
+
+Le porteur a demandé : *« pourquoi ceci ne passe pas, on ne peut pas modifier le numéro ? »*
+
+La fonction existait depuis le chantier 67, complète : double preuve, un code sur l'ancien numéro et
+un sur le nouveau. Le lien menait à la bonne page. **Mais il déposait le visiteur tout en haut de
+Réglages → Sécurité, devant « Adresse email »** — un bloc qui parle d'autre chose. Celui du téléphone
+est plus bas ; il fallait le chercher.
+
+Il a cliqué, vu un écran sans rapport, et conclu que la modification n'existait pas.
+
+*Une fonction qu'on n'atteint pas n'existe pas pour celui qui la cherche. C'est la même famille que
+« une capacité sans bouton » — sauf qu'ici le bouton était là, et qu'il visait trop court.*
+
+Corrigé comme sur « Ma vitrine » deux jours plus tôt : le lien vise le BLOC (`&bloc=telephone`), et
+la page saute à l'arrivée. Une query et non un fragment, parce que la section vit déjà dans la query
+et que `setSearchParams` la réécrit entièrement.
+
+#### ⚠️ Une règle qui vit en DEUX fichiers a besoin d'un test de chaque côté
+
+Deux fautes injectées. La première — le lien reperd son ancre — est tombée tout de suite.
+
+**La seconde n'a réveillé personne** : renommer l'ancre dans `SectionSecurite.tsx` laissait le lien
+pointer dans le vide, et **les 76 tests passaient**. Le test de C6 défend l'ADRESSE ; il ne voit rien
+de la CIBLE, qui vit dans un autre fichier.
+
+Un second test a donc été écrit du côté de la cible : le bloc porte bien l'ancre que C6 vise, et
+c'est bien le bloc du téléphone qu'elle désigne. Les deux ensemble rendent le lien indéformable.
+
+*Un lien est une règle en deux morceaux. Tester un seul morceau donne l'illusion de le tenir.*
+
+#### Ce que ce chantier dit de ma propre méthode
+
+Ce défaut ne pouvait pas venir de moi. Je mesure les tailles, les contrastes, les phrases qui
+disparaissent, et je vérifie que mes tests mordent — **mais je ne clique pas dans les écrans du
+porteur**. Un parcours qui s'arrête au milieu, un bouton qui vise trop court, une page qui s'ouvre
+au mauvais endroit : rien de tout cela n'apparaît dans une mesure.
+
+*Le porteur voit ce que la mesure ne voit pas. C'est une division du travail, pas un rattrapage.*
 
 ### Ce que le chantier 72 (C6 — Mes gains) a appris
 

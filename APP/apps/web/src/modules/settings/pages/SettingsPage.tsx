@@ -12,6 +12,7 @@
  * Cet écran est le seul du lot dont la moitié des blocs n'existaient pas côté serveur le 23/08/2026.
  * Chaque section porte en tête le détail de ce qui a été ajouté et de ce qui reste absent.
  */
+import { useEffect } from 'react'
 import { KeyRound, LifeBuoy, MonitorSmartphone, Scale, Settings2, SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { SectionLegal } from '../sections/SectionLegal'
@@ -57,7 +58,32 @@ export function SettingsPage() {
 
   // `replace` : naviguer entre les sections ne doit pas empiler quinze entrées dans l'historique, sans
   // quoi le bouton « retour » du navigateur ne ramènerait jamais à l'écran précédent.
+  // Il efface `bloc` au passage, et c'est voulu : on ne saute plus vers un bloc qu'on n'a pas demandé.
   const aller = (cle: CleSection) => setParams({ section: cle }, { replace: true })
+
+  /*
+    ── Amener au BLOC, et pas seulement à la page — chantier 73 ─────────────────────────────────
+
+    Trouvé par le porteur : « Modifier mon numéro », dans Mes gains, le déposait en haut de la page
+    Sécurité — devant « Adresse email », un bloc qui parle d'autre chose. Le bloc du téléphone est
+    plus bas. Il a cliqué, vu un écran sans rapport, et conclu que la modification n'existait pas ;
+    elle existait depuis le chantier 67.
+
+    *Un lien qui arrive à la bonne PAGE mais pas au bon ENDROIT se lit comme un lien cassé.*
+
+    Une QUERY (`&bloc=telephone`) et non un `#ancre` : la section vit déjà dans la query, et
+    `setSearchParams` la réécrit entièrement — un fragment y aurait survécu de façon fragile, et
+    aurait rejoué le saut à chaque changement d'onglet.
+
+    `scrollIntoView` est appelé avec `?.` : jsdom ne l'implémente pas, et un test qui monte cet
+    écran ne doit pas tomber sur une fonction absente.
+  */
+  const bloc = params.get('bloc')
+  useEffect(() => {
+    if (!bloc) return
+    const cible = document.getElementById(`bloc-${bloc}`)
+    cible?.scrollIntoView?.({ block: 'start' })
+  }, [bloc, active])
 
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col">
