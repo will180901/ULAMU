@@ -55,10 +55,30 @@ export class ReportService {
     }
     const pm30S = await this.params.getInt("PM-30");
     const now = new Date();
-    if (settled.status === CareSessionStatus.ENDED && !reportWindowOpen(settled.endedAt, pm30S, now.getTime())) {
-      // CU-06-03 : PM-30 dépassé sans compte-rendu → gains gelés (la capture n'aura pas lieu).
-      throw new ConflictException("Délai de dépôt dépassé : gains gelés — contactez le support");
-    }
+
+    /*
+      ── Hors délai : ACCEPTÉ, mais sans crédit (chantier 89, 11/09/2026) ────────────────────────
+
+      Jusqu'ici, passé PM-30, ce dépôt était **refusé définitivement** — par le professionnel comme
+      par quiconque : aucune route d'administration ne permettait de forcer.
+
+      Deux choses étaient perdues d'un coup, et une seule avait été décidée :
+
+        · les GAINS étaient gelés — c'est la sanction voulue par CU-06-03 ;
+        · le CARNET du patient ne recevait jamais le compte-rendu — **personne n'a décidé cela.**
+
+      Une consultation avait eu lieu, le patient avait payé, et la trace clinique manquait pour
+      toujours. *Une sanction qui vise l'argent ne doit pas emporter le dossier de santé d'un
+      tiers* — le patient n'a rien fait, et c'est lui qui perdait.
+
+      Décision du porteur, 11/09 : **séparer les deux.** Le dépôt passe, le crédit non.
+
+      ⚠️ Ce n'est PAS un assouplissement de CU-06-03 : les gains restent gelés exactement comme
+      avant, parce que c'est `capture()` qui crédite et qu'on ne l'appelle plus. La sanction est
+      entière ; seul le dossier du patient est sauvé.
+    */
+    const horsDelai =
+      settled.status === CareSessionStatus.ENDED && !reportWindowOpen(settled.endedAt, pm30S, now.getTime());
 
     let entryId = "";
     await this.prisma.$transaction(async (tx) => {
@@ -113,6 +133,39 @@ export class ReportService {
         context: { entryId },
       });
     });
+
+    /*
+      ⚠️ **Hors délai : on ne crédite PAS.** C'est ici, et nulle part ailleurs, que le gel des gains
+      prend effet — il n'existe aucun drapeau « gelé » en base. Les gains étaient gelés parce que le
+      dépôt n'avait jamais lieu ; ils le restent maintenant parce que le dépôt N'APPELLE PAS la
+      capture. *Le même effet, obtenu sans confisquer le dossier du patient.*
+
+      Le dépôt tardif est tracé et l'administration prévenue : un compte-rendu qui arrive après
+      l'échéance n'est pas un dépôt ordinaire, et l'équipe doit pouvoir trancher le sort de l'argent
+      en connaissance de cause — c'est elle qui a été alertée du retard.
+    */
+    if (horsDelai) {
+      await this.audit.emit(this.prisma, {
+        actorId: actor.accountId,
+        actorType: "professional",
+        action: "m06.report.deposited_late",
+        resource: `session:${sessionId}`,
+        context: { entryId, pm30S },
+      });
+      const admins = await this.prisma.adminRoleAssignment.findMany({ where: { role: "SUPER_ADMIN" } });
+      for (const admin of admins) {
+        await this.outbox.emit(this.prisma, {
+          type: "notify.request",
+          payload: {
+            accountId: admin.accountId,
+            template: "m06.report.deposited_late.admin",
+            sessionId,
+            professionalId: settled.professionalId,
+          },
+        });
+      }
+      return { sessionId, reportDepositedAt: now.toISOString(), entryId };
+    }
 
     // HORS transaction (C1, réseau/transactions propres à M13) : ordre de crédit —
     // capture() est IDEMPOTENTE (RM-13-04). En cas d'échec ici, le compte-rendu est

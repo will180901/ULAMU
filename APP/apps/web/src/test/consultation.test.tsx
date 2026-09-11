@@ -299,6 +299,78 @@ describe('C5 — le compte-rendu', () => {
     expect(await screen.findByText(/vos gains sont crédités/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Déposer le compte-rendu/ })).not.toBeInTheDocument()
   })
+
+  /*
+    ── Ce que le porteur a rencontré, et que l'écran promettait à tort (chantier 89) ────────────
+
+    L'avertissement disait : « Déposez tout de même : **le serveur tranchera** ». Le serveur ne
+    tranchait rien — il **refusait**, définitivement, et aucune administration ne pouvait forcer.
+    Le porteur l'a découvert en essayant de déposer son compte-rendu.
+
+    Depuis, le serveur accepte le dépôt tardif **sans créditer** : le dossier du patient est sauvé,
+    la sanction reste entière. La phrase doit dire cela, et rien d'autre.
+
+    ⚠️ **Le filet ne pouvait pas voir ce mensonge** : il recense les phrases qui énoncent une
+    LIMITE (jamais, aucun, ne… pas, seul, sans, refuse, interdit). Celle-ci **autorisait**. *Un
+    écran qui promet à tort qu'on PEUT envoie dans le mur aussi sûrement qu'un écran qui refuse à
+    tort.*
+  */
+  it('hors délai, il ne promet plus un arbitrage qui n’existe pas', async () => {
+    await monter(close(-336))
+    await ouvrir('Compte-rendu')
+
+    const avis = await screen.findByText(/Le délai de dépôt est dépassé/)
+    expect(avis).toHaveTextContent(/gelés et le resteront/)
+    expect(avis).toHaveTextContent(/il rejoindra le Carnet du patient/)
+    // La phrase qui mentait ne doit plus exister nulle part.
+    expect(screen.queryByText(/le serveur tranchera/)).not.toBeInTheDocument()
+  })
+
+  /* Et le bouton reste : le compte-rendu est attendu, et le serveur l'accepte désormais. */
+  it('et le bouton de dépôt reste offert', async () => {
+    await monter(close(-336))
+    await ouvrir('Compte-rendu')
+
+    expect(await screen.findByRole('button', { name: /Déposer le compte-rendu/ })).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Déposé APRÈS l'échéance, l'écran ne doit surtout pas annoncer des gains crédités : ils ne le
+    sont pas, et ils ne le seront pas. *Une phrase vraie neuf fois sur dix est un piège la dixième.*
+  */
+  it('déposé hors délai, il dit que les gains restent gelés', async () => {
+    await monter(
+      seance({
+        status: 'ENDED',
+        remainingSeconds: 0,
+        endedAt: '2026-08-24T08:32:00.000Z',
+        reportDueAt: '2026-08-25T08:32:00.000Z',
+        reportDepositedAt: '2026-08-28T09:00:00.000Z',
+      }),
+    )
+    await ouvrir('Compte-rendu')
+
+    expect(await screen.findByText(/vos gains restent gelés/i)).toBeInTheDocument()
+    expect(screen.getByText(/le dossier du patient est complet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/vos gains sont crédités/i)).not.toBeInTheDocument()
+  })
+
+  /* Et déposé DANS le délai, rien ne change : les gains sont bien crédités. */
+  it('déposé dans le délai, il annonce toujours les gains crédités', async () => {
+    await monter(
+      seance({
+        status: 'ENDED',
+        remainingSeconds: 0,
+        endedAt: '2026-08-24T08:32:00.000Z',
+        reportDueAt: '2026-08-25T08:32:00.000Z',
+        reportDepositedAt: '2026-08-24T09:00:00.000Z',
+      }),
+    )
+    await ouvrir('Compte-rendu')
+
+    expect(await screen.findByText(/vos gains sont crédités/i)).toBeInTheDocument()
+    expect(screen.queryByText(/restent gelés/i)).not.toBeInTheDocument()
+  })
 })
 
 describe('C5 — ce que le professionnel ne peut pas faire', () => {

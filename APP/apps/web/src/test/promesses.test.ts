@@ -487,16 +487,36 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
         motif: /Consultation ouverte[\s\S]{0,40}chiffré de bout en bout/,
       },
       {
-        quoi: 'passé le délai, le dépôt du compte-rendu est REFUSÉ et les gains sont gelés (CU-06-03)',
-        motif: /Passé ce délai[\s\S]{0,80}refusé/,
+        /*
+          ⚠️ Réécrite au chantier 89. Elle disait « le dépôt est REFUSÉ » — c'était vrai du serveur,
+          et faux de l'autre phrase du même écran, qui invitait à déposer quand même.
+
+          Le dépôt tardif est désormais accepté SANS crédit. Ce que l'écran doit promettre, c'est
+          donc le gel des gains — pas un refus qui n'existe plus.
+        */
+        quoi: 'passé le délai, les gains sont gelés définitivement (CU-06-03)',
+        // `\s+` entre les mots : la phrase est coupée par un retour à la ligne dans la source, et
+        // un motif qui exige une espace unique tombe à la première reformulation. Leçon du 09/09.
+        motif: /Passé ce délai[\s\S]{0,80}gelés\s+définitivement/,
       },
       {
         quoi: 'le délai ne court qu’à la fin de la séance — donc on rédige pendant',
         motif: /ne commence à courir qu'à la fin/,
       },
       {
-        quoi: 'délai dépassé : déposer quand même, le serveur tranche — on ne décourage pas',
-        motif: /Déposez tout de même/,
+        /*
+          ⚠️ **Cette entrée a tenu une phrase FAUSSE pendant des semaines, fidèlement.**
+
+          Elle vérifiait que l'écran dit « Déposez tout de même : le serveur tranchera ». L'écran le
+          disait ; le serveur, lui, REFUSAIT. Le test n'a jamais bronché, parce qu'il garde la
+          formulation, pas la vérité.
+
+          *Un test de promesse garantit qu'un écran continue de DIRE quelque chose. Il ne garantit
+          pas que ce soit vrai — cela, seul un test qui interroge le serveur peut le faire.* C'est
+          `m06.report-late.spec.ts` qui le fait désormais, côté API.
+        */
+        quoi: 'délai dépassé : le compte-rendu reste attendu et rejoint le Carnet — on ne décourage pas',
+        motif: /reste attendu[\s\S]{0,60}Carnet du patient/,
       },
     ],
   },

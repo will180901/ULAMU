@@ -501,6 +501,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 
 | 26 | **Le code de transfert d'un Carnet ne peut pas se dicter (née le 06/09, chantier 48).** Pour revendiquer son Carnet à sa majorité, le majeur doit recevoir de son tuteur **deux UUID** (`subProfileId` et `intentId`, 73 caractères réunis) puis un OTP à six chiffres. Le mobile les réduit à une seule chaîne partageable, et ça marche — **par SMS ou WhatsApp**. Mais le cas le plus fréquent est que les deux personnes soient **dans la même pièce**, et 73 caractères ne se dictent pas. **Issue** : que `claim/start` émette en plus un **code court** (8 caractères, durée de vie PM-17), stocké sur `SubProfileClaimIntent` et accepté par `claim` à la place de l'`intentId` — migration additive, ~2 h. **Recommandation : le faire**, c'est ce qui rend le geste utilisable sans réseau tiers. | ✅ **soldée le 06/09 (chantier 49)** — `SubProfileClaimIntent.shortCode`, huit signes d'un alphabet **sans aucune paire douteuse** (ni 0/O, ni 1/I/L, ni U — les DEUX membres de chaque paire exclus), migration additive, et une route `POST /sub-profiles/claim-by-code` **où le sous-profil n'est plus dans l'URL** : le code le désigne à lui seul. Le code est **effacé à la consommation** — un code servi cesse d'exister. Le chemin d'origine reste servi. |
 | 28 | **Le sélecteur d'emoji monte 1 867 boutons d'un coup (née le 11/09, chantier 81).** Découvert par deux tests du chantier 80 qui dépassaient les 15 s communs **sous charge** — seuls, ils passent largement. `SelecteurEmoji` rend la totalité des huit catégories dès l'ouverture : 1 867 `<span>` portant chacun un style calculé. ⚠️ **Le chiffre mesuré ici n'est pas le coût réel** : jsdom est beaucoup plus lent qu'un vrai navigateur pour poser des styles, et le test exagère donc la dépense. Mais il pointe une chose vraie — l'appareil du produit est un **Android d'entrée de gamme**, et c'est là que le coût se paierait, à chaque ouverture du sélecteur. **Deux issues** : (a) **ne monter une catégorie que lorsqu'elle entre à l'écran** (observateur d'intersection, ~1 h) — il faudra un repli pour jsdom, qui n'en a pas ; (b) **mesurer d'abord sur un vrai appareil** et ne rien changer si le coût est invisible. **Recommandation : (b) avant (a)** — on ne complique pas un écran sur la foi d'un chiffre de jsdom. Les deux tests portent en attendant un délai de 30 s et la raison écrite. | ⏸ ouverte |
+| 29 | **Le filet surveille ce que les écrans INTERDISENT, jamais ce qu'ils PERMETTENT (née le 11/09, chantier 89).** `promesses-sans-filet.py` recense les phrases portant un vocabulaire de refus — *jamais, aucun, impossible, ne… pas, seul, sans, refuse, interdit*. La phrase « Déposez tout de même : le serveur tranchera » n'en portait aucun : **elle autorisait**. Elle est restée fausse des semaines sans jamais entrer dans l'inventaire. ⚠️ *Un écran qui promet à tort qu'on PEUT envoie l'utilisateur dans le mur aussi sûrement qu'un écran qui refuse à tort* — et le second est surveillé, le premier non. **Deux issues** : (a) **étendre les marqueurs** aux verbes de permission (*peut, pourra, il suffit, déposez, vous pourrez, sera accepté*) — une heure, mais l'inventaire grossira beaucoup et la part « nue » avec lui ; (b) **accepter que l'inventaire ne couvre que les refus** et compter sur `promesses.test.ts` pour le reste — sauf que cette liste-là est écrite à la main, donc elle ne trouve que ce qu'on y met. **Recommandation : (a)**, en mesurant d'abord combien de phrases entrent, pour que le porteur voie le coût avant de décider. | ⏸ ouverte |
 
 | 27 | **Aucun client ne peut lire un paramètre métier (née le 06/09, chantier 48).** Les PM-xx ne sortent que par `GET /v1/admin/parameters`, réservé au super-administrateur. Conséquence constatée sur l'écran du Carnet familial : l'application **ne peut pas savoir à quel âge un transfert devient possible** (PM-16). Elle propose donc le geste à tous et laisse le serveur refuser en nommant l'âge — correct, mais l'utilisateur découvre la règle par un refus. ⚠️ **Recopier la valeur serait pire** : l'écran mentirait le jour où le paramètre change, et c'est exactement la dérive que le projet combat. **Issue** : une route publique en LECTURE SEULE sur une **liste blanche** de paramètres non sensibles (PM-16 l'âge, PM-13 l'échelle de notation, PM-07 le délai de confirmation) — ~1 h. **Recommandation : le faire** ; d'autres écrans buteront sur la même chose. | ✅ **soldée le 06/09 (chantier 49)** — `GET /v1/parameters`, publique, en lecture seule, bornée à une **liste blanche de trois clés ouvertes une par une avec leur raison** (PM-16, PM-13, PM-07). Publique et non authentifiée à dessein : l'âge minimum est opposé au visiteur AVANT toute session. **Employée aussitôt** là où la dette est née — l'écran du Carnet familial lit l'âge requis et grise les personnes trop jeunes ; si la lecture échoue, **il ne bloque rien** et laisse le serveur trancher. |
 
@@ -673,6 +674,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **86** | **La mise en forme d'un message — bulle sur la sélection, listes, web ET mobile** — 11/09, demande du porteur : *« une bulle au-dessus du texte sélectionné, avec gras, italique, barré, souligné, taille, et transformer en liste ; Ctrl+Entrée continue la liste ; supprimer la ligne courante annule la suite »*. Livré **en entier**, et **dans les deux applications au même commit** — sans le mobile, le patient lirait « *prenez ce médicament* » avec ses astérisques pendant que le soignant croirait avoir insisté. 📌 **Une grammaire, trois copies, un garde-fou** : la source est `packages/shared/src/texte-riche.ts`, vendorée selon la convention du projet — mais **rien ne vérifiait jusqu'ici qu'une copie ne dérive pas**. Un test compare désormais les trois **à l'octet près**. ⚠️ **La règle qui protège le vocabulaire du soin** : un marqueur n'ouvre qu'en début de mot et ne ferme qu'en fin de mot — sans elle, `nom_de_famille` deviendrait « nomdefamille » avec « de » en italique. WhatsApp ne pose pas cette règle ; ici le texte est un dossier. **Le champ reste un vrai champ de texte** (il montre `*gras*`) : un éditeur qui stylise en direct manipulerait du HTML dans un message qui porte des données de santé. **web 966 ✓ · lint 0 · builds et types propres · 9 fautes injectées, 9 détectées.** | ⏸ en attente | ⏸ |
 | **87** | **La mise en forme PARTOUT, et quatre tests qui ne gardaient rien** — 11/09. Le porteur essaie la sélection dans le compte-rendu : rien. *« Il faut ce type de sélection partout dans les interfaces où il y a des champs de saisie texte. »* J'avais restreint la bulle au seul composeur au chantier 86, **et j'avais tort de décider pour lui**. Elle est désormais montée **une fois dans la coquille** et s'attache d'elle-même aux **vingt-trois** zones de saisie, sans câblage écran par écran : elle écrit par le **setter natif** puis émet un vrai `input`, donc aucun écran n'a à la connaître. Le composeur perd son chemin particulier — *deux chemins pour la même fonction finissent toujours par diverger*. 📌 **Ouvrir une écriture ouvre une lecture** : le compte-rendu ressort dans le **Carnet du patient**, qui rend maintenant la même grammaire — sans quoi soignant et patient reliraient des astérisques dans un dossier de santé. ⚠️ **Quatre des six fautes injectées n'ont réveillé personne** : `waitFor(… not.toBeInTheDocument)` réussit **au premier instant**, avant que la chose ait eu le temps d'apparaître. Tests refaits, les six tombent. **web 975 ✓ · lint 0 · build et types propres · 6 fautes injectées, 6 détectées après correction des tests.** | ⏸ en attente | ⏸ |
 | **88** | **L'ordonnance rend les marqueurs — et le nom du médicament, non** — 11/09, le premier des trois restes du chantier 87, et **le seul qui touche à la sécurité**. Depuis que la bulle s'attache à toute zone de saisie, la **posologie** en fait partie : sans rendu, un médecin qui écrit « *matin et soir* » verrait ses astérisques, **et le patient aussi, sur une instruction de médicament**. Posologie et motif d'annulation rendus **des deux côtés** (web et mobile). 📌 **La règle qui décide, et qui vaudra pour les écrans suivants** : *on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.* Donc **non** pour le nom d'un médicament hors référentiel, qui est une ligne SIMPLE : la bulle n'y va pas, un astérisque tapé là est un astérisque **voulu**, et le transformer reviendrait à réécrire ce que le médecin a nommé — sur la seule ligne d'ordonnance qu'aucun garde-fou ne relit. Le composant de rendu prend le même nom des deux côtés (`TexteMisEnForme`). **web 979 ✓ · lint 0 · build et types propres (web et mobile) · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+| **89** | **Le compte-rendu tardif : accepté, sans crédit — et deux promesses contraires sur le même écran** — 11/09, **trouvé par le porteur**, qui n'arrivait pas à déposer son compte-rendu. 📌 **Le serveur refusait le dépôt passé PM-30, définitivement, et personne ne pouvait forcer** : aucune route d'administration. Deux choses étaient perdues d'un coup, et une seule avait été décidée — les **gains gelés** (sanction voulue, CU-06-03) et le **Carnet du patient privé du compte-rendu** (*personne n'a décidé cela*). Décision du porteur : séparer les deux. Le dépôt passe, `capture()` n'est plus appelée, la sanction reste entière. ⚠️ **Et l'écran promettait une chose ET son contraire** : avant l'échéance « le dépôt est refusé », après « Déposez tout de même : le serveur tranchera ». **Chacune avait son test** dans `promesses.test.ts` — *un test de promesse garantit qu'un écran continue de DIRE quelque chose, jamais que ce soit vrai.* 📌 Ma faute du chantier 84 nommée : j'avais lu la transaction sans lire le garde-fou six lignes au-dessus, et j'avais écrit ma conclusion fausse en commentaire. Ouvre la **dette n°29**. **web 983 ✓ · API unitaires 648 ✓ (+7) · lint 0 · builds et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -721,6 +723,94 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 89 (le compte-rendu tardif) a appris
+
+*11/09/2026 — un test peut tenir fidèlement une phrase fausse.*
+
+#### Ce que le porteur a rencontré
+
+Il essaie de déposer le compte-rendu du 28/08. L'écran l'y invite : *« Déposez tout de même : le
+serveur tranchera. »* Le serveur répond : **« Délai de dépôt dépassé : gains gelés — contactez le
+support. »**
+
+#### Deux choses perdues d'un coup, une seule décidée
+
+Passé PM-30, le dépôt était refusé **définitivement**, et j'ai vérifié : **aucune route
+d'administration ne permettait de forcer**. Il n'existait aucun recours, pour personne.
+
+| Ce qui était perdu | Décidé ? |
+|---|---|
+| Les **gains** du soignant | **Oui** — c'est la sanction de CU-06-03 |
+| Le **compte-rendu dans le Carnet du patient** | **Non** — personne n'a jamais décidé cela |
+
+Une consultation avait eu lieu, le patient avait payé, et la trace clinique manquait pour toujours.
+*Une sanction qui vise l'argent ne doit pas emporter le dossier de santé d'un tiers — le patient
+n'a rien fait, et c'est lui qui perdait.*
+
+Décision du porteur : **séparer les deux.** Le dépôt passe, `capture()` n'est plus appelée. La
+sanction est entière — il n'existe aucun drapeau « gelé » en base, les gains étaient gelés parce que
+le dépôt n'avait pas lieu, ils le restent parce que le dépôt ne crédite plus.
+
+#### ⚠️ L'écran promettait une chose ET son contraire
+
+C'est la découverte du chantier, et elle dépasse ce défaut-ci :
+
+| Quand | Ce que l'écran disait |
+|---|---|
+| **Avant** l'échéance | « Passé ce délai, **le dépôt est refusé** et vos gains sont gelés. » |
+| **Après** l'échéance | « **Déposez tout de même** : le serveur tranchera. » |
+
+**Deux promesses contraires sur la même règle, dans le même fichier, à cent lignes l'une de
+l'autre.** Et chacune avait **son entrée dans `promesses.test.ts`**, verte depuis des semaines.
+
+*Deux promesses contraires peuvent coexister très longtemps si on ne les lit jamais ensemble :
+chacune est vraie dans sa branche, et aucun test ne compare les branches.*
+
+#### La leçon qui vaut pour tout le filet
+
+L'entrée n°498 vérifiait que l'écran dit « Déposez tout de même ». L'écran le disait. **Le test n'a
+jamais bronché — parce qu'il garde la FORMULATION, pas la VÉRITÉ.**
+
+> **Un test de promesse garantit qu'un écran continue de dire quelque chose. Il ne garantit pas que
+> ce soit vrai. Seul un test qui interroge le serveur peut le faire.**
+
+C'est `m06.report-late.spec.ts` qui le fait désormais : il monte `ReportService` avec des doublures
+et regarde la seule chose qui compte — **`capture()` est-il appelé ?**
+
+*(Et j'avais d'abord dit au porteur que « le filet ne pouvait pas voir » cette phrase. C'était vrai
+de l'INVENTAIRE — `promesses-sans-filet.py` ne cherche que le vocabulaire du refus — et faux de la
+LISTE écrite à la main, qui la tenait. Corrigé devant lui.)*
+
+#### Ma faute du chantier 84, nommée
+
+En écrivant la bande d'échéance, j'avais mis « Il reste dû » et un bouton « Déposer », avec ce
+commentaire : *« le serveur accepte encore un dépôt tardif »*. **Faux.** J'avais lu la transaction
+qui enregistre — elle accepte les séances ENDED — sans lire le garde-fou **six lignes au-dessus**
+qui refuse tout passé le délai.
+
+*Lire la ligne qui fait le travail ne suffit pas : il faut lire ce qui la garde. Et une conclusion
+fausse écrite en commentaire se transmet à tous ceux qui la liront ensuite.*
+
+#### Le piège d'outillage du jour
+
+Les fichiers du **serveur sont en CRLF**, ceux du web en LF. Mes ancres d'injection multi-lignes ne
+correspondaient à rien côté API, et le script annonçait « ancre introuvable » alors que le code
+était exactement là. **Tout script qui compare du texte entre les deux applications doit normaliser
+les fins de ligne avant de chercher, et les rendre en écrivant.**
+
+#### Les mesures
+
+| | |
+|---|---|
+| Tests web | 983 ✓ |
+| Tests unitaires API | **648 ✓** (+7, dont « ne crédite PAS ») |
+| Promesses nues | 41 → **40** |
+| Fautes injectées | **5**, dont 3 côté serveur — 5 détectées |
+
+⚠️ **Ce que je n'ai pas pu vérifier** : les tests d'intégration du serveur n'ont pas de base de test
+sur ce poste. D'où le test à doublures — écrit précisément parce que ce changement touche à
+l'argent et ne pouvait pas partir sans preuve.
 
 ### Ce que le chantier 88 (l'ordonnance) a appris
 

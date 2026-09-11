@@ -1104,9 +1104,33 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
   })
 
   if (session.reportDepositedAt) {
+    /*
+      ── Déposé DANS le délai, ou après : ce n'est pas la même chose (chantier 89) ───────────────
+
+      Depuis le 11/09, un compte-rendu tardif est ACCEPTÉ — il rejoint le Carnet du patient — mais
+      il **ne crédite pas** les gains : la sanction de CU-06-03 reste entière.
+
+      L'écran doit donc distinguer les deux, sans quoi un soignant verrait « vos gains sont
+      crédités » alors qu'ils ne le sont pas. *Une phrase vraie neuf fois sur dix est un piège la
+      dixième.*
+
+      Les deux dates viennent du serveur : on compare ce qu'il a écrit, on ne recalcule rien.
+    */
+    const depotTardif =
+      session.reportDueAt !== null &&
+      new Date(session.reportDepositedAt).getTime() > new Date(session.reportDueAt).getTime()
     return (
-      <Carte icone={FileText} titre="Compte-rendu" sousTitre="Déposé — vos gains sont crédités">
-        <Avis ton="succes">Compte-rendu déposé le {new Date(session.reportDepositedAt).toLocaleString('fr-FR')}.</Avis>
+      <Carte
+        icone={FileText}
+        titre="Compte-rendu"
+        sousTitre={depotTardif ? 'Déposé hors délai — vos gains restent gelés' : 'Déposé — vos gains sont crédités'}
+      >
+        <Avis ton={depotTardif ? 'alerte' : 'succes'}>
+          Compte-rendu déposé le {new Date(session.reportDepositedAt).toLocaleString('fr-FR')}.
+          {depotTardif
+            ? " Il est arrivé après l'échéance : le dossier du patient est complet, mais les gains de cette séance ne sont pas crédités. L'administration en a été informée."
+            : ''}
+        </Avis>
       </Carte>
     )
   }
@@ -1133,9 +1157,24 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
     >
       {echeance ? (
         depasse ? (
+          /*
+            ⚠️ **Corrigé le 11/09 (chantier 89) — cette phrase mentait.**
+
+            Elle disait « Déposez tout de même : le serveur tranchera ». Le serveur ne tranchait
+            rien : il **refusait**, définitivement, et aucune administration ne pouvait forcer. Le
+            porteur s'y est heurté en essayant de déposer, et c'est lui qui l'a signalé.
+
+            Le serveur accepte désormais le dépôt tardif sans créditer (chantier 89). La phrase dit
+            donc exactement ce qui va se passer : le dossier est sauvé, l'argent reste gelé.
+
+            *Une phrase d'écran n'est vraie que tant que le serveur la tient. Celle-ci avait cessé
+            de l'être sans que personne ne la relise — et le filet ne pouvait pas la voir : il
+            surveille ce que les écrans INTERDISENT, jamais ce qu'ils permettent.*
+          */
           <Avis ton="erreur">
-            Le délai de dépôt est dépassé depuis le {echeance.toLocaleString('fr-FR')}. Vos gains sont
-            gelés et l'administration a été alertée. Déposez tout de même : le serveur tranchera.
+            Le délai de dépôt est dépassé depuis le {echeance.toLocaleString('fr-FR')}. Les gains de
+            cette séance sont gelés et le resteront — l'administration en a été informée. Le
+            compte-rendu, lui, reste attendu : déposez-le, il rejoindra le Carnet du patient.
           </Avis>
         ) : (
           <div
@@ -1161,9 +1200,24 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
               >
                 {dureeFr(resteS ?? 0)} pour déposer
               </span>
+              {/*
+                ⚠️ **Corrigée le 11/09 (chantier 89) — elle contredisait l'autre.**
+
+                AVANT l'échéance, cette phrase annonçait « le dépôt est refusé ». APRÈS l'échéance,
+                l'avertissement disait « déposez tout de même ». **Le même écran promettait une
+                chose et son contraire**, selon le moment où on le regardait — et chacune des deux
+                avait son test dans `promesses.test.ts`.
+
+                *Deux promesses contraires peuvent coexister très longtemps si on ne les lit jamais
+                ensemble : chacune est vraie dans sa branche, et aucun test ne compare les branches.*
+
+                Le serveur, lui, n'en tenait qu'une. Depuis le chantier 89 il n'en tient plus aucune
+                des deux telles quelles : le dépôt passe, le crédit non. Les deux phrases disent
+                maintenant cela.
+              */}
               <span className="block text-[11px] text-[var(--texte-secondaire)]">
-                Jusqu'au {echeance.toLocaleString('fr-FR')}. Passé ce délai, le dépôt est refusé et vos
-                gains sont gelés.
+                Jusqu'au {echeance.toLocaleString('fr-FR')}. Passé ce délai, vos gains sont gelés
+                définitivement — le compte-rendu restera attendu, mais il ne les débloquera plus.
               </span>
             </span>
           </div>
