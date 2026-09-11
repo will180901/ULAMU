@@ -1316,6 +1316,54 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     expect(await screen.findByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'true')
   })
 
+  /*
+    ── Trouvé EN LIGNE sur une consultation réelle du porteur (chantier 84) ─────────────────────
+
+    L'onglet disait « expiré » pendant que la bande annonçait « moins d'une minute restantes », et
+    que la carte juste en dessous disait « le délai est dépassé depuis le 29/08, vos gains sont
+    gelés ». **Trois affichages du même fait, dont deux qui se contredisaient.**
+
+    La cause tenait dans un `Math.max(0, …)` : un plancher à zéro transforme « dépassé de deux
+    semaines » en « zéro seconde », c'est-à-dire en « moins d'une minute ». **Un plancher n'est pas
+    une protection quand il fabrique une valeur fausse au lieu de dire qu'il n'y en a pas.**
+
+    Ce n'est pas cosmétique : ce délai décide du paiement (CU-06-03). Annoncer « il reste moins
+    d'une minute » à un soignant dont les gains sont gelés depuis deux semaines, c'est lui faire
+    croire qu'il peut encore les sauver.
+  */
+  it('le délai passé, la bande le DIT — elle n’annonce pas « moins d’une minute »', async () => {
+    await monter(close(-336))
+
+    const bande = await screen.findByRole('button', { name: /Compte-rendu hors délai/ })
+    expect(bande).toHaveTextContent(/vos gains sont gelés/)
+    expect(bande).not.toHaveTextContent(/moins d’une minute/)
+    expect(bande).not.toHaveTextContent(/il reste [0-9]/)
+    // Et il reste un chemin : le serveur accepte encore un dépôt tardif, le compte-rendu reste dû.
+    expect(bande).toHaveTextContent('Déposer')
+  })
+
+  /*
+    ⚠️ La garantie qui compte vraiment : la BANDE et l'ONGLET lisent la même échéance, donc ils ne
+    peuvent plus se contredire. C'est la seule protection durable — deux endroits qui calculent la
+    même chose finissent toujours par ne plus dire la même chose.
+  */
+  it('la bande et l’onglet disent la MÊME chose — ils lisaient deux horloges', async () => {
+    await monter(close(-336))
+
+    expect(await screen.findByRole('tab', { name: /Compte-rendu.*expiré/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /hors délai/ })).toBeInTheDocument()
+    // Aucun des deux ne doit laisser entendre qu'il reste du temps.
+    expect(screen.queryByRole('button', { name: /à déposer — il reste/ })).not.toBeInTheDocument()
+  })
+
+  it('et tant que le délai court, elle annonce le temps qui reste', async () => {
+    await monter(close(6))
+
+    const bande = await screen.findByRole('button', { name: /Compte-rendu à déposer/ })
+    expect(bande).toHaveTextContent(/il reste 6 h/)
+    expect(bande).toHaveTextContent('Rédiger')
+  })
+
   /* Déposé, il n'y a plus d'échéance : la bande disparaît au lieu de réclamer un travail fait. */
   it('la bande disparaît une fois le compte-rendu déposé', async () => {
     await monter(seance({ status: 'ENDED', remainingSeconds: 0, reportDepositedAt: '2026-08-24T09:00:00.000Z' }))

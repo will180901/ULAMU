@@ -1518,11 +1518,39 @@ export function ConsultationPage() {
     ⚠️ L'échéance vient du SERVEUR (`reportDueAt`, RM-06-02). L'horloge de ce poste n'est
     qu'indicative, et un soignant qui croirait son navigateur pourrait déposer trop tard.
   */
+  /*
+    ── L'échéance, lue UNE SEULE FOIS — chantier 84, 11/09/2026 ─────────────────────────────────
+
+    ⚠️ **Corrigé après vérification en ligne, sur une consultation réelle du porteur.** L'onglet
+    disait « **expiré** » pendant que la bande, trois centimètres plus bas, annonçait « moins d'une
+    minute **restantes** » — et la carte, juste en dessous, « le délai est dépassé depuis le
+    29/08/2026, vos gains sont gelés ». **Trois affichages du même fait, dont deux qui se
+    contredisaient.**
+
+    La cause : la bande recalculait le temps restant de son côté, avec un `Math.max(0, …)` qui
+    transforme silencieusement « dépassé de deux semaines » en « zéro seconde », c'est-à-dire en
+    « moins d'une minute ». Un plancher à zéro n'est pas une protection : **il fabrique une valeur
+    fausse au lieu de dire qu'il n'y en a pas.**
+
+    *Deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose.*
+    L'échéance est donc lue ici, une fois, et les deux affichages la consomment.
+
+    Ce n'est pas cosmétique : ce délai décide du paiement (CU-06-03, gains gelés). Annoncer « il
+    reste moins d'une minute » à un soignant dont les gains sont gelés depuis deux semaines, c'est
+    lui faire croire qu'il peut encore les sauver.
+  */
+  const echeanceCompteRendu = ((): { secondes: number; depasse: boolean } | null => {
+    if (s.reportDepositedAt || !s.reportDueAt) return null
+    // ⚠️ Pas de plancher à zéro : une valeur NÉGATIVE est l'information, pas une anomalie à corriger.
+    const secondes = Math.floor((new Date(s.reportDueAt).getTime() - Date.now()) / 1000)
+    return { secondes, depasse: secondes <= 0 }
+  })()
+
   const marqueCompteRendu = ((): MarqueOnglet | undefined => {
     if (s.reportDepositedAt) return { texte: 'déposé', ton: 'succes' }
-    if (!s.reportDueAt) return undefined
-    const restant = Math.floor((new Date(s.reportDueAt).getTime() - Date.now()) / 1000)
-    if (restant <= 0) return { texte: 'expiré', ton: 'urgence' }
+    if (!echeanceCompteRendu) return undefined
+    if (echeanceCompteRendu.depasse) return { texte: 'expiré', ton: 'urgence' }
+    const restant = echeanceCompteRendu.secondes
     const heures = Math.floor(restant / 3600)
     return {
       texte: heures >= 1 ? `${heures} h` : `${Math.max(1, Math.round(restant / 60))} min`,
@@ -1975,7 +2003,7 @@ export function ConsultationPage() {
                 La bande reste donc visible quel que soit l'onglet ouvert, et **elle conduit à la
                 carte** : une alerte qui ne mène nulle part ne fait qu'inquiéter.
               */
-              !s.reportDepositedAt && s.reportDueAt && !active ? (
+              echeanceCompteRendu && !active ? (
                 <button
                   type="button"
                   onClick={() => aller('compte-rendu')}
@@ -1988,9 +2016,20 @@ export function ConsultationPage() {
                 >
                   <AlertTriangle size={13} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
                   <span className="min-w-0 flex-1">
-                    Compte-rendu à déposer — {dureeFr(Math.max(0, Math.floor((new Date(s.reportDueAt).getTime() - Date.now()) / 1000)))} restantes.
+                    {echeanceCompteRendu.depasse
+                      ? 'Compte-rendu hors délai — vos gains sont gelés. Il reste dû.'
+                      : `Compte-rendu à déposer — il reste ${dureeFr(echeanceCompteRendu.secondes)}.`}
                   </span>
-                  <span className="shrink-0 font-semibold underline">Rédiger</span>
+                  {/*
+                    Le mot d'action change avec la situation : on ne « rédige » pas une chose en
+                    retard de la même façon qu'une chose à venir. Et il reste un chemin dans les
+                    deux cas — le serveur accepte encore un dépôt tardif, et le compte-rendu reste
+                    obligatoire (D-021). Retirer le bouton parce que c'est trop tard laisserait un
+                    soignant devant un reproche sans issue.
+                  */}
+                  <span className="shrink-0 font-semibold underline">
+                    {echeanceCompteRendu.depasse ? 'Déposer' : 'Rédiger'}
+                  </span>
                 </button>
               ) : null
             }

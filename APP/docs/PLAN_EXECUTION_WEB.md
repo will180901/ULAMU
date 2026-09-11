@@ -668,6 +668,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **81** | **C5 — le menu jusque sur l'archive, et une ligne qui se contredisait** — 11/09, deux demandes du porteur et un défaut lu sur SA capture d'écran. **(1)** Une séance close offrait un **bouton nu** « signaler » posé sur la bulle, là où tous les autres gestes vivent dans un menu : *deux grammaires sur le même écran*, et celle de l'archive était la plus rare. Elle reçoit le **même menu**, réduit à ce qui reste permis. 📌 **Et le menu a révélé un geste qui manquait** : « Copier le texte » est parfaitement légitime sur une archive — copier ne modifie rien, et c'est précisément après coup, en rédigeant le compte-rendu, qu'on veut reprendre mot pour mot ce qui a été dit. Sur ses PROPRES messages une archive n'offrait **rien du tout** ; elle offre la copie. *Un bouton ne porte qu'un geste : c'était le contenant qui limitait le produit.* **(2)** Le fil annonçait « **Consultation ouverte** » pendant que la pastille au-dessus affichait « **Terminée** » — deux états contraires à trois centimètres l'un de l'autre. La phrase de la maquette avait été recopiée **sans sa condition** (chantier 76), et aucun test ne la lisait. Ouvre la **dette n°27** (le sélecteur monte 1 867 boutons d'un coup). **web 893 ✓ (889 + 4) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **82** | **C5 — la poignée entre DANS la bulle, sans cadre** — 11/09, demande du porteur : *« petit, incrusté dans la bulle, à droite horizontalement et en haut verticalement, sans background »*. 📌 **Ce qui la rendait lourde n'était plus utile** : jusqu'au chantier 80 cette poignée était une BARRE de quatre boutons, et le cadre, le fond et l'ombre servaient à les tenir ensemble. Depuis que tout vit dans un seul menu, il ne restait qu'un chevron de 14 px au milieu d'une boîte bordée — **un cadre autour d'un seul objet, c'est-à-dire du bruit.** ⚠️ **Et le déplacement efface un contournement entier** : la barre était posée À CÔTÉ de la bulle (`left-full`), débordait de 73 px sur un téléphone et laissait le fil se tirer latéralement de 34 px (mesuré à 375 px au chantier 21) ; il avait fallu une règle `lg:` pour la rapatrier. **Posée DANS la bulle, elle ne peut plus déborder de rien : la règle disparaît.** *Un défaut de placement se contourne ; un bon placement n'a rien à contourner.* Sur écran TACTILE, où la poignée est permanente faute de survol, la bulle lui réserve sa place — et seulement s'il existe un menu. **web 895 ✓ (893 + 2) · lint 0 · build ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **83** | **C5 — deux zones fixes, et le rail devient un jeu d'onglets nommés** — 11/09, demande du porteur : *« la zone des messages fixe, le scroll à l'intérieur ; la zone de droite fixe aussi, avec une pagination et deux flèches »* — puis *« propose 10 000 fois mieux, et donne les raisons »*. **Les flèches sont gardées AU CLAVIER** (`←`/`→`, motif ARIA complet) et remplacées à l'écran par des **onglets nommés** : *une flèche est un excellent raccourci, c'est un mauvais menu*. 📌 **La raison décisive** : le compte-rendu a 24 h (PM-30) et les gains sont **gelés** passé ce délai (CU-06-03) — derrière trois clics de flèche, un soignant peut fermer une consultation sans jamais voir qu'il lui reste six heures. *Une information qui porte une échéance ne doit jamais dépendre d'un clic.* L'onglet porte donc sa **marque** (« 3 h », « déposé », le nombre d'ordonnances, « clos »), une **bande d'échéance reste visible quel que soit l'onglet ouvert et CONDUIT à la carte**, et le rail **s'ouvre tout seul sur ce qui presse** sans jamais bousculer un choix mémorisé. ⚠️ Corrige au passage un vrai défaut : le fil était bloqué à **46 % de la hauteur de l'écran** quelle que soit sa taille. **web 907 ✓ (895 + 12) · paquet 997 → 1 002 Ko · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **84** | **C5 — le plancher à zéro qui fabriquait une fausse échéance** — 11/09, trouvé **en ligne, sur la consultation réelle du porteur**, une heure après avoir livré le chantier 83. L'onglet disait « **expiré** », la bande trois centimètres plus bas « **moins d'une minute restantes** », et la carte juste en dessous « le délai est dépassé depuis le 29/08/2026, vos gains sont gelés ». **Trois affichages du même fait, dont deux qui se contredisaient.** 📌 **La cause : un `Math.max(0, …)`.** Un plancher à zéro transforme « dépassé de deux semaines » en « zéro seconde », donc en « moins d'une minute » — *un plancher n'est pas une protection quand il fabrique une valeur fausse au lieu de dire qu'il n'y en a pas.* ⚠️ Ce délai décide du **paiement** (CU-06-03) : annoncer qu'il reste une minute à un soignant dont les gains sont gelés depuis deux semaines, c'est lui faire croire qu'il peut encore les sauver. L'échéance est désormais lue **une seule fois** et consommée par les deux affichages — *deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose.* **web 910 ✓ (907 + 3) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -716,6 +717,67 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 84 (le plancher à zéro) a appris
+
+*11/09/2026 — une heure après avoir livré le 83, en le regardant tourner pour de vrai.*
+
+#### Trois affichages, deux mensonges
+
+Sur la consultation réelle du porteur — close le 28/08, compte-rendu jamais déposé :
+
+| Où | Ce qui était dit |
+|---|---|
+| L'onglet | « Compte-rendu **expiré** » ✅ |
+| La bande d'échéance | « Compte-rendu à déposer — **moins d'une minute restantes** » ❌ |
+| La carte, juste en dessous | « Le délai est dépassé depuis le 29/08/2026. Vos gains sont gelés. » ✅ |
+
+Deux affirmations contraires à trois centimètres l'une de l'autre, et la fausse était celle que je
+venais d'écrire.
+
+#### ⚠️ La cause tenait dans `Math.max(0, …)`
+
+J'avais planché le temps restant à zéro pour « éviter un nombre négatif ». Mais **le nombre négatif
+était l'information.** Le plancher ne l'a pas protégée : il l'a remplacée par une valeur fausse —
+zéro seconde, que le format rend en « moins d'une minute ».
+
+*Un plancher n'est pas une protection quand il fabrique une valeur au lieu de dire qu'il n'y en a
+pas.* Le cas « dépassé » n'est pas un cas limite du cas « il reste du temps » : c'est un autre cas,
+et il demande une autre phrase.
+
+Et ce n'est pas cosmétique. Ce délai décide du **paiement** (CU-06-03, gains gelés) : annoncer « il
+reste moins d'une minute » à un soignant dont les gains sont gelés depuis deux semaines, c'est lui
+faire croire qu'il peut encore les sauver.
+
+#### La correction n'est pas la phrase, c'est la source
+
+On aurait pu corriger la phrase. La vraie correction est ailleurs : **la bande recalculait l'échéance
+de son côté** au lieu de lire celle de l'onglet. Deux horloges, donc deux vérités possibles.
+
+L'échéance est maintenant lue **une seule fois**, et les deux affichages la consomment. Un test
+l'exige explicitement : la bande et l'onglet doivent dire la même chose.
+
+*Deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose. La
+seule protection durable n'est pas de les corriger : c'est de n'en garder qu'un.*
+
+#### Ce que la série 79 → 84 raconte
+
+Quatre défauts d'affilée, tous trouvés **en regardant l'écran en vrai**, aucun par les tests :
+
+| | Ce qui était faux |
+|---|---|
+| **79** | Les emoji des réactions n'étaient pas ceux des messages |
+| **81** | Le fil disait « ouverte » sur une séance terminée |
+| **82** | Un cadre entourait un bouton unique (porteur) |
+| **84** | La bande promettait du temps à qui n'en a plus |
+
+Trois sur quatre sont des **contradictions internes** : deux endroits de l'écran affirmant des
+choses incompatibles. Aucune n'est un défaut de logique — chaque morceau, seul, était juste.
+
+*Ce qu'on relit, on le relit tel qu'on voulait qu'il soit. Seul l'écran en vrai état le dément — et
+il faut le regarder avec de VRAIES données, pas celles qu'on a choisies pour le test.*
+
+Deux fautes injectées, deux détectées.
 
 ### Ce que le chantier 83 (le rail à onglets) a appris
 
