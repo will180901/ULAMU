@@ -663,6 +663,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **77** | **C4 — le registre paginé, et les gestes qui étaient enfermés** — 11/09, chantier C du plan de la consultation, **demandé en propres termes par le porteur** (« tableau avec pagination, et un bouton d'action sur chaque ligne pour les fonctionnalités secondaires »). Chaque ligne n'offrait qu'un bouton : **voir une ordonnance, l'annuler, signaler un patient** obligeaient à ENTRER dans la consultation pour en ressortir — trois capacités qui existent toutes côté serveur. Livré : le tableau **paginé** (quinze lignes), un menu **⋯** par ligne, et l'annulation d'ordonnance **avec son motif obligatoire** depuis le registre. ⚠️ **La pagination est côté écran par CONTRAINTE** : `listMine` renvoie au plus cent séances, sans curseur ni total — au-delà, les plus anciennes n'arrivent jamais, et tourner les pages ne les fera pas revenir. La phrase du plafond reste. ⚠️ **Vérifié au serveur avant d'écrire le menu** : la règle d'annulation ne regarde QUE l'état de l'ordonnance, jamais celui de la séance (CU-09-04) — une ordonnance active d'une consultation terminée reste annulable. 📌 Et ce que le menu ne contient PAS : ni export (aucune route), ni suppression (un acte de soin ne s'efface pas). **web 864 ✓ (853 + 11) · 159 promesses, 118 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **78** | **C5 — les emoji rendus en images, identiques partout** — 11/09, demande explicite du porteur (« le rendu Apple identique partout, comme WhatsApp »). Un emoji écrit en texte est dessiné par l'APPAREIL : le même 🙏 n'a pas la même forme sur un Android d'entrée de gamme, un iPhone et un poste Windows — et certains manquent. Sur un écran où l'on décide de soins, un patient qui envoie 😟 et un soignant qui voit un carré vide, c'est un malentendu. Livré : le rendu en images depuis **une feuille servie par le site** (aucun CDN), un **sélecteur** avec catégories et récents, et le **rendu géant** d'un message tout en emoji. 📌 **Sans la bibliothèque de SARIS** : `emoji-mart` pèse 1,6 Mo et se monte à la main dans une `ref` faute d'être écrite pour React 19 — un fichier de sélecteur fait le même travail, **zéro dépendance**. Et la table est **générée puis commitée** (`outils/construire-emoji.mjs`) : **467 Ko → 48 Ko**, en ne gardant que la position de chaque emoji et son rangement. ⚠️ Le sprite pèse **4,4 Mo** — c'est le prix du rendu identique, dit au porteur avant de commencer, et il n'est téléchargé que lorsqu'un emoji s'affiche. **web 879 ✓ (864 + 15) · paquet 930 → 997 Ko · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **79** | **C5 — les emoji des RÉACTIONS, la moitié d'écran oubliée** — 11/09, trouvé en vérifiant le chantier 78 **en ligne**, pas en écrivant le code. Les emoji des *messages* étaient devenus des images ; ceux des *réactions* — la palette rapide et les réactions posées — étaient restés du texte dessiné par la police du poste. Le même 👍 avait donc **deux apparences sur le même écran, à trois pixels de distance** : exactement ce que le chantier 78 prétendait supprimer. 📌 **Une garantie qui s'arrête à la moitié d'un écran n'est pas une garantie** — et le chantier qui la pose est le moins bien placé pour voir où elle s'arrête, parce qu'il regarde l'endroit qu'il vient d'écrire. Deux tests tiennent désormais les deux emplacements. **web 881 ✓ (879 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
+| **80** | **C5 — un seul menu de message, et le clic droit** — 11/09, né d'une phrase du porteur : *« je ne vois pas ce bouton qui apparaît au survol »*. Il avait raison de ne pas le voir : il y avait **quatre icônes flottantes**, invisibles tant qu'on ne survolait pas exactement le bon endroit, et **aucun autre chemin**. 📌 **Le plus instructif n'est pas le défaut, c'est où était déjà la réponse** : le **mobile d'ULAMU** offre depuis toujours une feuille d'actions à l'appui long (`ChatActionSheet.tsx` — bande de réactions, « + » vers le sélecteur complet, puis les actions), et CMS-SARIS le clic droit. **Le web était la seule des trois surfaces à ne rien offrir.** Ce n'était donc pas une idée à emprunter dehors : un écart à réduire chez nous. Livré : **un menu unique** (poignée + **clic droit**), la bande de réactions en tête, **« + » vers le sélecteur complet** — le serveur accepte n'importe quel emoji et le mobile le proposait déjà, *onzième fois que le motif « une capacité sans chemin » apparaît, et la première où il séparait nos deux propres clients* — et **« Copier le texte »**, que le mobile ne PEUT pas offrir (pas de presse-papier natif) et que le web obtient pour rien. ⚠️ **Une faute injectée a démasqué un de mes propres tests** : « le clic droit ne rouvre pas le menu sur une archive » passait même sans le garde-fou, puisqu'aucun menu n'y est monté. Réécrit sur ce que le garde-fou fait vraiment — **rendre le menu du navigateur** au lieu de le confisquer. **web 889 ✓ (881 + 8) · 160 promesses, 119 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -711,6 +712,84 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 80 (le menu du message) a appris
+
+*11/09/2026 — la réponse était déjà dans le produit, sur une autre surface.*
+
+#### Le défaut, dit par le porteur en une phrase
+
+> « je ne vois pas certaines choses que t'as citées pour CMS, comme lorsqu'on survole un message il
+> y a un bouton qui apparaît »
+
+Il avait raison de ne pas le voir. Le web posait **quatre icônes flottantes** à côté de la bulle,
+invisibles tant qu'on ne survolait pas exactement le bon endroit — et **aucun autre chemin** pour
+les atteindre. Pas de clic droit, pas d'appui long, rien.
+
+*Une commande qu'on ne trouve pas est une commande absente.*
+
+#### Ce qui rend ce chantier intéressant : où était la réponse
+
+Elle n'était pas chez le concurrent. Elle était **chez nous**, sur l'autre surface du même produit.
+
+| Surface | Le geste | Le menu |
+|---|---|---|
+| **Mobile ULAMU** (`ChatActionSheet.tsx`) | appui long | un seul : réactions + « + » + actions |
+| **CMS-SARIS** | clic droit **et** chevron | un seul : réactions + « + » + actions |
+| **Web ULAMU**, avant ce chantier | survol précis, et rien d'autre | **quatre boutons épars** |
+
+Le mobile avait déjà tout : la bande de réactions, le « + » vers le sélecteur complet, les actions
+en liste, et même le commentaire expliquant pourquoi « Copier » y manque. **Le web n'était pas en
+retard sur la concurrence — il était en retard sur lui-même.**
+
+*Avant d'aller chercher une idée dehors, il faut savoir ce que nos autres surfaces font déjà. Un
+écart entre deux clients du même produit coûte plus cher qu'une fonctionnalité manquante : il fait
+douter de laquelle des deux dit vrai.*
+
+#### La onzième « capacité sans chemin » — et la première entre nos deux clients
+
+Le serveur accepte **n'importe quel emoji** en réaction (`ReactToMessageDto`, 8 caractères : de
+quoi porter un emoji composé). Le mobile offre déjà ce choix par son sélecteur. Le web s'arrêtait à
+**six emoji figés**.
+
+Le motif revient pour la onzième fois — mais pour la première fois il ne séparait pas le serveur de
+l'écran : **il séparait deux écrans du même produit**.
+
+#### ⚠️ Une faute injectée a démasqué un de mes propres tests
+
+J'avais écrit : *« sur une séance close, le clic droit ne rouvre pas le menu »*. Le test passait.
+**Il passait aussi en retirant le garde-fou qu'il prétendait tenir.**
+
+La raison : sur une archive, `GestesBulle` ne monte aucun menu. Il n'y avait donc rien à rouvrir,
+et l'assertion était vraie **pour une raison qui n'était pas celle qu'on croyait**.
+
+Ce que le garde-fou fait vraiment, c'est **ne pas appeler `preventDefault`** — le clic droit rend
+alors le menu du NAVIGATEUR. Le test a été réécrit là-dessus, avec son miroir sur séance ouverte.
+
+*Un test qui passe n'est pas un test qui tient. Seule la faute injectée fait la différence, et
+c'est la deuxième fois en deux jours qu'elle corrige non pas le code, mais MOI.*
+
+#### Les arbitrages
+
+| Choix | Pourquoi |
+|---|---|
+| **Le sélecteur en dialogue, pas dans le menu** | Il a un champ de recherche, et un champ posé dans un menu se fait voler ses touches par la navigation clavier du menu. Le dialogue lui rend son clavier — et donne un titre à une grille d'emoji qui, sans lui, ne dit pas ce qu'elle va faire. |
+| **La bande de réactions n'est pas faite d'éléments de menu** | Six éléments en ligne casseraient la navigation haut/bas, qui passerait de l'un à l'autre au lieu de descendre dans la liste. |
+| **Pas d'appui long sur tactile** | Inutile : `@media (hover:none)` affiche la poignée en permanence, un appui simple suffit. Et l'appui long casserait la sélection de texte — le corps d'un message de soin se copie à la main. |
+| **Le clic droit s'efface sur une archive** | Confisquer le menu du navigateur pour n'offrir aucune ligne est un mauvais échange. |
+| **Pas de « Transférer »** | CMS l'a. Envoyer un message de santé vers une autre conversation d'un clic, c'est rendre une fuite de donnée médicale facile. Écarté, et dit. |
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 881 ✓ | **889 ✓** |
+| Icônes flottantes par bulle | 4 | **1** |
+| Chemins vers les gestes | 1 (survol précis) | **2** (poignée, clic droit) |
+| Emoji disponibles en réaction | 6 | **1 867** |
+| Promesses nues | 41 | **41** (la nouvelle phrase est tenue) |
+
+Sept fautes injectées, sept détectées — après réécriture du test que la septième avait démasqué.
 
 ### Ce que le chantier 79 (les emoji des réactions) a appris
 

@@ -71,8 +71,9 @@ import {
   Check,
   CheckCheck,
   Clock,
+  ChevronDown,
+  Copy,
   CornerUpLeft,
-  Ellipsis,
   Eye,
   FileText,
   Flag,
@@ -120,6 +121,7 @@ import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
 import { Emoji, seulementDesEmoji, texteAvecEmoji } from '../Emoji'
 import { SelecteurEmoji } from '../SelecteurEmoji'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
@@ -328,15 +330,48 @@ function Reactions({
 }
 
 /**
- * La barre de gestes, au survol de la bulle. Elle n'affiche QUE ce qui est possible : pas de
- * « Modifier » sur une photo, pas de « Supprimer pour tout le monde » passé un quart d'heure.
+ * Le menu d'un message — UN SEUL menu, ouvert par la poignée OU par le clic droit sur la bulle.
+ *
+ * ── Chantier 80, 11/09/2026 : le web rattrape son propre produit ──────────────────────────────
+ *
+ * Il y avait ici QUATRE icônes flottantes. Le porteur ne les a pas trouvées, et il avait raison de
+ * ne pas les trouver : elles sont invisibles tant qu'on ne survole pas exactement le bon endroit,
+ * et il n'existait **aucun autre chemin** pour les atteindre.
+ *
+ * Or les deux autres surfaces du même produit faisaient déjà mieux :
+ *
+ * | | Le geste | Le menu |
+ * |---|---|---|
+ * | **Mobile ULAMU** (`ChatActionSheet.tsx`) | appui long | un seul, réactions + « + » + actions |
+ * | **CMS-SARIS** | clic droit **et** chevron | un seul, réactions + « + » + actions |
+ * | **Web ULAMU**, avant ce chantier | survol précis, et rien d'autre | quatre boutons épars |
+ *
+ * Ce n'était donc pas une idée à emprunter dehors : **c'était un écart à réduire chez nous.** Le
+ * web est aligné sur le mobile, geste pour geste, et gagne le clic droit — celui qu'on tente
+ * d'instinct sur un message.
+ *
+ * ── Ce que ce menu ajoute, et qui manquait vraiment ───────────────────────────────────────────
+ *
+ * **Le « + » vers le sélecteur complet.** Le serveur accepte n'importe quel emoji en réaction
+ * (`ReactToMessageDto`, 8 caractères — de quoi porter un emoji composé). Le mobile offre déjà ce
+ * choix. Le web n'offrait que six emoji figés : **une capacité existait des deux côtés, et l'écran
+ * du soignant était le seul à ne pas y mener.** C'est la onzième fois que ce motif apparaît dans
+ * ce projet, et cette fois il séparait nos deux propres clients.
+ *
+ * **« Copier le texte »**, que le mobile ne PEUT pas offrir (pas de bibliothèque presse-papier
+ * native installée) et que le web obtient sans rien ajouter. On n'aligne pas par le bas.
  */
 function GestesBulle({
   aMoi,
   editable,
+  copiable,
   retirableParTous,
+  ouvert,
+  surOuvert,
   onRepondre,
   onReagir,
+  onReagirLibre,
+  onCopier,
   onModifier,
   onSupprimer,
   onSignaler,
@@ -344,9 +379,16 @@ function GestesBulle({
 }: {
   aMoi: boolean
   editable: boolean
+  /** Un texte, non vide : on ne propose pas de copier une photo ou une note vocale. */
+  copiable: boolean
   retirableParTous: boolean
+  ouvert: boolean
+  surOuvert: (o: boolean) => void
   onRepondre: () => void
   onReagir: (emoji: string) => void
+  /** Ouvre le sélecteur complet — le « + » de la bande, comme sur le mobile. */
+  onReagirLibre: () => void
+  onCopier: () => void
   onModifier: () => void
   onSupprimer: (pourTous: boolean) => void
   onSignaler: () => void
@@ -373,8 +415,8 @@ function GestesBulle({
   actif: boolean
 }) {
   /*
-    Séance close : la barre se réduit au seul signalement — et disparaît entièrement sur ses
-    PROPRES messages, où il n'y a plus rien à offrir.
+    Séance close : plus de menu du tout — il n'y aurait qu'une seule ligne dedans. Le signalement
+    reste un bouton direct, et disparaît sur ses PROPRES messages, où il n'y a rien à offrir.
   */
   if (!actif) {
     if (aMoi) return null
@@ -406,77 +448,103 @@ function GestesBulle({
         droite. Sur un téléphone la bulle occupe presque toute la largeur : la barre sortait de
         73 px, et le fil se laissait tirer latéralement de 34 px. Mesuré à 375 px le 01/09/2026
         (chantier 21). En dessous de 1024 px elle se cale donc à droite de la LIGNE, à l'intérieur.
+
+        `opacity` en STYLE et non en classe : `.ul-au-survol` vit hors d'un `@layer` et battrait
+        silencieusement n'importe quel utilitaire Tailwind. Ouvert au clic droit, le menu doit
+        montrer sa poignée — sinon il flotte, rattaché à rien de visible.
       */
+      style={{ opacity: ouvert ? 1 : undefined }}
       className={
         'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
         'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 ' +
         (aMoi ? 'lg:right-full lg:mr-1' : 'lg:right-auto lg:left-full lg:ml-1')
       }
     >
-      <DropdownMenu>
+      <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
         <DropdownMenuTrigger
-          aria-label="Réagir à ce message"
+          aria-label="Actions sur ce message"
           className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
         >
-          <SmilePlus size={13} strokeWidth={1.8} aria-hidden="true" />
+          <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="flex w-auto gap-0.5 p-1">
-          {REACTIONS_RAPIDES.map((e) => (
+        <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
+          {/*
+            La bande de réactions EN HAUT du menu — mobile et CMS la placent là tous les deux, et
+            c'est aussi l'ordre de WhatsApp : réagir est le geste le plus fréquent, il ne se mérite
+            pas au bout d'une liste.
+
+            Ce ne sont PAS des `DropdownMenuItem` : six éléments de menu en ligne casseraient la
+            navigation au clavier (haut/bas passerait de l'un à l'autre au lieu de descendre dans
+            la liste). Des boutons simples, dans un conteneur qui ne prétend pas être une liste.
+          */}
+          <div className="flex items-center gap-0.5 px-1 pt-1 pb-1.5">
+            {REACTIONS_RAPIDES.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => {
+                  onReagir(e)
+                  surOuvert(false)
+                }}
+                aria-label={`Réagir avec ${e}`}
+                className="flex size-8 items-center justify-center rounded-md leading-none hover:bg-secondary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              >
+                <span aria-hidden="true">
+                  <Emoji natif={e} taille={20} />
+                </span>
+              </button>
+            ))}
+            {/*
+              Le « + » — le chemin qui manquait. Le serveur accepte n'importe quel emoji, le mobile
+              le propose déjà ; le web s'arrêtait à six. Il ferme ce menu et ouvre le sélecteur
+              complet, car la recherche du sélecteur a besoin d'un champ de saisie, et un champ dans
+              un menu se fait voler ses touches par la navigation au clavier du menu lui-même.
+            */}
             <button
-              key={e}
               type="button"
-              onClick={() => onReagir(e)}
-              aria-label={`Réagir avec ${e}`}
-              className="rounded-md px-1.5 py-1 leading-none hover:bg-secondary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              onClick={() => {
+                surOuvert(false)
+                onReagirLibre()
+              }}
+              aria-label="Choisir un autre emoji"
+              className="flex size-8 items-center justify-center rounded-md text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
             >
-              <span aria-hidden="true">
-                <Emoji natif={e} taille={18} />
-              </span>
+              <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
             </button>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </div>
 
-      <button
-        type="button"
-        onClick={onRepondre}
-        aria-label="Répondre à ce message"
-        className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-      >
-        <CornerUpLeft size={13} strokeWidth={1.8} aria-hidden="true" />
-      </button>
+          <DropdownMenuSeparator />
 
-      {editable ? (
-        <button
-          type="button"
-          onClick={onModifier}
-          aria-label="Modifier ce message"
-          className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-        >
-          <Pencil size={13} strokeWidth={1.8} aria-hidden="true" />
-        </button>
-      ) : null}
+          <DropdownMenuItem onSelect={onRepondre}>
+            <CornerUpLeft size={14} strokeWidth={1.6} aria-hidden="true" />
+            Répondre
+          </DropdownMenuItem>
+          {/* Le mobile ne peut pas l'offrir — aucune bibliothèque presse-papier native installée.
+              Le web le peut sans rien ajouter : on n'aligne pas les surfaces par le bas. */}
+          {copiable ? (
+            <DropdownMenuItem onSelect={onCopier}>
+              <Copy size={14} strokeWidth={1.6} aria-hidden="true" />
+              Copier le texte
+            </DropdownMenuItem>
+          ) : null}
+          {editable ? (
+            <DropdownMenuItem onSelect={onModifier}>
+              <Pencil size={14} strokeWidth={1.6} aria-hidden="true" />
+              Modifier
+            </DropdownMenuItem>
+          ) : null}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          aria-label="Autres actions sur ce message"
-          className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-        >
-          <Ellipsis size={13} strokeWidth={1.8} aria-hidden="true" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-56">
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem onSelect={() => onSupprimer(false)}>
             <Eye size={14} strokeWidth={1.6} aria-hidden="true" />
             Retirer de mon fil
           </DropdownMenuItem>
           {retirableParTous ? (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => onSupprimer(true)}>
-                <Trash2 size={14} strokeWidth={1.6} aria-hidden="true" />
-                Supprimer pour tout le monde
-              </DropdownMenuItem>
-            </>
+            <DropdownMenuItem variant="destructive" onSelect={() => onSupprimer(true)}>
+              <Trash2 size={14} strokeWidth={1.6} aria-hidden="true" />
+              Supprimer pour tout le monde
+            </DropdownMenuItem>
           ) : null}
           {/*
             Signaler — chantier 41. Uniquement sur les messages de L'AUTRE : se signaler soi-même
@@ -484,13 +552,10 @@ function GestesBulle({
             fil » reste au-dessus parce qu'il répond au même problème sans engager personne.
           */}
           {aMoi ? null : (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={onSignaler}>
-                <Flag size={14} strokeWidth={1.6} aria-hidden="true" />
-                Signaler ce message
-              </DropdownMenuItem>
-            </>
+            <DropdownMenuItem variant="destructive" onSelect={onSignaler}>
+              <Flag size={14} strokeWidth={1.6} aria-hidden="true" />
+              Signaler ce message
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -517,6 +582,7 @@ function Bulle({
   onSupprimer,
   onSignaler,
   onReagir,
+  onReagirLibre,
   onAllerAuCite,
 }: {
   m: SessionMessage
@@ -531,10 +597,48 @@ function Bulle({
   onSupprimer: (pourTous: boolean) => void
   onSignaler: () => void
   onReagir: (emoji: string) => void
+  /** Ouvre le sélecteur complet pour CE message — le « + » de la bande de réactions. */
+  onReagirLibre: () => void
   onAllerAuCite: (id: string) => void
 }) {
   const cles = m.mediaKeys.length > 0 ? m.mediaKeys : m.fileKey ? [m.fileKey] : []
   const dansLaFenetre = Date.now() - new Date(m.createdAt).getTime() <= FENETRE_EDITION_MS
+
+  /*
+    Le menu est PILOTÉ ici, et non par sa poignée : il doit pouvoir s'ouvrir depuis deux endroits
+    — le clic sur la poignée, et le clic droit n'importe où sur la bulle. Un menu qui ne s'ouvre
+    que par son propre déclencheur ne peut pas recevoir le second geste.
+  */
+  const [menuOuvert, setMenuOuvert] = useState(false)
+  const [copie, setCopie] = useState<'ok' | 'echec' | null>(null)
+
+  /*
+    ⚠️ Ces trois crochets sont AVANT le `return` du message supprimé, et doivent y rester : React
+    exige le même nombre de crochets à chaque rendu, et une trace de suppression en appellerait
+    moins que la bulle qu'elle remplace.
+  */
+  useEffect(() => {
+    if (!copie) return
+    const t = setTimeout(() => setCopie(null), 2200)
+    return () => clearTimeout(t)
+  }, [copie])
+
+  /*
+    La copie peut échouer sans bruit : `navigator.clipboard` n'existe pas hors contexte sécurisé,
+    et un navigateur peut refuser l'autorisation. **On le dit.** Croire qu'on a copié le passage
+    d'un patient, puis coller autre chose dans un compte-rendu, est pire que ne pas avoir le geste.
+  */
+  const copier = () => {
+    const presse = navigator.clipboard
+    if (!presse?.writeText) {
+      setCopie('echec')
+      return
+    }
+    void presse
+      .writeText(m.body ?? '')
+      .then(() => setCopie('ok'))
+      .catch(() => setCopie('echec'))
+  }
 
   if (m.deletedAt) {
     return (
@@ -556,7 +660,22 @@ function Bulle({
         (surlignee ? ' rounded-lg ring-3 ring-[var(--ap-300)]' : '')
       }
     >
-      <div className="relative max-w-[min(34rem,85%)]">
+      <div
+        className="relative max-w-[min(34rem,85%)]"
+        /*
+          CLIC DROIT = le menu du message, comme sur WhatsApp et comme CMS-SARIS. C'est le geste
+          qu'on tente d'instinct, et c'est ce qui manquait : la poignée reste, mais il fallait
+          d'abord survoler exactement le bon endroit pour la voir. Le porteur ne l'a pas trouvée.
+
+          Séance close : on ne le détourne PAS. Il n'y aurait qu'une seule ligne à montrer, et
+          confisquer le menu du navigateur pour un seul geste est un mauvais échange.
+        */
+        onContextMenu={(e) => {
+          if (!actif) return
+          e.preventDefault()
+          setMenuOuvert(true)
+        }}
+      >
         {/*
           ── La barre est montée même séance close (chantier 41 ter, 04/09/2026) ────────────────
 
@@ -572,13 +691,40 @@ function Bulle({
           actif={!!actif}
           aMoi={aMoi}
           editable={aMoi && m.kind === 'TEXT' && dansLaFenetre}
+          copiable={m.kind === 'TEXT' && !!m.body?.trim()}
           retirableParTous={aMoi && dansLaFenetre}
+          ouvert={menuOuvert}
+          surOuvert={setMenuOuvert}
           onRepondre={onRepondre}
           onReagir={onReagir}
+          onReagirLibre={onReagirLibre}
+          onCopier={copier}
           onModifier={onModifier}
           onSupprimer={onSupprimer}
           onSignaler={onSignaler}
         />
+
+        {/*
+          Le retour de la copie. `role="status"` : un lecteur d'écran l'annonce sans voler le
+          focus — la main de l'utilisateur est déjà repartie ailleurs.
+        */}
+        {copie ? (
+          <span
+            role="status"
+            className={
+              'absolute -top-5 z-10 rounded-md px-1.5 py-0.5 text-[10px] font-medium ' +
+              'shadow-[0_1px_3px_rgba(15,23,42,.10)] ' +
+              (aMoi ? 'right-0' : 'left-0')
+            }
+            style={
+              copie === 'ok'
+                ? { background: 'var(--succes-fond)', color: 'var(--succes-texte)' }
+                : { background: 'var(--erreur-fond)', color: 'var(--erreur-texte)' }
+            }
+          >
+            {copie === 'ok' ? 'Texte copié' : 'Copie refusée par le navigateur'}
+          </span>
+        ) : null}
 
         <div
           className={
@@ -1014,6 +1160,8 @@ export function ConsultationPage() {
   */
   const [signalerPatient, setSignalerPatient] = useState(false)
   const [messageSignale, setMessageSignale] = useState<string | null>(null)
+  /** Le message dont on choisit librement la réaction — le « + » de la bande. */
+  const [reactionLibre, setReactionLibre] = useState<string | null>(null)
   const recuA = useRef(Date.now())
   const finFil = useRef<HTMLDivElement>(null)
   const champFichier = useRef<HTMLInputElement>(null)
@@ -1445,6 +1593,7 @@ export function ConsultationPage() {
                             onSupprimer={(pourTous) => supprimer.mutate({ id: m.id, pourTous })}
                             onSignaler={() => setMessageSignale(m.id)}
                             onReagir={(emoji) => reagir.mutate({ id: m.id, emoji })}
+                            onReagirLibre={() => setReactionLibre(m.id)}
                             onAllerAuCite={allerAuCite}
                           />
                         </div>
@@ -1785,6 +1934,31 @@ export function ConsultationPage() {
         cibleId={messageSignale ?? ''}
         quoi="ce message"
       />
+
+      {/*
+        Le sélecteur complet en RÉACTION — le chemin qui manquait au web.
+
+        En dialogue et non dans le menu : le sélecteur a un champ de recherche, et un champ posé
+        dans un menu se fait voler ses touches par la navigation au clavier du menu. Le dialogue
+        lui rend son clavier, et donne au passage un titre — « Réagir à ce message » — là où une
+        grille d'emoji sans intitulé ne dit pas ce qu'elle va faire.
+      */}
+      <Dialog open={reactionLibre !== null} onOpenChange={(o) => (o ? undefined : setReactionLibre(null))}>
+        <DialogContent className="max-w-[min(26rem,calc(100vw-2rem))]">
+          <DialogHeader>
+            <DialogTitle>Réagir à ce message</DialogTitle>
+            <DialogDescription>
+              Votre réaction remplace la précédente — une seule par message, comme sur le mobile.
+            </DialogDescription>
+          </DialogHeader>
+          <SelecteurEmoji
+            onChoisir={(emoji) => {
+              if (reactionLibre) reagir.mutate({ id: reactionLibre, emoji })
+              setReactionLibre(null)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **881 ✓** (44 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **889 ✓** (44 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 79
+## 3. Ce qui a été fait — chantiers 58 à 80
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 80 | *(à pousser)* | **Un seul menu de message, et le clic droit.** Le porteur ne trouvait pas les gestes sur un message : quatre icônes invisibles, aucun autre chemin. 📌 La réponse était **chez nous** — le mobile a depuis toujours sa feuille d'actions à l'appui long. Le web était en retard **sur lui-même**. Livré : menu unique + clic droit, « + » vers les 1 867 emoji (le serveur les acceptait déjà), « Copier le texte ». ⚠️ Une faute injectée a démasqué un de mes tests, réécrit. |
 | 79 | *(à pousser)* | **Les emoji des RÉACTIONS.** Le chantier 78 promettait « identique partout » et ne l'avait livré que dans le corps des messages : la palette rapide et les réactions posées restaient en police du poste. Le même 👍 avait deux apparences sur le même écran. 📌 Trouvé **en ligne**, pas par les tests — une promesse transversale se vérifie en cherchant tous ses emplacements, pas en relisant le chantier qui la pose. |
 | 78 | `ffc2450` | **C5 — les emoji en images, identiques partout.** Demande du porteur. Un emoji en texte est dessiné par l'APPAREIL : le même 🙏 change de forme, et certains manquent. Livré sans la bibliothèque de SARIS (1,6 Mo) : **zéro dépendance**, et la table **générée puis commitée**, 467 Ko → 48 Ko. ⚠️ Le sprite pèse 4,4 Mo — le prix du rendu identique, annoncé avant de commencer. |
 | 77 | `616c36b` | **C4 — le registre paginé et le menu de ligne**, demandé en propres termes par le porteur. Chaque ligne n'offrait qu'un bouton : voir/annuler une ordonnance et signaler un patient obligeaient à ENTRER dans la consultation. ⚠️ La pagination est côté écran **par contrainte** — `listMine` coupe à 100 sans curseur, et tourner les pages ne ramène pas les plus anciennes. ⚠️ Le prénom du patient n'a **pas** été ajouté à la ligne : une décision écrite dans le code l'interdit, elle est remontée au porteur. |

@@ -755,7 +755,7 @@ describe('C5 — les gestes sur un message', () => {
     const supprimer = vi.spyOn(api, 'deleteSessionMessage').mockResolvedValue({ ok: true })
     await monter(seance(), [aMoiRecent()])
 
-    await utilisateur.click(await fil().findByLabelText('Autres actions sur ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
     await utilisateur.click(await screen.findByText('Supprimer pour tout le monde'))
 
     await waitFor(() => expect(supprimer).toHaveBeenCalledWith('s1', 'm1', true))
@@ -766,7 +766,7 @@ describe('C5 — les gestes sur un message', () => {
     const supprimer = vi.spyOn(api, 'deleteSessionMessage').mockResolvedValue({ ok: true })
     await monter(seance(), [aMoiRecent()])
 
-    await utilisateur.click(await fil().findByLabelText('Autres actions sur ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
     await utilisateur.click(await screen.findByText('Retirer de mon fil'))
 
     await waitFor(() => expect(supprimer).toHaveBeenCalledWith('s1', 'm1', false))
@@ -777,7 +777,8 @@ describe('C5 — les gestes sur un message', () => {
     const envoyer = vi.spyOn(api, 'sendMessage').mockResolvedValue(message())
     await monter(seance(), [message({ body: 'Depuis trois nuits.' })])
 
-    await utilisateur.click(await fil().findByLabelText('Répondre à ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByRole('menuitem', { name: 'Répondre' }))
     await utilisateur.type(screen.getByLabelText('Votre message'), 'Depuis quand exactement ?')
     await utilisateur.click(screen.getByRole('button', { name: 'Envoyer' }))
 
@@ -791,7 +792,8 @@ describe('C5 — les gestes sur un message', () => {
     const envoyer = vi.spyOn(api, 'sendMessage').mockResolvedValue(message())
     await monter(seance(), [message({ senderId: 'pro-1', body: 'Bonour', createdAt: new Date().toISOString() })])
 
-    await utilisateur.click(await fil().findByLabelText('Modifier ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
     // Le texte existant est déjà là : on corrige, on ne réécrit pas.
     const champ = screen.getByLabelText('Modifier votre message')
     expect(champ).toHaveValue('Bonour')
@@ -809,11 +811,18 @@ describe('C5 — les gestes sur un message', () => {
    * l'applique pas — il évite seulement de proposer un geste qui reviendrait en 409.
    */
   it('passé un quart d’heure, « modifier » n’est plus proposé', async () => {
+    const utilisateur = userEvent.setup()
     const vieux = new Date(Date.now() - 20 * 60_000).toISOString()
     await monter(seance(), [message({ senderId: 'pro-1', createdAt: vieux })])
 
     await fil().findByText('Bonjour docteur')
-    expect(fil().queryByLabelText('Modifier ce message')).not.toBeInTheDocument()
+    // Depuis le chantier 80 le geste vit DANS le menu : il faut l'ouvrir pour constater l'absence.
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+
+    expect(await screen.findByRole('menuitem', { name: 'Répondre' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Modifier' })).not.toBeInTheDocument()
+    // Et « supprimer pour tout le monde » tombe avec la même fenêtre — une seule règle, deux gestes.
+    expect(screen.queryByRole('menuitem', { name: /Supprimer pour tout le monde/ })).not.toBeInTheDocument()
   })
 
   it('réagir bascule l’emoji — la même palette que le mobile', async () => {
@@ -821,7 +830,7 @@ describe('C5 — les gestes sur un message', () => {
     const reagir = vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
     await monter(seance(), [message()])
 
-    await utilisateur.click(await fil().findByLabelText('Réagir à ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
     await utilisateur.click(await screen.findByLabelText('Réagir avec 👍'))
 
     await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '👍'))
@@ -842,7 +851,7 @@ describe('C5 — les gestes sur un message', () => {
     vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
     await monter(seance(), [message()])
 
-    await utilisateur.click(await fil().findByLabelText('Réagir à ce message'))
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
     const bouton = await screen.findByLabelText('Réagir avec 👍')
     const dessin = bouton.querySelector<HTMLElement>('[role="img"]')
 
@@ -880,10 +889,49 @@ describe('C5 — les gestes sur un message', () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
 
     await fil().findByText('Bonjour docteur')
-    expect(fil().queryByLabelText('Répondre à ce message')).not.toBeInTheDocument()
-    expect(fil().queryByLabelText('Autres actions sur ce message')).not.toBeInTheDocument()
-    expect(fil().queryByLabelText('Réagir à ce message')).not.toBeInTheDocument()
-    expect(fil().queryByLabelText('Modifier ce message')).not.toBeInTheDocument()
+    // Depuis le chantier 80 tous ces gestes vivent dans UN menu : son absence les emporte tous.
+    expect(fil().queryByLabelText('Actions sur ce message')).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+  })
+
+  /*
+    ── Ce test a été RÉÉCRIT le 11/09, et la raison mérite d'être gardée ────────────────────────
+
+    Il disait d'abord : « sur une séance close, le clic droit n'ouvre aucun menu ». Il passait —
+    mais il passait **même en retirant le garde-fou qu'il prétendait tenir**. Une faute injectée
+    l'a montré.
+
+    La raison : sur une archive, `GestesBulle` ne monte PAS de menu du tout. Il n'y avait donc rien
+    à rouvrir, et l'assertion était vraie pour une raison qui n'était pas celle qu'on croyait.
+
+    Ce que le garde-fou fait vraiment, c'est **ne pas appeler `preventDefault`** : le clic droit
+    rend alors le menu du NAVIGATEUR — copier, inspecter, rechercher. Confisquer ce menu pour
+    n'offrir qu'une seule ligne serait un mauvais échange, et sur une archive on n'offre même pas
+    cette ligne-là.
+
+    *Un test qui passe n'est pas un test qui tient. C'est la faute injectée qui fait la différence.*
+  */
+  it('sur une séance close, le clic droit rend le menu du NAVIGATEUR au lieu de le confisquer', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
+
+    const bulle = await fil().findByText('Bonjour docteur')
+    const clicDroit = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    fireEvent(bulle, clicDroit)
+
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+    expect(clicDroit.defaultPrevented).toBe(false)
+  })
+
+  /* Et le miroir : séance ouverte, on prend la main — sinon les deux menus se superposeraient. */
+  it('séance ouverte au contraire, il prend la main sur celui du navigateur', async () => {
+    await monter(seance(), [message()])
+
+    const bulle = await fil().findByText('Bonjour docteur')
+    const clicDroit = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    fireEvent(bulle, clicDroit)
+
+    expect(clicDroit.defaultPrevented).toBe(true)
+    expect(await screen.findByRole('menuitem', { name: 'Répondre' })).toBeInTheDocument()
   })
 
   it('mais il reste signalable — c’est après coup qu’on repense à un propos déplacé', async () => {
@@ -898,6 +946,121 @@ describe('C5 — les gestes sur un message', () => {
 
     await fil().findByText('Bonjour docteur')
     expect(fil().queryByLabelText('Signaler ce message')).not.toBeInTheDocument()
+  })
+
+  /*
+    ══ Chantier 80 — ce que le menu unique APPORTE ════════════════════════════════════════════
+
+    Le porteur n'a pas trouvé les gestes sur un message. Il avait raison de ne pas les trouver :
+    quatre icônes invisibles tant qu'on ne survolait pas exactement le bon endroit, et **aucun
+    autre chemin**. Le mobile d'ULAMU offrait déjà une feuille d'actions à l'appui long, CMS-SARIS
+    le clic droit : le web était la seule des trois surfaces à ne rien offrir.
+
+    Ces tests tiennent les trois chemins ajoutés. Ils ne remplacent pas ceux d'au-dessus — ils
+    couvrent ce qui n'existait pas.
+  */
+  it('le CLIC DROIT sur une bulle ouvre le menu — le geste qu’on tente d’instinct', async () => {
+    await monter(seance(), [message()])
+
+    const bulle = await fil().findByText('Bonjour docteur')
+    fireEvent.contextMenu(bulle)
+
+    expect(await screen.findByRole('menuitem', { name: 'Répondre' })).toBeInTheDocument()
+  })
+
+  it('« Copier le texte » met le corps du message dans le presse-papier', async () => {
+    const utilisateur = userEvent.setup()
+    const ecrire = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: ecrire }, configurable: true })
+    await monter(seance(), [message({ body: 'Depuis trois nuits, et ça empire le matin.' })])
+
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByRole('menuitem', { name: 'Copier le texte' }))
+
+    await waitFor(() => expect(ecrire).toHaveBeenCalledWith('Depuis trois nuits, et ça empire le matin.'))
+    expect(await screen.findByText('Texte copié')).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Une copie peut échouer sans bruit — `navigator.clipboard` n'existe pas hors contexte
+    sécurisé, et un navigateur peut refuser l'autorisation. **L'écran doit le dire.**
+
+    Croire qu'on a copié le passage d'un patient, puis coller autre chose dans un compte-rendu,
+    est pire que ne pas avoir le geste du tout.
+  */
+  it('et si le navigateur la refuse, l’écran le DIT au lieu de laisser croire', async () => {
+    const utilisateur = userEvent.setup()
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    await monter(seance(), [message({ body: 'Depuis trois nuits.' })])
+
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByRole('menuitem', { name: 'Copier le texte' }))
+
+    expect(await screen.findByText('Copie refusée par le navigateur')).toBeInTheDocument()
+  })
+
+  it('ne propose pas de copier une PHOTO — il n’y a pas de texte à prendre', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(seance(), [message({ kind: 'PHOTO', body: '', mediaKeys: ['k1'] })])
+
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+
+    expect(await screen.findByRole('menuitem', { name: 'Répondre' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Copier le texte' })).not.toBeInTheDocument()
+  })
+
+  /*
+    Le « + » — le chemin qui manquait vraiment.
+
+    Le serveur accepte n'importe quel emoji en réaction (`ReactToMessageDto`, 8 caractères : de
+    quoi porter un emoji composé), et le mobile offre déjà ce choix par son sélecteur complet. Le
+    web s'arrêtait à six emoji figés : **une capacité existait des deux côtés, et l'écran du
+    soignant était le seul à ne pas y mener.**
+  */
+  it('le « + » ouvre le sélecteur complet, et la réaction choisie part au serveur', async () => {
+    const utilisateur = userEvent.setup()
+    const reagir = vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
+    await monter(seance(), [message()])
+
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByLabelText('Choisir un autre emoji'))
+
+    // Le dialogue dit ce qu'il va faire — une grille d'emoji sans intitulé ne le dit pas.
+    expect(await screen.findByRole('dialog', { name: 'Réagir à ce message' })).toBeInTheDocument()
+
+    // Un emoji ABSENT de la bande rapide : c'est tout l'intérêt du sélecteur.
+    const cases = await screen.findAllByLabelText('😀')
+    await utilisateur.click(cases.find((e) => e.tagName === 'BUTTON')!)
+
+    await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '😀'))
+  })
+
+  /*
+    ── La phrase du dialogue n'est pas une politesse ────────────────────────────────────────────
+
+    « Votre réaction remplace la précédente — une seule par message » est garantie par la **clé
+    primaire** du serveur : `@@id([messageId, accountId])` sur `SessionMessageReaction`. Un
+    participant ne peut structurellement pas en poser deux.
+
+    Ce que l'ÉCRAN doit tenir, c'est de passer par la même bascule que la bande rapide. S'il
+    appelait une route d'« ajout », la phrase deviendrait un mensonge — et l'écran promettrait au
+    soignant quelque chose que son propre geste dément.
+  */
+  it('« remplace la précédente » est tenu : le sélecteur passe par la MÊME bascule, une seule fois', async () => {
+    const utilisateur = userEvent.setup()
+    const reagir = vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
+    await monter(seance(), [message({ reactions: [{ emoji: '👍', count: 1, mine: true }] })])
+
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByLabelText('Choisir un autre emoji'))
+
+    expect(await screen.findByText(/Votre réaction remplace la précédente/)).toBeInTheDocument()
+
+    const cases = await screen.findAllByLabelText('😀')
+    await utilisateur.click(cases.find((e) => e.tagName === 'BUTTON')!)
+
+    await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '😀'))
+    expect(reagir).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -1011,7 +1174,7 @@ describe('C5 — le Carnet du patient', () => {
 
 /** Ouvre le menu « autres actions » d'un message, puis sa boîte de signalement. */
 async function ouvrirSignalementMessage(utilisateur: ReturnType<typeof userEvent.setup>) {
-  await utilisateur.click(await screen.findByRole('button', { name: /Autres actions sur ce message/ }))
+  await utilisateur.click(await screen.findByRole('button', { name: /Actions sur ce message/ }))
   await utilisateur.click(await screen.findByRole('menuitem', { name: /Signaler ce message/ }))
 }
 
@@ -1091,7 +1254,7 @@ describe('C5 — signaler (chantier 41)', () => {
     await monter(seance(), [message({ id: 'a-moi', senderId: 'pro-1' })])
     const utilisateur = userEvent.setup()
 
-    await utilisateur.click(await screen.findByRole('button', { name: /Autres actions sur ce message/ }))
+    await utilisateur.click(await screen.findByRole('button', { name: /Actions sur ce message/ }))
 
     expect(await screen.findByRole('menuitem', { name: /Retirer de mon fil/ })).toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: /Signaler/ })).not.toBeInTheDocument()
