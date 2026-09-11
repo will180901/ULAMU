@@ -118,7 +118,7 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
-import { seulementDesEmoji, texteAvecEmoji } from '../Emoji'
+import { Emoji, seulementDesEmoji, texteAvecEmoji } from '../Emoji'
 import { SelecteurEmoji } from '../SelecteurEmoji'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSessionStore } from '@/state/session.store'
@@ -307,7 +307,19 @@ function Reactions({
             (r.mine ? 'border-[var(--ap-300)] bg-[var(--ap-50)]' : 'border-border bg-card hover:bg-secondary')
           }
         >
-          <span aria-hidden="true">{r.emoji}</span>
+          {/*
+            ⚠️ La MÊME feuille que les messages — trouvé en vérifiant le chantier 78 en ligne.
+
+            Les emoji des messages étaient devenus des images, ceux des réactions étaient restés en
+            police système : le même 👍 avait deux apparences sur le même écran, à trois pixels de
+            distance. Une garantie qui ne vaut que pour la moitié d'un écran n'est pas une garantie.
+
+            `aria-hidden` : le bouton porte déjà « Réagir avec 👍 » ; annoncer l'image en plus
+            ferait entendre l'emoji deux fois.
+          */}
+          <span aria-hidden="true">
+            <Emoji natif={r.emoji} taille={15} />
+          </span>
           {r.count > 1 ? <span className="tabular-nums text-[var(--texte-tertiaire)]">{r.count}</span> : null}
         </button>
       ))}
@@ -415,9 +427,11 @@ function GestesBulle({
               type="button"
               onClick={() => onReagir(e)}
               aria-label={`Réagir avec ${e}`}
-              className="rounded-md px-1.5 py-1 text-[16px] leading-none hover:bg-secondary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              className="rounded-md px-1.5 py-1 leading-none hover:bg-secondary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
             >
-              <span aria-hidden="true">{e}</span>
+              <span aria-hidden="true">
+                <Emoji natif={e} taille={18} />
+              </span>
             </button>
           ))}
         </DropdownMenuContent>

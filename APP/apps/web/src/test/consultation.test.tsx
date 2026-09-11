@@ -828,6 +828,39 @@ describe('C5 — les gestes sur un message', () => {
   })
 
   /*
+    ── Trouvé en vérifiant le chantier 78 EN LIGNE, pas en écrivant le code ────────────────────
+
+    Les emoji des MESSAGES étaient devenus des images ; ceux des RÉACTIONS étaient restés du texte
+    dessiné par la police du système. Le même 👍 avait donc deux apparences sur le même écran, à
+    trois pixels de distance — exactement ce que le chantier prétendait supprimer.
+
+    « Le rendu identique partout » n'est pas une garantie si elle s'arrête à la moitié d'un écran.
+    Ces deux tests tiennent les deux endroits où un emoji apparaît hors du corps d'un message.
+  */
+  it('la palette de réaction dessine ses emoji depuis la FEUILLE, pas avec la police du poste', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
+    await monter(seance(), [message()])
+
+    await utilisateur.click(await fil().findByLabelText('Réagir à ce message'))
+    const bouton = await screen.findByLabelText('Réagir avec 👍')
+    const dessin = bouton.querySelector<HTMLElement>('[role="img"]')
+
+    expect(dessin?.style.backgroundImage).toContain('emoji/apple-64.png')
+    // Et le caractère ne doit PAS rester en texte à côté : il serait dessiné une seconde fois.
+    expect(bouton.textContent).not.toContain('👍')
+  })
+
+  it('une réaction déjà posée se dessine depuis la même feuille, et garde son compte', async () => {
+    await monter(seance(), [message({ reactions: [{ emoji: '👍', count: 3, mine: false }] })])
+
+    const bouton = await fil().findByLabelText('Réagir avec 👍')
+    expect(bouton.querySelector<HTMLElement>('[role="img"]')?.style.backgroundImage).toContain('emoji/apple-64.png')
+    // Le compte reste du TEXTE : c'est un chiffre, pas un emoji.
+    expect(bouton).toHaveTextContent('3')
+  })
+
+  /*
     ── Amendé le 04/09/2026 (chantier 41 ter), et la règle n'a pas bougé ──────────────────────
 
     « Une séance close est une archive » reste vrai : on n'y répond pas, on n'y réagit pas, on n'y

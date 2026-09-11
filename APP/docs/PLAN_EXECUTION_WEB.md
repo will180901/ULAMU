@@ -662,6 +662,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **76** | **C5 — la consultation prend un nom** — 11/09, chantier B du plan de la consultation. Le titre de l'écran était le mot « Consultation » : trois séances ouvertes dans la journée donnaient **trois onglets identiques**. Le motif était pourtant servi depuis toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas. Livré : le **titre porte le motif**, la **référence de séance** est lisible sous lui, les **honoraires** entrent dans le rail (par une jointure côté écran : le prix vit sur la DEMANDE, pas sur la séance), et le fil s'ouvre en rappelant le chiffrement de bout en bout. ⚠️ **Deux corrections à mon propre plan** : les allergies étaient **déjà affichées** (panneau Carnet) — mon analyse des maquettes les avait manquées ; et **donner un nom à la ligne de C4 est impossible sans le serveur**, `SessionListItem` ne portant pas la pré-consultation. 📌 Et le piège du heredoc, payé une nouvelle fois : `\r?\n` transformé en vrais CR/LF dans une expression régulière. **web 853 ✓ (844 + 9) · 158 promesses, 117 retenues (inchangé — la phrase ajoutée rejoint le filet sans changer l'inventaire) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **77** | **C4 — le registre paginé, et les gestes qui étaient enfermés** — 11/09, chantier C du plan de la consultation, **demandé en propres termes par le porteur** (« tableau avec pagination, et un bouton d'action sur chaque ligne pour les fonctionnalités secondaires »). Chaque ligne n'offrait qu'un bouton : **voir une ordonnance, l'annuler, signaler un patient** obligeaient à ENTRER dans la consultation pour en ressortir — trois capacités qui existent toutes côté serveur. Livré : le tableau **paginé** (quinze lignes), un menu **⋯** par ligne, et l'annulation d'ordonnance **avec son motif obligatoire** depuis le registre. ⚠️ **La pagination est côté écran par CONTRAINTE** : `listMine` renvoie au plus cent séances, sans curseur ni total — au-delà, les plus anciennes n'arrivent jamais, et tourner les pages ne les fera pas revenir. La phrase du plafond reste. ⚠️ **Vérifié au serveur avant d'écrire le menu** : la règle d'annulation ne regarde QUE l'état de l'ordonnance, jamais celui de la séance (CU-09-04) — une ordonnance active d'une consultation terminée reste annulable. 📌 Et ce que le menu ne contient PAS : ni export (aucune route), ni suppression (un acte de soin ne s'efface pas). **web 864 ✓ (853 + 11) · 159 promesses, 118 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **78** | **C5 — les emoji rendus en images, identiques partout** — 11/09, demande explicite du porteur (« le rendu Apple identique partout, comme WhatsApp »). Un emoji écrit en texte est dessiné par l'APPAREIL : le même 🙏 n'a pas la même forme sur un Android d'entrée de gamme, un iPhone et un poste Windows — et certains manquent. Sur un écran où l'on décide de soins, un patient qui envoie 😟 et un soignant qui voit un carré vide, c'est un malentendu. Livré : le rendu en images depuis **une feuille servie par le site** (aucun CDN), un **sélecteur** avec catégories et récents, et le **rendu géant** d'un message tout en emoji. 📌 **Sans la bibliothèque de SARIS** : `emoji-mart` pèse 1,6 Mo et se monte à la main dans une `ref` faute d'être écrite pour React 19 — un fichier de sélecteur fait le même travail, **zéro dépendance**. Et la table est **générée puis commitée** (`outils/construire-emoji.mjs`) : **467 Ko → 48 Ko**, en ne gardant que la position de chaque emoji et son rangement. ⚠️ Le sprite pèse **4,4 Mo** — c'est le prix du rendu identique, dit au porteur avant de commencer, et il n'est téléchargé que lorsqu'un emoji s'affiche. **web 879 ✓ (864 + 15) · paquet 930 → 997 Ko · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
+| **79** | **C5 — les emoji des RÉACTIONS, la moitié d'écran oubliée** — 11/09, trouvé en vérifiant le chantier 78 **en ligne**, pas en écrivant le code. Les emoji des *messages* étaient devenus des images ; ceux des *réactions* — la palette rapide et les réactions posées — étaient restés du texte dessiné par la police du poste. Le même 👍 avait donc **deux apparences sur le même écran, à trois pixels de distance** : exactement ce que le chantier 78 prétendait supprimer. 📌 **Une garantie qui s'arrête à la moitié d'un écran n'est pas une garantie** — et le chantier qui la pose est le moins bien placé pour voir où elle s'arrête, parce qu'il regarde l'endroit qu'il vient d'écrire. Deux tests tiennent désormais les deux emplacements. **web 881 ✓ (879 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -710,6 +711,39 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 79 (les emoji des réactions) a appris
+
+*11/09/2026 — une garantie s'évalue à son bord, pas à son centre.*
+
+Le chantier 78 promettait « le rendu identique partout ». Il l'a livré **dans le corps des
+messages**. Les emoji des RÉACTIONS — la palette rapide au survol, et les réactions déjà posées
+sous une bulle — sont restés du texte, dessinés par la police du poste.
+
+Résultat : le même 👍 avait deux apparences **sur le même écran, à trois pixels de distance**. Un
+soignant qui pose une réaction ne voyait pas le dessin qu'il venait de choisir dans la palette.
+
+#### Pourquoi je ne l'ai pas vu en écrivant le code
+
+Parce que j'ai regardé l'endroit que je venais d'écrire. Le composeur, le rendu du message, le
+sélecteur, le rendu géant : les quatre endroits **du chantier**. Les réactions existaient déjà
+depuis le chantier 21 — elles n'étaient pas dans ma liste, donc elles n'étaient pas dans mon
+regard.
+
+*Une promesse transversale (« partout ») ne se vérifie pas en relisant le chantier qui la pose.
+Elle se vérifie en cherchant TOUS les endroits où la chose apparaît — y compris ceux écrits des
+mois plus tôt par quelqu'un d'autre.*
+
+#### Ce que ça vaut comme règle
+
+| | |
+|---|---|
+| **Ce qui l'a trouvé** | La vérification en ligne, après le déploiement — pas les 879 tests. |
+| **Ce qui le tient maintenant** | Deux tests, un par emplacement, qui exigent la feuille d'images. |
+| **La règle** | Quand un chantier dit « partout », lister les emplacements **avant** de coder, en cherchant le motif dans tout le code — pas les emplacements qu'on s'apprête à écrire. |
+
+Les deux tests ont été vérifiés par injection : remis en texte, chacun tombe. Restauration à
+l'octet près.
 
 ### Ce que le chantier 78 (C5 — les emoji) a appris
 
