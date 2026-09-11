@@ -888,10 +888,23 @@ describe('C5 — les gestes sur un message', () => {
   it('une séance close n’offre plus aucun geste qui MODIFIE le fil : il est archivé', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
 
+    const utilisateur = userEvent.setup()
     await fil().findByText('Bonjour docteur')
-    // Depuis le chantier 80 tous ces gestes vivent dans UN menu : son absence les emporte tous.
-    expect(fil().queryByLabelText('Actions sur ce message')).not.toBeInTheDocument()
-    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+
+    /*
+      Depuis le chantier 81 l'archive a le MÊME menu, réduit. La garantie ne porte donc plus sur
+      l'absence du menu — elle porte sur son CONTENU, et c'est plus exigeant : il faut nommer un
+      par un les gestes qui ne doivent pas y être.
+    */
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+
+    expect(screen.queryByRole('menuitem', { name: 'Répondre' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Modifier' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /Retirer de mon fil/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /Supprimer pour tout le monde/ })).not.toBeInTheDocument()
+    // Et pas de réaction non plus : la bande n'est montée que sur une séance ouverte.
+    expect(screen.queryByLabelText('Réagir avec 👍')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Choisir un autre emoji')).not.toBeInTheDocument()
   })
 
   /*
@@ -911,15 +924,36 @@ describe('C5 — les gestes sur un message', () => {
 
     *Un test qui passe n'est pas un test qui tient. C'est la faute injectée qui fait la différence.*
   */
-  it('sur une séance close, le clic droit rend le menu du NAVIGATEUR au lieu de le confisquer', async () => {
+  it('sur une séance close, le clic droit ouvre le menu RÉDUIT — le geste ne change pas', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
 
     const bulle = await fil().findByText('Bonjour docteur')
     const clicDroit = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
     fireEvent(bulle, clicDroit)
 
-    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+    expect(clicDroit.defaultPrevented).toBe(true)
+    expect(await screen.findByRole('menuitem', { name: /Signaler ce message/ })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Répondre' })).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ La seule fois où on rend la main au navigateur : quand il n'y a RIEN à montrer.
+
+    Confisquer le menu du navigateur — copier, inspecter, rechercher — pour ouvrir le vide serait
+    le pire des deux mondes. La règle suit donc le MENU, jamais l'état de la séance.
+  */
+  it('mais il rend le menu du navigateur quand il n’y a rien à offrir', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [
+      message({ senderId: 'pro-1', kind: 'PHOTO', body: '', mediaKeys: ['k1'] }),
+    ])
+
+    // L'événement remonte jusqu'au conteneur de la bulle, qui porte `onContextMenu`.
+    const dansLaBulle = await screen.findByText('Média indisponible.')
+    const clicDroit = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    fireEvent(dansLaBulle, clicDroit)
+
     expect(clicDroit.defaultPrevented).toBe(false)
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
   })
 
   /* Et le miroir : séance ouverte, on prend la main — sinon les deux menus se superposeraient. */
@@ -934,18 +968,74 @@ describe('C5 — les gestes sur un message', () => {
     expect(await screen.findByRole('menuitem', { name: 'Répondre' })).toBeInTheDocument()
   })
 
+  /*
+    ── Vu sur une capture du porteur, le 11/09 (chantier 81) ────────────────────────────────────
+
+    Le fil annonçait « **Consultation ouverte** · échange chiffré de bout en bout » pendant que la
+    pastille juste au-dessus affichait « **Terminée** ». Deux états contraires à trois centimètres
+    l'un de l'autre, et rien pour départager.
+
+    La phrase de la maquette avait été recopiée **sans sa condition**. Aucun test ne la lisait :
+    elle était vraie le jour où on l'a écrite, sur la seule séance qu'on regardait.
+  */
+  it('le fil ne dit pas « ouverte » sur une consultation terminée — il se contredisait', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message()])
+
+    expect(await fil().findByText(/Consultation terminée · échange chiffré et archivé/)).toBeInTheDocument()
+    expect(fil().queryByText(/Consultation ouverte/)).not.toBeInTheDocument()
+  })
+
+  it('et il le dit bien sur une consultation en cours', async () => {
+    await monter(seance(), [message()])
+
+    expect(await fil().findByText(/Consultation ouverte · échange chiffré de bout en bout/)).toBeInTheDocument()
+  })
+
   it('mais il reste signalable — c’est après coup qu’on repense à un propos déplacé', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message({ senderId: 'pat-1' })])
 
-    expect(await fil().findByLabelText('Signaler ce message')).toBeInTheDocument()
+    const utilisateur = userEvent.setup()
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+
+    expect(await screen.findByRole('menuitem', { name: /Signaler ce message/ })).toBeInTheDocument()
   })
 
-  /* Sur SES PROPRES messages, une séance close n'offre plus rien du tout : on ne se signale pas. */
-  it('n’offre rien du tout sur ses propres messages, séance close', async () => {
+  /*
+    ── Ce que poser un menu sur l'archive a RÉVÉLÉ (chantier 81) ────────────────────────────────
+
+    Sur ses propres messages, une séance close n'offrait **rien du tout** : on ne se signale pas
+    soi-même, et c'était la seule ligne que le bouton nu savait porter.
+
+    Le menu en porte une seconde, qui manquait sans qu'on la voie : **copier**. Copier ne modifie
+    pas l'archive, et c'est précisément après coup, en rédigeant le compte-rendu, qu'on veut
+    reprendre mot pour mot ce qui a été dit — y compris ce qu'on a écrit soi-même.
+
+    *Un bouton ne peut porter qu'un geste ; c'est le contenant qui limitait le produit.*
+  */
+  it('sur ses propres messages, l’archive offre la copie — et rien qui la modifie', async () => {
+    const utilisateur = userEvent.setup()
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [message({ senderId: 'pro-1' })])
 
-    await fil().findByText('Bonjour docteur')
-    expect(fil().queryByLabelText('Signaler ce message')).not.toBeInTheDocument()
+    await utilisateur.click(await fil().findByLabelText('Actions sur ce message'))
+
+    expect(await screen.findByRole('menuitem', { name: 'Copier le texte' })).toBeInTheDocument()
+    // On ne se signale pas soi-même, et on ne retouche pas une pièce.
+    expect(screen.queryByRole('menuitem', { name: /Signaler/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /Retirer de mon fil/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    Et quand il ne reste VRAIMENT rien — ma propre photo sur une archive : rien à copier, personne
+    à signaler — la poignée ne s'affiche pas. Une poignée qui ouvre le vide est pire que pas de
+    poignée : elle promet un geste et n'en tient aucun.
+  */
+  it('mais aucune poignée quand il ne reste rien à offrir — pas de menu vide', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [
+      message({ senderId: 'pro-1', kind: 'PHOTO', body: '', mediaKeys: ['k1'] }),
+    ])
+
+    await screen.findByText('Média indisponible.')
+    expect(screen.queryByLabelText('Actions sur ce message')).not.toBeInTheDocument()
   })
 
   /*
@@ -1017,6 +1107,17 @@ describe('C5 — les gestes sur un message', () => {
     web s'arrêtait à six emoji figés : **une capacité existait des deux côtés, et l'écran du
     soignant était le seul à ne pas y mener.**
   */
+  /*
+    ⚠️ Délai porté à 30 s pour ces deux tests — et la raison est vraie, pas une rustine.
+
+    Ils montent le sélecteur COMPLET : 1 867 boutons, chacun avec son style calculé. Seuls, ils
+    passent largement ; c'est sous les 44 fichiers en parallèle qu'ils dépassent les 15 s communs.
+
+    jsdom est beaucoup plus lent qu'un vrai navigateur pour poser des styles — le coût mesuré ici
+    n'est PAS le coût réel chez l'utilisateur. Mais il pointe une chose vraie : ce sélecteur monte
+    d'un coup ce qu'il pourrait monter par catégorie. **Dette n°27** — à regarder sur un Android
+    d'entrée de gamme, qui est l'appareil du produit.
+  */
   it('le « + » ouvre le sélecteur complet, et la réaction choisie part au serveur', async () => {
     const utilisateur = userEvent.setup()
     const reagir = vi.spyOn(api, 'reactToSessionMessage').mockResolvedValue(message())
@@ -1033,7 +1134,7 @@ describe('C5 — les gestes sur un message', () => {
     await utilisateur.click(cases.find((e) => e.tagName === 'BUTTON')!)
 
     await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '😀'))
-  })
+  }, 30_000)
 
   /*
     ── La phrase du dialogue n'est pas une politesse ────────────────────────────────────────────
@@ -1061,7 +1162,7 @@ describe('C5 — les gestes sur un message', () => {
 
     await waitFor(() => expect(reagir).toHaveBeenCalledWith('s1', 'm1', '😀'))
     expect(reagir).toHaveBeenCalledTimes(1)
-  })
+  }, 30_000)
 })
 
 /**
@@ -1350,7 +1451,8 @@ describe('C5 — signaler après la fin de la séance (chantier 41 ter)', () => 
     await monter(seance({ status: 'ENDED', remainingSeconds: 0 }), [message({ id: 'm-tardif', senderId: 'pat-1' })])
     const utilisateur = userEvent.setup()
 
-    await utilisateur.click(await screen.findByLabelText('Signaler ce message'))
+    await utilisateur.click(await screen.findByLabelText('Actions sur ce message'))
+    await utilisateur.click(await screen.findByRole('menuitem', { name: /Signaler ce message/ }))
     await utilisateur.click(await screen.findByRole('radio', { name: /Harcèlement/ }))
     await utilisateur.click(screen.getByRole('button', { name: /Envoyer le signalement/ }))
 

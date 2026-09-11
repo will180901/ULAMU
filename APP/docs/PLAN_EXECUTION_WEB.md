@@ -500,6 +500,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | 25 | **Un soignant révoqué par erreur ne peut plus jamais être rétabli (née le 04/09, chantier 42).** Constaté en construisant le bouton de révocation : `LEGAL_TRANSITIONS.REVOKED` vaut `[]` — le statut est **terminal** — et `VerificationCase.professionalId` est `@unique`, donc un professionnel n'a **qu'un dossier, à vie**. Une révocation prononcée à tort ferme donc définitivement l'accès de ce soignant à la plateforme : il ne peut ni re-déposer, ni ouvrir un nouveau dossier, ni être vérifié de nouveau. **La seule issue serait une écriture directe en base.** ⚠️ Ce n'est pas un défaut de code — le serveur fait exactement ce qui a été spécifié (EF-03-08). C'est une **absence de voie de recours** sur une décision humaine, et les humains se trompent. L'écran l'annonce désormais en toutes lettres avant le clic, et exige une confirmation tapée : c'est tout ce que l'interface peut faire. **Deux issues** : (a) **ouvrir la transition `REVOKED → IN_REVIEW`** dans `m03.policies.ts`, réservée au super-administrateur, avec motif et journal — ~3 h, et le dossier reprend son cours normal ; (b) **assumer l'irréversibilité** et le documenter comme une garantie (une révocation est définitive, c'est ce qui lui donne son poids). **Recommandation : (a)**, parce qu'une plateforme de santé ne peut pas faire dépendre la carrière d'un soignant de l'absence d'erreur d'un administrateur. | ✅ **soldée le 04/09 (chantier 43)** — l'issue (a) est appliquée : `REVOKED → IN_REVIEW`, `POST /admin/verification/:id/reinstate` **réservée au SUPER_ADMIN** (l'examinateur qui révoque ne se dédit pas lui-même), motif obligatoire, notification et journal. **Elle ne rend pas le badge** — elle remet le dossier en examen, et l'écran le dit. ⚠️ **Deux phrases du chantier 42 sont devenues fausses le jour même** (« aucun moyen de le rétablir ») : corrigées, et c'est un test qui l'a signalé en tombant seul de toute la suite. |
 
 | 26 | **Le code de transfert d'un Carnet ne peut pas se dicter (née le 06/09, chantier 48).** Pour revendiquer son Carnet à sa majorité, le majeur doit recevoir de son tuteur **deux UUID** (`subProfileId` et `intentId`, 73 caractères réunis) puis un OTP à six chiffres. Le mobile les réduit à une seule chaîne partageable, et ça marche — **par SMS ou WhatsApp**. Mais le cas le plus fréquent est que les deux personnes soient **dans la même pièce**, et 73 caractères ne se dictent pas. **Issue** : que `claim/start` émette en plus un **code court** (8 caractères, durée de vie PM-17), stocké sur `SubProfileClaimIntent` et accepté par `claim` à la place de l'`intentId` — migration additive, ~2 h. **Recommandation : le faire**, c'est ce qui rend le geste utilisable sans réseau tiers. | ✅ **soldée le 06/09 (chantier 49)** — `SubProfileClaimIntent.shortCode`, huit signes d'un alphabet **sans aucune paire douteuse** (ni 0/O, ni 1/I/L, ni U — les DEUX membres de chaque paire exclus), migration additive, et une route `POST /sub-profiles/claim-by-code` **où le sous-profil n'est plus dans l'URL** : le code le désigne à lui seul. Le code est **effacé à la consommation** — un code servi cesse d'exister. Le chemin d'origine reste servi. |
+| 27 | **Le sélecteur d'emoji monte 1 867 boutons d'un coup (née le 11/09, chantier 81).** Découvert par deux tests du chantier 80 qui dépassaient les 15 s communs **sous charge** — seuls, ils passent largement. `SelecteurEmoji` rend la totalité des huit catégories dès l'ouverture : 1 867 `<span>` portant chacun un style calculé. ⚠️ **Le chiffre mesuré ici n'est pas le coût réel** : jsdom est beaucoup plus lent qu'un vrai navigateur pour poser des styles, et le test exagère donc la dépense. Mais il pointe une chose vraie — l'appareil du produit est un **Android d'entrée de gamme**, et c'est là que le coût se paierait, à chaque ouverture du sélecteur. **Deux issues** : (a) **ne monter une catégorie que lorsqu'elle entre à l'écran** (observateur d'intersection, ~1 h) — il faudra un repli pour jsdom, qui n'en a pas ; (b) **mesurer d'abord sur un vrai appareil** et ne rien changer si le coût est invisible. **Recommandation : (b) avant (a)** — on ne complique pas un écran sur la foi d'un chiffre de jsdom. Les deux tests portent en attendant un délai de 30 s et la raison écrite. | ⏸ ouverte |
 
 | 27 | **Aucun client ne peut lire un paramètre métier (née le 06/09, chantier 48).** Les PM-xx ne sortent que par `GET /v1/admin/parameters`, réservé au super-administrateur. Conséquence constatée sur l'écran du Carnet familial : l'application **ne peut pas savoir à quel âge un transfert devient possible** (PM-16). Elle propose donc le geste à tous et laisse le serveur refuser en nommant l'âge — correct, mais l'utilisateur découvre la règle par un refus. ⚠️ **Recopier la valeur serait pire** : l'écran mentirait le jour où le paramètre change, et c'est exactement la dérive que le projet combat. **Issue** : une route publique en LECTURE SEULE sur une **liste blanche** de paramètres non sensibles (PM-16 l'âge, PM-13 l'échelle de notation, PM-07 le délai de confirmation) — ~1 h. **Recommandation : le faire** ; d'autres écrans buteront sur la même chose. | ✅ **soldée le 06/09 (chantier 49)** — `GET /v1/parameters`, publique, en lecture seule, bornée à une **liste blanche de trois clés ouvertes une par une avec leur raison** (PM-16, PM-13, PM-07). Publique et non authentifiée à dessein : l'âge minimum est opposé au visiteur AVANT toute session. **Employée aussitôt** là où la dette est née — l'écran du Carnet familial lit l'âge requis et grise les personnes trop jeunes ; si la lecture échoue, **il ne bloque rien** et laisse le serveur trancher. |
 
@@ -664,6 +665,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **78** | **C5 — les emoji rendus en images, identiques partout** — 11/09, demande explicite du porteur (« le rendu Apple identique partout, comme WhatsApp »). Un emoji écrit en texte est dessiné par l'APPAREIL : le même 🙏 n'a pas la même forme sur un Android d'entrée de gamme, un iPhone et un poste Windows — et certains manquent. Sur un écran où l'on décide de soins, un patient qui envoie 😟 et un soignant qui voit un carré vide, c'est un malentendu. Livré : le rendu en images depuis **une feuille servie par le site** (aucun CDN), un **sélecteur** avec catégories et récents, et le **rendu géant** d'un message tout en emoji. 📌 **Sans la bibliothèque de SARIS** : `emoji-mart` pèse 1,6 Mo et se monte à la main dans une `ref` faute d'être écrite pour React 19 — un fichier de sélecteur fait le même travail, **zéro dépendance**. Et la table est **générée puis commitée** (`outils/construire-emoji.mjs`) : **467 Ko → 48 Ko**, en ne gardant que la position de chaque emoji et son rangement. ⚠️ Le sprite pèse **4,4 Mo** — c'est le prix du rendu identique, dit au porteur avant de commencer, et il n'est téléchargé que lorsqu'un emoji s'affiche. **web 879 ✓ (864 + 15) · paquet 930 → 997 Ko · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **79** | **C5 — les emoji des RÉACTIONS, la moitié d'écran oubliée** — 11/09, trouvé en vérifiant le chantier 78 **en ligne**, pas en écrivant le code. Les emoji des *messages* étaient devenus des images ; ceux des *réactions* — la palette rapide et les réactions posées — étaient restés du texte dessiné par la police du poste. Le même 👍 avait donc **deux apparences sur le même écran, à trois pixels de distance** : exactement ce que le chantier 78 prétendait supprimer. 📌 **Une garantie qui s'arrête à la moitié d'un écran n'est pas une garantie** — et le chantier qui la pose est le moins bien placé pour voir où elle s'arrête, parce qu'il regarde l'endroit qu'il vient d'écrire. Deux tests tiennent désormais les deux emplacements. **web 881 ✓ (879 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 | **80** | **C5 — un seul menu de message, et le clic droit** — 11/09, né d'une phrase du porteur : *« je ne vois pas ce bouton qui apparaît au survol »*. Il avait raison de ne pas le voir : il y avait **quatre icônes flottantes**, invisibles tant qu'on ne survolait pas exactement le bon endroit, et **aucun autre chemin**. 📌 **Le plus instructif n'est pas le défaut, c'est où était déjà la réponse** : le **mobile d'ULAMU** offre depuis toujours une feuille d'actions à l'appui long (`ChatActionSheet.tsx` — bande de réactions, « + » vers le sélecteur complet, puis les actions), et CMS-SARIS le clic droit. **Le web était la seule des trois surfaces à ne rien offrir.** Ce n'était donc pas une idée à emprunter dehors : un écart à réduire chez nous. Livré : **un menu unique** (poignée + **clic droit**), la bande de réactions en tête, **« + » vers le sélecteur complet** — le serveur accepte n'importe quel emoji et le mobile le proposait déjà, *onzième fois que le motif « une capacité sans chemin » apparaît, et la première où il séparait nos deux propres clients* — et **« Copier le texte »**, que le mobile ne PEUT pas offrir (pas de presse-papier natif) et que le web obtient pour rien. ⚠️ **Une faute injectée a démasqué un de mes propres tests** : « le clic droit ne rouvre pas le menu sur une archive » passait même sans le garde-fou, puisqu'aucun menu n'y est monté. Réécrit sur ce que le garde-fou fait vraiment — **rendre le menu du navigateur** au lieu de le confisquer. **web 889 ✓ (881 + 8) · 160 promesses, 119 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **81** | **C5 — le menu jusque sur l'archive, et une ligne qui se contredisait** — 11/09, deux demandes du porteur et un défaut lu sur SA capture d'écran. **(1)** Une séance close offrait un **bouton nu** « signaler » posé sur la bulle, là où tous les autres gestes vivent dans un menu : *deux grammaires sur le même écran*, et celle de l'archive était la plus rare. Elle reçoit le **même menu**, réduit à ce qui reste permis. 📌 **Et le menu a révélé un geste qui manquait** : « Copier le texte » est parfaitement légitime sur une archive — copier ne modifie rien, et c'est précisément après coup, en rédigeant le compte-rendu, qu'on veut reprendre mot pour mot ce qui a été dit. Sur ses PROPRES messages une archive n'offrait **rien du tout** ; elle offre la copie. *Un bouton ne porte qu'un geste : c'était le contenant qui limitait le produit.* **(2)** Le fil annonçait « **Consultation ouverte** » pendant que la pastille au-dessus affichait « **Terminée** » — deux états contraires à trois centimètres l'un de l'autre. La phrase de la maquette avait été recopiée **sans sa condition** (chantier 76), et aucun test ne la lisait. Ouvre la **dette n°27** (le sélecteur monte 1 867 boutons d'un coup). **web 893 ✓ (889 + 4) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -712,6 +714,67 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 81 (le menu sur l'archive) a appris
+
+*11/09/2026 — le contenant décide de ce que le produit peut offrir.*
+
+#### Deux grammaires sur le même écran
+
+Une séance close offrait un **bouton nu** « signaler », posé directement sur la bulle. Toutes les
+autres actions, depuis le chantier 80, vivent dans un menu ouvert par une poignée.
+
+Deux formes pour la même famille de gestes — et celle de l'archive était **la plus rare** : on
+l'apprend une fois sur cent. Le porteur l'a dit en une phrase : *« au lieu du bouton directement
+sur le message, je veux le même bouton flottant qui fait apparaître un menu, mais un menu avec
+uniquement les fonctionnalités autorisées »*.
+
+**Le geste ne doit pas changer selon l'état de la séance. Seul son CONTENU change.**
+
+#### Ce que le menu a révélé — et que le bouton ne pouvait pas porter
+
+Un bouton ne porte qu'**un** geste. C'est pourquoi l'archive n'offrait que « signaler », et
+**rien du tout** sur ses propres messages.
+
+Le menu en porte plusieurs, et il a immédiatement fait apparaître ce qui manquait : **« Copier le
+texte »**. Copier ne modifie pas l'archive, et c'est **précisément après coup**, en rédigeant le
+compte-rendu dans les 24 h (PM-30), qu'on veut reprendre mot pour mot ce que le patient a écrit —
+y compris ce qu'on a dit soi-même.
+
+*Ce n'était pas une décision de produit : c'était le contenant qui limitait le produit. Une forme
+trop étroite ne se contente pas de mal présenter — elle empêche de penser ce qu'on pourrait offrir.*
+
+Ce qui reste exclu, et pourquoi : **« Retirer de mon fil »** modifie ce que l'archive montre, même
+à moi seul. Un fil clos est une pièce, pas un brouillon.
+
+#### ⚠️ L'écran se contredisait, et c'est une capture du porteur qui l'a montré
+
+Le fil annonçait en tête « **Consultation ouverte** · échange chiffré de bout en bout » pendant que
+la pastille juste au-dessus affichait « **Terminée** ».
+
+La phrase venait de la maquette C5 et avait été recopiée **sans sa condition** (chantier 76). Elle
+était vraie le jour où on l'a écrite, sur la seule séance qu'on regardait.
+
+| | |
+|---|---|
+| **Ce qui l'a trouvée** | Une capture d'écran du porteur. Pas les 889 tests. |
+| **Pourquoi aucun test ne la tenait** | Le filet ne la comptait pas : elle n'énonce ni limite ni refus, elle énonce un **état** — et un état contredit est aussi grave qu'une promesse non tenue. |
+| **Ce qui la tient maintenant** | Deux tests, un par état, et la faute injectée les vérifie. |
+
+C'est le **troisième** défaut d'affilée trouvé en regardant l'écran en vrai plutôt qu'en relisant
+le code : les emoji des réactions (79), le menu introuvable (80), cette phrase (81). *Trois fois,
+ce que je venais d'écrire, je l'ai relu tel que je voulais qu'il soit.*
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 889 ✓ | **893 ✓** |
+| Gestes sur une archive (message de l'autre) | 1 | **2** (copier, signaler) |
+| Gestes sur une archive (mes messages) | **0** | **1** (copier) |
+| Formes de menu sur l'écran | 2 | **1** |
+
+Cinq fautes injectées, cinq détectées.
 
 ### Ce que le chantier 80 (le menu du message) a appris
 

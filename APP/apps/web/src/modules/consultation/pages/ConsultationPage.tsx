@@ -415,26 +415,60 @@ function GestesBulle({
   actif: boolean
 }) {
   /*
-    Séance close : plus de menu du tout — il n'y aurait qu'une seule ligne dedans. Le signalement
-    reste un bouton direct, et disparaît sur ses PROPRES messages, où il n'y a rien à offrir.
+    ── Séance close : LE MÊME MENU, réduit à ce qui reste permis (chantier 81, 11/09/2026) ──────
+
+    Il y avait ici un bouton « signaler » posé nu sur la bulle — un geste au dessin différent de
+    tous les autres, à l'endroit où les autres vivent dans un menu. **Deux grammaires sur le même
+    écran**, et celle de l'archive était la plus rare : on l'apprend une fois sur cent.
+
+    Demande du porteur, 11/09 : *« au lieu du bouton directement sur le message, je veux le même
+    bouton flottant qui fait apparaître un menu, mais un menu avec uniquement les fonctionnalités
+    autorisées »*. C'est la bonne règle, et elle vaut mieux que l'économie d'un clic : **le geste
+    ne change pas selon l'état de la séance, seul son CONTENU change.**
+
+    ⚠️ Et ce menu révèle un geste qui manquait. Sur une archive, « Copier le texte » est
+    parfaitement légitime — copier ne modifie rien, et c'est **précisément après coup**, en
+    rédigeant le compte-rendu, qu'on veut reprendre mot pour mot ce que le patient a écrit. Le
+    bouton nu ne pouvait pas le porter ; le menu, oui. Sur ses PROPRES messages, une archive
+    n'offrait rien du tout : elle offre maintenant la copie.
+
+    Ce qui reste exclu, et pourquoi : « Retirer de mon fil » modifie ce que l'archive montre, même
+    si c'est à moi seul. Un fil clos est une pièce, pas un brouillon.
   */
   if (!actif) {
-    if (aMoi) return null
+    // Ni texte à copier, ni personne à signaler : pas de menu vide, pas de poignée qui ment.
+    if (!copiable && aMoi) return null
     return (
       <span
+        style={{ opacity: ouvert ? 1 : undefined }}
         className={
           'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
-          'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 lg:right-auto lg:left-full lg:ml-1'
+          'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 ' +
+          (aMoi ? 'lg:right-full lg:mr-1' : 'lg:right-auto lg:left-full lg:ml-1')
         }
       >
-        <button
-          type="button"
-          onClick={onSignaler}
-          aria-label="Signaler ce message"
-          className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-[var(--erreur-texte)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-        >
-          <Flag size={13} strokeWidth={1.8} aria-hidden="true" />
-        </button>
+        <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
+          <DropdownMenuTrigger
+            aria-label="Actions sur ce message"
+            className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+          >
+            <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
+            {copiable ? (
+              <DropdownMenuItem onSelect={onCopier}>
+                <Copy size={14} strokeWidth={1.6} aria-hidden="true" />
+                Copier le texte
+              </DropdownMenuItem>
+            ) : null}
+            {aMoi ? null : (
+              <DropdownMenuItem variant="destructive" onSelect={onSignaler}>
+                <Flag size={14} strokeWidth={1.6} aria-hidden="true" />
+                Signaler ce message
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </span>
     )
   }
@@ -613,6 +647,17 @@ function Bulle({
   const [copie, setCopie] = useState<'ok' | 'echec' | null>(null)
 
   /*
+    Y a-t-il un menu à ouvrir ? La règle est lue ICI, une seule fois, parce que deux endroits en
+    dépendent : la poignée (qui ne doit pas s'afficher pour rien) et le clic droit (qui ne doit pas
+    confisquer le menu du navigateur pour rien).
+
+    Séance ouverte : toujours. Séance close : seulement s'il reste quelque chose — un texte à
+    copier, ou quelqu'un d'autre à signaler.
+  */
+  const copiable = m.kind === 'TEXT' && !!m.body?.trim()
+  const menuPossible = !!actif || copiable || !aMoi
+
+  /*
     ⚠️ Ces trois crochets sont AVANT le `return` du message supprimé, et doivent y rester : React
     exige le même nombre de crochets à chaque rendu, et une trace de suppression en appellerait
     moins que la bulle qu'elle remplace.
@@ -667,11 +712,13 @@ function Bulle({
           qu'on tente d'instinct, et c'est ce qui manquait : la poignée reste, mais il fallait
           d'abord survoler exactement le bon endroit pour la voir. Le porteur ne l'a pas trouvée.
 
-          Séance close : on ne le détourne PAS. Il n'y aurait qu'une seule ligne à montrer, et
-          confisquer le menu du navigateur pour un seul geste est un mauvais échange.
+          Il suit le MENU, pas l'état de la séance (chantier 81) : depuis qu'une archive a le sien,
+          le clic droit y ouvre la version réduite. La seule fois où on rend la main au navigateur,
+          c'est quand il n'y a rien à montrer — confisquer son menu pour ouvrir le vide serait le
+          pire des deux mondes.
         */
         onContextMenu={(e) => {
-          if (!actif) return
+          if (!menuPossible) return
           e.preventDefault()
           setMenuOuvert(true)
         }}
@@ -691,7 +738,7 @@ function Bulle({
           actif={!!actif}
           aMoi={aMoi}
           editable={aMoi && m.kind === 'TEXT' && dansLaFenetre}
-          copiable={m.kind === 'TEXT' && !!m.body?.trim()}
+          copiable={copiable}
           retirableParTous={aMoi && dansLaFenetre}
           ouvert={menuOuvert}
           surOuvert={setMenuOuvert}
@@ -1548,11 +1595,22 @@ export function ConsultationPage() {
 
                     Elle ne s'affiche que s'il y a des messages : sur un fil vide, la phrase d'état
                     juste en dessous dit déjà tout, et deux phrases pour un fil vide, c'est du bruit.
+
+                    ⚠️ **Corrigé le 11/09 (chantier 81), vu sur une capture du porteur.** La phrase
+                    était FIXE : sur une consultation terminée, le fil annonçait « Consultation
+                    ouverte » pendant que la pastille juste au-dessus affichait « Terminée ». Deux
+                    états contraires à trois centimètres l'un de l'autre, et rien pour départager.
+
+                    La phrase de la maquette a été recopiée sans sa condition. C'est le même défaut
+                    que les emoji des réactions au chantier 79 : ce qu'on vient d'écrire, on le
+                    relit tel qu'on voulait qu'il soit. **Seul l'écran en vrai état le dément.**
                   */}
                   {items.length > 0 ? (
                     <li className="flex items-center justify-center gap-1.5 pt-1 ul-aide">
                       <Lock size={11} strokeWidth={1.8} aria-hidden="true" />
-                      Consultation ouverte · échange chiffré de bout en bout
+                      {active
+                        ? 'Consultation ouverte · échange chiffré de bout en bout'
+                        : 'Consultation terminée · échange chiffré et archivé'}
                     </li>
                   ) : null}
                   {items.length === 0 ? (
