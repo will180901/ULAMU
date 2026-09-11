@@ -21,6 +21,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { AideRaccourcis } from '@/components/layout/AideRaccourcis'
 import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
+import { TraqueurNavigation } from '@/components/layout/FlechesNavigation'
 import { useRaccourcisGlobaux } from '@/hooks/useRaccourcisGlobaux'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useIdleLogout } from '@/state/useIdleLogout'
@@ -180,6 +181,15 @@ export function AppShell() {
 
         */}
         <BulleFormatageGlobale />
+
+        {/*
+          ── Le traqueur de navigation (chantier 94) ──────────────────────────────────────────
+
+          Il ne rend rien : il observe les changements d'écran et alimente la pile que lisent les
+          flèches du bandeau. Monté ici parce que la coquille est le seul endroit traversé par
+          toutes les pages — et une seule fois, sinon chaque page compterait double.
+        */}
+        <TraqueurNavigation />
       </main>
     </div>
   )

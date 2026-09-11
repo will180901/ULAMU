@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **996 ✓** (47 fichiers, + 6 todo) |
+| Web | `npx vitest run` | **1 011 ✓** (48 fichiers, + 6 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 92
+## 3. Ce qui a été fait — chantiers 58 à 94
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 94 | *(à pousser)* | **Précédent / Suivant, et la mémoire d'écran.** Une pile de navigation à nous (*React Router ne dit pas si l'on peut reculer*), un traqueur `PUSH`/`REPLACE`/`POP`, des flèches **montées même éteintes**, et un état d'écran rangé par page dans le stockage de session. 📌 Règle reprise de CMS : **jamais de brouillon ni de modale** — *une décision en suspens qu'on ne se souvient pas d'avoir commencée est une confirmation donnée sans l'avoir voulue*. ⚠️ 20 tests tombés d'un coup : vider le stockage ne vide pas un magasin qui vit en mémoire. Et deux couleurs d'onde relevées sur une capture du téléphone. |
+| 93 | `ebe7e2a` | **Le « retard » comptait les pauses du soignant entre ses propres messages.** 1 930 s affichés, **90 s réellement attendues**. 📌 Le commentaire disait la règle juste, le code avait dérivé. ⚠️ Aucun des 648 tests n'est tombé à la correction : *une règle qui juge quelqu'un et que rien ne vérifie est une accusation sans preuve*. ⚠️ **Asymétrie posée au porteur** : seul le mobile affiche ce compteur. |
 | 92 | *(à pousser)* | **Les bulles prennent la forme du mobile.** Rayon 12 px, coin rabattu, **ma bulle en accent saturé avec texte blanc**, heure DANS la bulle, et **un message tout en emoji perd sa bulle** (WhatsApp). ⚠️ *Changer un fond, c'est changer tout ce qu'il porte* : cinq éléments repassent en encre claire. 📌 Le seuil de la mise en page fixe passe à **768 px** — mesuré, la fenêtre du porteur fait 799 px et il n'avait jamais vu les deux colonnes. ⛔ **La photo de profil sur la note vocale est impossible aujourd'hui** : le serveur ne sert aucun avatar dans une séance. |
 | 91 | *(à pousser)* | **Le rideau de confidentialité retiré, le lecteur vocal reformé.** Le rideau part à la demande du porteur — composant, état, `inert`, bouton **et ses trois tests** : *un test qui garde une fonctionnalité absente ment sur ce que le produit fait*. Le lecteur vocal prend les proportions exactes du mobile (bouton 34 px, tête de lecture, vitesse en pastille) et **perd son contenant**. ⚠️ Les couleurs ne se copient pas : la bulle du web est claire là où celle du téléphone est bleue. |
 | 90 | *(à pousser)* | **La note vocale sur le web.** Lecteur riche (onde, déplacement au clic, vitesse 1× / 1,5× / 2×). 📌 **L'onde est VRAIE** : le navigateur décode le son là où le mobile dessine au hasard — et si le décodage échoue, **barres égales, pas fausse onde**. ⚠️ Deux défauts vus sur une consultation réelle : `body` porte la DURÉE d'une note vocale, que le web affichait comme une légende (« 76 ») et n'envoyait pas. Les coches à trois états existaient déjà depuis le chantier 21. |

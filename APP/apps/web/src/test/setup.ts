@@ -9,6 +9,9 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach, vi } from 'vitest'
 import { cleanup, configure } from '@testing-library/react'
 
+import { useEtatDesPages } from '@/state/useEtatPersistant'
+import { usePileNavigation } from '@/state/usePileNavigation'
+
 /**
  * Le délai d'attente de `findBy*` passe de 1 s à 2,5 s.
  *
@@ -108,4 +111,20 @@ afterEach(() => {
   vi.restoreAllMocks()
   localStorage.clear()
   sessionStorage.clear()
+
+  /*
+    ── Les magasins qui SURVIVENT au stockage (chantier 94) ──────────────────────────────────────
+
+    `useEtatDesPages` et `usePileNavigation` gardent leur état EN MÉMOIRE : ils lisent le stockage
+    une fois, à la création du module, puis vivent leur vie. Vider `sessionStorage` ne les remet
+    donc pas à zéro — le module est chargé une seule fois pour toute la suite.
+
+    Sans ces deux lignes, vingt tests du registre des consultations sont tombés d'un coup : une
+    recherche posée par un test filtrait la liste du suivant, qui ne trouvait plus ses lignes.
+
+    *Vider le stockage d'un magasin n'est pas vider le magasin. C'est le prix de toute mémoire qui
+    survit à la navigation — il se paie une fois, ici, et pas dans chaque fichier de test.*
+  */
+  useEtatDesPages.setState({ pages: {} })
+  usePileNavigation.setState({ chemins: [], index: -1 })
 })

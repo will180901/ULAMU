@@ -162,8 +162,24 @@ export function LecteurVocal({
     celles de l'autre). L'encre d'accent porte sur les deux ; on ne reprend donc pas le blanc du
     téléphone, qui n'a de sens que sur son bleu saturé.
   */
-  const jouee = surAccent ? '#FFFFFF' : 'var(--ap-600)'
-  const aVenir = surAccent ? 'rgba(255,255,255,.38)' : 'color-mix(in srgb, var(--ap-600) 26%, transparent)'
+  /*
+    ── Relevé sur une capture RÉELLE du téléphone (chantier 94, 11/09/2026) ──────────────────────
+
+    Le porteur a demandé de décrire ce que je voyais avant de prétendre l'avoir aligné. Capture de
+    son appareil à pleine résolution, puis lecture de `VoiceNotePlayer.tsx` :
+
+      played   = mine ? '#FFFFFF' : accent500          → web : blanc ou `--ap-400`
+      unplayed = mine ? blanc 42 % : borderStrong      → web : blanc 42 % ou `--bordure-normale`
+
+    ⚠️ **Ce que j'avais mis de travers** : sur une bulle REÇUE, l'onde à venir était un bleu à 26 %.
+    Le mobile y met une teinte de bordure **neutre** — un gris. C'est visible à l'œil, et je ne
+    l'avais pas vu parce que j'avais déduit les couleurs de la palette au lieu de les lire.
+
+    *Deviner une couleur « cohérente » n'est pas la relever. Une capture vaut mieux qu'une
+    déduction, et le code source de l'autre application vaut mieux que la capture.*
+  */
+  const jouee = surAccent ? '#FFFFFF' : 'var(--ap-400)'
+  const aVenir = surAccent ? 'rgba(255,255,255,.42)' : 'var(--bordure-normale)'
 
   return (
     <span className="flex w-full max-w-[264px] items-center gap-2 py-0.5">

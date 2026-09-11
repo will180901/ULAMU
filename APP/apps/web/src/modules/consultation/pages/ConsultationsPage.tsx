@@ -45,6 +45,7 @@
  * 6. **« ORD-2026-00412 » retiré.** Ce format de référence n'existe pas : les identifiants sont des
  *    UUID opaques. On montre l'état de l'ordonnance, pas un numéro inventé.
  */
+import { useEtatPersistant } from '@/state/useEtatPersistant'
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -327,7 +328,17 @@ function BoiteAnnulation({
 }
 
 export function ConsultationsPage() {
-  const [recherche, setRecherche] = useState('')
+  /*
+    ── Ce que l'on retrouve en revenant (chantier 94) ───────────────────────────────────────────
+
+    On ouvre une consultation depuis la page 3 du registre, on revient : sans cela, on retombait
+    page 1, recherche effacée, à refaire défiler. *Le registre est un point de départ ; on y revient
+    toujours, et on n'y revient jamais pour recommencer.*
+
+    ⚠️ Ce qui est gardé ici est de la NAVIGATION — une page, une recherche. Aucune décision, aucun
+    brouillon : la boîte d'annulation, elle, reste en état local et repart fermée.
+  */
+  const [recherche, setRecherche] = useEtatPersistant('consultations', 'recherche', '')
   const [onglet, setOnglet] = useState<Onglet>('toutes')
   /*
     ── La pagination — chantier 77 ───────────────────────────────────────────────────────────────
@@ -339,7 +350,7 @@ export function ConsultationsPage() {
     Conséquence à ne jamais masquer : **au-delà de cent, les plus anciennes n'arrivent pas**, et
     tourner les pages ne les fera pas revenir. La phrase qui le dit reste sous le tableau.
   */
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useEtatPersistant('consultations', 'page', 0)
   /*
     Les deux gestes du menu qui demandent une confirmation. `null` = fermé.
 

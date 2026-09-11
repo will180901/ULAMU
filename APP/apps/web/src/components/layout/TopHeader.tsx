@@ -22,6 +22,7 @@
 import { Menu } from 'lucide-react'
 import { useSessionStore } from '@/state/session.store'
 import { ESPACE_PAR_ROLE } from '@/config/navigation.config'
+import { FlechesNavigation } from '@/components/layout/FlechesNavigation'
 import { IndicateurPresence } from '@/components/layout/IndicateurPresence'
 import { CentreNotifications } from '@/components/layout/CentreNotifications'
 import { RechercheGlobale } from '@/components/layout/RechercheGlobale'
@@ -59,13 +60,24 @@ export function TopHeader({
           <Menu size={18} strokeWidth={1.5} aria-hidden="true" />
         </button>
       ) : (
-        <nav aria-label="Fil d'Ariane" className="mr-auto flex min-w-0 items-center gap-1.5 text-[11px] text-[var(--texte-tertiaire)]">
-          <span className="whitespace-nowrap text-muted-foreground">{espace}</span>
-          <span aria-hidden="true" className="text-[var(--bordure-normale)]">
-            /
-          </span>
-          <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium text-foreground">{titre}</span>
-        </nav>
+        <div className="mr-auto flex min-w-0 items-center gap-2">
+          {/*
+            ── Les flèches devant le fil d'Ariane (chantier 94) ─────────────────────────────────
+
+            À gauche de l'endroit où l'on est, comme dans un navigateur et comme dans CMS-SARIS :
+            on lit « d'où je viens » avant « où je suis ». Elles restent montées même inactives —
+            *une commande qui apparaît et disparaît se cherche ; une commande éteinte s'attend.*
+          */}
+          <FlechesNavigation />
+          <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />
+          <nav aria-label="Fil d'Ariane" className="flex min-w-0 items-center gap-1.5 text-[11px] text-[var(--texte-tertiaire)]">
+            <span className="whitespace-nowrap text-muted-foreground">{espace}</span>
+            <span aria-hidden="true" className="text-[var(--bordure-normale)]">
+              /
+            </span>
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium text-foreground">{titre}</span>
+          </nav>
+        </div>
       )}
 
       {/*

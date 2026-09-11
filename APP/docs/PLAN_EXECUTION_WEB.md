@@ -678,6 +678,8 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **90** | **La note vocale sur le web : une onde VRAIE, et une durée qui cessait d'être une durée** — 11/09, demande du porteur (« je voudrais que la note vocale s'affiche comme ça »), faite depuis une **consultation réellement active**. Le lecteur devient riche : **onde, déplacement au clic, tête de lecture, vitesse 1× / 1,5× / 2×**, comme sur le téléphone. 📌 **Mais l'onde est VRAIE ici** : le mobile dessine 36 barres pseudo-aléatoires faute de pouvoir décoder un son ; le navigateur décode, donc on montre les **pics réels** — on voit où l'on parle et où l'on se tait, et on saute au passage qui compte. Et quand le décodage échoue, **barres ÉGALES, pas une fausse onde** : *un dessin au hasard prétend dire quelque chose du son ; des barres égales n'affirment rien.* ⚠️ **Deux défauts trouvés en regardant l'écran** : pour un message `VOICE`, `body` porte **la durée en secondes** (convention posée par le mobile) — le web l'affichait comme une légende, et on lisait « 76 » sous chaque note venue d'un téléphone ; et le web **n'envoyait pas** cette durée, donc une note enregistrée ici arrivait chez le patient sans durée. *Un champ qui change de sens selon un autre champ est un piège que les types ne rattrapent pas.* **web 990 ✓ (983 + 7) · lint 0 · build ✓ · 6 fautes injectées, 5 détectées — la sixième est le chemin d'enregistrement, injouable sous jsdom.** | ⏸ en attente | ⏸ |
 | **91** | **Le rideau de confidentialité s'en va, et le lecteur vocal prend la forme du téléphone** — 11/09, deux demandes du porteur, écran contre écran. **(1) Le rideau est retiré** (« on n'en a pas besoin pour l'instant ») : composant supprimé, état, `inert` et bouton du bandeau avec lui, **et ses trois tests** — *un test qui garde une fonctionnalité absente n'est pas une sécurité, c'est un mensonge sur ce que le produit fait.* Tout reste dans l'historique. **(2) Le lecteur vocal** reprend les proportions exactes du mobile : bouton de 34 px, barres de 3 px, **tête de lecture ronde**, durée en chasse fixe, vitesse en pastille — et **le contenant disparaît** : il vivait dans une pilule bordée à l'intérieur de la bulle, une boîte dans une boîte que le téléphone n'a jamais eue. ⚠️ **Les couleurs ne se copient pas** : sur le téléphone ma bulle est d'un bleu saturé et l'onde y est blanche ; sur le web elle est `--ap-50`, très claire — une onde blanche y serait invisible. *Copier une maquette, c'est reprendre ses proportions et ses gestes ; recopier ses couleurs sur un autre fond, c'est recopier une erreur.* Au passage, la propriété `aMoi` du lecteur **est supprimée** : elle ne servait plus, et une entrée qui ne fait rien ment sur le contrat du composant. **web 989 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
 | **92** | **Les bulles du web prennent la forme de celles du mobile** — 11/09, demande du porteur, les deux écrans côte à côte (« regarde dans les moindres détails »). Relevé dans `SessionScreen.tsx` et repris : **rayon 12 px**, **coin rabattu à 3 px du côté de l'expéditeur**, **ma bulle en accent SATURÉ avec texte blanc** (mobile `accent500` = web `--ap-400`, la correspondance est écrite dans le fichier de jetons), bulle reçue sur fond de carte avec filet et ombre légère, et **l'heure passée DANS la bulle**. 📌 **Un message qui n'est QUE des emoji perd sa bulle** — convention WhatsApp : *un « 👍 » sur un rectangle coloré ressemble à un autocollant encadré ; posé sur le fil, il ressemble à un geste.* ⚠️ **Changer un fond, c'est changer tout ce qu'il porte** : citation, lecteur vocal, poignée, heure et accusés repassent en encre claire, et `surAccent` **revient** au lecteur vocal après avoir été supprimé la veille — la raison qui l'avait rendu inutile a disparu. Et le « lu » ne peut plus être `--ap-600` sur l'accent : *une couleur se choisit contre le fond qui la porte.* 📌 **Le seuil de la mise en page fixe passe de 1024 à 768 px** — mesuré : la fenêtre du porteur fait 799 px, il n'avait donc JAMAIS vu les deux colonnes fixes, et sa page défilait de 543 px à cause du rail empilé (546 px), pas du fil (déjà plafonné à 227). **web 996 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
+| **93** | **Le « retard » comptait les pauses du soignant entre ses propres messages** — 11/09, **vu par le porteur** sur le téléphone du patient : un badge rouge « retard 32:13 ». Mesuré sur sa consultation réelle : **1 930 s affichés, 90 s réellement attendues** — les 1 840 s restantes (95 %) étaient les silences du soignant **après ses propres messages**. Écrire « Bonjour », réfléchir dix minutes, puis envoyer son analyse coûtait neuf minutes et demie de « retard », alors que personne n'attendait. 📌 **Le commentaire disait déjà la règle juste** (« si le soignant RÉPOND après 45 s ») : *répondre, c'est répondre à quelqu'un*, et le code mesurait autre chose — **quand un commentaire et son code divergent, c'est presque toujours le commentaire qui dit l'intention et le code qui a dérivé.** ⚠️ **La corriger n'a fait tomber aucun des 648 tests** : la règle n'avait aucune couverture propre — *une règle qui juge quelqu'un et que rien ne vérifie est une accusation sans preuve*. Neuf tests la tiennent maintenant, dont la reconstitution du cas réel. ⚠️ **Asymétrie posée au porteur** : seul le MOBILE affiche ce compteur — le patient lit « retard 32:13 », le soignant ne sait même pas que la mesure existe. **web 996 ✓ · API unitaires 657 ✓ (+9) · lint 0 · builds et types propres · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
+| **94** | **Précédent / Suivant, et la mémoire d'écran** — 11/09, demande du porteur (« comme avec le projet CMS, va voir »), motif lu dans `navStack.store.ts` et `usePersistedState.ts` puis adapté. Quatre pièces : **une pile à nous** — *React Router ne dit pas si l'on peut avancer ou reculer*, et sans elle les deux flèches seraient toujours actives ; **un traqueur** qui distingue `PUSH` / `REPLACE` / `POP`, faute de quoi une redirection laisse une trace et « retour » ramène là où l'on n'a jamais voulu aller ; **les flèches** dans le bandeau, **montées même éteintes** (*une commande qui apparaît et disparaît se cherche ; une commande éteinte s'attend*) ; **la mémoire d'écran**, rangée par écran et par clé dans le stockage de session. 📌 **La règle reprise telle quelle de CMS** : jamais de brouillon ni de fenêtre modale dans cette mémoire — *rouvrir un écran et y trouver une décision en suspens qu'on ne se souvient pas d'avoir commencée, sur un écran de soin, c'est une confirmation donnée sans l'avoir voulue.* ⚠️ **Vingt tests sont tombés d'un coup** : vider `sessionStorage` ne vide pas un magasin qui vit en mémoire — la remise à zéro se paie une fois, dans le harnais commun. Et deux couleurs d'onde **relevées sur une capture du téléphone** au lieu d'être déduites de la palette. **web 1 011 ✓ (996 + 15) · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -726,6 +728,98 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 94 (la navigation) a appris
+
+*11/09/2026 — reprendre un motif éprouvé demande de comprendre ce qu'il protège.*
+
+#### Pourquoi une pile à nous
+
+**React Router ne dit pas si l'on peut avancer ou reculer.** L'historique du navigateur ne se lit
+pas : on peut y aller, jamais savoir ce qu'il contient. Sans pile, les deux flèches seraient
+toujours actives.
+
+> **Une flèche active qui ne fait rien est pire qu'une flèche éteinte** : elle promet un geste et
+> n'en tient aucun.
+
+Et la pile ne navigue pas : elle **observe**. Quand elle se désynchronise — le bouton du navigateur
+enfoncé trois fois, un lien collé — elle se **reconstruit** au lieu de résister. *Une pile qui ne
+décrit plus rien vaut moins qu'une pile qui repart.*
+
+Les flèches, elles, restent **montées même éteintes** : les faire disparaître ferait sauter le fil
+d'Ariane d'un écran à l'autre. *Une commande qui apparaît et disparaît se cherche ; une commande
+éteinte s'attend.*
+
+#### La règle que CMS avait écrite, et qu'il fallait comprendre avant de la copier
+
+`usePersistedState` y porte un avertissement : **jamais pour les modales, les tiroirs, les
+brouillons**. On pouvait le prendre pour de la prudence de développeur. C'en est une de produit :
+
+> Rouvrir un écran et y trouver une décision en suspens qu'on ne se souvient pas d'avoir commencée
+> est pire que de tout retaper. **Sur un écran de soin, c'est une confirmation donnée sans l'avoir
+> voulue.**
+
+Ce qui est gardé : une page de tableau, une recherche, un onglet, une sélection. *Ce qu'on retrouve
+avec plaisir, jamais ce qu'on déclenche par surprise.* Un test le fixe : le brouillon repart vide.
+
+#### ⚠️ Vider le stockage n'est pas vider le magasin
+
+Vingt tests sont tombés d'un coup après le branchement. Le harnais commun vidait bien
+`sessionStorage` — mais les deux magasins gardent leur état **en mémoire** : ils lisent le stockage
+une seule fois, à la création du module, chargé une seule fois pour toute la suite. Une recherche
+posée par un test filtrait la liste du suivant.
+
+*C'est le prix de toute mémoire qui survit à la navigation. Il se paie une fois, dans le harnais —
+pas dans chaque fichier de test.*
+
+#### Deviner une couleur n'est pas la relever
+
+Le porteur a demandé de **décrire** les bulles de sa capture avant de prétendre les avoir alignées.
+En capturant son téléphone à pleine résolution puis en lisant `VoiceNotePlayer.tsx`, deux couleurs
+d'onde étaient fausses : sur une bulle **reçue**, la partie à venir doit être un **gris de bordure**,
+et j'y avais mis un bleu à 26 % — déduit de la palette, jamais relevé. Aucun test ne les tenait ; la
+faute injectée passait. Il y en a un maintenant.
+
+> **Une capture vaut mieux qu'une déduction, et le code source de l'autre application vaut mieux que
+> la capture.**
+
+J'avais aussi annoncé **trois** corrections de bulle : la troisième — la bordure de la bulle reçue —
+était déjà juste (8 % contre 7 % au mobile, indiscernable). *Annoncer une correction qu'on n'a pas
+faite, c'est se créditer d'un défaut qui n'existait pas.*
+
+### Ce que le chantier 93 (le retard) a appris
+
+*11/09/2026 — une mesure qui juge, et que rien ne vérifiait.*
+
+#### Quand le commentaire et le code ne disent pas la même chose
+
+Au-dessus de la règle, le commentaire annonçait : *« si le soignant **répond** après 45 s, +15 s »*.
+Répondre, c'est répondre **à quelqu'un**. Le code, lui, comptait **tout** écart précédant un message
+du soignant — y compris quand le message d'avant était le sien.
+
+> **Quand un commentaire et son code divergent, c'est presque toujours le commentaire qui dit
+> l'intention et le code qui a dérivé.**
+
+Sur la consultation réelle du porteur : **1 930 s affichés, 90 s réellement attendues**. Les 95 %
+restants étaient les silences du soignant entre ses propres phrases — réfléchir dix minutes après
+avoir écrit « Bonjour » coûtait neuf minutes et demie de « retard », alors que personne n'attendait.
+
+#### ⚠️ Aucun test n'est tombé — et c'est le vrai défaut
+
+La correction n'a fait tomber **aucun** des 648 tests de l'API. La règle n'avait pas de couverture
+propre : personne ne l'avait jamais écrite noir sur blanc.
+
+> **Une règle qui juge quelqu'un et que rien ne vérifie est une accusation sans preuve.**
+
+Elle décide d'un délai professionnel porté au dossier d'un soignant. Neuf tests la tiennent
+désormais, dont la **reconstitution du cas réel** — 1 930 s attendus avant, 90 s après.
+
+#### Une asymétrie qui n'est pas un défaut technique
+
+Seul le **mobile** affiche ce compteur. Le patient lit « retard 32:13 » en rouge ; le soignant, sur
+le web, ne sait même pas que la mesure existe — il ne peut ni la voir, ni l'expliquer, ni la
+corriger. *Être mesuré sans savoir qu'on l'est n'est pas une question de code.* La décision est
+posée au porteur.
 
 ### Ce que le chantier 92 (les bulles) a appris
 

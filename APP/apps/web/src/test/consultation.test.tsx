@@ -1044,6 +1044,27 @@ describe('C5 — la note vocale (chantier 90)', () => {
     expect(contenant.className).not.toMatch(/border|bg-secondary|rounded-full/)
   })
 
+  /*
+    ── Les couleurs de l'onde, RELEVÉES et non déduites (chantier 94) ───────────────────────────
+
+    Sur une bulle REÇUE, le mobile peint l'onde à venir avec une teinte de bordure **neutre** — un
+    gris. J'y avais mis un bleu à 26 %, déduit de la palette : c'était visible à l'œil sur la
+    capture du porteur, et aucun test ne le tenait.
+
+    *Deviner une couleur « cohérente » n'est pas la relever.*
+  */
+  it('sur une bulle reçue, l’onde à venir est GRISE, pas bleue', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal({ senderId: 'pat-1' })])
+    await fil().findByLabelText('Écouter la note vocale')
+
+    const barres = [...document.querySelectorAll('[aria-hidden="true"] > span[style*="height"]')] as HTMLElement[]
+    const aVenir = barres.map((b) => b.style.background).filter(Boolean)
+    expect(aVenir.length).toBeGreaterThan(0)
+    expect(aVenir.some((c) => /ap-600|ap-500/.test(c))).toBe(false)
+    expect(aVenir.some((c) => /bordure-normale/.test(c))).toBe(true)
+  })
+
   /* La vitesse tourne 1× → 1,5× → 2× → 1×, comme sur le téléphone. */
   it('la vitesse de lecture se change, et revient à 1×', async () => {
     servirUnSon()
