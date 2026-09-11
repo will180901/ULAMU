@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **975 ✓** (47 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **979 ✓** (47 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 87
+## 3. Ce qui a été fait — chantiers 58 à 88
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 88 | *(à pousser)* | **L'ordonnance rend les marqueurs — et le nom du médicament, non.** Le seul des trois restes du chantier 87 qui touche à la sécurité : une posologie est lue par quelqu'un qui délivre un médicament. Posologie et motif d'annulation rendus **web et mobile**. 📌 La règle : *on rend les marqueurs là, et seulement là, où la bulle peut les écrire* — donc pas le nom hors référentiel, saisi dans une ligne simple. Restent les motifs d'administration et les raisons de signalement : laid, pas dangereux. |
 | 87 | *(à pousser)* | **La mise en forme PARTOUT.** Le porteur l'a essayée dans le compte-rendu : j'avais restreint la bulle au composeur, et j'avais tort de décider pour lui. Montée une fois dans la coquille, elle s'attache aux **23 zones de saisie** sans câblage. 📌 Le Carnet rend la même grammaire — *ouvrir une écriture ouvre une lecture*. ⚠️ **4 des 6 fautes injectées n'ont réveillé personne** : `waitFor` négatif réussit avant que la chose ait pu apparaître. Tests refaits. |
 | 86 | *(à pousser)* | **La mise en forme d'un message.** Bulle au-dessus de la sélection (gras, italique, barré, souligné, agrandir, listes), Ctrl+Entrée qui continue la liste et en sort sur une ligne vide. **Web ET mobile au même commit** — sinon le patient lirait les astérisques. 📌 Grammaire vendorée en trois copies, et **un test les compare à l'octet près** : rien ne le faisait jusqu'ici. ⚠️ Un marqueur n'ouvre qu'en début de mot — sans cela `nom_de_famille` se fait manger ses tirets bas. |
 | 85 | *(à pousser)* | **Les codes du cahier sortent des textes affichés.** Demande du porteur : le projet est en production, « (EF-06-06) » ne dit rien à un médecin. **154 citations retirées dans 40 fichiers**, dont **53 messages d'erreur du serveur** — ceux qu'on lit au pire moment. ⚠️ NE partent pas : les commentaires du code, les **clés** `PM-xx` (c'est la donnée, pas une citation), les erreurs de démarrage. 📌 Deux défauts trouvés en chemin : un JSDoc dupliqué (antérieur) et **un test d'absence devenu vide** — il serait resté vert même si la carte s'affichait. |

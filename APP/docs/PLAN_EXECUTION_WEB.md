@@ -672,6 +672,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **85** | **Les codes du cahier sortent des textes affichés** — 11/09, demande du porteur : *« retire partout les textes du genre (RM-06-04), (EF-06-06)… nous sommes en production »*. **154 citations retirées dans 40 fichiers** — web, mobile et **serveur**. 📌 Le plus important était invisible depuis l'écran : **53 messages d'erreur du serveur** portaient un code, et ce sont eux qu'un patient lit quand quelque chose échoue — « Compte suspendu (RM-01-05) », « Code expiré (PM-17) ». ⚠️ **Trois choses NE partent pas**, et la distinction est le vrai travail : les **commentaires du code** (la traçabilité vers le cahier, qui ne se voit pas) ; les **clés de paramètre** `PM-xx` de l'écran Paramètres métier et de l'API publique (là, le code n'est pas une citation, c'est **la donnée** — la retirer laisserait des lignes sans nom) ; les **erreurs de démarrage** destinées à l'exploitant, où le code nomme le paramètre mal réglé. **Deux défauts trouvés en chemin** : un JSDoc **dupliqué sur une ligne** dans `m03` (présent dans HEAD avant ce chantier), et surtout **un test d'absence devenu vide** — il vérifiait qu'un texte portant « (PM-01) » était absent, donc il serait resté vert même si la carte s'affichait. **web 910 ✓ · API unitaires 641 ✓ · lint 0 · builds ✓ · 1 faute injectée sur le test réparé, détectée.** | ⏸ en attente | ⏸ |
 | **86** | **La mise en forme d'un message — bulle sur la sélection, listes, web ET mobile** — 11/09, demande du porteur : *« une bulle au-dessus du texte sélectionné, avec gras, italique, barré, souligné, taille, et transformer en liste ; Ctrl+Entrée continue la liste ; supprimer la ligne courante annule la suite »*. Livré **en entier**, et **dans les deux applications au même commit** — sans le mobile, le patient lirait « *prenez ce médicament* » avec ses astérisques pendant que le soignant croirait avoir insisté. 📌 **Une grammaire, trois copies, un garde-fou** : la source est `packages/shared/src/texte-riche.ts`, vendorée selon la convention du projet — mais **rien ne vérifiait jusqu'ici qu'une copie ne dérive pas**. Un test compare désormais les trois **à l'octet près**. ⚠️ **La règle qui protège le vocabulaire du soin** : un marqueur n'ouvre qu'en début de mot et ne ferme qu'en fin de mot — sans elle, `nom_de_famille` deviendrait « nomdefamille » avec « de » en italique. WhatsApp ne pose pas cette règle ; ici le texte est un dossier. **Le champ reste un vrai champ de texte** (il montre `*gras*`) : un éditeur qui stylise en direct manipulerait du HTML dans un message qui porte des données de santé. **web 966 ✓ · lint 0 · builds et types propres · 9 fautes injectées, 9 détectées.** | ⏸ en attente | ⏸ |
 | **87** | **La mise en forme PARTOUT, et quatre tests qui ne gardaient rien** — 11/09. Le porteur essaie la sélection dans le compte-rendu : rien. *« Il faut ce type de sélection partout dans les interfaces où il y a des champs de saisie texte. »* J'avais restreint la bulle au seul composeur au chantier 86, **et j'avais tort de décider pour lui**. Elle est désormais montée **une fois dans la coquille** et s'attache d'elle-même aux **vingt-trois** zones de saisie, sans câblage écran par écran : elle écrit par le **setter natif** puis émet un vrai `input`, donc aucun écran n'a à la connaître. Le composeur perd son chemin particulier — *deux chemins pour la même fonction finissent toujours par diverger*. 📌 **Ouvrir une écriture ouvre une lecture** : le compte-rendu ressort dans le **Carnet du patient**, qui rend maintenant la même grammaire — sans quoi soignant et patient reliraient des astérisques dans un dossier de santé. ⚠️ **Quatre des six fautes injectées n'ont réveillé personne** : `waitFor(… not.toBeInTheDocument)` réussit **au premier instant**, avant que la chose ait eu le temps d'apparaître. Tests refaits, les six tombent. **web 975 ✓ · lint 0 · build et types propres · 6 fautes injectées, 6 détectées après correction des tests.** | ⏸ en attente | ⏸ |
+| **88** | **L'ordonnance rend les marqueurs — et le nom du médicament, non** — 11/09, le premier des trois restes du chantier 87, et **le seul qui touche à la sécurité**. Depuis que la bulle s'attache à toute zone de saisie, la **posologie** en fait partie : sans rendu, un médecin qui écrit « *matin et soir* » verrait ses astérisques, **et le patient aussi, sur une instruction de médicament**. Posologie et motif d'annulation rendus **des deux côtés** (web et mobile). 📌 **La règle qui décide, et qui vaudra pour les écrans suivants** : *on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.* Donc **non** pour le nom d'un médicament hors référentiel, qui est une ligne SIMPLE : la bulle n'y va pas, un astérisque tapé là est un astérisque **voulu**, et le transformer reviendrait à réécrire ce que le médecin a nommé — sur la seule ligne d'ordonnance qu'aucun garde-fou ne relit. Le composant de rendu prend le même nom des deux côtés (`TexteMisEnForme`). **web 979 ✓ · lint 0 · build et types propres (web et mobile) · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -720,6 +721,55 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 88 (l'ordonnance) a appris
+
+*11/09/2026 — ouvrir une écriture oblige à choisir où l'on lit, pas seulement à lire partout.*
+
+#### Le reste le plus grave du chantier 87
+
+Trois écrans affichaient des textes devenus formatables sans les rendre : les **motifs
+d'administration**, les **raisons de signalement**, et l'**ordonnance**. Les deux premiers risquent
+la laideur. Le troisième risque autre chose : **une posologie est lue par quelqu'un qui délivre un
+médicament.**
+
+Posologie et motif d'annulation rendent donc les marqueurs, **web et mobile au même commit** — sans
+le mobile, le patient aurait vu les astérisques que le médecin croyait avoir remplacés par du gras.
+
+#### ⚠️ La règle qui décide, et qui vaudra pour les écrans suivants
+
+> **On rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.**
+
+Le nom d'un médicament **hors référentiel** est saisi dans une ligne SIMPLE. La bulle ne s'y attache
+pas (chantier 87 : elle ignore les champs d'une seule ligne). Donc un astérisque tapé là est un
+astérisque **voulu** — et le rendre reviendrait à réécrire ce que le médecin a nommé, sur la seule
+ligne d'ordonnance qu'**aucun garde-fou ne relit** (EF-09-02).
+
+*Rendre partout serait plus simple à expliquer. Ce serait aussi faux.* Un test tient cette
+frontière, et la faute qui la franchit le fait tomber.
+
+Même raison pour la durée et la quantité : ce sont des nombres du formulaire, pas du texte saisi.
+
+#### Un nom pour une chose
+
+Le composant de rendu s'appelait `TexteMessage` côté mobile et `TexteMisEnForme` côté web, depuis
+qu'il avait quitté le module de la consultation. Il porte désormais **le même nom des deux côtés**.
+Un composant qui sert aux messages, aux posologies et au Carnet ne peut pas continuer à s'appeler
+« texte de message » : *un nom qui a cessé d'être vrai finit par tromper quelqu'un.*
+
+#### Ce que j'ai cassé en chemin, et qui dit quelque chose
+
+En corrigeant mes propres tests, un remplacement trop large a transformé un `monter(false, …)`
+**légitime** — celui qui prouve qu'une ordonnance scellée reste lisible sur une séance close — et a
+dupliqué une déclaration. Le compilateur l'a dit tout de suite ; sans lui, un test aurait cessé de
+garder ce qu'il gardait, en silence.
+
+*Un remplacement global sur un fichier de tests touche des intentions, pas seulement du texte.*
+
+#### Ce qui reste des trois
+
+Les **motifs d'administration** et les **raisons de signalement** ne rendent toujours pas. C'est
+laid, pas dangereux — et c'est écrit ici pour rester une liste plutôt qu'une surprise.
 
 ### Ce que le chantier 87 (la mise en forme partout) a appris
 

@@ -41,7 +41,7 @@ import {cancelRecording, fileToBase64, startRecording, stopRecording} from '../s
 import {ChatActionSheet} from '../components/ChatActionSheet';
 import {FeuilleSignalement} from '../components/FeuilleSignalement';
 import {MediaPreview} from '../components/MediaPreview';
-import {TexteMessage} from '../components/TexteMessage';
+import {TexteMisEnForme} from '../components/TexteMisEnForme';
 import {MediaViewer} from '../components/MediaViewer';
 import {VoiceNotePlayer} from '../components/VoiceNotePlayer';
 import {MessageReaction, MessageView, SessionView} from '../lib/contracts';
@@ -972,7 +972,7 @@ function Bubble({
             {replyCard}
             <MediaGrid keys={imageKeys} headers={headers} onOpen={setViewerKey} />
             {msg.body ? (
-              <TexteMessage
+              <TexteMisEnForme
                 texte={msg.body}
                 style={[styles.bubbleText, mine && styles.bubbleTextMine, styles.photoCaption]}
               />
@@ -1031,7 +1031,7 @@ function Bubble({
       <View style={styles.bubbleWrap}>
         <Pressable onLongPress={onLongPress} delayLongPress={300} style={bubbleStyle}>
           {replyCard}
-          <TexteMessage texte={msg.body ?? ''} style={[styles.bubbleText, mine && styles.bubbleTextMine]} />
+          <TexteMisEnForme texte={msg.body ?? ''} style={[styles.bubbleText, mine && styles.bubbleTextMine]} />
           {footer}
         </Pressable>
         <ReactionsRow reactions={msg.reactions} mine={mine} onToggle={onReact} />

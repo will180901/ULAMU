@@ -1,5 +1,9 @@
 /**
- * Le corps d'un message, rendu — chantier 86, 11/09/2026.
+ * Un texte mis en forme, rendu — chantiers 86 et 88.
+ *
+ * Il ne sert plus qu'aux messages : depuis que la bulle s'attache à toute zone de saisie, les
+ * mêmes marqueurs peuvent venir d'une posologie ou d'un motif d'annulation. D'où le nom, et
+ * d'où le fait qu'il porte désormais le MÊME que son jumeau du web.
  *
  * ⚠️ **Le pendant mobile du rendu web, et il n'est pas optionnel.** Le soignant écrit depuis le
  * web ; si le mobile ne lisait pas la même grammaire, le patient recevrait « *prenez ce
@@ -41,7 +45,7 @@ function styleDe(s: StyleTexte, base: number): TextStyle | undefined {
   };
 }
 
-export function TexteMessage({
+export function TexteMisEnForme({
   texte,
   style,
   tailleBase = 13.5,

@@ -44,6 +44,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -481,8 +482,14 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
             c'est au patient de le savoir.
           */}
           Cette ordonnance est annulée : elle ne doit plus être suivie
-          {ordonnance.cancelReason ? ` (${ordonnance.cancelReason})` : ''}. Le patient en est
-          informé — prévenez-le aussi de vive voix s'il a déjà pu la présenter.
+          {ordonnance.cancelReason ? (
+            <>
+              {' ('}
+              <TexteMisEnForme texte={ordonnance.cancelReason} />
+              {')'}
+            </>
+          ) : null}
+          . Le patient en est informé — prévenez-le aussi de vive voix s'il a déjà pu la présenter.
         </Avis>
       )}
 
@@ -496,7 +503,7 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
               ) : null}
             </p>
             <p className="mt-0.5 text-[12px] leading-[1.5] whitespace-pre-wrap text-[var(--texte-secondaire)]">
-              {l.posology}
+              <TexteMisEnForme texte={l.posology} />
             </p>
             <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
               {l.qtyPrescribed} à délivrer
@@ -558,6 +565,24 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
 
 // ── Le panneau ─────────────────────────────────────────────────────────────
 
+/*
+ * ── Pourquoi l'ordonnance rend les marqueurs (chantier 88, 11/09/2026) ───────────────────────
+ *
+ * Depuis le chantier 87, la bulle de mise en forme s'attache à TOUTE zone de saisie — la posologie
+ * et le motif d'annulation en font partie. Sans rendu, un médecin qui écrit « *matin et soir* »
+ * verrait ses astérisques, et le patient aussi, **sur une instruction de médicament**.
+ *
+ * ⚠️ **La règle qui décide où rendre, et où ne pas rendre** :
+ *
+ *     on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.
+ *
+ * Donc oui pour la **posologie** et le **motif d'annulation** (zones de saisie multilignes), et
+ * **non** pour le nom du médicament hors référentiel, qui est une ligne simple : la bulle n'y va
+ * pas, et un astérisque tapé là serait un astérisque VOULU. Le transformer serait pire que de
+ * l'afficher.
+ *
+ * C'est aussi non pour le nom venant du référentiel : ce n'est pas du texte d'utilisateur.
+ */
 export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; active: boolean }) {
   const qc = useQueryClient()
   const [ouvert, setOuvert] = useState(false)

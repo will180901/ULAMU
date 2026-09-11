@@ -10,6 +10,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Badge, Banner, Card, IconButton} from '../components/ui';
 import {Grain} from '../components/Grain';
+import {TexteMisEnForme} from '../components/TexteMisEnForme';
 import {ErrorState, LoadingState} from '../components/ScreenState';
 import {Icon} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
@@ -89,7 +90,9 @@ export function OrdonnanceScreen({route, navigation}: NativeStackScreenProps<App
           </View>
 
           {presc.status === 'CANCELLED' && presc.cancelReason && (
-            <Banner tone="warning" title="Ordonnance annulée">{presc.cancelReason}</Banner>
+            <Banner tone="warning" title="Ordonnance annulée">
+              <TexteMisEnForme texte={presc.cancelReason} />
+            </Banner>
           )}
 
           {/* Médicaments */}
@@ -100,8 +103,14 @@ export function OrdonnanceScreen({route, navigation}: NativeStackScreenProps<App
                   <Icon name="pill" size={16} variant="tile" />
                   <View style={styles.flex}>
                     <Text style={styles.lineName}>{l.freeText ?? l.medicationName ?? 'Médicament prescrit'}</Text>
+                    {/*
+                      ⚠️ La posologie rend la mise en forme (chantier 88) ; la durée et la quantité
+                      non — ce sont des nombres du formulaire, pas du texte saisi.
+
+                      *On rend les marqueurs là, et seulement là, où la bulle peut les écrire.*
+                    */}
                     <Text style={styles.linePoso}>
-                      {l.posology}
+                      <TexteMisEnForme texte={l.posology} style={styles.linePoso} tailleBase={12} />
                       {l.durationDays ? ` · ${l.durationDays} jours` : ''}
                       {l.qtyPrescribed ? ` · ${l.qtyPrescribed} u.` : ''}
                     </Text>

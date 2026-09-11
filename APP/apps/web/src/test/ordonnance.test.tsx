@@ -227,6 +227,77 @@ describe('C7 — le scellement', () => {
   })
 })
 
+describe('C7 — la mise en forme d’une ordonnance (chantier 88)', () => {
+  /*
+    ── Pourquoi ces tests existent ──────────────────────────────────────────────────────────────
+
+    Depuis le chantier 87, la bulle de mise en forme s'attache à TOUTE zone de saisie — la
+    posologie en fait partie. Sans rendu, un médecin qui écrit « *matin et soir* » verrait ses
+    astérisques, et le patient aussi, **sur une instruction de médicament**.
+
+    C'est le seul des trois restes du chantier 87 qui touche à la sécurité : un motif d'audit mal
+    rendu est laid, une posologie mal rendue est lue par quelqu'un qui délivre un médicament.
+  */
+  it('rend la mise en forme d’une posologie', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(true, [ordonnance({ lines: [{ ...ordonnance().lines[0], posology: '1 gélule *matin et soir*' }] })])
+    // Les ordonnances scellées vivent DANS le panneau : il faut l'ouvrir pour les relire.
+    await utilisateur.click(await screen.findByRole('button', { name: /(Rédiger|Revoir) l.ordonnance/ }))
+
+    const insiste = await screen.findByText('matin et soir')
+    expect(insiste).toHaveStyle({ fontWeight: '600' })
+    // Et les marqueurs ont disparu : ils sont devenus du style.
+    expect(screen.queryByText(/\*matin et soir\*/)).not.toBeInTheDocument()
+  })
+
+  it('et celle d’un motif d’annulation', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(true, [
+      ordonnance({ status: 'CANCELLED', cancelReason: 'Erreur de ~dosage~ posologie', qrToken: null }),
+    ])
+    // Les ordonnances scellées vivent DANS le panneau : il faut l'ouvrir pour les relire.
+    await utilisateur.click(await screen.findByRole('button', { name: /(Rédiger|Revoir) l.ordonnance/ }))
+
+    expect(await screen.findByText('dosage')).toHaveStyle({ textDecorationLine: 'line-through' })
+  })
+
+  /*
+    ⚠️ **LA règle de ce chantier, et le test qui la tient :**
+
+        on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.
+
+    Le nom d'un médicament hors référentiel est saisi dans une ligne SIMPLE, où la bulle ne va pas.
+    Un astérisque tapé là est donc un astérisque **voulu** : le transformer en gras serait réécrire
+    ce que le médecin a nommé — sur la seule ligne d'ordonnance qu'aucun garde-fou ne relit.
+
+    *Rendre partout serait plus simple à expliquer. Ce serait aussi faux.*
+  */
+  it('mais PAS le nom d’un médicament hors référentiel — la bulle n’y écrit pas', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(true, [
+      ordonnance({
+        lines: [{ ...ordonnance().lines[0], medicamentId: null, medicationName: null, freeText: 'Sirop *maison* 5 %' }],
+      }),
+    ])
+    // Les ordonnances scellées vivent DANS le panneau : il faut l'ouvrir pour les relire.
+    await utilisateur.click(await screen.findByRole('button', { name: /(Rédiger|Revoir) l.ordonnance/ }))
+
+    // Le nom ressort EXACTEMENT tel qu'il a été saisi, astérisques compris.
+    expect(await screen.findByText(/Sirop \*maison\* 5 %/)).toBeInTheDocument()
+    expect(screen.queryByText('maison')).not.toBeInTheDocument()
+  })
+
+  /* Une posologie sans marqueur ne change pas d'un cheveu : le rendu n'ajoute rien. */
+  it('une posologie ordinaire ressort intacte', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(true, [ordonnance()])
+    // Les ordonnances scellées vivent DANS le panneau : il faut l'ouvrir pour les relire.
+    await utilisateur.click(await screen.findByRole('button', { name: /(Rédiger|Revoir) l.ordonnance/ }))
+
+    expect(await screen.findByText('1 gélule matin et soir')).toBeInTheDocument()
+  })
+})
+
 describe('C7 — une ordonnance déjà scellée', () => {
   it("affiche l'échéance servie par le serveur, sans écrire aucune durée (PM-10)", async () => {
     const utilisateur = userEvent.setup()
