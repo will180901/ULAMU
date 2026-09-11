@@ -659,6 +659,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **73** | **Un lien qui arrive à la bonne page mais pas au bon endroit** — 10/09, **trouvé par le porteur** sur son propre écran. Le bouton « Modifier mon numéro » de C6 le déposait **en haut** de Réglages → Sécurité, devant « Adresse email » — le bloc du téléphone est plus bas. Il a cliqué, vu un écran sans rapport, et conclu que **la modification n'existait pas**. Elle existait depuis le chantier 67. Livré : `&bloc=telephone`, l'ancre sur le bloc, et le saut à l'arrivée. 📌 **Et la leçon du chantier** : la faute qui renomme l'ANCRE n'a réveillé personne — le lien pointait dans le vide et 76 tests passaient. Les deux moitiés de la règle vivent dans deux fichiers ; il fallait un test de chaque côté. **web 813 ✓ (811 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées après correction du filet.** | ⏸ en attente | ⏸ |
 | **74** | **C3 — Demandes : une demande payée n'attend plus son paiement** — 11/09, quatrième écran de la passe 1. ⚠️ Ouvert la demande du 28/08 sur le site : sa pastille dit **« Payée »**, et l'écran demandait juste en dessous d'attendre le paiement. La phrase n'était conditionnée par **aucun état**. Elle promettait en plus les symptômes « juste après » sans dire OÙ — ils sont dans la consultation, `sessionId` est servi depuis toujours, la route existe, et **aucun écran ne les reliait** : **neuvième occurrence** du motif. Livré : la phrase juste quand c'est payé, le bouton « Ouvrir la consultation », le panneau « Temps restant » qui cède la place à **comment** la demande s'est terminée (« expirée » et « payée » n'appellent pas le même geste, et l'une coûte un point de taux), le compte à rebours passé de **34 px inventés** à la voix de chiffre héros, et les 10 tailles hors charte ramenées à 0. 📌 **Et la suite complète mentait** : 13 échecs dans 4 fichiers non touchés, tous à ~5 000 ms — des dépassements de délai. Les quatre fichiers passent SEULS (140 ✓). `testTimeout` porté à 15 s. **web 821 ✓ (813 + 8) · 158 promesses, 117 retenues · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **75** | **C5 — les médias : ouvrir ce que le serveur tenait déjà ouvert** — 11/09, chantier A du plan de la consultation. Écrit après avoir ouvert les maquettes C4/C5 et lu la messagerie de **CMS-SARIS** (4 103 lignes). ⚠️ **Le serveur accepte quatre types de message — `TEXT`, `PHOTO`, `VOICE`, `DOCUMENT` — et un album de dix photos (`fileKeys`) ; le web n'envoyait que du texte et UNE photo.** Le fil savait pourtant déjà AFFICHER les albums (`mediaKeys`). **Dixième occurrence** du motif, et la première où c'est un **type TypeScript** qui fermait la porte : `sendMessage` ne déclarait que `'TEXT' | 'PHOTO'`, donc aucun écran ne POUVAIT envoyer une note vocale. ⚠️ **Et la limite de taille se découvrait par l'échec** : le DTO accepte ~84 Mo, le stockage refuse au-delà de **8 Mo** — un fichier de 20 Mo traversait le réseau EN ENTIER avant d'être rejeté, et le commentaire du DTO annonce « ≈ 80 Mo, cohérent » : **faux d'un facteur dix**. Livré : les **notes vocales** (chrono, onde d'amplitude, envoi en un geste, lecteur dans la bulle), l'**album de dix photos**, l'**aperçu avant envoi** avec compression et **poids annoncé AVANT**, et le minuteur devenu un **instrument** encadré et étiqueté « Horloge serveur ». 📌 **Le piège du format**, vérifié sur un vrai navigateur : `MediaRecorder` produit du `audio/webm` que le serveur REFUSE — l'intersection tient en `audio/mp4` (Chromium/Safari) ou `audio/ogg` (Firefox), et sans format commun le micro est désactivé **avec sa raison**. **web 844 ✓ (821 + 23) · 158 promesses, 117 retenues · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
+| **76** | **C5 — la consultation prend un nom** — 11/09, chantier B du plan de la consultation. Le titre de l'écran était le mot « Consultation » : trois séances ouvertes dans la journée donnaient **trois onglets identiques**. Le motif était pourtant servi depuis toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas. Livré : le **titre porte le motif**, la **référence de séance** est lisible sous lui, les **honoraires** entrent dans le rail (par une jointure côté écran : le prix vit sur la DEMANDE, pas sur la séance), et le fil s'ouvre en rappelant le chiffrement de bout en bout. ⚠️ **Deux corrections à mon propre plan** : les allergies étaient **déjà affichées** (panneau Carnet) — mon analyse des maquettes les avait manquées ; et **donner un nom à la ligne de C4 est impossible sans le serveur**, `SessionListItem` ne portant pas la pré-consultation. 📌 Et le piège du heredoc, payé une nouvelle fois : `\r?\n` transformé en vrais CR/LF dans une expression régulière. **web 853 ✓ (844 + 9) · 158 promesses, 117 retenues (inchangé — la phrase ajoutée rejoint le filet sans changer l'inventaire) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -707,6 +708,94 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 76 (C5 — le nom de la consultation) a appris
+
+*11/09/2026 — le jour où deux points de mon propre plan se sont révélés faux.*
+
+#### ⚠️ Deux corrections à une analyse que j'avais signée
+
+Le plan de la consultation, écrit la veille après lecture des maquettes, annonçait deux choses
+inexactes. Les voici, dites en clair plutôt que corrigées en silence.
+
+**1. « Les allergies manquent dans le rail » — elles y étaient.** La maquette C5 les range dans son
+bloc « Contexte patient » ; chez nous elles vivent dans un panneau **distinct**, le Carnet, avec le
+groupe sanguin et les maladies chroniques. En comparant bloc à bloc, j'ai conclu à une absence là
+où il n'y avait qu'un **rangement différent** — et meilleur, puisqu'il distingue ce que le patient
+déclare avant la séance de ce que porte son dossier médical.
+
+**2. « Donner un nom à la ligne de C4 ne demande aucun serveur » — c'est faux.**
+`SessionListItem` ne porte **pas** la pré-consultation : le registre des consultations ne reçoit
+jamais le motif. Il reste donc `573DCCCB` tant que le serveur ne sert pas ce champ. Reversé en
+dette.
+
+*Comparer deux maquettes bloc à bloc dit ce qui DIFFÈRE, pas ce qui MANQUE. La différence ne devient
+un manque qu'après avoir cherché la chose ailleurs — et j'avais sauté cette étape.*
+
+#### Une consultation qui s'appelle « Consultation » n'a pas de nom
+
+Trois séances ouvertes dans la journée donnaient trois onglets identiques, trois titres identiques,
+et aucun moyen de les distinguer. La maquette C5 titre par le MOTIF, et c'est ce qu'un soignant
+reconnaît — pas une référence hexadécimale.
+
+Le motif était **déjà servi** (`preConsultation.symptoms`) et **déjà affiché** : tout en bas du rail
+de droite. La matière était là, rangée là où personne ne la cherche.
+
+Ce qu'on prend : la **première ligne**, coupée à soixante caractères au dernier espace. Un patient
+écrit un paragraphe ; un titre est une ligne. Le texte entier reste lisible dans le rail — et ce
+n'est pas ce titre qui sert à soigner, il sert à **reconnaître**.
+
+⚠️ **Sans pré-consultation, on ne devine pas.** Une séance en préparation garde le mot générique :
+fabriquer un nom à partir de rien serait pire, parce qu'on lui ferait confiance.
+
+#### Le prix n'est pas là où on le cherche
+
+L'écran où un médecin passe trente minutes ne disait nulle part ce qu'elles lui rapportent.
+
+⚠️ Et le montant **n'est pas sur la séance** : `GET /v1/care-sessions/:id` ne porte aucun prix. Il
+vit sur la **demande** qui l'a précédée (`offerPriceXaf`), reliée par `sessionId`. La jointure se
+fait donc côté écran, sur une route que le client appelle déjà ailleurs — le cache la sert, elle ne
+part qu'une fois.
+
+⚠️ **Et on n'écrit jamais le net.** La commission vient du contrat signé du soignant (RM-13-07) et
+diffère d'un médecin à l'autre : aucun écran ne peut la calculer, il ne peut que lire ce qui a été
+prélevé — et cette lecture n'existe qu'au dépôt du compte-rendu. Le bloc renvoie donc à « Mes
+gains » plutôt que d'afficher un chiffre faux.
+
+*Une jointure absente n'est pas un zéro : sans demande correspondante, le bloc ne s'affiche pas du
+tout. Un test le retient.*
+
+#### 📌 Le piège du heredoc, payé une nouvelle fois
+
+La passation le note depuis le 05/08 : *« les heredocs bash avec du gros contenu échouent — les
+échappements s'effondrent »*. Il s'est manifesté d'une façon nouvelle : `\r?\n`, dans une
+expression régulière, est arrivé dans le fichier sous forme de **vrais CR et LF** — coupant le
+littéral en deux et cassant la compilation.
+
+Le diagnostic n'a pas été immédiat, parce que le fichier *avait l'air* correct à la lecture : le CR
+est invisible. Il a fallu lire les **octets**.
+
+*Corrigé par un script écrit avec l'outil d'écriture, jamais par le shell. La règle se précise :
+tout contenu portant des échappements passe par un fichier, pas par un heredoc.*
+
+#### L'injection a encore trouvé un trou — le sixième chantier de suite
+
+Sur six fautes, cinq sont tombées. **La sixième n'a réveillé personne** : remplacer la ligne
+d'ouverture du fil — *« Consultation ouverte · échange chiffré de bout en bout »* — par le mot
+« Fil » laissait les 77 tests verts.
+
+C'est pourtant le **seul endroit où la garantie de chiffrement se dit DANS le fil**, là où les
+messages passent ; le sous-titre du panneau la dit aussi, mais on ne le relit pas en défilant. Elle
+rejoint le filet.
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 844 ✓ | **853 ✓** |
+| Titre de C5 | « Consultation » | **le motif du patient** |
+| Le prix de la séance, visible pendant la séance | nulle part | **dans le rail** |
+| Promesses retenues | 117 / 158 | **117 / 158** (la phrase rejoint le filet ; l'outil ne la comptait pas comme promesse) |
 
 ### Ce que le chantier 75 (C5 — les médias) a appris
 

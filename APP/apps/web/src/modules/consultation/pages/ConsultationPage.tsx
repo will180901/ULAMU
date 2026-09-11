@@ -66,6 +66,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import {
   AlertTriangle,
+  Banknote,
   BookOpen,
   Check,
   CheckCheck,
@@ -116,7 +117,7 @@ import {
 import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
-import { compresserImage, enBase64, formatDuree, MIMES_IMAGE } from '../media'
+import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
@@ -995,6 +996,24 @@ export function ConsultationPage() {
   })
 
   const active = session.data?.status === 'ACTIVE'
+  /*
+    ── Ce que cette consultation rapporte — chantier 76 ─────────────────────────────────────────
+
+    L'écran où un médecin passe trente minutes ne disait nulle part ce qu'elles lui rapportent. La
+    maquette C5 met les honoraires dans le rail, et elle a raison.
+
+    ⚠️ **Le montant n'est pas sur la séance.** `GET /v1/care-sessions/:id` ne porte aucun prix — il
+    vit sur la DEMANDE qui l'a précédée (`offerPriceXaf`), et la demande porte le `sessionId` qui
+    les relie. La jointure se fait donc ici, côté écran, sur une route que le client appelle déjà
+    ailleurs (tableau de bord, registre) : la requête est servie par le cache, elle ne part qu'une
+    fois.
+
+    C'est le **prix payé par le patient**, pas le net : la commission se lit au contrat, elle
+    dépend du soignant (RM-13-07), et aucun écran ne la calcule — « Mes gains » montre le net, qui
+    n'existe qu'au dépôt du compte-rendu.
+  */
+  const demandes = useQuery({ queryKey: ['handshakes', 'mine'], queryFn: () => api.myHandshakes(), retry: false })
+
   const messages = useQuery({
     queryKey: ['session', sessionId, 'messages'],
     queryFn: () => api.sessionMessages(sessionId),
@@ -1214,6 +1233,8 @@ export function ConsultationPage() {
   const s = session.data
   const etat = ETATS[s.status]
   const pre = s.preConsultation
+  /* Le prix payé par le patient pour CETTE séance — voir la note sur `demandes` plus haut. */
+  const prixPatient = (demandes.data?.items ?? []).find((h) => h.sessionId === s.id)?.offerPriceXaf ?? null
   const peutProlonger = active && s.extensionTotalSec < 1800
   const nomAuteur = (senderId: string) => (senderId === s.professionalId ? 'Vous' : 'Le patient')
   const enCoursDEnvoi = envoyer.isPending || modifier.isPending
@@ -1231,10 +1252,32 @@ export function ConsultationPage() {
             chronomètre. À 320 px le titre tombait à 74 px pour 108 nécessaires — « Consultati ».
             Avec un plancher, c'est la pastille qui passe à la ligne, et le titre reste entier. */}
         <span className="min-w-0 flex-1 basis-44">
-          <h1 className="ul-titre-page">Consultation</h1>
-          <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[var(--texte-tertiaire)]">
+          {/*
+            ── La consultation prend un NOM — chantier 76 ─────────────────────────────────────────
+
+            Le titre était le mot « Consultation ». Un médecin qui ouvre trois séances dans la
+            journée ne pouvait pas les distinguer : trois onglets identiques, trois fois le même
+            mot. La maquette C5 titre par le MOTIF (« Palpitations nocturnes ») — et elle a raison.
+
+            Le motif vient des symptômes de la pré-consultation, qui étaient déjà servis et déjà
+            affichés… tout en bas du rail de droite. La matière était là, rangée là où on ne la
+            cherche pas.
+
+            ⚠️ Le titre reste « Consultation » tant que la pré-consultation n'est pas transmise —
+            une séance en préparation n'a pas encore de motif, et inventer un titre à partir de rien
+            serait pire que le mot générique.
+          */}
+          <h1 className="ul-titre-page">{titreConsultation(s.preConsultation)}</h1>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-[var(--texte-tertiaire)]">
             <Lock size={12} strokeWidth={1.8} aria-hidden="true" />
             Échange chiffré · {s.durationMin} minutes
+            {/*
+              La RÉFÉRENCE de la séance. La maquette la met au fil d'Ariane ; le nôtre est calculé
+              par la coquille à partir des routes et ne sait pas porter une valeur d'écran. Elle vit
+              donc ici, en chasse fixe — c'est elle qu'on dicte au support ou qu'on cherche dans le
+              registre des consultations, où elle sert déjà d'identifiant.
+            */}
+            <span className="t-code-sm">· {s.id.slice(0, 8).toUpperCase()}</span>
           </p>
         </span>
         <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
@@ -1311,6 +1354,22 @@ export function ConsultationPage() {
             ) : (
               <div className="max-h-[46dvh] overflow-y-auto">
                 <ul className="flex flex-col gap-3">
+                  {/*
+                    ── La ligne qui ouvre le fil — chantier 76 ──────────────────────────────────
+
+                    La maquette C5 pose une ligne système en tête : « Consultation ouverte · échange
+                    chiffré de bout en bout ». Elle n'est pas décorative — c'est le seul endroit où
+                    la garantie de chiffrement se dit DANS le fil, là où les messages passent.
+
+                    Elle ne s'affiche que s'il y a des messages : sur un fil vide, la phrase d'état
+                    juste en dessous dit déjà tout, et deux phrases pour un fil vide, c'est du bruit.
+                  */}
+                  {items.length > 0 ? (
+                    <li className="flex items-center justify-center gap-1.5 pt-1 ul-aide">
+                      <Lock size={11} strokeWidth={1.8} aria-hidden="true" />
+                      Consultation ouverte · échange chiffré de bout en bout
+                    </li>
+                  ) : null}
                   {items.length === 0 ? (
                     <li className="py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
                       {active ? 'La consultation vient de commencer.' : 'Aucun message n’a été échangé.'}
@@ -1525,6 +1584,32 @@ export function ConsultationPage() {
         </section>
 
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-80">
+          {/*
+            ── Ce que la séance rapporte, en tête du rail — chantier 76 ─────────────────────────
+
+            En tête, et pas en bas : c'est la seule information du rail qui concerne le soignant
+            lui-même, et elle tient en une ligne. Elle ne s'affiche que si on a pu la LIRE — une
+            jointure qui échoue n'est ni un zéro ni « gratuit ».
+          */}
+          {prixPatient !== null ? (
+            <Carte icone={Banknote} titre="Honoraires" sousTitre="Ce que le patient a payé pour cette séance">
+              <p className="flex items-baseline justify-between gap-2">
+                <span className="ul-surtitre">Prix patient</span>
+                <span className="ul-chiffre-ligne">{new Intl.NumberFormat('fr-FR').format(prixPatient)} F</span>
+              </p>
+              {/*
+                ⚠️ On ne calcule PAS le net ici. La commission vient du contrat signé du soignant
+                (RM-13-07) et diffère d'un médecin à l'autre : l'écran ne peut que lire ce qui a été
+                prélevé, et cette lecture n'existe qu'après le dépôt du compte-rendu. « Mes gains »
+                la montre ; ici on dirait un chiffre faux.
+              */}
+              <p className="ul-aide">
+                Votre part nette, commission déduite, se lit dans Mes gains — elle est créditée au dépôt
+                du compte-rendu.
+              </p>
+            </Carte>
+          ) : null}
+
           <Carte icone={FileText} titre="Contexte patient" sousTitre="Transmis avec la pré-consultation">
             {pre ? (
               <>

@@ -121,6 +121,14 @@ les deux.
 
 ### Chantier B — la consultation prend un nom, et le rail dit ce qui manque
 
+> ✅ **FAIT — chantier 76, 11/09/2026**, avec **deux corrections à ce plan** :
+> • les **allergies étaient déjà affichées** (panneau Carnet, distinct du contexte patient) —
+>   l'analyse bloc à bloc des maquettes avait pris un rangement différent pour une absence ;
+> • **nommer la ligne de C4 demande le serveur** : `SessionListItem` ne porte pas la
+>   pré-consultation. Reversé au §5 comme dette.
+> Le choix libre d'emoji (point 10) n'est pas fait : il demande une dépendance et un sprite
+> auto-hébergé de plusieurs centaines de Ko. À décider séparément.
+
 *Aucun travail serveur.*
 
 6. **Le nom de la consultation** — son motif — dans le titre de C5, le fil d'Ariane, et la ligne de

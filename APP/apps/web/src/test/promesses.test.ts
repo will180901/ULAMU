@@ -476,6 +476,16 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
     ecran: 'Consultation (soignant)',
     fichier: 'modules/consultation/pages/ConsultationPage.tsx',
     promesses: [
+      /*
+        Ajoutée au chantier 76. C'est le seul endroit où la garantie de chiffrement se dit DANS le
+        fil — le sous-titre du panneau la dit aussi, mais on ne le relit pas en défilant. Sur un
+        écran où passent des données de santé, cette phrase est la contrepartie visible d'une
+        promesse technique (RM-06-06).
+      */
+      {
+        quoi: 'le fil rappelle, à son ouverture, que l’échange est chiffré de bout en bout',
+        motif: /Consultation ouverte[\s\S]{0,40}chiffré de bout en bout/,
+      },
       {
         quoi: 'passé le délai, le dépôt du compte-rendu est REFUSÉ et les gains sont gelés (CU-06-03)',
         motif: /Passé ce délai[\s\S]{0,80}refusé/,

@@ -100,6 +100,34 @@ function message(over: Partial<SessionMessage> = {}): SessionMessage {
   }
 }
 
+/** Le squelette d'une demande — seuls `sessionId` et `offerPriceXaf` comptent pour ces tests. */
+const demandeVide = {
+  id: 'h0',
+  status: 'PAID' as const,
+  patientAccountId: 'pat-1',
+  professionalId: 'pro-1',
+  offerId: 'o1',
+  subProfileId: null,
+  initiatedAt: '2026-08-24T08:00:00.000Z',
+  confirmedAt: null,
+  confirmExpiresAt: null,
+  refusalReason: null,
+  windowExpiresAt: null,
+  windowRemainingSeconds: 0,
+  sessionId: null as string | null,
+  patientFirstName: 'Mireille',
+  patientAge: 32,
+  offerLabel: 'Consultation',
+  offerDurationMin: 30,
+  offerPriceXaf: 5000 as number | null,
+}
+
+/*
+  ⚠️ Depuis le chantier 76, le `h1` de C5 porte le MOTIF de la consultation (« Palpitations
+  nocturnes… »), plus le mot « Consultation ». Les attentes de montage visent donc le titre de
+  premier niveau quel que soit son texte : ce qu'elles vérifient est que l'écran est MONTÉ, pas ce
+  qu'il s'appelle. Le nom, lui, a ses propres tests plus bas.
+*/
 async function monter(s: CareSession, items: SessionMessage[] = []) {
   vi.spyOn(api, 'session').mockResolvedValue(s)
   vi.spyOn(api, 'sessionMessages').mockResolvedValue({ items, nextCursor: null })
@@ -120,6 +148,17 @@ async function monter(s: CareSession, items: SessionMessage[] = []) {
   if (!vi.isMockFunction(api.myPrescribed)) {
     vi.spyOn(api, 'myPrescribed').mockResolvedValue({ items: [] })
   }
+  /*
+    Les DEMANDES, lues depuis le chantier 76 : c'est là que vit le prix payé par le patient, que la
+    séance elle-même ne porte pas. Sans cette doublure, l'appel partait pour de vrai — et huit tests
+    de C7 tombaient sur l'épuisement de leur délai, en accusant le compte-rendu.
+
+    C'est le piège exact noté à la passation : **un nouvel appel non bouchonné fait basculer des
+    tests existants**, et le message d'échec désigne alors n'importe quoi sauf la cause.
+  */
+  if (!vi.isMockFunction(api.myHandshakes)) {
+    vi.spyOn(api, 'myHandshakes').mockResolvedValue({ items: [] })
+  }
   useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
@@ -131,7 +170,7 @@ async function monter(s: CareSession, items: SessionMessage[] = []) {
       </MemoryRouter>
     </QueryClientProvider>,
   )
-  await screen.findByRole('heading', { name: 'Consultation' })
+  await screen.findByRole('heading', { level: 1 })
 }
 
 const fil = () => within(screen.getByRole('region', { name: 'Fil de la consultation' }))
@@ -231,7 +270,7 @@ describe('C5 — le compte-rendu', () => {
 describe('C5 — ce que le professionnel ne peut pas faire', () => {
   it('aucun bouton pour terminer la séance : seul le patient annule (EF-06-10)', async () => {
     await monter(seance())
-    await screen.findByRole('heading', { name: 'Consultation' })
+    await screen.findByRole('heading', { level: 1 })
 
     expect(screen.queryByRole('button', { name: /Terminer/ })).not.toBeInTheDocument()
     expect(document.body.textContent).not.toContain('Terminer la consultation')
@@ -239,7 +278,7 @@ describe('C5 — ce que le professionnel ne peut pas faire', () => {
 
   it('aucun composeur hors d’une séance active (RM-06-03)', async () => {
     await monter(seance({ status: 'ENDED', endedAt: '2026-08-24T08:32:00.000Z', remainingSeconds: 0 }))
-    await screen.findByRole('heading', { name: 'Consultation' })
+    await screen.findByRole('heading', { level: 1 })
 
     expect(screen.queryByLabelText('Votre message')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument()
@@ -249,7 +288,7 @@ describe('C5 — ce que le professionnel ne peut pas faire', () => {
 
   it('la prolongation disparaît une fois le plafond de 30 minutes atteint (PM-29)', async () => {
     await monter(seance({ extensionTotalSec: 1800 }))
-    await screen.findByRole('heading', { name: 'Consultation' })
+    await screen.findByRole('heading', { level: 1 })
     expect(screen.queryByRole('button', { name: /Prolonger/ })).not.toBeInTheDocument()
   })
 
@@ -355,8 +394,132 @@ describe('C5 — les états de la séance', () => {
 describe('C5 — le contexte patient', () => {
   it('affiche la pré-consultation, qui arrive APRÈS le paiement (EF-06-04)', async () => {
     await monter(seance())
-    expect(await screen.findByText('Palpitations nocturnes depuis trois nuits.')).toBeInTheDocument()
-    expect(screen.getByText('3 jours')).toBeInTheDocument()
+
+    /*
+      ⚠️ Les symptômes apparaissent DEUX fois depuis le chantier 76 — en titre de l'écran et dans
+      le rail — et c'est voulu : le titre sert à reconnaître la séance, le rail à la lire en entier.
+      L'assertion vise donc le rail, seul endroit où le TEXTE COMPLET doit figurer.
+    */
+    const rail = (await screen.findByText('Contexte patient')).closest('section') as HTMLElement
+    expect(within(rail).getByText('Palpitations nocturnes depuis trois nuits.')).toBeInTheDocument()
+    expect(within(rail).getByText('3 jours')).toBeInTheDocument()
+  })
+
+  /*
+    ══════════════════════════════════════════════════════════════════════════════════════════════
+    CHANTIER 76 — la consultation prend un nom
+    ══════════════════════════════════════════════════════════════════════════════════════════════
+
+    Le titre était le mot « Consultation ». Trois séances ouvertes dans la journée donnaient trois
+    onglets identiques : impossible de les distinguer. Le motif était pourtant servi depuis
+    toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas.
+  */
+  it('le titre porte le motif, pas le mot « Consultation »', async () => {
+    await monter(seance())
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      'Palpitations nocturnes depuis trois nuits.',
+    )
+  })
+
+  /*
+    ⚠️ Sans pré-consultation, on ne devine pas. Une séance en préparation n'a pas encore de motif :
+    fabriquer un nom à partir de rien serait pire que le mot générique, parce qu'on lui ferait
+    confiance.
+  */
+  it('sans pré-consultation, le titre reste générique plutôt qu’inventé', async () => {
+    await monter(seance({ status: 'PREPARING', preConsultation: null }))
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Consultation')
+  })
+
+  /*
+    La référence de la séance : c'est elle qu'on dicte au support et qu'on cherche dans le registre.
+    La maquette la met au fil d'Ariane ; le nôtre est calculé par la coquille et ne sait pas porter
+    une valeur d'écran — elle vit donc sous le titre.
+  */
+  /*
+    ── Ce que la séance rapporte — chantier 76 ────────────────────────────────────────────────
+
+    L'écran où un médecin passe trente minutes ne disait nulle part ce qu'elles lui rapportent.
+
+    ⚠️ Le montant n'est pas sur la séance : il vit sur la DEMANDE qui l'a précédée
+    (`offerPriceXaf`), reliée par `sessionId`. La jointure se fait côté écran, sur une route que le
+    client appelle déjà ailleurs.
+  */
+  it('affiche ce que le patient a payé pour CETTE séance', async () => {
+    vi.spyOn(api, 'myHandshakes').mockResolvedValue({
+      items: [
+        { ...demandeVide, id: 'h-autre', sessionId: 'autre-seance', offerPriceXaf: 99_000 },
+        { ...demandeVide, id: 'h1', sessionId: 's1', offerPriceXaf: 5000 },
+      ],
+    })
+    await monter(seance({ id: 's1' }))
+
+    const bloc = (await screen.findByText('Honoraires')).closest('section') as HTMLElement
+    expect(within(bloc).getByText(/5\s?000 F/)).toBeInTheDocument()
+    // Le prix de l'AUTRE séance ne doit pas fuiter ici.
+    expect(within(bloc).queryByText(/99\s?000/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Une jointure qui n'aboutit pas n'est ni un zéro ni « gratuit ». Sans demande correspondante —
+    lecture en échec, ou séance sans demande liée — le bloc ne s'affiche pas du tout.
+  */
+  it('sans demande correspondante, aucun montant n’est inventé', async () => {
+    vi.spyOn(api, 'myHandshakes').mockResolvedValue({ items: [] })
+    await monter(seance({ id: 's1' }))
+    await screen.findByText('Contexte patient')
+
+    expect(screen.queryByText('Honoraires')).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Et on n'écrit JAMAIS le net ici. La commission vient du contrat signé du soignant (RM-13-07)
+    et diffère d'un médecin à l'autre : l'écran ne peut que lire ce qui a été prélevé, et cette
+    lecture n'existe qu'au dépôt du compte-rendu. Afficher un net calculé serait un chiffre faux.
+  */
+  it('ne calcule pas le net : il renvoie à Mes gains', async () => {
+    vi.spyOn(api, 'myHandshakes').mockResolvedValue({
+      items: [{ ...demandeVide, id: 'h1', sessionId: 's1', offerPriceXaf: 5000 }],
+    })
+    await monter(seance({ id: 's1' }))
+
+    const bloc = (await screen.findByText('Honoraires')).closest('section') as HTMLElement
+    expect(within(bloc).getByText(/se lit dans Mes gains/)).toBeInTheDocument()
+    expect(within(bloc).queryByText(/4\s?500/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ── La ligne qui ouvre le fil — chantier 76 ────────────────────────────────────────────────
+
+    C'est le seul endroit où la garantie de chiffrement se dit DANS le fil, là où les messages
+    passent. Le sous-titre du panneau la dit aussi, mais on ne le relit pas en défilant.
+
+    ⚠️ Écrite après l'injection : la faute qui remplaçait cette phrase par « Fil » n'a réveillé
+    personne, et les 77 tests passaient.
+  */
+  it('le fil s’ouvre en rappelant le chiffrement de bout en bout', async () => {
+    await monter(seance(), [message({ id: 'm1', body: 'Bonjour' })])
+
+    expect(await screen.findByText(/Consultation ouverte · échange chiffré de bout en bout/)).toBeInTheDocument()
+  })
+
+  /*
+    Et pas sur un fil vide : la phrase d'état juste en dessous dit déjà tout, et deux phrases pour
+    un fil vide, c'est du bruit.
+  */
+  it('mais pas sur un fil vide', async () => {
+    await monter(seance(), [])
+    await screen.findByText('Contexte patient')
+
+    expect(screen.queryByText(/Consultation ouverte · échange chiffré/)).not.toBeInTheDocument()
+  })
+
+  it('la référence de la séance est lisible sous le titre', async () => {
+    await monter(seance({ id: '573dcccb-91e7-4435-bb65-84219c5336e5' }))
+
+    expect(await screen.findByText(/573DCCCB/)).toBeInTheDocument()
   })
 
   it('dit son absence au lieu d’afficher un cadre vide', async () => {
@@ -533,7 +696,7 @@ describe('C5 — le minuteur (chantier 75)', () => {
 
   it('une séance close n’affiche aucun minuteur', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }))
-    await screen.findByRole('heading', { name: 'Consultation' })
+    await screen.findByRole('heading', { level: 1 })
 
     expect(screen.queryByText('Horloge serveur')).not.toBeInTheDocument()
   })
