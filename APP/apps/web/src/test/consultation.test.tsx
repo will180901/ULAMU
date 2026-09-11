@@ -850,6 +850,101 @@ describe('C5 — la note vocale (chantier 75)', () => {
   })
 })
 
+describe('C5 — les bulles, comme sur le téléphone (chantier 92)', () => {
+  /** La bulle d'un message, visée par sa STRUCTURE et non par une classe d'apparence. */
+  const bulleDe = (texte: string) =>
+    (screen.getByText(texte).closest('.relative')?.querySelector(':scope > div')) as HTMLElement
+
+  /*
+    ── Ce que le porteur voyait sans pouvoir le nommer ──────────────────────────────────────────
+
+    Sur le téléphone, MA bulle est d'un accent saturé avec du texte blanc. Sur le web, elle était
+    d'un bleu très clair avec du texte normal. C'est la différence principale, et elle entraîne
+    tout le reste : citation, lecteur vocal, poignée, heure et accusés doivent passer en encre
+    claire. *Changer un fond, c'est changer tout ce qu'il porte.*
+  */
+  it('ma bulle porte l’accent saturé et du texte blanc', async () => {
+    await monter(seance(), [message({ senderId: 'pro-1', body: 'à moi' })])
+    await fil().findByText('à moi')
+
+    const bulle = bulleDe('à moi')
+    expect(bulle.className).toMatch(/bg-\[var\(--ap-400\)\]/)
+    expect(bulle.className).toMatch(/text-white/)
+  })
+
+  it('et celle de l’autre garde le fond de carte', async () => {
+    await monter(seance(), [message({ senderId: 'pat-1', body: 'à lui' })])
+    await fil().findByText('à lui')
+
+    const bulle = bulleDe('à lui')
+    expect(bulle.className).toMatch(/bg-card/)
+    expect(bulle.className).not.toMatch(/bg-\[var\(--ap-400\)\]/)
+  })
+
+  /*
+    Le coin RABATTU du côté de l'expéditeur — c'est lui qui donne la pointe, et c'est ce qui
+    manquait le plus à l'œil. En bas à droite pour moi, en bas à gauche pour l'autre.
+  */
+  it('le coin rabattu tombe du côté de l’expéditeur', async () => {
+    await monter(seance(), [
+      message({ id: 'a', senderId: 'pro-1', body: 'à moi' }),
+      message({ id: 'b', senderId: 'pat-1', body: 'à lui' }),
+    ])
+    await fil().findByText('à moi')
+
+    expect(bulleDe('à moi').className).toMatch(/rounded-br-\[3px\]/)
+    expect(bulleDe('à lui').className).toMatch(/rounded-bl-\[3px\]/)
+  })
+
+  /*
+    ⚠️ **Un message qui n'est QUE des emoji n'a plus de bulle** — la demande du porteur, et la
+    convention de WhatsApp. Un « 👍 » posé sur un rectangle coloré ressemble à un autocollant
+    encadré ; posé sur le fil, il ressemble à ce qu'il est : un geste.
+  */
+  it('un message tout en emoji n’a ni fond ni bord', async () => {
+    await monter(seance(), [message({ senderId: 'pro-1', body: '👍' })])
+    await fil().findByRole('img', { name: '👍' })
+
+    const bulle = (document.querySelector('li[id^="msg-"] .relative > div')) as HTMLElement
+    expect(bulle.className).not.toMatch(/bg-\[var\(--ap-400\)\]|bg-card|border/)
+  })
+
+  /* Mais avec du texte autour, la bulle revient : ce n'est plus un geste, c'est une phrase. */
+  it('mais un emoji dans une phrase garde sa bulle', async () => {
+    await monter(seance(), [message({ senderId: 'pro-1', body: 'merci 👍 beaucoup' })])
+    await fil().findByText(/merci/)
+
+    const bulle = (document.querySelector('li[id^="msg-"] .relative > div')) as HTMLElement
+    expect(bulle.className).toMatch(/bg-\[var\(--ap-400\)\]/)
+  })
+
+  /*
+    L'heure passe DANS la bulle, comme sur le téléphone. *Une bulle avec sa marque temporelle à
+    l'intérieur se lit comme un bloc ; la même avec l'heure en dessous se lit comme un texte suivi
+    d'un commentaire.*
+  */
+  it('l’heure est DANS la bulle, plus en dessous', async () => {
+    await monter(seance(), [message({ senderId: 'pro-1', body: 'à moi' })])
+    await fil().findByText('à moi')
+
+    const bulle = bulleDe('à moi')
+    expect(bulle.textContent).toMatch(/\d{1,2}:\d{2}/)
+  })
+
+  /*
+    ⚠️ Et l'accusé « lu » ne peut plus être `--ap-600` sur MA bulle : ce serait du bleu sur du
+    bleu. *Une couleur ne se choisit pas dans l'absolu, elle se choisit contre le fond qui la
+    porte.*
+  */
+  it('l’accusé « lu » se détache de l’accent au lieu de s’y fondre', async () => {
+    await monter(seance(), [message({ senderId: 'pro-1', body: 'à moi', status: 'read' })])
+    await fil().findByText('à moi')
+
+    const coche = fil().getByLabelText('Lu')
+    expect(coche.getAttribute('class')).not.toMatch(/text-\[var\(--ap-600\)\]/)
+  })
+})
+
 describe('C5 — la note vocale (chantier 90)', () => {
   /**
    * Le média est servi par `lireMediaSession`. Sans cette doublure, la bulle affiche « Média
@@ -2116,7 +2211,16 @@ describe('C5 — signaler (chantier 41)', () => {
     ])
 
     const dansLaBulle = await screen.findByText('Média indisponible.')
-    const bulle = dansLaBulle.closest('.rounded-lg') as HTMLElement
+    /*
+      ⚠️ On vise la bulle par sa STRUCTURE — le premier enfant du conteneur positionné — et non par
+      une classe d'apparence. La première version cherchait `.rounded-lg` ; le chantier 92 a mis le
+      rayon à 12 px (`rounded-xl`) pour rejoindre le mobile, et le test est tombé sans qu'aucune
+      garantie n'ait bougé.
+
+      *Un test qui s'accroche à une classe de style se casse à chaque retouche visuelle, et on finit
+      par le croire fragile alors qu'il visait mal.*
+    */
+    const bulle = dansLaBulle.closest('.relative')?.querySelector(':scope > div') as HTMLElement
     // Ma propre photo sur une archive : rien à copier, personne à signaler, donc pas de poignée.
     expect(bulle.className).not.toMatch(/ul-bulle/)
   })

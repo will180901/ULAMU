@@ -93,9 +93,22 @@ async function picsDuSon(url: string): Promise<number[] | null> {
 
 export function LecteurVocal({
   url,
+  surAccent = false,
   dureeAnnoncee,
 }: {
   url: string
+  /**
+   * Le lecteur est posé sur MA bulle, qui est un accent saturé depuis le chantier 92.
+   *
+   * ⚠️ Cette propriété avait été SUPPRIMÉE au chantier 91, avec une raison juste à l'époque : les
+   * deux bulles du web étaient claires, l'encre d'accent portait sur les deux. Le porteur a ensuite
+   * demandé les bulles du téléphone, et la distinction est redevenue nécessaire.
+   *
+   * *Une propriété retirée parce qu'elle ne servait plus peut redevenir utile le jour où la raison
+   * qui l'avait rendue inutile disparaît. Ce n'est pas un retour en arrière, c'est la même règle
+   * appliquée à un fond différent.*
+   */
+  surAccent?: boolean
   /**
    * La durée en secondes, telle que l'expéditeur l'a envoyée (`body` d'un message VOICE).
    *
@@ -149,8 +162,8 @@ export function LecteurVocal({
     celles de l'autre). L'encre d'accent porte sur les deux ; on ne reprend donc pas le blanc du
     téléphone, qui n'a de sens que sur son bleu saturé.
   */
-  const jouee = 'var(--ap-600)'
-  const aVenir = 'color-mix(in srgb, var(--ap-600) 26%, transparent)'
+  const jouee = surAccent ? '#FFFFFF' : 'var(--ap-600)'
+  const aVenir = surAccent ? 'rgba(255,255,255,.38)' : 'color-mix(in srgb, var(--ap-600) 26%, transparent)'
 
   return (
     <span className="flex w-full max-w-[264px] items-center gap-2 py-0.5">
@@ -188,7 +201,10 @@ export function LecteurVocal({
               .catch(() => setJoue(false))
           }
         }}
-        className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--ap-400)] text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+        className={
+          'flex size-[34px] shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
+          (surAccent ? 'bg-white text-[var(--ap-400)]' : 'bg-[var(--ap-400)] text-white')
+        }
       >
         {joue ? <Pause size={14} strokeWidth={2} aria-hidden="true" /> : <Play size={14} strokeWidth={2} aria-hidden="true" />}
       </button>
@@ -225,11 +241,16 @@ export function LecteurVocal({
         */}
         <span
           className="pointer-events-none absolute top-1/2 size-[10px] -translate-y-1/2 rounded-full shadow-[0_1px_2px_rgba(15,23,42,.25)]"
-          style={{ left: `calc(${fraction * 100}% - 5px)`, background: 'var(--ap-400)' }}
+          style={{ left: `calc(${fraction * 100}% - 5px)`, background: surAccent ? '#FFFFFF' : 'var(--ap-400)' }}
         />
       </div>
 
-      <span className="min-w-[30px] shrink-0 text-right t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
+      <span
+        className={
+          'min-w-[30px] shrink-0 text-right t-code-sm tabular-nums ' +
+          (surAccent ? 'text-white/85' : 'text-[var(--texte-tertiaire)]')
+        }
+      >
         {duree === null ? '—' : formatDuree(joue || position > 0 ? duree - position : duree)}
       </span>
 
@@ -242,7 +263,10 @@ export function LecteurVocal({
         type="button"
         onClick={changerVitesse}
         aria-label={`Vitesse de lecture : ${libelleVitesse(vitesse)}. Changer`}
-        className="shrink-0 rounded-[9px] bg-[var(--ap-50)] px-1.5 py-[3px] t-code-sm font-semibold tabular-nums text-[var(--ap-600)] transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+        className={
+          'shrink-0 rounded-[9px] px-1.5 py-[3px] t-code-sm font-semibold tabular-nums transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 ' +
+          (surAccent ? 'bg-white/20 text-white' : 'bg-[var(--ap-50)] text-[var(--ap-600)]')
+        }
       >
         {libelleVitesse(vitesse)}
       </button>

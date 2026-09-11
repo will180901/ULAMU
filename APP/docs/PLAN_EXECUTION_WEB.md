@@ -677,6 +677,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **89** | **Le compte-rendu tardif : accepté, sans crédit — et deux promesses contraires sur le même écran** — 11/09, **trouvé par le porteur**, qui n'arrivait pas à déposer son compte-rendu. 📌 **Le serveur refusait le dépôt passé PM-30, définitivement, et personne ne pouvait forcer** : aucune route d'administration. Deux choses étaient perdues d'un coup, et une seule avait été décidée — les **gains gelés** (sanction voulue, CU-06-03) et le **Carnet du patient privé du compte-rendu** (*personne n'a décidé cela*). Décision du porteur : séparer les deux. Le dépôt passe, `capture()` n'est plus appelée, la sanction reste entière. ⚠️ **Et l'écran promettait une chose ET son contraire** : avant l'échéance « le dépôt est refusé », après « Déposez tout de même : le serveur tranchera ». **Chacune avait son test** dans `promesses.test.ts` — *un test de promesse garantit qu'un écran continue de DIRE quelque chose, jamais que ce soit vrai.* 📌 Ma faute du chantier 84 nommée : j'avais lu la transaction sans lire le garde-fou six lignes au-dessus, et j'avais écrit ma conclusion fausse en commentaire. Ouvre la **dette n°29**. **web 983 ✓ · API unitaires 648 ✓ (+7) · lint 0 · builds et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **90** | **La note vocale sur le web : une onde VRAIE, et une durée qui cessait d'être une durée** — 11/09, demande du porteur (« je voudrais que la note vocale s'affiche comme ça »), faite depuis une **consultation réellement active**. Le lecteur devient riche : **onde, déplacement au clic, tête de lecture, vitesse 1× / 1,5× / 2×**, comme sur le téléphone. 📌 **Mais l'onde est VRAIE ici** : le mobile dessine 36 barres pseudo-aléatoires faute de pouvoir décoder un son ; le navigateur décode, donc on montre les **pics réels** — on voit où l'on parle et où l'on se tait, et on saute au passage qui compte. Et quand le décodage échoue, **barres ÉGALES, pas une fausse onde** : *un dessin au hasard prétend dire quelque chose du son ; des barres égales n'affirment rien.* ⚠️ **Deux défauts trouvés en regardant l'écran** : pour un message `VOICE`, `body` porte **la durée en secondes** (convention posée par le mobile) — le web l'affichait comme une légende, et on lisait « 76 » sous chaque note venue d'un téléphone ; et le web **n'envoyait pas** cette durée, donc une note enregistrée ici arrivait chez le patient sans durée. *Un champ qui change de sens selon un autre champ est un piège que les types ne rattrapent pas.* **web 990 ✓ (983 + 7) · lint 0 · build ✓ · 6 fautes injectées, 5 détectées — la sixième est le chemin d'enregistrement, injouable sous jsdom.** | ⏸ en attente | ⏸ |
 | **91** | **Le rideau de confidentialité s'en va, et le lecteur vocal prend la forme du téléphone** — 11/09, deux demandes du porteur, écran contre écran. **(1) Le rideau est retiré** (« on n'en a pas besoin pour l'instant ») : composant supprimé, état, `inert` et bouton du bandeau avec lui, **et ses trois tests** — *un test qui garde une fonctionnalité absente n'est pas une sécurité, c'est un mensonge sur ce que le produit fait.* Tout reste dans l'historique. **(2) Le lecteur vocal** reprend les proportions exactes du mobile : bouton de 34 px, barres de 3 px, **tête de lecture ronde**, durée en chasse fixe, vitesse en pastille — et **le contenant disparaît** : il vivait dans une pilule bordée à l'intérieur de la bulle, une boîte dans une boîte que le téléphone n'a jamais eue. ⚠️ **Les couleurs ne se copient pas** : sur le téléphone ma bulle est d'un bleu saturé et l'onde y est blanche ; sur le web elle est `--ap-50`, très claire — une onde blanche y serait invisible. *Copier une maquette, c'est reprendre ses proportions et ses gestes ; recopier ses couleurs sur un autre fond, c'est recopier une erreur.* Au passage, la propriété `aMoi` du lecteur **est supprimée** : elle ne servait plus, et une entrée qui ne fait rien ment sur le contrat du composant. **web 989 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
+| **92** | **Les bulles du web prennent la forme de celles du mobile** — 11/09, demande du porteur, les deux écrans côte à côte (« regarde dans les moindres détails »). Relevé dans `SessionScreen.tsx` et repris : **rayon 12 px**, **coin rabattu à 3 px du côté de l'expéditeur**, **ma bulle en accent SATURÉ avec texte blanc** (mobile `accent500` = web `--ap-400`, la correspondance est écrite dans le fichier de jetons), bulle reçue sur fond de carte avec filet et ombre légère, et **l'heure passée DANS la bulle**. 📌 **Un message qui n'est QUE des emoji perd sa bulle** — convention WhatsApp : *un « 👍 » sur un rectangle coloré ressemble à un autocollant encadré ; posé sur le fil, il ressemble à un geste.* ⚠️ **Changer un fond, c'est changer tout ce qu'il porte** : citation, lecteur vocal, poignée, heure et accusés repassent en encre claire, et `surAccent` **revient** au lecteur vocal après avoir été supprimé la veille — la raison qui l'avait rendu inutile a disparu. Et le « lu » ne peut plus être `--ap-600` sur l'accent : *une couleur se choisit contre le fond qui la porte.* 📌 **Le seuil de la mise en page fixe passe de 1024 à 768 px** — mesuré : la fenêtre du porteur fait 799 px, il n'avait donc JAMAIS vu les deux colonnes fixes, et sa page défilait de 543 px à cause du rail empilé (546 px), pas du fil (déjà plafonné à 227). **web 996 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -725,6 +726,72 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 92 (les bulles) a appris
+
+*11/09/2026 — le porteur voyait la différence sans pouvoir la nommer. La mesure l'a nommée.*
+
+#### Ce qui différait vraiment
+
+| | Mobile | Web (avant) |
+|---|---|---|
+| Rayon | 12 px, **coin rabattu à 3 px** côté expéditeur | 8 px, symétrique |
+| Ma bulle | accent **saturé**, texte **blanc** | `--ap-50`, très clair, texte normal |
+| Bulle reçue | fond de carte + filet + **ombre** | fond de carte + filet |
+| Heure | **DANS** la bulle | en dessous, comme une légende |
+
+La ligne qui compte est la deuxième. Tout le reste est du détail ; **la couleur de ma bulle est la
+différence qu'on voit sans la nommer.**
+
+#### Changer un fond, c'est changer tout ce qu'il porte
+
+Passer ma bulle en accent saturé a obligé à reprendre **cinq** choses qui vivent dedans : la
+citation, le lecteur vocal, la poignée du menu, l'heure et les accusés de lecture. Chacune était
+lisible sur du bleu très clair et disparaissait sur du bleu saturé.
+
+> **Une couleur de bulle n'est jamais une décision locale.**
+
+Et le cas le plus net : l'accusé « lu » était `--ap-600`, du bleu — sur une bulle bleue, il
+devenait invisible. On prend un bleu **clair**, ce que fait WhatsApp sur ses bulles vertes. *Une
+couleur ne se choisit pas dans l'absolu : elle se choisit contre le fond qui la porte.*
+
+#### Une propriété supprimée la veille, remise aujourd'hui
+
+Au chantier 91, `surAccent` (alors `aMoi`) avait été **retirée** du lecteur vocal, avec une raison
+juste : les deux bulles du web étaient claires, l'encre d'accent portait sur les deux. Le porteur a
+ensuite demandé les bulles du téléphone, et la distinction est redevenue nécessaire.
+
+*Ce n'est pas un retour en arrière : c'est la même règle appliquée à un fond différent. Une
+propriété retirée parce qu'elle ne servait plus peut redevenir utile le jour où la raison qui
+l'avait rendue inutile disparaît.*
+
+#### ⚠️ Le défilement : le porteur avait tort sur la cause, et il fallait le mesurer
+
+Il demandait de **réduire la hauteur du fil** pour que la page cesse de défiler. Mesuré sur sa
+fenêtre :
+
+| | |
+|---|---|
+| Fenêtre | 494 px de haut, **799 px de large** |
+| Le fil | **227 px** — déjà plafonné à 46 %, il n'y était pour rien |
+| Le rail de droite | **546 px**, empilé dessous |
+| Défilement | **543 px** |
+
+Le vrai coupable : **799 px < 1024 px**, donc la mise en page fixe du chantier 83 ne s'appliquait
+jamais chez lui. Il ne l'avait simplement jamais vue. Le seuil passe à **768 px**, et la page cesse
+de défiler sans rogner un fil déjà court.
+
+> **Quand quelqu'un décrit un symptôme et propose un remède, mesurer avant d'appliquer le remède.**
+> Réduire le fil aurait dégradé l'écran sans régler le problème.
+
+#### Ce qui n'a PAS pu être fait
+
+**La photo de profil sur la note vocale.** Vérifié : le serveur ne sert **aucun avatar** dans une
+séance — ni celui du patient, ni celui du soignant. `CareSession` ne porte que des identifiants de
+compte. Et le patient n'a même pas de nom affiché (« Le patient »), par décision écrite.
+
+Le faire demande une **migration de la vue de séance** côté serveur. C'est dit au porteur plutôt
+que remplacé par un rond générique qui aurait ressemblé à la fonctionnalité sans en être une.
 
 ### Ce que le chantier 91 (le rideau, et la forme du lecteur) a appris
 

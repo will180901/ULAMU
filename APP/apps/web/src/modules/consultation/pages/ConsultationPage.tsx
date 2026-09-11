@@ -185,9 +185,12 @@ function dureeFr(secondes: number): string {
 
 function Media({
   fileKey,
+  surAccent = false,
   dureeAnnoncee,
 }: {
   fileKey: string
+  /** Le média est posé sur MA bulle, devenue un accent saturé au chantier 92 : encre claire. */
+  surAccent?: boolean
   /** Voir `LecteurVocal` : la durée envoyée par l'expéditeur, avant que le son soit chargé. */
   dureeAnnoncee?: number | null
 }) {
@@ -221,7 +224,7 @@ function Media({
   if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
   if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
   // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
-  if (type?.startsWith('audio/')) return <LecteurVocal url={url} dureeAnnoncee={dureeAnnoncee} />
+  if (type?.startsWith('audio/')) return <LecteurVocal url={url} surAccent={surAccent} dureeAnnoncee={dureeAnnoncee} />
   return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
 }
 
@@ -302,8 +305,17 @@ const POIGNEE_CADRE = 'ul-au-survol absolute top-0.5 right-0.5 z-10'
  * Le survol change l'ENCRE, pas le fond — c'est le seul retour dont un chevron a besoin.
  */
 const POIGNEE_BOUTON =
-  'rounded p-1 text-[var(--texte-tertiaire)] transition-colors hover:text-foreground ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30'
+  'rounded p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30'
+
+/*
+ * L'encre de la poignée dépend de la bulle qui la porte (chantier 92).
+ *
+ * Depuis que MA bulle est un accent saturé, l'encre tertiaire y disparaît. C'est la conséquence
+ * directe du changement de fond — et elle se répète partout : *changer un fond, c'est changer tout
+ * ce qu'il porte.*
+ */
+const encrePoignee = (aMoi: boolean): string =>
+  aMoi ? 'text-white/70 hover:text-white' : 'text-[var(--texte-tertiaire)] hover:text-foreground'
 
 /**
  * Le menu d'un message — UN SEUL menu, ouvert par la poignée OU par le clic droit sur la bulle.
@@ -417,7 +429,7 @@ function GestesBulle({
     return (
       <span style={{ opacity: ouvert ? 1 : undefined }} className={POIGNEE_CADRE}>
         <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
-          <DropdownMenuTrigger aria-label="Actions sur ce message" className={POIGNEE_BOUTON}>
+          <DropdownMenuTrigger aria-label="Actions sur ce message" className={`${POIGNEE_BOUTON} ${encrePoignee(aMoi)}`}>
             <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
@@ -445,7 +457,7 @@ function GestesBulle({
       className={POIGNEE_CADRE}
     >
       <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
-        <DropdownMenuTrigger aria-label="Actions sur ce message" className={POIGNEE_BOUTON}>
+        <DropdownMenuTrigger aria-label="Actions sur ce message" className={`${POIGNEE_BOUTON} ${encrePoignee(aMoi)}`}>
           <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
@@ -545,10 +557,19 @@ function GestesBulle({
 }
 
 /** L'accusé de réception, sur MES messages uniquement — `status` est nul sur ceux de l'autre. */
-function Accuse({ status }: { status: NonNullable<SessionMessage['status']> }) {
-  if (status === 'sent') return <Check size={12} strokeWidth={2} aria-label="Envoyé" className="text-[var(--texte-tertiaire)]" />
-  if (status === 'delivered') return <CheckCheck size={12} strokeWidth={2} aria-label="Reçu" className="text-[var(--texte-tertiaire)]" />
-  return <CheckCheck size={12} strokeWidth={2} aria-label="Lu" className="text-[var(--ap-600)]" />
+function Accuse({ status, surAccent = false }: { status: NonNullable<SessionMessage['status']>; surAccent?: boolean }) {
+  /*
+    ⚠️ Sur MA bulle, le fond est l'accent saturé (chantier 92) : un « lu » en `--ap-600` y serait
+    bleu sur bleu, donc invisible. On prend un bleu CLAIR, qui reste bleu tout en se détachant —
+    c'est exactement ce que fait WhatsApp sur ses bulles vertes.
+
+    *Une couleur ne se choisit pas dans l'absolu : elle se choisit contre le fond qui la porte.*
+  */
+  const eteint = surAccent ? 'text-white/70' : 'text-[var(--texte-tertiaire)]'
+  const lu = surAccent ? 'text-[#8FD3FF]' : 'text-[var(--ap-600)]'
+  if (status === 'sent') return <Check size={12} strokeWidth={2} aria-label="Envoyé" className={eteint} />
+  if (status === 'delivered') return <CheckCheck size={12} strokeWidth={2} aria-label="Reçu" className={eteint} />
+  return <CheckCheck size={12} strokeWidth={2} aria-label="Lu" className={lu} />
 }
 
 function Bulle({
@@ -591,6 +612,14 @@ function Bulle({
   */
   const dureeVocale =
     m.kind === 'VOICE' && m.body !== null && /^\d+$/.test(m.body.trim()) ? Number(m.body.trim()) : null
+
+  /*
+    Un message qui n'est QUE des emoji — et rien d'autre : pas de média, pas de citation. C'est le
+    seul cas où la bulle disparaît. Avec une citation au-dessus, le fond reste nécessaire : il
+    faut bien que la citation soit posée sur quelque chose.
+  */
+  const emojiSeul =
+    !!m.body && dureeVocale === null && cles.length === 0 && !m.replyTo && seulementDesEmoji(m.body)
   const dansLaFenetre = Date.now() - new Date(m.createdAt).getTime() <= FENETRE_EDITION_MS
 
   /*
@@ -740,9 +769,36 @@ function Bulle({
             décalerait le texte pour rien.
           */
           className={
-            'rounded-lg px-3 py-2 ' +
-            (menuPossible ? 'ul-bulle ' : '') +
-            (aMoi ? 'bg-[var(--ap-50)] text-foreground' : 'border border-border bg-card text-foreground')
+            /*
+              ── Les mêmes bulles que sur le téléphone (chantier 92) ──────────────────────────
+
+              Le porteur a mis les deux écrans côte à côte : *« il faut que le style des bulles
+              soit le même que dans l'app mobile, regarde dans les moindres détails »*. Relevé
+              dans `SessionScreen.tsx` et repris ici :
+
+                · rayon 12 px, et un coin RABATTU à 3 px du côté de l'expéditeur — c'est lui qui
+                  donne la pointe, et c'est ce qui manquait le plus à l'œil ;
+                · ma bulle en accent SATURÉ avec texte blanc (mobile : `accent500`, que le fichier
+                  de jetons désigne lui-même comme `--ap-400`) ;
+                · la bulle reçue sur le fond de carte, avec un filet et une ombre légère.
+
+              ⚠️ **Ma bulle était jusqu'ici en `--ap-50`, un bleu très clair.** C'est la vraie
+              différence que le porteur voyait sans la nommer, et elle a une conséquence : tout ce
+              qui vit DANS ma bulle doit repasser en encre claire — la citation, le lecteur vocal,
+              la poignée, l'heure et les accusés. *Changer un fond, c'est changer tout ce qu'il
+              porte ; une couleur de bulle n'est jamais une décision locale.*
+
+              ⚠️ **Un message qui n'est QUE des emoji n'a plus de bulle du tout** — comme sur
+              WhatsApp. Un « 👍 » posé sur un rectangle coloré ressemble à un autocollant encadré ;
+              posé sur le fil, il ressemble à ce qu'il est : un geste.
+            */
+            (emojiSeul
+              ? 'leading-none'
+              : 'rounded-xl px-3 py-2 ' +
+                (menuPossible ? 'ul-bulle ' : '') +
+                (aMoi
+                  ? 'rounded-br-[3px] bg-[var(--ap-400)] text-white'
+                  : 'rounded-bl-[3px] border border-border bg-card text-foreground shadow-[0_1px_2px_rgba(15,23,42,.06)]'))
           }
         >
           {/*
@@ -753,15 +809,24 @@ function Bulle({
             <button
               type="button"
               onClick={() => onAllerAuCite(m.replyTo!.id)}
-              className="mb-1.5 block w-full rounded-md border-l-2 border-[var(--ap-400)] bg-black/[.03] px-2 py-1 text-left hover:bg-black/[.06] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 dark:bg-white/[.04] dark:hover:bg-white/[.08]"
+              className={
+                'mb-1.5 block w-full rounded-md border-l-2 px-2 py-1 text-left focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
+                (aMoi
+                  ? 'border-white/70 bg-white/15 hover:bg-white/25'
+                  : 'border-[var(--ap-400)] bg-black/[.03] hover:bg-black/[.06] dark:bg-white/[.04] dark:hover:bg-white/[.08]')
+              }
             >
-              <span className="block text-[10px] font-semibold text-[var(--ap-600)]">{nomAuteur(m.replyTo.senderId)}</span>
-              <span className="block truncate text-[11px] text-[var(--texte-secondaire)]">{m.replyTo.preview}</span>
+              <span className={'block text-[10px] font-semibold ' + (aMoi ? 'text-white' : 'text-[var(--ap-600)]')}>
+                {nomAuteur(m.replyTo.senderId)}
+              </span>
+              <span className={'block truncate text-[11px] ' + (aMoi ? 'text-white/80' : 'text-[var(--texte-secondaire)]')}>
+                {m.replyTo.preview}
+              </span>
             </button>
           ) : null}
 
           {cles.map((k) => (
-            <Media key={k} fileKey={k} dureeAnnoncee={dureeVocale} />
+            <Media key={k} fileKey={k} surAccent={aMoi} dureeAnnoncee={dureeVocale} />
           ))}
           {/*
             ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
@@ -800,17 +865,48 @@ function Bulle({
               </p>
             )
           ) : null}
+
+          {/*
+            ── L'heure vit DANS la bulle (chantier 92) ────────────────────────────────────────
+
+            Sur le téléphone, l'heure et les accusés sont posés au bas de la bulle, alignés à
+            droite. Sur le web ils flottaient EN DESSOUS, comme une légende — et c'est une des
+            choses que le porteur voyait sans pouvoir la nommer.
+
+            *Une bulle avec sa marque temporelle à l'intérieur se lit comme un bloc ; la même
+            avec l'heure en dessous se lit comme un texte suivi d'un commentaire.*
+          */}
+          {emojiSeul ? null : (
+            <span
+              className={
+                'mt-1 flex items-center justify-end gap-1 text-[9px] tabular-nums ' +
+                (aMoi ? 'text-white/75' : 'text-[var(--texte-tertiaire)]')
+              }
+            >
+              {heureFr(m.createdAt)}
+              {m.editedAt ? <span>· modifié</span> : null}
+              {/* Accusés : `status` n'est renseigné que sur MES messages (contrat M06). */}
+              {aMoi && m.status ? <Accuse status={m.status} surAccent /> : null}
+            </span>
+          )}
         </div>
       </div>
 
       <Reactions reactions={m.reactions} onBasculer={onReagir} />
 
-      <span className="flex items-center gap-1.5 px-1 text-[10px] text-[var(--texte-tertiaire)]">
-        {heureFr(m.createdAt)}
-        {m.editedAt ? <span>· modifié</span> : null}
-        {/* Accusés : `status` n'est renseigné que sur MES messages (contrat M06). */}
-        {aMoi && m.status ? <Accuse status={m.status} /> : null}
-      </span>
+      {/*
+        ⚠️ L'heure reste ICI, sous la bulle, pour un message tout en emoji : sans bulle, il n'y a
+        plus de dedans. Partout ailleurs elle est passée DANS la bulle (chantier 92), comme sur le
+        téléphone — c'est ce qui fait qu'une bulle se lit comme un bloc et non comme un texte suivi
+        d'une légende.
+      */}
+      {emojiSeul ? (
+        <span className="flex items-center gap-1.5 px-1 text-[10px] text-[var(--texte-tertiaire)]">
+          {heureFr(m.createdAt)}
+          {m.editedAt ? <span>· modifié</span> : null}
+          {aMoi && m.status ? <Accuse status={m.status} /> : null}
+        </span>
+      ) : null}
     </li>
   )
 }
@@ -1647,7 +1743,7 @@ export function ConsultationPage() {
       la place ; sur un portable c'était à l'étroit. Une hauteur en pourcentage n'est pas une mise en
       page, c'est une moyenne — et personne ne travaille sur un écran moyen.
     */
-    <div className="mx-auto flex w-full max-w-[1160px] flex-col lg:h-full lg:min-h-0">
+    <div className="mx-auto flex w-full max-w-[1160px] flex-col md:h-full md:min-h-0">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <span
           aria-hidden="true"
@@ -1726,8 +1822,8 @@ export function ConsultationPage() {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-5">
-        <section aria-label="Fil de la consultation" className="flex min-w-0 flex-1 flex-col gap-4 lg:min-h-0">
+      <div className="flex flex-col gap-4 md:min-h-0 md:flex-1 md:flex-row md:gap-4 lg:gap-5">
+        <section aria-label="Fil de la consultation" className="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0">
           {s.status === 'PREPARING' ? (
             <Carte icone={Clock} titre="En attente du patient" sousTitre="Le décompteur n'a pas encore démarré">
               <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
@@ -1764,7 +1860,7 @@ export function ConsultationPage() {
             {messages.isPending ? (
               <SqueletteFil nombre={4} libelle="Chargement du fil…" />
             ) : (
-              <div className="max-h-[46dvh] overflow-y-auto lg:max-h-none lg:min-h-0 lg:flex-1">
+              <div className="max-h-[46dvh] overflow-y-auto md:max-h-none md:min-h-0 md:flex-1">
                 <ul className="flex flex-col gap-3">
                   {/*
                     ── La ligne qui ouvre le fil — chantier 76 ──────────────────────────────────
@@ -2048,7 +2144,7 @@ export function ConsultationPage() {
           </Carte>
         </section>
 
-        <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[22rem]">
+        <aside className="flex w-full shrink-0 flex-col gap-3 md:min-h-0 md:w-[19rem] lg:w-[22rem]">
           {/*
             ── Le rail devient un jeu d'ONGLETS NOMMÉS (chantier 83) ────────────────────────────
 
