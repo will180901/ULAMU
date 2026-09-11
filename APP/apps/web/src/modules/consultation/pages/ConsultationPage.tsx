@@ -690,7 +690,7 @@ function Bulle({
       }
     >
       <div
-        className="relative max-w-[min(34rem,85%)]"
+        className="relative max-w-[min(34rem,82%)]"
         /*
           CLIC DROIT = le menu du message, comme sur WhatsApp et comme CMS-SARIS. C'est le geste
           qu'on tente d'instinct, et c'est ce qui manquait : la poignée reste, mais il fallait
@@ -860,7 +860,7 @@ function Bulle({
                 <TexteMisEnForme texte={m.body} taille={34} />
               </p>
             ) : (
-              <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">
+              <p className="text-[13.5px] leading-[19px] whitespace-pre-wrap">
                 <TexteMisEnForme texte={m.body} />
               </p>
             )

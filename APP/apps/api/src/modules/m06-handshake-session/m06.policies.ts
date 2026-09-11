@@ -274,6 +274,25 @@ export function accumulatedProfessionalDelaySec(
   let acc = 0;
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i].senderId !== professionalId) continue;
+    /*
+      ⚠️ **On ne compte que si le PATIENT attendait** (corrigé au chantier 93, 11/09/2026).
+
+      La version d'origine comptait tout écart précédant un message du soignant — y compris quand
+      le message précédent était **le sien**. Un soignant qui écrit « Bonjour », réfléchit dix
+      minutes, puis ajoute son analyse, se voyait facturer neuf minutes et demie de « retard »
+      alors que personne n'attendait.
+
+      Mesuré sur une consultation réelle le 11/09 : **1 930 s affichés, dont 1 840 s (95 %)
+      venaient des messages du soignant après ses propres messages.** Le patient n'avait
+      réellement attendu que 90 s.
+
+      Le commentaire d'origine disait déjà la règle juste — « si le soignant **répond** après
+      45 s » : *répondre, c'est répondre à quelqu'un*. Le code, lui, mesurait autre chose.
+
+      *Quand un commentaire et son code divergent, c'est presque toujours le commentaire qui dit
+      l'intention et le code qui a dérivé.*
+    */
+    if (sorted[i - 1].senderId === professionalId) continue;
     const gapSec = (sorted[i].createdAt.getTime() - sorted[i - 1].createdAt.getTime()) / 1000;
     if (gapSec > toleranceSec) acc += Math.floor(gapSec - toleranceSec);
   }
