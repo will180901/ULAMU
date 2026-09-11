@@ -22,6 +22,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
+import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
 import { useSessionStore } from '@/state/session.store'
 import { api, type CareSession, type CareSessionStatus, type MeResponse, type SessionMessage } from '@/lib/api'
 
@@ -186,6 +187,17 @@ async function monter(s: CareSession, items: SessionMessage[] = []) {
           <Route path="/consultations/:sessionId" element={<ConsultationPage />} />
         </Routes>
       </MemoryRouter>
+      {/*
+        ── La bulle de mise en forme, comme dans l'application (chantier 87) ────────────────────
+
+        Elle n'appartient plus à cet écran : la coquille la monte UNE fois pour toute
+        l'application, et elle s'attache d'elle-même à n'importe quelle zone de saisie. Le harnais
+        la monte donc aussi, sinon il testerait un écran qui n'existe nulle part.
+
+        Sa présence ici ne prouve pas le « partout » — c'est `bulle-formatage.test.tsx` qui s'en
+        charge, sur un champ qui n'a rien à voir avec une consultation.
+      */}
+      <BulleFormatageGlobale />
     </QueryClientProvider>,
   )
   await screen.findByRole('heading', { level: 1 })
@@ -1676,6 +1688,45 @@ describe('C5 — le Carnet du patient', () => {
     expect(lire).not.toHaveBeenCalled()
   })
 
+  /*
+    ⚠️ **Le Carnet rend la même grammaire que les messages (chantier 87).**
+
+    C'est ici que ressort le COMPTE-RENDU. Depuis que la bulle s'attache à toute zone de saisie, un
+    soignant peut y écrire « *important* » — et sans ce rendu, le patient comme le soignant
+    reliraient des astérisques dans un dossier de santé.
+
+    *Quand on ouvre une écriture, on ouvre une lecture. L'une sans l'autre fabrique un texte que
+    personne n'a voulu.* Aucun test ne tenait cela avant l'injection : retirer le rendu du Carnet
+    ne réveillait personne.
+  */
+  it('rend la mise en forme — ce que le compte-rendu y dépose', async () => {
+    vi.spyOn(api, 'sessionRecord').mockResolvedValue({
+      recordId: 'r1',
+      items: [
+        {
+          id: 'e1',
+          // Le type EXACT du compte-rendu : c'est bien lui qu'on suit jusqu'au Carnet.
+          type: 'CONSULTATION_REPORT',
+          provenance: 'PROFESSIONAL',
+          authorId: 'pro-1',
+          sourceRef: null,
+          payload: { label: 'Repos *strict* pendant ~trois~ deux jours' },
+          supersedesId: null,
+          createdAt: '2026-06-01T10:00:00.000Z',
+          superseded: false,
+        },
+      ],
+      nextCursor: null,
+    })
+    await monter(seance())
+    await ouvrir('Carnet')
+
+    expect(await screen.findByText('strict')).toHaveStyle({ fontWeight: '600' })
+    expect(screen.getByText('trois')).toHaveStyle({ textDecorationLine: 'line-through' })
+    // Et les marqueurs ne se lisent plus — ils sont devenus du style.
+    expect(screen.queryByText(/\*strict\*/)).not.toBeInTheDocument()
+  })
+
   it('n’efface pas une entrée remplacée : elle reste visible, corrigée (EF-07-04)', async () => {
     vi.spyOn(api, 'sessionRecord').mockResolvedValue({
       recordId: 'r1',
@@ -1697,7 +1748,15 @@ describe('C5 — le Carnet du patient', () => {
     await monter(seance())
     await ouvrir('Carnet')
 
-    const entree = await screen.findByText('Arachide')
+    /*
+      Le texte du Carnet passe désormais par le rendu de la mise en forme (chantier 87), donc il
+      vit dans un `<span>` à l'intérieur du paragraphe. C'est le PARAGRAPHE qui porte le barré —
+      celui de l'entrée remplacée, pas celui d'un marqueur `~…~` écrit par un soignant.
+
+      *Un test qui vise l'élément trouvé par son texte vise en fait le plus profond qui le porte ;
+      il faut nommer l'élément dont on parle, sinon il change avec le rendu.*
+    */
+    const entree = (await screen.findByText('Arachide')).closest('p') as HTMLElement
     expect(entree.className).toContain('line-through')
     // RM-07-03 : une déclaration du patient n'est JAMAIS présentée comme un diagnostic.
     expect(screen.getByText(/déclaré par le patient/)).toBeInTheDocument()

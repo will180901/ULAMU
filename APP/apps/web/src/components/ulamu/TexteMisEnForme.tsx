@@ -1,17 +1,24 @@
 /**
- * Le corps d'un message, rendu — chantier 86, 11/09/2026.
+ * Un texte mis en forme, rendu — chantiers 86 et 87.
  *
  * Deux couches, dans cet ordre : la **mise en forme** découpe le texte en fragments stylés, puis
  * chaque fragment passe par le rendu des **emoji** (chantier 78, images d'une feuille servie par
  * le site, pour que le même 🙏 ait la même forme partout).
+ *
+ * ⚠️ **Il ne sert plus qu'aux messages.** Depuis que la bulle s'attache à toute zone de saisie
+ * (chantier 87), les mêmes marqueurs peuvent apparaître dans un compte-rendu, un motif, un
+ * signalement. Partout où l'un de ces textes est RELU, c'est ce composant qui doit le rendre —
+ * sinon le lecteur voit des astérisques là où l'auteur croyait avoir insisté.
+ *
+ * Il vit donc dans la boîte commune, et non dans le module de la consultation.
  *
  * ⚠️ **Rien n'est INTERPRÉTÉ.** Cette fonction remplace cinq marqueurs symétriques par du style, et
  * les emoji par leurs images. Elle ne fabrique aucun lien, ne lit aucune balise : un patient qui
  * écrit `<b>` doit lire `<b>`. Le corps d'un message de consultation porte des données de santé —
  * on l'affiche, on ne le transforme pas.
  */
-import { texteAvecEmoji } from './Emoji'
-import { analyserTexteRiche, type StyleTexte } from './texte-riche'
+import { texteAvecEmoji } from '@/modules/consultation/Emoji'
+import { analyserTexteRiche, type StyleTexte } from '@/modules/consultation/texte-riche'
 
 /**
  * Le style d'un fragment, en valeurs plutôt qu'en classes.
@@ -38,7 +45,7 @@ function styleDe(s: StyleTexte): React.CSSProperties | undefined {
  * `taille` est celle des emoji, en pixels — 34 pour un message qui n'est QUE des emoji, 18 sinon.
  * Elle ne concerne pas le texte, dont la taille vient de la bulle qui le contient.
  */
-export function TexteMessage({ texte, taille = 18 }: { texte: string; taille?: number }) {
+export function TexteMisEnForme({ texte, taille = 18 }: { texte: string; taille?: number }) {
   const fragments = analyserTexteRiche(texte)
   return (
     <>

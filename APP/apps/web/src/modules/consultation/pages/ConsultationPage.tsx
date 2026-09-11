@@ -121,9 +121,7 @@ import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
 import { Emoji, seulementDesEmoji } from '../Emoji'
-import { TexteMessage } from '../TexteMessage'
-import { BulleFormatage } from '../BulleFormatage'
-import { continuerListe } from '../texte-riche'
+import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
 import { SelecteurEmoji } from '../SelecteurEmoji'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -836,11 +834,11 @@ function Bulle({
           {m.body ? (
             seulementDesEmoji(m.body) ? (
               <p className="leading-none">
-                <TexteMessage texte={m.body} taille={34} />
+                <TexteMisEnForme texte={m.body} taille={34} />
               </p>
             ) : (
               <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">
-                <TexteMessage texte={m.body} />
+                <TexteMisEnForme texte={m.body} />
               </p>
             )
           ) : null}
@@ -1032,7 +1030,17 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
                   (e.superseded ? 'text-[var(--texte-tertiaire)] line-through' : 'text-foreground')
                 }
               >
-                {texteEntree(e)}
+                {/*
+                  ── Le Carnet rend la même grammaire que les messages (chantier 87) ───────────
+
+                  C'est ici que ressort le COMPTE-RENDU : depuis que la bulle s'attache à toute
+                  zone de saisie, un soignant peut y écrire `*important*`. Sans ce rendu, le
+                  patient et le soignant reliraient des astérisques dans un dossier de santé.
+
+                  *Quand on ouvre une écriture, on ouvre une lecture. L'une sans l'autre fabrique
+                  un texte que personne n'a voulu.*
+                */}
+                <TexteMisEnForme texte={texteEntree(e)} />
               </p>
             </li>
           ))}
@@ -1966,27 +1974,15 @@ export function ConsultationPage() {
                     }}
                     onKeyDown={(e) => {
                       /*
-                        ── Ctrl+Entrée : la suite logique de la liste (chantier 86) ─────────────
+                        Entrée envoie, Maj+Entrée passe à la ligne — la convention de toute messagerie.
 
-                        Il passe AVANT le test d'envoi : Ctrl+Entrée n'a pas la touche Maj, et
-                        serait donc parti comme un envoi. Un raccourci ajouté après coup doit
-                        toujours être lu avant celui qu'il affine.
-
-                        Sur un élément de liste qui a du contenu, on reprend la puce ou le numéro
-                        suivant. Sur un élément VIDE, on sort de la liste — c'est ce que le porteur
-                        demandait : *supprimer la ligne courante annule la suite automatique*.
-                        Hors d'une liste, il passe simplement à la ligne.
+                        ⚠️ **Ctrl+Entrée est exclu ici** : il continue la liste, et la coquille s'en
+                        charge pour toute l'application (chantier 87). Elle l'intercepte en capture,
+                        donc avant nous — mais la garde reste écrite, parce qu'un lecteur de cette
+                        ligne doit savoir que Ctrl+Entrée n'envoie pas, sans avoir à deviner qu'un
+                        autre fichier le lui prend.
                       */
-                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                        e.preventDefault()
-                        const champ = e.currentTarget
-                        const r = continuerListe(brouillon, champ.selectionStart ?? brouillon.length)
-                        curseurARendre.current = { debut: r.curseur, fin: r.curseur }
-                        setBrouillon(r.texte)
-                        return
-                      }
-                      // Entrée envoie, Maj+Entrée passe à la ligne — la convention de toute messagerie.
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                         e.preventDefault()
                         valider()
                       }
@@ -1998,19 +1994,12 @@ export function ConsultationPage() {
                     }}
                   />
                   {/*
-                    La bulle se rend dans `document.body` (portail) : elle doit flotter au-dessus du
-                    champ sans être rognée par le composeur, qui est une pilule à débordement caché.
-                    Sa place dans l'arbre ne décide donc pas de sa place à l'écran — seulement de
-                    son cycle de vie, qui suit celui du champ.
+                    ── La bulle n'est plus ici (chantier 87) ────────────────────────────────────
+
+                    Elle est montée une fois dans la coquille et s'attache d'elle-même à toute zone
+                    de saisie. Ce champ n'a plus rien de particulier — et c'est le but : *deux
+                    chemins pour la même fonction finissent toujours par diverger.*
                   */}
-                  <BulleFormatage
-                    champ={champTexte}
-                    valeur={brouillon}
-                    onChanger={(texte, debut, fin) => {
-                      curseurARendre.current = { debut, fin }
-                      setBrouillon(texte)
-                    }}
-                  />
                   <Button
                     type="submit"
                     size="icon"

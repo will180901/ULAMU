@@ -671,6 +671,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **84** | **C5 — le plancher à zéro qui fabriquait une fausse échéance** — 11/09, trouvé **en ligne, sur la consultation réelle du porteur**, une heure après avoir livré le chantier 83. L'onglet disait « **expiré** », la bande trois centimètres plus bas « **moins d'une minute restantes** », et la carte juste en dessous « le délai est dépassé depuis le 29/08/2026, vos gains sont gelés ». **Trois affichages du même fait, dont deux qui se contredisaient.** 📌 **La cause : un `Math.max(0, …)`.** Un plancher à zéro transforme « dépassé de deux semaines » en « zéro seconde », donc en « moins d'une minute » — *un plancher n'est pas une protection quand il fabrique une valeur fausse au lieu de dire qu'il n'y en a pas.* ⚠️ Ce délai décide du **paiement** (CU-06-03) : annoncer qu'il reste une minute à un soignant dont les gains sont gelés depuis deux semaines, c'est lui faire croire qu'il peut encore les sauver. L'échéance est désormais lue **une seule fois** et consommée par les deux affichages — *deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose.* **web 910 ✓ (907 + 3) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 | **85** | **Les codes du cahier sortent des textes affichés** — 11/09, demande du porteur : *« retire partout les textes du genre (RM-06-04), (EF-06-06)… nous sommes en production »*. **154 citations retirées dans 40 fichiers** — web, mobile et **serveur**. 📌 Le plus important était invisible depuis l'écran : **53 messages d'erreur du serveur** portaient un code, et ce sont eux qu'un patient lit quand quelque chose échoue — « Compte suspendu (RM-01-05) », « Code expiré (PM-17) ». ⚠️ **Trois choses NE partent pas**, et la distinction est le vrai travail : les **commentaires du code** (la traçabilité vers le cahier, qui ne se voit pas) ; les **clés de paramètre** `PM-xx` de l'écran Paramètres métier et de l'API publique (là, le code n'est pas une citation, c'est **la donnée** — la retirer laisserait des lignes sans nom) ; les **erreurs de démarrage** destinées à l'exploitant, où le code nomme le paramètre mal réglé. **Deux défauts trouvés en chemin** : un JSDoc **dupliqué sur une ligne** dans `m03` (présent dans HEAD avant ce chantier), et surtout **un test d'absence devenu vide** — il vérifiait qu'un texte portant « (PM-01) » était absent, donc il serait resté vert même si la carte s'affichait. **web 910 ✓ · API unitaires 641 ✓ · lint 0 · builds ✓ · 1 faute injectée sur le test réparé, détectée.** | ⏸ en attente | ⏸ |
 | **86** | **La mise en forme d'un message — bulle sur la sélection, listes, web ET mobile** — 11/09, demande du porteur : *« une bulle au-dessus du texte sélectionné, avec gras, italique, barré, souligné, taille, et transformer en liste ; Ctrl+Entrée continue la liste ; supprimer la ligne courante annule la suite »*. Livré **en entier**, et **dans les deux applications au même commit** — sans le mobile, le patient lirait « *prenez ce médicament* » avec ses astérisques pendant que le soignant croirait avoir insisté. 📌 **Une grammaire, trois copies, un garde-fou** : la source est `packages/shared/src/texte-riche.ts`, vendorée selon la convention du projet — mais **rien ne vérifiait jusqu'ici qu'une copie ne dérive pas**. Un test compare désormais les trois **à l'octet près**. ⚠️ **La règle qui protège le vocabulaire du soin** : un marqueur n'ouvre qu'en début de mot et ne ferme qu'en fin de mot — sans elle, `nom_de_famille` deviendrait « nomdefamille » avec « de » en italique. WhatsApp ne pose pas cette règle ; ici le texte est un dossier. **Le champ reste un vrai champ de texte** (il montre `*gras*`) : un éditeur qui stylise en direct manipulerait du HTML dans un message qui porte des données de santé. **web 966 ✓ · lint 0 · builds et types propres · 9 fautes injectées, 9 détectées.** | ⏸ en attente | ⏸ |
+| **87** | **La mise en forme PARTOUT, et quatre tests qui ne gardaient rien** — 11/09. Le porteur essaie la sélection dans le compte-rendu : rien. *« Il faut ce type de sélection partout dans les interfaces où il y a des champs de saisie texte. »* J'avais restreint la bulle au seul composeur au chantier 86, **et j'avais tort de décider pour lui**. Elle est désormais montée **une fois dans la coquille** et s'attache d'elle-même aux **vingt-trois** zones de saisie, sans câblage écran par écran : elle écrit par le **setter natif** puis émet un vrai `input`, donc aucun écran n'a à la connaître. Le composeur perd son chemin particulier — *deux chemins pour la même fonction finissent toujours par diverger*. 📌 **Ouvrir une écriture ouvre une lecture** : le compte-rendu ressort dans le **Carnet du patient**, qui rend maintenant la même grammaire — sans quoi soignant et patient reliraient des astérisques dans un dossier de santé. ⚠️ **Quatre des six fautes injectées n'ont réveillé personne** : `waitFor(… not.toBeInTheDocument)` réussit **au premier instant**, avant que la chose ait eu le temps d'apparaître. Tests refaits, les six tombent. **web 975 ✓ · lint 0 · build et types propres · 6 fautes injectées, 6 détectées après correction des tests.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -719,6 +720,71 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 87 (la mise en forme partout) a appris
+
+*11/09/2026 — un test d'absence peut être vrai avant même que la chose ait pu exister.*
+
+#### J'avais décidé à la place du porteur
+
+Au chantier 86, j'avais restreint la bulle au seul composeur de la consultation, avec une raison
+défendable : le compte-rendu est relu ailleurs par des écrans qui ne rendent pas ces marqueurs.
+
+Le porteur l'a essayée là où il en avait besoin, et elle n'y était pas. *Une raison défendable ne
+suffit pas à décider pour quelqu'un — elle suffit à le prévenir.* La bonne conduite était de
+livrer « partout » **et** de régler la conséquence, pas de retenir la fonctionnalité.
+
+#### Une bulle, vingt-trois champs, zéro câblage
+
+Elle est montée **une fois** dans la coquille. Elle s'attache d'elle-même à toute zone de saisie
+multiligne : elle lit `document.activeElement`, écoute `selectionchange`, et écrit par le **setter
+natif de `value`** suivi d'un vrai événement `input` — exactement ce que fait un clavier. React
+reçoit l'événement, appelle le `onChange` de l'écran, l'état part par le chemin normal.
+
+**Aucun écran n'a à savoir que cette bulle existe.** Et le composeur de la consultation a perdu son
+traitement particulier : *deux chemins pour la même fonction finissent toujours par diverger* —
+c'est la leçon du chantier 84, appliquée avant que la divergence n'arrive.
+
+#### Ouvrir une écriture, c'est ouvrir une lecture
+
+Le compte-rendu ne s'affiche pas dans l'écran qui le rédige — il ressort dans le **Carnet du
+patient**. Depuis que la bulle y est, un soignant peut y écrire `*important*` ; sans rendu, lui et
+le patient reliraient des astérisques dans un dossier de santé.
+
+*Quand on ouvre une écriture, on ouvre une lecture. L'une sans l'autre fabrique un texte que
+personne n'a voulu.* Le rendu a donc quitté le module de la consultation pour la boîte commune.
+
+#### ⚠️ Quatre fautes sur six n'ont réveillé personne
+
+C'est le vrai enseignement du jour. Les tests étaient verts, la fonctionnalité marchait, et
+**quatre garanties sur six n'étaient tenues par rien** :
+
+| La faute posée | Pourquoi aucun test ne tombait |
+|---|---|
+| L'échappatoire `data-sans-formatage` ignorée | `waitFor(… not.toBeInTheDocument)` **réussit au premier instant** — avant que la bulle ait pu apparaître. |
+| Les champs d'une seule ligne acceptés | Même piège. |
+| `Ctrl+Entrée` plus pris en capture | Le composeur se protège **aussi** de son côté : les deux protections se couvraient mutuellement. |
+| Le Carnet ne rend plus les marqueurs | Aucun test ne lisait le Carnet mis en forme. |
+
+**Un test d'absence doit d'abord prouver que la chose SAIT apparaître.** On sélectionne dans un
+champ normal, on attend la bulle, **puis** on va dans le champ qui doit la refuser. Et quand la
+transition passe par un instant où la chose disparaît de toute façon — un changement de focus — il
+faut `act` et une assertion **synchrone** : `waitFor` gagnerait la course sans rien prouver.
+
+*C'est la troisième fois de la journée qu'un test vert ne gardait rien* — le test d'absence du
+chantier 85, les deux moitiés de règle du 86, et ces quatre-ci. Le point commun : **rien ne signale
+un test qui a cessé de mordre.** Seule l'injection le dit.
+
+#### Ce qui reste ouvert
+
+La bulle écrit maintenant dans **tous** les champs. Les marqueurs peuvent donc apparaître dans des
+textes relus par des écrans qui ne les rendent pas encore : les **motifs d'administration**, les
+**raisons de signalement**, les **lignes d'ordonnance**. Le Carnet est traité ; les autres ne le
+sont pas.
+
+Ce n'est pas grave partout de la même façon — un astérisque dans un motif d'audit est laid, un
+astérisque dans une posologie est autre chose. **À reprendre écran par écran**, et c'est écrit ici
+pour que ce soit une liste et non une surprise.
 
 ### Ce que le chantier 86 (la mise en forme) a appris
 

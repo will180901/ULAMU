@@ -21,6 +21,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
 import { VoileRideau } from '@/components/layout/RideauConfidentialite'
 import { AideRaccourcis } from '@/components/layout/AideRaccourcis'
+import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
 import { useRaccourcisGlobaux } from '@/hooks/useRaccourcisGlobaux'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useIdleLogout } from '@/state/useIdleLogout'
@@ -178,6 +179,21 @@ export function AppShell() {
         </div>
 
         <AideRaccourcis ouvert={aideOuverte} surChangement={setAideOuverte} />
+
+        {/*
+          ── La mise en forme, montée UNE FOIS pour toute l'application (chantier 87) ───────────
+
+          Demande du porteur, après avoir essayé la sélection dans le compte-rendu : *« il faut ce
+          type de sélection partout dans les interfaces où il y a des champs de saisie texte »*.
+
+          Elle s'attache d'elle-même à toute zone de saisie multiligne — les vingt-trois de
+          l'application — sans qu'aucun écran ait à la connaître. Un champ peut la refuser avec
+          `data-sans-formatage` ; aucun ne le fait aujourd'hui, et c'est voulu.
+
+          ⚠️ Elle est HORS du conteneur `inert` du rideau de confidentialité : quand le rideau
+          tombe, plus rien n'est saisissable, donc plus rien à mettre en forme.
+        */}
+        <BulleFormatageGlobale />
       </main>
     </div>
   )
