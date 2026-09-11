@@ -116,6 +116,7 @@ import {
   type SessionMessage,
 } from '@/lib/api'
 import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
+import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
@@ -1264,6 +1265,20 @@ export function ConsultationPage() {
   */
   const demandes = useQuery({ queryKey: ['handshakes', 'mine'], queryFn: () => api.myHandshakes(), retry: false })
 
+  /*
+    ── Les ordonnances, lues ICI pour que l'ONGLET puisse les compter (chantier 83) ─────────────
+
+    `PanneauOrdonnance` fait déjà cette requête, avec exactement cette clé. Ce n'est donc pas un
+    second appel : react-query sert le même cache aux deux. C'est ce qui permet à l'onglet
+    d'annoncer « 2 » sans qu'on ouvre la carte — et sans rien coûter au réseau.
+  */
+  const prescrites = useQuery({
+    queryKey: ['prescriptions', 'prescribed'],
+    queryFn: () => api.myPrescribed(),
+    retry: false,
+    staleTime: 60_000,
+  })
+
   const messages = useQuery({
     queryKey: ['session', sessionId, 'messages'],
     queryFn: () => api.sessionMessages(sessionId),
@@ -1488,9 +1503,63 @@ export function ConsultationPage() {
   const peutProlonger = active && s.extensionTotalSec < 1800
   const nomAuteur = (senderId: string) => (senderId === s.professionalId ? 'Vous' : 'Le patient')
   const enCoursDEnvoi = envoyer.isPending || modifier.isPending
+  const nbOrdonnances = (prescrites.data?.items ?? []).filter((p) => p.sessionId === s.id).length
+
+  /*
+    ── Ce que l'onglet « Compte-rendu » annonce sans qu'on l'ouvre ──────────────────────────────
+
+    C'est la marque qui justifie tout ce chantier. Le compte-rendu a 24 h (PM-30) et les gains sont
+    **gelés** passé ce délai (CU-06-03) : c'est la seule carte du rail dont l'ignorance coûte de
+    l'argent. Elle porte donc son état sur l'onglet lui-même.
+
+    Le format est COURT — « 6 h », « 41 min » — parce qu'une pastille d'onglet ne tient pas
+    « 6 h 12 min ». Le détail exact reste dans la carte, qui a la place de le dire.
+
+    ⚠️ L'échéance vient du SERVEUR (`reportDueAt`, RM-06-02). L'horloge de ce poste n'est
+    qu'indicative, et un soignant qui croirait son navigateur pourrait déposer trop tard.
+  */
+  const marqueCompteRendu = ((): MarqueOnglet | undefined => {
+    if (s.reportDepositedAt) return { texte: 'déposé', ton: 'succes' }
+    if (!s.reportDueAt) return undefined
+    const restant = Math.floor((new Date(s.reportDueAt).getTime() - Date.now()) / 1000)
+    if (restant <= 0) return { texte: 'expiré', ton: 'urgence' }
+    const heures = Math.floor(restant / 3600)
+    return {
+      texte: heures >= 1 ? `${heures} h` : `${Math.max(1, Math.round(restant / 60))} min`,
+      // Sous six heures, le délai n'est plus une information : c'est un avertissement.
+      ton: restant < 6 * 3600 ? 'urgence' : 'neutre',
+    }
+  })()
+
+  /*
+    L'onglet ouvert par défaut, quand on n'a aucun souvenir sur cette consultation.
+
+    Pendant la séance, c'est le CONTEXTE du patient : on ouvre l'écran pour savoir de quoi il
+    souffre. Une fois la séance close et le compte-rendu non déposé, c'est le COMPTE-RENDU : il n'y
+    a plus qu'une chose à faire, et elle est chronométrée.
+
+    *Une capacité doit avoir un chemin — et le meilleur chemin, c'est parfois être déjà là.*
+  */
+  const ongletParDefaut = !active && !s.reportDepositedAt && s.reportDueAt ? 'compte-rendu' : 'contexte'
 
   return (
-    <div className="mx-auto flex w-full max-w-[1160px] flex-col">
+    /*
+      ── Deux zones FIXES, chacune défilant chez elle (chantier 83, demande du porteur) ──────────
+
+      *« La zone du contenant des messages doit être fixe, le scroll se passe à l'intérieur ; à
+      l'extérieur le bloc ne bouge pas. »*
+
+      Au-dessus de 1024 px, l'écran occupe exactement la hauteur disponible et ne la dépasse jamais :
+      le fil défile dans le fil, le rail défile dans le rail, **la page ne bouge plus**. En dessous,
+      les deux colonnes s'empilent et la page redevient un document qui défile — sur un téléphone,
+      deux zones de défilement l'une sous l'autre s'annulent, on ne sait plus laquelle on tire.
+
+      ⚠️ Au passage, cela corrige un vrai défaut : le fil était bloqué à **46 % de la hauteur de
+      l'écran**, quelle que soit la taille de l'écran. Sur un grand moniteur on perdait la moitié de
+      la place ; sur un portable c'était à l'étroit. Une hauteur en pourcentage n'est pas une mise en
+      page, c'est une moyenne — et personne ne travaille sur un écran moyen.
+    */
+    <div className="mx-auto flex w-full max-w-[1160px] flex-col lg:h-full lg:min-h-0">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <span
           aria-hidden="true"
@@ -1569,8 +1638,8 @@ export function ConsultationPage() {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        <section aria-label="Fil de la consultation" className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-5">
+        <section aria-label="Fil de la consultation" className="flex min-w-0 flex-1 flex-col gap-4 lg:min-h-0">
           {s.status === 'PREPARING' ? (
             <Carte icone={Clock} titre="En attente du patient" sousTitre="Le décompteur n'a pas encore démarré">
               <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
@@ -1598,11 +1667,16 @@ export function ConsultationPage() {
             </Avis>
           ) : null}
 
-          <Carte icone={UserRound} titre="Échange" sousTitre={active ? 'Chiffré de bout en bout au repos' : "L'échange est clos et archivé"}>
+          <Carte
+            icone={UserRound}
+            titre="Échange"
+            sousTitre={active ? 'Chiffré de bout en bout au repos' : "L'échange est clos et archivé"}
+            pleineHauteur
+          >
             {messages.isPending ? (
               <SqueletteFil nombre={4} libelle="Chargement du fil…" />
             ) : (
-              <div className="max-h-[46dvh] overflow-y-auto">
+              <div className="max-h-[46dvh] overflow-y-auto lg:max-h-none lg:min-h-0 lg:flex-1">
                 <ul className="flex flex-col gap-3">
                   {/*
                     ── La ligne qui ouvre le fil — chantier 76 ──────────────────────────────────
@@ -1871,100 +1945,171 @@ export function ConsultationPage() {
           </Carte>
         </section>
 
-        <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-80">
+        <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[22rem]">
           {/*
-            ── Ce que la séance rapporte, en tête du rail — chantier 76 ─────────────────────────
+            ── Le rail devient un jeu d'ONGLETS NOMMÉS (chantier 83) ────────────────────────────
 
-            En tête, et pas en bas : c'est la seule information du rail qui concerne le soignant
-            lui-même, et elle tient en une ligne. Elle ne s'affiche que si on a pu la LIRE — une
-            jointure qui échoue n'est ni un zéro ni « gratuit ».
+            Le porteur demandait deux flèches ◀ ▶ pour passer d'une carte à l'autre. Le raisonnement
+            qui a conduit à faire autrement est écrit en tête de `RailInfos.tsx` ; l'essentiel tient
+            en une phrase : **une information qui porte une échéance ne doit jamais dépendre d'un
+            clic**, et le compte-rendu gèle des gains au bout de 24 h.
+
+            ⚠️ **L'ordre a changé, et la raison a changé avec le contenant.** Le chantier 76 avait
+            mis « Honoraires » en tête, et c'était juste : dans une PILE, le premier est celui qu'on
+            voit en arrivant, et c'est la seule ligne du rail qui parle du soignant lui-même. Dans
+            des ONGLETS, le premier est celui qui s'OUVRE — et ce qu'on vient chercher en ouvrant
+            une consultation, c'est de quoi souffre le patient.
+
+            *Le même argument donne deux résultats opposés selon la forme qui le porte. Quand on
+            change le contenant, il faut relire les raisons, pas seulement déplacer le contenu.*
           */}
-          {prixPatient !== null ? (
-            <Carte icone={Banknote} titre="Honoraires" sousTitre="Ce que le patient a payé pour cette séance">
-              <p className="flex items-baseline justify-between gap-2">
-                <span className="ul-surtitre">Prix patient</span>
-                <span className="ul-chiffre-ligne">{new Intl.NumberFormat('fr-FR').format(prixPatient)} F</span>
-              </p>
-              {/*
-                ⚠️ On ne calcule PAS le net ici. La commission vient du contrat signé du soignant
-                (RM-13-07) et diffère d'un médecin à l'autre : l'écran ne peut que lire ce qui a été
-                prélevé, et cette lecture n'existe qu'après le dépôt du compte-rendu. « Mes gains »
-                la montre ; ici on dirait un chiffre faux.
-              */}
-              <p className="ul-aide">
-                Votre part nette, commission déduite, se lit dans Mes gains — elle est créditée au dépôt
-                du compte-rendu.
-              </p>
-            </Carte>
-          ) : null}
+          <RailInfos
+            session={s.id}
+            defaut={ongletParDefaut}
+            alerte={(aller) =>
+              /*
+                ── Le garde-fou : l'échéance ne descend jamais dans un onglet ──────────────────
 
-          <Carte icone={FileText} titre="Contexte patient" sousTitre="Transmis avec la pré-consultation">
-            {pre ? (
-              <>
-                <div>
-                  <p className="ul-surtitre">
-                    Symptômes
-                  </p>
-                  <p className="mt-0.5 text-[13px] leading-[1.55] whitespace-pre-wrap text-foreground">{pre.symptoms}</p>
-                </div>
-                {pre.sinceWhen ? (
-                  <div>
-                    <p className="ul-surtitre">
-                      Depuis
-                    </p>
-                    <p className="mt-0.5 text-[13px] text-foreground">{pre.sinceWhen}</p>
-                  </div>
-                ) : null}
-                {pre.attachments.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {pre.attachments.map((k) => (
-                      <Media key={k} fileKey={k} />
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
-                Le patient n'a pas encore transmis sa pré-consultation.
-              </p>
-            )}
-          </Carte>
-
-          {/* Le Carnet n'a de sens qu'une fois la séance ouverte : avant, le serveur refuse (409). */}
-          {s.status !== 'REFUNDED' ? <CarnetPatient sessionId={s.id} active={!!active} /> : null}
-
-          {/*
-            Le bloc « Livrables » de la maquette, désormais tenu des deux côtés : l'ordonnance ouvre
-            C7 en panneau (le médecin ne quitte pas le fil), le compte-rendu se rédige juste en
-            dessous. La maquette les groupait sous un même titre parce que les deux n'étaient que
-            des boutons vers ailleurs ; ici le compte-rendu est un éditeur à part entière, et les
-            réunir sous un titre commun ferait une carte à deux corps.
-          */}
-          {s.status !== 'REFUNDED' ? <PanneauOrdonnance sessionId={s.id} active={!!active} /> : null}
-
-          {s.status !== 'REFUNDED' ? <CompteRendu session={s} onDepose={rafraichir} /> : null}
-
-          {/*
-            À la place de « Terminer la consultation » de la maquette. Le professionnel ne peut pas
-            clore — mais il peut donner du temps, gratuitement (EF-06-07), jusqu'à PM-29.
-          */}
-          {peutProlonger ? (
-            <Carte icone={HeartPulse} titre="Prolonger" sousTitre="Gratuit pour le patient (EF-06-07)">
-              <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-                Vous ne pouvez pas mettre fin à la séance : le patient a payé {s.durationMin} minutes, elles
-                lui appartiennent. Vous pouvez en revanche lui en offrir.
-              </p>
-              <div>
-                <Button type="button" size="sm" variant="outline" onClick={() => prolonger.mutate()} disabled={prolonger.isPending}>
-                  <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
-                  {prolonger.isPending ? 'Prolongation…' : 'Prolonger de 10 minutes'}
-                </Button>
-                <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
-                  {Math.round(s.extensionTotalSec / 60)} min déjà offertes sur 30 au maximum.
-                </p>
-              </div>
-            </Carte>
-          ) : null}
+                Tout système de navigation cache — c'est son métier. On n'accepte pas qu'il cache
+                CELA : passé 24 h sans compte-rendu, les gains de la séance sont gelés (CU-06-03).
+                La bande reste donc visible quel que soit l'onglet ouvert, et **elle conduit à la
+                carte** : une alerte qui ne mène nulle part ne fait qu'inquiéter.
+              */
+              !s.reportDepositedAt && s.reportDueAt && !active ? (
+                <button
+                  type="button"
+                  onClick={() => aller('compte-rendu')}
+                  className="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] leading-[1.4] transition-colors hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+                  style={{
+                    borderColor: 'var(--erreur-bordure, var(--erreur-texte))',
+                    background: 'var(--erreur-fond)',
+                    color: 'var(--erreur-texte)',
+                  }}
+                >
+                  <AlertTriangle size={13} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    Compte-rendu à déposer — {dureeFr(Math.max(0, Math.floor((new Date(s.reportDueAt).getTime() - Date.now()) / 1000)))} restantes.
+                  </span>
+                  <span className="shrink-0 font-semibold underline">Rédiger</span>
+                </button>
+              ) : null
+            }
+            onglets={[
+              {
+                id: 'contexte',
+                nom: 'Contexte',
+                contenu: (
+                  <Carte icone={FileText} titre="Contexte patient" sousTitre="Transmis avec la pré-consultation">
+                    {pre ? (
+                      <>
+                        <div>
+                          <p className="ul-surtitre">Symptômes</p>
+                          <p className="mt-0.5 text-[13px] leading-[1.55] whitespace-pre-wrap text-foreground">{pre.symptoms}</p>
+                        </div>
+                        {pre.sinceWhen ? (
+                          <div>
+                            <p className="ul-surtitre">Depuis</p>
+                            <p className="mt-0.5 text-[13px] text-foreground">{pre.sinceWhen}</p>
+                          </div>
+                        ) : null}
+                        {pre.attachments.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {pre.attachments.map((k) => (
+                              <Media key={k} fileKey={k} />
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
+                        Le patient n'a pas encore transmis sa pré-consultation.
+                      </p>
+                    )}
+                  </Carte>
+                ),
+              },
+              /* Le Carnet n'a de sens qu'une fois la séance ouverte : avant, le serveur refuse (409). */
+              ...(s.status !== 'REFUNDED'
+                ? [
+                    {
+                      id: 'carnet',
+                      nom: 'Carnet',
+                      // « clos » plutôt qu'un cadenas : un mot se lit, un pictogramme se devine.
+                      marque: active ? undefined : ({ texte: 'clos' } as MarqueOnglet),
+                      contenu: <CarnetPatient sessionId={s.id} active={!!active} />,
+                    },
+                    {
+                      id: 'ordonnance',
+                      nom: 'Ordonnance',
+                      marque: nbOrdonnances > 0 ? ({ texte: String(nbOrdonnances) } as MarqueOnglet) : undefined,
+                      contenu: <PanneauOrdonnance sessionId={s.id} active={!!active} />,
+                    },
+                    {
+                      id: 'compte-rendu',
+                      nom: 'Compte-rendu',
+                      marque: marqueCompteRendu,
+                      contenu: <CompteRendu session={s} onDepose={rafraichir} />,
+                    },
+                  ]
+                : []),
+              ...(prixPatient !== null
+                ? [
+                    {
+                      id: 'honoraires',
+                      nom: 'Honoraires',
+                      contenu: (
+                        <Carte icone={Banknote} titre="Honoraires" sousTitre="Ce que le patient a payé pour cette séance">
+                          <p className="flex items-baseline justify-between gap-2">
+                            <span className="ul-surtitre">Prix patient</span>
+                            <span className="ul-chiffre-ligne">{new Intl.NumberFormat('fr-FR').format(prixPatient)} F</span>
+                          </p>
+                          {/*
+                            ⚠️ On ne calcule PAS le net ici. La commission vient du contrat signé du
+                            soignant (RM-13-07) et diffère d'un médecin à l'autre : l'écran ne peut
+                            que lire ce qui a été prélevé, et cette lecture n'existe qu'après le
+                            dépôt du compte-rendu. « Mes gains » la montre ; ici on dirait un chiffre
+                            faux.
+                          */}
+                          <p className="ul-aide">
+                            Votre part nette, commission déduite, se lit dans Mes gains — elle est créditée au dépôt
+                            du compte-rendu.
+                          </p>
+                        </Carte>
+                      ),
+                    },
+                  ]
+                : []),
+              /*
+                À la place de « Terminer la consultation » de la maquette. Le professionnel ne peut
+                pas clore — mais il peut donner du temps, gratuitement (EF-06-07), jusqu'à PM-29.
+              */
+              ...(peutProlonger
+                ? [
+                    {
+                      id: 'prolonger',
+                      nom: 'Prolonger',
+                      contenu: (
+                        <Carte icone={HeartPulse} titre="Prolonger" sousTitre="Gratuit pour le patient (EF-06-07)">
+                          <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                            Vous ne pouvez pas mettre fin à la séance : le patient a payé {s.durationMin} minutes, elles
+                            lui appartiennent. Vous pouvez en revanche lui en offrir.
+                          </p>
+                          <div>
+                            <Button type="button" size="sm" variant="outline" onClick={() => prolonger.mutate()} disabled={prolonger.isPending}>
+                              <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
+                              {prolonger.isPending ? 'Prolongation…' : 'Prolonger de 10 minutes'}
+                            </Button>
+                            <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
+                              {Math.round(s.extensionTotalSec / 60)} min déjà offertes sur 30 au maximum.
+                            </p>
+                          </div>
+                        </Carte>
+                      ),
+                    },
+                  ]
+                : []),
+            ] satisfies OngletRail[]}
+          />
 
           {/*
             ── Signaler, tout en bas du rail (chantier 41, 04/09/2026) ────────────────────────────

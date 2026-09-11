@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **895 ✓** (44 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **907 ✓** (44 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 82
+## 3. Ce qui a été fait — chantiers 58 à 83
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 83 | *(à pousser)* | **Deux zones fixes, et le rail devient un jeu d'onglets nommés.** Les flèches demandées par le porteur passent **au clavier** ; à l'écran, des onglets nommés qui **portent leur état** (« 3 h » sur le compte-rendu, « 2 » sur l'ordonnance). 📌 La raison : le compte-rendu gèle des gains au bout de 24 h — *une information qui porte une échéance ne doit jamais dépendre d'un clic*. Une bande d'échéance reste visible hors des onglets et conduit à la carte. ⚠️ Le fil n'est plus bloqué à 46 % de la hauteur de l'écran. |
 | 82 | *(à pousser)* | **La poignée entre DANS la bulle, sans cadre.** Demande du porteur. Le cadre tenait QUATRE boutons ; depuis le chantier 80 il n'en entourait plus qu'un — un habillage qui survit à ce qu'il habillait. ⚠️ Et le déplacement **efface un contournement entier** : posée à côté de la bulle, la barre débordait de 73 px sur un téléphone ; dans la bulle, elle ne peut plus déborder de rien. |
 | 81 | *(à pousser)* | **Le menu jusque sur l'archive, et une ligne qui se contredisait.** Une séance close offrait un bouton nu là où tout le reste vit dans un menu — deux grammaires sur le même écran. Elle reçoit le même menu, réduit. 📌 Et le menu a révélé « Copier le texte », légitime sur une archive et impossible à porter par un bouton seul. ⚠️ Le fil disait « Consultation ouverte » sur une séance **Terminée** — vu sur une capture du porteur, pas par les tests. Ouvre la **dette n°27**. |
 | 80 | *(à pousser)* | **Un seul menu de message, et le clic droit.** Le porteur ne trouvait pas les gestes sur un message : quatre icônes invisibles, aucun autre chemin. 📌 La réponse était **chez nous** — le mobile a depuis toujours sa feuille d'actions à l'appui long. Le web était en retard **sur lui-même**. Livré : menu unique + clic droit, « + » vers les 1 867 emoji (le serveur les acceptait déjà), « Copier le texte ». ⚠️ Une faute injectée a démasqué un de mes tests, réécrit. |

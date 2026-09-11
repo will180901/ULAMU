@@ -128,6 +128,24 @@ const demandeVide = {
   premier niveau quel que soit son texte : ce qu'elles vérifient est que l'écran est MONTÉ, pas ce
   qu'il s'appelle. Le nom, lui, a ses propres tests plus bas.
 */
+/**
+ * Ouvre un onglet du rail et rend son panneau — chantier 83.
+ *
+ * ⚠️ **C'est le coût assumé des onglets, et il fallait le payer quelque part.** Les cartes du rail
+ * vivent désormais derrière des onglets : une carte qu'on ne regarde pas n'est **pas montée**. Onze
+ * tests sont tombés d'un coup en découvrant cela, et ils avaient raison de tomber — ils disaient
+ * une vérité qui a cessé d'être vraie.
+ *
+ * On rend le PANNEAU pour que les assertions s'y limitent : plusieurs onglets portent le même mot
+ * que la carte qu'ils ouvrent (« Honoraires », « Compte-rendu »), et une recherche par texte sur
+ * toute la page en trouverait deux.
+ */
+async function ouvrir(nom: string): Promise<HTMLElement> {
+  const utilisateur = userEvent.setup()
+  await utilisateur.click(await screen.findByRole('tab', { name: new RegExp('^' + nom) }))
+  return screen.getByRole('tabpanel')
+}
+
 async function monter(s: CareSession, items: SessionMessage[] = []) {
   vi.spyOn(api, 'session').mockResolvedValue(s)
   vi.spyOn(api, 'sessionMessages').mockResolvedValue({ items, nextCursor: null })
@@ -215,6 +233,7 @@ describe('C5 — le compte-rendu', () => {
 
   it("tant que la séance dure, aucun décompte : le délai ne court qu'à la clôture", async () => {
     await monter(seance({ reportDueAt: null }))
+    await ouvrir('Compte-rendu')
 
     await screen.findByRole('button', { name: /Déposer le compte-rendu/ })
     expect(document.body.textContent).not.toContain('pour déposer')
@@ -240,6 +259,7 @@ describe('C5 — le compte-rendu', () => {
     const utilisateur = userEvent.setup()
     const deposer = vi.spyOn(api, 'depositReport').mockResolvedValue(seance())
     await monter(seance())
+    await ouvrir('Compte-rendu')
 
     const bouton = await screen.findByRole('button', { name: /Déposer le compte-rendu/ })
     expect(bouton).toBeDisabled()
@@ -255,6 +275,7 @@ describe('C5 — le compte-rendu', () => {
   it('conserve le brouillon : une fermeture d’onglet ne coûte pas vingt minutes de texte', async () => {
     const utilisateur = userEvent.setup()
     await monter(seance())
+    await ouvrir('Compte-rendu')
     await utilisateur.type(await screen.findByLabelText('Diagnostic'), 'Tachycardie')
 
     await waitFor(() => expect(localStorage.getItem('ulamu-compte-rendu-s1')).toContain('Tachycardie'))
@@ -262,6 +283,7 @@ describe('C5 — le compte-rendu', () => {
 
   it('déposé, il annonce que les gains sont crédités (RM-06-04)', async () => {
     await monter(seance({ status: 'ENDED', reportDepositedAt: '2026-08-24T09:00:00.000Z' }))
+    await ouvrir('Compte-rendu')
     expect(await screen.findByText(/vos gains sont crédités/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Déposer le compte-rendu/ })).not.toBeInTheDocument()
   })
@@ -296,6 +318,7 @@ describe('C5 — ce que le professionnel ne peut pas faire', () => {
     const utilisateur = userEvent.setup()
     const prolonger = vi.spyOn(api, 'extendSession').mockResolvedValue(seance({ extensionTotalSec: 600 }))
     await monter(seance({ extensionTotalSec: 600 }))
+    await ouvrir('Prolonger')
 
     await utilisateur.click(await screen.findByRole('button', { name: /Prolonger de 10 minutes/ }))
     await waitFor(() => expect(prolonger).toHaveBeenCalledWith('s1', 10))
@@ -456,7 +479,7 @@ describe('C5 — le contexte patient', () => {
     })
     await monter(seance({ id: 's1' }))
 
-    const bloc = (await screen.findByText('Honoraires')).closest('section') as HTMLElement
+    const bloc = await ouvrir('Honoraires')
     expect(within(bloc).getByText(/5\s?000 F/)).toBeInTheDocument()
     // Le prix de l'AUTRE séance ne doit pas fuiter ici.
     expect(within(bloc).queryByText(/99\s?000/)).not.toBeInTheDocument()
@@ -471,6 +494,8 @@ describe('C5 — le contexte patient', () => {
     await monter(seance({ id: 's1' }))
     await screen.findByText('Contexte patient')
 
+    // Ni la carte, ni l'ONGLET : sans montant lisible, aucun chemin ne mène à un montant inventé.
+    expect(screen.queryByRole('tab', { name: /Honoraires/ })).not.toBeInTheDocument()
     expect(screen.queryByText('Honoraires')).not.toBeInTheDocument()
   })
 
@@ -485,7 +510,7 @@ describe('C5 — le contexte patient', () => {
     })
     await monter(seance({ id: 's1' }))
 
-    const bloc = (await screen.findByText('Honoraires')).closest('section') as HTMLElement
+    const bloc = await ouvrir('Honoraires')
     expect(within(bloc).getByText(/se lit dans Mes gains/)).toBeInTheDocument()
     expect(within(bloc).queryByText(/4\s?500/)).not.toBeInTheDocument()
   })
@@ -1189,6 +1214,215 @@ describe('C5 — l’avertissement de remboursement', () => {
  * aucune n'est décorative : la lecture seule, la traçabilité de l'accès, et sa fermeture à la
  * clôture — le compte-rendu rédigé à la 23ᵉ heure n'aura plus le Carnet sous les yeux.
  */
+describe('C5 — le rail d’informations (chantier 83)', () => {
+  /** Une séance close, dont l'échéance de dépôt tombe dans `heures` heures. */
+  const close = (heures: number) =>
+    seance({
+      status: 'ENDED' as CareSessionStatus,
+      endedAt: '2026-08-24T08:32:00.000Z',
+      remainingSeconds: 0,
+      reportDueAt: new Date(Date.now() + heures * 3_600_000 + 90_000).toISOString(),
+    })
+
+  /** Le squelette d'une ordonnance — seul `sessionId` compte pour ces tests. */
+  const ordonnanceVide = {
+    id: 'p0',
+    sessionId: 's1',
+    status: 'ACTIVE' as const,
+    qrToken: null,
+    subProfileId: null,
+    expiresAt: '2026-09-24T08:00:00.000Z',
+    createdAt: '2026-08-24T08:20:00.000Z',
+    cancelReason: null,
+    lines: [],
+  }
+
+  beforeEach(() => {
+    // Le rail se souvient de l'onglet PAR CONSULTATION : sans ce nettoyage, un test hériterait du
+    // choix du précédent et ne prouverait plus rien.
+    try {
+      localStorage.clear()
+    } catch {
+      /* sans conséquence */
+    }
+  })
+
+  /*
+    ── La demande du porteur, tenue à l'endroit où elle est bonne ────────────────────────────────
+
+    Il voulait deux flèches ◀ ▶ pour passer d'une carte à l'autre. Les flèches sont gardées **au
+    clavier**, et remplacées à l'écran par des onglets nommés : *une flèche est un excellent
+    raccourci, c'est un mauvais menu.*
+  */
+  it('les flèches ← et → passent d’un onglet à l’autre', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(seance())
+
+    const contexte = await screen.findByRole('tab', { name: /^Contexte/ })
+    expect(contexte).toHaveAttribute('aria-selected', 'true')
+
+    contexte.focus()
+    await utilisateur.keyboard('{ArrowRight}')
+    expect(await screen.findByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+
+    // Et la liste BOUCLE : depuis le premier, « gauche » va au dernier. Sinon une extrémité est un
+    // cul-de-sac, et on ne sait pas si on est bloqué ou arrivé.
+    await utilisateur.keyboard('{ArrowLeft}{ArrowLeft}')
+    const onglets = screen.getAllByRole('tab')
+    expect(onglets[onglets.length - 1]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  /*
+    ⚠️ **La marque est la raison d'être de ce chantier.** Le compte-rendu a 24 h (PM-30) et les
+    gains sont gelés passé ce délai (CU-06-03) : c'est la seule carte dont l'ignorance coûte de
+    l'argent. Elle porte donc son état SUR l'onglet, lisible sans rien ouvrir.
+  */
+  it('l’onglet du compte-rendu annonce le temps restant sans qu’on l’ouvre', async () => {
+    await monter(close(3))
+
+    expect(await screen.findByRole('tab', { name: /Compte-rendu.*3 h/ })).toBeInTheDocument()
+  })
+
+  it('et il annonce « déposé » quand il l’est — on ne laisse pas croire qu’il reste du travail', async () => {
+    await monter(seance({ status: 'ENDED', remainingSeconds: 0, reportDepositedAt: '2026-08-24T09:00:00.000Z' }))
+
+    expect(await screen.findByRole('tab', { name: /Compte-rendu.*déposé/ })).toBeInTheDocument()
+  })
+
+  /*
+    ── Le garde-fou : l'échéance ne descend JAMAIS dans un onglet ────────────────────────────────
+
+    Tout système de navigation cache — c'est son métier. On n'accepte pas qu'il cache CELA. La
+    bande reste visible quel que soit l'onglet ouvert, et **elle conduit à la carte** : une alerte
+    qui ne mène nulle part ne fait qu'inquiéter.
+  */
+  it('l’échéance du compte-rendu reste visible quel que soit l’onglet ouvert', async () => {
+    await monter(close(3))
+
+    await ouvrir('Contexte')
+    expect(screen.getByRole('button', { name: /Compte-rendu à déposer/ })).toBeInTheDocument()
+
+    await ouvrir('Carnet')
+    expect(screen.getByRole('button', { name: /Compte-rendu à déposer/ })).toBeInTheDocument()
+  })
+
+  it('et cette bande CONDUIT à la carte — une alerte qui ne mène nulle part ne fait qu’inquiéter', async () => {
+    const utilisateur = userEvent.setup()
+    await monter(close(3))
+
+    await ouvrir('Contexte')
+    await utilisateur.click(screen.getByRole('button', { name: /Compte-rendu à déposer/ }))
+
+    expect(await screen.findByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  /* Déposé, il n'y a plus d'échéance : la bande disparaît au lieu de réclamer un travail fait. */
+  it('la bande disparaît une fois le compte-rendu déposé', async () => {
+    await monter(seance({ status: 'ENDED', remainingSeconds: 0, reportDepositedAt: '2026-08-24T09:00:00.000Z' }))
+
+    await screen.findByRole('tablist')
+    expect(screen.queryByRole('button', { name: /Compte-rendu à déposer/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    L'onglet ouvert PAR DÉFAUT est ce qui presse — *une capacité doit avoir un chemin, et le
+    meilleur chemin c'est parfois être déjà là.* Pendant la séance on vient voir de quoi souffre le
+    patient ; une fois close et le compte-rendu non déposé, il n'y a plus qu'une chose à faire.
+  */
+  it('une séance close sans compte-rendu s’ouvre SUR le compte-rendu', async () => {
+    await monter(close(3))
+
+    expect(await screen.findByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('mais une séance en cours s’ouvre sur le contexte du patient', async () => {
+    await monter(seance())
+
+    expect(await screen.findByRole('tab', { name: /^Contexte/ })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  /*
+    ⚠️ Le défaut ne bouscule JAMAIS un choix. Un soignant qui a ouvert l'ordonnance et recharge la
+    page doit retrouver l'ordonnance : on n'a pas à savoir mieux que lui ce qu'il regardait.
+  */
+  it('le souvenir l’emporte sur le défaut — on ne bouscule pas un choix', async () => {
+    localStorage.setItem('ulamu.consultation.onglet.s1', 'carnet')
+    await monter(close(3))
+
+    expect(await screen.findByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  /*
+    ── L'onglet qui DISPARAÎT pendant qu'on le regarde ──────────────────────────────────────────
+
+    « Prolonger » s'en va au plafond des 30 minutes (PM-29), et le soignant y est justement quand il
+    l'atteint : il vient de cliquer. Sans garde-fou, le rail reste sur un onglet qui n'existe plus
+    — c'est-à-dire sur du vide, sans rien pour le dire.
+
+    ⚠️ **Ce test remplace une première version qui ne prouvait rien.** Elle posait un souvenir
+    périmé et vérifiait le repli — mais le repli du PREMIER rendu passe déjà par un autre chemin, et
+    la faute injectée (l'effet retiré) ne la réveillait pas. Il fallait faire disparaître l'onglet
+    APRÈS le montage, alors qu'il est sélectionné. *Un test qui ne tombe sous aucune faute ne garde
+    rien : il rassure.*
+  */
+  it('un onglet qui disparaît pendant qu’on le regarde ne laisse pas le rail sur du vide', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'extendSession').mockResolvedValue(undefined as never)
+    await monter(seance({ extensionTotalSec: 1200 }))
+
+    await ouvrir('Prolonger')
+    expect(screen.getByRole('tab', { name: /^Prolonger/ })).toHaveAttribute('aria-selected', 'true')
+
+    // Le plafond est atteint : la relecture de la séance fait tomber l'onglet sous les yeux.
+    vi.spyOn(api, 'session').mockResolvedValue(seance({ extensionTotalSec: 1800 }))
+    await utilisateur.click(screen.getByRole('button', { name: /Prolonger de 10 minutes/ }))
+
+    await waitFor(() => expect(screen.queryByRole('tab', { name: /^Prolonger/ })).not.toBeInTheDocument())
+    // Le rail est retombé sur un onglet réel, et son panneau porte du contenu.
+    const contexte = screen.getByRole('tab', { name: /^Contexte/ })
+    expect(contexte).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Contexte patient')
+
+    /*
+      ⚠️ **Et le CLAVIER doit suivre.** C'est ici que se joue le vrai garde-fou : l'affichage
+      retombe seul sur le premier onglet, mais la sélection MÉMORISÉE, elle, désigne encore
+      l'onglet disparu. Les flèches cherchent leur position dans la liste, ne s'y trouvent pas, et
+      **se figent** — le rail paraît normal et ne répond plus.
+
+      Une faute injectée qui retirait ce repli ne réveillait aucun test tant qu'on ne regardait que
+      l'affichage. *Un défaut qui ne se voit pas est celui qui survit le plus longtemps.*
+    */
+    contexte.focus()
+    await utilisateur.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  /* Et au PREMIER rendu, un souvenir qui ne désigne rien retombe aussi sur le premier onglet. */
+  it('un souvenir qui ne correspond à rien retombe sur le premier onglet', async () => {
+    localStorage.setItem('ulamu.consultation.onglet.s1', 'un-onglet-qui-nexiste-plus')
+    await monter(seance())
+
+    expect(await screen.findByRole('tab', { name: /^Contexte/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Contexte patient')
+  })
+
+  /* L'onglet de l'ordonnance compte les lignes déjà prescrites — sans ouvrir la carte. */
+  it('l’onglet de l’ordonnance annonce combien il y en a', async () => {
+    vi.spyOn(api, 'myPrescribed').mockResolvedValue({
+      items: [
+        { ...ordonnanceVide, id: 'p1', sessionId: 's1' },
+        { ...ordonnanceVide, id: 'p2', sessionId: 's1' },
+        { ...ordonnanceVide, id: 'p3', sessionId: 'une-autre-seance' },
+      ],
+    })
+    await monter(seance({ id: 's1' }))
+
+    // Trois prescrites, mais DEUX sur cette séance : celle de l'autre séance ne doit pas compter.
+    expect(await screen.findByRole('tab', { name: /Ordonnance.*2/ })).toBeInTheDocument()
+  })
+})
+
 describe('C5 — le Carnet du patient', () => {
   it('montre le groupe sanguin, les allergies actives et les chroniques', async () => {
     vi.spyOn(api, 'sessionRecordSummary').mockResolvedValue({
@@ -1197,6 +1431,7 @@ describe('C5 — le Carnet du patient', () => {
       chronicDiseases: ['Hypertension'],
     })
     await monter(seance())
+    await ouvrir('Carnet')
 
     expect(await screen.findByText('O+')).toBeInTheDocument()
     // L'allergie est la seule information de cet écran qui peut tuer : elle est en tête.
@@ -1206,6 +1441,7 @@ describe('C5 — le Carnet du patient', () => {
 
   it('annonce la lecture seule et la traçabilité AVANT qu’on lise', async () => {
     await monter(seance())
+    await ouvrir('Carnet')
 
     expect(await screen.findByText(/Lecture seule · votre consultation est enregistrée/)).toBeInTheDocument()
   })
@@ -1213,6 +1449,7 @@ describe('C5 — le Carnet du patient', () => {
   it('la séance close, l’accès est refermé — et l’écran ne demande plus rien au serveur', async () => {
     const lire = vi.spyOn(api, 'sessionRecordSummary')
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }))
+    await ouvrir('Carnet')
 
     expect(await screen.findByText(/L'accès s'est refermé avec la consultation/)).toBeInTheDocument()
     expect(lire).not.toHaveBeenCalled()
@@ -1237,6 +1474,7 @@ describe('C5 — le Carnet du patient', () => {
       nextCursor: null,
     })
     await monter(seance())
+    await ouvrir('Carnet')
 
     const entree = await screen.findByText('Arachide')
     expect(entree.className).toContain('line-through')

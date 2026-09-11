@@ -667,6 +667,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **80** | **C5 — un seul menu de message, et le clic droit** — 11/09, né d'une phrase du porteur : *« je ne vois pas ce bouton qui apparaît au survol »*. Il avait raison de ne pas le voir : il y avait **quatre icônes flottantes**, invisibles tant qu'on ne survolait pas exactement le bon endroit, et **aucun autre chemin**. 📌 **Le plus instructif n'est pas le défaut, c'est où était déjà la réponse** : le **mobile d'ULAMU** offre depuis toujours une feuille d'actions à l'appui long (`ChatActionSheet.tsx` — bande de réactions, « + » vers le sélecteur complet, puis les actions), et CMS-SARIS le clic droit. **Le web était la seule des trois surfaces à ne rien offrir.** Ce n'était donc pas une idée à emprunter dehors : un écart à réduire chez nous. Livré : **un menu unique** (poignée + **clic droit**), la bande de réactions en tête, **« + » vers le sélecteur complet** — le serveur accepte n'importe quel emoji et le mobile le proposait déjà, *onzième fois que le motif « une capacité sans chemin » apparaît, et la première où il séparait nos deux propres clients* — et **« Copier le texte »**, que le mobile ne PEUT pas offrir (pas de presse-papier natif) et que le web obtient pour rien. ⚠️ **Une faute injectée a démasqué un de mes propres tests** : « le clic droit ne rouvre pas le menu sur une archive » passait même sans le garde-fou, puisqu'aucun menu n'y est monté. Réécrit sur ce que le garde-fou fait vraiment — **rendre le menu du navigateur** au lieu de le confisquer. **web 889 ✓ (881 + 8) · 160 promesses, 119 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **81** | **C5 — le menu jusque sur l'archive, et une ligne qui se contredisait** — 11/09, deux demandes du porteur et un défaut lu sur SA capture d'écran. **(1)** Une séance close offrait un **bouton nu** « signaler » posé sur la bulle, là où tous les autres gestes vivent dans un menu : *deux grammaires sur le même écran*, et celle de l'archive était la plus rare. Elle reçoit le **même menu**, réduit à ce qui reste permis. 📌 **Et le menu a révélé un geste qui manquait** : « Copier le texte » est parfaitement légitime sur une archive — copier ne modifie rien, et c'est précisément après coup, en rédigeant le compte-rendu, qu'on veut reprendre mot pour mot ce qui a été dit. Sur ses PROPRES messages une archive n'offrait **rien du tout** ; elle offre la copie. *Un bouton ne porte qu'un geste : c'était le contenant qui limitait le produit.* **(2)** Le fil annonçait « **Consultation ouverte** » pendant que la pastille au-dessus affichait « **Terminée** » — deux états contraires à trois centimètres l'un de l'autre. La phrase de la maquette avait été recopiée **sans sa condition** (chantier 76), et aucun test ne la lisait. Ouvre la **dette n°27** (le sélecteur monte 1 867 boutons d'un coup). **web 893 ✓ (889 + 4) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **82** | **C5 — la poignée entre DANS la bulle, sans cadre** — 11/09, demande du porteur : *« petit, incrusté dans la bulle, à droite horizontalement et en haut verticalement, sans background »*. 📌 **Ce qui la rendait lourde n'était plus utile** : jusqu'au chantier 80 cette poignée était une BARRE de quatre boutons, et le cadre, le fond et l'ombre servaient à les tenir ensemble. Depuis que tout vit dans un seul menu, il ne restait qu'un chevron de 14 px au milieu d'une boîte bordée — **un cadre autour d'un seul objet, c'est-à-dire du bruit.** ⚠️ **Et le déplacement efface un contournement entier** : la barre était posée À CÔTÉ de la bulle (`left-full`), débordait de 73 px sur un téléphone et laissait le fil se tirer latéralement de 34 px (mesuré à 375 px au chantier 21) ; il avait fallu une règle `lg:` pour la rapatrier. **Posée DANS la bulle, elle ne peut plus déborder de rien : la règle disparaît.** *Un défaut de placement se contourne ; un bon placement n'a rien à contourner.* Sur écran TACTILE, où la poignée est permanente faute de survol, la bulle lui réserve sa place — et seulement s'il existe un menu. **web 895 ✓ (893 + 2) · lint 0 · build ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **83** | **C5 — deux zones fixes, et le rail devient un jeu d'onglets nommés** — 11/09, demande du porteur : *« la zone des messages fixe, le scroll à l'intérieur ; la zone de droite fixe aussi, avec une pagination et deux flèches »* — puis *« propose 10 000 fois mieux, et donne les raisons »*. **Les flèches sont gardées AU CLAVIER** (`←`/`→`, motif ARIA complet) et remplacées à l'écran par des **onglets nommés** : *une flèche est un excellent raccourci, c'est un mauvais menu*. 📌 **La raison décisive** : le compte-rendu a 24 h (PM-30) et les gains sont **gelés** passé ce délai (CU-06-03) — derrière trois clics de flèche, un soignant peut fermer une consultation sans jamais voir qu'il lui reste six heures. *Une information qui porte une échéance ne doit jamais dépendre d'un clic.* L'onglet porte donc sa **marque** (« 3 h », « déposé », le nombre d'ordonnances, « clos »), une **bande d'échéance reste visible quel que soit l'onglet ouvert et CONDUIT à la carte**, et le rail **s'ouvre tout seul sur ce qui presse** sans jamais bousculer un choix mémorisé. ⚠️ Corrige au passage un vrai défaut : le fil était bloqué à **46 % de la hauteur de l'écran** quelle que soit sa taille. **web 907 ✓ (895 + 12) · paquet 997 → 1 002 Ko · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -715,6 +716,96 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 83 (le rail à onglets) a appris
+
+*11/09/2026 — quand on change le contenant, il faut relire les raisons.*
+
+#### La demande, et pourquoi on n'y a pas répondu à la lettre
+
+Le porteur demandait une bande avec deux flèches ◀ ▶ pour passer d'une carte à l'autre, et il a
+ajouté : *« propose 10 000 fois mieux, et donne les raisons »*. Les raisons, dans l'ordre de poids :
+
+1. **Des flèches cachent une échéance qui coûte de l'argent.** Le compte-rendu a 24 h (PM-30) et les
+   gains sont **gelés** passé ce délai (CU-06-03). Derrière trois clics de flèche, un soignant peut
+   fermer une consultation sans jamais voir qu'il lui reste six heures.
+2. **Elles disent « il y a autre chose », jamais quoi.** « Y a-t-il une ordonnance ? » doit se
+   répondre d'un coup d'œil.
+3. **Elles imposent un ordre à des choses qui n'en ont pas.** On veut *aller* à l'ordonnance.
+
+Les flèches ne sont pas jetées : elles passent **au clavier**, où elles sont exactement à leur
+place. *Une flèche est un excellent raccourci ; c'est un mauvais menu.*
+
+#### ⚠️ Le même argument, deux résultats opposés
+
+Le chantier 76 avait mis « Honoraires » en **tête** du rail, et la raison était juste : *dans une
+PILE, le premier est celui qu'on voit en arrivant, et c'est la seule ligne qui parle du soignant
+lui-même.*
+
+Dans des **onglets**, le premier est celui qui **s'ouvre**. Et ce qu'on vient chercher en ouvrant
+une consultation, ce n'est pas son prix — c'est de quoi souffre le patient. « Contexte » passe donc
+en tête, et « Honoraires » descend.
+
+*Le même argument donne deux résultats opposés selon la forme qui le porte. Quand on change le
+contenant, il faut relire les raisons — pas seulement déplacer le contenu.* C'est la sœur de la
+leçon du chantier 82, où un cadre avait survécu à ce qu'il encadrait.
+
+#### Ce qu'on doit à un système de navigation : dire ce qu'il cache
+
+Tout système de navigation cache — c'est son métier. Trois dispositifs pour que ce qu'il cache reste
+su :
+
+| | |
+|---|---|
+| **La marque sur l'onglet** | « 3 h » sur le compte-rendu, « 2 » sur l'ordonnance, « clos » sur le Carnet. On lit l'état de la consultation **sans rien ouvrir**. Les cartes sans décision à porter n'en ont pas : *une marque partout ne marque rien.* |
+| **La bande d'échéance** | Hors des onglets, visible quoi qu'on regarde, tant que le compte-rendu n'est pas déposé. **Et elle conduit à la carte** — une alerte qui ne mène nulle part ne fait qu'inquiéter. |
+| **L'ouverture par défaut** | Séance close et compte-rendu non déposé → le rail s'ouvre **dessus**. *Une capacité doit avoir un chemin ; le meilleur chemin, c'est parfois être déjà là.* ⚠️ Mais jamais contre un choix mémorisé : on n'a pas à savoir mieux que le soignant ce qu'il regardait. |
+
+#### Le coût des onglets, payé là où il se voit
+
+**Onze tests sont tombés d'un coup** : une carte non sélectionnée n'est plus montée. Ils avaient
+raison de tomber — ils disaient une vérité qui a cessé d'être vraie. Ils ouvrent désormais leur
+onglet avant de lire, et un test devient même **plus fort** : sans montant lisible, ce n'est plus
+seulement la carte des honoraires qui manque, c'est **l'onglet**, donc aucun chemin ne mène à un
+montant inventé.
+
+#### ⚠️ Une faute injectée qui ne réveillait personne — deux fois
+
+Le repli sur le premier onglet, quand celui qu'on regarde disparaît, semblait tenu par un test. Il
+ne l'était pas : le rendu retombe **seul** sur le premier onglet, et la faute passait.
+
+Première correction : faire disparaître l'onglet **après** le montage, alors qu'il est sélectionné
+(« Prolonger » s'en va au plafond des 30 minutes, et le soignant y est justement — il vient de
+cliquer). La faute passait encore.
+
+Ce qui casse vraiment, c'est **le clavier** : la sélection mémorisée désigne un onglet absent, les
+flèches ne trouvent pas leur position dans la liste et **se figent**. Le rail paraît normal et ne
+répond plus.
+
+*Un test qui ne tombe sous aucune faute ne garde rien : il rassure. Et un défaut qui ne se voit pas
+est celui qui survit le plus longtemps.*
+
+#### La hauteur en pourcentage n'était pas une mise en page
+
+Le fil était bloqué à **46 % de la hauteur de l'écran**, quelle que soit la taille de l'écran. Sur
+un grand moniteur on perdait la moitié de la place ; sur un portable c'était à l'étroit. *Une
+hauteur en pourcentage est une moyenne, et personne ne travaille sur un écran moyen.*
+
+Au-dessus de 1024 px l'écran occupe maintenant exactement la hauteur disponible : le fil défile dans
+le fil, le rail dans le rail, la page ne bouge plus. **En dessous, les colonnes s'empilent et la
+page redevient un document** — sur un téléphone, deux zones de défilement l'une sous l'autre
+s'annulent, on ne sait plus laquelle on tire.
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 895 ✓ | **907 ✓** |
+| Paquet servi | 997 Ko | **1 002 Ko** |
+| Clics pour atteindre une carte | jusqu'à 5 (flèches) | **1** |
+| État lisible sans ouvrir | aucun | **4 marques** |
+
+Sept fautes injectées, sept détectées.
 
 ### Ce que le chantier 82 (la poignée dans la bulle) a appris
 

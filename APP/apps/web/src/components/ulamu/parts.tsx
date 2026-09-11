@@ -17,6 +17,7 @@ export function Carte({
   sousTitre,
   ton = 'accent',
   action,
+  pleineHauteur = false,
   children,
 }: {
   icone: LucideIcon
@@ -28,6 +29,14 @@ export function Carte({
    * Il ne se comprime jamais ; s'il ne tient pas, c'est le bandeau qui passe à la ligne.
    */
   action?: React.ReactNode
+  /**
+   * La carte occupe toute la hauteur qu'on lui donne, et son CONTENU y defile (chantier 83).
+   *
+   * Un booleen plutot qu'un `className` libre : `ul-grain-fine` vit hors d'un `@layer` et battrait
+   * silencieusement les utilitaires qu'un appelant passerait. Un interrupteur nomme ne peut servir
+   * qu'a ce pour quoi il est ecrit.
+   */
+  pleineHauteur?: boolean
   children: React.ReactNode
 }) {
   const tuile =
@@ -35,7 +44,12 @@ export function Carte({
       ? 'bg-[var(--ton-rose-fond)] text-[var(--ton-rose-icone)]'
       : 'bg-[var(--ap-50)] text-[var(--ap-600)]'
   return (
-    <section className="ul-grain-fine overflow-hidden rounded-[10px] border border-border bg-card">
+    <section
+      className={
+        'ul-grain-fine overflow-hidden rounded-[10px] border border-border bg-card' +
+        (pleineHauteur ? ' flex min-h-0 flex-1 flex-col' : '')
+      }
+    >
       {/*
         `flex-wrap` + `basis-40` : à 375 px, un `action` large — les trois segments
         « Ouvertes / Closes / Annulées » d'E7 font 239 px — prenait toute la place et laissait
@@ -61,7 +75,7 @@ export function Carte({
         </div>
         {action ? <span className="ml-auto shrink-0">{action}</span> : null}
       </div>
-      <div className="flex flex-col gap-3 p-4">{children}</div>
+      <div className={'flex flex-col gap-3 p-4' + (pleineHauteur ? ' min-h-0 flex-1' : '')}>{children}</div>
     </section>
   )
 }
