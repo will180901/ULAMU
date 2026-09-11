@@ -23,7 +23,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
 import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
-import { barresQuiTiennent, ramener } from '@/modules/consultation/LecteurVocal'
+import { barresQuiTiennent, formatDureeVocale, ramenerHauteurs } from '@/modules/consultation/onde-vocale'
 import { useSessionStore } from '@/state/session.store'
 import { api, lireMediaSession, type CareSession, type CareSessionStatus, type MeResponse, type SessionMessage } from '@/lib/api'
 
@@ -443,7 +443,55 @@ describe('C5 — le fil', () => {
 
   it('un message supprimé laisse une trace, il ne disparaît pas', async () => {
     await monter(seance(), [message({ deletedAt: '2026-08-24T08:05:00.000Z', body: null })])
-    expect(await fil().findByText('Message supprimé')).toBeInTheDocument()
+    expect(await fil().findByText(/Message supprimé/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **L'espacement du fil vient du téléphone** (chantier 96) : 10 px entre deux messages, 2 px
+    quand ils sont groupés (`SessionScreen.tsx` : `marginTop: grouped ? 2 : 10`). Le web était à 12
+    et 6 — un fil plus aéré, donc moins de messages à l'écran, et surtout un regroupement qui ne se
+    LISAIT plus comme un bloc.
+
+    *Deux messages d'affilée du même auteur doivent presque se toucher : c'est l'écart qui dit « la
+    même voix continue ». À 6 px, ils redevenaient deux prises de parole.*
+  */
+  it('⚠️ deux messages du même auteur se touchent presque, comme sur le téléphone', async () => {
+    const t0 = '2026-08-24T08:00:00.000Z'
+    await monter(seance(), [
+      message({ id: 'm1', senderId: 'pro-1', body: 'Premier', createdAt: t0 }),
+      // Moins de cinq minutes plus tard, même auteur : les deux se regroupent.
+      message({ id: 'm2', senderId: 'pro-1', body: 'Second', createdAt: '2026-08-24T08:01:00.000Z' }),
+    ])
+
+    await fil().findByText('Premier')
+    const second = fil().getByText('Second').closest('li') as HTMLElement
+    const liste = second.closest('ul') as HTMLElement
+
+    // 10 px d'écart de base…
+    expect(liste.className).toMatch(/gap-2\.5/)
+    // …dont 8 sont repris quand le message continue le précédent : il reste 2 px.
+    expect(second.className).toMatch(/ -mt-2$/)
+  })
+
+  /*
+    ⚠️ **Et cette trace garde la forme d'une BULLE** (chantier 96, alignement sur le téléphone).
+
+    Le web en faisait une pilule à bordure POINTILLÉE — une grammaire qu'on ne voit nulle part
+    ailleurs dans le fil. À la place du message, une forme étrangère. Le téléphone, lui, garde le
+    gabarit : même rayon, même coin rabattu, fond éteint, phrase en italique.
+
+    *Ce qui a disparu, c'est le contenu, pas le tour de parole. L'espace qu'il occupait dans la
+    conversation, lui, a bien existé.*
+  */
+  it('⚠️ et cette trace garde la forme d’une bulle, pas d’un pointillé', async () => {
+    await monter(seance(), [message({ deletedAt: '2026-08-24T08:05:00.000Z', body: null })])
+
+    const trace = await fil().findByText(/Message supprimé/)
+
+    expect(trace.className).not.toMatch(/border-dashed/)
+    expect(trace.className).toMatch(/rounded-xl/)
+    // Le coin rabattu du côté de l'expéditeur — celui des vraies bulles.
+    expect(trace.className).toMatch(/rounded-(br|bl)-\[3px\]/)
   })
 
   it('un message modifié le dit', async () => {
@@ -1061,6 +1109,103 @@ describe('C5 — la note vocale (chantier 90)', () => {
   })
 
   /*
+    ── ⚠️ La durée LUE, et non attendue (chantier 96) ──────────────────────────────────────────
+
+    Vu en ligne sur la consultation du porteur : la MÊME note vocale affichait `1:16` en arrivant et
+    `1:03` en y revenant. Le lecteur écoutait `onLoadedMetadata` par une propriété React ; quand le
+    son est déjà en cache, le navigateur a la métadonnée AVANT que l'écouteur soit branché.
+    L'évènement passe, personne ne l'entend, et la durée reste celle **annoncée par l'expéditeur** —
+    ici 63 s, alors que le fichier en dure 76,7.
+
+    *Un évènement qu'on n'a pas entendu n'a pas eu lieu. On lit l'état au montage, puis on écoute.*
+
+    Le test reproduit exactement ce cas : la durée est DÉJÀ disponible, et aucun évènement ne sera
+    jamais émis.
+  */
+  it('⚠️ affiche la durée du FICHIER même si l’évènement est passé avant elle', async () => {
+    const vraie = Object.getOwnPropertyDescriptor(window.HTMLMediaElement.prototype, 'duration')
+    Object.defineProperty(window.HTMLMediaElement.prototype, 'duration', {
+      configurable: true,
+      get: () => 76.693333,
+    })
+
+    try {
+      servirUnSon()
+      // `body: '63'` — la durée que l'expéditeur a annoncée, et qui est fausse.
+      await monter(seance(), [vocal({ body: '63' })])
+      await fil().findByLabelText('Écouter la note vocale')
+      await act(async () => {})
+
+      // 76,7 s arrondi : 1:17. Sans la lecture au montage, on lirait « 1:03 ».
+      expect(await fil().findByText('1:17')).toBeInTheDocument()
+      expect(fil().queryByText('1:03')).not.toBeInTheDocument()
+    } finally {
+      if (vraie) Object.defineProperty(window.HTMLMediaElement.prototype, 'duration', vraie)
+    }
+  })
+
+  /*
+    ⚠️ **Et la durée s'ARRONDIT, elle ne se tronque pas.** Le mobile arrondissait, le web tronquait :
+    pour ce même fichier de 76,7 s, le patient lisait `1:17` sur son téléphone et le soignant `1:16`
+    sur son écran. Une seconde, sur la même note. Les deux lisent maintenant la même règle partagée.
+  */
+  it('et les deux applications arrondissent la même durée pareil', () => {
+    expect(formatDureeVocale(76.693333)).toBe('1:17')
+    expect(formatDureeVocale(8.419542)).toBe('0:08')
+    expect(formatDureeVocale(59.6)).toBe('1:00')
+  })
+
+  /*
+    ── ⚠️ L'ouverture de la consultation : un squelette, pas un rond (chantier 96) ─────────────
+
+    L'écran affichait **une phrase et un rond qui tourne**, seuls sur une page vide, puis la page
+    entière se posait d'un coup. Le FIL avait pourtant son squelette depuis le chantier 21 : c'est
+    l'écran qui le contient qui n'en avait pas. *Le soin s'était arrêté à une porte.*
+
+    `Squelette.tsx` dit la règle en tête : **un rond dit qu'on attend, un squelette dit ce qui
+    arrive.** Devant une forme reconnaissable on prépare son geste ; et rien ne saute à l'arrivée,
+    parce que la place est déjà réservée.
+
+    ⚠️ Ce test vérifie les deux moitiés de cette règle, et la seconde est celle qu'on oublie : la
+    phrase doit RESTER, pour qui n'a que le son. *Remplacer un texte par des rectangles gris, c'est
+    un progrès pour l'œil et un recul pour tout le reste.*
+  */
+  it('⚠️ pendant l’ouverture, montre la FORME de la page — et garde la phrase pour l’oreille', async () => {
+    // La séance ne répondra jamais : c'est exactement l'état « en cours d'ouverture ».
+    vi.spyOn(api, 'session').mockReturnValue(new Promise(() => {}) as ReturnType<typeof api.session>)
+    vi.spyOn(api, 'sessionMessages').mockResolvedValue({ items: [], nextCursor: null })
+    useSessionStore.setState({ token: 'jeton', me: MOI, isAuthenticated: true, hasHydrated: true })
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/consultations/s1']}>
+          <Routes>
+            <Route path="/consultations/:sessionId" element={<ConsultationPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Pour l'oreille : la phrase est là, et la zone se déclare occupée.
+    /*
+      Plusieurs zones d'attente s'emboîtent — le fil et le rail ont chacun la leur. La première dans
+      l'ordre du document est l'enveloppe de la page, celle qui porte la phrase d'ouverture.
+    */
+    const zone = (await screen.findAllByRole('status'))[0]
+    expect(zone).toHaveAttribute('aria-busy', 'true')
+    expect(within(zone).getByText('Ouverture de la consultation…')).toBeInTheDocument()
+
+    /*
+      Pour l'œil : la forme de la page, pas un rond. On compte les briques ondulantes — un rond qui
+      tourne n'en produirait aucune — et on vérifie que le fil de bulles est bien annoncé, puisque
+      c'est ce qui occupe la plus grande part de l'écran qui arrive.
+    */
+    expect(zone.querySelectorAll('.ul-shimmer').length).toBeGreaterThanOrEqual(10)
+    expect(within(zone).getByText('Chargement du fil…')).toBeInTheDocument()
+  })
+
+  /*
     ⚠️ **Et l'onde se REMESURE.** La place change sans que le message change : le rail de droite
     s'ouvre, la fenêtre est redimensionnée, on passe du portrait au paysage. Mesurée une seule fois
     au premier rendu, l'onde garderait un nombre de barres qui ne correspond plus à la place — trop
@@ -1130,7 +1275,7 @@ describe('C5 — la note vocale (chantier 90)', () => {
     const silence = Array.from({ length: 36 }, () => 0)
     silence[5] = 1
 
-    const ramenee = ramener(silence, 8)
+    const ramenee = ramenerHauteurs(silence, 8)
 
     // La tranche 4–8 contient l'éclat : en échantillonnant, on aurait lu la valeur 4, donc zéro.
     expect(ramenee[1]).toBeGreaterThan(0)

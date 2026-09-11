@@ -1,7 +1,7 @@
 /**
  * Lecteur de note vocale sur bulle (adaptation RN de SARIS §9.7 « Lecteur sur bulle »).
- * Onde de 36 barres (approximée, déterministe par clé — RN n'a pas la Web Audio API pour décoder
- * les pics réels), bouton lecture/pause, position + seek au tap sur l'onde, tête de lecture, durée,
+ * Onde approximée (déterministe par clé — RN n'a pas la Web Audio API pour décoder les pics
+ * réels), bouton lecture/pause, position + seek au tap sur l'onde, tête de lecture, durée,
  * et VITESSE variable 1× / 1,5× / 2× (via react-native-video, qui expose `rate`).
  * Palette adaptée à ULAMU : bulle « mienne » (cobalt) → onde blanche ; bulle reçue → accent cobalt.
  * La lecture passe par <Video> (audio seul, vue masquée) ; l'enregistrement reste sur audio.ts.
@@ -14,8 +14,12 @@ import {getAuthToken} from '../services/api';
 import {claimPlayback, releasePlayback} from '../services/voicePlayback';
 import {fonts} from '../theme';
 import {useTheme} from '../state/ThemeContext';
+/*
+  ⚠️ La géométrie de l'onde vient de la SOURCE PARTAGÉE, pas d'ici : le web lit le même fichier.
+  Sans cela, la même note vocale n'aurait pas le même dessin chez le patient et chez le soignant.
+*/
+import {BARRES_MAX, LARGEUR_BARRE, barresQuiTiennent, formatDureeVocale, ramenerHauteurs} from '../lib/onde-vocale';
 
-const BARS = 36;
 const RATES = [1, 1.5, 2] as const;
 const rateLabel = (r: number): string => (r === 1 ? '1×' : r === 1.5 ? '1,5×' : '2×');
 
@@ -27,17 +31,15 @@ function pseudoWave(seed: string): number[] {
   }
   const out: number[] = [];
   let x = h >>> 0;
-  for (let i = 0; i < BARS; i++) {
+  for (let i = 0; i < BARRES_MAX; i++) {
     x = (1103515245 * x + 12345) & 0x7fffffff;
     out.push(0.18 + (x / 0x7fffffff) * 0.82); // 0.18..1
   }
   return out;
 }
 
-const fmt = (ms: number): string => {
-  const s = Math.max(0, Math.round(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
+/* Le format vient de la source partagée : une seconde d'écart entre les deux écrans se voit. */
+const fmt = (ms: number): string => formatDureeVocale(ms / 1000);
 
 export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: boolean; durationSec?: number}) {
   const {colors} = useTheme();
@@ -48,6 +50,12 @@ export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: bo
   const [durMs, setDurMs] = useState(durationSec ? durationSec * 1000 : 0);
   const [width, setWidth] = useState(0);
   const heights = useMemo(() => pseudoWave(uri), [uri]);
+  /*
+    ⚠️ L'onde suit la place MESURÉE. La rangée fait 244 px, dont 128 pour l'onde : à 36 barres,
+    chacune tombait à 1,6 px — un trait fin, pas une onde. On en garde autant qu'il en tient
+    avec leurs 3 px pleins.
+  */
+  const visibles = useMemo(() => ramenerHauteurs(heights, barresQuiTiennent(width)), [heights, width]);
 
   const token = getAuthToken();
   const source = useMemo(
@@ -121,9 +129,14 @@ export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: bo
         <Icon name={playing ? 'pause' : 'play'} size={14} color={mine ? colors.accent : '#fff'} />
       </Pressable>
       <Pressable style={styles.wave} onLayout={onWaveLayout} onPress={onWavePress}>
-        {heights.map((hgt, i) => {
-          const on = i / BARS <= progress;
-          return <View key={i} style={{flex: 1, maxWidth: 3, borderRadius: 2, height: 3 + hgt * 21, backgroundColor: on ? played : unplayed}} />;
+        {visibles.map((hgt, i) => {
+          const on = i / visibles.length <= progress;
+          return (
+            <View
+              key={i}
+              style={{flex: 1, maxWidth: LARGEUR_BARRE, borderRadius: 2, height: 3 + hgt * 21, backgroundColor: on ? played : unplayed}}
+            />
+          );
         })}
         {width > 0 ? (
           <View style={[styles.playhead, {left: progress * width - 5, backgroundColor: mine ? '#fff' : colors.accent400}]} />

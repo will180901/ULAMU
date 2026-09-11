@@ -126,7 +126,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
-import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
+import { Bloc, SqueletteFil, SqueletteLignes, ZoneEnAttente } from '@/components/ulamu/Squelette'
 import { DialogueSignalement } from '@/components/ulamu/DialogueSignalement'
 import { messageErreur } from '@/lib/message-erreur'
 
@@ -672,8 +672,23 @@ function Bulle({
   if (m.deletedAt) {
     return (
       <li id={`msg-${m.id}`} className={'flex ' + (aMoi ? 'justify-end' : 'justify-start')}>
-        <span className="rounded-lg border border-dashed border-border px-3 py-2 text-[12px] italic text-[var(--texte-tertiaire)]">
-          Message supprimé
+        {/*
+          ⚠️ **La trace d'un message supprimé reste une BULLE** (chantier 96, alignement sur le
+          téléphone). Le web en faisait une pilule à bordure pointillée, d'une grammaire qu'on ne
+          voit nulle part ailleurs dans le fil : à la place du message, une forme étrangère.
+
+          Le téléphone garde le gabarit de la bulle — même rayon, même coin rabattu, même place — et
+          se contente d'en vider le fond et d'écrire la phrase en italique. *Ce qui a disparu, c'est
+          le contenu, pas le tour de parole : l'espace qu'il occupait dans la conversation, lui, a
+          bien existé.*
+        */}
+        <span
+          className={
+            'rounded-xl border border-border bg-secondary px-3 py-2 text-[13px] italic text-[var(--texte-tertiaire)] ' +
+            (aMoi ? 'rounded-br-[3px]' : 'rounded-bl-[3px]')
+          }
+        >
+          🚫 Message supprimé
         </span>
       </li>
     )
@@ -685,7 +700,8 @@ function Bulle({
       className={
         'group relative flex flex-col gap-1 scroll-mt-4 ' +
         (aMoi ? 'items-end' : 'items-start') +
-        (groupee ? ' -mt-1.5' : '') +
+        // 10 px du `gap` moins 8 px : il reste les 2 px du téléphone.
+        (groupee ? ' -mt-2' : '') +
         (surlignee ? ' rounded-lg ring-3 ring-[var(--ap-300)]' : '')
       }
     >
@@ -884,7 +900,8 @@ function Bulle({
               }
             >
               {heureFr(m.createdAt)}
-              {m.editedAt ? <span>· modifié</span> : null}
+              {/* En italique, comme sur le téléphone : la mention n'est pas de l'heure. */}
+              {m.editedAt ? <span className="italic">· modifié</span> : null}
               {/* Accusés : `status` n'est renseigné que sur MES messages (contrat M06). */}
               {aMoi && m.status ? <Accuse status={m.status} surAccent /> : null}
             </span>
@@ -903,7 +920,7 @@ function Bulle({
       {emojiSeul ? (
         <span className="flex items-center gap-1.5 px-1 text-[10px] text-[var(--texte-tertiaire)]">
           {heureFr(m.createdAt)}
-          {m.editedAt ? <span>· modifié</span> : null}
+          {m.editedAt ? <span className="italic">· modifié</span> : null}
           {aMoi && m.status ? <Accuse status={m.status} /> : null}
         </span>
       ) : null}
@@ -999,10 +1016,17 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
     <Carte icone={BookOpen} titre="Carnet du patient" sousTitre="Lecture seule · votre consultation est enregistrée">
       {echec ? <Avis ton="erreur">{messageErreur(echec)}</Avis> : null}
 
+      {/*
+        La synthèse arrive dans un ENCADRÉ, pas en une phrase : le squelette prend donc sa forme, et
+        non celle d'une ligne de texte. La chronologie juste en dessous avait déjà le sien ; ce
+        bloc-ci était resté au rond qui tourne.
+      */}
       {synthese.isPending ? (
-        <p className="flex items-center gap-2 text-[12px] text-[var(--texte-tertiaire)]">
-          <Spinner className="size-3.5" /> Ouverture du Carnet…
-        </p>
+        <ZoneEnAttente libelle="Ouverture du Carnet…" className="gap-2.5 rounded-lg border border-border bg-secondary/50 p-2.5">
+          <Bloc className="h-[10px] w-[38%] rounded" />
+          <Bloc className="h-[14px] w-[24%] rounded" />
+          <Bloc className="h-[11px] w-[64%] rounded" />
+        </ZoneEnAttente>
       ) : synthese.data ? (
         <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
           <p className="ul-surtitre">
@@ -1317,6 +1341,72 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
 
 // ── Écran ──────────────────────────────────────────────────────────────────
 
+/**
+ * Le squelette de la consultation — chantier 96.
+ *
+ * ── ⚠️ Ce qu'il remplace, et pourquoi c'était un défaut ───────────────────────────────────────
+ *
+ * L'ouverture d'une consultation affichait **une phrase et un rond qui tourne**, seuls sur une page
+ * vide. Puis la page complète se posait d'un coup : un bandeau, un fil, un rail de trois onglets,
+ * une barre d'écriture. *Le fil, lui, avait déjà son squelette depuis le chantier 21 ; l'écran qui
+ * le contient n'en avait pas.* Le soin s'était arrêté à une porte.
+ *
+ * `Squelette.tsx` dit la règle en tête : **un rond qui tourne dit qu'on attend, un squelette dit ce
+ * qui arrive**. Devant une forme reconnaissable, on prépare son geste — on sait déjà où sera le
+ * champ d'écriture et de quel côté sera le motif du patient. Et rien ne saute à l'arrivée.
+ *
+ * ── Il suit la MÊME mise en page, pas une approximation ───────────────────────────────────────
+ *
+ * Mêmes largeurs, mêmes espacements, même bascule à `md:` : `max-w-[1160px]`, bandeau puis deux
+ * colonnes, rail de `19rem` puis `22rem`. *Un squelette qui annonce une forme que le contenu ne
+ * prend pas ment deux fois — il fait attendre, et il fait sauter.*
+ */
+function SqueletteConsultation() {
+  return (
+    <ZoneEnAttente
+      libelle="Ouverture de la consultation…"
+      className="mx-auto w-full max-w-[1160px] md:h-full md:min-h-0"
+    >
+      {/* Le bandeau : l'icône carrée, le titre et sa ligne de dessous, la pastille d'état. */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Bloc className="size-10 shrink-0 rounded-lg" />
+        <span className="flex min-w-0 flex-1 basis-44 flex-col gap-1.5">
+          <Bloc className="h-[18px] w-[62%] rounded" />
+          <Bloc className="h-[13px] w-[45%] rounded" />
+        </span>
+        <Bloc className="h-6 w-24 shrink-0 rounded-full" />
+      </div>
+
+      <div className="flex flex-col gap-4 md:min-h-0 md:flex-1 md:flex-row md:gap-4 lg:gap-5">
+        {/* À gauche : la carte de l'échange — son en-tête, le fil, puis la barre d'écriture. */}
+        <section className="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0">
+          <div className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-4">
+            <div className="flex items-center gap-2.5">
+              <Bloc className="size-8 shrink-0 rounded-lg" />
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Bloc className="h-[13px] w-24 rounded" />
+                <Bloc className="h-[11px] w-[58%] rounded" />
+              </span>
+            </div>
+            <SqueletteFil nombre={4} libelle="Chargement du fil…" />
+          </div>
+          <Bloc className="h-[76px] rounded-[10px]" />
+        </section>
+
+        {/* À droite : le rail — sa bande d'onglets, puis la carte ouverte. */}
+        <aside className="flex w-full shrink-0 flex-col gap-3 md:min-h-0 md:w-[19rem] lg:w-[22rem]">
+          <Bloc className="h-9 rounded-[8px]" />
+          <div className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-4">
+            <Bloc className="h-[13px] w-[52%] rounded" />
+            <SqueletteLignes nombre={4} libelle="Chargement des informations…" />
+          </div>
+        </aside>
+      </div>
+    </ZoneEnAttente>
+  )
+}
+
+
 /** Ce que le champ de saisie est en train de faire : un nouveau message, une réponse, ou une retouche. */
 type ModeSaisie =
   | { type: 'nouveau' }
@@ -1626,13 +1716,8 @@ export function ConsultationPage() {
     [items, session.data],
   )
 
-  if (session.isPending) {
-    return (
-      <p className="flex items-center gap-2 py-8 text-[13px] text-[var(--texte-tertiaire)]">
-        <Spinner className="size-4" /> Ouverture de la consultation…
-      </p>
-    )
-  }
+  if (session.isPending) return <SqueletteConsultation />
+
 
   if (session.isError || !session.data) {
     return (
@@ -1861,7 +1946,15 @@ export function ConsultationPage() {
               <SqueletteFil nombre={4} libelle="Chargement du fil…" />
             ) : (
               <div className="max-h-[46dvh] overflow-y-auto md:max-h-none md:min-h-0 md:flex-1">
-                <ul className="flex flex-col gap-3">
+                {/*
+                    ⚠️ **10 px entre deux messages, et 2 px quand ils sont groupés** — les mesures du
+                    téléphone (`SessionScreen.tsx` : `marginTop: grouped ? 2 : 10`). Le web était à
+                    12 et 6 : un fil plus aéré, donc moins de messages à l'écran, et surtout un
+                    regroupement qui ne se LISAIT plus comme un bloc. *Deux messages d'affilée du
+                    même auteur doivent se toucher presque ; c'est l'écart qui dit « c'est la même
+                    voix qui continue ».*
+                  */}
+                <ul className="flex flex-col gap-2.5">
                   {/*
                     ── La ligne qui ouvre le fil — chantier 76 ──────────────────────────────────
 

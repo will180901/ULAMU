@@ -681,6 +681,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **93** | **Le « retard » comptait les pauses du soignant entre ses propres messages** — 11/09, **vu par le porteur** sur le téléphone du patient : un badge rouge « retard 32:13 ». Mesuré sur sa consultation réelle : **1 930 s affichés, 90 s réellement attendues** — les 1 840 s restantes (95 %) étaient les silences du soignant **après ses propres messages**. Écrire « Bonjour », réfléchir dix minutes, puis envoyer son analyse coûtait neuf minutes et demie de « retard », alors que personne n'attendait. 📌 **Le commentaire disait déjà la règle juste** (« si le soignant RÉPOND après 45 s ») : *répondre, c'est répondre à quelqu'un*, et le code mesurait autre chose — **quand un commentaire et son code divergent, c'est presque toujours le commentaire qui dit l'intention et le code qui a dérivé.** ⚠️ **La corriger n'a fait tomber aucun des 648 tests** : la règle n'avait aucune couverture propre — *une règle qui juge quelqu'un et que rien ne vérifie est une accusation sans preuve*. Neuf tests la tiennent maintenant, dont la reconstitution du cas réel. ⚠️ **Asymétrie posée au porteur** : seul le MOBILE affiche ce compteur — le patient lit « retard 32:13 », le soignant ne sait même pas que la mesure existe. **web 996 ✓ · API unitaires 657 ✓ (+9) · lint 0 · builds et types propres · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **94** | **Précédent / Suivant, et la mémoire d'écran** — 11/09, demande du porteur (« comme avec le projet CMS, va voir »), motif lu dans `navStack.store.ts` et `usePersistedState.ts` puis adapté. Quatre pièces : **une pile à nous** — *React Router ne dit pas si l'on peut avancer ou reculer*, et sans elle les deux flèches seraient toujours actives ; **un traqueur** qui distingue `PUSH` / `REPLACE` / `POP`, faute de quoi une redirection laisse une trace et « retour » ramène là où l'on n'a jamais voulu aller ; **les flèches** dans le bandeau, **montées même éteintes** (*une commande qui apparaît et disparaît se cherche ; une commande éteinte s'attend*) ; **la mémoire d'écran**, rangée par écran et par clé dans le stockage de session. 📌 **La règle reprise telle quelle de CMS** : jamais de brouillon ni de fenêtre modale dans cette mémoire — *rouvrir un écran et y trouver une décision en suspens qu'on ne se souvient pas d'avoir commencée, sur un écran de soin, c'est une confirmation donnée sans l'avoir voulue.* ⚠️ **Vingt tests sont tombés d'un coup** : vider `sessionStorage` ne vide pas un magasin qui vit en mémoire — la remise à zéro se paie une fois, dans le harnais commun. Et deux couleurs d'onde **relevées sur une capture du téléphone** au lieu d'être déduites de la palette. **web 1 011 ✓ (996 + 15) · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **95** | **L'onde vocale qui n'avait plus de place** — 11/09, **vu sur l'écran du porteur juste après la mise en ligne du 94** : les deux lecteurs vocaux s'affichaient **sans aucune onde**. Mesuré dans la page servie : l'onde recevait **70 px**, là où trente-six barres de 3 px espacées de 2 px en réclament **178**. Les trente-cinq écarts consommaient les 70 px à eux seuls, et les barres — élastiques — tombaient à **0 px de large**. 📌 **La cause est une mesure reprise à moitié** : j'avais relevé « 36 barres » sur le téléphone sans relever la largeur qui va avec. *Une densité, ce n'est pas un nombre de barres : c'est un nombre de barres ET une largeur d'écran.* Le nombre suit maintenant la place — la géométrie du mobile (3 px + 2 px) est tenue à toute largeur, et on retrouve les 36 dès qu'il y a les 178 px. ⚠️ **Et un plancher que j'ai dû retirer avant même de le livrer** : j'avais posé « jamais moins de huit barres », or huit barres réclament 38 px — *un plancher qui ne tient pas sous le plancher n'est pas un plancher.* ⚠️ **Le même piège qu'au chantier 87** : le premier test comptait les barres avant que la mesure soit commise, et affirmait donc le contraire de ce qu'il vérifiait. **web 1 017 ✓ (1 011 + 6) · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **96** | **Le mobile aligné, la durée qui mentait, et le squelette qui manquait** — 12/09, quatre demandes du porteur en une. **(1) La règle de l'onde devient PARTAGÉE** (`packages/shared/src/onde-vocale.ts`, vendorée) : le téléphone dessinait lui aussi 36 barres dans 128 px, soit des barres de **1,6 px** au lieu des 3 annoncées en tête de son propre lecteur — *le web s'effondrait, le mobile s'étiolait, même cause*. **(2) ⚠️ La durée d'une note vocale était fausse une fois sur deux** : le lecteur attendait `onLoadedMetadata` par une propriété React, or quand le son est déjà en cache l'évènement passe **avant** que React ait branché l'écouteur. La même note affichait `1:16` en arrivant et `1:03` en y revenant — 1:03 étant la durée **annoncée par l'expéditeur**, fausse de 14 s. *Un évènement qu'on n'a pas entendu n'a pas eu lieu : on lit l'état au montage, puis on écoute.* Et l'arrondi divergeait (mobile 1:17, web 1:16) — même fichier, deux durées. **(3) Le squelette de la consultation** : l'écran s'ouvrait sur **une phrase et un rond**, puis toute la page se posait d'un coup. Le FIL avait pourtant son squelette depuis le chantier 21 — *le soin s'était arrêté à une porte*. **(4) Les trois derniers écarts de bulles** : espacement **10 px / 2 px groupés** (le web était à 12 / 6, et le regroupement ne se lisait plus comme un bloc), la trace d'un message supprimé qui redevient une **bulle** au lieu d'une pilule pointillée, « modifié » en italique. ⚠️ **Et un écart que je REFUSE de copier** : l'heure d'une bulle reçue, que le téléphone peint en `#52525B` sur `#1C1C20` — **2,2:1**. Le web l'avait relevée exprès le 09/09. *Aligner deux écrans ne veut pas dire recopier le moins lisible des deux.* **web 1 024 ✓ (1 017 + 7) · mobile 88 ✓ (84 + 4) · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -729,6 +730,88 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 96 (le mobile, la durée, le squelette) a appris
+
+*12/09/2026 — quand une règle vaut pour deux écrans, elle doit vivre à un seul endroit.*
+
+#### Le web s'effondrait, le mobile s'étiolait — même cause
+
+Le chantier 95 avait corrigé le web seul. En lisant le lecteur du téléphone pour l'aligner, le même
+défaut y était, simplement moins spectaculaire : sa rangée fait 244 px, dont **128** reviennent à
+l'onde, et trente-six barres en réclament 178. Ses barres mesuraient **1,6 px** — là où l'en-tête de
+son propre fichier annonce « barres de 3 px ».
+
+> **Un fichier peut décrire fidèlement ce qu'il croit faire.** Le commentaire n'était pas un
+> mensonge : c'était la maquette, et personne n'avait mesuré ce que la mise en page en laissait.
+
+La règle vit désormais dans `packages/shared/src/onde-vocale.ts`, vendorée dans les deux
+applications, et le test de vendorage — écrit au chantier 86 pour **un** module — a été généralisé
+en table. *Un garde-fou écrit pour un seul cas n'est pas un garde-fou : c'est une exception qui a eu
+de la chance.*
+
+#### ⚠️ Un évènement qu'on n'a pas entendu n'a pas eu lieu
+
+La durée d'une note vocale était fausse **une fois sur deux**, et c'est le porteur qui l'a signalé
+sans pouvoir le nommer. Mesuré sur sa consultation : la même note affichait `1:16` en arrivant sur
+l'écran et `1:03` en y revenant.
+
+Le lecteur écoutait `onLoadedMetadata` par une propriété React. Quand le son est **déjà en cache**,
+le navigateur a la métadonnée avant que React ait branché l'écouteur : l'évènement part, personne
+ne l'entend, et la durée reste **celle qu'a annoncée l'expéditeur** — ici 63 s pour un fichier qui
+en dure 76,7.
+
+> **Un état qui existe déjà ne s'attend pas : il se lit.** On lit au montage, *puis* on écoute pour
+> la suite.
+
+*C'est le même défaut de forme que la mesure de largeur du chantier 95 — une valeur prise au mauvais
+moment — et il est apparu dans le même fichier, à trois lignes d'écart. Les deux se corrigent par la
+même phrase.*
+
+Au passage, l'arrondi divergeait : le téléphone arrondissait (`1:17`), le web tronquait (`1:16`).
+Une seconde d'écart sur la même note, entre le patient et le soignant. Les deux lisent maintenant la
+même fonction.
+
+#### Le soin s'était arrêté à une porte
+
+`Squelette.tsx` porte, écrite en tête depuis le chantier 21, la règle : *un rond qui tourne dit
+qu'on attend, un squelette dit ce qui arrive.* Le FIL de la consultation avait le sien. **L'écran
+qui le contient n'en avait pas** : il s'ouvrait sur une phrase et un rond, puis la page entière —
+bandeau, fil, rail, barre d'écriture — se posait d'un coup.
+
+> **Une règle appliquée à l'intérieur d'un écran et pas à l'écran lui-même n'est pas une règle
+> appliquée à moitié : c'est celle qu'on voit le moins qui manque le plus.** L'attente de l'écran
+> entier dure plus longtemps que celle d'un de ses morceaux.
+
+Le squelette reprend les mesures exactes de la page — `max-w-[1160px]`, bascule à `md:`, rail de
+`19rem` puis `22rem` — parce qu'*un squelette qui annonce une forme que le contenu ne prend pas ment
+deux fois : il fait attendre, et il fait sauter.* Et il garde sa phrase en `sr-only` : remplacer un
+texte par des rectangles gris est un progrès pour l'œil et un recul pour tout le reste.
+
+#### ⚠️ L'écart que je refuse de copier
+
+Le porteur demande deux écrans identiques. En les comparant ligne à ligne, un dernier écart restait :
+l'heure sous une bulle reçue. Le téléphone la peint en `textDisabled` — **`#52525B` sur `#1C1C20`,
+soit 2,2:1**. Le web utilise `--texte-tertiaire`, **relevé exprès le 09/09** après un contrôle de
+contraste.
+
+Aligner le web sur le mobile aurait rendu l'heure illisible pour qui a les yeux fatigués, un écran
+bon marché, ou la lumière du jour dans le dos.
+
+> **Aligner deux écrans ne veut pas dire recopier le moins lisible des deux.** C'est au mobile de
+> monter.
+
+Signalé, non corrigé sans décision : la version mobile est la référence du porteur.
+
+#### ⚠️ Et le piège que je continue de me tendre
+
+Un caractère de contrôle s'est glissé dans une expression régulière de test, par un `\b` passé dans
+un *heredoc* — la **sixième** fois de ce chantier-ci et des précédents. La règle que j'ai écrite
+moi-même dit : *tout contenu portant des échappements passe par un fichier, pas par un heredoc.* Le
+test ne la trahissait pas bruyamment — il cherchait `-mt-2` suivi d'un retour arrière, donc jamais.
+
+*Une règle qu'on se donne et qu'on enfreint six fois n'est pas une règle : c'est une intention. Elle
+ne devient une règle que le jour où le geste par défaut change.*
 
 ### Ce que le chantier 95 (l'onde sans place) a appris
 

@@ -37,62 +37,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pause, Play } from 'lucide-react'
 
-import { formatDuree } from './media'
-
-/**
- * Le PLAFOND de barres — celui du mobile, qui en dessine toujours 36.
- *
- * ⚠️ Sur le web, ce nombre ne peut PAS être fixe, et c'est un défaut vu sur l'écran du porteur
- * (chantier 95) : chaque barre coûte 3 px plus 2 px d'écart. Trente-six barres réclament donc
- * 178 px. Dans une colonne de fil étroite, l'onde n'en recevait que 70 — soit exactement de quoi
- * loger les trente-cinq ÉCARTS, et plus rien pour les barres elles-mêmes. Elles tombaient à zéro :
- * le lecteur s'affichait **sans onde du tout**.
- *
- * *Une densité relevée sur un téléphone n'est pas une densité : c'est un nombre de barres ET une
- * largeur d'écran. Reprendre le nombre sans la largeur, c'est reprendre la moitié de la mesure.*
- */
-const BARRES = 36
-
-/** La géométrie du mobile, elle, est reprise telle quelle : 3 px de barre, 2 px d'écart. */
-const LARGEUR_BARRE = 3
-const ECART_BARRE = 2
-
-/**
- * Combien de barres tiennent dans `largeur`, sans jamais dépasser celles du mobile.
- *
- * **La règle tient en une phrase : chaque barre gardée a ses 3 px.** J'avais d'abord posé un
- * plancher de huit barres — *« en dessous ce n'est plus une onde, c'est un pointillé »* — et c'était
- * une promesse intenable : huit barres réclament 38 px, et sous 38 px elles seraient redevenues
- * invisibles. *Un plancher qui ne tient pas sous le plancher n'est pas un plancher.* Mieux vaut
- * quatre barres qu'on voit que huit qu'on ne voit pas.
- *
- * Largeur inconnue (premier rendu, ou `ResizeObserver` muet sous les tests) : on garde les 36 du
- * mobile — *une onde complète qui rétrécit ensuite se remarque à peine ; un pointillé qui
- * s'épaissit se voit.*
- */
-export function barresQuiTiennent(largeur: number): number {
-  if (largeur <= 0) return BARRES
-  const tiennent = Math.floor((largeur + ECART_BARRE) / (LARGEUR_BARRE + ECART_BARRE))
-  return Math.max(1, Math.min(BARRES, tiennent))
-}
-
-/**
- * Les pics ramenés de `BARRES` valeurs à `combien`, en MOYENNANT chaque tranche.
- *
- * Prendre une valeur sur deux perdrait les pointes : un « oui » bref entre deux silences
- * disparaîtrait de l'onde selon le nombre de barres affichées — l'onde changerait de forme avec la
- * largeur de la fenêtre, ce qui ferait mentir le dessin.
- */
-export function ramener(pics: number[], combien: number): number[] {
-  if (combien >= pics.length) return pics
-  return Array.from({ length: combien }, (_, i) => {
-    const debut = Math.floor((i * pics.length) / combien)
-    const fin = Math.max(debut + 1, Math.floor(((i + 1) * pics.length) / combien))
-    let somme = 0
-    for (let k = debut; k < fin; k += 1) somme += pics[k]
-    return somme / (fin - debut)
-  })
-}
+/*
+  ⚠️ La géométrie de l'onde vient de la SOURCE PARTAGÉE, pas d'ici : le mobile lit le même
+  fichier. Sans cela, la même note vocale n'aurait pas le même dessin chez le patient et chez
+  le soignant. Voir `onde-vocale.ts` — et le test qui garde les trois copies identiques.
+*/
+import { BARRES_MAX, LARGEUR_BARRE, barresQuiTiennent, formatDureeVocale, ramenerHauteurs } from './onde-vocale'
 
 /** Les vitesses offertes, dans l'ordre du cycle. Celles du mobile, pour ne pas dérouter. */
 const VITESSES = [1, 1.5, 2] as const
@@ -100,7 +50,8 @@ const VITESSES = [1, 1.5, 2] as const
 const libelleVitesse = (v: number): string => (v === 1 ? '1×' : v === 1.5 ? '1,5×' : '2×')
 
 /**
- * Les pics réels du son, ramenés à `BARRES` valeurs entre 0,12 et 1.
+ * Les pics réels du son, ramenés à `BARRES_MAX` valeurs entre 0,12 et 1 — la résolution la plus
+ * fine dont l'affichage puisse avoir besoin ; il la ramène ensuite à la place dont il dispose.
  *
  * Le plancher à 0,12 : une barre de hauteur nulle disparaît, et un silence deviendrait un trou dans
  * l'onde — on ne saurait plus si le son est silencieux ou si le lecteur est cassé.
@@ -120,11 +71,11 @@ async function picsDuSon(url: string): Promise<number[] | null> {
     const echantillons = son.getChannelData(0)
     void contexte.close()
 
-    const parBarre = Math.floor(echantillons.length / BARRES)
+    const parBarre = Math.floor(echantillons.length / BARRES_MAX)
     if (parBarre < 1) return null
 
     const bruts: number[] = []
-    for (let i = 0; i < BARRES; i += 1) {
+    for (let i = 0; i < BARRES_MAX; i += 1) {
       let sommet = 0
       for (let j = 0; j < parBarre; j += 1) {
         const v = Math.abs(echantillons[i * parBarre + j] ?? 0)
@@ -190,6 +141,38 @@ export function LecteurVocal({
   }, [url])
 
   /*
+    ── ⚠️ La durée se LIT, elle ne s'attend pas (chantier 96) ────────────────────────────────────
+
+    Le lecteur écoutait `onLoadedMetadata` par une propriété React. Quand le son est **déjà en
+    cache** — on revient sur la consultation, on change d'onglet — le navigateur a la métadonnée
+    avant que React ait branché l'écouteur : l'évènement est passé, personne ne l'entend, et la
+    durée reste celle **annoncée par l'expéditeur**.
+
+    Relevé sur la consultation du porteur : le fichier dure **76,7 s**, l'expéditeur en avait
+    annoncé **63**. Le web affichait donc `1:16` au premier chargement et `1:03` au suivant — la
+    même note vocale, deux durées, selon qu'on venait d'arriver ou non.
+
+    *Un évènement qu'on n'a pas entendu n'a pas eu lieu. On lit donc l'état DIRECTEMENT au montage,
+    puis on écoute pour la suite.*
+  */
+  useEffect(() => {
+    const el = audio.current
+    if (!el) return
+    const lire = () => {
+      const d = el.duration
+      // La durée annoncée reste si le navigateur ne sait pas mesurer (flux sans en-tête).
+      if (Number.isFinite(d) && d > 0) setDuree(d)
+    }
+    lire()
+    el.addEventListener('loadedmetadata', lire)
+    el.addEventListener('durationchange', lire)
+    return () => {
+      el.removeEventListener('loadedmetadata', lire)
+      el.removeEventListener('durationchange', lire)
+    }
+  }, [url])
+
+  /*
     On SUIT la largeur au lieu de la lire une fois : le rail de droite s'ouvre et se ferme, la
     fenêtre change de taille, et une onde mesurée au premier rendu garderait un nombre de barres qui
     ne correspond plus à rien.
@@ -207,7 +190,7 @@ export function LecteurVocal({
   const fraction = duree && duree > 0 ? Math.min(1, position / duree) : 0
 
   const nombreDeBarres = barresQuiTiennent(largeurOnde)
-  const hauteurs = pics ? ramener(pics, nombreDeBarres) : null
+  const hauteurs = pics ? ramenerHauteurs(pics, nombreDeBarres) : null
 
   /** Se déplacer dans la note en cliquant l'onde — le geste qu'on tente d'instinct. */
   const allerA = useCallback(
@@ -259,11 +242,6 @@ export function LecteurVocal({
         ref={audio}
         src={url}
         preload="metadata"
-        onLoadedMetadata={(e) => {
-          const d = e.currentTarget.duration
-          // La durée annoncée reste si le navigateur ne sait pas mesurer (flux sans en-tête).
-          if (Number.isFinite(d) && d > 0) setDuree(d)
-        }}
         onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
         onEnded={() => {
           setJoue(false)
@@ -339,7 +317,7 @@ export function LecteurVocal({
           (surAccent ? 'text-white/85' : 'text-[var(--texte-tertiaire)]')
         }
       >
-        {duree === null ? '—' : formatDuree(joue || position > 0 ? duree - position : duree)}
+        {duree === null ? '—' : formatDureeVocale(joue || position > 0 ? duree - position : duree)}
       </span>
 
       {/*
