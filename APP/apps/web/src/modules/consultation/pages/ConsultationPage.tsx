@@ -329,6 +329,42 @@ function Reactions({
   )
 }
 
+/*
+ * ── La poignée du menu : DANS la bulle, sans cadre (chantier 82, 11/09/2026) ──────────────────
+ *
+ * Demande du porteur : *« le bouton doit être petit, incrusté dans la bulle, placé à droite
+ * horizontalement et en haut verticalement, sans background »*.
+ *
+ * Ce qui la rendait lourde n'était plus utile. Jusqu'au chantier 80 cette poignée était une
+ * BARRE de quatre boutons : le cadre, le fond et l'ombre servaient à les tenir ensemble et à les
+ * détacher du fil. Depuis que tout vit dans un seul menu, il ne restait qu'un chevron de 14 px
+ * au milieu d'une boîte bordée — **un cadre autour d'un seul objet, c'est-à-dire du bruit.**
+ *
+ * ⚠️ Et le déplacement efface un contournement entier. La barre était posée À CÔTÉ de la bulle
+ * (`left-full`) : sur un téléphone où la bulle prend presque toute la largeur, elle débordait de
+ * 73 px et le fil se laissait tirer latéralement de 34 px — mesuré à 375 px au chantier 21. Il
+ * avait fallu une règle `lg:` pour la rapatrier dans le coin de la ligne en dessous de 1024 px.
+ * **Posée DANS la bulle, elle ne peut plus déborder de rien : la règle disparaît.**
+ *
+ * *Un défaut de placement se contourne ; un bon placement n'a rien à contourner.*
+ *
+ * `opacity` en STYLE et non en classe : `.ul-au-survol` vit hors d'un `@layer` et battrait
+ * silencieusement n'importe quel utilitaire Tailwind. Ouvert au clic droit, le menu doit montrer
+ * sa poignée — sinon il flotte, rattaché à rien de visible.
+ */
+const POIGNEE_CADRE = 'ul-au-survol absolute top-0.5 right-0.5 z-10'
+
+/*
+ * Sans fond, et sans fond au survol non plus. Les deux bulles sont des surfaces claires
+ * (`--ap-50` pour les miennes, `--fond-carte` pour celles de l'autre), et l'encre tertiaire porte
+ * sur les deux dans les deux thèmes : un fond n'apporterait rien qu'une tache.
+ *
+ * Le survol change l'ENCRE, pas le fond — c'est le seul retour dont un chevron a besoin.
+ */
+const POIGNEE_BOUTON =
+  'rounded p-1 text-[var(--texte-tertiaire)] transition-colors hover:text-foreground ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30'
+
 /**
  * Le menu d'un message — UN SEUL menu, ouvert par la poignée OU par le clic droit sur la bulle.
  *
@@ -439,19 +475,9 @@ function GestesBulle({
     // Ni texte à copier, ni personne à signaler : pas de menu vide, pas de poignée qui ment.
     if (!copiable && aMoi) return null
     return (
-      <span
-        style={{ opacity: ouvert ? 1 : undefined }}
-        className={
-          'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
-          'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 ' +
-          (aMoi ? 'lg:right-full lg:mr-1' : 'lg:right-auto lg:left-full lg:ml-1')
-        }
-      >
+      <span style={{ opacity: ouvert ? 1 : undefined }} className={POIGNEE_CADRE}>
         <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
-          <DropdownMenuTrigger
-            aria-label="Actions sur ce message"
-            className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-          >
+          <DropdownMenuTrigger aria-label="Actions sur ce message" className={POIGNEE_BOUTON}>
             <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
@@ -475,30 +501,11 @@ function GestesBulle({
 
   return (
     <span
-      /*
-        Placement : À CÔTÉ de la bulle sur grand écran, DANS le coin de la ligne en dessous.
-
-        `left-full` posait la barre juste après la bulle — parfait tant qu'il reste de la place à
-        droite. Sur un téléphone la bulle occupe presque toute la largeur : la barre sortait de
-        73 px, et le fil se laissait tirer latéralement de 34 px. Mesuré à 375 px le 01/09/2026
-        (chantier 21). En dessous de 1024 px elle se cale donc à droite de la LIGNE, à l'intérieur.
-
-        `opacity` en STYLE et non en classe : `.ul-au-survol` vit hors d'un `@layer` et battrait
-        silencieusement n'importe quel utilitaire Tailwind. Ouvert au clic droit, le menu doit
-        montrer sa poignée — sinon il flotte, rattaché à rien de visible.
-      */
       style={{ opacity: ouvert ? 1 : undefined }}
-      className={
-        'ul-au-survol absolute top-0 flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 ' +
-        'shadow-[0_1px_3px_rgba(15,23,42,.10)] right-0 ' +
-        (aMoi ? 'lg:right-full lg:mr-1' : 'lg:right-auto lg:left-full lg:ml-1')
-      }
+      className={POIGNEE_CADRE}
     >
       <DropdownMenu open={ouvert} onOpenChange={surOuvert}>
-        <DropdownMenuTrigger
-          aria-label="Actions sur ce message"
-          className="rounded-md p-1 text-[var(--texte-tertiaire)] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-        >
+        <DropdownMenuTrigger aria-label="Actions sur ce message" className={POIGNEE_BOUTON}>
           <ChevronDown size={14} strokeWidth={1.8} aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align={aMoi ? 'end' : 'start'} sideOffset={4} className="w-60">
@@ -774,8 +781,19 @@ function Bulle({
         ) : null}
 
         <div
+          /*
+            `ul-bulle` ne sert qu'aux écrans SANS survol (chantier 82). Là, la poignée est affichée
+            en permanence — une commande qu'on n'atteint qu'à la souris est absente pour qui n'en a
+            pas — et, posée dans la bulle, elle couvrirait la fin de la première ligne. La classe
+            réserve sa place. Sur un écran à souris elle ne fait rien : la poignée n'apparaît qu'au
+            survol, l'instant où l'on ne lit pas.
+
+            Elle n'est posée que si un menu existe : réserver la place d'une poignée absente
+            décalerait le texte pour rien.
+          */
           className={
             'rounded-lg px-3 py-2 ' +
+            (menuPossible ? 'ul-bulle ' : '') +
             (aMoi ? 'bg-[var(--ap-50)] text-foreground' : 'border border-border bg-card text-foreground')
           }
         >

@@ -1351,6 +1351,53 @@ describe('C5 — signaler (chantier 41)', () => {
     On ne se signale pas soi-même. L'offrir ferait douter de ce que le geste veut dire — et
     produirait des signalements que l'administration ne pourrait qu'écarter.
   */
+  /*
+    ── La poignée est DANS la bulle, et n'a pas de fond (chantier 82, demande du porteur) ───────
+
+    *« Le bouton doit être petit, incrusté dans la bulle, placé à droite horizontalement et en haut
+    verticalement, sans background. »*
+
+    ⚠️ **Ce que ce test peut prouver, et ce qu'il ne peut pas.** jsdom ne calcule aucune mise en
+    page : il ne mesurera jamais que la poignée tombe bien dans le coin. Il retient donc ce qui est
+    vérifiable — l'absence de cadre, et l'absence de la règle `lg:left-full` qui la posait À CÔTÉ
+    de la bulle. Cette règle-là est le vrai enjeu : c'est elle qui faisait déborder le fil de 73 px
+    sur un téléphone (chantier 21), et la poser dans la bulle est ce qui la rend inutile.
+
+    Le placement au pixel, lui, se vérifie à l'œil sur la plateforme — et c'est ainsi que le
+    porteur a signalé le problème.
+  */
+  it('la poignée n’a ni cadre ni fond, et ne se pose plus à côté de la bulle', async () => {
+    await monter(seance(), [message()])
+
+    const poignee = await fil().findByLabelText('Actions sur ce message')
+    const cadre = poignee.parentElement as HTMLElement
+
+    // Sans fond : ni sur le cadre, ni au survol du bouton. Le survol change l'ENCRE.
+    expect(cadre.className).not.toMatch(/bg-|border|shadow-/)
+    expect(poignee.className).not.toMatch(/bg-|hover:bg-/)
+    expect(poignee.className).toMatch(/hover:text-foreground/)
+
+    // Et elle est posée DANS la bulle : plus aucune règle qui la sort sur les côtés.
+    expect(cadre.className).not.toMatch(/left-full|right-full/)
+    expect(cadre.className).toMatch(/absolute/)
+  })
+
+  /*
+    La réserve de place ne vaut que pour les écrans SANS survol, où la poignée est permanente. Et
+    elle ne se pose que s'il y a un menu : réserver la place d'une poignée absente décalerait le
+    texte pour rien.
+  */
+  it('la bulle ne réserve la place de la poignée que s’il y a un menu', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [
+      message({ senderId: 'pro-1', kind: 'PHOTO', body: '', mediaKeys: ['k1'] }),
+    ])
+
+    const dansLaBulle = await screen.findByText('Média indisponible.')
+    const bulle = dansLaBulle.closest('.rounded-lg') as HTMLElement
+    // Ma propre photo sur une archive : rien à copier, personne à signaler, donc pas de poignée.
+    expect(bulle.className).not.toMatch(/ul-bulle/)
+  })
+
   it('n’offre pas de signaler ses PROPRES messages', async () => {
     await monter(seance(), [message({ id: 'a-moi', senderId: 'pro-1' })])
     const utilisateur = userEvent.setup()

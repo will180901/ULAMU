@@ -666,6 +666,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **79** | **C5 — les emoji des RÉACTIONS, la moitié d'écran oubliée** — 11/09, trouvé en vérifiant le chantier 78 **en ligne**, pas en écrivant le code. Les emoji des *messages* étaient devenus des images ; ceux des *réactions* — la palette rapide et les réactions posées — étaient restés du texte dessiné par la police du poste. Le même 👍 avait donc **deux apparences sur le même écran, à trois pixels de distance** : exactement ce que le chantier 78 prétendait supprimer. 📌 **Une garantie qui s'arrête à la moitié d'un écran n'est pas une garantie** — et le chantier qui la pose est le moins bien placé pour voir où elle s'arrête, parce qu'il regarde l'endroit qu'il vient d'écrire. Deux tests tiennent désormais les deux emplacements. **web 881 ✓ (879 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 | **80** | **C5 — un seul menu de message, et le clic droit** — 11/09, né d'une phrase du porteur : *« je ne vois pas ce bouton qui apparaît au survol »*. Il avait raison de ne pas le voir : il y avait **quatre icônes flottantes**, invisibles tant qu'on ne survolait pas exactement le bon endroit, et **aucun autre chemin**. 📌 **Le plus instructif n'est pas le défaut, c'est où était déjà la réponse** : le **mobile d'ULAMU** offre depuis toujours une feuille d'actions à l'appui long (`ChatActionSheet.tsx` — bande de réactions, « + » vers le sélecteur complet, puis les actions), et CMS-SARIS le clic droit. **Le web était la seule des trois surfaces à ne rien offrir.** Ce n'était donc pas une idée à emprunter dehors : un écart à réduire chez nous. Livré : **un menu unique** (poignée + **clic droit**), la bande de réactions en tête, **« + » vers le sélecteur complet** — le serveur accepte n'importe quel emoji et le mobile le proposait déjà, *onzième fois que le motif « une capacité sans chemin » apparaît, et la première où il séparait nos deux propres clients* — et **« Copier le texte »**, que le mobile ne PEUT pas offrir (pas de presse-papier natif) et que le web obtient pour rien. ⚠️ **Une faute injectée a démasqué un de mes propres tests** : « le clic droit ne rouvre pas le menu sur une archive » passait même sans le garde-fou, puisqu'aucun menu n'y est monté. Réécrit sur ce que le garde-fou fait vraiment — **rendre le menu du navigateur** au lieu de le confisquer. **web 889 ✓ (881 + 8) · 160 promesses, 119 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **81** | **C5 — le menu jusque sur l'archive, et une ligne qui se contredisait** — 11/09, deux demandes du porteur et un défaut lu sur SA capture d'écran. **(1)** Une séance close offrait un **bouton nu** « signaler » posé sur la bulle, là où tous les autres gestes vivent dans un menu : *deux grammaires sur le même écran*, et celle de l'archive était la plus rare. Elle reçoit le **même menu**, réduit à ce qui reste permis. 📌 **Et le menu a révélé un geste qui manquait** : « Copier le texte » est parfaitement légitime sur une archive — copier ne modifie rien, et c'est précisément après coup, en rédigeant le compte-rendu, qu'on veut reprendre mot pour mot ce qui a été dit. Sur ses PROPRES messages une archive n'offrait **rien du tout** ; elle offre la copie. *Un bouton ne porte qu'un geste : c'était le contenant qui limitait le produit.* **(2)** Le fil annonçait « **Consultation ouverte** » pendant que la pastille au-dessus affichait « **Terminée** » — deux états contraires à trois centimètres l'un de l'autre. La phrase de la maquette avait été recopiée **sans sa condition** (chantier 76), et aucun test ne la lisait. Ouvre la **dette n°27** (le sélecteur monte 1 867 boutons d'un coup). **web 893 ✓ (889 + 4) · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **82** | **C5 — la poignée entre DANS la bulle, sans cadre** — 11/09, demande du porteur : *« petit, incrusté dans la bulle, à droite horizontalement et en haut verticalement, sans background »*. 📌 **Ce qui la rendait lourde n'était plus utile** : jusqu'au chantier 80 cette poignée était une BARRE de quatre boutons, et le cadre, le fond et l'ombre servaient à les tenir ensemble. Depuis que tout vit dans un seul menu, il ne restait qu'un chevron de 14 px au milieu d'une boîte bordée — **un cadre autour d'un seul objet, c'est-à-dire du bruit.** ⚠️ **Et le déplacement efface un contournement entier** : la barre était posée À CÔTÉ de la bulle (`left-full`), débordait de 73 px sur un téléphone et laissait le fil se tirer latéralement de 34 px (mesuré à 375 px au chantier 21) ; il avait fallu une règle `lg:` pour la rapatrier. **Posée DANS la bulle, elle ne peut plus déborder de rien : la règle disparaît.** *Un défaut de placement se contourne ; un bon placement n'a rien à contourner.* Sur écran TACTILE, où la poignée est permanente faute de survol, la bulle lui réserve sa place — et seulement s'il existe un menu. **web 895 ✓ (893 + 2) · lint 0 · build ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -714,6 +715,67 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 82 (la poignée dans la bulle) a appris
+
+*11/09/2026 — un habillage qui survit à ce qu'il habillait.*
+
+#### Le cadre servait à quelque chose. Puis il n'a plus rien servi.
+
+Cette poignée a été une **barre de quatre icônes** : réagir, répondre, modifier, « ⋯ ». Le cadre,
+le fond et l'ombre y avaient un rôle réel — tenir les quatre ensemble, et les détacher du fil
+derrière.
+
+Le chantier 80 a réuni les quatre dans **un seul menu**. Le cadre, lui, est resté : une boîte
+bordée, ombrée, autour d'**un chevron de 14 px**.
+
+*Personne ne l'a décidé. C'est le propre de ces restes : ils ont eu raison, et plus rien ne
+rappelle qu'ils ne l'ont plus.* Il a fallu que le porteur regarde l'écran et dise « ce n'est pas
+trop à mon goût » pour qu'on le voie.
+
+**Quand on retire ce qu'un habillage habillait, il faut retirer l'habillage dans le même geste.**
+
+#### Le déplacement efface un contournement entier
+
+La barre était posée **à côté** de la bulle (`left-full`). Sur un téléphone, où la bulle occupe
+presque toute la largeur, elle débordait de **73 px** et le fil se laissait tirer latéralement de
+**34 px** — mesuré à 375 px au chantier 21. Il avait fallu une règle `lg:` pour la rapatrier dans
+le coin de la ligne en dessous de 1024 px.
+
+Posée **dans** la bulle, elle ne peut plus déborder de rien. La règle `lg:` disparaît, et avec elle
+la différence de comportement entre deux tailles d'écran.
+
+*Un défaut de placement se contourne ; un bon placement n'a rien à contourner.* Le porteur demandait
+une question de goût — il a réglé un bug de mise en page sans le savoir.
+
+#### Sans fond, y compris au survol
+
+Les deux bulles sont des surfaces claires (`--ap-50` pour les miennes, `--fond-carte` pour celles
+de l'autre), et l'encre tertiaire porte sur les deux dans les deux thèmes. Un fond n'apporterait
+rien qu'une tache. **Le survol change l'ENCRE** — c'est le seul retour dont un chevron a besoin.
+
+#### ⚠️ Le cas tactile, qui n'a pas de survol
+
+Sur un écran sans souris, la poignée est affichée **en permanence** — une commande qu'on n'atteint
+qu'au survol est absente pour qui n'a pas de souris. Mais posée dans la bulle, permanente, elle
+couvrirait la fin de la première ligne.
+
+La bulle lui réserve donc sa place, **uniquement là** : `@media (hover: none)`. Sur un écran à
+souris, rien ne bouge — la poignée n'apparaît qu'au survol, l'instant précis où l'on ne lit pas.
+
+Et la réserve ne se pose que **s'il existe un menu** : réserver la place d'une poignée absente
+décalerait le texte pour rien.
+
+#### Ce que les tests peuvent, et ce qu'ils ne peuvent pas
+
+jsdom ne calcule aucune mise en page : aucun test ne dira jamais que la poignée tombe bien dans le
+coin. Les deux tests retiennent donc ce qui est vérifiable — **l'absence de cadre**, et **l'absence
+de la règle qui la posait à côté**. Le placement au pixel se vérifie à l'œil sur la plateforme, et
+c'est ainsi qu'il a été signalé.
+
+*Écrire ce qu'un test ne prouve pas vaut mieux que laisser croire qu'il le prouve.*
+
+Quatre fautes injectées, quatre détectées.
 
 ### Ce que le chantier 81 (le menu sur l'archive) a appris
 

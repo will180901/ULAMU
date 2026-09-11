@@ -955,6 +955,12 @@ textarea:-webkit-autofill {
 }
 @media (hover: none) {
   .ul-au-survol { opacity: 1; }
+  /* La poignée du message est posée DANS la bulle (chantier 82). Affichée en permanence faute de
+     survol, elle couvrirait la fin de la première ligne : on lui réserve sa place.
+     ⚠️ `.ul-bulle` vit hors d'un `@layer` et bat donc `px-3` de Tailwind — ici c'est VOULU, et
+     c'est pour ça que la règle est enfermée dans cette media query : elle ne peut rien déborder
+     ailleurs. */
+  .ul-bulle { padding-right: 1.75rem; }
 }
 
 /* Grain des boutons — posé par `button.tsx` sur toutes les variantes.
