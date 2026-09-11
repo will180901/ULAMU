@@ -199,3 +199,20 @@ export function titreConsultation(pre: { symptoms: string } | null | undefined, 
   const espace = coupe.lastIndexOf(' ')
   return `${(espace > longueurMax * 0.6 ? coupe.slice(0, espace) : coupe).trimEnd()}…`
 }
+
+/**
+ * Le corps d'un message de note vocale : la DURÉE en secondes, en texte.
+ *
+ * ⚠️ Ce n'est pas une légende. Le mobile a posé cette convention depuis toujours — `body` porte le
+ * nombre de secondes pour un message `VOICE` — et le web ne l'envoyait pas : une note enregistrée
+ * depuis le web arrivait sur le téléphone du patient sans sa durée (chantier 90).
+ *
+ * Extrait ici pour être vérifiable : le chemin complet d'enregistrement n'est pas jouable sous
+ * jsdom, qui n'a pas de `MediaRecorder`. *Ce qu'on ne peut pas éprouver de bout en bout, on
+ * l'isole en une fonction qu'on peut éprouver.*
+ *
+ * Plancher à 1 : une note d'une demi-seconde existe, « 0 » se lirait comme une note vide.
+ */
+export function corpsNoteVocale(secondes: number): string {
+  return String(Math.max(1, Math.round(secondes)))
+}

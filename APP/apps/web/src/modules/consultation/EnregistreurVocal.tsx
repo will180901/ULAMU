@@ -42,7 +42,14 @@ export function EnregistreurVocal({
 }: {
   onAnnuler: () => void
   /** Le fichier prêt à partir, avec le mime que le SERVEUR accepte (pas celui du navigateur). */
-  onEnvoyer: (f: File) => void
+  /**
+   * Le fichier ET sa durée (chantier 90).
+   *
+   * Le mobile envoie la durée dans le corps du message depuis toujours ; le web ne la transmettait
+   * pas, et une note enregistrée ici arrivait sur le téléphone du patient sans sa durée. Le
+   * compteur est déjà tenu ici — il suffisait de le faire sortir.
+   */
+  onEnvoyer: (note: { fichier: File; secondes: number }) => void
   enCours: boolean
 }) {
   const [secondes, setSecondes] = useState(0)
@@ -120,7 +127,7 @@ export function EnregistreurVocal({
           /* Le nom porte l'extension du mime SERVEUR, pas celle du conteneur du navigateur : c'est
              ce nom qui se retrouvera dans le stockage. */
           const ext = format.envoi === 'audio/ogg' ? 'ogg' : 'm4a'
-          onEnvoyer(new File([blob], `note-vocale.${ext}`, { type: format.envoi }))
+          onEnvoyer({ fichier: new File([blob], `note-vocale.${ext}`, { type: format.envoi }), secondes })
         }
         rec.start()
         setPret(true)

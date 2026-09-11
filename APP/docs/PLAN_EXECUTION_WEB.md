@@ -675,6 +675,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **87** | **La mise en forme PARTOUT, et quatre tests qui ne gardaient rien** — 11/09. Le porteur essaie la sélection dans le compte-rendu : rien. *« Il faut ce type de sélection partout dans les interfaces où il y a des champs de saisie texte. »* J'avais restreint la bulle au seul composeur au chantier 86, **et j'avais tort de décider pour lui**. Elle est désormais montée **une fois dans la coquille** et s'attache d'elle-même aux **vingt-trois** zones de saisie, sans câblage écran par écran : elle écrit par le **setter natif** puis émet un vrai `input`, donc aucun écran n'a à la connaître. Le composeur perd son chemin particulier — *deux chemins pour la même fonction finissent toujours par diverger*. 📌 **Ouvrir une écriture ouvre une lecture** : le compte-rendu ressort dans le **Carnet du patient**, qui rend maintenant la même grammaire — sans quoi soignant et patient reliraient des astérisques dans un dossier de santé. ⚠️ **Quatre des six fautes injectées n'ont réveillé personne** : `waitFor(… not.toBeInTheDocument)` réussit **au premier instant**, avant que la chose ait eu le temps d'apparaître. Tests refaits, les six tombent. **web 975 ✓ · lint 0 · build et types propres · 6 fautes injectées, 6 détectées après correction des tests.** | ⏸ en attente | ⏸ |
 | **88** | **L'ordonnance rend les marqueurs — et le nom du médicament, non** — 11/09, le premier des trois restes du chantier 87, et **le seul qui touche à la sécurité**. Depuis que la bulle s'attache à toute zone de saisie, la **posologie** en fait partie : sans rendu, un médecin qui écrit « *matin et soir* » verrait ses astérisques, **et le patient aussi, sur une instruction de médicament**. Posologie et motif d'annulation rendus **des deux côtés** (web et mobile). 📌 **La règle qui décide, et qui vaudra pour les écrans suivants** : *on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.* Donc **non** pour le nom d'un médicament hors référentiel, qui est une ligne SIMPLE : la bulle n'y va pas, un astérisque tapé là est un astérisque **voulu**, et le transformer reviendrait à réécrire ce que le médecin a nommé — sur la seule ligne d'ordonnance qu'aucun garde-fou ne relit. Le composant de rendu prend le même nom des deux côtés (`TexteMisEnForme`). **web 979 ✓ · lint 0 · build et types propres (web et mobile) · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **89** | **Le compte-rendu tardif : accepté, sans crédit — et deux promesses contraires sur le même écran** — 11/09, **trouvé par le porteur**, qui n'arrivait pas à déposer son compte-rendu. 📌 **Le serveur refusait le dépôt passé PM-30, définitivement, et personne ne pouvait forcer** : aucune route d'administration. Deux choses étaient perdues d'un coup, et une seule avait été décidée — les **gains gelés** (sanction voulue, CU-06-03) et le **Carnet du patient privé du compte-rendu** (*personne n'a décidé cela*). Décision du porteur : séparer les deux. Le dépôt passe, `capture()` n'est plus appelée, la sanction reste entière. ⚠️ **Et l'écran promettait une chose ET son contraire** : avant l'échéance « le dépôt est refusé », après « Déposez tout de même : le serveur tranchera ». **Chacune avait son test** dans `promesses.test.ts` — *un test de promesse garantit qu'un écran continue de DIRE quelque chose, jamais que ce soit vrai.* 📌 Ma faute du chantier 84 nommée : j'avais lu la transaction sans lire le garde-fou six lignes au-dessus, et j'avais écrit ma conclusion fausse en commentaire. Ouvre la **dette n°29**. **web 983 ✓ · API unitaires 648 ✓ (+7) · lint 0 · builds et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **90** | **La note vocale sur le web : une onde VRAIE, et une durée qui cessait d'être une durée** — 11/09, demande du porteur (« je voudrais que la note vocale s'affiche comme ça »), faite depuis une **consultation réellement active**. Le lecteur devient riche : **onde, déplacement au clic, tête de lecture, vitesse 1× / 1,5× / 2×**, comme sur le téléphone. 📌 **Mais l'onde est VRAIE ici** : le mobile dessine 36 barres pseudo-aléatoires faute de pouvoir décoder un son ; le navigateur décode, donc on montre les **pics réels** — on voit où l'on parle et où l'on se tait, et on saute au passage qui compte. Et quand le décodage échoue, **barres ÉGALES, pas une fausse onde** : *un dessin au hasard prétend dire quelque chose du son ; des barres égales n'affirment rien.* ⚠️ **Deux défauts trouvés en regardant l'écran** : pour un message `VOICE`, `body` porte **la durée en secondes** (convention posée par le mobile) — le web l'affichait comme une légende, et on lisait « 76 » sous chaque note venue d'un téléphone ; et le web **n'envoyait pas** cette durée, donc une note enregistrée ici arrivait chez le patient sans durée. *Un champ qui change de sens selon un autre champ est un piège que les types ne rattrapent pas.* **web 990 ✓ (983 + 7) · lint 0 · build ✓ · 6 fautes injectées, 5 détectées — la sixième est le chemin d'enregistrement, injouable sous jsdom.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -723,6 +724,69 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 90 (la note vocale) a appris
+
+*11/09/2026 — le premier chantier vérifié sur une consultation qui vivait vraiment.*
+
+#### Ce que la vraie consultation a montré en trois secondes
+
+Le porteur a ouvert une séance, envoyé une note vocale depuis son téléphone, et l'écran du soignant
+a affiché : le lecteur, puis **« 76 »** juste en dessous.
+
+`76`, c'est la durée en secondes. Le mobile la met dans `body` (`emit('VOICE', { body: '76' })`) et
+le web, qui traite `body` comme du texte, l'écrivait telle quelle sous chaque note.
+
+> **Un champ qui change de signification selon un autre champ est un piège que les types ne
+> rattrapent pas.** `body: string | null` ne dit rien de ce basculement ; seul un écran le révèle.
+
+Et le défaut avait un jumeau, dans l'autre sens : **le web n'envoyait pas** cette durée. Une note
+enregistrée sur le web arrivait chez le patient sans sa durée. *Les deux applications se parlaient,
+et chacune ignorait la moitié de la convention.*
+
+#### L'onde : là où le web peut faire mieux que le mobile
+
+Le lecteur mobile dessine **36 barres pseudo-aléatoires**, dérivées de la clé du fichier. React
+Native n'a pas de quoi décoder un son : c'est une décoration qui ressemble à une onde.
+
+Le navigateur, lui, décode. On lit donc les **pics réels**. Sur une note vocale de soin, ce n'est
+pas cosmétique : on voit où quelqu'un parle et où il se tait, et on retrouve « la partie où il
+décrit la douleur » sans réécouter quatre-vingts secondes.
+
+⚠️ **Et quand le décodage échoue** — un codec que ce navigateur ne connaît pas — on affiche des
+**barres égales**, pas la fausse onde du mobile.
+
+> **Un dessin au hasard prétend dire quelque chose du son. Des barres égales n'affirment rien.**
+> Sur un écran de soin, on préfère ne rien dire à dire faux.
+
+*C'est une divergence assumée avec le mobile : les deux lecteurs ne montreront pas le même dessin
+pour la même note. On l'accepte parce que l'un informe et l'autre décore.*
+
+#### Ce que les tests ne peuvent pas atteindre, dit plutôt que caché
+
+jsdom n'a pas de `MediaRecorder` : **le chemin d'enregistrement n'est pas jouable**. Sur six fautes
+injectées, cinq tombent ; la sixième — l'enregistreur qui cesserait de compter sa durée — ne
+réveille personne.
+
+Plutôt que de laisser ce trou muet, la construction du corps du message est **extraite en une
+fonction** (`corpsNoteVocale`) qu'on éprouve, et un `it.todo` nommé dit ce qui reste à vérifier en
+ligne. *Ce qu'on ne peut pas éprouver de bout en bout, on l'isole en une fonction qu'on peut
+éprouver — et on écrit ce qui reste dehors.*
+
+#### Et les coches : elles existaient déjà
+
+Le porteur a demandé « le système de trois coches comme WhatsApp ». **Il était déjà là** — une coche
+grise (envoyé), deux grises (reçu), deux bleues (lu), rendu depuis le chantier 21. Mesuré sur son
+écran : toutes ses coches étaient **bleues**, parce que le patient avait tout lu. Il n'avait jamais
+vu les deux autres états.
+
+⚠️ Une nuance dite au porteur : l'état du milieu ne signifie pas « arrivé sur l'appareil ». Le
+serveur n'a aucun accusé de remise ; il déduit « reçu » du fait que l'autre a **déjà lu quelque
+chose de plus ancien** dans ce fil. C'est une approximation raisonnable, et elle n'est pas celle de
+WhatsApp.
+
+*Avant de construire ce qu'on demande, vérifier que ce n'est pas déjà construit — et si ça l'est,
+expliquer pourquoi on ne l'a jamais vu.*
 
 ### Ce que le chantier 89 (le compte-rendu tardif) a appris
 

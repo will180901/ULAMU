@@ -12,6 +12,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  corpsNoteVocale,
   formatDuree,
   formatOctets,
   LIMITE_OCTETS,
@@ -151,4 +152,38 @@ describe('Dire un poids et une durée comme on les lit', () => {
   it('le plafond d’une note vocale est de deux minutes', () => {
     expect(VOCAL_MAX_S).toBe(120)
   })
+})
+
+describe('Le corps d’un message de note vocale (chantier 90)', () => {
+  /*
+    ⚠️ **Une convention partagée entre deux applications.** Pour un message `VOICE`, `body` porte la
+    DURÉE en secondes — le mobile le fait depuis toujours, le web ne le faisait pas : une note
+    enregistrée sur le web arrivait sur le téléphone du patient sans sa durée, affichée « — ».
+
+    C'est le pendant exact du défaut d'affichage corrigé au même chantier : le web prenait cette
+    durée pour une légende et écrivait « 76 » sous chaque note venue d'un téléphone. Les deux
+    applications se parlaient, et chacune ignorait la moitié de la convention.
+  */
+  it('porte la durée en secondes, arrondie', () => {
+    expect(corpsNoteVocale(76)).toBe('76')
+    expect(corpsNoteVocale(76.4)).toBe('76')
+    expect(corpsNoteVocale(76.6)).toBe('77')
+  })
+
+  /*
+    Plancher à 1 : une note d'une demi-seconde existe — on tape le micro par erreur — et « 0 » se
+    lirait comme une note vide, donc comme un défaut du lecteur.
+  */
+  it('ne descend jamais sous une seconde', () => {
+    expect(corpsNoteVocale(0)).toBe('1')
+    expect(corpsNoteVocale(0.4)).toBe('1')
+  })
+
+  /*
+    ⚠️ **Ce que ce test NE prouve pas.** Il vérifie la valeur, pas que l'écran l'envoie : le chemin
+    complet d'enregistrement n'est pas jouable sous jsdom, qui n'a pas de `MediaRecorder`. C'est
+    écrit ici plutôt que laissé croire — *un test qui ne dit pas sa limite se fait prendre pour une
+    garantie qu'il n'offre pas.*
+  */
+  it.todo('le composeur envoie ce corps avec le fichier — à vérifier en ligne, faute de MediaRecorder')
 })

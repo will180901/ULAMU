@@ -24,7 +24,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
 import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
 import { useSessionStore } from '@/state/session.store'
-import { api, type CareSession, type CareSessionStatus, type MeResponse, type SessionMessage } from '@/lib/api'
+import { api, lireMediaSession, type CareSession, type CareSessionStatus, type MeResponse, type SessionMessage } from '@/lib/api'
 
 const MOI: MeResponse = {
   accountId: 'pro-1',
@@ -205,8 +205,24 @@ async function monter(s: CareSession, items: SessionMessage[] = []) {
 
 const fil = () => within(screen.getByRole('region', { name: 'Fil de la consultation' }))
 
+/**
+ * `lireMediaSession` fait un `fetch` avec jeton puis fabrique une URL `blob:` — deux choses que
+ * jsdom ne sait pas faire. C'est un export AUTONOME du module, pas une méthode de `api` : on ne
+ * peut pas l'espionner, il faut remplacer le module.
+ *
+ * ⚠️ Son comportement par défaut reste l'ÉCHEC, posé dans le `beforeEach`. Plusieurs tests
+ * s'appuient dessus : ils s'ancrent sur « Média indisponible. » pour trouver une bulle de photo.
+ * Le faire réussir par défaut les casserait tous — *une doublure qui change le comportement par
+ * défaut change des tests qui ne parlent pas d'elle.*
+ */
+vi.mock('@/lib/api', async (importOriginal) => {
+  const reel = await importOriginal<typeof import('@/lib/api')>()
+  return { ...reel, lireMediaSession: vi.fn() }
+})
+
 beforeEach(() => {
   vi.restoreAllMocks()
+  vi.mocked(lireMediaSession).mockRejectedValue(new Error('média non simulé'))
   localStorage.clear()
   // Radix pose `pointer-events: none` et `data-scroll-locked` sur le <body> tant qu'un menu ou un
   // panneau est ouvert, et les LAISSE en place si le composant est démonté dans cet état. Le test
@@ -831,6 +847,91 @@ describe('C5 — la note vocale (chantier 75)', () => {
     const micro = await screen.findByRole('button', { name: /Enregistrer une note vocale/i })
     expect(micro).toBeDisabled()
     expect(micro.getAttribute('title')).toMatch(/aucun format audio accepté/i)
+  })
+})
+
+describe('C5 — la note vocale (chantier 90)', () => {
+  /**
+   * Le média est servi par `lireMediaSession`. Sans cette doublure, la bulle affiche « Média
+   * indisponible » et le lecteur n'existe jamais — on testerait l'écran d'échec.
+   */
+  const servirUnSon = () =>
+    vi.mocked(lireMediaSession).mockResolvedValue({ url: 'blob:note', type: 'audio/mp4' })
+
+  const vocal = (over: Partial<SessionMessage> = {}) =>
+    message({ senderId: 'pat-1', kind: 'VOICE', fileKey: 'k-audio', mediaKeys: [], body: '76', ...over })
+
+  /*
+    ── ⚠️ Le défaut vu sur une VRAIE consultation, pas dans le code ─────────────────────────────
+
+    Le mobile envoie la durée en secondes dans `body` (`emit('VOICE', { body: '76' })`). Le web
+    l'affichait comme une légende : sous chaque note vocale venue d'un téléphone, on lisait un
+    « 76 » qui ne voulait rien dire.
+
+    *Un champ qui change de signification selon un autre champ est un piège que les types ne
+    rattrapent pas — `body: string | null` ne dit rien de ce basculement.*
+  */
+  it('n’affiche plus la durée comme une légende — le « 76 » a disparu', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+
+    expect(await fil().findByLabelText('Écouter la note vocale')).toBeInTheDocument()
+    expect(fil().queryByText('76')).not.toBeInTheDocument()
+  })
+
+  it('et la durée s’affiche en clair, avant même que le son soit chargé', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+
+    // 76 secondes annoncées par l'expéditeur → « 1:16 », sans attendre les métadonnées.
+    expect(await fil().findByText('1:16')).toBeInTheDocument()
+  })
+
+  /*
+    Mais `body` reste du TEXTE partout ailleurs : une légende écrite à la main doit s'afficher.
+    Sans cette distinction, on effacerait un vrai message sous prétexte qu'il accompagne un son.
+  */
+  it('une légende écrite reste affichée', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal({ body: 'écoutez à partir de la fin' })])
+
+    expect(await fil().findByText('écoutez à partir de la fin')).toBeInTheDocument()
+  })
+
+  /*
+    ── L'onde, et ce qu'elle promet ─────────────────────────────────────────────────────────────
+
+    Sous jsdom il n'y a pas de `AudioContext` : le décodage échoue, et le lecteur doit afficher des
+    barres ÉGALES. **C'est exactement ce qu'on veut vérifier** — *un dessin au hasard prétend dire
+    quelque chose du son ; des barres égales n'affirment rien.* Le mobile, lui, dessine une onde
+    pseudo-aléatoire faute de pouvoir décoder ; le web ne l'imite pas.
+  */
+  it('sans décodage possible, l’onde est NEUTRE — elle n’invente pas un son', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+    await fil().findByLabelText('Écouter la note vocale')
+
+    const barres = [...document.querySelectorAll('[aria-hidden="true"] > span[style*="height"]')]
+    expect(barres.length).toBeGreaterThanOrEqual(36)
+    const hauteurs = new Set(barres.slice(0, 36).map((b) => (b as HTMLElement).style.height))
+    expect(hauteurs.size).toBe(1)
+  })
+
+  /* La vitesse tourne 1× → 1,5× → 2× → 1×, comme sur le téléphone. */
+  it('la vitesse de lecture se change, et revient à 1×', async () => {
+    servirUnSon()
+    const utilisateur = userEvent.setup()
+    await monter(seance(), [vocal()])
+
+    const bouton = await fil().findByRole('button', { name: /Vitesse de lecture/ })
+    expect(bouton).toHaveTextContent('1×')
+
+    await utilisateur.click(bouton)
+    expect(bouton).toHaveTextContent('1,5×')
+    await utilisateur.click(bouton)
+    expect(bouton).toHaveTextContent('2×')
+    await utilisateur.click(bouton)
+    expect(bouton).toHaveTextContent('1×')
   })
 })
 

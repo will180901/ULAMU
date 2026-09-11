@@ -81,9 +81,7 @@ import {
   Hourglass,
   ImagePlus,
   Lock,
-  Pause,
   Pencil,
-  Play,
   Plus,
   Send,
   ShieldAlert,
@@ -119,9 +117,10 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
-import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
+import { compresserImage, corpsNoteVocale, enBase64, MIMES_IMAGE, titreConsultation } from '../media'
 import { Emoji, seulementDesEmoji } from '../Emoji'
 import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
+import { LecteurVocal } from '../LecteurVocal'
 import { SelecteurEmoji } from '../SelecteurEmoji'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -184,7 +183,16 @@ function dureeFr(secondes: number): string {
 
 // ── Une bulle du fil ───────────────────────────────────────────────────────
 
-function Media({ fileKey }: { fileKey: string }) {
+function Media({
+  fileKey,
+  aMoi = false,
+  dureeAnnoncee,
+}: {
+  fileKey: string
+  aMoi?: boolean
+  /** Voir `LecteurVocal` : la durée envoyée par l'expéditeur, avant que le son soit chargé. */
+  dureeAnnoncee?: number | null
+}) {
   const [url, setUrl] = useState<string | null>(null)
   // Le TYPE servi par le serveur : c'est lui qui distingue une photo d'une note vocale. Il était
   // renvoyé par `lireMediaSession` depuis toujours, et jeté ici (chantier 75).
@@ -215,76 +223,8 @@ function Media({ fileKey }: { fileKey: string }) {
   if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
   if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
   // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
-  if (type?.startsWith('audio/')) return <LecteurVocal url={url} />
+  if (type?.startsWith('audio/')) return <LecteurVocal url={url} aMoi={aMoi} dureeAnnoncee={dureeAnnoncee} />
   return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
-}
-
-/**
- * Le lecteur d'une note vocale, DANS la bulle — chantier 75.
- *
- * ── Pourquoi pas `<audio controls>` ────────────────────────────────────────────────────────────
- *
- * Les contrôles natifs mesurent 300 px de large, changent d'allure à chaque navigateur, et ignorent
- * le thème. Dans une bulle de conversation, ils écrasent le message. Celui-ci tient en 200 px,
- * suit les jetons, et ne montre que ce dont on se sert : lire, s'arrêter, savoir où on en est.
- *
- * ⚠️ La durée vient du fichier, jamais d'un calcul : `duration` peut valoir `Infinity` tant que les
- * métadonnées ne sont pas lues — on affiche alors un tiret plutôt qu'un nombre faux.
- */
-function LecteurVocal({ url }: { url: string }) {
-  const audio = useRef<HTMLAudioElement | null>(null)
-  const [joue, setJoue] = useState(false)
-  const [position, setPosition] = useState(0)
-  const [duree, setDuree] = useState<number | null>(null)
-
-  const fraction = duree && duree > 0 ? Math.min(1, position / duree) : 0
-
-  return (
-    <span className="flex w-full max-w-[260px] items-center gap-2 rounded-full border border-border bg-secondary px-2.5 py-1.5">
-      <audio
-        ref={audio}
-        src={url}
-        preload="metadata"
-        onLoadedMetadata={(e) => {
-          const d = e.currentTarget.duration
-          setDuree(Number.isFinite(d) && d > 0 ? d : null)
-        }}
-        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
-        onEnded={() => {
-          setJoue(false)
-          setPosition(0)
-        }}
-        className="sr-only"
-      />
-      <button
-        type="button"
-        aria-label={joue ? 'Mettre en pause' : 'Écouter la note vocale'}
-        onClick={() => {
-          const el = audio.current
-          if (!el) return
-          if (joue) {
-            el.pause()
-            setJoue(false)
-          } else {
-            void el.play().then(() => setJoue(true)).catch(() => setJoue(false))
-          }
-        }}
-        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--ap-400)] text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-      >
-        {joue ? <Pause size={13} strokeWidth={2} aria-hidden="true" /> : <Play size={13} strokeWidth={2} aria-hidden="true" />}
-      </button>
-
-      {/* La barre de progression. `aria-hidden` : la durée juste à côté dit déjà tout ce qu'un
-          lecteur d'écran a besoin d'entendre, et les contrôles natifs restent accessibles. */}
-      <span aria-hidden="true" className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--bordure-normale)]">
-        <span className="block h-full rounded-full bg-[var(--ap-400)]" style={{ width: `${fraction * 100}%` }} />
-      </span>
-
-      <span className="shrink-0 t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
-        {duree === null ? '—' : formatDuree(joue || position > 0 ? duree - position : duree)}
-      </span>
-    </span>
-  )
 }
 
 /** Les réactions agrégées, sous la bulle. Un clic sur la mienne la retire — le serveur bascule. */
@@ -645,6 +585,14 @@ function Bulle({
   onAllerAuCite: (id: string) => void
 }) {
   const cles = m.mediaKeys.length > 0 ? m.mediaKeys : m.fileKey ? [m.fileKey] : []
+
+  /*
+    La durée d'une note vocale, lue dans `body` — voir la note plus bas. `null` dès que le message
+    n'est pas une note vocale, ou que le corps n'est pas un nombre : dans ce cas `body` redevient
+    ce qu'il est partout ailleurs, du texte à afficher.
+  */
+  const dureeVocale =
+    m.kind === 'VOICE' && m.body !== null && /^\d+$/.test(m.body.trim()) ? Number(m.body.trim()) : null
   const dansLaFenetre = Date.now() - new Date(m.createdAt).getTime() <= FENETRE_EDITION_MS
 
   /*
@@ -815,7 +763,7 @@ function Bulle({
           ) : null}
 
           {cles.map((k) => (
-            <Media key={k} fileKey={k} />
+            <Media key={k} fileKey={k} aMoi={aMoi} dureeAnnoncee={dureeVocale} />
           ))}
           {/*
             ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
@@ -831,7 +779,19 @@ function Bulle({
             d'un message de consultation porte des données de santé : on l'affiche, on ne le
             transforme pas.
           */}
-          {m.body ? (
+          {/*
+            ── ⚠️ Sur une note vocale, `body` est la DURÉE, pas une légende (chantier 90) ────────
+
+            Le mobile envoie la durée en secondes dans ce champ (`emit('VOICE', { body: '76' })`).
+            Le web l'affichait tel quel : sous chaque note vocale venue d'un téléphone, on lisait
+            un « 76 » qui ne voulait rien dire pour personne.
+
+            Trouvé en regardant l'écran d'une vraie consultation, pas en lisant le code — le type
+            `SessionMessage` dit « body: string | null » et ne dit rien de ce changement de sens
+            selon `kind`. *Un champ qui change de signification selon un autre champ est un piège
+            que les types ne rattrapent pas : seul un commentaire, ou un écran, le révèle.*
+          */}
+          {m.body && dureeVocale === null ? (
             seulementDesEmoji(m.body) ? (
               <p className="leading-none">
                 <TexteMisEnForme texte={m.body} taille={34} />
@@ -1448,9 +1408,22 @@ export function ConsultationPage() {
    * charge, parce que le format par défaut des navigateurs Chromium (`audio/webm`) serait refusé.
    */
   const envoyerVocal = useMutation({
-    mutationFn: async (f: File) => {
-      const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(f), mime: f.type })
-      return api.sendMessage(sessionId, { clientMsgId: crypto.randomUUID(), kind: 'VOICE', fileKey: up.fileKey })
+    /*
+      ⚠️ La DURÉE part avec le fichier (chantier 90). Le mobile le fait depuis toujours — il met le
+      nombre de secondes dans `body` — et le web ne le faisait pas : une note enregistrée ici
+      arrivait sur le téléphone du patient sans sa durée, affichée « — » le temps du chargement.
+
+      C'est le pendant exact du défaut corrigé à l'affichage : les deux applications se parlent, et
+      l'une des deux ne disait pas tout.
+    */
+    mutationFn: async ({ fichier, secondes }: { fichier: File; secondes: number }) => {
+      const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(fichier), mime: fichier.type })
+      return api.sendMessage(sessionId, {
+        clientMsgId: crypto.randomUUID(),
+        kind: 'VOICE',
+        fileKey: up.fileKey,
+        body: corpsNoteVocale(secondes),
+      })
     },
     onSuccess: () => {
       setVocalOuvert(false)
@@ -1943,7 +1916,7 @@ export function ConsultationPage() {
                   <EnregistreurVocal
                     enCours={envoyerVocal.isPending}
                     onAnnuler={() => setVocalOuvert(false)}
-                    onEnvoyer={(f) => envoyerVocal.mutate(f)}
+                    onEnvoyer={(note) => envoyerVocal.mutate(note)}
                   />
                 ) : null}
 
