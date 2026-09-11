@@ -61,7 +61,7 @@
  * `MediaRecorder`, un encodage et une gestion de permission micro — un chantier à part. Texte et
  * photos suffisent à la démonstration, et l'API accepte déjà les deux.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import {
@@ -120,7 +120,10 @@ import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
-import { Emoji, seulementDesEmoji, texteAvecEmoji } from '../Emoji'
+import { Emoji, seulementDesEmoji } from '../Emoji'
+import { TexteMessage } from '../TexteMessage'
+import { BulleFormatage } from '../BulleFormatage'
+import { continuerListe } from '../texte-riche'
 import { SelecteurEmoji } from '../SelecteurEmoji'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -832,9 +835,13 @@ function Bulle({
           */}
           {m.body ? (
             seulementDesEmoji(m.body) ? (
-              <p className="leading-none">{texteAvecEmoji(m.body, 34)}</p>
+              <p className="leading-none">
+                <TexteMessage texte={m.body} taille={34} />
+              </p>
             ) : (
-              <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">{texteAvecEmoji(m.body)}</p>
+              <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">
+                <TexteMessage texte={m.body} />
+              </p>
             )
           ) : null}
         </div>
@@ -1414,6 +1421,26 @@ export function ConsultationPage() {
     onError: (e) => setErreur(messageErreur(e)),
   })
 
+  /*
+    ── Le curseur, après une réécriture du brouillon (chantier 86) ──────────────────────────────
+
+    Quand un bouton de la bulle ou Ctrl+Entrée réécrit le texte, React repose la valeur du champ et
+    le navigateur remet le curseur À LA FIN. Sans ce rattrapage, on perdrait sa place à chaque
+    geste : impossible de mettre un mot en gras PUIS en italique, impossible d'enchaîner deux
+    lignes de liste.
+
+    Un `useLayoutEffect` et non un `useEffect` : le replacement doit avoir lieu avant que le
+    navigateur ne peigne, sinon on voit le curseur sauter.
+  */
+  const curseurARendre = useRef<{ debut: number; fin: number } | null>(null)
+  useLayoutEffect(() => {
+    const cible = curseurARendre.current
+    if (!cible || !champTexte.current) return
+    curseurARendre.current = null
+    champTexte.current.focus()
+    champTexte.current.setSelectionRange(cible.debut, cible.fin)
+  }, [brouillon])
+
   // Signal de frappe, au plus une fois toutes les quatre secondes : le serveur lui donne ~6 s de vie.
   const dernierPing = useRef(0)
   const signalerFrappe = () => {
@@ -1938,6 +1965,26 @@ export function ConsultationPage() {
                       if (mode.type !== 'edition') signalerFrappe()
                     }}
                     onKeyDown={(e) => {
+                      /*
+                        ── Ctrl+Entrée : la suite logique de la liste (chantier 86) ─────────────
+
+                        Il passe AVANT le test d'envoi : Ctrl+Entrée n'a pas la touche Maj, et
+                        serait donc parti comme un envoi. Un raccourci ajouté après coup doit
+                        toujours être lu avant celui qu'il affine.
+
+                        Sur un élément de liste qui a du contenu, on reprend la puce ou le numéro
+                        suivant. Sur un élément VIDE, on sort de la liste — c'est ce que le porteur
+                        demandait : *supprimer la ligne courante annule la suite automatique*.
+                        Hors d'une liste, il passe simplement à la ligne.
+                      */
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault()
+                        const champ = e.currentTarget
+                        const r = continuerListe(brouillon, champ.selectionStart ?? brouillon.length)
+                        curseurARendre.current = { debut: r.curseur, fin: r.curseur }
+                        setBrouillon(r.texte)
+                        return
+                      }
                       // Entrée envoie, Maj+Entrée passe à la ligne — la convention de toute messagerie.
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
@@ -1948,6 +1995,20 @@ export function ConsultationPage() {
                         e.preventDefault()
                         quitterLeMode()
                       }
+                    }}
+                  />
+                  {/*
+                    La bulle se rend dans `document.body` (portail) : elle doit flotter au-dessus du
+                    champ sans être rognée par le composeur, qui est une pilule à débordement caché.
+                    Sa place dans l'arbre ne décide donc pas de sa place à l'écran — seulement de
+                    son cycle de vie, qui suit celui du champ.
+                  */}
+                  <BulleFormatage
+                    champ={champTexte}
+                    valeur={brouillon}
+                    onChanger={(texte, debut, fin) => {
+                      curseurARendre.current = { debut, fin }
+                      setBrouillon(texte)
                     }}
                   />
                   <Button

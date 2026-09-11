@@ -670,6 +670,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **83** | **C5 — deux zones fixes, et le rail devient un jeu d'onglets nommés** — 11/09, demande du porteur : *« la zone des messages fixe, le scroll à l'intérieur ; la zone de droite fixe aussi, avec une pagination et deux flèches »* — puis *« propose 10 000 fois mieux, et donne les raisons »*. **Les flèches sont gardées AU CLAVIER** (`←`/`→`, motif ARIA complet) et remplacées à l'écran par des **onglets nommés** : *une flèche est un excellent raccourci, c'est un mauvais menu*. 📌 **La raison décisive** : le compte-rendu a 24 h (PM-30) et les gains sont **gelés** passé ce délai (CU-06-03) — derrière trois clics de flèche, un soignant peut fermer une consultation sans jamais voir qu'il lui reste six heures. *Une information qui porte une échéance ne doit jamais dépendre d'un clic.* L'onglet porte donc sa **marque** (« 3 h », « déposé », le nombre d'ordonnances, « clos »), une **bande d'échéance reste visible quel que soit l'onglet ouvert et CONDUIT à la carte**, et le rail **s'ouvre tout seul sur ce qui presse** sans jamais bousculer un choix mémorisé. ⚠️ Corrige au passage un vrai défaut : le fil était bloqué à **46 % de la hauteur de l'écran** quelle que soit sa taille. **web 907 ✓ (895 + 12) · paquet 997 → 1 002 Ko · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **84** | **C5 — le plancher à zéro qui fabriquait une fausse échéance** — 11/09, trouvé **en ligne, sur la consultation réelle du porteur**, une heure après avoir livré le chantier 83. L'onglet disait « **expiré** », la bande trois centimètres plus bas « **moins d'une minute restantes** », et la carte juste en dessous « le délai est dépassé depuis le 29/08/2026, vos gains sont gelés ». **Trois affichages du même fait, dont deux qui se contredisaient.** 📌 **La cause : un `Math.max(0, …)`.** Un plancher à zéro transforme « dépassé de deux semaines » en « zéro seconde », donc en « moins d'une minute » — *un plancher n'est pas une protection quand il fabrique une valeur fausse au lieu de dire qu'il n'y en a pas.* ⚠️ Ce délai décide du **paiement** (CU-06-03) : annoncer qu'il reste une minute à un soignant dont les gains sont gelés depuis deux semaines, c'est lui faire croire qu'il peut encore les sauver. L'échéance est désormais lue **une seule fois** et consommée par les deux affichages — *deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose.* **web 910 ✓ (907 + 3) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
 | **85** | **Les codes du cahier sortent des textes affichés** — 11/09, demande du porteur : *« retire partout les textes du genre (RM-06-04), (EF-06-06)… nous sommes en production »*. **154 citations retirées dans 40 fichiers** — web, mobile et **serveur**. 📌 Le plus important était invisible depuis l'écran : **53 messages d'erreur du serveur** portaient un code, et ce sont eux qu'un patient lit quand quelque chose échoue — « Compte suspendu (RM-01-05) », « Code expiré (PM-17) ». ⚠️ **Trois choses NE partent pas**, et la distinction est le vrai travail : les **commentaires du code** (la traçabilité vers le cahier, qui ne se voit pas) ; les **clés de paramètre** `PM-xx` de l'écran Paramètres métier et de l'API publique (là, le code n'est pas une citation, c'est **la donnée** — la retirer laisserait des lignes sans nom) ; les **erreurs de démarrage** destinées à l'exploitant, où le code nomme le paramètre mal réglé. **Deux défauts trouvés en chemin** : un JSDoc **dupliqué sur une ligne** dans `m03` (présent dans HEAD avant ce chantier), et surtout **un test d'absence devenu vide** — il vérifiait qu'un texte portant « (PM-01) » était absent, donc il serait resté vert même si la carte s'affichait. **web 910 ✓ · API unitaires 641 ✓ · lint 0 · builds ✓ · 1 faute injectée sur le test réparé, détectée.** | ⏸ en attente | ⏸ |
+| **86** | **La mise en forme d'un message — bulle sur la sélection, listes, web ET mobile** — 11/09, demande du porteur : *« une bulle au-dessus du texte sélectionné, avec gras, italique, barré, souligné, taille, et transformer en liste ; Ctrl+Entrée continue la liste ; supprimer la ligne courante annule la suite »*. Livré **en entier**, et **dans les deux applications au même commit** — sans le mobile, le patient lirait « *prenez ce médicament* » avec ses astérisques pendant que le soignant croirait avoir insisté. 📌 **Une grammaire, trois copies, un garde-fou** : la source est `packages/shared/src/texte-riche.ts`, vendorée selon la convention du projet — mais **rien ne vérifiait jusqu'ici qu'une copie ne dérive pas**. Un test compare désormais les trois **à l'octet près**. ⚠️ **La règle qui protège le vocabulaire du soin** : un marqueur n'ouvre qu'en début de mot et ne ferme qu'en fin de mot — sans elle, `nom_de_famille` deviendrait « nomdefamille » avec « de » en italique. WhatsApp ne pose pas cette règle ; ici le texte est un dossier. **Le champ reste un vrai champ de texte** (il montre `*gras*`) : un éditeur qui stylise en direct manipulerait du HTML dans un message qui porte des données de santé. **web 966 ✓ · lint 0 · builds et types propres · 9 fautes injectées, 9 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -718,6 +719,88 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 86 (la mise en forme) a appris
+
+*11/09/2026 — une grammaire est un contrat entre deux applications.*
+
+#### Ce qui a été livré
+
+Une **bulle qui apparaît au-dessus de la sélection** — gras, italique, barré, souligné, agrandir,
+liste à puces, liste numérotée — plus **Ctrl+Entrée** qui continue la liste, et qui en SORT quand
+la ligne courante est vide. C'est la demande du porteur, mot pour mot.
+
+Et le rendu dans **les deux applications au même commit**. Ce n'était pas négociable : sans le
+mobile, un patient lirait « *prenez ce médicament* » avec ses astérisques pendant que le soignant
+croirait avoir insisté. *Une mise en forme livrée d'un seul côté n'est pas une demi-fonctionnalité,
+c'est un malentendu.*
+
+#### ⚠️ Une grammaire, trois copies — et personne pour les surveiller
+
+Le projet vendore : `packages/shared/src/…` est la source, chaque application en garde une copie.
+La convention existait pour `api-client`, `auth`, `validation` — mais **rien ne vérifiait que les
+copies ne dérivaient pas**. Seulement un commentaire en tête qui le demandait poliment.
+
+Pour cette grammaire-ci, une dérive ne serait pas une gêne de développeur : **le patient verrait
+autre chose que ce que le soignant a écrit.** Un test compare donc les trois copies **à l'octet
+près**, et son message d'échec nomme le geste à faire — sinon on finit par aligner la source sur la
+copie, dans le mauvais sens.
+
+C'est la leçon du chantier 84 (*deux endroits qui calculent la même chose finissent par ne plus
+dire la même chose*), appliquée le jour même à un cas où la divergence serait silencieuse.
+
+#### La règle qu'il a fallu ajouter : le vocabulaire du soin
+
+Trois règles empêchent les faux positifs. Les deux premières venaient du bon sens :
+
+1. un marqueur **ne traverse pas une ligne** — sinon un astérisque égaré emporte un paragraphe ;
+2. **pas d'espace collé** à l'intérieur — « 2 * 3 * 4 » reste une multiplication.
+
+La troisième est née d'un test qui tombait : **un marqueur n'ouvre qu'en début de mot et ne ferme
+qu'en fin de mot**. Sans elle, `nom_de_famille` devient « nomdefamille » avec « de » en italique, et
+le nom d'un fichier, d'une molécule ou d'un identifiant se fait manger ses tirets bas **sans que
+personne le voie**.
+
+WhatsApp ne pose pas cette règle. Nous si — *ici, le texte est un dossier.*
+
+#### Ce que la grammaire ne promet PAS, écrit plutôt que subi
+
+Une suite de marqueurs sans texte autour (`### ###`, `_*__~`) se combine d'une façon qu'on ne
+devinerait pas. C'est le lot de toute grammaire légère. Deux tests **fixent ce comportement** au
+lieu de le nier : aucun texte de soin réaliste ne ressemble à cela, et le jour où la grammaire
+changera, ces deux lignes le diront.
+
+*Un défaut connu et fixé par un test est une décision. Le même défaut non écrit est une surprise
+qui attend son tour.*
+
+#### Le champ reste un champ de texte
+
+Il montre `*important*` pendant la frappe, et le gras apparaît dans le message envoyé — le
+comportement de WhatsApp. Ce n'est pas un renoncement : **un éditeur qui stylise en direct manipule
+du HTML**, et le corps d'un message de consultation porte des données de santé. Ce qui est stocké
+est exactement ce qui a été tapé : aucune balise à nettoyer, aucun collage à désinfecter.
+
+Un test tient la frontière : `<b>` écrit doit être `<b>` lu, et aucune balise réelle n'est créée.
+*C'est lui qui interdira, un jour, d'ajouter « juste un petit rendu HTML ».*
+
+#### Les deux subtilités d'une barre flottante
+
+| | |
+|---|---|
+| **`onMouseDown` neutralisé** | Sans cela, le champ perd le focus au clic et le bouton agit sur un curseur vide. C'est LA subtilité de toute barre flottante. |
+| **La sélection rendue après coup** | React repose la valeur, le navigateur remet le curseur à la fin. Sans rattrapage, il faudrait re-sélectionner entre chaque bouton — impossible de mettre un mot en gras PUIS en italique. Un test l'exige. |
+
+Et un choix de placement : la bulle est mesurée dans un **miroir** — un `<textarea>` ne contient
+aucun nœud de texte, on ne peut pas lui demander où tombe une sélection. Sous jsdom toutes les
+mesures valent zéro, donc **aucun test ne porte sur la position** : elle se vérifie à l'œil, comme
+la poignée du chantier 82. *Écrire ce qu'un test ne prouve pas vaut mieux que laisser croire qu'il
+le prouve.*
+
+#### Ce qui n'a PAS été fait, et pourquoi
+
+**La bulle n'est pas posée sur le compte-rendu.** Il est lu ailleurs — administration, patient —
+par des écrans qui ne rendent pas ces marqueurs. Un soignant y écrirait `*important*` et un
+administrateur lirait les astérisques. On l'étendra quand ces écrans rendront la même grammaire.
 
 ### Ce que le chantier 85 (les codes du cahier) a appris
 

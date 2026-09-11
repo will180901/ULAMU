@@ -1214,6 +1214,179 @@ describe('C5 — l’avertissement de remboursement', () => {
  * aucune n'est décorative : la lecture seule, la traçabilité de l'accès, et sa fermeture à la
  * clôture — le compte-rendu rédigé à la 23ᵉ heure n'aura plus le Carnet sous les yeux.
  */
+describe('C5 — la mise en forme du texte (chantier 86)', () => {
+  /**
+   * Sélectionne du texte dans le champ et prévient le document.
+   *
+   * ⚠️ `userEvent` ne sait pas poser une sélection dans un `<textarea>` : il tape et il clique,
+   * il ne surligne pas. On pose donc la sélection à la main et on émet `selectionchange`, qui est
+   * exactement l'événement que la bulle écoute. *Simuler le geste au plus près de ce que le
+   * navigateur émet vaut mieux que simuler ce qu'on aurait aimé qu'il émette.*
+   */
+  const selectionner = async (champ: HTMLTextAreaElement, debut: number, fin: number) => {
+    champ.focus()
+    champ.setSelectionRange(debut, fin)
+    document.dispatchEvent(new Event('selectionchange'))
+    return await screen.findByRole('toolbar', { name: 'Mise en forme du texte' })
+  }
+
+  const champ = () => screen.getByLabelText('Votre message') as HTMLTextAreaElement
+
+  it('aucune bulle tant que rien n’est sélectionné', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+
+    expect(screen.queryByRole('toolbar', { name: 'Mise en forme du texte' })).not.toBeInTheDocument()
+  })
+
+  it('la bulle apparaît dès qu’on sélectionne, et porte les sept outils', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+
+    const barre = await selectionner(champ(), 3, 8)
+
+    for (const nom of ['Gras', 'Italique', 'Barré', 'Souligné', 'Agrandir', 'Liste à puces', 'Liste numérotée']) {
+      expect(within(barre).getByRole('button', { name: nom })).toBeInTheDocument()
+    }
+  })
+
+  it('elle disparaît quand la sélection se réduit à rien', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+    await selectionner(champ(), 3, 8)
+
+    champ().setSelectionRange(5, 5)
+    document.dispatchEvent(new Event('selectionchange'))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('toolbar', { name: 'Mise en forme du texte' })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('« Gras » entoure la sélection, et la GARDE sur le texte', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+    const barre = await selectionner(champ(), 3, 8)
+
+    await utilisateur.click(within(barre).getByRole('button', { name: 'Gras' }))
+
+    expect(champ().value).toBe('du *repos*')
+    /*
+      La sélection doit rester SUR LE MOT. Sans ce rattrapage, le navigateur remet le curseur à la
+      fin et il faudrait re-sélectionner entre chaque bouton — on ne pourrait pas mettre un mot en
+      gras PUIS en italique.
+    */
+    expect(champ().value.slice(champ().selectionStart, champ().selectionEnd)).toBe('repos')
+  })
+
+  it('et deux styles s’enchaînent sans re-sélectionner', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+    const barre = await selectionner(champ(), 3, 8)
+
+    await utilisateur.click(within(barre).getByRole('button', { name: 'Gras' }))
+    await utilisateur.click(await screen.findByRole('button', { name: 'Italique' }))
+
+    expect(champ().value).toBe('du *_repos_*')
+  })
+
+  it('« Liste à puces » transforme les lignes sélectionnées', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos{Shift>}{Enter}{/Shift}de l’eau')
+    const barre = await selectionner(champ(), 0, champ().value.length)
+
+    await utilisateur.click(within(barre).getByRole('button', { name: 'Liste à puces' }))
+
+    expect(champ().value).toBe('• du repos\n• de l’eau')
+  })
+
+  /*
+    ── Ctrl+Entrée : la suite logique de la liste, demandée par le porteur ──────────────────────
+
+    Il passe AVANT le test d'envoi : Ctrl+Entrée n'a pas la touche Maj et serait parti comme un
+    envoi. *Un raccourci ajouté après coup doit être lu avant celui qu'il affine.*
+  */
+  it('Ctrl+Entrée continue la liste au lieu d’envoyer', async () => {
+    const envoyer = vi.spyOn(api, 'sendMessage')
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), '• du repos')
+
+    await utilisateur.keyboard('{Control>}{Enter}{/Control}')
+
+    expect(champ().value).toBe('• du repos\n• ')
+    expect(envoyer).not.toHaveBeenCalled()
+  })
+
+  it('et sur un élément VIDE, il sort de la liste — la demande exacte du porteur', async () => {
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), '• du repos')
+    await utilisateur.keyboard('{Control>}{Enter}{/Control}')
+    expect(champ().value).toBe('• du repos\n• ')
+
+    await utilisateur.keyboard('{Control>}{Enter}{/Control}')
+
+    expect(champ().value).toBe('• du repos\n')
+  })
+
+  /* Entrée seule continue d'envoyer : le raccourci ajouté ne vole pas le geste principal. */
+  it('Entrée seule envoie toujours', async () => {
+    const envoyer = vi.spyOn(api, 'sendMessage').mockResolvedValue(message())
+    await monter(seance())
+    const utilisateur = userEvent.setup()
+    await utilisateur.type(champ(), 'du repos')
+
+    await utilisateur.keyboard('{Enter}')
+
+    await waitFor(() => expect(envoyer).toHaveBeenCalled())
+  })
+})
+
+describe('C5 — le rendu d’un message mis en forme (chantier 86)', () => {
+  it('le gras se rend en gras, et le marqueur disparaît', async () => {
+    await monter(seance(), [message({ body: 'Prenez *deux* comprimés' })])
+
+    const gras = await fil().findByText('deux')
+    expect(gras).toHaveStyle({ fontWeight: '600' })
+    expect(fil().queryByText(/\*deux\*/)).not.toBeInTheDocument()
+  })
+
+  it('le barré et le souligné aussi', async () => {
+    await monter(seance(), [message({ body: '~annulé~ puis __noté__' })])
+
+    expect(await fil().findByText('annulé')).toHaveStyle({ textDecorationLine: 'line-through' })
+    expect(fil().getByText('noté')).toHaveStyle({ textDecorationLine: 'underline' })
+  })
+
+  /*
+    ⚠️ **La frontière entre afficher et interpréter.** Le corps d'un message porte des données de
+    santé : un patient qui écrit `<b>` doit LIRE `<b>`. Ce test est plus important qu'il n'en a
+    l'air — c'est lui qui interdira, un jour, d'ajouter « juste un petit rendu HTML ».
+  */
+  it('une balise reste une balise — rien n’est interprété', async () => {
+    await monter(seance(), [message({ body: 'attention <b>gras ?</b>' })])
+
+    const rendu = await fil().findByText(/<b>gras \?<\/b>/)
+    expect(rendu).toBeInTheDocument()
+    // Le texte est AFFICHÉ, jamais lu : aucune balise `<b>` réelle n'a été créée dans la bulle.
+    expect(rendu.closest('p')?.querySelector('b')).toBeFalsy()
+  })
+
+  /* Et la protection du vocabulaire du soin tient jusqu'à l'écran, pas seulement dans la grammaire. */
+  it('un tiret bas au milieu d’un mot ne fait pas d’italique', async () => {
+    await monter(seance(), [message({ body: 'dossier nom_de_famille' })])
+
+    expect(await fil().findByText(/nom_de_famille/)).toBeInTheDocument()
+  })
+})
+
 describe('C5 — le rail d’informations (chantier 83)', () => {
   /** Une séance close, dont l'échéance de dépôt tombe dans `heures` heures. */
   const close = (heures: number) =>
