@@ -18,6 +18,27 @@ export default mergeConfig(
       globals: true,
       setupFiles: ['./src/test/setup.ts'],
       css: false,
+      /*
+        ── Pourquoi 15 s et non les 5 s par défaut — chantier 74, 11/09/2026 ──────────────────────
+
+        La suite a dépassé les 800 tests, et une exécution COMPLÈTE rendait **13 échecs répartis
+        dans quatre fichiers**, tous à ~5 000 ms pile — c'est-à-dire des dépassements de délai, pas
+        des assertions fausses. Relancés **seuls**, ces quatre fichiers passent : 140 tests, verts.
+
+        La cause est connue et notée à la passation : `userEvent` rejoue des séquences de pointeur
+        (survol, appui, relâchement) et devient très lent quand les workers se partagent la machine.
+        Ce n'est pas le code applicatif qui est lent, c'est le harnais.
+
+        ⚠️ **Ce réglage ne masque aucun défaut.** Un test qui échoue pour une vraie raison échoue
+        toujours, et aussi vite qu'avant : le délai ne borne que l'ATTENTE d'une condition qui ne
+        vient jamais. Ce qu'il supprime, ce sont les faux rouges — et un filet qui crie au loup une
+        fois sur deux cesse d'être lu, ce qui est exactement le risque que ce projet ne peut pas
+        prendre : toute la méthode repose sur la comparaison avant/après.
+
+        Si un jour un test met vraiment 15 s, c'est un autre problème — et il faudra le traiter,
+        pas relever le plafond une seconde fois.
+      */
+      testTimeout: 15_000,
       coverage: {
         provider: 'v8',
         reportsDirectory: './coverage',

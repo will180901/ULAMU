@@ -14,7 +14,7 @@
  * « pas plus avant paiement » (EF-06-01). Sans elle, on décidait sur un identifiant technique.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -91,6 +91,127 @@ const file = () => within(screen.getByRole('region', { name: 'File des demandes'
 
 beforeEach(() => {
   vi.restoreAllMocks()
+})
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  CHANTIER 74 — une demande PAYÉE n'attend plus son paiement
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  Trouvé en ouvrant la demande du 28/08 sur le site : sa pastille disait « Payée », et l'écran, juste
+  en dessous, demandait d'attendre le paiement. La phrase n'était conditionnée par AUCUN état.
+
+  Elle promettait en plus les symptômes « juste après », sans dire OÙ. Ils sont dans la consultation
+  — et `sessionId` est servi sur la demande depuis toujours, la route `/consultations/:sessionId`
+  existe, et **aucun écran ne les reliait**. Neuvième occurrence du motif « une capacité qui existe,
+  sans bouton pour l'atteindre ».
+*/
+describe('C3 — une demande payée (chantier 74)', () => {
+  const payee = () => demande({ status: 'PAID', sessionId: 'sess-1' })
+
+  /*
+    ⚠️ L'onglet ouvert par défaut est « En attente », et une demande PAYÉE n'y est pas : elle vit
+    dans « Confirmées », une expirée dans « Closes ». Sans ce geste, le détail reste vide et les
+    assertions échouent en donnant l'impression que le code est faux — il ne l'est pas, c'est la
+    file qu'on n'a pas ouverte.
+
+    `fireEvent` et non `userEvent` : c'est une étape de MISE EN PLACE, et `userEvent` rejoue des
+    séquences de pointeur qui dépassent leur délai sous charge parallèle (piège noté à la passation).
+  */
+  const ouvrir = (onglet: RegExp) => fireEvent.click(screen.getByRole('button', { name: onglet }))
+
+  it('ne demande plus d’attendre un paiement déjà encaissé', async () => {
+    await monter([payee()])
+    ouvrir(/Confirmées/)
+
+    expect(await detail().findByText(/les symptômes.*vous attendent dans le fil/i)).toBeInTheDocument()
+    expect(detail().queryByText(/tant que la consultation n'est pas payée/)).not.toBeInTheDocument()
+  })
+
+  it('offre enfin le chemin vers la consultation', async () => {
+    await monter([payee()])
+    ouvrir(/Confirmées/)
+
+    const lien = await detail().findByRole('link', { name: /Ouvrir la consultation/i })
+    expect(lien).toHaveAttribute('href', '/consultations/sess-1')
+  })
+
+  /*
+    ⚠️ Un `sessionId` absent n'est pas une session vide : c'est une session qu'on ne sait pas
+    nommer. Proposer un lien vers `/consultations/null` enverrait le soignant sur une page morte.
+  */
+  it('sans session à ouvrir, aucun bouton n’est proposé', async () => {
+    await monter([demande({ status: 'PAID', sessionId: null })])
+    ouvrir(/Confirmées/)
+    await detail().findByText(/vous attendent dans le fil/i)
+
+    expect(detail().queryByRole('link', { name: /Ouvrir la consultation/i })).not.toBeInTheDocument()
+  })
+
+  /*
+    Le panneau « Temps restant » s'affichait toujours — 122 px pour dire qu'il n'y a pas de temps,
+    sous un titre qui en promet un. Il ne s'affiche plus que quand un temps court vraiment, et une
+    demande terminée dit COMMENT elle s'est terminée.
+  */
+  it('le panneau du décompte cède la place à ce qui s’est passé', async () => {
+    await monter([payee()])
+    ouvrir(/Confirmées/)
+    await detail().findByText(/vous attendent dans le fil/i)
+
+    expect(detail().queryByText('Temps restant')).not.toBeInTheDocument()
+    expect(detail().getByText(/Consultation payée — la demande a abouti/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ « Expirée » et « payée » n'appellent pas le même geste, et l'une des deux coûte un point de
+    taux de confirmation. Les dire toutes « closes » était exact et n'apprenait rien.
+  */
+  it('une demande expirée dit ce qu’elle coûte, pas seulement qu’elle est close', async () => {
+    await monter([demande({ status: 'EXPIRED', windowRemainingSeconds: 0 })])
+    ouvrir(/Closes/)
+
+    expect(await detail().findByText(/compte comme une non-réponse dans votre taux/i)).toBeInTheDocument()
+  })
+
+  it('le décompte reste affiché tant qu’une demande court', async () => {
+    await monter([demande({ status: 'INITIATED', windowRemainingSeconds: 240 })])
+
+    expect(await detail().findByText('Temps restant')).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ L'URGENCE doit rester visible — et c'est le piège du `@layer`, payé pour de vrai ici.
+
+    Le compte à rebours porte désormais `.ul-chiffre`, qui fixe `color` et vit hors d'un `@layer` :
+    elle l'emporte sur `text-[…]`, **en silence**. Sans l'encre posée en style inline, le chiffre
+    resterait couleur d'encre primaire à dix secondes de l'expiration — la seule chose que cet écran
+    doit crier ne se verrait plus.
+
+    Éprouvé en retirant l'inline : les 33 tests passaient. Celui-ci ne passe plus.
+
+    On lit `style.color` et non une classe : c'est précisément l'inline qui est en jeu, et jsdom le
+    rend tel quel sans avoir besoin d'une feuille de style.
+  */
+  it('à moins d’une minute, le décompte passe à l’encre d’alerte', async () => {
+    await monter([demande({ status: 'INITIATED', windowRemainingSeconds: 30 })])
+    await detail().findByText('Temps restant')
+
+    const chiffre = detail().getByText(/^\d{1,2}:\d{2}$/)
+    expect(chiffre).toHaveClass('ul-chiffre')
+    expect(chiffre.style.color).toBe('var(--erreur-texte)')
+  })
+
+  /*
+    Le pendant : au calme, aucune encre n'est forcée — le chiffre garde celle de la voix. Sans ce
+    test, poser le rouge en permanence passerait inaperçu, et une alarme toujours allumée ne se lit
+    plus.
+  */
+  it('au calme, aucune couleur d’alerte n’est forcée', async () => {
+    await monter([demande({ status: 'INITIATED', windowRemainingSeconds: 240 })])
+    await detail().findByText('Temps restant')
+
+    expect(detail().getByText(/^\d{1,2}:\d{2}$/).style.color).toBe('')
+  })
 })
 
 describe('C3 — la fiche anonymisée (EF-06-01)', () => {

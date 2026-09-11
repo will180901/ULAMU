@@ -372,6 +372,16 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
         quoi: 'le soignant ne voit rien du dossier tant que la consultation n’est pas payée',
         motif: /tant que la consultation n'est pas payée/,
       },
+      /*
+        Ajoutée au chantier 74. Le panneau du décompte disait « Cette demande est close » pour les
+        quatre issues à la fois : exact, et sans valeur. « Expirée » et « payée » n'appellent pas le
+        même geste, et l'une des deux coûte un point de taux de confirmation — un taux que les
+        patients lisent avant de choisir. C'est le COÛT qui devait être dit.
+      */
+      {
+        quoi: 'une demande expirée compte comme une non-réponse dans le taux de confirmation',
+        motif: /expiré sans réponse[\s\S]{0,120}non-réponse dans votre taux/,
+      },
     ],
   },
   {

@@ -121,6 +121,37 @@ const CLASSE_TEXTE: Record<Urgence, string> = {
 }
 
 /**
+ * La même urgence, en ENCRE plutôt qu'en classe — chantier 74.
+ *
+ * ⚠️ `.ul-chiffre` fixe `color` et vit hors d'un `@layer` : elle l'emporte sur `text-[…]`, en
+ * silence. Le compte à rebours serait donc resté couleur d'encre primaire, même à dix secondes de
+ * l'expiration. C'est le piège du chantier 70, et il se paie ici en rouge qui ne s'allume pas.
+ */
+const ENCRE_URGENCE: Record<Urgence, string | undefined> = {
+  calme: undefined,
+  ambre: 'var(--ton-ambre-icone)',
+  rouge: 'var(--erreur-texte)',
+  ecoule: 'var(--texte-tertiaire)',
+}
+
+/**
+ * Comment une demande s'est terminée — chantier 74.
+ *
+ * Le panneau « Temps restant » disait « Cette demande est close » pour les quatre issues à la fois.
+ * C'est exact et ça n'apprend rien : « payée » et « expirée » n'appellent pas le même geste, et
+ * l'une des deux coûte un point de taux de confirmation.
+ *
+ * Les états non listés retombent sur la phrase d'origine : un état qu'on ne sait pas nommer se dit
+ * prudemment, il ne s'invente pas.
+ */
+const FIN_DE_DEMANDE: Record<string, string> = {
+  PAID: 'Consultation payée — la demande a abouti.',
+  REFUSED: 'Vous avez refusé cette demande, avec un motif.',
+  EXPIRED: 'Cette demande a expiré sans réponse. Elle compte comme une non-réponse dans votre taux de confirmation.',
+  CANCELLED: 'Le patient a annulé cette demande.',
+}
+
+/**
  * L'anneau qui décrémente — la forme de la maquette, conservée telle quelle.
  *
  * ⚠️ **La fenêtre totale n'est PAS écrite ici.** Elle se déduit de ce que le serveur envoie :
@@ -195,7 +226,8 @@ function LigneFile({ h, actif, recuA, onChoisir }: { h: Handshake; actif: boolea
             {h.patientFirstName ?? 'Patient'}
             {h.patientAge !== null ? <span className="font-normal text-muted-foreground"> · {h.patientAge} ans</span> : null}
           </span>
-          <span className="shrink-0 font-mono text-[10px] text-[var(--texte-tertiaire)]">{heureRecue(h.initiatedAt)}</span>
+          {/* 10 px n'existe pas dans CG-02 : le palier de code (11 px) le remplace. */}
+          <span className="shrink-0 t-code-sm text-[var(--texte-tertiaire)]">{heureRecue(h.initiatedAt)}</span>
           {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
             <span
               className={'shrink-0 font-mono text-[12px] font-semibold tabular-nums ' + CLASSE_TEXTE[urgence]}
@@ -248,9 +280,8 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
             {(h.patientFirstName ?? '?').slice(0, 1).toUpperCase()}
           </span>
           <span className="min-w-0">
-            <span className="block font-[family-name:var(--font-display)] text-[17px] font-bold leading-tight text-foreground">
-              {h.patientFirstName ?? 'Patient'}
-            </span>
+            {/* 17 px n'existe dans aucun palier : le prénom prend le titre de panneau (18 px). */}
+            <span className="block ul-titre-panneau">{h.patientFirstName ?? 'Patient'}</span>
             <span className="mt-0.5 block text-[12px] text-[var(--texte-tertiaire)]">
               {h.patientAge !== null ? `${h.patientAge} ${accord(h.patientAge, 'an')}` : 'Âge non communiqué'}
             </span>
@@ -259,30 +290,75 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
         {/*
           Le dire explicitement plutôt que de laisser croire à un manque : c'est une règle, pas une
           lacune. Un médecin qui cherche « où sont les symptômes ? » perd des secondes qu'il n'a pas.
+
+          ⚠️ Mais cette phrase s'affichait pour TOUS les états — chantier 74. Sur la demande payée du
+          28/08, la pastille disait « Payée » et l'écran, juste en dessous, demandait d'attendre un
+          paiement déjà encaissé. Elle promettait aussi les symptômes « juste après » sans jamais
+          dire OÙ : ils sont dans la consultation, et rien n'y menait depuis ici.
+
+          *On ne fait pas attendre quelqu'un pour une chose déjà faite — et une promesse qui ne dit
+          pas où regarder n'est pas tenue.*
         */}
-        <Avis ton="info">
-          Vous n'en voyez pas plus tant que la consultation n'est pas payée. Les symptômes, la durée
-          des troubles et les photos vous seront transmis juste après, avant que le décompte ne démarre.
-        </Avis>
+        {h.status === 'PAID' ? (
+          <Avis ton="succes">
+            La consultation est payée : les symptômes, la durée des troubles et les photos vous
+            attendent dans le fil de la consultation.
+          </Avis>
+        ) : (
+          <Avis ton="info">
+            Vous n'en voyez pas plus tant que la consultation n'est pas payée. Les symptômes, la durée
+            des troubles et les photos vous seront transmis juste après, avant que le décompte ne démarre.
+          </Avis>
+        )}
+
+        {/*
+          Le chemin qui manquait. `sessionId` est servi sur la demande depuis toujours et la route
+          `/consultations/:sessionId` existe : **aucun écran ne les reliait**. Neuvième occurrence du
+          motif « une capacité qui existe, sans bouton pour l'atteindre ».
+
+          Le bouton n'apparaît que s'il y a vraiment une session à ouvrir : un `sessionId` absent
+          n'est pas une session vide, c'est une session qu'on ne sait pas nommer.
+        */}
+        {h.status === 'PAID' && h.sessionId ? (
+          <div>
+            <Button asChild size="sm">
+              <Link to={`/consultations/${h.sessionId}`}>Ouvrir la consultation</Link>
+            </Button>
+          </div>
+        ) : null}
       </Carte>
 
+      {/*
+        ⚠️ Ce panneau s'affichait TOUJOURS — chantier 74. Sur une demande close, il occupait 122 px,
+        avec un titre qui promet un décompte et un sous-titre sur l'horloge du serveur, pour dire
+        « Cette demande est close ». *Un panneau qui annonce un décompte et dit qu'il n'y en a pas
+        est du bruit.*
+
+        Il ne s'affiche donc que quand un temps court vraiment. Ce qu'il faut savoir d'une demande
+        terminée — COMMENT elle s'est terminée — est dit juste en dessous, en une ligne.
+      */}
+      {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
       <Carte
         icone={Clock}
         ton={h.status === 'INITIATED' && reste === 0 ? 'danger' : 'accent'}
         titre="Temps restant"
         sousTitre="Compté par le serveur — l'horloge de ce poste n'est qu'indicative (RM-06-02)"
       >
-        {h.status === 'INITIATED' || h.status === 'CONFIRMED' ? (
+        {(
           <div className="flex items-center gap-4">
             {/* L'anneau à gauche, les chiffres à droite — la disposition de la maquette, mesurée. */}
             <AnneauDecompte reste={reste} total={fenetreTotaleS(h)} urgence={urgence} />
             <div className="min-w-0 flex-1">
-              <p
-                className={
-                  'font-[family-name:var(--font-display)] text-[34px] font-bold leading-none tabular-nums ' +
-                  CLASSE_TEXTE[urgence]
-                }
-              >
+              {/*
+                ⚠️ 34 px auparavant — la plus grande taille de toute l'application, et elle
+                n'existait dans AUCUN palier de la charte. Le geste était juste : c'est l'urgence de
+                l'écran, elle doit se lire sans s'approcher. Il lui manquait un nom.
+
+                Elle prend donc la voix de chiffre héros — celle des montants du tableau de bord et
+                de « Mes gains » — qui est déjà en chasse fixe et à la bonne échelle (32 px en zone
+                de soin). Aucune taille nouvelle n'est créée.
+              */}
+              <p className="ul-chiffre" style={{ color: ENCRE_URGENCE[urgence] }}>
                 {mmss(reste)}
               </p>
               <p className="mt-1.5 text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
@@ -292,10 +368,15 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               </p>
             </div>
           </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground">Cette demande est close.</p>
         )}
       </Carte>
+      ) : (
+        /*
+          Une demande terminée n'a pas besoin d'un panneau : elle a besoin d'une phrase. Celle-ci dit
+          ce qui s'est passé, et non ce qui n'est plus possible.
+        */
+        <Avis ton={h.status === 'PAID' ? 'succes' : 'info'}>{FIN_DE_DEMANDE[h.status] ?? 'Cette demande est close.'}</Avis>
+      )}
 
       <Carte icone={HandshakeIcon} titre="Ce qui est demandé" sousTitre="L'offre choisie par le patient dans votre vitrine">
         <dl className="flex flex-wrap gap-x-8 gap-y-3">
@@ -311,7 +392,8 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
           </div>
           <div>
             <dt className="ul-surtitre">Montant</dt>
-            <dd className="mt-0.5 font-[family-name:var(--font-display)] text-[17px] font-bold text-foreground">
+            {/* Le montant est la donnée de cette liste : il prend la voix de chiffre de ligne. */}
+            <dd className="mt-0.5 ul-chiffre-ligne">
               {h.offerPriceXaf !== null ? `${xaf(h.offerPriceXaf)} F` : '—'}
             </dd>
           </div>
@@ -338,7 +420,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               <span
                 aria-hidden="true"
                 className={
-                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-bold ' +
+                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full t-code-sm ' +
                   (h.status === 'INITIATED' ? 'bg-[var(--ap-500)] text-white' : 'bg-secondary text-muted-foreground')
                 }
               >
@@ -353,7 +435,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               <span
                 aria-hidden="true"
                 className={
-                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-bold ' +
+                  'mt-px flex size-5 shrink-0 items-center justify-center rounded-full t-code-sm ' +
                   (h.status === 'CONFIRMED' ? 'bg-[var(--ap-500)] text-white' : 'bg-secondary text-muted-foreground')
                 }
               >
@@ -367,7 +449,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
             <li className="flex gap-2.5">
               <span
                 aria-hidden="true"
-                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[10px] font-bold text-muted-foreground"
+                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary t-code-sm text-muted-foreground"
               >
                 3
               </span>
@@ -379,7 +461,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
             <li className="flex gap-2.5">
               <span
                 aria-hidden="true"
-                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[10px] font-bold text-muted-foreground"
+                className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary t-code-sm text-muted-foreground"
               >
                 4
               </span>

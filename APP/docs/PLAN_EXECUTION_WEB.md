@@ -657,6 +657,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **71** | **C2 — Ma vitrine : un fait dit une fois, et l'argent qui se voit** — 10/09, deuxième écran de la passe 1. Mesuré en ligne d'abord : l'état de la vitrine était dit **trois fois et jamais fort** (sous-titre 13 px, carte du rail, compteur d'offres) ; le mot « désactivée » — la CAUSE de tout le reste — était noyé dans un gris de 11 px ; et le **net d'une offre, seule ligne de l'écran qui touche un compte en banque, s'écrivait 16 px avec son libellé à 9 px**. Livré : un bandeau d'état unique qui dit la conséquence et le geste, la pastille sur l'offre éteinte, les voix de chiffre sur l'argent et sur les trois chiffres publics, et les neuf tailles hors charte ramenées sur la gamme — dont la date d'un avis, seul texte de l'écran sous le seuil (**3,49:1**). ⚠️ **Et l'assiette du taux**, vérifiée avant d'être branchée : les deux écrans appellent la même fonction `confirmRate()`, seul l'arrondi diffère. Elle est dite SOUS les chiffres publics, jamais collée au taux — ce panneau promet « c'est ce qu'un patient lit », et les patients ne voient pas ce nombre. 📌 **Deux tests ne mordaient pas** : l'un passait parce que le rendu PLANTAIT, l'autre n'existait pas. Trouvés par l'injection, corrigés. **web 799 ✓ (791 + 8) · 157 promesses, 116 retenues (156/115 avant) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **72** | **C6 — Mes gains : l'argent en attente ne se vaut pas tout entier** — 10/09, troisième écran de la passe 1. ⚠️ **Le défaut n'était pas visuel, et il portait sur de l'argent.** L'écran affirmait, pour TOUTE somme en attente, qu'elle « devient retirable dès leur dépôt ». Or le serveur REFUSE le dépôt passé l'échéance — *« Délai de dépôt dépassé (PM-30) : gains gelés »* — et chaque séance porte **déjà** `reportDueAt`, dont le commentaire dit en toutes lettres *« Au-delà, le dépôt est REFUSÉ et les gains gelés »*. **L'écran ne consultait jamais ce champ.** Les 4 500 F affichés sont le net de la consultation du 28/08 trouvée immobilisée au chantier 64 : la fenêtre s'est fermée le 29/08, et l'écran d'administration le savait pendant que celui du soignant promettait un versement à un geste près. **Huitième occurrence** du motif, la première qui porte sur de l'argent que quelqu'un attend. Livré aussi : les trois montants passés de **26 px hors charte** à la voix de chiffre héros, la rangée qui cesse de s'étirer (269 px pour 51, 264 et 57 caractères), le **numéro sur lequel part l'argent de 14 → 20 px**, l'avertissement « jamais créditée » sorti du 11 px, et `restant()` dans `lib/temps.ts`. 📌 **Deux fautes injectées n'ont réveillé personne** — le numéro et le rabattement d'un futur à zéro — trouvées et corrigées. **web 811 ✓ (799 + 12) · 157 promesses, 116 retenues · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **73** | **Un lien qui arrive à la bonne page mais pas au bon endroit** — 10/09, **trouvé par le porteur** sur son propre écran. Le bouton « Modifier mon numéro » de C6 le déposait **en haut** de Réglages → Sécurité, devant « Adresse email » — le bloc du téléphone est plus bas. Il a cliqué, vu un écran sans rapport, et conclu que **la modification n'existait pas**. Elle existait depuis le chantier 67. Livré : `&bloc=telephone`, l'ancre sur le bloc, et le saut à l'arrivée. 📌 **Et la leçon du chantier** : la faute qui renomme l'ANCRE n'a réveillé personne — le lien pointait dans le vide et 76 tests passaient. Les deux moitiés de la règle vivent dans deux fichiers ; il fallait un test de chaque côté. **web 813 ✓ (811 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées après correction du filet.** | ⏸ en attente | ⏸ |
+| **74** | **C3 — Demandes : une demande payée n'attend plus son paiement** — 11/09, quatrième écran de la passe 1. ⚠️ Ouvert la demande du 28/08 sur le site : sa pastille dit **« Payée »**, et l'écran demandait juste en dessous d'attendre le paiement. La phrase n'était conditionnée par **aucun état**. Elle promettait en plus les symptômes « juste après » sans dire OÙ — ils sont dans la consultation, `sessionId` est servi depuis toujours, la route existe, et **aucun écran ne les reliait** : **neuvième occurrence** du motif. Livré : la phrase juste quand c'est payé, le bouton « Ouvrir la consultation », le panneau « Temps restant » qui cède la place à **comment** la demande s'est terminée (« expirée » et « payée » n'appellent pas le même geste, et l'une coûte un point de taux), le compte à rebours passé de **34 px inventés** à la voix de chiffre héros, et les 10 tailles hors charte ramenées à 0. 📌 **Et la suite complète mentait** : 13 échecs dans 4 fichiers non touchés, tous à ~5 000 ms — des dépassements de délai. Les quatre fichiers passent SEULS (140 ✓). `testTimeout` porté à 15 s. **web 821 ✓ (813 + 8) · 158 promesses, 117 retenues · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -705,6 +706,82 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 74 (C3 — Demandes) a appris
+
+*11/09/2026 — le quatrième écran, et le jour où la suite de tests a menti.*
+
+#### ⚠️ Une phrase conditionnée par rien s'affiche partout, y compris là où elle est fausse
+
+La demande du 28/08 porte la pastille **« Payée »**. Juste en dessous, l'écran affichait :
+
+> *« Vous n'en voyez pas plus **tant que la consultation n'est pas payée**. Les symptômes, la durée
+> des troubles et les photos vous seront transmis **juste après**. »*
+
+Elle est payée. La phrase n'était conditionnée par **aucun état** — elle s'affichait pour les quatre.
+
+Et elle promettait les symptômes « juste après » **sans jamais dire où**. Ils sont dans la
+consultation : `sessionId` est servi sur la demande depuis toujours, la route
+`/consultations/:sessionId` existe depuis le chantier 8, et **aucun écran ne les reliait**.
+
+*Neuvième occurrence du motif « une capacité qui existe, sans bouton pour l'atteindre ». Il ne se
+résorbe pas tout seul : chaque écran ouvert en trouve un.*
+
+#### Un panneau qui promet un décompte et dit qu'il n'y en a pas
+
+« Temps restant » s'affichait toujours : **122 px**, un titre qui annonce un compte à rebours, un
+sous-titre sur l'horloge du serveur — pour dire *« Cette demande est close »*.
+
+Il ne s'affiche plus que quand un temps court vraiment. Ce qu'il faut savoir d'une demande terminée,
+c'est **comment** elle s'est terminée — et les quatre issues ne se valent pas : « expirée » coûte un
+point de taux de confirmation, que les patients lisent avant de choisir. Les dire toutes « closes »
+était exact et n'apprenait rien.
+
+*Un écran qui dit vrai sans rien apprendre n'est pas un écran honnête, c'est un écran muet.*
+
+#### ⚠️ Le piège du `@layer`, payé pour de vrai cette fois
+
+Le compte à rebours s'écrivait **34 px** — la plus grande taille de l'application, dans aucun palier.
+Il prend la voix de chiffre héros (32 px), déjà en chasse fixe.
+
+Mais `.ul-chiffre` fixe `color` et vit **hors d'un `@layer`** : elle l'emporte sur `text-[…]`, en
+silence. Sans encre posée en style inline, **le décompte serait resté couleur d'encre primaire à dix
+secondes de l'expiration** — la seule chose que cet écran doit crier ne se serait plus vue.
+
+Éprouvé en retirant l'inline : **les 33 tests passaient**. Deux tests l'attrapent maintenant — un
+pour l'alerte, un pour le calme, parce qu'une alarme toujours allumée ne se lit pas non plus.
+
+*Une classe qui bat les utilitaires est un choix ; il faut alors tester ce qu'elle écrase.*
+
+#### 📌 Le jour où la suite complète a menti
+
+Une exécution complète a rendu **13 échecs dans quatre fichiers** — `consultation`, `ordonnance`,
+`parametres`, `gains` — dont **aucun n'avait été touché**. Tous à ~5 000 ms pile : des dépassements
+de délai, pas des assertions fausses.
+
+Relancés **seuls** : **140 tests, tous verts.**
+
+La cause était notée à la passation : `userEvent` rejoue des séquences de pointeur et devient très
+lent quand les workers se partagent la machine. Avec 826 tests, le défaut est devenu systématique.
+
+`testTimeout` passe à **15 s**. ⚠️ **Ce réglage ne masque aucun défaut** : un test qui échoue pour
+une vraie raison échoue toujours, et aussi vite qu'avant — le délai ne borne que l'ATTENTE d'une
+condition qui ne viendra jamais. Ce qu'il supprime, ce sont les faux rouges.
+
+*Et c'était urgent : toute la méthode de ce projet repose sur une comparaison avant/après. Un filet
+qui crie au loup une fois sur deux cesse d'être lu — et le jour où il crie juste, personne ne vient.*
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 813 ✓ | **821 ✓** |
+| Promesses retenues | 116 / 157 | **117 / 158** |
+| Tailles hors charte sur C3 | **10** | **0** |
+| Suite complète | 13 faux échecs | **0** |
+
+Six fautes injectées, six détectées — la sixième seulement **après** avoir écrit le test qu'elle
+avait démasqué comme manquant. Trois chantiers de suite que l'injection trouve un trou.
 
 ### Ce que le chantier 73 (le lien de « Modifier mon numéro ») a appris
 
