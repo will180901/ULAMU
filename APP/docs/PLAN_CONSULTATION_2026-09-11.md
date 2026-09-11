@@ -142,6 +142,12 @@ les deux.
 
 ### Chantier C — la liste, telle que le porteur la veut
 
+> ✅ **FAIT — chantier 77, 11/09/2026.** Pagination et menu ⋯ livrés.
+> ⚠️ Le point 13 (**avatar / prénom du patient dans la ligne**) n'est PAS fait : le fichier
+> porte une décision écrite — *« aucune identité de patient n'est chargée ici »* — qui n'est
+> pas à renverser au détour d'un chantier de forme. Remontée au porteur comme question de
+> produit.
+
 *Aucun travail serveur.*
 
 11. **Tableau paginé**, côté écran, sur les 100 lignes que le serveur envoie.

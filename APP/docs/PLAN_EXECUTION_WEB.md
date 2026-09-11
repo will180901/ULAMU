@@ -660,6 +660,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **74** | **C3 — Demandes : une demande payée n'attend plus son paiement** — 11/09, quatrième écran de la passe 1. ⚠️ Ouvert la demande du 28/08 sur le site : sa pastille dit **« Payée »**, et l'écran demandait juste en dessous d'attendre le paiement. La phrase n'était conditionnée par **aucun état**. Elle promettait en plus les symptômes « juste après » sans dire OÙ — ils sont dans la consultation, `sessionId` est servi depuis toujours, la route existe, et **aucun écran ne les reliait** : **neuvième occurrence** du motif. Livré : la phrase juste quand c'est payé, le bouton « Ouvrir la consultation », le panneau « Temps restant » qui cède la place à **comment** la demande s'est terminée (« expirée » et « payée » n'appellent pas le même geste, et l'une coûte un point de taux), le compte à rebours passé de **34 px inventés** à la voix de chiffre héros, et les 10 tailles hors charte ramenées à 0. 📌 **Et la suite complète mentait** : 13 échecs dans 4 fichiers non touchés, tous à ~5 000 ms — des dépassements de délai. Les quatre fichiers passent SEULS (140 ✓). `testTimeout` porté à 15 s. **web 821 ✓ (813 + 8) · 158 promesses, 117 retenues · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **75** | **C5 — les médias : ouvrir ce que le serveur tenait déjà ouvert** — 11/09, chantier A du plan de la consultation. Écrit après avoir ouvert les maquettes C4/C5 et lu la messagerie de **CMS-SARIS** (4 103 lignes). ⚠️ **Le serveur accepte quatre types de message — `TEXT`, `PHOTO`, `VOICE`, `DOCUMENT` — et un album de dix photos (`fileKeys`) ; le web n'envoyait que du texte et UNE photo.** Le fil savait pourtant déjà AFFICHER les albums (`mediaKeys`). **Dixième occurrence** du motif, et la première où c'est un **type TypeScript** qui fermait la porte : `sendMessage` ne déclarait que `'TEXT' | 'PHOTO'`, donc aucun écran ne POUVAIT envoyer une note vocale. ⚠️ **Et la limite de taille se découvrait par l'échec** : le DTO accepte ~84 Mo, le stockage refuse au-delà de **8 Mo** — un fichier de 20 Mo traversait le réseau EN ENTIER avant d'être rejeté, et le commentaire du DTO annonce « ≈ 80 Mo, cohérent » : **faux d'un facteur dix**. Livré : les **notes vocales** (chrono, onde d'amplitude, envoi en un geste, lecteur dans la bulle), l'**album de dix photos**, l'**aperçu avant envoi** avec compression et **poids annoncé AVANT**, et le minuteur devenu un **instrument** encadré et étiqueté « Horloge serveur ». 📌 **Le piège du format**, vérifié sur un vrai navigateur : `MediaRecorder` produit du `audio/webm` que le serveur REFUSE — l'intersection tient en `audio/mp4` (Chromium/Safari) ou `audio/ogg` (Firefox), et sans format commun le micro est désactivé **avec sa raison**. **web 844 ✓ (821 + 23) · 158 promesses, 117 retenues · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **76** | **C5 — la consultation prend un nom** — 11/09, chantier B du plan de la consultation. Le titre de l'écran était le mot « Consultation » : trois séances ouvertes dans la journée donnaient **trois onglets identiques**. Le motif était pourtant servi depuis toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas. Livré : le **titre porte le motif**, la **référence de séance** est lisible sous lui, les **honoraires** entrent dans le rail (par une jointure côté écran : le prix vit sur la DEMANDE, pas sur la séance), et le fil s'ouvre en rappelant le chiffrement de bout en bout. ⚠️ **Deux corrections à mon propre plan** : les allergies étaient **déjà affichées** (panneau Carnet) — mon analyse des maquettes les avait manquées ; et **donner un nom à la ligne de C4 est impossible sans le serveur**, `SessionListItem` ne portant pas la pré-consultation. 📌 Et le piège du heredoc, payé une nouvelle fois : `\r?\n` transformé en vrais CR/LF dans une expression régulière. **web 853 ✓ (844 + 9) · 158 promesses, 117 retenues (inchangé — la phrase ajoutée rejoint le filet sans changer l'inventaire) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
+| **77** | **C4 — le registre paginé, et les gestes qui étaient enfermés** — 11/09, chantier C du plan de la consultation, **demandé en propres termes par le porteur** (« tableau avec pagination, et un bouton d'action sur chaque ligne pour les fonctionnalités secondaires »). Chaque ligne n'offrait qu'un bouton : **voir une ordonnance, l'annuler, signaler un patient** obligeaient à ENTRER dans la consultation pour en ressortir — trois capacités qui existent toutes côté serveur. Livré : le tableau **paginé** (quinze lignes), un menu **⋯** par ligne, et l'annulation d'ordonnance **avec son motif obligatoire** depuis le registre. ⚠️ **La pagination est côté écran par CONTRAINTE** : `listMine` renvoie au plus cent séances, sans curseur ni total — au-delà, les plus anciennes n'arrivent jamais, et tourner les pages ne les fera pas revenir. La phrase du plafond reste. ⚠️ **Vérifié au serveur avant d'écrire le menu** : la règle d'annulation ne regarde QUE l'état de l'ordonnance, jamais celui de la séance (CU-09-04) — une ordonnance active d'une consultation terminée reste annulable. 📌 Et ce que le menu ne contient PAS : ni export (aucune route), ni suppression (un acte de soin ne s'efface pas). **web 864 ✓ (853 + 11) · 159 promesses, 118 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -708,6 +709,87 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 77 (C4 — le registre) a appris
+
+*11/09/2026 — le chantier que le porteur a spécifié lui-même, et une décision du code qu'il a fallu
+respecter contre ma propre proposition.*
+
+#### Trois capacités à une seconde de distance, et pourtant à trois clics
+
+Chaque ligne du registre n'offrait **qu'un bouton**. Voir une ordonnance, l'annuler, signaler un
+patient : trois gestes qui existent tous côté serveur, et qui obligeaient à **entrer dans la
+consultation pour en ressortir**.
+
+C'est une variante du motif du projet — la capacité n'est pas absente, elle est **enfermée**. Le
+menu ⋯ ne crée rien : il ouvre un chemin court vers ce qui était déjà là.
+
+⚠️ **Vérifié au serveur avant d'écrire la première ligne** : `m09.cancel()` ne regarde que l'état de
+l'ORDONNANCE — `ACTIVE` ou partiellement délivrée — et **jamais celui de la séance**. Une ordonnance
+d'une consultation terminée reste donc annulable (CU-09-04), et c'est précisément ce qui rend le
+raccourci utile. Sans cette vérification, le menu aurait proposé un geste qui répond 409.
+
+#### Ce que le menu ne contient pas, et c'est délibéré
+
+| Écarté | Pourquoi |
+|---|---|
+| **Exporter** | Aucune route ne produit d'export. *Un bouton qui ment est pire qu'un bouton absent.* |
+| **Supprimer la consultation** | Rien de tel n'existe — et rien de tel ne doit exister : un acte de soin ne s'efface pas. |
+| Une entrée « ordonnance » grisée quand il n'y en a pas | *Une entrée grisée n'apprend rien de plus qu'une entrée absente, et elle fait espérer.* |
+
+Et le geste qui **presse** reste dehors, nommé : « Déposer » quand un compte-rendu manque, « Ouvrir »
+sinon. Le glisser dans le menu reviendrait à cacher ce qui coûte des gains gelés.
+
+#### ⚠️ La pagination est côté écran — par contrainte, pas par choix
+
+`listMine` renvoie au plus **cent** séances (`take: 100`), **sans curseur, sans page, sans total**.
+Il n'y a donc rien à paginer côté serveur : on découpe ce qui est arrivé.
+
+**La conséquence ne doit jamais être masquée** : au-delà de cent, les plus anciennes n'arrivent
+jamais jusqu'à l'écran, et **tourner les pages ne les fera pas revenir**. La phrase qui le dit —
+« Seules les cent consultations les plus récentes sont affichées » — reste sous le tableau.
+
+*Une pagination qui découpe une liste tronquée peut faire croire qu'on voit tout. C'est le contraire
+d'un progrès si l'on tait la troncature.*
+
+Un défaut trouvé en l'écrivant : filtrer depuis la page 2 **vidait le tableau** — la page courante
+sortait des bornes et l'écran montrait zéro ligne sous un « page 2 sur 1 ». La page est ramenée dans
+les bornes, et un test le retient.
+
+#### Une décision écrite dans le code, respectée contre ma propre proposition
+
+Mon plan prévoyait d'afficher le **prénom du patient** dans la ligne, à la place de `573DCCCB` — ce
+que fait la maquette C4.
+
+Le fichier porte pourtant, depuis le chantier 4, cette phrase :
+
+> *« La recherche porte sur la date et la référence : aucune identité de patient n'est chargée ici,
+> et il n'est pas question d'en réclamer une pour agrémenter un filtre. »*
+
+La jointure est techniquement faisable — `myHandshakes` porte le prénom et relie par `sessionId`,
+comme le chantier 76 vient de le faire sur C5. **Elle n'a pas été faite.** La décision est écrite,
+elle est motivée, et elle n'est pas à moi de renverser au détour d'un chantier de forme.
+
+*Elle est remontée au porteur comme une question de produit, pas appliquée en silence.*
+
+#### Les boîtes ne vivent pas dans la ligne qui les ouvre
+
+Détail d'implémentation qui aurait coûté un bug : la boîte d'annulation et celle de signalement sont
+montées **au niveau de l'écran**, pas dans la cellule du menu.
+
+Une boîte rendue dans une ligne de tableau **disparaît avec sa ligne** dès qu'on tourne la page ou
+qu'on change de filtre — et une annulation partirait à moitié.
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 853 ✓ | **864 ✓** |
+| Gestes accessibles depuis une ligne | 1 | **4** |
+| Lignes affichées d'un bloc | toutes | **15 par page** |
+| Promesses retenues | 117 / 158 | **118 / 159** |
+
+Sept fautes injectées, sept détectées.
 
 ### Ce que le chantier 76 (C5 — le nom de la consultation) a appris
 

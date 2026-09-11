@@ -20,7 +20,7 @@
  *     messagerie est le seul portail, et un médecin n'est rattachable à aucun cabinet.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -127,6 +127,166 @@ const credit = (reference: string, amountXaf: number, quand = ilYA(1)) => ({
   // net crédité — mais le contrat les porte, et un fabricant de test ne doit pas mentir sur le contrat.
   grossXaf: Math.round(amountXaf / 0.9),
   commissionXaf: Math.round(amountXaf / 0.9) - amountXaf,
+})
+
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  CHANTIER 77 — la pagination, et les gestes qui étaient enfermés dans la consultation
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  Le registre affichait TOUT d'un bloc, et chaque ligne n'offrait qu'un bouton. Voir une
+  ordonnance, l'annuler, signaler un patient : trois capacités qui existent côté serveur et qui
+  obligeaient à entrer dans la consultation pour en ressortir.
+
+  ⚠️ Et la pagination est **côté écran** par contrainte : `listMine` renvoie au plus cent séances,
+  sans curseur ni total. On découpe ce qui est arrivé — au-delà de cent, rien ne revient.
+*/
+describe('C4 — la pagination (chantier 77)', () => {
+  const beaucoup = (n: number) =>
+    Array.from({ length: n }, (_, i) => seance({ id: `s${i}`, reportDepositedAt: ilYA(1) }))
+
+  it('en dessous d’une page, aucune commande de page — ce serait du décor', async () => {
+    await monter(beaucoup(10))
+    await screen.findByRole('table')
+
+    expect(screen.queryByRole('navigation', { name: /Pages du registre/i })).not.toBeInTheDocument()
+  })
+
+  it('au-delà, elle découpe et dit où l’on en est', async () => {
+    await monter(beaucoup(20))
+    await screen.findByRole('table')
+
+    // Quinze lignes par page : la première en porte quinze, pas vingt.
+    expect(screen.getAllByRole('row').length - 1).toBe(15)
+    expect(screen.getByText(/1–15 sur 20 consultations/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Précédent' })).toBeDisabled()
+  })
+
+  it('la page suivante montre le reste, et la fin du registre se voit', async () => {
+    await monter(beaucoup(20))
+    await screen.findByRole('table')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }))
+
+    expect(await screen.findByText(/16–20 sur 20 consultations/)).toBeInTheDocument()
+    expect(screen.getAllByRole('row').length - 1).toBe(5)
+    expect(screen.getByRole('button', { name: 'Suivant' })).toBeDisabled()
+  })
+
+  /*
+    ⚠️ Filtrer depuis la page 2 vidait le tableau : la page courante sortait des bornes et l'écran
+    montrait zéro ligne sous un « page 2 sur 1 ». On la ramène dans les bornes.
+  */
+  it('un filtre qui réduit la liste ne laisse pas une page vide derrière lui', async () => {
+    await monter(beaucoup(20))
+    await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }))
+    await screen.findByText(/16–20 sur 20/)
+
+    fireEvent.change(screen.getByPlaceholderText(/Une date, une référence/), { target: { value: 's3' } })
+
+    // Le tableau n'est pas vide : la page est revenue dans les bornes.
+    await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1))
+  })
+})
+
+describe('C4 — le menu d’actions d’une ligne (chantier 77)', () => {
+  /*
+    ⚠️ Un menu Radix s'ouvre sur `pointerdown`, pas sur `click` : un `fireEvent.click` seul ne le
+    déplie pas, et les assertions échouent en accusant le contenu du menu plutôt que son ouverture.
+
+    `fireEvent` et non `userEvent` malgré tout : c'est une étape de MISE EN PLACE, et `userEvent`
+    rejoue des séquences de pointeur qui dépassent leur délai sous charge (piège de la passation).
+  */
+  const ouvrirMenu = async () => {
+    const bouton = await screen.findByRole('button', { name: /Autres actions/i })
+    fireEvent.pointerDown(bouton, { button: 0, ctrlKey: false, pointerType: 'mouse' })
+    return bouton
+  }
+
+  /*
+    Le geste qui PRESSE reste dehors et nommé. Le cacher derrière trois points reviendrait à cacher
+    ce qui coûte des gains gelés.
+  */
+  it('le geste principal reste visible et nommé', async () => {
+    await monter([seance({ reportDueAt: dans(2) })])
+
+    expect(await screen.findByRole('link', { name: 'Déposer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Autres actions/i })).toBeInTheDocument()
+  })
+
+  it('sans ordonnance, le menu n’en propose aucune — une entrée grisée fait espérer', async () => {
+    await monter([seance()])
+    await ouvrirMenu()
+
+    expect(await screen.findByText(/Signaler ce patient/)).toBeInTheDocument()
+    expect(screen.queryByText(/Annuler l'ordonnance/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Voir l'ordonnance/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Vérifié côté serveur avant d'écrire ce menu : la règle d'annulation ne regarde QUE l'état de
+    l'ordonnance, jamais celui de la séance (CU-09-04). Une ordonnance active d'une consultation
+    terminée reste donc annulable — et c'est tout l'intérêt d'y accéder depuis le registre.
+  */
+  it('une ordonnance active est annulable depuis le registre, séance terminée comprise', async () => {
+    await monter([seance({ status: 'ENDED' })], { ordonnances: [ordonnance({ status: 'ACTIVE' })] })
+    await ouvrirMenu()
+
+    expect(await screen.findByText(/Annuler l'ordonnance/)).toBeInTheDocument()
+  })
+
+  it('une ordonnance déjà annulée ne propose plus de l’annuler', async () => {
+    await monter([seance()], { ordonnances: [ordonnance({ status: 'CANCELLED' })] })
+    await ouvrirMenu()
+
+    expect(await screen.findByText(/Voir l'ordonnance/)).toBeInTheDocument()
+    expect(screen.queryByText(/Annuler l'ordonnance/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Le motif est OBLIGATOIRE côté serveur, et ce n'est pas une formalité : l'ordonnance annulée
+    reste au dossier du patient, et le motif est ce qui l'explique à qui la relira.
+  */
+  it('l’annulation attend son motif avant de partir', async () => {
+    const annule = vi.spyOn(api, 'cancelPrescription').mockResolvedValue({} as never)
+    await monter([seance()], { ordonnances: [ordonnance({ id: 'ord-1', status: 'ACTIVE' })] })
+    await ouvrirMenu()
+    fireEvent.click(await screen.findByText(/Annuler l'ordonnance/))
+
+    const bouton = await screen.findByRole('button', { name: "Annuler l'ordonnance" })
+    expect(bouton).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText(/Motif de l'annulation/), { target: { value: 'Erreur de posologie' } })
+    fireEvent.click(screen.getByRole('button', { name: "Annuler l'ordonnance" }))
+
+    await waitFor(() => expect(annule).toHaveBeenCalledWith('ord-1', 'Erreur de posologie'))
+  })
+
+  /*
+    L'acte est irréversible — le QR devient inerte (RM-09-05). La boîte le dit AVANT, pas après.
+  */
+  it('la boîte annonce ce que l’annulation coûte, avant de la faire', async () => {
+    await monter([seance()], { ordonnances: [ordonnance({ status: 'ACTIVE' })] })
+    await ouvrirMenu()
+    fireEvent.click(await screen.findByText(/Annuler l'ordonnance/))
+
+    expect(await screen.findByText(/cesse définitivement d'être valable/)).toBeInTheDocument()
+    expect(screen.getByText(/restera au dossier du patient/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Ce que le menu ne contient PAS : aucune route ne produit d'export, et un acte de soin ne
+    s'efface pas. Un bouton qui ment est pire qu'un bouton absent.
+  */
+  it('n’offre ni export ni suppression — rien de tout cela n’existe', async () => {
+    await monter([seance()])
+    await ouvrirMenu()
+    await screen.findByText(/Signaler ce patient/)
+
+    expect(screen.queryByText(/Exporter/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Supprimer/i)).not.toBeInTheDocument()
+  })
 })
 
 async function monter(

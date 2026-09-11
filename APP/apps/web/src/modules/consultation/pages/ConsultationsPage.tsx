@@ -46,7 +46,7 @@
  *    UUID opaques. On montre l'état de l'ordonnance, pas un numéro inventé.
  */
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -54,6 +54,7 @@ import {
   ClipboardList,
   Clock,
   Hourglass,
+  MoreVertical,
   Pill,
   Search,
   Wallet,
@@ -65,12 +66,43 @@ import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulam
 import { api, type CareSessionStatus, type Prescription, type SessionListItem } from '@/lib/api'
 import { useSessionStore } from '@/state/session.store'
 import { SqueletteTableau } from '@/components/ulamu/Squelette'
+import { Label } from '@/components/ui/label'
+import { Spinner } from '@/components/ui/spinner'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { DialogueSignalement } from '@/components/ulamu/DialogueSignalement'
+import { messageErreur } from '@/lib/message-erreur'
+
+/**
+ * La référence courte d'un identifiant — la même forme partout : huit caractères, en capitales.
+ *
+ * C'est ce qu'on dicte au support et ce qu'on cherche dans un registre. `Prescription` ne porte
+ * aucun code métier ; son identifiant technique en tient lieu, comme pour une séance.
+ */
+const refCourte = (id: string) => id.slice(0, 8).toUpperCase()
 
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 const heureFr = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
 /** Les montants en XAF s'écrivent sans décimale et avec une espace tous les trois chiffres. */
 const xaf = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 })
+
+/** Lignes par page — voir la note sur `page` dans l'écran. */
+const TAILLE_PAGE = 15
 
 const ETATS: Record<CareSessionStatus, { libelle: string; ton: TonPilule }> = {
   PREPARING: { libelle: 'En préparation', ton: 'info' },
@@ -144,9 +176,180 @@ function Tuile({
 
 // ── Écran ──────────────────────────────────────────────────────────────────
 
+
+/**
+ * Le menu d'actions secondaires d'une ligne du registre — chantier 77.
+ *
+ * ── Ce qu'il corrige ──────────────────────────────────────────────────────────────────────────
+ *
+ * Chaque ligne n'offrait qu'un bouton. Voir une ordonnance, l'annuler, signaler un patient : trois
+ * gestes qui existent tous côté serveur, et qui obligeaient à ENTRER dans la consultation pour en
+ * ressortir.
+ *
+ * ── Ce qu'il ne contient PAS, et pourquoi ─────────────────────────────────────────────────────
+ *
+ * • **Exporter** — aucune route ne produit d'export. Un bouton qui ment est pire qu'un bouton
+ *   absent.
+ * • **Supprimer la consultation** — rien de tel n'existe, et rien de tel ne doit exister : un acte
+ *   de soin ne s'efface pas.
+ *
+ * ⚠️ Le menu ne montre que ce qui est FAISABLE sur CETTE ligne : pas d'ordonnance, pas d'entrée
+ * d'ordonnance. Une entrée grisée n'apprend rien de plus qu'une entrée absente, et elle fait
+ * espérer.
+ */
+function MenuLigne({
+  seance,
+  ordonnances,
+  surSignaler,
+  surAnnuler,
+}: {
+  seance: SessionListItem
+  ordonnances: Prescription[]
+  surSignaler: () => void
+  surAnnuler: (o: Prescription) => void
+}) {
+  /* Annulable = le SERVEUR l'accepterait. Vérifié dans `m09` : la règle ne regarde que l'état de
+     l'ordonnance (ACTIVE ou partiellement délivrée), jamais celui de la séance — une ordonnance
+     d'une consultation terminée reste donc annulable, et c'est voulu (CU-09-04). */
+  const annulables = ordonnances.filter((o) => o.status === 'ACTIVE' || o.status === 'PARTIALLY_DISPENSED')
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" size="icon" variant="ghost" aria-label={`Autres actions — consultation du ${dateFr(seance.paidAt)}`}>
+          <MoreVertical size={16} strokeWidth={1.8} aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-52">
+        <DropdownMenuItem asChild>
+          <Link to={`/consultations/${seance.id}`}>Ouvrir le fil de la consultation</Link>
+        </DropdownMenuItem>
+
+        {ordonnances.length > 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            {/* « Voir » mène au fil : l'ordonnance vit dans le panneau de la consultation, et c'est
+                là qu'elle se relit avec son contexte. On ne duplique pas un écran pour un raccourci. */}
+            <DropdownMenuItem asChild>
+              <Link to={`/consultations/${seance.id}`}>
+                Voir {accord(ordonnances.length, "l'ordonnance", 'les ordonnances')}
+              </Link>
+            </DropdownMenuItem>
+            {annulables.map((o) => (
+              <DropdownMenuItem key={o.id} onSelect={() => surAnnuler(o)}>
+                Annuler l'ordonnance {refCourte(o.id)}
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : null}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={surSignaler}>Signaler ce patient</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
+ * L'annulation d'une ordonnance, depuis le registre — chantier 77.
+ *
+ * ⚠️ **Le motif est obligatoire côté serveur**, et ce n'est pas une formalité : une ordonnance
+ * annulée reste au dossier du patient, et le motif est ce qui explique l'annulation à qui la
+ * relira. Le bouton attend donc qu'il soit écrit.
+ *
+ * ⚠️ Et l'acte est **irréversible** : le QR devient inerte (RM-09-05). La boîte le dit avant, pas
+ * après.
+ */
+function BoiteAnnulation({
+  ordonnance,
+  surFermer,
+  surFait,
+}: {
+  ordonnance: Prescription
+  surFermer: () => void
+  surFait: () => void
+}) {
+  const [motif, setMotif] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+
+  const annuler = useMutation({
+    mutationFn: () => api.cancelPrescription(ordonnance.id, motif.trim()),
+    onSuccess: () => {
+      surFait()
+      surFermer()
+    },
+    onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && surFermer()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Annuler l'ordonnance {refCourte(ordonnance.id)}</DialogTitle>
+          <DialogDescription>
+            Elle restera au dossier du patient, marquée annulée, avec votre motif. Le code cesse
+            définitivement d'être valable.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="motif-annulation" className="text-[13px]">
+            Motif de l'annulation
+          </Label>
+          <Textarea
+            id="motif-annulation"
+            rows={3}
+            value={motif}
+            onChange={(e) => setMotif(e.target.value)}
+            placeholder="Ce que vous voulez que le prochain lecteur du dossier sache."
+          />
+        </div>
+
+        {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={surFermer} disabled={annuler.isPending}>
+            Ne pas annuler
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => annuler.mutate()}
+            disabled={motif.trim().length === 0 || annuler.isPending}
+          >
+            {annuler.isPending ? <Spinner className="size-4" /> : null}
+            Annuler l'ordonnance
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function ConsultationsPage() {
   const [recherche, setRecherche] = useState('')
   const [onglet, setOnglet] = useState<Onglet>('toutes')
+  /*
+    ── La pagination — chantier 77 ───────────────────────────────────────────────────────────────
+
+    ⚠️ Elle est **côté écran**, et c'est une contrainte, pas un choix : `listMine` renvoie au plus
+    cent séances (`take: 100`), **sans curseur, sans page, sans total**. Il n'y a donc rien à
+    paginer côté serveur — on découpe ce qui est arrivé.
+
+    Conséquence à ne jamais masquer : **au-delà de cent, les plus anciennes n'arrivent pas**, et
+    tourner les pages ne les fera pas revenir. La phrase qui le dit reste sous le tableau.
+  */
+  const [page, setPage] = useState(0)
+  /*
+    Les deux gestes du menu qui demandent une confirmation. `null` = fermé.
+
+    ⚠️ Ils vivent ICI et non dans `MenuLigne` : une boîte de dialogue montée dans une cellule de
+    tableau se ferme avec sa ligne dès que la page tourne ou qu'un filtre change — et l'annulation
+    partirait à moitié.
+  */
+  const qc = useQueryClient()
+  const [signale, setSignale] = useState<SessionListItem | null>(null)
+  const [aAnnuler, setAAnnuler] = useState<Prescription | null>(null)
   const moi = useSessionStore((s) => s.me)
 
   const seances = useQuery({ queryKey: ['sessions', 'mine'], queryFn: () => api.mySessions(), retry: false })
@@ -223,6 +426,17 @@ export function ConsultationsPage() {
       return dateFr(s.paidAt).toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
     })
   }, [items, recherche, onglet])
+
+  /*
+    Quinze lignes : une hauteur d'écran de bureau sans défilement, et assez peu pour qu'une page se
+    balaye d'un regard. En dessous de ce seuil, aucune commande de page ne s'affiche — des boutons
+    « précédent / suivant » pour une seule page sont du décor.
+  */
+  const pages = Math.max(1, Math.ceil(visibles.length / TAILLE_PAGE))
+  /* Changer d'onglet ou taper dans la recherche peut vider la page courante : on la ramène dans les
+     bornes plutôt que d'afficher un tableau vide sous un « page 4 sur 2 ». */
+  const pageSure = Math.min(page, pages - 1)
+  const lignes = visibles.slice(pageSure * TAILLE_PAGE, (pageSure + 1) * TAILLE_PAGE)
 
   if (seances.isPending) {
     return (
@@ -398,7 +612,7 @@ export function ConsultationsPage() {
               </tr>
             </thead>
             <tbody>
-              {visibles.map((s) => {
+              {lignes.map((s) => {
                 const etat = ETATS[s.status]
                 const ordo = parSeance.get(s.id) ?? []
                 const manque = aSigner(s)
@@ -490,9 +704,29 @@ export function ConsultationsPage() {
                     </td>
 
                     <td role="cell" data-libelle="" className="px-3 py-3 whitespace-nowrap text-right">
-                      <Button asChild size="sm" variant={manque ? 'default' : 'outline'}>
-                        <Link to={`/consultations/${s.id}`}>{manque ? 'Déposer' : 'Ouvrir'}</Link>
-                      </Button>
+                      {/*
+                        ── Le geste principal DEHORS, les secondaires dans un menu — chantier 77 ──
+
+                        Chaque ligne n'offrait qu'un bouton, et tout le reste obligeait à ENTRER dans
+                        la consultation pour en ressortir : voir une ordonnance, l'annuler, signaler
+                        un patient. Trois capacités qui existent depuis longtemps, à une seconde de
+                        distance et pourtant à trois clics.
+
+                        Le geste qui presse reste **nommé et visible** — « Déposer » quand un
+                        compte-rendu manque, « Ouvrir » sinon. Le cacher derrière trois points
+                        reviendrait à cacher ce qui coûte des gains gelés.
+                      */}
+                      <span className="inline-flex items-center gap-1.5">
+                        <Button asChild size="sm" variant={manque ? 'default' : 'outline'}>
+                          <Link to={`/consultations/${s.id}`}>{manque ? 'Déposer' : 'Ouvrir'}</Link>
+                        </Button>
+                        <MenuLigne
+                          seance={s}
+                          ordonnances={ordo}
+                          surSignaler={() => setSignale(s)}
+                          surAnnuler={(o) => setAAnnuler(o)}
+                        />
+                      </span>
                     </td>
                   </tr>
                 )
@@ -501,6 +735,80 @@ export function ConsultationsPage() {
           </table>
         </div>
       )}
+
+      {/*
+        Les commandes de page — chantier 77.
+
+        Elles ne s'affichent qu'à partir de deux pages : des boutons « précédent / suivant » sur une
+        liste qui tient sur un écran sont du décor, et un décor qu'on clique par réflexe.
+
+        Le compte est dit en toutes lettres (« 1–15 sur 42 ») plutôt qu'en numéros de page seuls :
+        c'est ce qui permet de savoir qu'il reste quelque chose à voir.
+      */}
+      {/*
+        ── Les deux boîtes du menu — chantier 77 ────────────────────────────────────────────────
+
+        Montées ICI, au niveau de l'écran, et non dans la cellule qui les ouvre : une boîte rendue
+        dans une ligne de tableau disparaît avec sa ligne dès qu'on tourne la page ou qu'on change
+        de filtre — et l'annulation partirait à moitié.
+      */}
+      {aAnnuler ? (
+        <BoiteAnnulation
+          ordonnance={aAnnuler}
+          surFermer={() => setAAnnuler(null)}
+          surFait={() => {
+            // Le registre relit les ordonnances : la pastille de la ligne doit suivre l'annulation.
+            void qc.invalidateQueries({ queryKey: ['prescriptions', 'prescribed'] })
+          }}
+        />
+      ) : null}
+
+      {/*
+        Le signalement vise le PATIENT de la séance, pas la séance : c'est la cible que
+        l'administration sait instruire. L'identité du signaleur n'est jamais transmise (RM-04-04) —
+        la boîte le dit elle-même.
+      */}
+      <DialogueSignalement
+        ouvert={signale !== null}
+        surFermer={() => setSignale(null)}
+        /* `PROFILE` et non « PATIENT » : la liste des cibles est FERMÉE côté serveur — un profil
+           ou un message, rien d'autre. C'est le profil du patient qu'on signale. */
+        cible="PROFILE"
+        cibleId={signale?.patientAccountId ?? ''}
+        quoi="ce patient"
+      />
+
+      {pages > 1 ? (
+        <nav aria-label="Pages du registre" className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="ul-aide">
+            {pageSure * TAILLE_PAGE + 1}–{Math.min((pageSure + 1) * TAILLE_PAGE, visibles.length)} sur{' '}
+            {visibles.length} {accord(visibles.length, 'consultation')}
+          </span>
+          <span className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={pageSure === 0}
+            >
+              Précédent
+            </Button>
+            <span className="t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
+              {pageSure + 1} / {pages}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+              disabled={pageSure >= pages - 1}
+            >
+              Suivant
+            </Button>
+          </span>
+        </nav>
+      ) : null}
 
       <div className="mt-3 flex flex-col gap-1 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
         <p>
