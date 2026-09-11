@@ -25,22 +25,17 @@ import { ESPACE_PAR_ROLE } from '@/config/navigation.config'
 import { IndicateurPresence } from '@/components/layout/IndicateurPresence'
 import { CentreNotifications } from '@/components/layout/CentreNotifications'
 import { RechercheGlobale } from '@/components/layout/RechercheGlobale'
-import { BoutonRideau } from '@/components/layout/RideauConfidentialite'
 
 export function TopHeader({
   titre,
   estMobile,
   surOuvrirNav,
-  rideau,
-  surBasculerRideau,
   rechercheOuverte,
   surRechercheChange,
 }: {
   titre: string
   estMobile: boolean
   surOuvrirNav: () => void
-  rideau: boolean
-  surBasculerRideau: () => void
   /* L'état de la palette vit dans la coquille depuis le chantier 47 : c'est elle qui écoute les
      touches, et deux sources d'ouverture (le bouton, le raccourci) ne peuvent pas diverger. */
   rechercheOuverte: boolean
@@ -84,13 +79,12 @@ export function TopHeader({
           autres rôles (un administrateur n'a aucune disponibilité à déclarer). */}
       <IndicateurPresence />
 
-      {/* La cloche reste sur mobile, contrairement au rideau : c'est justement sur un téléphone,
+      {/* La cloche reste sur mobile : c'est justement sur un téléphone,
           entre deux consultations, qu'on veut savoir qu'un patient attend. */}
       <CentreNotifications />
 
       {/* Absent sur mobile, comme dans la maquette : un téléphone se retourne, et la place dans une
           barre de 48 px y est comptée. */}
-      {estMobile ? null : <BoutonRideau actif={rideau} surBasculer={surBasculerRideau} />}
     </header>
   )
 }

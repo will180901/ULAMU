@@ -19,6 +19,20 @@
  * **Et quand le décodage échoue** — un codec que ce navigateur ne connaît pas — on affiche des
  * barres ÉGALES, pas une fausse onde. *Un dessin au hasard prétend dire quelque chose du son. Des
  * barres égales n'affirment rien, et sur un écran de soin on préfère ne rien dire à dire faux.*
+ *
+ * ── La FORME vient du téléphone, pas les couleurs (chantier 91) ───────────────────────────────
+ *
+ * Le porteur a comparé les deux écrans côte à côte : *« la note vocale ne se présente pas de la
+ * même manière, celui du téléphone me plaît bien »*. On reprend donc ses proportions exactes —
+ * bouton de 34 px, barres de 3 px de large et 3 à 24 px de haut, tête de lecture ronde de 10 px,
+ * durée en chasse fixe, vitesse dans une pastille — et **on retire le contenant** : le lecteur
+ * vit directement dans la bulle, comme sur le téléphone, au lieu d'être une pilule dans une bulle.
+ *
+ * ⚠️ **Les couleurs, elles, ne se copient pas.** Sur le téléphone, ma bulle est d'un bleu saturé :
+ * l'onde y est BLANCHE. Sur le web, ma bulle est `--ap-50`, un bleu très clair — une onde blanche
+ * y serait invisible. On garde donc l'encre d'accent des deux côtés. *Copier une maquette, c'est
+ * reprendre ses proportions et ses gestes ; recopier ses couleurs sur un autre fond, c'est
+ * recopier une erreur.*
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pause, Play } from 'lucide-react'
@@ -79,12 +93,9 @@ async function picsDuSon(url: string): Promise<number[] | null> {
 
 export function LecteurVocal({
   url,
-  aMoi = false,
   dureeAnnoncee,
 }: {
   url: string
-  /** Bulle « mienne » : l'onde doit porter sur un fond teinté, pas sur le fond de carte. */
-  aMoi?: boolean
   /**
    * La durée en secondes, telle que l'expéditeur l'a envoyée (`body` d'un message VOICE).
    *
@@ -133,11 +144,16 @@ export function LecteurVocal({
     if (audio.current) audio.current.playbackRate = suivante
   }
 
-  const encre = aMoi ? 'var(--ap-600)' : 'var(--ap-400)'
-  const encreEteinte = aMoi ? 'color-mix(in srgb, var(--ap-600) 30%, transparent)' : 'var(--bordure-normale)'
+  /*
+    Sur le web, les deux bulles sont CLAIRES (`--ap-50` pour les miennes, le fond de carte pour
+    celles de l'autre). L'encre d'accent porte sur les deux ; on ne reprend donc pas le blanc du
+    téléphone, qui n'a de sens que sur son bleu saturé.
+  */
+  const jouee = 'var(--ap-600)'
+  const aVenir = 'color-mix(in srgb, var(--ap-600) 26%, transparent)'
 
   return (
-    <span className="flex w-full max-w-[300px] items-center gap-2 rounded-full border border-border bg-secondary px-2.5 py-1.5">
+    <span className="flex w-full max-w-[264px] items-center gap-2 py-0.5">
       <audio
         ref={audio}
         src={url}
@@ -172,44 +188,53 @@ export function LecteurVocal({
               .catch(() => setJoue(false))
           }
         }}
-        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--ap-400)] text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+        className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--ap-400)] text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
       >
-        {joue ? <Pause size={13} strokeWidth={2} aria-hidden="true" /> : <Play size={13} strokeWidth={2} aria-hidden="true" />}
+        {joue ? <Pause size={14} strokeWidth={2} aria-hidden="true" /> : <Play size={14} strokeWidth={2} aria-hidden="true" />}
       </button>
 
       {/*
-        L'onde. `aria-hidden` : la durée juste à côté dit tout ce qu'un lecteur d'écran doit
-        entendre, et le déplacement reste possible par les contrôles natifs de l'élément audio.
+        L'onde et sa tête de lecture. `aria-hidden` : la durée juste à côté dit tout ce qu'un lecteur
+        d'écran doit entendre, et les contrôles natifs de l'élément audio restent atteignables.
       */}
       <div
         ref={onde}
         aria-hidden="true"
         onClick={allerA}
-        className="flex h-6 min-w-0 flex-1 cursor-pointer items-center gap-[2px]"
+        className="relative flex h-[30px] min-w-0 flex-1 cursor-pointer items-center gap-[2px]"
       >
         {Array.from({ length: BARRES }, (_, i) => {
           // Sans pics décodés : des barres ÉGALES. On n'invente pas une onde.
-          const hauteur = pics ? pics[i] : 0.34
-          const passee = i / BARRES < fraction
+          const hauteur = pics ? pics[i] : 0.3
+          const passee = i / BARRES <= fraction
           return (
             <span
               key={i}
-              className="min-w-0 flex-1 rounded-full"
+              className="min-w-0 flex-1 rounded-[2px]"
               style={{
-                height: `${Math.round(hauteur * 22)}px`,
-                background: passee ? encre : encreEteinte,
+                maxWidth: 3,
+                height: `${Math.round(3 + hauteur * 21)}px`,
+                background: passee ? jouee : aVenir,
               }}
             />
           )
         })}
+        {/*
+          La tête de lecture — le point que le pouce suit sur le téléphone. Elle dit où l'on en est
+          mieux qu'un changement de teinte : on la voit du coin de l'œil pendant qu'on écoute.
+        */}
+        <span
+          className="pointer-events-none absolute top-1/2 size-[10px] -translate-y-1/2 rounded-full shadow-[0_1px_2px_rgba(15,23,42,.25)]"
+          style={{ left: `calc(${fraction * 100}% - 5px)`, background: 'var(--ap-400)' }}
+        />
       </div>
 
-      <span className="shrink-0 t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
+      <span className="min-w-[30px] shrink-0 text-right t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
         {duree === null ? '—' : formatDuree(joue || position > 0 ? duree - position : duree)}
       </span>
 
       {/*
-        La vitesse — reprise du lecteur mobile, mêmes paliers, même libellé. Une note vocale de deux
+        La vitesse — reprise du lecteur mobile, mêmes paliers, même pastille. Une note vocale de deux
         minutes se réécoute souvent pour retrouver une phrase : doubler la vitesse est le geste
         qu'on fait vraiment.
       */}
@@ -217,7 +242,7 @@ export function LecteurVocal({
         type="button"
         onClick={changerVitesse}
         aria-label={`Vitesse de lecture : ${libelleVitesse(vitesse)}. Changer`}
-        className="shrink-0 rounded-full px-1.5 py-0.5 t-code-sm tabular-nums text-[var(--texte-secondaire)] transition-colors hover:bg-[var(--fond-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+        className="shrink-0 rounded-[9px] bg-[var(--ap-50)] px-1.5 py-[3px] t-code-sm font-semibold tabular-nums text-[var(--ap-600)] transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
       >
         {libelleVitesse(vitesse)}
       </button>

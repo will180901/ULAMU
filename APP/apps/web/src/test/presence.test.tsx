@@ -1,5 +1,10 @@
 /**
- * B1 — la présence du soignant, et le rideau de confidentialité.
+ * B1 — la présence du soignant.
+ *
+ * ⚠️ Le RIDEAU DE CONFIDENTIALITÉ a été retiré au chantier 91, à la demande du porteur
+ * (« on n'en a pas besoin pour l'instant »). Ses trois tests sont partis avec lui : un test
+ * qui garde une fonctionnalité absente n'est pas une sécurité, c'est un mensonge sur ce que
+ * le produit fait. Tout est dans l'historique si la fonction revient.
  *
  * ── Pourquoi ce fichier existe ────────────────────────────────────────────────────────────────
  *
@@ -202,40 +207,5 @@ describe('B1 — la pastille de présence', () => {
     await screen.findByText('contenu de l’écran')
     expect(screen.queryByRole('button', { name: /Ma présence/ })).not.toBeInTheDocument()
     expect(api.presenceHeartbeat).not.toHaveBeenCalled()
-  })
-})
-
-describe('B1 — le rideau de confidentialité', () => {
-  const bouton = () => screen.getByRole('button', { name: /rideau de confidentialité|Révéler l’écran/i })
-
-  it('masque le contenu, et le rend INERTE — sinon on taperait dans un formulaire invisible', async () => {
-    monter()
-    await screen.findByText('contenu de l’écran')
-
-    await userEvent.click(bouton())
-
-    expect(await screen.findByText('Écran masqué')).toBeInTheDocument()
-    // Le contenu reste dans le DOM (on ne démonte pas l'écran pour un voile), mais il est inerte.
-    const contenu = screen.getByText('contenu de l’écran').closest('[inert]')
-    expect(contenu).not.toBeNull()
-  })
-
-  it('se lève au clic sur le voile, et la session n’est pas fermée', async () => {
-    monter()
-    await screen.findByText('contenu de l’écran')
-    await userEvent.click(bouton())
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Lever le rideau' }))
-
-    await waitFor(() => expect(screen.queryByText('Écran masqué')).not.toBeInTheDocument())
-    // Le rideau n'est PAS une mesure de sécurité : il ne déconnecte rien, et le dit à l'écran.
-    expect(useSessionStore.getState().isAuthenticated).toBe(true)
-  })
-
-  it('n’existe pas sur mobile, comme dans la maquette', async () => {
-    monter({ largeur: 500 })
-    await screen.findByText('contenu de l’écran')
-
-    expect(screen.queryByRole('button', { name: /rideau de confidentialité/i })).not.toBeInTheDocument()
   })
 })

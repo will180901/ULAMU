@@ -19,7 +19,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { GardeFou } from '@/components/layout/GardeFou'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopHeader } from '@/components/layout/TopHeader'
-import { VoileRideau } from '@/components/layout/RideauConfidentialite'
 import { AideRaccourcis } from '@/components/layout/AideRaccourcis'
 import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
 import { useRaccourcisGlobaux } from '@/hooks/useRaccourcisGlobaux'
@@ -41,8 +40,6 @@ function useTitrePage(): string {
 export function AppShell() {
   const [survol, setSurvol] = useState(false)
   const [navMobile, setNavMobile] = useState(false)
-  // Rideau de confidentialité : état d'écran, jamais persisté (voir `RideauConfidentialite.tsx`).
-  const [rideau, setRideau] = useState(false)
   /*
     Les deux fenêtres ouvertes au clavier (chantier 47). Leur état vit ICI, et pas dans les
     composants qui les affichent : c'est la coquille qui écoute les touches, et un état posé plus
@@ -68,12 +65,6 @@ export function AppShell() {
   // la page qu'on vient justement de demander.
   useEffect(() => {
     setNavMobile(false)
-  }, [pathname])
-
-  // Changer de page lève le rideau : on vient de demander cet écran, le garder voilé ressemblerait
-  // à une panne. Et le geste qui a mené ici prouve qu'on est bien devant la machine.
-  useEffect(() => {
-    setRideau(false)
   }, [pathname])
 
   const ouverte = estMobile ? true : survol
@@ -152,8 +143,6 @@ export function AppShell() {
           titre={titre}
           estMobile={estMobile}
           surOuvrirNav={() => setNavMobile(true)}
-          rideau={rideau}
-          surBasculerRideau={() => setRideau((v) => !v)}
           rechercheOuverte={rechercheOuverte}
           surRechercheChange={setRechercheOuverte}
         />
@@ -163,7 +152,7 @@ export function AppShell() {
           {/* `inert` sous le voile : sans lui, les champs masqués resteraient TABULABLES — on
               taperait dans un formulaire qu'on ne voit pas. Le voile ne couvre PAS la barre du
               haut, sinon le bouton qui l'a posé deviendrait inatteignable. */}
-          <div inert={rideau} className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto">
             <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4">
               {/*
                 `key={pathname}` remonte la limite à chaque changement d'écran : sans elle, une fois
@@ -175,7 +164,6 @@ export function AppShell() {
               </GardeFou>
             </div>
           </div>
-          {rideau ? <VoileRideau surLever={() => setRideau(false)} /> : null}
         </div>
 
         <AideRaccourcis ouvert={aideOuverte} surChangement={setAideOuverte} />
@@ -190,8 +178,6 @@ export function AppShell() {
           l'application — sans qu'aucun écran ait à la connaître. Un champ peut la refuser avec
           `data-sans-formatage` ; aucun ne le fait aujourd'hui, et c'est voulu.
 
-          ⚠️ Elle est HORS du conteneur `inert` du rideau de confidentialité : quand le rideau
-          tombe, plus rien n'est saisissable, donc plus rien à mettre en forme.
         */}
         <BulleFormatageGlobale />
       </main>

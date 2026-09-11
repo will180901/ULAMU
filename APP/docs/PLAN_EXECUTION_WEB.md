@@ -676,6 +676,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **88** | **L'ordonnance rend les marqueurs — et le nom du médicament, non** — 11/09, le premier des trois restes du chantier 87, et **le seul qui touche à la sécurité**. Depuis que la bulle s'attache à toute zone de saisie, la **posologie** en fait partie : sans rendu, un médecin qui écrit « *matin et soir* » verrait ses astérisques, **et le patient aussi, sur une instruction de médicament**. Posologie et motif d'annulation rendus **des deux côtés** (web et mobile). 📌 **La règle qui décide, et qui vaudra pour les écrans suivants** : *on rend les marqueurs là — et SEULEMENT là — où la bulle peut les écrire.* Donc **non** pour le nom d'un médicament hors référentiel, qui est une ligne SIMPLE : la bulle n'y va pas, un astérisque tapé là est un astérisque **voulu**, et le transformer reviendrait à réécrire ce que le médecin a nommé — sur la seule ligne d'ordonnance qu'aucun garde-fou ne relit. Le composant de rendu prend le même nom des deux côtés (`TexteMisEnForme`). **web 979 ✓ · lint 0 · build et types propres (web et mobile) · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **89** | **Le compte-rendu tardif : accepté, sans crédit — et deux promesses contraires sur le même écran** — 11/09, **trouvé par le porteur**, qui n'arrivait pas à déposer son compte-rendu. 📌 **Le serveur refusait le dépôt passé PM-30, définitivement, et personne ne pouvait forcer** : aucune route d'administration. Deux choses étaient perdues d'un coup, et une seule avait été décidée — les **gains gelés** (sanction voulue, CU-06-03) et le **Carnet du patient privé du compte-rendu** (*personne n'a décidé cela*). Décision du porteur : séparer les deux. Le dépôt passe, `capture()` n'est plus appelée, la sanction reste entière. ⚠️ **Et l'écran promettait une chose ET son contraire** : avant l'échéance « le dépôt est refusé », après « Déposez tout de même : le serveur tranchera ». **Chacune avait son test** dans `promesses.test.ts` — *un test de promesse garantit qu'un écran continue de DIRE quelque chose, jamais que ce soit vrai.* 📌 Ma faute du chantier 84 nommée : j'avais lu la transaction sans lire le garde-fou six lignes au-dessus, et j'avais écrit ma conclusion fausse en commentaire. Ouvre la **dette n°29**. **web 983 ✓ · API unitaires 648 ✓ (+7) · lint 0 · builds et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **90** | **La note vocale sur le web : une onde VRAIE, et une durée qui cessait d'être une durée** — 11/09, demande du porteur (« je voudrais que la note vocale s'affiche comme ça »), faite depuis une **consultation réellement active**. Le lecteur devient riche : **onde, déplacement au clic, tête de lecture, vitesse 1× / 1,5× / 2×**, comme sur le téléphone. 📌 **Mais l'onde est VRAIE ici** : le mobile dessine 36 barres pseudo-aléatoires faute de pouvoir décoder un son ; le navigateur décode, donc on montre les **pics réels** — on voit où l'on parle et où l'on se tait, et on saute au passage qui compte. Et quand le décodage échoue, **barres ÉGALES, pas une fausse onde** : *un dessin au hasard prétend dire quelque chose du son ; des barres égales n'affirment rien.* ⚠️ **Deux défauts trouvés en regardant l'écran** : pour un message `VOICE`, `body` porte **la durée en secondes** (convention posée par le mobile) — le web l'affichait comme une légende, et on lisait « 76 » sous chaque note venue d'un téléphone ; et le web **n'envoyait pas** cette durée, donc une note enregistrée ici arrivait chez le patient sans durée. *Un champ qui change de sens selon un autre champ est un piège que les types ne rattrapent pas.* **web 990 ✓ (983 + 7) · lint 0 · build ✓ · 6 fautes injectées, 5 détectées — la sixième est le chemin d'enregistrement, injouable sous jsdom.** | ⏸ en attente | ⏸ |
+| **91** | **Le rideau de confidentialité s'en va, et le lecteur vocal prend la forme du téléphone** — 11/09, deux demandes du porteur, écran contre écran. **(1) Le rideau est retiré** (« on n'en a pas besoin pour l'instant ») : composant supprimé, état, `inert` et bouton du bandeau avec lui, **et ses trois tests** — *un test qui garde une fonctionnalité absente n'est pas une sécurité, c'est un mensonge sur ce que le produit fait.* Tout reste dans l'historique. **(2) Le lecteur vocal** reprend les proportions exactes du mobile : bouton de 34 px, barres de 3 px, **tête de lecture ronde**, durée en chasse fixe, vitesse en pastille — et **le contenant disparaît** : il vivait dans une pilule bordée à l'intérieur de la bulle, une boîte dans une boîte que le téléphone n'a jamais eue. ⚠️ **Les couleurs ne se copient pas** : sur le téléphone ma bulle est d'un bleu saturé et l'onde y est blanche ; sur le web elle est `--ap-50`, très claire — une onde blanche y serait invisible. *Copier une maquette, c'est reprendre ses proportions et ses gestes ; recopier ses couleurs sur un autre fond, c'est recopier une erreur.* Au passage, la propriété `aMoi` du lecteur **est supprimée** : elle ne servait plus, et une entrée qui ne fait rien ment sur le contrat du composant. **web 989 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -724,6 +725,47 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 91 (le rideau, et la forme du lecteur) a appris
+
+*11/09/2026 — deux écrans côte à côte valent mieux qu'une description.*
+
+#### Retirer une fonctionnalité, c'est retirer ses tests aussi
+
+Le rideau de confidentialité masquait l'écran d'un clic. Le porteur : *« on n'en a pas besoin pour
+l'instant »*. Sont partis : le composant, l'état de la coquille, le `inert` qui rendait le contenu
+intouchable, le bouton du bandeau — **et les trois tests qui le gardaient**.
+
+*Un test qui garde une fonctionnalité absente n'est pas une sécurité : c'est un mensonge sur ce que
+le produit fait.* Il passerait au vert en éprouvant du code mort, et le jour où quelqu'un lira la
+suite pour savoir ce que l'application sait faire, il y trouvera une réponse fausse.
+
+Le « pour l'instant » du porteur est noté : tout est dans l'historique, et le revenir coûte un
+`git revert`.
+
+#### Une maquette se copie par ses proportions, pas par ses couleurs
+
+Le porteur a mis les deux écrans côte à côte. Le lecteur du web tenait dans une **pilule bordée à
+l'intérieur de la bulle** — une boîte dans une boîte — là où le téléphone pose le lecteur
+directement sur la bulle. Et il lui manquait la **tête de lecture**, ce point que le pouce suit.
+
+Ce qui a été repris à l'identique : bouton de 34 px, barres de 3 px de large et 3 à 24 px de haut,
+tête ronde de 10 px, durée en chasse fixe alignée à droite, vitesse dans une pastille.
+
+⚠️ **Ce qui n'a PAS été repris : les couleurs.** Sur le téléphone, la bulle « mienne » est d'un
+bleu saturé et l'onde y est **blanche**. Sur le web, la même bulle est `--ap-50`, un bleu très
+clair : une onde blanche y serait invisible.
+
+> **Copier une maquette, c'est reprendre ses proportions et ses gestes. Recopier ses couleurs sur
+> un autre fond, c'est recopier une erreur.**
+
+#### Une propriété qui ne fait plus rien ment
+
+`LecteurVocal` recevait `aMoi` pour choisir l'encre selon la bulle. Les deux bulles du web étant
+claires, la distinction a disparu — et la propriété est **supprimée**, pas laissée à `false`.
+
+*Une entrée qui ne change rien annonce un comportement qui n'existe pas. Le prochain qui la lira
+croira qu'il peut s'en servir.*
 
 ### Ce que le chantier 90 (la note vocale) a appris
 

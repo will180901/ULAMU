@@ -917,6 +917,38 @@ describe('C5 — la note vocale (chantier 90)', () => {
     expect(hauteurs.size).toBe(1)
   })
 
+  /*
+    ── La forme du téléphone, reprise (chantier 91) ───────────────────────────────────────────
+
+    Le porteur a comparé les deux écrans : *« la note vocale ne se présente pas de la même manière,
+    celui du téléphone me plaît bien »*. Deux choses le distinguaient, et ces tests les tiennent.
+
+    **La tête de lecture** : le point que le pouce suit. Elle dit où l'on en est mieux qu'un
+    changement de teinte — on la voit du coin de l'œil pendant qu'on écoute.
+  */
+  it('montre une tête de lecture, comme sur le téléphone', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+    await fil().findByLabelText('Écouter la note vocale')
+
+    const tete = document.querySelector('span.rounded-full.absolute, span.absolute.rounded-full')
+    expect(tete).not.toBeNull()
+    expect((tete as HTMLElement).style.left).toMatch(/calc\(/)
+  })
+
+  /*
+    **Et le lecteur vit DANS la bulle**, sans contenant à lui. Le web l'enfermait dans une pilule
+    bordée — une boîte dans une boîte, que le téléphone n'a jamais eue.
+  */
+  it('n’est plus enfermé dans une pilule à l’intérieur de la bulle', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+
+    const bouton = await fil().findByLabelText('Écouter la note vocale')
+    const contenant = bouton.parentElement as HTMLElement
+    expect(contenant.className).not.toMatch(/border|bg-secondary|rounded-full/)
+  })
+
   /* La vitesse tourne 1× → 1,5× → 2× → 1×, comme sur le téléphone. */
   it('la vitesse de lecture se change, et revient à 1×', async () => {
     servirUnSon()

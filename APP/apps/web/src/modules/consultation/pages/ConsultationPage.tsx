@@ -185,11 +185,9 @@ function dureeFr(secondes: number): string {
 
 function Media({
   fileKey,
-  aMoi = false,
   dureeAnnoncee,
 }: {
   fileKey: string
-  aMoi?: boolean
   /** Voir `LecteurVocal` : la durée envoyée par l'expéditeur, avant que le son soit chargé. */
   dureeAnnoncee?: number | null
 }) {
@@ -223,7 +221,7 @@ function Media({
   if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
   if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
   // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
-  if (type?.startsWith('audio/')) return <LecteurVocal url={url} aMoi={aMoi} dureeAnnoncee={dureeAnnoncee} />
+  if (type?.startsWith('audio/')) return <LecteurVocal url={url} dureeAnnoncee={dureeAnnoncee} />
   return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
 }
 
@@ -763,7 +761,7 @@ function Bulle({
           ) : null}
 
           {cles.map((k) => (
-            <Media key={k} fileKey={k} aMoi={aMoi} dureeAnnoncee={dureeVocale} />
+            <Media key={k} fileKey={k} dureeAnnoncee={dureeVocale} />
           ))}
           {/*
             ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
