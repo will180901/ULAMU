@@ -79,7 +79,9 @@ import {
   Hourglass,
   ImagePlus,
   Lock,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Send,
   ShieldAlert,
@@ -112,6 +114,9 @@ import {
   type SessionMessage,
 } from '@/lib/api'
 import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
+import { ApercuMedias } from '../ApercuMedias'
+import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
+import { compresserImage, enBase64, formatDuree, MIMES_IMAGE } from '../media'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
@@ -173,6 +178,9 @@ function dureeFr(secondes: number): string {
 
 function Media({ fileKey }: { fileKey: string }) {
   const [url, setUrl] = useState<string | null>(null)
+  // Le TYPE servi par le serveur : c'est lui qui distingue une photo d'une note vocale. Il était
+  // renvoyé par `lireMediaSession` depuis toujours, et jeté ici (chantier 75).
+  const [type, setType] = useState<string | null>(null)
   const [echec, setEchec] = useState(false)
 
   useEffect(() => {
@@ -186,6 +194,7 @@ function Media({ fileKey }: { fileKey: string }) {
         }
         cree = f.url
         setUrl(f.url)
+        setType(f.type)
       })
       .catch(() => vivant && setEchec(true))
     // Libéré au démontage : une photo de consultation n'a pas à rester en mémoire de l'onglet.
@@ -195,9 +204,79 @@ function Media({ fileKey }: { fileKey: string }) {
     }
   }, [fileKey])
 
-  if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Image indisponible.</p>
+  if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
   if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
+  // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
+  if (type?.startsWith('audio/')) return <LecteurVocal url={url} />
   return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
+}
+
+/**
+ * Le lecteur d'une note vocale, DANS la bulle — chantier 75.
+ *
+ * ── Pourquoi pas `<audio controls>` ────────────────────────────────────────────────────────────
+ *
+ * Les contrôles natifs mesurent 300 px de large, changent d'allure à chaque navigateur, et ignorent
+ * le thème. Dans une bulle de conversation, ils écrasent le message. Celui-ci tient en 200 px,
+ * suit les jetons, et ne montre que ce dont on se sert : lire, s'arrêter, savoir où on en est.
+ *
+ * ⚠️ La durée vient du fichier, jamais d'un calcul : `duration` peut valoir `Infinity` tant que les
+ * métadonnées ne sont pas lues — on affiche alors un tiret plutôt qu'un nombre faux.
+ */
+function LecteurVocal({ url }: { url: string }) {
+  const audio = useRef<HTMLAudioElement | null>(null)
+  const [joue, setJoue] = useState(false)
+  const [position, setPosition] = useState(0)
+  const [duree, setDuree] = useState<number | null>(null)
+
+  const fraction = duree && duree > 0 ? Math.min(1, position / duree) : 0
+
+  return (
+    <span className="flex w-full max-w-[260px] items-center gap-2 rounded-full border border-border bg-secondary px-2.5 py-1.5">
+      <audio
+        ref={audio}
+        src={url}
+        preload="metadata"
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration
+          setDuree(Number.isFinite(d) && d > 0 ? d : null)
+        }}
+        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
+        onEnded={() => {
+          setJoue(false)
+          setPosition(0)
+        }}
+        className="sr-only"
+      />
+      <button
+        type="button"
+        aria-label={joue ? 'Mettre en pause' : 'Écouter la note vocale'}
+        onClick={() => {
+          const el = audio.current
+          if (!el) return
+          if (joue) {
+            el.pause()
+            setJoue(false)
+          } else {
+            void el.play().then(() => setJoue(true)).catch(() => setJoue(false))
+          }
+        }}
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--ap-400)] text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+      >
+        {joue ? <Pause size={13} strokeWidth={2} aria-hidden="true" /> : <Play size={13} strokeWidth={2} aria-hidden="true" />}
+      </button>
+
+      {/* La barre de progression. `aria-hidden` : la durée juste à côté dit déjà tout ce qu'un
+          lecteur d'écran a besoin d'entendre, et les contrôles natifs restent accessibles. */}
+      <span aria-hidden="true" className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--bordure-normale)]">
+        <span className="block h-full rounded-full bg-[var(--ap-400)]" style={{ width: `${fraction * 100}%` }} />
+      </span>
+
+      <span className="shrink-0 t-code-sm tabular-nums text-[var(--texte-tertiaire)]">
+        {duree === null ? '—' : formatDuree(joue || position > 0 ? duree - position : duree)}
+      </span>
+    </span>
+  )
 }
 
 /** Les réactions agrégées, sous la bulle. Un clic sur la mienne la retire — le serveur bascule. */
@@ -880,6 +959,17 @@ export function ConsultationPage() {
   const [surligne, setSurligne] = useState<string | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   /*
+    Les deux surfaces d'envoi de média — chantier 75.
+
+    `apercu` porte les photos CHOISIES mais pas encore parties : elles s'affichent, on en ajoute,
+    on en retire, on voit leur poids, et on renonce si besoin. `null` = pas d'aperçu ouvert.
+
+    `vocalOuvert` ouvre l'enregistreur à la place de la barre de saisie. Les deux ne coexistent
+    jamais : on ne dicte pas une note vocale en regardant des photos.
+  */
+  const [apercu, setApercu] = useState<File[] | null>(null)
+  const [vocalOuvert, setVocalOuvert] = useState(false)
+  /*
     Signalement (chantier 41). Deux états et non un : on signale soit LE PATIENT, soit UN MESSAGE
     précis — et l'administration a besoin de savoir lequel des deux. Le second porte l'identifiant
     du message ; `null` ferme la boîte.
@@ -956,24 +1046,67 @@ export function ConsultationPage() {
     onError: (e) => setErreur(messageErreur(e)),
   })
 
-  const envoyerPhoto = useMutation({
-    mutationFn: (f: File) =>
-      new Promise<unknown>((resolve, reject) => {
-        const lecteur = new FileReader()
-        lecteur.onerror = () => reject(new Error('Fichier illisible'))
-        lecteur.onload = async () => {
-          const brut = String(lecteur.result)
-          // Deux temps : on téléverse, puis on envoie la CLÉ. Le message ne porte jamais les octets.
-          const up = await api.uploadSessionMedia(sessionId, {
-            fileBase64: brut.slice(brut.indexOf(',') + 1),
-            mime: f.type,
-          })
-          resolve(await api.sendMessage(sessionId, { clientMsgId: crypto.randomUUID(), kind: 'PHOTO', fileKey: up.fileKey }))
-        }
-        lecteur.readAsDataURL(f)
-      }),
-    onSuccess: rafraichir,
+  /**
+   * Les photos — chantier 75.
+   *
+   * ⚠️ Trois choses ont changé :
+   *
+   * 1. **Plusieurs à la fois.** `SendMessageDto` accepte `fileKeys`, jusqu'à dix clés dans une
+   *    seule bulle, et le fil savait déjà les afficher (`mediaKeys`). Rien ne savait les envoyer.
+   * 2. **Compressées avant de partir.** Une photo de téléphone pèse 4 à 9 Mo ; sur un réseau
+   *    mobile, l'envoyer telle quelle coûte des minutes pour aucun gain de lecture médicale.
+   * 3. **Un seul message, pas dix.** Les clés partent groupées : dix bulles pour une éruption
+   *    photographiée sous dix angles rendraient le fil illisible.
+   *
+   * Les deux temps sont conservés : on téléverse, puis on envoie les CLÉS. Le message ne porte
+   * jamais les octets.
+   */
+  const envoyerPhotos = useMutation({
+    mutationFn: async (fichiers: File[]) => {
+      const cles: string[] = []
+      for (const f of fichiers) {
+        const leger = await compresserImage(f)
+        const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(leger), mime: leger.type })
+        cles.push(up.fileKey)
+      }
+      return api.sendMessage(sessionId, {
+        clientMsgId: crypto.randomUUID(),
+        kind: 'PHOTO',
+        // Une seule photo garde `fileKey` : c'est la forme que le serveur a toujours reçue, et
+        // rien ne gagne à envoyer un tableau d'un élément.
+        ...(cles.length === 1 ? { fileKey: cles[0] } : { fileKeys: cles }),
+      })
+    },
+    onSuccess: () => {
+      setApercu(null)
+      rafraichir()
+    },
     onError: (e) => setErreur(messageErreur(e)),
+  })
+
+  /**
+   * La note vocale — chantier 75.
+   *
+   * Le serveur accepte le type `VOICE` depuis le premier jour et six formats audio. Le web n'a
+   * jamais rien envoyé d'autre que du texte et des photos : dixième occurrence du motif « la
+   * capacité existe, l'écran ne l'offre pas ».
+   *
+   * Le fichier arrive déjà au format que le SERVEUR accepte — c'est `EnregistreurVocal` qui s'en
+   * charge, parce que le format par défaut des navigateurs Chromium (`audio/webm`) serait refusé.
+   */
+  const envoyerVocal = useMutation({
+    mutationFn: async (f: File) => {
+      const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(f), mime: f.type })
+      return api.sendMessage(sessionId, { clientMsgId: crypto.randomUUID(), kind: 'VOICE', fileKey: up.fileKey })
+    },
+    onSuccess: () => {
+      setVocalOuvert(false)
+      rafraichir()
+    },
+    onError: (e) => {
+      setVocalOuvert(false)
+      setErreur(messageErreur(e))
+    },
   })
 
   const supprimer = useMutation({
@@ -1105,14 +1238,40 @@ export function ConsultationPage() {
           </p>
         </span>
         <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
+        {/*
+          ── Le minuteur devient un INSTRUMENT — chantier 75 ─────────────────────────────────────
+
+          Il s'écrivait en 20 px nus, posés entre une pastille d'état et le titre : la chose qui
+          DÉCIDE de cet écran était la moins mise en scène de la page. La maquette C5 l'encadre et
+          l'étiquette « HORLOGE SERVEUR » — et elle a raison, pour une raison qui n'est pas
+          esthétique : ce chiffre n'est pas une information parmi d'autres, c'est le temps que le
+          patient a payé.
+
+          L'étiquette dit SERVEUR, et ce n'est pas un détail : l'horloge de ce poste n'est
+          qu'indicative (RM-06-02). Un médecin qui croit son navigateur plutôt que le serveur se
+          fait couper en pleine phrase.
+
+          L'encre d'urgence est posée en style inline : `.ul-chiffre` fixe `color` et vit hors d'un
+          `@layer` — un utilitaire `text-[…]` n'aurait eu aucun effet, et le rouge des deux
+          dernières minutes ne se serait jamais allumé. Piège du chantier 74, déjà payé une fois.
+        */}
         {s.status === 'ACTIVE' || s.status === 'PREPARING' ? (
           <span
             className={
-              'font-mono text-[20px] font-bold tabular-nums ' + (reste < 120 && active ? 'text-[var(--erreur-texte)]' : 'text-foreground')
+              'flex shrink-0 flex-col items-end rounded-[10px] border px-3 py-1.5 ' +
+              (reste < 120 && active
+                ? 'border-[var(--erreur-bordure)] bg-[var(--erreur-fond)]'
+                : 'border-border bg-[var(--fond-surface-2)]')
             }
-            aria-label="Temps restant"
           >
-            {mmss(reste)}
+            <span
+              className="ul-chiffre-ligne"
+              style={{ color: reste < 120 && active ? 'var(--erreur-texte)' : undefined }}
+              aria-label="Temps restant"
+            >
+              {mmss(reste)}
+            </span>
+            <span className="ul-surtitre">Horloge serveur</span>
           </span>
         ) : null}
       </div>
@@ -1251,16 +1410,45 @@ export function ConsultationPage() {
                   </div>
                 ) : null}
 
+                {/*
+                  Les deux surfaces d'envoi de média — chantier 75.
+
+                  Elles s'ouvrent AU-DESSUS de la barre de saisie et ne la remplacent pas : on peut
+                  toujours voir le fil et le message qu'on était en train d'écrire. L'aperçu des
+                  photos et l'enregistreur ne coexistent jamais — le micro est désactivé tant qu'un
+                  aperçu est ouvert, et réciproquement.
+                */}
+                {apercu ? (
+                  <ApercuMedias
+                    fichiers={apercu}
+                    enCours={envoyerPhotos.isPending}
+                    onFermer={() => setApercu(null)}
+                    onEnvoyer={(f) => envoyerPhotos.mutate(f)}
+                  />
+                ) : null}
+
+                {vocalOuvert ? (
+                  <EnregistreurVocal
+                    enCours={envoyerVocal.isPending}
+                    onAnnuler={() => setVocalOuvert(false)}
+                    onEnvoyer={(f) => envoyerVocal.mutate(f)}
+                  />
+                ) : null}
+
                 <div className="flex items-end gap-2">
                   <input
                     ref={champFichier}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept={MIMES_IMAGE.join(',')}
+                    /* `multiple` : le serveur accepte dix photos par bulle. Sans cet attribut, la
+                       capacité restait inatteignable depuis le sélecteur lui-même. */
+                    multiple
                     className="sr-only"
                     onChange={(e) => {
-                      const f = e.target.files?.[0]
+                      const choisis = Array.from(e.target.files ?? [])
                       e.target.value = ''
-                      if (f) envoyerPhoto.mutate(f)
+                      // On n'envoie plus au choix : on OUVRE l'aperçu. Voir `ApercuMedias`.
+                      if (choisis.length > 0) setApercu(choisis)
                     }}
                   />
                   <Button
@@ -1272,10 +1460,20 @@ export function ConsultationPage() {
                     onClick={() => champFichier.current?.click()}
                     // Une photo ne se glisse pas au milieu d'une retouche de texte : le serveur ne
                     // sait pas « modifier un message en y ajoutant une image ».
-                    disabled={envoyerPhoto.isPending || mode.type === 'edition'}
+                    disabled={envoyerPhotos.isPending || mode.type === 'edition'}
                   >
-                    {envoyerPhoto.isPending ? <Spinner className="size-4" /> : <ImagePlus size={16} strokeWidth={1.6} aria-hidden="true" />}
+                    {envoyerPhotos.isPending ? <Spinner className="size-4" /> : <ImagePlus size={16} strokeWidth={1.6} aria-hidden="true" />}
                   </Button>
+                  {/* Le micro, à côté de l'appareil photo : les deux ouvrent une surface d'envoi,
+                      aucun n'envoie directement. Désactivé pendant une retouche, pour la même
+                      raison que la photo. */}
+                  <BoutonMicro
+                    onOuvrir={() => {
+                      setErreur(null)
+                      setVocalOuvert(true)
+                    }}
+                    disabled={envoyerVocal.isPending || mode.type === 'edition'}
+                  />
                   <Textarea
                     ref={champTexte}
                     aria-label={mode.type === 'edition' ? 'Modifier votre message' : 'Votre message'}

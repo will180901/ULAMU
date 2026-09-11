@@ -17,7 +17,7 @@
  * reçue, jamais un calcul fait sur l'horloge du poste.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -369,6 +369,176 @@ describe('C5 — le contexte patient', () => {
  * Le fil, mis au niveau du mobile. Le serveur servait déjà tout cela (`MessageView` porte les
  * réponses citées, les réactions, l'édition et la double suppression) ; le web n'en montrait rien.
  */
+/*
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+  CHANTIER 75 — les médias : ce que le serveur acceptait et que l'écran n'offrait pas
+  ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  `SendMessageDto` accepte quatre types de message — `TEXT`, `PHOTO`, **`VOICE`**, `DOCUMENT` — et
+  un **album de dix photos** (`fileKeys`). Le web n'envoyait que du texte et UNE photo à la fois :
+  dixième occurrence du motif « la capacité existe, l'écran ne l'offre pas ».
+
+  Et la limite de taille se découvrait par l'échec : le serveur accepte ~84 Mo à l'entrée et refuse
+  au-delà de 8 Mo au stockage. Un fichier trop lourd traversait le réseau EN ENTIER avant d'être
+  rejeté.
+*/
+describe('C5 — les photos (chantier 75)', () => {
+  /** Une vraie image, assez petite pour qu'aucune règle ne la refuse. */
+  const photo = (nom: string, octets = 1024) => {
+    const f = new File([new Uint8Array(octets)], nom, { type: 'image/jpeg' })
+    Object.defineProperty(f, 'size', { value: octets })
+    return f
+  }
+
+  /*
+    ⚠️ Choisir n'est plus envoyer. Dans une consultation, une photo est un acte médical : on veut
+    voir ce qu'on transmet avant de le transmettre, et pouvoir renoncer.
+  */
+  it('choisir des photos ouvre un aperçu au lieu de les envoyer', async () => {
+    const envoi = vi.spyOn(api, 'sendMessage')
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('a.jpg'), photo('b.jpg')] } })
+
+    expect(await screen.findByText(/2 photos à envoyer/)).toBeInTheDocument()
+    // Rien n'est parti : c'est un aperçu, pas un envoi.
+    expect(envoi).not.toHaveBeenCalled()
+  })
+
+  /*
+    ⚠️ Le poids est dit AVANT, avec la limite. C'est le défaut que ce chantier corrige : un fichier
+    de 12 Mo traversait tout le réseau pour se faire refuser à l'arrivée.
+  */
+  it('un fichier trop lourd est refusé avec son poids ET la limite, avant tout envoi', async () => {
+    const envoi = vi.spyOn(api, 'sendMessage')
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('enorme.jpg', 12 * 1024 * 1024)] } })
+
+    // Le poids apparaît DEUX fois, et c'est voulu : sous la vignette (ce qu'on a choisi) et dans le
+    // refus (pourquoi ça ne part pas). On vise le refus, qui est le seul à porter la limite.
+    const refus = await screen.findByText(/12,0 Mo — maximum 8,0 Mo par fichier/)
+    expect(refus).toBeInTheDocument()
+    expect(envoi).not.toHaveBeenCalled()
+  })
+
+  /*
+    L'album : le serveur accepte dix clés dans UNE bulle (`fileKeys`), et le fil savait déjà les
+    afficher (`mediaKeys`). Dix bulles pour une éruption photographiée sous dix angles rendraient
+    le fil illisible.
+  */
+  it('plusieurs photos partent dans UNE seule bulle', async () => {
+    vi.spyOn(api, 'uploadSessionMedia')
+      .mockResolvedValueOnce({ fileKey: 'k1' })
+      .mockResolvedValueOnce({ fileKey: 'k2' })
+    const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('a.jpg'), photo('b.jpg')] } })
+    fireEvent.click(await screen.findByRole('button', { name: /Envoyer les 2 photos/ }))
+
+    await waitFor(() => expect(envoi).toHaveBeenCalledTimes(1))
+    expect(envoi.mock.calls[0]![1]).toMatchObject({ kind: 'PHOTO', fileKeys: ['k1', 'k2'] })
+  })
+
+  /*
+    Une seule photo garde `fileKey` : c'est la forme que le serveur a toujours reçue, et rien ne
+    gagne à envoyer un tableau d'un élément.
+  */
+  it('une seule photo garde la forme d’origine', async () => {
+    vi.spyOn(api, 'uploadSessionMedia').mockResolvedValue({ fileKey: 'k1' })
+    const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('a.jpg')] } })
+    fireEvent.click(await screen.findByRole('button', { name: /Envoyer la photo/ }))
+
+    await waitFor(() => expect(envoi).toHaveBeenCalled())
+    const dto = envoi.mock.calls[0]![1] as Record<string, unknown>
+    expect(dto.fileKey).toBe('k1')
+    expect(dto.fileKeys).toBeUndefined()
+  })
+
+  /*
+    ⚠️ Le test que l'injection a réclamé.
+
+    Un fichier refusé doit rester AU SOL. En posant la faute — « Envoyer » expédiant tout ce qui est
+    sélectionné au lieu des seuls fichiers valides — les 70 tests passaient : le trop-lourd serait
+    reparti sur le réseau pour se faire refuser à l'arrivée, c'est-à-dire exactement le défaut que
+    ce chantier corrige.
+
+    *Afficher un refus ne sert à rien si le bouton ne le respecte pas.*
+  */
+  it('les fichiers refusés ne partent pas, les autres oui', async () => {
+    vi.spyOn(api, 'uploadSessionMedia').mockResolvedValue({ fileKey: 'k1' })
+    const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('ok.jpg'), photo('enorme.jpg', 12 * 1024 * 1024)] } })
+
+    // Le bouton ne propose QUE ce qui peut partir : une photo, pas deux.
+    fireEvent.click(await screen.findByRole('button', { name: /Envoyer la photo/ }))
+
+    await waitFor(() => expect(envoi).toHaveBeenCalled())
+    const dto = envoi.mock.calls[0]![1] as Record<string, unknown>
+    expect(dto.fileKey).toBe('k1')
+    expect(dto.fileKeys).toBeUndefined()
+  })
+
+  it('on peut renoncer : l’aperçu se ferme sans rien envoyer', async () => {
+    const envoi = vi.spyOn(api, 'sendMessage')
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('a.jpg')] } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+
+    await waitFor(() => expect(screen.queryByText(/photo à envoyer/)).not.toBeInTheDocument())
+    expect(envoi).not.toHaveBeenCalled()
+  })
+})
+
+describe('C5 — la note vocale (chantier 75)', () => {
+  /*
+    ⚠️ jsdom n'a pas de `MediaRecorder`. C'est donc exactement l'état « aucun format commun » — et
+    le micro DOIT être désactivé en disant pourquoi, jamais ouvrir un enregistreur qui produira un
+    fichier que le serveur refusera.
+  */
+  it('sans format audio commun, le micro est désactivé et dit pourquoi', async () => {
+    await monter(seance())
+
+    const micro = await screen.findByRole('button', { name: /Enregistrer une note vocale/i })
+    expect(micro).toBeDisabled()
+    expect(micro.getAttribute('title')).toMatch(/aucun format audio accepté/i)
+  })
+})
+
+describe('C5 — le minuteur (chantier 75)', () => {
+  /*
+    Il s'écrivait en 20 px nus entre une pastille et le titre : la chose qui DÉCIDE de cet écran
+    était la moins mise en scène de la page. Et l'étiquette n'est pas décorative — elle dit que le
+    compte vient du SERVEUR, l'horloge du poste n'étant qu'indicative (RM-06-02).
+  */
+  it('porte son étiquette : le compte vient du serveur, pas du navigateur', async () => {
+    await monter(seance({ remainingSeconds: 900 }))
+
+    expect(await screen.findByText('Horloge serveur')).toBeInTheDocument()
+    expect(screen.getByLabelText('Temps restant')).toHaveClass('ul-chiffre-ligne')
+  })
+
+  it('une séance close n’affiche aucun minuteur', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }))
+    await screen.findByRole('heading', { name: 'Consultation' })
+
+    expect(screen.queryByText('Horloge serveur')).not.toBeInTheDocument()
+  })
+})
+
 describe('C5 — les gestes sur un message', () => {
   /** Un message à MOI, tout juste écrit : la fenêtre de quinze minutes est ouverte. */
   const aMoiRecent = () => message({ senderId: 'pro-1', createdAt: new Date().toISOString() })

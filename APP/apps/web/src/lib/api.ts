@@ -1558,10 +1558,35 @@ export const api = {
   session: (id: string) => request<CareSession>('GET', `/v1/care-sessions/${id}`, undefined, true),
   sessionMessages: (id: string) =>
     request<{ items: SessionMessage[]; nextCursor: string | null }>('GET', `/v1/care-sessions/${id}/messages`, undefined, true),
-  /** `clientMsgId` est une clé d'idempotence (ADR-12) : un rejeu réseau ne crée pas un doublon. */
+  /**
+   * `clientMsgId` est une clé d'idempotence (ADR-12) : un rejeu réseau ne crée pas un doublon.
+   *
+   * ⚠️ **`VOICE` et `fileKeys` ajoutés au chantier 75** — ils n'étaient pas DÉCLARÉS ici, et ce
+   * silence a coûté deux capacités entières :
+   *
+   * • `VOICE` est accepté par `SendMessageDto` depuis le premier jour (`TEXT, PHOTO, VOICE,
+   *   DOCUMENT`). Le type de ce client n'en connaissait que deux — donc aucun écran ne pouvait
+   *   envoyer une note vocale sans que TypeScript refuse.
+   * • `fileKeys` porte un **album de dix photos dans une seule bulle** (`@ArrayMaxSize(10)`). Le
+   *   fil savait déjà les AFFICHER (`SessionMessage.mediaKeys`) ; rien ne savait les envoyer.
+   *
+   * *Un type qui ment par omission ferme une porte aussi sûrement qu'une route absente — et sans
+   * laisser de trace, puisque rien n'échoue : le champ n'existe simplement pour personne.*
+   *
+   * `DOCUMENT` reste absent VOLONTAIREMENT : le type de message l'accepte, mais
+   * `UploadSessionMediaDto` ne connaît que les images et l'audio — aucun moyen d'obtenir la clé
+   * d'un document. Le déclarer ici promettrait un envoi impossible (dette n°2 du plan C5).
+   */
   sendMessage: (
     id: string,
-    dto: { clientMsgId: string; kind: 'TEXT' | 'PHOTO'; body?: string; fileKey?: string; replyToId?: string },
+    dto: {
+      clientMsgId: string
+      kind: 'TEXT' | 'PHOTO' | 'VOICE'
+      body?: string
+      fileKey?: string
+      fileKeys?: string[]
+      replyToId?: string
+    },
   ) => request<SessionMessage>('POST', `/v1/care-sessions/${id}/messages`, dto, true),
   /** Téléverse d'abord, envoie ensuite : le message ne porte que la CLÉ, jamais les octets. */
   uploadSessionMedia: (id: string, dto: { fileBase64: string; mime: string }) =>

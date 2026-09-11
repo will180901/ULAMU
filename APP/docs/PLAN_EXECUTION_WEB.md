@@ -658,6 +658,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **72** | **C6 — Mes gains : l'argent en attente ne se vaut pas tout entier** — 10/09, troisième écran de la passe 1. ⚠️ **Le défaut n'était pas visuel, et il portait sur de l'argent.** L'écran affirmait, pour TOUTE somme en attente, qu'elle « devient retirable dès leur dépôt ». Or le serveur REFUSE le dépôt passé l'échéance — *« Délai de dépôt dépassé (PM-30) : gains gelés »* — et chaque séance porte **déjà** `reportDueAt`, dont le commentaire dit en toutes lettres *« Au-delà, le dépôt est REFUSÉ et les gains gelés »*. **L'écran ne consultait jamais ce champ.** Les 4 500 F affichés sont le net de la consultation du 28/08 trouvée immobilisée au chantier 64 : la fenêtre s'est fermée le 29/08, et l'écran d'administration le savait pendant que celui du soignant promettait un versement à un geste près. **Huitième occurrence** du motif, la première qui porte sur de l'argent que quelqu'un attend. Livré aussi : les trois montants passés de **26 px hors charte** à la voix de chiffre héros, la rangée qui cesse de s'étirer (269 px pour 51, 264 et 57 caractères), le **numéro sur lequel part l'argent de 14 → 20 px**, l'avertissement « jamais créditée » sorti du 11 px, et `restant()` dans `lib/temps.ts`. 📌 **Deux fautes injectées n'ont réveillé personne** — le numéro et le rabattement d'un futur à zéro — trouvées et corrigées. **web 811 ✓ (799 + 12) · 157 promesses, 116 retenues · lint 0 · build ✓ · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **73** | **Un lien qui arrive à la bonne page mais pas au bon endroit** — 10/09, **trouvé par le porteur** sur son propre écran. Le bouton « Modifier mon numéro » de C6 le déposait **en haut** de Réglages → Sécurité, devant « Adresse email » — le bloc du téléphone est plus bas. Il a cliqué, vu un écran sans rapport, et conclu que **la modification n'existait pas**. Elle existait depuis le chantier 67. Livré : `&bloc=telephone`, l'ancre sur le bloc, et le saut à l'arrivée. 📌 **Et la leçon du chantier** : la faute qui renomme l'ANCRE n'a réveillé personne — le lien pointait dans le vide et 76 tests passaient. Les deux moitiés de la règle vivent dans deux fichiers ; il fallait un test de chaque côté. **web 813 ✓ (811 + 2) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées après correction du filet.** | ⏸ en attente | ⏸ |
 | **74** | **C3 — Demandes : une demande payée n'attend plus son paiement** — 11/09, quatrième écran de la passe 1. ⚠️ Ouvert la demande du 28/08 sur le site : sa pastille dit **« Payée »**, et l'écran demandait juste en dessous d'attendre le paiement. La phrase n'était conditionnée par **aucun état**. Elle promettait en plus les symptômes « juste après » sans dire OÙ — ils sont dans la consultation, `sessionId` est servi depuis toujours, la route existe, et **aucun écran ne les reliait** : **neuvième occurrence** du motif. Livré : la phrase juste quand c'est payé, le bouton « Ouvrir la consultation », le panneau « Temps restant » qui cède la place à **comment** la demande s'est terminée (« expirée » et « payée » n'appellent pas le même geste, et l'une coûte un point de taux), le compte à rebours passé de **34 px inventés** à la voix de chiffre héros, et les 10 tailles hors charte ramenées à 0. 📌 **Et la suite complète mentait** : 13 échecs dans 4 fichiers non touchés, tous à ~5 000 ms — des dépassements de délai. Les quatre fichiers passent SEULS (140 ✓). `testTimeout` porté à 15 s. **web 821 ✓ (813 + 8) · 158 promesses, 117 retenues · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
+| **75** | **C5 — les médias : ouvrir ce que le serveur tenait déjà ouvert** — 11/09, chantier A du plan de la consultation. Écrit après avoir ouvert les maquettes C4/C5 et lu la messagerie de **CMS-SARIS** (4 103 lignes). ⚠️ **Le serveur accepte quatre types de message — `TEXT`, `PHOTO`, `VOICE`, `DOCUMENT` — et un album de dix photos (`fileKeys`) ; le web n'envoyait que du texte et UNE photo.** Le fil savait pourtant déjà AFFICHER les albums (`mediaKeys`). **Dixième occurrence** du motif, et la première où c'est un **type TypeScript** qui fermait la porte : `sendMessage` ne déclarait que `'TEXT' | 'PHOTO'`, donc aucun écran ne POUVAIT envoyer une note vocale. ⚠️ **Et la limite de taille se découvrait par l'échec** : le DTO accepte ~84 Mo, le stockage refuse au-delà de **8 Mo** — un fichier de 20 Mo traversait le réseau EN ENTIER avant d'être rejeté, et le commentaire du DTO annonce « ≈ 80 Mo, cohérent » : **faux d'un facteur dix**. Livré : les **notes vocales** (chrono, onde d'amplitude, envoi en un geste, lecteur dans la bulle), l'**album de dix photos**, l'**aperçu avant envoi** avec compression et **poids annoncé AVANT**, et le minuteur devenu un **instrument** encadré et étiqueté « Horloge serveur ». 📌 **Le piège du format**, vérifié sur un vrai navigateur : `MediaRecorder` produit du `audio/webm` que le serveur REFUSE — l'intersection tient en `audio/mp4` (Chromium/Safari) ou `audio/ogg` (Firefox), et sans format commun le micro est désactivé **avec sa raison**. **web 844 ✓ (821 + 23) · 158 promesses, 117 retenues · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -706,6 +707,125 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 75 (C5 — les médias) a appris
+
+*11/09/2026 — le jour où un type TypeScript s'est révélé être une porte fermée.*
+
+#### ⚠️ Une déclaration incomplète ferme une capacité aussi sûrement qu'une route absente
+
+`SendMessageDto`, côté serveur, accepte depuis le premier jour :
+
+    kind: "TEXT" | "PHOTO" | "VOICE" | "DOCUMENT"
+    fileKeys: string[]   // album, @ArrayMaxSize(10)
+
+Le client web déclarait :
+
+    kind: 'TEXT' | 'PHOTO'
+
+Rien n'échouait. Aucune requête ne partait en erreur, aucun test ne tombait — **le champ n'existait
+simplement pour personne**. Et `fileKeys` n'était pas déclaré du tout, alors que le fil savait
+**déjà afficher** les albums (`SessionMessage.mediaKeys`, utilisé depuis le chantier 8).
+
+Les deux moitiés de la capacité existaient, des deux côtés, et rien ne les reliait.
+
+*C'est la dixième occurrence du motif — et la première où l'obstacle n'était ni une route ni un
+bouton, mais **un type**. Un type qui ment par omission ne laisse aucune trace : il n'y a pas
+d'erreur à lire, pas de 404 à constater. Il faut comparer les deux déclarations.*
+
+#### ⚠️ La limite de taille se découvrait par l'échec — et le commentaire serveur est faux
+
+| | Valeur |
+|---|---|
+| Ce que le DTO accepte (`@MaxLength(112_000_000)`) | **~84 Mo** de fichier |
+| Ce que le stockage accepte (`StorageService.maxBytes`) | **8 Mo** |
+| Ce que le commentaire du DTO annonce | *« ≈ 80 Mo, cohérent avec StorageService »* |
+
+Le commentaire est **faux d'un facteur dix**, et la conséquence n'est pas théorique : un fichier de
+20 Mo était encodé en base64, traversait le réseau **en entier**, et se faisait refuser à
+l'arrivée. Sur une connexion mobile congolaise, c'est plusieurs minutes pour un refus.
+
+L'écran n'annonçait aucune limite. Il l'annonce maintenant **avant** l'envoi, avec le poids du
+fichier ET la limite — *« 12,0 Mo — maximum 8,0 Mo par fichier »*. Une phrase qui dit quoi faire,
+au lieu de « fichier trop volumineux ».
+
+*Un miroir de contrainte serveur est une dette : il dérive en silence. Il est donc figé par un test
+qui cite le chiffre — le modifier devient une décision, pas un glissement.*
+
+#### 📌 Le piège du format audio, qui aurait tout fait échouer en silence
+
+Vérifié **sur un vrai navigateur**, pas supposé :
+
+| | Formats |
+|---|---|
+| Ce que `MediaRecorder` sait produire | `audio/mp4`, `audio/webm;codecs=opus`, `audio/webm` |
+| Ce qu'il ne sait PAS produire | `audio/ogg`, `audio/wav`, `audio/mpeg` |
+| Ce que le serveur ULAMU accepte | `audio/mp4`, `m4a`, `aac`, `mpeg`, `ogg`, `wav` — **jamais `webm`** |
+
+**L'intersection tient en un seul format : `audio/mp4`.** Sur Firefox, qui ne fait pas de mp4 mais
+fait de l'ogg/opus, c'est `audio/ogg` qui tombe juste.
+
+Prendre « le premier format supporté par le navigateur » — le réflexe — aurait produit du `webm`
+sur Chromium, c'est-à-dire **deux minutes de parole refusées à l'envoi**. Un test interdit
+désormais ce raccourci.
+
+Et quand aucun format commun n'existe, le micro est **désactivé avec sa raison** dans son `title`.
+Jamais un enregistreur qui produira un fichier condamné.
+
+*Enregistrer dans un format que le serveur refusera, c'est faire parler quelqu'un pour rien. Le
+refus doit arriver AVANT la parole, pas après.*
+
+#### Ce que la messagerie SARIS a apporté, et ce qu'on a laissé
+
+Ce chantier a été écrit après avoir lu `apps/web/src/modules/messagerie` de CMS-SARIS.
+
+**Pris :** l'envoi de note vocale **en un seul geste** (pas d'étape de relecture — une relecture la
+rendrait plus LENTE qu'un message écrit, et personne ne s'en servirait), l'onde d'amplitude
+(seule preuve visible que le micro capte), l'aperçu avant envoi, la compression d'image.
+
+**Laissé, et pour une raison de fond :** les groupes, le transfert d'un message, la mise en
+sourdine, la suppression par lot. **Notre conversation n'est pas une messagerie** — c'est une
+séance payée, unique, chronométrée, chiffrée, qui se verrouille à la fin (RM-06-03, RM-06-06).
+Transférer une donnée de santé hors de sa séance casserait le modèle ; il n'y a d'ailleurs aucune
+autre conversation où l'envoyer.
+
+*Reprendre une bonne idée demande de savoir ce qui, dans le produit d'origine, la rendait bonne.*
+
+#### Le minuteur était la chose la moins mise en scène de l'écran
+
+Il s'écrivait en 20 px nus, entre une pastille d'état et le titre. C'est pourtant **ce qui décide**
+de cet écran : le temps que le patient a payé.
+
+Il est encadré, et son étiquette dit **« Horloge serveur »** — ce n'est pas décoratif : l'horloge du
+poste n'est qu'indicative (RM-06-02), et un médecin qui croit son navigateur se fait couper en
+pleine phrase.
+
+#### L'injection a encore trouvé un trou — le huitième
+
+Sur huit fautes posées, sept sont tombées immédiatement. **La huitième n'a réveillé personne** : en
+faisant partir TOUS les fichiers sélectionnés au lieu des seuls fichiers valides, le trop-lourd
+serait reparti sur le réseau — **exactement le défaut que ce chantier corrige** — et les 70 tests
+passaient.
+
+*Afficher un refus ne sert à rien si le bouton ne le respecte pas.* Un test le retient maintenant.
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 821 ✓ | **844 ✓** |
+| Types de message que le web peut envoyer | 2 sur 4 | **3 sur 4** (`DOCUMENT` reste impossible — voir ci-dessous) |
+| Photos par bulle | 1 | **10** |
+| Limite de taille annoncée | jamais | **avant l'envoi, avec le poids et la limite** |
+| Promesses retenues | 117 / 158 | **117 / 158** (inchangé) |
+
+#### Ce qui reste, et qui demande le serveur
+
+- **`DOCUMENT` est un type mort** : accepté par le message, mais `UploadSessionMediaDto` ne connaît
+  que les images et l'audio — aucun moyen d'obtenir la clé d'un document. Un patient ne peut donc
+  pas transmettre un relevé, ce que la maquette C5 montre pourtant (`tension-releve-aout.pdf`).
+  **Volontairement non déclaré côté client** : le déclarer promettrait un envoi impossible.
+- **Le commentaire du DTO serveur** (« ≈ 80 Mo, cohérent ») reste faux. À corriger côté API.
 
 ### Ce que le chantier 74 (C3 — Demandes) a appris
 

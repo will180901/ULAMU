@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **821 ✓** (42 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **844 ✓** (43 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -66,7 +66,7 @@ arbre de travail propre.
 - Lint : **oxlint** sur api et web, **eslint** sur mobile. Référence : **0**.
 - `npm run build` sur les trois.
 - `python outils/promesses-sans-filet.py` (dans `APP/apps/web`) — mesure les phrases d'écran
-  qu'aucun test ne retient. Référence : **117 retenues sur 158**.
+  qu'aucun test ne retient. Référence : **117 retenues sur 158** (inchangé au chantier 75).
 
 **Structure :** monorepo `APP/apps/{api,web,mobile}`.
 ⚠️ **Le dépôt git est le dossier INTÉRIEUR** : `C:\Users\ADMIN\Desktop\ULAMU\ULAMU`.
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 74
+## 3. Ce qui a été fait — chantiers 58 à 75
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,7 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
-| 74 | *(à pousser)* | **C3 — Demandes.** ⚠️ Une demande PAYÉE demandait encore d'attendre le paiement — la phrase n'était conditionnée par aucun état — et ne disait pas où sont les symptômes : dans la consultation, que `sessionId` désigne depuis toujours et qu'**aucun écran ne reliait** (9ᵉ occurrence). 📌 Et la suite complète rendait **13 faux échecs** par dépassement de délai : `testTimeout` porté à 15 s. |
+| 75 | *(à pousser)* | **C5 — les médias.** ⚠️ Le serveur accepte `VOICE` et un **album de dix photos** ; le web n'envoyait que texte et UNE photo — et c'est un **type TypeScript** qui fermait la porte (`'TEXT' | 'PHOTO'`). 10ᵉ occurrence. ⚠️ Et la limite de 8 Mo se découvrait **après** que le fichier ait traversé le réseau. Livré : notes vocales, album, aperçu avant envoi, minuteur en instrument. 📌 `MediaRecorder` produit du `webm` que le serveur refuse : le format commun est `audio/mp4`. |
+| 74 | `98912ec` | **C3 — Demandes.** ⚠️ Une demande PAYÉE demandait encore d'attendre le paiement — la phrase n'était conditionnée par aucun état — et ne disait pas où sont les symptômes : dans la consultation, que `sessionId` désigne depuis toujours et qu'**aucun écran ne reliait** (9ᵉ occurrence). 📌 Et la suite complète rendait **13 faux échecs** par dépassement de délai : `testTimeout` porté à 15 s. |
 | 73 | `aa78033` | ⚠️ **Trouvé par le porteur** : « Modifier mon numéro » menait à la bonne PAGE mais pas au bon ENDROIT — il déposait en haut de Sécurité, devant « Adresse email ». Il en a conclu que la fonction n'existait pas ; elle existait depuis le chantier 67. 📌 Et la faute qui renomme l'ANCRE n'a réveillé personne : une règle qui vit en deux fichiers a besoin d'un test de chaque côté. |
 | 72 | `5c76586` | **C6 — Mes gains.** ⚠️ L'écran promettait que TOUT l'argent en attente « devient retirable dès leur dépôt » — faux passé l'échéance, où le serveur refuse le dépôt et gèle les gains. La donnée (`reportDueAt`) était servie depuis toujours, avec le commentaire qui dit exactement ça ; l'écran ne la lisait pas. **Huitième occurrence** du motif, la première sur de l'argent. Plus : les montants hors charte, la rangée qui s'étirait, le numéro de retrait à 14 px. |
 | 71 | `87fa15c` | **C2 — Ma vitrine.** Un fait dit trois fois et jamais fort, devenu un bandeau d'état unique ; l'offre éteinte qui se voit ; l'argent et les chiffres publics qui prennent leur voix ; l'assiette du taux, **vérifiée avant d'être branchée**. 📌 Deux tests ne mordaient pas — l'un passait parce que le rendu PLANTAIT — trouvés par l'injection et corrigés. |
