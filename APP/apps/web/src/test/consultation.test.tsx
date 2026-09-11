@@ -1152,7 +1152,7 @@ describe('C5 — les gestes sur un message', () => {
 
     jsdom est beaucoup plus lent qu'un vrai navigateur pour poser des styles — le coût mesuré ici
     n'est PAS le coût réel chez l'utilisateur. Mais il pointe une chose vraie : ce sélecteur monte
-    d'un coup ce qu'il pourrait monter par catégorie. **Dette n°27** — à regarder sur un Android
+    d'un coup ce qu'il pourrait monter par catégorie. **Dette n°28** — à regarder sur un Android
     d'entrée de gamme, qui est l'appareil du produit.
   */
   it('le « + » ouvre le sélecteur complet, et la réaction choisie part au serveur', async () => {
