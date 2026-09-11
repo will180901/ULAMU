@@ -130,7 +130,7 @@ export class HealthRecordReaderService {
   private async findRecord(owner: { patientId?: string; subProfileId?: string }): Promise<HealthRecord | null> {
     const ownersGiven = Number(Boolean(owner.patientId)) + Number(Boolean(owner.subProfileId));
     if (ownersGiven !== 1) {
-      throw new BadRequestException("Exactement un propriétaire requis : patient OU sous-profil (RM-07-01)");
+      throw new BadRequestException("Exactement un propriétaire requis : patient OU sous-profil");
     }
     if (owner.patientId) {
       return this.prisma.healthRecord.findUnique({ where: { patientAccountId: owner.patientId } });

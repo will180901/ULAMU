@@ -51,7 +51,7 @@ export class HealthRecordWriterService {
       const target = await tx.healthRecordEntry.findUnique({ where: { id: input.supersedesId } });
       if (!target || !canSupersede({ recordId: target.recordId, type: target.type }, { recordId: record.id, type: input.type })) {
         throw new BadRequestException(
-          "L'entrée remplacée doit exister, appartenir au même Carnet et être du même type (RM-07-02)",
+          "L'entrée remplacée doit exister, appartenir au même Carnet et être du même type",
         );
       }
     }
@@ -93,14 +93,14 @@ export class HealthRecordWriterService {
   ): Promise<{ record: HealthRecord; notifyAccountId: string | null }> {
     const ownersGiven = Number(Boolean(input.ownerPatientId)) + Number(Boolean(input.ownerSubProfileId));
     if (ownersGiven !== 1) {
-      throw new BadRequestException("Exactement un propriétaire requis : patient OU sous-profil (RM-07-01)");
+      throw new BadRequestException("Exactement un propriétaire requis : patient OU sous-profil");
     }
 
     if (input.ownerPatientId) {
       // Sécurité : on ne crée jamais un Carnet pour un compte inexistant ou non patient.
       const account = await tx.account.findUnique({ where: { id: input.ownerPatientId }, select: { id: true, type: true } });
       if (!account || account.type !== "PATIENT") {
-        throw new BadRequestException("Propriétaire du Carnet introuvable ou non patient (RM-07-01)");
+        throw new BadRequestException("Propriétaire du Carnet introuvable ou non patient");
       }
       const record = await tx.healthRecord.upsert({
         where: { patientAccountId: input.ownerPatientId },
@@ -113,7 +113,7 @@ export class HealthRecordWriterService {
     const subProfileId = input.ownerSubProfileId as string;
     const subProfile = await tx.subProfile.findUnique({ where: { id: subProfileId } });
     if (!subProfile) {
-      throw new BadRequestException("Sous-profil introuvable (EF-07-09)");
+      throw new BadRequestException("Sous-profil introuvable");
     }
     /*
       ── Après un transfert, l'écriture SUIT le Carnet (chantier 52, 06/09/2026) ────────────────
@@ -143,7 +143,7 @@ export class HealthRecordWriterService {
       if (!subProfile.transferredToId) {
         // Transféré sans destinataire : incohérence de données, on ne devine pas de propriétaire.
         throw new BadRequestException(
-          "Ce Carnet a été transféré sans titulaire identifiable — contactez le support (RM-07-06)",
+          "Ce Carnet a été transféré sans titulaire identifiable — contactez le support",
         );
       }
       const record = await tx.healthRecord.upsert({

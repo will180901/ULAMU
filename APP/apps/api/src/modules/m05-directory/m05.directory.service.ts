@@ -277,7 +277,7 @@ export class DirectoryService {
     professionalId: string,
   ): Promise<{ professionalId: string; expiresAt: string }> {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("La cloche d'alerte est réservée aux patients connectés (EF-05-04)");
+      throw new ForbiddenException("La cloche d'alerte est réservée aux patients connectés");
     }
 
     // Le professionnel doit exister dans la vitrine (mêmes règles RM-05-01/RM-05-05).

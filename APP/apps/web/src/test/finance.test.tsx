@@ -414,7 +414,16 @@ describe('E-finance — filet de refonte : qui décide, et ce qu’on ne sait pa
   */
   it('dit que la double validation exige deux administrateurs différents', async () => {
     monter()
-    expect(await screen.findByText(/deux administrateurs, jamais le même deux fois/)).toBeInTheDocument()
+    /*
+      Motif INSENSIBLE A LA CASSE. La phrase a perdu son préfixe « RM-13-06 — » (chantier 85) et
+      son « d » est devenu la première lettre du sous-titre, donc une majuscule. Le test est tombé
+      sur la casse, pas sur le sens.
+
+      C'est la DEUXIEME fois : le filet des promesses avait appris la même leçon le 09/09, quand
+      une phrase était devenue un titre. *Un test qui tient une phrase doit tenir son SENS, pas
+      sa typographie — sinon il tombe à chaque retouche et on finit par le croire fragile.*
+    */
+    expect(await screen.findByText(/deux administrateurs, jamais le même deux fois/i)).toBeInTheDocument()
   })
 
   /*

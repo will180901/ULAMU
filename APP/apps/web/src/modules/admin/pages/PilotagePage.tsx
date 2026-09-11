@@ -326,7 +326,7 @@ export function PilotagePage() {
             </section>
 
             <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-96">
-              <Carte icone={ShieldCheck} titre="Intégrité du journal" sousTitre="Chaînage cryptographique (EF-04-03)">
+              <Carte icone={ShieldCheck} titre="Intégrité du journal" sousTitre="Chaînage cryptographique">
                 {integrite.isPending ? (
                   <p className="flex items-center gap-2 py-2 text-[12px] text-[var(--texte-tertiaire)]">
                     <Spinner className="size-3.5" /> Vérification…
@@ -510,7 +510,7 @@ export function PilotagePage() {
 
           <p className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[var(--texte-tertiaire)]">
             <Pilule ton="info">Agrégats seuls</Pilule>
-            Aucune donnée individuelle ne sort de cet écran : que des compteurs et des taux (RM-16-05).
+            Aucune donnée individuelle ne sort de cet écran : que des compteurs et des taux.
           </p>
         </>
       )}

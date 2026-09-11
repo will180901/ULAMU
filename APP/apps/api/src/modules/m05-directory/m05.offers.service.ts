@@ -114,7 +114,7 @@ export class OffersService {
     dto: { biography?: string; district?: string },
   ): Promise<{ specialty: string | null; biography: string | null; district: string | null }> {
     if (actor.accountType !== "PROFESSIONAL") {
-      throw new ForbiddenException("Action réservée aux professionnels de santé (EF-05-01)");
+      throw new ForbiddenException("Action réservée aux professionnels de santé");
     }
     const updated = await this.prisma.professionalProfile.update({
       where: { accountId: actor.accountId },
@@ -312,7 +312,7 @@ export class OffersService {
 
   private assertProfessional(actor: AuthenticatedActor): void {
     if (actor.accountType !== "PROFESSIONAL") {
-      throw new ForbiddenException("Action réservée aux professionnels de santé (EF-05-02)");
+      throw new ForbiddenException("Action réservée aux professionnels de santé");
     }
   }
 
@@ -321,7 +321,7 @@ export class OffersService {
     const status = await this.verification.getForProfessional(professionalId);
     if (!status.canPractice) {
       throw new ForbiddenException(
-        "Publication d'offre impossible : votre profil doit être vérifié et votre contrat signé (D-029)",
+        "Publication d'offre impossible : votre profil doit être vérifié et votre contrat signé",
       );
     }
   }
@@ -329,10 +329,10 @@ export class OffersService {
   /** Messages précis, PM injectés (jamais en dur) — EF-05-02. */
   private assertOfferFields(durationMin: number, priceXaf: number, bounds: number[], floor: number): void {
     if (!durationIsValid(durationMin, bounds)) {
-      throw new BadRequestException(`Durée invalide : entre ${bounds[0]} et ${bounds[1]} minutes (PM-09)`);
+      throw new BadRequestException(`Durée invalide : entre ${bounds[0]} et ${bounds[1]} minutes`);
     }
     if (!priceIsValid(priceXaf, floor)) {
-      throw new BadRequestException(`Prix invalide : minimum ${floor} XAF, commission incluse (PM-06, D-010)`);
+      throw new BadRequestException(`Prix invalide : minimum ${floor} XAF, commission incluse`);
     }
   }
 
@@ -341,7 +341,7 @@ export class OffersService {
     const activeCount = await tx.careOffer.count({ where: { professionalId, active: true } });
     if (activeCount >= maxActive) {
       throw new ConflictException(
-        `Nombre maximum d'offres actives atteint (${maxActive}, PM-25) — désactivez une offre avant d'en publier une autre`,
+        `Nombre maximum d'offres actives atteint (${maxActive}) — désactivez une offre avant d'en publier une autre`,
       );
     }
   }

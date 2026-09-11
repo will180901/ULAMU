@@ -162,7 +162,7 @@ export class M02Service {
   ): Promise<{ accountId: string }> {
     const phone = this.normalizeOrThrow(dto.phone);
     const existing = await this.prisma.account.findUnique({ where: { phone } });
-    if (existing) throw new ConflictException("Ce numéro est déjà enregistré (RM-01-01)");
+    if (existing) throw new ConflictException("Ce numéro est déjà enregistré");
     const username = normalizeUsername(dto.username);
     if (!isAcceptableUsername(username)) throw new BadRequestException("Nom d'utilisateur invalide (3 à 30 caractères : lettres, chiffres, . _ -)");
     const usernameTaken = await this.prisma.account.findUnique({ where: { username }, select: { id: true } });

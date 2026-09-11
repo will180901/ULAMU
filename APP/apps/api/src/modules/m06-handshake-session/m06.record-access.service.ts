@@ -51,13 +51,13 @@ export class RecordAccessService {
   ): Promise<CareSession> {
     const session = await this.sessions.loadForParticipant(actor, sessionId);
     if (session.professionalId !== actor.accountId) {
-      throw new ForbiddenException("Le Carnet en session n'est lisible que par le professionnel (EF-06-06)");
+      throw new ForbiddenException("Le Carnet en session n'est lisible que par le professionnel");
     }
     // Transitions paresseuses d'abord : une session échue se referme AVANT toute lecture.
     const settled = await this.sessions.settle(session);
     if (settled.status !== CareSessionStatus.ACTIVE) {
       throw new ConflictException(
-        "L'accès au Carnet n'est ouvert que pendant la session active — il se referme à la clôture (EF-06-06, RM-06-05)",
+        "L'accès au Carnet n'est ouvert que pendant la session active — il se referme à la clôture",
       );
     }
     await this.prisma.$transaction(async (tx) => {

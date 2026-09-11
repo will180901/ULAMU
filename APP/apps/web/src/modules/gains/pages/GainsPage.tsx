@@ -623,7 +623,7 @@ export function GainsPage() {
             </Carte>
           ) : null}
 
-          <Carte icone={History} titre="Mouvements" sousTitre="Le journal fait foi (EF-13-06)">
+          <Carte icone={History} titre="Mouvements" sousTitre="Le journal fait foi">
             {entries.length === 0 ? (
               <p className="py-4 text-center text-[12px] text-[var(--texte-tertiaire)]">
                 Aucun mouvement pour le moment. Votre première consultation créditée apparaîtra ici.

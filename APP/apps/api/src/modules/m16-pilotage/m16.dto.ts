@@ -13,14 +13,14 @@ export class SearchAccountsQueryDto {
 
 /** Action motivée générique (suspension, réactivation, demande de ban). */
 export class MotiveDto {
-  @IsString() @IsNotEmpty({ message: "Motif obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) reason!: string;
+  @IsString() @IsNotEmpty({ message: "Motif obligatoire" }) @MinLength(3) @MaxLength(2000) reason!: string;
 }
 
 /** Arbitrage d'un strike de fiabilité (EF-12-07, CU via M16) : maintenu ou levé. */
 export class ResolveStrikeDto {
   /** true = strike maintenu (ACTIVE) ; false = strike levé (CANCELLED). */
   @IsBoolean() uphold!: boolean;
-  @IsString() @IsNotEmpty({ message: "Motif obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) reason!: string;
+  @IsString() @IsNotEmpty({ message: "Motif obligatoire" }) @MinLength(3) @MaxLength(2000) reason!: string;
 }
 
 /** Modification d'un paramètre plateforme (EF-16-04, Super Admin) : valeur + date d'effet + motif. */
@@ -29,7 +29,7 @@ export class UpdateParameterDto {
   @IsString() @IsNotEmpty({ message: "Nouvelle valeur requise" }) @MaxLength(500) value!: string;
   /** Date d'effet ISO-8601 : les modules servent la valeur à compter de cette date (CU-16-02). */
   @IsISO8601({}, { message: "Date d'effet au format ISO-8601 attendue" }) effectiveAt!: string;
-  @IsString() @IsNotEmpty({ message: "Motif obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) reason!: string;
+  @IsString() @IsNotEmpty({ message: "Motif obligatoire" }) @MinLength(3) @MaxLength(2000) reason!: string;
 }
 
 /** Types de procédure support (alignés sur l'enum Prisma SupportProcedureType). */
@@ -48,7 +48,7 @@ export class OpenSupportProcedureDto {
   @IsIn(SUPPORT_PROCEDURE_TYPES) type!: SupportProcedureTypeCode;
   /** Compte concerné (facultatif selon le type de procédure). */
   @IsOptional() @IsUUID() accountId?: string;
-  @IsString() @IsNotEmpty({ message: "Justification obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) justification!: string;
+  @IsString() @IsNotEmpty({ message: "Justification obligatoire" }) @MinLength(3) @MaxLength(2000) justification!: string;
   @IsArray() @Type(() => SupportStepDto) steps!: SupportStepDto[];
 }
 
@@ -94,7 +94,7 @@ export class ListSupportRequestsQueryDto {
 
 /** Annulation motivée d'une procédure support. */
 export class CancelSupportProcedureDto {
-  @IsString() @IsNotEmpty({ message: "Motif obligatoire (RM-16-03)" }) @MinLength(3) @MaxLength(2000) reason!: string;
+  @IsString() @IsNotEmpty({ message: "Motif obligatoire" }) @MinLength(3) @MaxLength(2000) reason!: string;
 }
 
 /** Filtre de la liste des procédures support. */

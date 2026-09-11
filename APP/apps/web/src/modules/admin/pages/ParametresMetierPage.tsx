@@ -169,7 +169,7 @@ function Changer({ parametre, onFini }: { parametre: PlatformParameter; onFini: 
           onChange={(e) => setMotif(e.target.value)}
         />
         <p className="mt-1 ul-aide">
-          Il part au journal d'audit avec votre nom, l'ancienne et la nouvelle valeur (RM-16-03).
+          Il part au journal d'audit avec votre nom, l'ancienne et la nouvelle valeur.
         </p>
       </div>
 

@@ -510,7 +510,7 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
       {annulable ? (
         <div className="rounded-lg border border-border p-3">
           <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-            Une ordonnance scellée ne se modifie pas (RM-09-05). En cas d'erreur, annulez-la — son
+            Une ordonnance scellée ne se modifie pas. En cas d'erreur, annulez-la — son
             code devient inerte définitivement — et rédigez-en une nouvelle.
           </p>
           {demandeAnnulation ? (
@@ -652,7 +652,7 @@ export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; ac
         ) : active ? (
           <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
             Aucune ligne prescrite. Vous ne pourrez plus prescrire une fois la séance terminée
-            (RM-09-01).
+           .
           </p>
         ) : (
           <p className="text-[12px] leading-[1.55] text-[var(--texte-tertiaire)]">
@@ -689,7 +689,7 @@ export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; ac
 
             {!active ? (
               <Avis ton="info">
-                On ne prescrit que depuis une séance active (RM-09-01, D-014). Cette consultation est
+                On ne prescrit que depuis une séance active. Cette consultation est
                 close : l'ordonnance ci-dessus reste consultable, mais aucune nouvelle ne peut être
                 rédigée.
               </Avis>

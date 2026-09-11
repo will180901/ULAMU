@@ -205,7 +205,7 @@ export class SessionService {
     const session = await this.loadForParticipant(actor, sessionId);
     const settled = await this.settle(session);
     if (settled.status !== CareSessionStatus.ACTIVE) {
-      throw new ConflictException("Un média ne peut être envoyé que dans une session active (RM-06-03)");
+      throw new ConflictException("Un média ne peut être envoyé que dans une session active");
     }
     const fileKey = await this.storage.save("sm", base64, mime);
     return { fileKey };
@@ -295,7 +295,7 @@ export class SessionService {
         where: { sessionId: current.id, senderId: current.professionalId },
       });
       if (professionalMessages === 0) {
-        await this.payments.refund(current.orderRef, "Aucune réponse du professionnel (D-008)");
+        await this.payments.refund(current.orderRef, "Aucune réponse du professionnel");
         await this.prisma.$transaction(async (tx) => {
           const { count } = await tx.careSession.updateMany({
             where: { id: current.id, status: CareSessionStatus.ENDED },
@@ -358,13 +358,13 @@ export class SessionService {
   async submitPreConsultation(actor: AuthenticatedActor, sessionId: string, dto: SubmitPreConsultationDto): Promise<SessionView> {
     const session = await this.loadForParticipant(actor, sessionId);
     if (session.patientAccountId !== actor.accountId) {
-      throw new ForbiddenException("Seul le patient remplit la pré-consultation (D-019)");
+      throw new ForbiddenException("Seul le patient remplit la pré-consultation");
     }
     const settled = await this.settle(session);
     if (settled.status !== CareSessionStatus.PREPARING) {
       if (settled.status === CareSessionStatus.ACTIVE) {
         throw new ConflictException(
-          "La session a déjà démarré (démarrage automatique, PM-28) — envoyez ces informations directement dans la conversation",
+          "La session a déjà démarré (démarrage automatique) — envoyez ces informations directement dans la conversation",
         );
       }
       throw new ConflictException("La session n'est plus en préparation — la pré-consultation n'est plus attendue");
@@ -419,7 +419,7 @@ export class SessionService {
     const settled = await this.settle(session);
     if (settled.status !== CareSessionStatus.ACTIVE) {
       throw new ConflictException(
-        "Aucun message ne peut exister hors d'une session active (RM-06-03, D-006) — la session est " +
+        "Aucun message ne peut exister hors d'une session active — la session est " +
           this.statusLabel(settled.status),
       );
     }
@@ -428,7 +428,7 @@ export class SessionService {
     const contentValid = dto.kind === "TEXT" ? !!dto.body?.trim() : hasMedia;
     if (!contentValid) {
       throw new BadRequestException(
-        "Message invalide : un texte exige un contenu, une photo / note vocale / document exige un fichier (EF-06-05)",
+        "Message invalide : un texte exige un contenu, une photo / note vocale / document exige un fichier",
       );
     }
     // Citation/réponse : le message cité doit appartenir à la session et ne pas être supprimé.
@@ -447,7 +447,7 @@ export class SessionService {
           where: { id: sessionId, status: CareSessionStatus.ACTIVE, endsAt: { gt: new Date() } },
           select: { id: true },
         });
-        if (!live) throw new ConflictException("La session vient de se terminer — le message n'a pas été envoyé (RM-06-03)");
+        if (!live) throw new ConflictException("La session vient de se terminer — le message n'a pas été envoyé");
         const message = await tx.sessionMessage.create({
           data: {
             sessionId,
@@ -699,17 +699,17 @@ export class SessionService {
   async extend(actor: AuthenticatedActor, sessionId: string, dto: ExtendSessionDto): Promise<SessionView> {
     const session = await this.loadForParticipant(actor, sessionId);
     if (session.professionalId !== actor.accountId) {
-      throw new ForbiddenException("La prolongation est à la seule initiative du professionnel (D-016)");
+      throw new ForbiddenException("La prolongation est à la seule initiative du professionnel");
     }
     const settled = await this.settle(session);
     if (settled.status !== CareSessionStatus.ACTIVE || !settled.endsAt) {
-      throw new ConflictException("Seule une session active peut être prolongée (EF-06-07)");
+      throw new ConflictException("Seule une session active peut être prolongée");
     }
     const pm29S = await this.params.getInt("PM-29");
     const addSec = dto.minutes * 60;
     if (!canExtend(settled.extensionTotalSec, addSec, pm29S)) {
       throw new ConflictException(
-        `Prolongation impossible : le cumul gratuit est plafonné à ${Math.floor(pm29S / 60)} minutes (PM-29)`,
+        `Prolongation impossible : le cumul gratuit est plafonné à ${Math.floor(pm29S / 60)} minutes`,
       );
     }
 
@@ -741,7 +741,7 @@ export class SessionService {
   async cancel(actor: AuthenticatedActor, sessionId: string): Promise<SessionView> {
     const session = await this.loadForParticipant(actor, sessionId);
     if (session.patientAccountId !== actor.accountId) {
-      throw new ForbiddenException("Seul le patient peut annuler sa session (EF-06-10)");
+      throw new ForbiddenException("Seul le patient peut annuler sa session");
     }
     const settled = await this.settle(session);
     if (settled.status === CareSessionStatus.REFUNDED) {
@@ -749,7 +749,7 @@ export class SessionService {
     }
     if (settled.status === CareSessionStatus.ENDED) {
       throw new ConflictException(
-        "Session terminée — l'annulation n'est plus possible (le remboursement automatique D-008 s'applique si le professionnel n'a jamais répondu ; sinon, ouvrez un signalement)",
+        "Session terminée — l'annulation n'est plus possible (le remboursement automatique s'applique si le professionnel n'a jamais répondu ; sinon, ouvrez un signalement)",
       );
     }
 
@@ -761,7 +761,7 @@ export class SessionService {
       (!settled.startedAt || Date.now() - settled.startedAt.getTime() < MIN_OPEN_MS)
     ) {
       throw new ConflictException(
-        "Annulation possible après 5 minutes de session ouverte sans réponse du soignant (EF-06-10)",
+        "Annulation possible après 5 minutes de session ouverte sans réponse du soignant",
       );
     }
 
@@ -776,7 +776,7 @@ export class SessionService {
           });
           if (professionalMessages > 0) {
             throw new ConflictException(
-              "Le professionnel a déjà répondu — pas d'annulation unilatérale après échange : ouvrez un signalement (M04) ou contactez le support (EF-06-10)",
+              "Le professionnel a déjà répondu — pas d'annulation unilatérale après échange : ouvrez un signalement (M04) ou contactez le support",
             );
           }
           const { count } = await tx.careSession.updateMany({
@@ -812,7 +812,7 @@ export class SessionService {
     // Le patient est notifié par M13 (« m13.refund », critique). En cas d'échec ici, la
     // session est déjà REFUNDED côté M06 : trace d'audit + réconciliation M13 (EF-13-09).
     try {
-      await this.payments.refund(settled.orderRef, "Annulation par le patient avant toute réponse du professionnel (EF-06-10)");
+      await this.payments.refund(settled.orderRef, "Annulation par le patient avant toute réponse du professionnel");
     } catch (err) {
       this.logger.error(`Ordre de remboursement en échec pour la session ${sessionId}: ${(err as Error).message}`);
       await this.audit.emit(this.prisma, {
@@ -830,18 +830,18 @@ export class SessionService {
   async rate(actor: AuthenticatedActor, sessionId: string, dto: RateSessionDto): Promise<{ sessionId: string; score: number; comment: string | null }> {
     const session = await this.loadForParticipant(actor, sessionId);
     if (session.patientAccountId !== actor.accountId) {
-      throw new ForbiddenException("Seul le patient note la session (EF-06-11)");
+      throw new ForbiddenException("Seul le patient note la session");
     }
     const settled = await this.settle(session);
     if (settled.status !== CareSessionStatus.ENDED) {
       if (settled.status === CareSessionStatus.REFUNDED) {
-        throw new ConflictException("Session remboursée — elle ne se note pas (l'incident est déjà compté, EF-06-09)");
+        throw new ConflictException("Session remboursée — elle ne se note pas (l'incident est déjà compté)");
       }
-      throw new ConflictException("La session ne se note qu'après sa clôture (EF-06-11)");
+      throw new ConflictException("La session ne se note qu'après sa clôture");
     }
     const bounds = await this.params.getIntList("PM-13");
     if (!ratingValid(dto.score, bounds)) {
-      throw new BadRequestException(`Note invalide : entier entre ${bounds[0]} et ${bounds[1]} attendu (PM-13)`);
+      throw new BadRequestException(`Note invalide : entier entre ${bounds[0]} et ${bounds[1]} attendu`);
     }
 
     try {
@@ -864,7 +864,7 @@ export class SessionService {
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        throw new ConflictException("Cette session a déjà été notée — une seule notation par session (EF-06-11)");
+        throw new ConflictException("Cette session a déjà été notée — une seule notation par session");
       }
       throw err;
     }

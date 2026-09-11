@@ -96,10 +96,10 @@ export class PrescriptionService {
     const session = await this.sessions.loadForParticipant(actor, sessionId);
     const settled = await this.sessions.settle(session);
     if (settled.status !== CareSessionStatus.ACTIVE) {
-      throw new ConflictException("On ne prescrit que depuis une session active (D-014, RM-09-01)");
+      throw new ConflictException("On ne prescrit que depuis une session active");
     }
     if (settled.professionalId !== actor.accountId) {
-      throw new ForbiddenException("Seul le professionnel de la session prescrit (RM-09-01)");
+      throw new ForbiddenException("Seul le professionnel de la session prescrit");
     }
     await this.assertPrescriber(actor.accountId);
 
@@ -123,7 +123,7 @@ export class PrescriptionService {
     for (const line of lines) {
       if (!line.medicamentId) continue;
       const med = medicaments.get(line.medicamentId);
-      if (!med) throw new BadRequestException("Médicament hors référentiel : choisissez un médicament valide (EF-09-02)");
+      if (!med) throw new BadRequestException("Médicament hors référentiel : choisissez un médicament valide");
       const hits = matchingAllergies([med.dci, ...med.commercialNames], activeAllergies);
       if (hits.length === 0) continue;
       const reason = overridesByMed.get(line.medicamentId);
@@ -138,7 +138,7 @@ export class PrescriptionService {
       // EF-09-03 : alerte BLOQUANTE — le prescripteur doit renoncer ou confirmer avec motif.
       throw new ConflictException({
         code: "ALLERGY_GUARD",
-        message: "Alerte allergie : confirmez chaque médicament en cause avec un motif explicite (EF-09-03)",
+        message: "Alerte allergie : confirmez chaque médicament en cause avec un motif explicite",
         conflicts: blocking,
       });
     }
@@ -270,11 +270,11 @@ export class PrescriptionService {
     const prescription = await this.prisma.prescription.findUnique({ where: { id } });
     if (!prescription) throw new NotFoundException("Ordonnance introuvable");
     if (prescription.prescriberId !== actor.accountId) {
-      throw new ForbiddenException("Seul le prescripteur peut annuler son ordonnance (CU-09-04)");
+      throw new ForbiddenException("Seul le prescripteur peut annuler son ordonnance");
     }
     if (!canCancel(prescription.status)) {
       throw new ConflictException(
-        "Cette ordonnance ne peut plus être annulée (déjà délivrée, expirée ou annulée — RM-09-05)",
+        "Cette ordonnance ne peut plus être annulée (déjà délivrée, expirée ou annulée)",
       );
     }
 
@@ -292,7 +292,7 @@ export class PrescriptionService {
         },
       });
       if (count === 0) {
-        throw new ConflictException("L'ordonnance a changé d'état entre-temps — réessayez (D-046)");
+        throw new ConflictException("L'ordonnance a changé d'état entre-temps — réessayez");
       }
       await this.outbox.emit(tx, {
         type: "notify.request",
@@ -415,10 +415,10 @@ export class PrescriptionService {
   private async assertPrescriber(accountId: string): Promise<void> {
     const profile = await this.prisma.professionalProfile.findUnique({ where: { accountId } });
     if (!profile) {
-      throw new ForbiddenException("Seul un professionnel peut prescrire (RM-09-01)");
+      throw new ForbiddenException("Seul un professionnel peut prescrire");
     }
     if (!isPrescribingCategory(profile.category)) {
-      throw new ForbiddenException("Votre catégorie professionnelle n'autorise pas la prescription (RM-09-01)");
+      throw new ForbiddenException("Votre catégorie professionnelle n'autorise pas la prescription");
     }
   }
 
@@ -429,11 +429,11 @@ export class PrescriptionService {
       const hasFree = Boolean(l.freeText);
       if (hasMed === hasFree) {
         throw new BadRequestException(
-          `Ligne ${i + 1} : exactement un médicament du référentiel OU un texte libre (EF-09-02)`,
+          `Ligne ${i + 1} : exactement un médicament du référentiel OU un texte libre`,
         );
       }
       if (!qtyPrescribedValid(l.qtyPrescribed)) {
-        throw new BadRequestException(`Ligne ${i + 1} : quantité prescrite strictement positive (EF-09-02)`);
+        throw new BadRequestException(`Ligne ${i + 1} : quantité prescrite strictement positive`);
       }
       return {
         medicamentId: l.medicamentId ?? null,

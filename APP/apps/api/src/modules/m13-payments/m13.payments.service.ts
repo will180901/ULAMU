@@ -101,7 +101,7 @@ export class PaymentsService {
       throw new BadRequestException("Opérateur Mobile Money inconnu : MTN_MOMO ou AIRTEL_MONEY attendu");
     }
     if (!order.orderRef || order.orderRef.trim().length === 0) {
-      throw new BadRequestException("Référence d'ordre requise (RM-13-01)");
+      throw new BadRequestException("Référence d'ordre requise");
     }
     if (order.beneficiary && !order.beneficiary.holderId) {
       throw new BadRequestException("Bénéficiaire incomplet : identifiant du titulaire requis");

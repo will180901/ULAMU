@@ -218,7 +218,7 @@ export class M03Service {
     const c = await this.resolveOwnCase(actor.accountId, facilityId);
     if (!canAddDocuments(c.status)) {
       throw new ConflictException(
-        "Pièces modifiables uniquement quand le dossier est « à compléter », « complément demandé » ou « refusé » (EF-03-01/04)",
+        "Pièces modifiables uniquement quand le dossier est « à compléter », « complément demandé » ou « refusé »",
       );
     }
     const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
@@ -253,7 +253,7 @@ export class M03Service {
     const c = await this.resolveOwnCase(actor.accountId, facilityId);
     if (!canAddDocuments(c.status)) {
       throw new ConflictException(
-        "Pièces modifiables uniquement quand le dossier est « à compléter », « complément demandé » ou « refusé » (EF-03-01/04)",
+        "Pièces modifiables uniquement quand le dossier est « à compléter », « complément demandé » ou « refusé »",
       );
     }
     const doc = c.documents.find((d) => d.id === documentId);
@@ -336,7 +336,7 @@ export class M03Service {
     const providedKinds = c.documents.map((d) => d.kind);
     if (!requiredDocsSatisfied(subject.kind, providedKinds)) {
       const missing = missingRequiredDocs(subject.kind, providedKinds).join(", ");
-      throw new BadRequestException(`Pièces obligatoires manquantes : ${missing} (EF-03-01/02)`);
+      throw new BadRequestException(`Pièces obligatoires manquantes : ${missing}`);
     }
     // CU-03-01 : accusé de dépôt avec délai annoncé (PM-11).
     const announcedDelayHours = await this.params.getInt("PM-11");
@@ -598,7 +598,7 @@ export class M03Service {
     const c = await this.requireCase(caseId);
     // VERIFIED → IN_REVIEW existe dans la machine d'états mais est réservé à la revalidation système (EF-02-06).
     if (c.status !== "SUBMITTED" || !canTransition(c.status, "IN_REVIEW")) {
-      throw new ConflictException(`Prise en examen impossible depuis l'état ${c.status} (CU-03-02)`);
+      throw new ConflictException(`Prise en examen impossible depuis l'état ${c.status}`);
     }
     await this.prisma.$transaction(async (tx) => {
       // Écriture conditionnelle (anti-TOCTOU) : deux admins ne « prennent » pas le même dossier.
@@ -617,7 +617,7 @@ export class M03Service {
     const c = await this.requireCase(caseId);
     const target: VerificationStatusCode = dto.decision;
     if (!canTransition(c.status, target)) {
-      throw new ConflictException(`Transition ${c.status} → ${target} interdite — prenez d'abord le dossier en examen (CU-03-02)`);
+      throw new ConflictException(`Transition ${c.status} → ${target} interdite — prenez d'abord le dossier en examen`);
     }
     const subject = this.subjectOf(c);
     // PM-01 lu au moment de la génération — jamais de taux en dur.
@@ -669,7 +669,7 @@ export class M03Service {
   async revoke(adminId: string, caseId: string, reasons: string): Promise<{ caseId: string; status: VerificationStatus }> {
     const c = await this.requireCase(caseId);
     if (!canTransition(c.status, "REVOKED")) {
-      throw new ConflictException(`Seul un dossier vérifié peut être révoqué — état actuel : ${c.status} (EF-03-08)`);
+      throw new ConflictException(`Seul un dossier vérifié peut être révoqué — état actuel : ${c.status}`);
     }
     const subject = this.subjectOf(c);
     return this.prisma.$transaction(async (tx) => {
@@ -762,7 +762,7 @@ export class M03Service {
   async reissueAgreement(adminId: string, caseId: string): Promise<{ caseId: string; reissued: boolean }> {
     const c = await this.requireCase(caseId);
     if (c.status !== "VERIFIED") {
-      throw new ConflictException("Un avenant ne s'émet que pour un dossier vérifié (EF-03-07)");
+      throw new ConflictException("Un avenant ne s'émet que pour un dossier vérifié");
     }
     const subject = this.subjectOf(c);
     const commissionPct = await this.params.getInt("PM-01");
@@ -817,7 +817,7 @@ export class M03Service {
         data: { signedAt: now, signedBy: actor.accountId, effectiveAt: now },
       });
       if (sealed.count !== 1) {
-        throw new ConflictException("La version courante du contrat est déjà signée (RM-03-05)");
+        throw new ConflictException("La version courante du contrat est déjà signée");
       }
       // C6 : badge + contrat signé ⇒ le sujet peut désormais exercer (RM-03-01).
       await this.outbox.emit(tx, {
@@ -848,7 +848,7 @@ export class M03Service {
       const ownership = await this.prisma.facilityMember.findFirst({
         where: { accountId, facilityId, role: "OWNER", active: true },
       });
-      if (!ownership) throw new NotFoundException("Vous n'êtes pas titulaire de cette structure (EF-02-05)");
+      if (!ownership) throw new NotFoundException("Vous n'êtes pas titulaire de cette structure");
       where = { facilityId };
     } else {
       const ownership = await this.prisma.facilityMember.findFirst({
@@ -926,11 +926,11 @@ export class M03Service {
   /** Le contrat est signable : dossier VERIFIED + version courante non signée (EF-03-06). */
   private requireSignableVersion(c: CaseFull): AgreementVersionRow {
     if (c.status !== "VERIFIED") {
-      throw new ConflictException("Le contrat ne se signe qu'après vérification positive du dossier (EF-03-06)");
+      throw new ConflictException("Le contrat ne se signe qu'après vérification positive du dossier");
     }
     const latest = this.latestVersion(c);
     if (!latest) throw new NotFoundException("Aucun contrat généré pour ce dossier — contactez le support");
-    if (latest.signedAt) throw new ConflictException("La version courante du contrat est déjà signée (RM-03-05)");
+    if (latest.signedAt) throw new ConflictException("La version courante du contrat est déjà signée");
     return latest;
   }
 

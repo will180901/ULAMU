@@ -926,7 +926,7 @@ function CarnetPatient({ sessionId, active }: { sessionId: string; active: boole
     return (
       <Carte icone={BookOpen} titre="Carnet du patient" sousTitre="L'accès s'est refermé avec la consultation">
         <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-          Le Carnet n'est lisible que pendant la séance (EF-06-06). Ce que vous en avez retenu doit
+          Le Carnet n'est lisible que pendant la séance. Ce que vous en avez retenu doit
           figurer dans votre compte-rendu — il ne se rouvrira pas pour le rédiger.
         </p>
       </Carte>
@@ -1114,7 +1114,7 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
     <Carte
       icone={FileText}
       titre="Compte-rendu"
-      sousTitre="Obligatoire — vos gains ne sont crédités qu'à son dépôt (RM-06-04)"
+      sousTitre="Obligatoire — vos gains ne sont crédités qu'à son dépôt"
     >
       {echeance ? (
         depasse ? (
@@ -1691,7 +1691,7 @@ export function ConsultationPage() {
           {active && !aRepondu && !messages.isPending ? (
             <Avis ton="alerte">
               Vous n'avez encore écrit aucun message. Si la séance se termine ainsi, elle sera
-              intégralement remboursée au patient et vous ne percevrez rien (D-008).
+              intégralement remboursée au patient et vous ne percevrez rien.
             </Avis>
           ) : null}
 
@@ -2128,7 +2128,7 @@ export function ConsultationPage() {
                       id: 'prolonger',
                       nom: 'Prolonger',
                       contenu: (
-                        <Carte icone={HeartPulse} titre="Prolonger" sousTitre="Gratuit pour le patient (EF-06-07)">
+                        <Carte icone={HeartPulse} titre="Prolonger" sousTitre="Gratuit pour le patient">
                           <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
                             Vous ne pouvez pas mettre fin à la séance : le patient a payé {s.durationMin} minutes, elles
                             lui appartiennent. Vous pouvez en revanche lui en offrir.

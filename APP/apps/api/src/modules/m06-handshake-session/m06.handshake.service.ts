@@ -134,13 +134,13 @@ export class HandshakeService {
     // D-029 / C6 : le professionnel doit pouvoir exercer (Badge Vérifié + contrat signé).
     const status = await this.verification.getForProfessional(offer.professionalId);
     if (!status.canPractice) {
-      throw new ConflictException("Ce professionnel ne peut pas exercer actuellement (vérification ou contrat en défaut, D-029)");
+      throw new ConflictException("Ce professionnel ne peut pas exercer actuellement (vérification ou contrat en défaut)");
     }
 
     // EF-05-06 / RM-05-04 : « on ne paie jamais un absent » — disponible = ONLINE + battement frais.
     if (!(await this.presence.isAvailableForInitiation(offer.professionalId))) {
       throw new ConflictException(
-        "Ce professionnel n'est pas disponible pour l'instant (EF-05-06) — posez une cloche pour être averti de son retour",
+        "Ce professionnel n'est pas disponible pour l'instant — posez une cloche pour être averti de son retour",
       );
     }
 
@@ -149,10 +149,10 @@ export class HandshakeService {
     if (dto.subProfileId) {
       const sp = await this.prisma.subProfile.findUnique({ where: { id: dto.subProfileId } });
       if (!sp || sp.guardianAccountId !== actor.accountId) {
-        throw new ForbiddenException("Sous-profil introuvable ou vous n'en êtes pas le tuteur (D-033)");
+        throw new ForbiddenException("Sous-profil introuvable ou vous n'en êtes pas le tuteur");
       }
       if (sp.status !== SubProfileStatus.DEPENDENT) {
-        throw new ConflictException("Ce profil a été transféré à son titulaire — il consulte désormais avec son propre compte (RM-07-06)");
+        throw new ConflictException("Ce profil a été transféré à son titulaire — il consulte désormais avec son propre compte");
       }
       subProfile = { firstName: sp.firstName, birthDate: sp.birthDate };
     }
@@ -186,7 +186,7 @@ export class HandshakeService {
             },
           });
           if (open > 0) {
-            throw new ConflictException("Vous avez déjà une poignée de main en cours avec ce professionnel (EF-06-14)");
+            throw new ConflictException("Vous avez déjà une poignée de main en cours avec ce professionnel");
           }
 
           // EF-06-14 / PM-27 : plafond de sessions simultanées du professionnel — compte
@@ -197,7 +197,7 @@ export class HandshakeService {
           });
           if (busy >= pm27) {
             throw new ConflictException(
-              `Ce professionnel est occupé : il mène déjà ${pm27} sessions simultanées (PM-27) — réessayez un peu plus tard`,
+              `Ce professionnel est occupé : il mène déjà ${pm27} sessions simultanées — réessayez un peu plus tard`,
             );
           }
 
@@ -423,7 +423,7 @@ export class HandshakeService {
     // être payé (getActiveOffer/présence ne portent pas la cascade C6 ; on la vérifie ici).
     const canPractice = await this.verification.getForProfessional(fresh.professionalId);
     if (!canPractice.canPractice) {
-      throw new ConflictException("Ce professionnel ne peut plus exercer — rien n'a été débité (D-029)");
+      throw new ConflictException("Ce professionnel ne peut plus exercer — rien n'a été débité");
     }
 
     // C1 : ordre référencé, capture DIFFÉRÉE (RM-06-04 : gains crédités au compte-rendu).
@@ -523,7 +523,7 @@ export class HandshakeService {
     const reason =
       fresh.status === HandshakeStatus.PAID
         ? "Paiement excédentaire : la session était déjà ouverte par un autre ordre (M06)"
-        : "Poignée de main expirée avant la confirmation du paiement — remboursement automatique (EF-06-03)";
+        : "Poignée de main expirée avant la confirmation du paiement — remboursement automatique";
     try {
       await this.payments.refund(orderRef, reason);
     } catch (err) {
@@ -665,7 +665,7 @@ export class HandshakeService {
 
   private async loadForProfessional(actor: AuthenticatedActor, handshakeId: string): Promise<Handshake> {
     if (actor.accountType !== "PROFESSIONAL") {
-      throw new ForbiddenException("Action réservée au professionnel destinataire (EF-06-02)");
+      throw new ForbiddenException("Action réservée au professionnel destinataire");
     }
     const handshake = await this.prisma.handshake.findUnique({ where: { id: handshakeId } });
     // 404 (et non 403) si la poignée appartient à un autre professionnel : pas de fuite d'existence.
@@ -677,14 +677,14 @@ export class HandshakeService {
 
   private assertPatient(actor: AuthenticatedActor): void {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("Action réservée aux patients (EF-06-01)");
+      throw new ForbiddenException("Action réservée aux patients");
     }
   }
 
   private throwNotConfirmable(status: HandshakeStatus): never {
     switch (status) {
       case HandshakeStatus.EXPIRED:
-        throw new ConflictException("La demande a expiré (fenêtre PM-07) — le patient est invité à réinitier");
+        throw new ConflictException("La demande a expiré — le patient est invité à réinitier");
       case HandshakeStatus.REFUSED:
         throw new ConflictException("Cette demande a déjà été refusée");
       case HandshakeStatus.PAID:
@@ -698,12 +698,12 @@ export class HandshakeService {
     switch (status) {
       case HandshakeStatus.INITIATED:
         throw new ConflictException(
-          "Paiement impossible : le professionnel n'a pas encore confirmé « Je suis prêt à recevoir » — sans confirmation, le bouton payer n'existe pas (RM-06-01, D-007)",
+          "Paiement impossible : le professionnel n'a pas encore confirmé « Je suis prêt à recevoir » — sans confirmation, le bouton payer n'existe pas",
         );
       case HandshakeStatus.CONFIRMED: // fenêtre dépassée mais expiration pas encore matérialisée
       case HandshakeStatus.EXPIRED:
         throw new ConflictException(
-          "Paiement impossible : la confirmation a expiré (fenêtre PM-07) — rien n'a été débité, réinitiez une demande (RM-06-01)",
+          "Paiement impossible : la confirmation a expiré — rien n'a été débité, réinitiez une demande",
         );
       case HandshakeStatus.REFUSED:
         throw new ConflictException("Paiement impossible : le professionnel a refusé cette demande — rien n'a été débité");

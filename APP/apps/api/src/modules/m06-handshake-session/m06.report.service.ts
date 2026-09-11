@@ -43,7 +43,7 @@ export class ReportService {
   ): Promise<{ sessionId: string; reportDepositedAt: string; entryId: string }> {
     const session = await this.sessions.loadForParticipant(actor, sessionId);
     if (session.professionalId !== actor.accountId) {
-      throw new ForbiddenException("Seul le professionnel de la session rédige le compte-rendu (D-021)");
+      throw new ForbiddenException("Seul le professionnel de la session rédige le compte-rendu");
     }
     const settled = await this.sessions.settle(session); // transitions paresseuses d'abord
 
@@ -51,13 +51,13 @@ export class ReportService {
       throw new ConflictException("Session remboursée — aucun compte-rendu n'est attendu");
     }
     if (settled.status === CareSessionStatus.PREPARING) {
-      throw new ConflictException("La session n'a pas encore commencé — le compte-rendu se rédige pendant ou après la session (EF-06-08)");
+      throw new ConflictException("La session n'a pas encore commencé — le compte-rendu se rédige pendant ou après la session");
     }
     const pm30S = await this.params.getInt("PM-30");
     const now = new Date();
     if (settled.status === CareSessionStatus.ENDED && !reportWindowOpen(settled.endedAt, pm30S, now.getTime())) {
       // CU-06-03 : PM-30 dépassé sans compte-rendu → gains gelés (la capture n'aura pas lieu).
-      throw new ConflictException("Délai de dépôt dépassé (PM-30) : gains gelés — contactez le support");
+      throw new ConflictException("Délai de dépôt dépassé : gains gelés — contactez le support");
     }
 
     let entryId = "";
@@ -68,7 +68,7 @@ export class ReportService {
         data: { reportDepositedAt: now },
       });
       if (count === 0) {
-        throw new ConflictException("Un compte-rendu a déjà été déposé pour cette session (D-021)");
+        throw new ConflictException("Un compte-rendu a déjà été déposé pour cette session");
       }
       // C2 : Entrée au Carnet — propriétaire = patient OU personne à charge (D-033),
       // provenance posée explicitement (RM-07-03), référence de l'acte "session:<id>".

@@ -74,11 +74,11 @@ export class EarningsService {
   private assertHolderAccess(actor: AuthenticatedActor, holderType: EarningsHolderType, holderId: string): void {
     if (holderType !== "PROFESSIONAL") {
       throw new ForbiddenException(
-        "Les comptes de gains de structure ne sont plus servis par ULAMU (D-051) — seuls les gains d'un professionnel le sont",
+        "Les comptes de gains de structure ne sont plus servis par ULAMU — seuls les gains d'un professionnel le sont",
       );
     }
     if (actor.accountId !== holderId) {
-      throw new ForbiddenException("Seul le titulaire de ce compte de gains peut y accéder (EF-13-06)");
+      throw new ForbiddenException("Seul le titulaire de ce compte de gains peut y accéder");
     }
   }
 

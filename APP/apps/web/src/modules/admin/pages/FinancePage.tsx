@@ -480,7 +480,7 @@ export function FinancePage() {
         si E3 le change, cette phrase suit.
       */}
       <div className="mb-4">
-        <Carte icone={ShieldCheck} titre="Double validation" sousTitre="RM-13-06 — deux administrateurs, jamais le même deux fois">
+        <Carte icone={ShieldCheck} titre="Double validation" sousTitre="Deux administrateurs, jamais le même deux fois">
           <p className="text-[12px] leading-[1.6] text-[var(--texte-secondaire)]">
             {seuil
               ? `Un remboursement de plus de ${xaf(Number(seuil))} XAF exige l'accord de deux administrateurs différents. `
@@ -574,7 +574,7 @@ export function FinancePage() {
       */}
       <p className="mt-3 text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
         La file sert les deux cents demandes les plus récentes : elle ne totalise pas les
-        remboursements d'un mois. Le journal des mouvements fait foi (EF-13-06).
+        remboursements d'un mois. Le journal des mouvements fait foi.
       </p>
 
       {enAttente.length === 0 && historique.length === 0 && !attente.isPending ? (
@@ -582,7 +582,7 @@ export function FinancePage() {
           <Avis ton="info">
             <AlertTriangle size={13} strokeWidth={1.9} aria-hidden="true" className="inline" /> Les
             remboursements automatiques — une consultation sans réponse du soignant — ne passent pas
-            par cette file : ils sont exécutés par le serveur, sans décision humaine (D-008).
+            par cette file : ils sont exécutés par le serveur, sans décision humaine.
           </Avis>
         </div>
       ) : null}

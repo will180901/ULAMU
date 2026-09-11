@@ -181,7 +181,7 @@ export class ManualRefundsService {
       throw new ConflictException(`Cette demande a déjà été décidée (statut ${request.status})`);
     }
     if (!canSecondApprove(request.requestedBy, adminId)) {
-      throw new ForbiddenException("Double validation : l'approbateur doit être un admin différent du demandeur (RM-13-06)");
+      throw new ForbiddenException("Double validation : l'approbateur doit être un admin différent du demandeur");
     }
     const payment = await this.prisma.payment.findUniqueOrThrow({ where: { id: request.paymentId } });
 

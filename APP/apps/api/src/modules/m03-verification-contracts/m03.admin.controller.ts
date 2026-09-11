@@ -50,7 +50,7 @@ export class M03AdminController {
     return new StreamableFile(f.buffer, { type: f.contentType });
   }
 
-  /** Prise en examen d'un dossier déposé (CU-03-02). */  /** Prise en examen d'un dossier déposé (CU-03-02). */
+  /** Prise en examen d'un dossier déposé (CU-03-02). */
   @Post(":caseId/claim")
   @HttpCode(200)
   claim(@Actor() actor: AuthenticatedActor, @Param("caseId") caseId: string) {

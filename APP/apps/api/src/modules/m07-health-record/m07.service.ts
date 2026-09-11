@@ -105,7 +105,7 @@ export class M07Service {
   private async resolveScope(actor: AuthenticatedActor, subProfileId?: string): Promise<RecordOwner> {
     if (actor.accountType !== "PATIENT") {
       throw new ForbiddenException(
-        "Le Carnet n'est accessible qu'aux comptes patients — l'accès professionnel passe par la session (RM-07-05)",
+        "Le Carnet n'est accessible qu'aux comptes patients — l'accès professionnel passe par la session",
       );
     }
     if (!subProfileId) return { patientId: actor.accountId };
@@ -115,7 +115,7 @@ export class M07Service {
       throw new NotFoundException("Sous-profil introuvable");
     }
     if (subProfile.status !== SubProfileStatus.DEPENDENT) {
-      throw new ForbiddenException("Ce Carnet a été transféré à son titulaire — le tuteur n'y a plus accès (RM-07-06)");
+      throw new ForbiddenException("Ce Carnet a été transféré à son titulaire — le tuteur n'y a plus accès");
     }
     return { subProfileId };
   }
@@ -226,7 +226,7 @@ export class M07Service {
       fingerprint,
       content,
       signedPdf: null,
-      note: "Export JSON avec empreinte vérifiable — le PDF signé et filigrané arrive avec l'interface (EF-07-08).",
+      note: "Export JSON avec empreinte vérifiable — le PDF signé et filigrané arrive avec l'interface.",
     };
   }
 
@@ -238,7 +238,7 @@ export class M07Service {
     dto: CreateSubProfileDto,
   ): Promise<{ subProfileId: string; healthRecordId: string }> {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("Seul un compte patient peut créer une personne à charge (EF-07-09)");
+      throw new ForbiddenException("Seul un compte patient peut créer une personne à charge");
     }
     // CU-07-04 : « un patient majeur » — garanti par construction (PM-16 à l'inscription M01).
     const birth = new Date(dto.birthDate);
@@ -270,7 +270,7 @@ export class M07Service {
   /** Personnes à charge du tuteur — les transférées restent listées (statut), sans accès au Carnet. */
   async listSubProfiles(actor: AuthenticatedActor): Promise<SubProfileView[]> {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("Seul un compte patient gère des personnes à charge (EF-07-09)");
+      throw new ForbiddenException("Seul un compte patient gère des personnes à charge");
     }
     const rows = await this.prisma.subProfile.findMany({
       where: { guardianAccountId: actor.accountId },
@@ -298,7 +298,7 @@ export class M07Service {
     subProfileId: string,
   ): Promise<{ intentId: string; shortCode: string; expiresInSeconds: number }> {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("Seul le tuteur (compte patient) peut lancer le transfert (CU-07-05)");
+      throw new ForbiddenException("Seul le tuteur (compte patient) peut lancer le transfert");
     }
     const subProfile = await this.prisma.subProfile.findUnique({ where: { id: subProfileId } });
     if (!subProfile || subProfile.guardianAccountId !== actor.accountId) {
@@ -309,7 +309,7 @@ export class M07Service {
     }
     const minYears = await this.params.getInt("PM-16");
     if (!isOwnerAdult(subProfile.birthDate, minYears, new Date())) {
-      throw new BadRequestException(`Transfert possible à partir de ${minYears} ans (PM-16) — pas encore l'âge requis`);
+      throw new BadRequestException(`Transfert possible à partir de ${minYears} ans — pas encore l'âge requis`);
     }
     // D-048 : intention PERSISTÉE liée à CE sous-profil (même motif que M02) — l'OTP « action
     // sensible » du tuteur ne pourra confirmer QUE ce transfert, pas une autre action sensible.
@@ -397,7 +397,7 @@ export class M07Service {
     dto: ClaimSubProfileDto,
   ): Promise<{ subProfileId: string; healthRecordId: string }> {
     if (actor.accountType !== "PATIENT") {
-      throw new ForbiddenException("Seul un compte patient peut revendiquer un Carnet (CU-07-05)");
+      throw new ForbiddenException("Seul un compte patient peut revendiquer un Carnet");
     }
     const subProfile = await this.prisma.subProfile.findUnique({ where: { id: subProfileId } });
     if (!subProfile) throw new NotFoundException("Sous-profil introuvable");
@@ -406,12 +406,12 @@ export class M07Service {
     }
     if (subProfile.guardianAccountId === actor.accountId) {
       throw new BadRequestException(
-        "Le tuteur ne peut pas revendiquer pour lui-même — le majeur revendique depuis SON compte (CU-07-05)",
+        "Le tuteur ne peut pas revendiquer pour lui-même — le majeur revendique depuis SON compte",
       );
     }
     const minYears = await this.params.getInt("PM-16");
     if (!isOwnerAdult(subProfile.birthDate, minYears, new Date())) {
-      throw new ForbiddenException(`Transfert possible à partir de ${minYears} ans (PM-16) — pas encore l'âge requis`);
+      throw new ForbiddenException(`Transfert possible à partir de ${minYears} ans — pas encore l'âge requis`);
     }
 
     const healthRecordId = await this.prisma.$transaction(async (tx) => {
@@ -427,7 +427,7 @@ export class M07Service {
         },
       });
       if (!intent) {
-        throw new ConflictException("Aucun transfert en cours pour ce Carnet — le tuteur doit d'abord le lancer (CU-07-05)");
+        throw new ConflictException("Aucun transfert en cours pour ce Carnet — le tuteur doit d'abord le lancer");
       }
       const consumed = await tx.subProfileClaimIntent.updateMany({
         where: { id: intent.id, consumedAt: null },
@@ -457,7 +457,7 @@ export class M07Service {
       if (existing) {
         if (existing._count.entries > 0) {
           throw new ConflictException(
-            "Votre compte possède déjà un Carnet alimenté — transfert impossible ici, contactez le support (RM-07-01)",
+            "Votre compte possède déjà un Carnet alimenté — transfert impossible ici, contactez le support",
           );
         }
         await tx.healthRecord.delete({ where: { id: existing.id } }); // coquille vide de l'inscription

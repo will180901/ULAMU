@@ -190,7 +190,7 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
             <Text style={styles.waitingTitle}>Confirmez sur votre téléphone</Text>
             <Text style={styles.waitingSub}>Saisissez votre code {OPERATORS.find(o => o.code === operator)?.label} pour valider le paiement. La session s'ouvrira automatiquement.</Text>
             <Banner tone="info" title="Remboursement automatique">
-              Si le soignant n'envoie aucun message, vous êtes intégralement remboursé (D-008).
+              Si le soignant n'envoie aucun message, vous êtes intégralement remboursé.
             </Banner>
           </View>
         )}

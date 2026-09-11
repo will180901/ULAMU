@@ -342,7 +342,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
         icone={Clock}
         ton={h.status === 'INITIATED' && reste === 0 ? 'danger' : 'accent'}
         titre="Temps restant"
-        sousTitre="Compté par le serveur — l'horloge de ce poste n'est qu'indicative (RM-06-02)"
+        sousTitre="Compté par le serveur — l'horloge de ce poste n'est qu'indicative"
       >
         {(
           <div className="flex items-center gap-4">
@@ -428,7 +428,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               </span>
               <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
                 <strong className="font-semibold text-foreground">Vous confirmez.</strong> Rien n’est encore
-                débité : votre accord ouvre simplement le paiement (D-007, aucun paiement sans confirmation).
+                débité : votre accord ouvre simplement le paiement (aucun paiement sans confirmation).
               </span>
             </li>
             <li className="flex gap-2.5">
@@ -455,7 +455,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
               </span>
               <span className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
                 <strong className="font-semibold text-foreground">Il remplit sa pré-consultation</strong> —
-                symptômes, durée des troubles, photos. C’est là seulement que vous les recevez (EF-06-04).
+                symptômes, durée des troubles, photos. C’est là seulement que vous les recevez.
               </span>
             </li>
             <li className="flex gap-2.5">
@@ -482,7 +482,7 @@ function Detail({ h, recuA, onFait }: { h: Handshake; recuA: number; onFait: () 
       ) : null}
 
       {decidable ? (
-        <Carte icone={CheckCircle2} titre="Votre décision" sousTitre="Sans confirmation, le patient ne peut pas payer (D-007)">
+        <Carte icone={CheckCircle2} titre="Votre décision" sousTitre="Sans confirmation, le patient ne peut pas payer">
           {!refusOuvert ? (
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="lg" onClick={() => confirmer.mutate()} disabled={confirmer.isPending}>

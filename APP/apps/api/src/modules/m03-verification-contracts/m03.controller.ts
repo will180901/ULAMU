@@ -71,7 +71,7 @@ export class M03Controller {
     return this.service.removeDocument(actor, id, facilityId);
   }
 
-  /** Dépôt du dossier — jeu minimal de pièces exigé (CU-03-01). */  /** Dépôt du dossier — jeu minimal de pièces exigé (CU-03-01). */
+  /** Dépôt du dossier — jeu minimal de pièces exigé (CU-03-01). */
   @Post("me/submit")
   @HttpCode(200)
   submit(@Actor() actor: AuthenticatedActor, @Query("facilityId") facilityId?: string) {

@@ -342,7 +342,7 @@ export class AdminService {
         resource: `account:${sanction.accountId}`,
         context: { sanctionId, requestedBy: sanction.requestedBy },
       });
-      throw new ForbiddenException("Double validation : l'approbateur doit être un admin différent du demandeur (EF-16-07)");
+      throw new ForbiddenException("Double validation : l'approbateur doit être un admin différent du demandeur");
     }
 
     const account = await this.prisma.account.findUnique({ where: { id: sanction.accountId } });

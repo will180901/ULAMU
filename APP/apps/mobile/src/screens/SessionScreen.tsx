@@ -229,7 +229,7 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
         <View style={styles.centerBlock}>
           <Icon name="refresh" size={28} color={colors.successDot} />
           <Text style={styles.bigTitle}>Session remboursée</Text>
-          <Text style={styles.bigSub}>Le soignant n'a envoyé aucun message : vous avez été intégralement remboursé (D-008). Aucune action requise.</Text>
+          <Text style={styles.bigSub}>Le soignant n'a envoyé aucun message : vous avez été intégralement remboursé. Aucune action requise.</Text>
           <PrimaryButton title="Revenir à l'accueil" iconLeft="home" onPress={goHome} />
         </View>
       </Shell>

@@ -124,7 +124,7 @@ export class M05Controller {
 
   private assertProfessional(actor: AuthenticatedActor): void {
     if (actor.accountType !== "PROFESSIONAL") {
-      throw new ForbiddenException("Action réservée aux professionnels de santé (EF-05-05)");
+      throw new ForbiddenException("Action réservée aux professionnels de santé");
     }
   }
 }

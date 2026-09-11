@@ -475,7 +475,7 @@ export class NotificationsService {
   ): Promise<{ category: string; enabled: boolean }> {
     if (!isPreferenceAdjustable(category)) {
       throw new BadRequestException(
-        "Les notifications critiques (sécurité du compte, paiements, urgences) ne peuvent pas être désactivées (RM-14-02)",
+        "Les notifications critiques (sécurité du compte, paiements, urgences) ne peuvent pas être désactivées",
       );
     }
     await this.prisma.$transaction(async (tx) => {

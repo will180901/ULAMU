@@ -78,7 +78,7 @@ function buildExportText(exp: RecordExport, title: string): string {
     lines.push(`  Provenance : ${PROVENANCE_LABEL[e.provenance] ?? e.provenance}`);
   }
   lines.push('');
-  lines.push("Document généré par ULAMU — gratuit, à vie, votre propriété (D-020). Vérifiez l'empreinte pour authentifier ce carnet.");
+  lines.push("Document généré par ULAMU — gratuit, à vie, votre propriété. Vérifiez l'empreinte pour authentifier ce carnet.");
   return lines.join('\n');
 }
 
@@ -139,7 +139,7 @@ export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStac
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {summary.activeAllergies.length > 0 && (
             <Banner tone="error" title={`Allergie${summary.activeAllergies.length > 1 ? 's' : ''} : ${summary.activeAllergies.join(', ')}`}>
-              Visible par tout soignant en session — garde-fou actif à la prescription (CU-07-02).
+              Visible par tout soignant en session — garde-fou actif à la prescription.
             </Banner>
           )}
 
@@ -190,7 +190,7 @@ export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStac
             <Icon name="share" size={15} color={colors.textSecondary} />
             <Text style={styles.exportText}>Exporter mon carnet</Text>
           </Pressable>
-          <Text style={styles.footNote}>Gratuit, à vie, votre propriété (D-020). Jamais de contenu médical sur l'écran verrouillé.</Text>
+          <Text style={styles.footNote}>Gratuit, à vie, votre propriété. Jamais de contenu médical sur l'écran verrouillé.</Text>
         </ScrollView>
       )}
 
@@ -282,7 +282,7 @@ function DeclareModal({subProfileId, visible, onClose, onDone}: {subProfileId?: 
       <Pressable style={styles.backdrop} onPress={dismiss}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Déclarer une information</Text>
-          <Text style={styles.sheetSub}>Elle sera marquée « déclarée par vous » et prise en compte immédiatement (CU-07-02).</Text>
+          <Text style={styles.sheetSub}>Elle sera marquée « déclarée par vous » et prise en compte immédiatement.</Text>
 
           <View style={styles.kindRow}>
             {DECLARE_KINDS.map(k => {

@@ -270,7 +270,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
       </Carte>
 
       {d.decisions.length > 0 ? (
-        <Carte icone={Clock} titre="Journal du dossier" sousTitre="Les décisions sont en insertion seule (RM-03-02)">
+        <Carte icone={Clock} titre="Journal du dossier" sousTitre="Les décisions sont en insertion seule">
           <ul className="flex flex-col gap-2">
             {d.decisions.map((x) => (
               <li key={x.id} className="rounded-md border border-border bg-card px-3 py-2">
@@ -308,7 +308,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
         dessus.
       */}
       {d.status === 'VERIFIED' ? (
-        <Carte icone={ShieldAlert} titre="Révoquer le Badge Vérifié" sousTitre="Fraude, pièces falsifiées, autorisation d'exercer perdue (EF-03-08)">
+        <Carte icone={ShieldAlert} titre="Révoquer le Badge Vérifié" sousTitre="Fraude, pièces falsifiées, autorisation d'exercer perdue">
           {/*
             `alerte` et non `erreur` : rien n'a échoué. Le projet distingue les deux — « erreur » dit
             qu'une action a ÉCHOUÉ, et porte `role="alert"`, qui interrompt un lecteur d'écran.
@@ -414,7 +414,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
         <Carte
           icone={FileSignature}
           titre="Contrat d'adhésion"
-          sousTitre="Avenant au taux de commission courant (EF-03-07, D-022)"
+          sousTitre="Avenant au taux de commission courant"
         >
           <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] leading-[1.5]">
             <div>
@@ -426,7 +426,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               </dd>
             </div>
             <div>
-              <dt className="text-[var(--texte-tertiaire)]">Taux courant (PM-01)</dt>
+              <dt className="text-[var(--texte-tertiaire)]">Taux courant</dt>
               <dd className="m-0 font-medium text-foreground">{d.currentCommissionPct} %</dd>
             </div>
           </dl>
@@ -465,7 +465,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
                 </li>
                 <li className="flex gap-2">
                   <span aria-hidden="true">·</span>
-                  <span>Pour changer le taux lui-même, c'est dans Paramètres métier (PM-01).</span>
+                  <span>Pour changer le taux lui-même, c'est dans Paramètres métier.</span>
                 </li>
               </ul>
 
@@ -779,7 +779,7 @@ export function FileVerificationPage() {
           <Carte icone={AlertTriangle} titre="La file n'a pas pu être chargée" sousTitre="Aucune décision n'est enregistrable hors ligne">
             <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
               Une décision non journalisée serait invalide : elle doit être horodatée et attribuée à un
-              administrateur nommé (RM-03-02). Rien ne se décide donc sans le serveur.
+              administrateur nommé. Rien ne se décide donc sans le serveur.
             </p>
             <div>
               <Button type="button" onClick={() => file.refetch()}>

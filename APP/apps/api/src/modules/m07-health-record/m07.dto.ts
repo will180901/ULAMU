@@ -25,7 +25,7 @@ export class OwnerScopeQueryDto {
 /** Déclaration patient (EF-07-06, CU-07-02) — types déclarables uniquement. */
 export class DeclareEntryDto {
   @IsIn([...PATIENT_DECLARABLE_TYPES], {
-    message: "Type non déclarable par le patient : ALLERGY, MEDICAL_HISTORY, VACCINATION ou PERSONAL_NOTE attendu (EF-07-06)",
+    message: "Type non déclarable par le patient : ALLERGY, MEDICAL_HISTORY, VACCINATION ou PERSONAL_NOTE attendu",
   })
   type!: PatientDeclarableType;
 
@@ -40,7 +40,7 @@ export class DeclareEntryDto {
 /** Chronologie filtrable et paginée (EF-07-03). */
 export class RecordQueryDto {
   @IsOptional()
-  @IsIn([...RECORD_ENTRY_TYPES], { message: "Type d'entrée inconnu (EF-07-02)" })
+  @IsIn([...RECORD_ENTRY_TYPES], { message: "Type d'entrée inconnu" })
   type?: RecordEntryTypeCode;
 
   @IsOptional() @IsUUID(undefined, { message: "Curseur de pagination invalide" }) cursor?: string;

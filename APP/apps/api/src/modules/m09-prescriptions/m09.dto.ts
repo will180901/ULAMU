@@ -36,7 +36,7 @@ export class PrescriptionLineDto {
   freeText?: string;
 
   @IsString()
-  @IsNotEmpty({ message: "Posologie requise (EF-09-02)" })
+  @IsNotEmpty({ message: "Posologie requise" })
   @MaxLength(300, { message: "Posologie : 300 caractères maximum" })
   posology!: string;
 
@@ -50,7 +50,7 @@ export class PrescriptionLineDto {
   /** Quantité prescrite — bornes vérifiées côté service (entier strictement positif). */
   @Type(() => Number)
   @IsInt({ message: "Quantité : entier attendu" })
-  @Min(1, { message: "Quantité prescrite strictement positive (EF-09-02)" })
+  @Min(1, { message: "Quantité prescrite strictement positive" })
   qtyPrescribed!: number;
 }
 
@@ -61,7 +61,7 @@ export class AllergyOverrideDto {
   medicamentId!: string;
 
   @IsString()
-  @IsNotEmpty({ message: "Motif explicite requis pour passer outre une alerte allergie (EF-09-03)" })
+  @IsNotEmpty({ message: "Motif explicite requis pour passer outre une alerte allergie" })
   @MaxLength(500, { message: "Motif : 500 caractères maximum" })
   reason!: string;
 }
@@ -87,7 +87,7 @@ export class CreatePrescriptionDto {
 
 export class CancelPrescriptionDto {
   @IsString()
-  @IsNotEmpty({ message: "Motif d'annulation obligatoire (EF-09-08, CU-09-04)" })
+  @IsNotEmpty({ message: "Motif d'annulation obligatoire" })
   @MaxLength(500, { message: "Motif : 500 caractères maximum" })
   reason!: string;
 }
@@ -101,7 +101,7 @@ export class DispenseLineDto {
 
   @Type(() => Number)
   @IsInt({ message: "Quantité : entier attendu" })
-  @Min(1, { message: "Quantité délivrée strictement positive (EF-09-07)" })
+  @Min(1, { message: "Quantité délivrée strictement positive" })
   quantity!: number;
 }
 

@@ -669,6 +669,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **82** | **C5 — la poignée entre DANS la bulle, sans cadre** — 11/09, demande du porteur : *« petit, incrusté dans la bulle, à droite horizontalement et en haut verticalement, sans background »*. 📌 **Ce qui la rendait lourde n'était plus utile** : jusqu'au chantier 80 cette poignée était une BARRE de quatre boutons, et le cadre, le fond et l'ombre servaient à les tenir ensemble. Depuis que tout vit dans un seul menu, il ne restait qu'un chevron de 14 px au milieu d'une boîte bordée — **un cadre autour d'un seul objet, c'est-à-dire du bruit.** ⚠️ **Et le déplacement efface un contournement entier** : la barre était posée À CÔTÉ de la bulle (`left-full`), débordait de 73 px sur un téléphone et laissait le fil se tirer latéralement de 34 px (mesuré à 375 px au chantier 21) ; il avait fallu une règle `lg:` pour la rapatrier. **Posée DANS la bulle, elle ne peut plus déborder de rien : la règle disparaît.** *Un défaut de placement se contourne ; un bon placement n'a rien à contourner.* Sur écran TACTILE, où la poignée est permanente faute de survol, la bulle lui réserve sa place — et seulement s'il existe un menu. **web 895 ✓ (893 + 2) · lint 0 · build ✓ · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **83** | **C5 — deux zones fixes, et le rail devient un jeu d'onglets nommés** — 11/09, demande du porteur : *« la zone des messages fixe, le scroll à l'intérieur ; la zone de droite fixe aussi, avec une pagination et deux flèches »* — puis *« propose 10 000 fois mieux, et donne les raisons »*. **Les flèches sont gardées AU CLAVIER** (`←`/`→`, motif ARIA complet) et remplacées à l'écran par des **onglets nommés** : *une flèche est un excellent raccourci, c'est un mauvais menu*. 📌 **La raison décisive** : le compte-rendu a 24 h (PM-30) et les gains sont **gelés** passé ce délai (CU-06-03) — derrière trois clics de flèche, un soignant peut fermer une consultation sans jamais voir qu'il lui reste six heures. *Une information qui porte une échéance ne doit jamais dépendre d'un clic.* L'onglet porte donc sa **marque** (« 3 h », « déposé », le nombre d'ordonnances, « clos »), une **bande d'échéance reste visible quel que soit l'onglet ouvert et CONDUIT à la carte**, et le rail **s'ouvre tout seul sur ce qui presse** sans jamais bousculer un choix mémorisé. ⚠️ Corrige au passage un vrai défaut : le fil était bloqué à **46 % de la hauteur de l'écran** quelle que soit sa taille. **web 907 ✓ (895 + 12) · paquet 997 → 1 002 Ko · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **84** | **C5 — le plancher à zéro qui fabriquait une fausse échéance** — 11/09, trouvé **en ligne, sur la consultation réelle du porteur**, une heure après avoir livré le chantier 83. L'onglet disait « **expiré** », la bande trois centimètres plus bas « **moins d'une minute restantes** », et la carte juste en dessous « le délai est dépassé depuis le 29/08/2026, vos gains sont gelés ». **Trois affichages du même fait, dont deux qui se contredisaient.** 📌 **La cause : un `Math.max(0, …)`.** Un plancher à zéro transforme « dépassé de deux semaines » en « zéro seconde », donc en « moins d'une minute » — *un plancher n'est pas une protection quand il fabrique une valeur fausse au lieu de dire qu'il n'y en a pas.* ⚠️ Ce délai décide du **paiement** (CU-06-03) : annoncer qu'il reste une minute à un soignant dont les gains sont gelés depuis deux semaines, c'est lui faire croire qu'il peut encore les sauver. L'échéance est désormais lue **une seule fois** et consommée par les deux affichages — *deux endroits qui calculent la même chose finissent toujours par ne plus dire la même chose.* **web 910 ✓ (907 + 3) · lint 0 · build ✓ · 2 fautes injectées, 2 détectées.** | ⏸ en attente | ⏸ |
+| **85** | **Les codes du cahier sortent des textes affichés** — 11/09, demande du porteur : *« retire partout les textes du genre (RM-06-04), (EF-06-06)… nous sommes en production »*. **154 citations retirées dans 40 fichiers** — web, mobile et **serveur**. 📌 Le plus important était invisible depuis l'écran : **53 messages d'erreur du serveur** portaient un code, et ce sont eux qu'un patient lit quand quelque chose échoue — « Compte suspendu (RM-01-05) », « Code expiré (PM-17) ». ⚠️ **Trois choses NE partent pas**, et la distinction est le vrai travail : les **commentaires du code** (la traçabilité vers le cahier, qui ne se voit pas) ; les **clés de paramètre** `PM-xx` de l'écran Paramètres métier et de l'API publique (là, le code n'est pas une citation, c'est **la donnée** — la retirer laisserait des lignes sans nom) ; les **erreurs de démarrage** destinées à l'exploitant, où le code nomme le paramètre mal réglé. **Deux défauts trouvés en chemin** : un JSDoc **dupliqué sur une ligne** dans `m03` (présent dans HEAD avant ce chantier), et surtout **un test d'absence devenu vide** — il vérifiait qu'un texte portant « (PM-01) » était absent, donc il serait resté vert même si la carte s'affichait. **web 910 ✓ · API unitaires 641 ✓ · lint 0 · builds ✓ · 1 faute injectée sur le test réparé, détectée.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -717,6 +718,76 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 85 (les codes du cahier) a appris
+
+*11/09/2026 — une demande d'une ligne, dont tout le travail est une distinction.*
+
+#### Ce qu'un médecin lisait
+
+« Le Carnet n'est lisible que pendant la séance **(EF-06-06)**. » Le code ne lui dit rien. Il ne
+dit quelque chose qu'à celui qui a le cahier des charges ouvert — c'est-à-dire à nous, pendant la
+construction. **Le produit est en production : il parle à des soignants, plus à ses auteurs.**
+
+#### ⚠️ Le plus important n'était pas à l'écran
+
+Le porteur a pointé une phrase d'un panneau. Mais la même habitude avait couvert **53 messages
+d'erreur du serveur** — et ce sont ceux-là qu'on lit au pire moment : « Compte suspendu
+(RM-01-05) », « Code expiré (PM-17) — redemandez un code », « Ce numéro est déjà enregistré
+(RM-01-01) ».
+
+*Une demande formulée sur ce qu'on voit doit être instruite sur tout ce qui s'affiche — y compris
+ce qui ne s'affiche qu'en cas d'échec, là où l'utilisateur est déjà en difficulté.*
+
+#### Trois choses qui NE partent pas — et c'est là qu'est le travail
+
+| Ce qui reste | Pourquoi |
+|---|---|
+| **Les commentaires du code** | C'est la traçabilité vers le cahier. Elle ne se voit pas à l'écran, et elle est ce qui permet de retrouver *pourquoi* une règle existe. La retirer aurait coûté la mémoire du projet pour zéro gain. |
+| **Les clés `PM-xx`** de l'écran Paramètres métier et de l'API publique | Là, le code **n'est pas une citation : c'est la donnée**. L'administrateur gère des paramètres qui s'appellent PM-01, PM-30. Les retirer laisserait des lignes sans nom. |
+| **Les erreurs de démarrage** (`new Error("Paramètre PM-09 invalide…")`) | Elles s'adressent à l'exploitant, jamais à un utilisateur, et le code **nomme le paramètre mal réglé**. |
+
+*« Retire partout » ne veut jamais dire « partout ». La valeur du travail n'est pas dans la
+substitution — elle est dans la frontière.*
+
+#### Deux défauts trouvés en chemin
+
+**Un JSDoc dupliqué.** `m03.controller.ts` et `m03.admin.controller.ts` portaient **deux fois le
+même commentaire sur une seule ligne**. Le défaut était dans HEAD avant ce chantier ; il n'est
+devenu visible que parce que le nettoyage n'a touché que la seconde copie. Réparé.
+
+**Et surtout : un test d'absence devenu vide.** Ce test-ci :
+
+```
+expect(screen.queryByText(/Taux courant \(PM-01\)/)).not.toBeInTheDocument()
+```
+
+Il vérifiait qu'une carte ne s'affiche pas sur un dossier non vérifié. En retirant « (PM-01) » du
+libellé, le motif a cessé de correspondre à quoi que ce soit — **et le test est resté vert, pour la
+mauvaise raison.** Il serait resté vert même si la carte s'était affichée.
+
+*Un test d'ABSENCE meurt en silence : rien ne signale qu'il ne garde plus rien.* Un test de
+présence tombe dès qu'on touche à sa phrase ; un test d'absence devient simplement toujours vrai.
+
+**Il n'a pas été trouvé par la suite de tests** — elle était verte avant comme après. Il a été
+trouvé en comparant **l'inventaire des promesses** avant et après le nettoyage : une promesse
+tenue avait quitté l'inventaire. Réparé, puis vérifié par injection : la carte forcée à s'afficher,
+le test tombe maintenant sur les trois statuts.
+
+#### Les mesures
+
+| | |
+|---|---|
+| Citations retirées | **154** dans **40 fichiers** |
+| Dont messages d'erreur du serveur | **53** |
+| Commentaires touchés | **0** |
+| Promesses nues | **41 avant, 41 après** — aucune n'a perdu son test |
+| Tests | web **910 ✓**, API unitaires **641 ✓** |
+
+⚠️ **Les tests d'intégration du serveur n'ont pas pu tourner ici** : le garde-fou du projet les
+arrête faute de base de test (`DATABASE_URL` désigne la production). Les assertions ont donc été
+relues à la main — aucune ne porte sur les phrases modifiées, seulement des noms de tests et des
+commentaires.
 
 ### Ce que le chantier 84 (le plancher à zéro) a appris
 

@@ -670,7 +670,17 @@ describe('E1 — rééditer le contrat d’adhésion (écart C)', () => {
       await monter()
 
       await screen.findAllByText('Ange Makaya')
-      expect(screen.queryByText(/Taux courant \(PM-01\)/)).not.toBeInTheDocument()
+      /*
+        ⚠️ Le motif cherchait « Taux courant (PM-01) ». En retirant les codes du cahier des
+        textes affichés (chantier 85), ce libellé est devenu « Taux courant » — et le test s'est
+        mis à passer POUR LA MAUVAISE RAISON : il vérifiait l'absence d'un texte qui n'existait
+        plus nulle part, et serait resté vert même si la carte du contrat s'affichait.
+
+        *Un test d'ABSENCE meurt en silence : rien ne signale qu'il ne garde plus rien.* Celui-ci
+        a été retrouvé en vérifiant l'inventaire des promesses après le nettoyage, pas par la
+        suite de tests — qui était verte dans les deux cas.
+      */
+      expect(screen.queryByText(/Taux courant/)).not.toBeInTheDocument()
     },
   )
 

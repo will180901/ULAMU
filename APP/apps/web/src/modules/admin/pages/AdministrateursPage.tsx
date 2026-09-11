@@ -447,7 +447,7 @@ export function AdministrateursPage() {
             Le modèle n'en porte qu'un.
           */}
           <div className="mb-4">
-            <Carte icone={ShieldCheck} titre="Un compte, un sous-rôle" sousTitre="EF-02-08">
+            <Carte icone={ShieldCheck} titre="Un compte, un sous-rôle" sousTitre="Un autre rôle remplace le précédent, il ne s'y ajoute pas">
               <p className="text-[12px] leading-[1.6] text-[var(--texte-secondaire)]">
                 Un compte d'administration porte <strong>exactement un</strong> sous-rôle : lui en
                 attribuer un autre remplace le précédent, il ne s'y ajoute pas. Le super-administrateur

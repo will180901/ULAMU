@@ -156,7 +156,7 @@ function Waiting({name, remaining, onCancel}: {name: string; remaining: number; 
         <Text style={styles.countdownText}>Expire dans {mmss(remaining)}</Text>
       </View>
       <Banner tone="info" title="Aucun franc n'est débité">
-        Le paiement ne sera possible qu'une fois la confirmation reçue (D-007).
+        Le paiement ne sera possible qu'une fois la confirmation reçue.
       </Banner>
       <Pressable onPress={onCancel} style={styles.cancelHs} hitSlop={6}>
         <Icon name="x" size={15} color={colors.textTertiary} />

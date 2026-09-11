@@ -299,7 +299,7 @@ function PreferencesModal({visible, onClose}: {visible: boolean; onClose: () => 
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sheetTitle}>Préférences de notification</Text>
-          <Text style={styles.sheetSub}>Choisissez ce dont vous voulez être averti. Les alertes critiques restent toujours actives (RM-14-02).</Text>
+          <Text style={styles.sheetSub}>Choisissez ce dont vous voulez être averti. Les alertes critiques restent toujours actives.</Text>
           {err ? (
             <View style={styles.prefError}>
               <Text style={styles.loading}>Impossible de charger les préférences.</Text>

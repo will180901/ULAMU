@@ -52,7 +52,7 @@ export class PayHandshakeDto {
 
 export class SubmitPreConsultationDto {
   @IsString()
-  @IsNotEmpty({ message: "Décrivez vos symptômes — c'est ce qui prépare le professionnel (D-019)" })
+  @IsNotEmpty({ message: "Décrivez vos symptômes — c'est ce qui prépare le professionnel" })
   @MaxLength(4000, { message: "Symptômes : 4000 caractères maximum" })
   symptoms!: string;
 
@@ -166,12 +166,12 @@ export class ExtendSessionDto {
 
 export class DepositReportDto {
   @IsString()
-  @IsNotEmpty({ message: "Diagnostic requis (compte-rendu obligatoire, D-021)" })
+  @IsNotEmpty({ message: "Diagnostic requis (compte-rendu obligatoire)" })
   @MaxLength(8000, { message: "Diagnostic : 8000 caractères maximum" })
   diagnosis!: string;
 
   @IsString()
-  @IsNotEmpty({ message: "Recommandations requises (compte-rendu obligatoire, D-021)" })
+  @IsNotEmpty({ message: "Recommandations requises (compte-rendu obligatoire)" })
   @MaxLength(8000, { message: "Recommandations : 8000 caractères maximum" })
   recommendations!: string;
 }

@@ -95,7 +95,7 @@ export class M01Service {
       select: { createdAt: true },
     });
     if (!canSendOtp(recent.map((r) => r.createdAt.getTime()), quota, Date.now())) {
-      throw new ForbiddenException("Trop de demandes de code — réessayez plus tard (PM-19)");
+      throw new ForbiddenException("Trop de demandes de code — réessayez plus tard");
     }
     const ttl = await this.params.getInt("PM-17");
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -134,7 +134,7 @@ export class M01Service {
       orderBy: { createdAt: "desc" },
     });
     if (!otp) throw new UnauthorizedException("Aucun code en attente — redemandez un code");
-    if (otp.expiresAt.getTime() < Date.now()) throw new UnauthorizedException("Code expiré (PM-17) — redemandez un code");
+    if (otp.expiresAt.getTime() < Date.now()) throw new UnauthorizedException("Code expiré — redemandez un code");
     if (otp.attempts >= OTP_MAX_VERIFY_ATTEMPTS) throw new UnauthorizedException("Trop d'essais — redemandez un code");
     if (otp.codeHash !== hashOtp(code)) {
       // D-048 (correctif transversal) : l'incrément doit SURVIVRE au rollback de la transaction
@@ -198,7 +198,7 @@ export class M01Service {
     const minYears = await this.params.getInt("PM-16");
     const birth = new Date(dto.birthDate);
     if (Number.isNaN(birth.getTime()) || !isAdult(birth, minYears, new Date())) {
-      throw new BadRequestException(`Âge minimum : ${minYears} ans (PM-16) — Carnet familial pour les mineurs (D-033)`);
+      throw new BadRequestException(`Âge minimum : ${minYears} ans — Carnet familial pour les mineurs`);
     }
     const passwordHash = await hashPassword(dto.password);
 
@@ -246,7 +246,7 @@ export class M01Service {
         const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
         if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
         if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
-        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès");
       }
       throw e;
     }
@@ -320,7 +320,7 @@ export class M01Service {
         const target = String((e.meta as { target?: unknown } | undefined)?.target ?? "");
         if (target.includes("username")) throw new ConflictException("Ce nom d'utilisateur est déjà pris");
         if (target.includes("email")) throw new ConflictException("Cette adresse email est déjà enregistrée");
-        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+        throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès");
       }
       throw e;
     }
@@ -387,8 +387,8 @@ export class M01Service {
       await this.prisma.loginAttempt.create({ data: { phone: account?.phone ?? `unknown:${dto.username}`, success: false, client: dto.client } });
       throw new UnauthorizedException("Identifiants incorrects"); // message identique (anti-énumération)
     }
-    if (account.status === "SUSPENDED") throw new ForbiddenException("Compte suspendu (RM-01-05)");
-    if (account.status === "CLOSED") throw new ForbiddenException("Compte clôturé — contactez le support (PM-21)");
+    if (account.status === "SUSPENDED") throw new ForbiddenException("Compte suspendu");
+    if (account.status === "CLOSED") throw new ForbiddenException("Compte clôturé — contactez le support");
     // D-012 : le web est l'app soignant/administration, le mobile est l'app patient. Sans ce refus, un patient
     // obtenait une session web valide puis restait coincé (aucune capacité → garde de route qui rejette,
     // puis redirection en boucle vers ce même tableau de bord), sans comprendre pourquoi. Vérifié APRÈS le
@@ -727,7 +727,7 @@ export class M01Service {
       const minYears = await this.params.getInt("PM-16");
       const birth = new Date(dto.birthDate);
       if (Number.isNaN(birth.getTime()) || !isAdult(birth, minYears, new Date())) {
-        throw new BadRequestException(`Âge minimum : ${minYears} ans (PM-16)`);
+        throw new BadRequestException(`Âge minimum : ${minYears} ans`);
       }
       data.birthDate = birth;
     }
@@ -1271,7 +1271,7 @@ export class M01Service {
 
   private async ensurePhoneFree(phone: string): Promise<void> {
     const existing = await this.prisma.account.findUnique({ where: { phone } });
-    if (existing) throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès (RM-01-01)");
+    if (existing) throw new ConflictException("Ce numéro est déjà enregistré — connectez-vous ou récupérez votre accès");
   }
 
   private async ensureEmailFree(email: string): Promise<void> {
