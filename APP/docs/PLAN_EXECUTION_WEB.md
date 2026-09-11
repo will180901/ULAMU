@@ -680,6 +680,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **92** | **Les bulles du web prennent la forme de celles du mobile** — 11/09, demande du porteur, les deux écrans côte à côte (« regarde dans les moindres détails »). Relevé dans `SessionScreen.tsx` et repris : **rayon 12 px**, **coin rabattu à 3 px du côté de l'expéditeur**, **ma bulle en accent SATURÉ avec texte blanc** (mobile `accent500` = web `--ap-400`, la correspondance est écrite dans le fichier de jetons), bulle reçue sur fond de carte avec filet et ombre légère, et **l'heure passée DANS la bulle**. 📌 **Un message qui n'est QUE des emoji perd sa bulle** — convention WhatsApp : *un « 👍 » sur un rectangle coloré ressemble à un autocollant encadré ; posé sur le fil, il ressemble à un geste.* ⚠️ **Changer un fond, c'est changer tout ce qu'il porte** : citation, lecteur vocal, poignée, heure et accusés repassent en encre claire, et `surAccent` **revient** au lecteur vocal après avoir été supprimé la veille — la raison qui l'avait rendu inutile a disparu. Et le « lu » ne peut plus être `--ap-600` sur l'accent : *une couleur se choisit contre le fond qui la porte.* 📌 **Le seuil de la mise en page fixe passe de 1024 à 768 px** — mesuré : la fenêtre du porteur fait 799 px, il n'avait donc JAMAIS vu les deux colonnes fixes, et sa page défilait de 543 px à cause du rail empilé (546 px), pas du fil (déjà plafonné à 227). **web 996 ✓ · lint 0 · build et types propres.** | ⏸ en attente | ⏸ |
 | **93** | **Le « retard » comptait les pauses du soignant entre ses propres messages** — 11/09, **vu par le porteur** sur le téléphone du patient : un badge rouge « retard 32:13 ». Mesuré sur sa consultation réelle : **1 930 s affichés, 90 s réellement attendues** — les 1 840 s restantes (95 %) étaient les silences du soignant **après ses propres messages**. Écrire « Bonjour », réfléchir dix minutes, puis envoyer son analyse coûtait neuf minutes et demie de « retard », alors que personne n'attendait. 📌 **Le commentaire disait déjà la règle juste** (« si le soignant RÉPOND après 45 s ») : *répondre, c'est répondre à quelqu'un*, et le code mesurait autre chose — **quand un commentaire et son code divergent, c'est presque toujours le commentaire qui dit l'intention et le code qui a dérivé.** ⚠️ **La corriger n'a fait tomber aucun des 648 tests** : la règle n'avait aucune couverture propre — *une règle qui juge quelqu'un et que rien ne vérifie est une accusation sans preuve*. Neuf tests la tiennent maintenant, dont la reconstitution du cas réel. ⚠️ **Asymétrie posée au porteur** : seul le MOBILE affiche ce compteur — le patient lit « retard 32:13 », le soignant ne sait même pas que la mesure existe. **web 996 ✓ · API unitaires 657 ✓ (+9) · lint 0 · builds et types propres · 3 fautes injectées, 3 détectées.** | ⏸ en attente | ⏸ |
 | **94** | **Précédent / Suivant, et la mémoire d'écran** — 11/09, demande du porteur (« comme avec le projet CMS, va voir »), motif lu dans `navStack.store.ts` et `usePersistedState.ts` puis adapté. Quatre pièces : **une pile à nous** — *React Router ne dit pas si l'on peut avancer ou reculer*, et sans elle les deux flèches seraient toujours actives ; **un traqueur** qui distingue `PUSH` / `REPLACE` / `POP`, faute de quoi une redirection laisse une trace et « retour » ramène là où l'on n'a jamais voulu aller ; **les flèches** dans le bandeau, **montées même éteintes** (*une commande qui apparaît et disparaît se cherche ; une commande éteinte s'attend*) ; **la mémoire d'écran**, rangée par écran et par clé dans le stockage de session. 📌 **La règle reprise telle quelle de CMS** : jamais de brouillon ni de fenêtre modale dans cette mémoire — *rouvrir un écran et y trouver une décision en suspens qu'on ne se souvient pas d'avoir commencée, sur un écran de soin, c'est une confirmation donnée sans l'avoir voulue.* ⚠️ **Vingt tests sont tombés d'un coup** : vider `sessionStorage` ne vide pas un magasin qui vit en mémoire — la remise à zéro se paie une fois, dans le harnais commun. Et deux couleurs d'onde **relevées sur une capture du téléphone** au lieu d'être déduites de la palette. **web 1 011 ✓ (996 + 15) · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **95** | **L'onde vocale qui n'avait plus de place** — 11/09, **vu sur l'écran du porteur juste après la mise en ligne du 94** : les deux lecteurs vocaux s'affichaient **sans aucune onde**. Mesuré dans la page servie : l'onde recevait **70 px**, là où trente-six barres de 3 px espacées de 2 px en réclament **178**. Les trente-cinq écarts consommaient les 70 px à eux seuls, et les barres — élastiques — tombaient à **0 px de large**. 📌 **La cause est une mesure reprise à moitié** : j'avais relevé « 36 barres » sur le téléphone sans relever la largeur qui va avec. *Une densité, ce n'est pas un nombre de barres : c'est un nombre de barres ET une largeur d'écran.* Le nombre suit maintenant la place — la géométrie du mobile (3 px + 2 px) est tenue à toute largeur, et on retrouve les 36 dès qu'il y a les 178 px. ⚠️ **Et un plancher que j'ai dû retirer avant même de le livrer** : j'avais posé « jamais moins de huit barres », or huit barres réclament 38 px — *un plancher qui ne tient pas sous le plancher n'est pas un plancher.* ⚠️ **Le même piège qu'au chantier 87** : le premier test comptait les barres avant que la mesure soit commise, et affirmait donc le contraire de ce qu'il vérifiait. **web 1 017 ✓ (1 011 + 6) · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -728,6 +729,61 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 95 (l'onde sans place) a appris
+
+*11/09/2026 — une mesure relevée à moitié, et un test qui affirmait le contraire de ce qu'il
+vérifiait.*
+
+#### Reprendre un nombre sans reprendre sa largeur
+
+Aux chantiers 90 et 91 j'avais relevé sur le téléphone : **36 barres, 3 px de large, 2 px d'écart**,
+et je les avais reprises telles quelles. Le compte est juste. Mais 36 barres à 5 px l'unité
+réclament **178 px**, et dans la colonne de fil du web — étroite, parce qu'un rail vit à sa droite —
+l'onde n'en recevait que **70**.
+
+Soixante-dix pixels, c'est exactement de quoi loger les **trente-cinq écarts**. Il ne restait rien
+pour les barres : élastiques, elles tombaient à zéro. Le lecteur s'affichait **sans onde du tout** —
+un bouton, une durée, et un grand vide.
+
+> **Une densité relevée sur un téléphone n'est pas une densité : c'est un nombre de barres ET une
+> largeur d'écran. Reprendre le nombre sans la largeur, c'est reprendre la moitié de la mesure.**
+
+Le nombre suit désormais la place, et la géométrie du mobile est tenue **à toute largeur** : trois
+pixels de barre, deux d'écart, toujours. Dès qu'il y a les 178 px, on retrouve les 36 du téléphone.
+
+*Et le nombre de barres change, pas la forme de l'onde* : en rétrécissant on **moyenne** chaque
+tranche au lieu d'échantillonner, sans quoi un éclat bref — un « oui », une inspiration — sortirait
+ou rentrerait dans le dessin selon la largeur de la fenêtre. Un test le tient.
+
+#### ⚠️ Un plancher qui ne tient pas sous le plancher
+
+J'avais d'abord écrit *« jamais moins de huit barres — en dessous ce n'est plus une onde, c'est un
+pointillé »*. C'est une jolie phrase et une règle fausse : huit barres réclament 38 px, et sous
+38 px elles seraient redevenues invisibles — exactement le défaut que je venais de corriger.
+
+C'est la **faute injectée qui l'a révélé** : elle ne réveillait aucun test, parce qu'à la largeur
+testée le plancher ne servait à rien. Une garantie qu'aucun test ne peut distinguer de son absence
+n'en est pas une.
+
+> **Mieux vaut quatre barres qu'on voit que huit qu'on ne voit pas.**
+
+#### ⚠️ Le piège du chantier 87, exactement le même
+
+Le test de remesure a commencé par **passer alors qu'il aurait dû échouer**. La première mesure
+arrive par un effet, donc dans un **second** rendu ; `findBy…` rend la main dès que le bouton
+existe, c'est-à-dire **avant**. On comptait les barres du rendu d'avant la mesure.
+
+*Un test asynchrone qui n'attend pas la bonne étape ne vérifie pas moins : il vérifie autre chose,
+et l'annonce comme un succès.*
+
+#### ⚠️ Et ce que ça dit du mobile
+
+Le lecteur mobile est construit **exactement pareil** (`flex: 1, maxWidth: 3`, écart de 2, 36
+barres). Il ne s'effondre pas seulement parce qu'un fil de téléphone est plus large qu'une colonne
+de web — mais sur un petit appareil ses barres descendent déjà sous les 3 px annoncés. **Le défaut
+n'est pas visible là-bas ; la construction qui le permet, si.** Signalé au porteur, non corrigé sans
+sa décision : la version mobile est sa référence.
 
 ### Ce que le chantier 94 (la navigation) a appris
 

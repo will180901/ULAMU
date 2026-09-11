@@ -17,12 +17,13 @@
  * reçue, jamais un calcul fait sur l'horloge du poste.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConsultationPage } from '@/modules/consultation/pages/ConsultationPage'
 import { BulleFormatageGlobale } from '@/components/ulamu/BulleFormatageGlobale'
+import { barresQuiTiennent, ramener } from '@/modules/consultation/LecteurVocal'
 import { useSessionStore } from '@/state/session.store'
 import { api, lireMediaSession, type CareSession, type CareSessionStatus, type MeResponse, type SessionMessage } from '@/lib/api'
 
@@ -1010,6 +1011,130 @@ describe('C5 — la note vocale (chantier 90)', () => {
     expect(barres.length).toBeGreaterThanOrEqual(36)
     const hauteurs = new Set(barres.slice(0, 36).map((b) => (b as HTMLElement).style.height))
     expect(hauteurs.size).toBe(1)
+  })
+
+  /*
+    ── ⚠️ L'onde qui n'avait plus de place (chantier 95) ───────────────────────────
+
+    Vu **en ligne, sur l'écran du porteur** : les deux lecteurs vocaux s'affichaient **sans onde du
+    tout**. Mesuré dans la page — l'onde recevait **70 px**, là où trente-six barres de 3 px espacées
+    de 2 px en réclament **178**. Les trente-cinq écarts consommaient les 70 px à eux seuls, et les
+    barres, élastiques, tombaient à **0 px de large**.
+
+    *Une densité relevée sur un téléphone n'est pas une densité : c'est un nombre de barres ET une
+    largeur d'écran. Reprendre le nombre sans la largeur, c'est reprendre la moitié de la mesure.*
+
+    Les trois tests ci-dessous tiennent la géométrie du mobile — 3 px de barre, 2 px d'écart — écrite
+    ici à la main à dessein : si le composant change ses constantes, c'est à ces chiffres-là qu'il
+    doit répondre.
+  */
+  it('⚠️ à TOUTE largeur, les barres gardent leurs 3 px — elles ne tombent jamais à zéro', () => {
+    // 70 px : la largeur réellement mesurée sur l'écran du porteur, celle qui ne montrait rien.
+    for (const largeur of [20, 38, 70, 109, 151, 178, 400]) {
+      const combien = barresQuiTiennent(largeur)
+
+      expect(combien * 3 + (combien - 1) * 2).toBeLessThanOrEqual(largeur)
+      expect(combien).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  /*
+    Et la largeur de 70 px doit vraiment donner une onde, pas deux traits : c'est le cas concret vu
+    en ligne, celui par lequel tout est parti.
+  */
+  it('et dans la bulle du porteur, il en reste de quoi lire le son', () => {
+    expect(barresQuiTiennent(70)).toBeGreaterThanOrEqual(12)
+  })
+
+  it('mais dès qu’il y a la place, on retrouve les 36 du téléphone', () => {
+    expect(barresQuiTiennent(36 * 3 + 35 * 2)).toBe(36)
+    expect(barresQuiTiennent(400)).toBe(36)
+  })
+
+  /*
+    Largeur encore inconnue : premier rendu, ou navigateur sans `ResizeObserver`. On garde les 36 du
+    mobile plutôt qu'un plancher — *une onde complète qui rétrécit se remarque à peine ; un
+    pointillé qui s'épaissit se voit.*
+  */
+  it('et tant que la largeur est inconnue, l’onde reste complète', () => {
+    expect(barresQuiTiennent(0)).toBe(36)
+  })
+
+  /*
+    ⚠️ **Et l'onde se REMESURE.** La place change sans que le message change : le rail de droite
+    s'ouvre, la fenêtre est redimensionnée, on passe du portrait au paysage. Mesurée une seule fois
+    au premier rendu, l'onde garderait un nombre de barres qui ne correspond plus à la place — trop
+    peu dans une bulle devenue large, ou de nouveau écrasées dans une bulle devenue étroite.
+
+    *Une mesure prise une fois n'est pas une mesure : c'est un souvenir.*
+  */
+  it('⚠️ l’onde se remesure quand la place change', async () => {
+    const rappels: (() => void)[] = []
+    const vraiObservateur = window.ResizeObserver
+    window.ResizeObserver = class {
+      constructor(rappel: () => void) {
+        rappels.push(rappel)
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver
+
+    // L'onde est d'abord étroite : 70 px, la bulle du porteur.
+    let largeur = 70
+    const vraiRect = Element.prototype.getBoundingClientRect
+    Element.prototype.getBoundingClientRect = function () {
+      const r = vraiRect.call(this) as DOMRect
+      if ((this as HTMLElement).className?.includes?.('gap-[2px]')) {
+        return { ...r, width: largeur } as DOMRect
+      }
+      return r
+    }
+
+    try {
+      servirUnSon()
+      await monter(seance(), [vocal()])
+      await fil().findByLabelText('Écouter la note vocale')
+
+      const compter = () =>
+        document.querySelectorAll('[aria-hidden="true"] > span[style*="height"]').length
+      /*
+        ⚠️ La première mesure arrive par un EFFET, donc dans un second rendu. `findBy…` rend la main
+        dès que le bouton existe — c'est-à-dire AVANT. Sans ce vidage, on compterait les barres du
+        rendu d'avant la mesure, et le test dirait exactement le contraire de ce qu'il vérifie.
+      */
+      await act(async () => {})
+      const etroite = compter()
+      expect(etroite).toBeLessThan(36)
+
+      // Le rail se ferme, la bulle s'élargit : l'onde doit se redensifier.
+      largeur = 400
+      await act(async () => {
+        rappels.forEach((r) => r())
+      })
+
+      expect(compter()).toBeGreaterThan(etroite)
+    } finally {
+      Element.prototype.getBoundingClientRect = vraiRect
+      window.ResizeObserver = vraiObservateur
+    }
+  })
+
+  /*
+    ⚠️ **Moins de barres ne veut pas dire une autre onde.** En prenant une valeur sur quatre au lieu
+    de moyenner chaque tranche, un éclat bref entre deux silences — un « oui », une inspiration —
+    disparaîtrait selon la largeur de la fenêtre. Le dessin changerait de forme avec la place
+    disponible, et ne dirait plus la même chose du même son.
+  */
+  it('⚠️ en rétrécissant, un éclat bref ne disparaît pas de l’onde', () => {
+    const silence = Array.from({ length: 36 }, () => 0)
+    silence[5] = 1
+
+    const ramenee = ramener(silence, 8)
+
+    // La tranche 4–8 contient l'éclat : en échantillonnant, on aurait lu la valeur 4, donc zéro.
+    expect(ramenee[1]).toBeGreaterThan(0)
+    expect(ramenee).toHaveLength(8)
   })
 
   /*

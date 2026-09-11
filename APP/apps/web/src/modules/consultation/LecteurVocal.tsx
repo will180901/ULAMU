@@ -39,8 +39,60 @@ import { Pause, Play } from 'lucide-react'
 
 import { formatDuree } from './media'
 
-/** 36 barres, comme le mobile : la même densité, donc la même lecture d'un coup d'œil. */
+/**
+ * Le PLAFOND de barres — celui du mobile, qui en dessine toujours 36.
+ *
+ * ⚠️ Sur le web, ce nombre ne peut PAS être fixe, et c'est un défaut vu sur l'écran du porteur
+ * (chantier 95) : chaque barre coûte 3 px plus 2 px d'écart. Trente-six barres réclament donc
+ * 178 px. Dans une colonne de fil étroite, l'onde n'en recevait que 70 — soit exactement de quoi
+ * loger les trente-cinq ÉCARTS, et plus rien pour les barres elles-mêmes. Elles tombaient à zéro :
+ * le lecteur s'affichait **sans onde du tout**.
+ *
+ * *Une densité relevée sur un téléphone n'est pas une densité : c'est un nombre de barres ET une
+ * largeur d'écran. Reprendre le nombre sans la largeur, c'est reprendre la moitié de la mesure.*
+ */
 const BARRES = 36
+
+/** La géométrie du mobile, elle, est reprise telle quelle : 3 px de barre, 2 px d'écart. */
+const LARGEUR_BARRE = 3
+const ECART_BARRE = 2
+
+/**
+ * Combien de barres tiennent dans `largeur`, sans jamais dépasser celles du mobile.
+ *
+ * **La règle tient en une phrase : chaque barre gardée a ses 3 px.** J'avais d'abord posé un
+ * plancher de huit barres — *« en dessous ce n'est plus une onde, c'est un pointillé »* — et c'était
+ * une promesse intenable : huit barres réclament 38 px, et sous 38 px elles seraient redevenues
+ * invisibles. *Un plancher qui ne tient pas sous le plancher n'est pas un plancher.* Mieux vaut
+ * quatre barres qu'on voit que huit qu'on ne voit pas.
+ *
+ * Largeur inconnue (premier rendu, ou `ResizeObserver` muet sous les tests) : on garde les 36 du
+ * mobile — *une onde complète qui rétrécit ensuite se remarque à peine ; un pointillé qui
+ * s'épaissit se voit.*
+ */
+export function barresQuiTiennent(largeur: number): number {
+  if (largeur <= 0) return BARRES
+  const tiennent = Math.floor((largeur + ECART_BARRE) / (LARGEUR_BARRE + ECART_BARRE))
+  return Math.max(1, Math.min(BARRES, tiennent))
+}
+
+/**
+ * Les pics ramenés de `BARRES` valeurs à `combien`, en MOYENNANT chaque tranche.
+ *
+ * Prendre une valeur sur deux perdrait les pointes : un « oui » bref entre deux silences
+ * disparaîtrait de l'onde selon le nombre de barres affichées — l'onde changerait de forme avec la
+ * largeur de la fenêtre, ce qui ferait mentir le dessin.
+ */
+export function ramener(pics: number[], combien: number): number[] {
+  if (combien >= pics.length) return pics
+  return Array.from({ length: combien }, (_, i) => {
+    const debut = Math.floor((i * pics.length) / combien)
+    const fin = Math.max(debut + 1, Math.floor(((i + 1) * pics.length) / combien))
+    let somme = 0
+    for (let k = debut; k < fin; k += 1) somme += pics[k]
+    return somme / (fin - debut)
+  })
+}
 
 /** Les vitesses offertes, dans l'ordre du cycle. Celles du mobile, pour ne pas dérouter. */
 const VITESSES = [1, 1.5, 2] as const
@@ -124,6 +176,8 @@ export function LecteurVocal({
   const [duree, setDuree] = useState<number | null>(dureeAnnoncee ?? null)
   const [pics, setPics] = useState<number[] | null>(null)
   const [vitesse, setVitesse] = useState<number>(1)
+  /** La largeur MESURÉE de l'onde — elle seule sait combien de barres peuvent tenir. */
+  const [largeurOnde, setLargeurOnde] = useState(0)
 
   useEffect(() => {
     let vivant = true
@@ -135,7 +189,25 @@ export function LecteurVocal({
     }
   }, [url])
 
+  /*
+    On SUIT la largeur au lieu de la lire une fois : le rail de droite s'ouvre et se ferme, la
+    fenêtre change de taille, et une onde mesurée au premier rendu garderait un nombre de barres qui
+    ne correspond plus à rien.
+  */
+  useEffect(() => {
+    const el = onde.current
+    if (!el) return
+    const mesurer = () => setLargeurOnde(el.getBoundingClientRect().width)
+    mesurer()
+    const observateur = new ResizeObserver(mesurer)
+    observateur.observe(el)
+    return () => observateur.disconnect()
+  }, [])
+
   const fraction = duree && duree > 0 ? Math.min(1, position / duree) : 0
+
+  const nombreDeBarres = barresQuiTiennent(largeurOnde)
+  const hauteurs = pics ? ramener(pics, nombreDeBarres) : null
 
   /** Se déplacer dans la note en cliquant l'onde — le geste qu'on tente d'instinct. */
   const allerA = useCallback(
@@ -235,16 +307,16 @@ export function LecteurVocal({
         onClick={allerA}
         className="relative flex h-[30px] min-w-0 flex-1 cursor-pointer items-center gap-[2px]"
       >
-        {Array.from({ length: BARRES }, (_, i) => {
+        {Array.from({ length: nombreDeBarres }, (_, i) => {
           // Sans pics décodés : des barres ÉGALES. On n'invente pas une onde.
-          const hauteur = pics ? pics[i] : 0.3
-          const passee = i / BARRES <= fraction
+          const hauteur = hauteurs ? hauteurs[i] : 0.3
+          const passee = i / nombreDeBarres <= fraction
           return (
             <span
               key={i}
               className="min-w-0 flex-1 rounded-[2px]"
               style={{
-                maxWidth: 3,
+                maxWidth: LARGEUR_BARRE,
                 height: `${Math.round(3 + hauteur * 21)}px`,
                 background: passee ? jouee : aVenir,
               }}
