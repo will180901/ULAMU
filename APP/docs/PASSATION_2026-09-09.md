@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **864 ✓** (43 fichiers, + 5 todo) |
+| Web | `npx vitest run` | **879 ✓** (44 fichiers, + 5 todo) |
 | Mobile | `npm test` | **84 ✓** (10 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 77
+## 3. Ce qui a été fait — chantiers 58 à 78
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,7 +102,8 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
-| 77 | *(à pousser)* | **C4 — le registre paginé et le menu de ligne**, demandé en propres termes par le porteur. Chaque ligne n'offrait qu'un bouton : voir/annuler une ordonnance et signaler un patient obligeaient à ENTRER dans la consultation. ⚠️ La pagination est côté écran **par contrainte** — `listMine` coupe à 100 sans curseur, et tourner les pages ne ramène pas les plus anciennes. ⚠️ Le prénom du patient n'a **pas** été ajouté à la ligne : une décision écrite dans le code l'interdit, elle est remontée au porteur. |
+| 78 | *(à pousser)* | **C5 — les emoji en images, identiques partout.** Demande du porteur. Un emoji en texte est dessiné par l'APPAREIL : le même 🙏 change de forme, et certains manquent. Livré sans la bibliothèque de SARIS (1,6 Mo) : **zéro dépendance**, et la table **générée puis commitée**, 467 Ko → 48 Ko. ⚠️ Le sprite pèse 4,4 Mo — le prix du rendu identique, annoncé avant de commencer. |
+| 77 | `616c36b` | **C4 — le registre paginé et le menu de ligne**, demandé en propres termes par le porteur. Chaque ligne n'offrait qu'un bouton : voir/annuler une ordonnance et signaler un patient obligeaient à ENTRER dans la consultation. ⚠️ La pagination est côté écran **par contrainte** — `listMine` coupe à 100 sans curseur, et tourner les pages ne ramène pas les plus anciennes. ⚠️ Le prénom du patient n'a **pas** été ajouté à la ligne : une décision écrite dans le code l'interdit, elle est remontée au porteur. |
 | 76 | `a095fe4` | **C5 — la consultation prend un nom.** Le titre était le mot « Consultation » : trois séances ouvertes donnaient trois onglets identiques. Le motif était servi depuis toujours, rangé en bas du rail. Livré aussi : la référence de séance, les **honoraires** (jointure côté écran — le prix vit sur la DEMANDE, pas sur la séance), et la ligne d'ouverture du fil. ⚠️ **Deux corrections à mon propre plan** : les allergies étaient déjà affichées, et nommer la ligne de C4 demande le serveur. |
 | 75 | `ca96376` | **C5 — les médias.** ⚠️ Le serveur accepte `VOICE` et un **album de dix photos** ; le web n'envoyait que texte et UNE photo — et c'est un **type TypeScript** qui fermait la porte (`'TEXT' | 'PHOTO'`). 10ᵉ occurrence. ⚠️ Et la limite de 8 Mo se découvrait **après** que le fichier ait traversé le réseau. Livré : notes vocales, album, aperçu avant envoi, minuteur en instrument. 📌 `MediaRecorder` produit du `webm` que le serveur refuse : le format commun est `audio/mp4`. |
 | 74 | `98912ec` | **C3 — Demandes.** ⚠️ Une demande PAYÉE demandait encore d'attendre le paiement — la phrase n'était conditionnée par aucun état — et ne disait pas où sont les symptômes : dans la consultation, que `sessionId` désigne depuis toujours et qu'**aucun écran ne reliait** (9ᵉ occurrence). 📌 Et la suite complète rendait **13 faux échecs** par dépassement de délai : `testTimeout` porté à 15 s. |

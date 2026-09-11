@@ -139,6 +139,9 @@ les deux.
 9. **La ligne d'ouverture du fil** et le rail présenté **en colonnes alignées** (libellé à gauche,
    valeur à droite en chasse fixe), comme la maquette.
 10. **Le choix libre d'emoji** à la saisie, avec sprite local — sans CDN, hors-ligne.
+    → ✅ **FAIT au chantier 78**, plus le rendu en images dans les messages et le rendu géant.
+      Sans la bibliothèque de SARIS : zéro dépendance, table générée (467 Ko → 48 Ko),
+      sprite de 4,4 Mo servi par le site.
 
 ### Chantier C — la liste, telle que le porteur la veut
 

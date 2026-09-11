@@ -661,6 +661,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **75** | **C5 — les médias : ouvrir ce que le serveur tenait déjà ouvert** — 11/09, chantier A du plan de la consultation. Écrit après avoir ouvert les maquettes C4/C5 et lu la messagerie de **CMS-SARIS** (4 103 lignes). ⚠️ **Le serveur accepte quatre types de message — `TEXT`, `PHOTO`, `VOICE`, `DOCUMENT` — et un album de dix photos (`fileKeys`) ; le web n'envoyait que du texte et UNE photo.** Le fil savait pourtant déjà AFFICHER les albums (`mediaKeys`). **Dixième occurrence** du motif, et la première où c'est un **type TypeScript** qui fermait la porte : `sendMessage` ne déclarait que `'TEXT' | 'PHOTO'`, donc aucun écran ne POUVAIT envoyer une note vocale. ⚠️ **Et la limite de taille se découvrait par l'échec** : le DTO accepte ~84 Mo, le stockage refuse au-delà de **8 Mo** — un fichier de 20 Mo traversait le réseau EN ENTIER avant d'être rejeté, et le commentaire du DTO annonce « ≈ 80 Mo, cohérent » : **faux d'un facteur dix**. Livré : les **notes vocales** (chrono, onde d'amplitude, envoi en un geste, lecteur dans la bulle), l'**album de dix photos**, l'**aperçu avant envoi** avec compression et **poids annoncé AVANT**, et le minuteur devenu un **instrument** encadré et étiqueté « Horloge serveur ». 📌 **Le piège du format**, vérifié sur un vrai navigateur : `MediaRecorder` produit du `audio/webm` que le serveur REFUSE — l'intersection tient en `audio/mp4` (Chromium/Safari) ou `audio/ogg` (Firefox), et sans format commun le micro est désactivé **avec sa raison**. **web 844 ✓ (821 + 23) · 158 promesses, 117 retenues · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 | **76** | **C5 — la consultation prend un nom** — 11/09, chantier B du plan de la consultation. Le titre de l'écran était le mot « Consultation » : trois séances ouvertes dans la journée donnaient **trois onglets identiques**. Le motif était pourtant servi depuis toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas. Livré : le **titre porte le motif**, la **référence de séance** est lisible sous lui, les **honoraires** entrent dans le rail (par une jointure côté écran : le prix vit sur la DEMANDE, pas sur la séance), et le fil s'ouvre en rappelant le chiffrement de bout en bout. ⚠️ **Deux corrections à mon propre plan** : les allergies étaient **déjà affichées** (panneau Carnet) — mon analyse des maquettes les avait manquées ; et **donner un nom à la ligne de C4 est impossible sans le serveur**, `SessionListItem` ne portant pas la pré-consultation. 📌 Et le piège du heredoc, payé une nouvelle fois : `\r?\n` transformé en vrais CR/LF dans une expression régulière. **web 853 ✓ (844 + 9) · 158 promesses, 117 retenues (inchangé — la phrase ajoutée rejoint le filet sans changer l'inventaire) · lint 0 · build ✓ · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **77** | **C4 — le registre paginé, et les gestes qui étaient enfermés** — 11/09, chantier C du plan de la consultation, **demandé en propres termes par le porteur** (« tableau avec pagination, et un bouton d'action sur chaque ligne pour les fonctionnalités secondaires »). Chaque ligne n'offrait qu'un bouton : **voir une ordonnance, l'annuler, signaler un patient** obligeaient à ENTRER dans la consultation pour en ressortir — trois capacités qui existent toutes côté serveur. Livré : le tableau **paginé** (quinze lignes), un menu **⋯** par ligne, et l'annulation d'ordonnance **avec son motif obligatoire** depuis le registre. ⚠️ **La pagination est côté écran par CONTRAINTE** : `listMine` renvoie au plus cent séances, sans curseur ni total — au-delà, les plus anciennes n'arrivent jamais, et tourner les pages ne les fera pas revenir. La phrase du plafond reste. ⚠️ **Vérifié au serveur avant d'écrire le menu** : la règle d'annulation ne regarde QUE l'état de l'ordonnance, jamais celui de la séance (CU-09-04) — une ordonnance active d'une consultation terminée reste annulable. 📌 Et ce que le menu ne contient PAS : ni export (aucune route), ni suppression (un acte de soin ne s'efface pas). **web 864 ✓ (853 + 11) · 159 promesses, 118 retenues · lint 0 · build ✓ · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **78** | **C5 — les emoji rendus en images, identiques partout** — 11/09, demande explicite du porteur (« le rendu Apple identique partout, comme WhatsApp »). Un emoji écrit en texte est dessiné par l'APPAREIL : le même 🙏 n'a pas la même forme sur un Android d'entrée de gamme, un iPhone et un poste Windows — et certains manquent. Sur un écran où l'on décide de soins, un patient qui envoie 😟 et un soignant qui voit un carré vide, c'est un malentendu. Livré : le rendu en images depuis **une feuille servie par le site** (aucun CDN), un **sélecteur** avec catégories et récents, et le **rendu géant** d'un message tout en emoji. 📌 **Sans la bibliothèque de SARIS** : `emoji-mart` pèse 1,6 Mo et se monte à la main dans une `ref` faute d'être écrite pour React 19 — un fichier de sélecteur fait le même travail, **zéro dépendance**. Et la table est **générée puis commitée** (`outils/construire-emoji.mjs`) : **467 Ko → 48 Ko**, en ne gardant que la position de chaque emoji et son rangement. ⚠️ Le sprite pèse **4,4 Mo** — c'est le prix du rendu identique, dit au porteur avant de commencer, et il n'est téléchargé que lorsqu'un emoji s'affiche. **web 879 ✓ (864 + 15) · paquet 930 → 997 Ko · lint 0 · build ✓ · 8 fautes injectées, 8 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -709,6 +710,79 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 78 (C5 — les emoji) a appris
+
+*11/09/2026 — reprendre une bonne idée sans reprendre son poids.*
+
+#### Ce qui se joue vraiment derrière « des emoji »
+
+Un emoji écrit en texte n'est pas une image : c'est un caractère que **chaque appareil dessine à sa
+façon**. Le même 🙏 change de forme entre un Android d'entrée de gamme, un iPhone et un poste
+Windows — et les plus récents manquent purement, remplacés par un carré vide.
+
+Sur une messagerie d'entreprise, c'est un détail. **Sur une consultation, c'en est un autre** : un
+patient qui envoie 😟 et un soignant qui voit un carré n'ont pas eu la même conversation.
+
+C'est pour ça que la demande du porteur — *« le rendu Apple identique partout, comme WhatsApp »* —
+n'était pas une coquetterie, et c'est pour ça qu'elle coûte 4,4 Mo : **il n'existe pas de version
+légère de cette garantie.**
+
+#### Reprendre l'idée de SARIS sans reprendre sa bibliothèque
+
+CMS-SARIS monte le sélecteur de `emoji-mart` : 1,6 Mo, un moteur de rendu, un thème à réaccorder,
+et un composant qu'il faut monter « à la main » dans une `ref` parce qu'il n'est pas écrit pour
+React 19.
+
+Ce dont un sélecteur a besoin — huit catégories, une grille, un filtre, des récents — tient dans un
+fichier. **Aucune dépendance n'a été ajoutée.**
+
+Et SARIS importe la table complète **à l'exécution** : 467 Ko de JSON qui partent dans le paquet,
+portant pour chacun des 1 867 emoji son nom, ses mots-clés, ses six teintes et ses traductions.
+Nous n'avons besoin que de **la position dans l'image et le rangement**. Un générateur
+(`outils/construire-emoji.mjs`) réduit la table à **48 Ko**, et son résultat est commité.
+
+*Reprendre une bonne idée demande de savoir ce qui, dedans, fait le travail — et ce qui n'est que
+le contexte du produit d'origine.*
+
+#### Les arbitrages, dits plutôt que subis
+
+| Choix | Pourquoi |
+|---|---|
+| **Pas de teintes de peau** | Six variantes par emoji tripleraient la table pour un usage marginal dans un échange de soin. Si le besoin vient, c'est le générateur qu'on change. |
+| **Recherche par CATÉGORIE, pas par mot** | Les mots-clés sont exactement ce qui pèse 400 Ko. Sur un échange de soin, on choisit à l'œil dans une grille. Le prix de la recherche par mot est écrit dans le code, pour que la décision reste possible. |
+| **Le sprite servi par le site** | Aucun CDN : pas de dépendance réseau tierce, et aucune fuite de l'usage vers un tiers. |
+| **Un emoji inconnu retombe sur le texte** | Un drapeau récent, un caractère exotique : mieux vaut le dessin du système qu'un trou dans la phrase. On dégrade, on ne perd pas. |
+
+#### ⚠️ Le texte d'un message n'est JAMAIS transformé
+
+Le rendu remplace les emoji par leurs images — **et rien d'autre**. Pas de balise interprétée, pas
+de lien fabriqué automatiquement.
+
+Le corps d'un message de consultation porte des données de santé : un patient qui écrit `<b>` doit
+lire `<b>`. Un test le retient, et il est plus important qu'il n'en a l'air — c'est la frontière
+entre « afficher » et « interpréter ».
+
+#### Ce que le seuil de huit protège
+
+Un message qui n'est QUE des emoji se rend en grand : un « 👍 » seul tient lieu de phrase, et le
+rendre à la taille d'un mot le rate. **Au-delà de huit, ce n'est plus une réaction mais un texte**,
+et le grand format le rendrait illisible sur un téléphone.
+
+Deux fautes injectées visaient exactement ce seuil et cette distinction — un message contenant une
+seule lettre ne doit pas passer pour un message d'emoji. Les deux sont tombées.
+
+#### Les mesures
+
+| | Avant | Après |
+|---|---|---|
+| Tests web | 864 ✓ | **879 ✓** |
+| Paquet servi | 930 Ko | **997 Ko** (+67 Ko : la table et les composants) |
+| Table des emoji | — | **48 Ko** (au lieu de 467) |
+| Sprite | — | **4,4 Mo**, chargé une seule fois, et seulement si un emoji s'affiche |
+| Dépendances ajoutées | — | **aucune** |
+
+Huit fautes injectées, huit détectées.
 
 ### Ce que le chantier 77 (C4 — le registre) a appris
 

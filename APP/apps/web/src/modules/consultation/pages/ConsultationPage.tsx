@@ -118,6 +118,9 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import { compresserImage, enBase64, formatDuree, MIMES_IMAGE, titreConsultation } from '../media'
+import { seulementDesEmoji, texteAvecEmoji } from '../Emoji'
+import { SelecteurEmoji } from '../SelecteurEmoji'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSessionStore } from '@/state/session.store'
 import { mmss, useDecompteurServeur } from '@/hooks/useDecompteurServeur'
 import { SqueletteFil, SqueletteLignes } from '@/components/ulamu/Squelette'
@@ -587,7 +590,27 @@ function Bulle({
           {cles.map((k) => (
             <Media key={k} fileKey={k} />
           ))}
-          {m.body ? <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">{m.body}</p> : null}
+          {/*
+            ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
+
+            Les emoji deviennent des IMAGES, servies par le site : le même 🙏 a la même forme chez
+            le patient et chez le soignant, quel que soit l'appareil. Écrits en texte, ils sont
+            dessinés par le système — et certains manquent tout simplement.
+
+            Un message qui n'est QUE des emoji, et pas plus de huit, se rend en grand : un « 👍 »
+            seul tient lieu de phrase, et le rendre à la taille d'un mot le rate.
+
+            ⚠️ Le texte non-emoji n'est PAS interprété — ni balises, ni liens automatiques. Le corps
+            d'un message de consultation porte des données de santé : on l'affiche, on ne le
+            transforme pas.
+          */}
+          {m.body ? (
+            seulementDesEmoji(m.body) ? (
+              <p className="leading-none">{texteAvecEmoji(m.body, 34)}</p>
+            ) : (
+              <p className="text-[13px] leading-[1.55] whitespace-pre-wrap">{texteAvecEmoji(m.body)}</p>
+            )
+          ) : null}
         </div>
       </div>
 
@@ -1533,6 +1556,32 @@ export function ConsultationPage() {
                     }}
                     disabled={envoyerVocal.isPending || mode.type === 'edition'}
                   />
+                  {/*
+                    ── Le sélecteur d'emoji — chantier 78 ─────────────────────────────────────
+
+                    Il INSÈRE dans le brouillon plutôt que d'envoyer : on compose une phrase, on
+                    n'expédie pas un emoji isolé par accident. Et il reste ouvert après un choix —
+                    on en met souvent deux.
+
+                    Contrairement à la photo et au micro, il fonctionne aussi pendant une RETOUCHE :
+                    corriger un message pour y ajouter un emoji est un usage courant, et le serveur
+                    l'accepte (c'est du texte).
+                  */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" size="icon" variant="outline" aria-label="Choisir un emoji">
+                        <SmilePlus size={16} strokeWidth={1.6} aria-hidden="true" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-80 p-2">
+                      <SelecteurEmoji
+                        onChoisir={(natif) => {
+                          setBrouillon((b) => b + natif)
+                          champTexte.current?.focus()
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <Textarea
                     ref={champTexte}
                     aria-label={mode.type === 'edition' ? 'Modifier votre message' : 'Votre message'}

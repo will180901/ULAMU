@@ -545,6 +545,50 @@ describe('C5 — le contexte patient', () => {
   au-delà de 8 Mo au stockage. Un fichier trop lourd traversait le réseau EN ENTIER avant d'être
   rejeté.
 */
+describe('C5 — les emoji (chantier 78)', () => {
+  /*
+    Les emoji des MESSAGES deviennent des images servies par le site. Sans cela, le même caractère
+    est dessiné par chaque appareil — et un patient qui envoie 😟 peut être lu comme un carré vide
+    par son soignant.
+  */
+  it('un emoji reçu est rendu en image, pas en caractère système', async () => {
+    await monter(seance(), [message({ id: 'm1', body: 'Merci docteur 🙏' })])
+
+    const img = await screen.findByRole('img', { name: '🙏' })
+    expect(img.style.backgroundImage).toContain('emoji/apple-64.png')
+  })
+
+  it('un message qui n’est que des emoji se rend en grand', async () => {
+    await monter(seance(), [message({ id: 'm1', body: '👍' })])
+
+    const img = await screen.findByRole('img', { name: '👍' })
+    // 34 px : la taille du rendu « réaction », contre 18 px dans une phrase.
+    expect(img.style.width).toBe('34px')
+  })
+
+  it('mêlé à du texte, il garde la taille d’un mot', async () => {
+    await monter(seance(), [message({ id: 'm1', body: 'Bien reçu 👍' })])
+
+    expect((await screen.findByRole('img', { name: '👍' })).style.width).toBe('18px')
+  })
+
+  /*
+    ⚠️ Le sélecteur INSÈRE dans le brouillon, il n'envoie pas : on compose une phrase, on n'expédie
+    pas un emoji isolé par accident.
+  */
+  it('le sélecteur insère dans le brouillon au lieu d’envoyer', async () => {
+    const envoi = vi.spyOn(api, 'sendMessage')
+    await monter(seance())
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Choisir un emoji' }))
+    const bouton = await screen.findByRole('button', { name: '👍' })
+    fireEvent.click(bouton)
+
+    expect(screen.getByLabelText('Votre message')).toHaveValue('👍')
+    expect(envoi).not.toHaveBeenCalled()
+  })
+})
+
 describe('C5 — les photos (chantier 75)', () => {
   /** Une vraie image, assez petite pour qu'aucune règle ne la refuse. */
   const photo = (nom: string, octets = 1024) => {
