@@ -370,13 +370,26 @@ export function LecteurVocal({
         />
       </div>
 
+      {/*
+        ── ⚠️ Le compteur MONTE, il ne descend pas (chantier 98) ──────────────────────────────
+
+        Le web décomptait (`duree - position`) là où le téléphone compte l'écoulé. La même note, au
+        même instant, affichait `1:13` chez le soignant et `0:04` chez le patient. *Deux nombres
+        contraires pour un seul son.* On reprend celui du téléphone, qui est aussi celui de
+        WhatsApp : au repos la DURÉE, dès qu'on écoute le TEMPS ÉCOULÉ.
+
+        `ul-chiffre-clair` : le zéro de JetBrains Mono est POINTÉ, et à 11 px son point se referme —
+        `0:08` se lit `0:88`. Je l'ai moi-même mal lu deux fois sur mes propres captures avant de
+        vérifier le texte. *Un chiffre qu'on doit vérifier n'est plus un chiffre.* La variante
+        barrée du même caractère lève l'ambiguïté sans changer de police.
+      */}
       <span
         className={
-          'min-w-[30px] shrink-0 text-right t-code-sm tabular-nums ' +
+          'ul-chiffre-clair min-w-[30px] shrink-0 text-right t-code-sm tabular-nums ' +
           (surAccent ? 'text-white/85' : 'text-[var(--texte-tertiaire)]')
         }
       >
-        {duree === null ? '—' : formatDureeVocale(joue || position > 0 ? duree - position : duree)}
+        {duree === null ? '—' : formatDureeVocale(joue || position > 0 ? position : duree)}
       </span>
 
       {/*

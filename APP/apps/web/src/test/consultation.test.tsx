@@ -79,6 +79,11 @@ function seance(over: Partial<CareSession> = {}): CareSession {
     rated: false,
     patientAvatarKey: null,
     professionalAvatarKey: null,
+    patientFirstName: 'Mireille',
+    patientLastName: 'Nkouka',
+    professionalFirstName: 'Armel',
+    professionalLastName: 'Konaté',
+    otherPartyPresence: { online: false, since: null },
     otherPartyTyping: false,
     ...over,
   }
@@ -407,8 +412,14 @@ describe('C5 — ce que le professionnel ne peut pas faire', () => {
 
     expect(screen.queryByLabelText('Votre message')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument()
-    // Mais le fil reste lisible : une consultation close s'archive, elle ne disparaît pas.
-    expect(fil().getByText(/l'échange est clos/i)).toBeInTheDocument()
+    /*
+      Mais le fil reste lisible, et il le DIT : une consultation close s'archive, elle ne disparaît
+      pas. La phrase a changé de place au chantier 98 — elle est passée du sous-titre de la carte à
+      la ligne d'état, sous le prénom du patient — et de mots. *Ce que ce test défend n'est pas une
+      formule : c'est qu'une archive s'annonce comme telle au lieu de ressembler à une conversation
+      ouverte dont personne ne répond.*
+    */
+    expect(fil().getByText(/terminée · archivée/i)).toBeInTheDocument()
   })
 
   it('la prolongation disparaît une fois le plafond de 30 minutes atteint (PM-29)', async () => {
@@ -1249,6 +1260,46 @@ describe('C5 — la note vocale (chantier 90)', () => {
   })
 
   /*
+    ── ⚠️ Le compteur MONTE, il ne descend pas (chantier 98) ───────────────────────────────────
+
+    Trouvé en vérifiant la page servie : le web DÉCOMPTAIT là où le téléphone compte l'écoulé. Sur
+    la note de 76,7 s, à quatre secondes de lecture, le soignant lisait `1:13` et le patient `0:04`.
+    *Deux nombres contraires pour un seul son, et aucun moyen de savoir lequel des deux est le
+    même.*
+
+    Au repos on montre la DURÉE — c'est ce qu'on veut savoir avant d'écouter, pour décider si on a
+    le temps. Dès qu'on écoute, on montre le TEMPS ÉCOULÉ. C'est ce que fait le téléphone, et
+    WhatsApp avant lui.
+  */
+  it('⚠️ pendant l’écoute, le compteur monte — il ne décompte pas', async () => {
+    const vraie = Object.getOwnPropertyDescriptor(window.HTMLMediaElement.prototype, 'duration')
+    Object.defineProperty(window.HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => 76 })
+
+    try {
+      servirUnSon()
+      await monter(seance(), [vocal()])
+      await fil().findByLabelText('Écouter la note vocale')
+      await act(async () => {})
+
+      // Au repos : la durée de la note.
+      expect(fil().getByText('1:16')).toBeInTheDocument()
+
+      // Quatre secondes de lecture.
+      const son = document.querySelector('audio') as HTMLAudioElement
+      await act(async () => {
+        Object.defineProperty(son, 'currentTime', { configurable: true, value: 4 })
+        son.dispatchEvent(new Event('timeupdate'))
+      })
+
+      // On lit le temps ÉCOULÉ — et surtout PAS le restant, qui vaudrait 1:12.
+      expect(fil().getByText('0:04')).toBeInTheDocument()
+      expect(fil().queryByText('1:12')).not.toBeInTheDocument()
+    } finally {
+      if (vraie) Object.defineProperty(window.HTMLMediaElement.prototype, 'duration', vraie)
+    }
+  })
+
+  /*
     ── La photo de l'expéditeur sur le cercle de lecture (chantier 97) ─────────────────────────
 
     Demande du porteur, posée au chantier 92 et restée bloquée cinq chantiers : *« pour ce cercle il
@@ -1527,8 +1578,119 @@ describe('C5 — le minuteur (chantier 75)', () => {
   it('porte son étiquette : le compte vient du serveur, pas du navigateur', async () => {
     await monter(seance({ remainingSeconds: 900 }))
 
+    /*
+      ⚠️ Le minuteur a déménagé au chantier 98 — du bandeau de page vers celui de la discussion — et
+      ce test est tombé. **Il avait raison de tomber** : j'avais réduit l'étiquette à une infobulle.
+      *Une infobulle ne se lit qu'après l'avoir cherchée ; celui qui doute de son minuteur ne
+      survole rien, il croit son navigateur.* Elle est redevenue visible.
+
+      L'assertion, elle, ne porte plus sur une classe de typographie — elle avait bougé avec le
+      reste sans que rien de promis ne change. Elle porte sur ce qui compte vraiment pour un chiffre
+      qui se réécrit chaque seconde : **une chasse fixe**, sans quoi les minutes sautillent
+      latéralement et le regard doit se reposer dessus à chaque tic.
+    */
     expect(await screen.findByText('Horloge serveur')).toBeInTheDocument()
-    expect(screen.getByLabelText('Temps restant')).toHaveClass('ul-chiffre-ligne')
+    expect(screen.getByLabelText('Temps restant').className).toMatch(/tabular-nums/)
+  })
+
+  /*
+    ── Le bandeau de la discussion — chantier 98, 12/09/2026 ────────────────────────────────────
+
+    Demande du porteur, pièce par pièce : *« le bandeau header de la discussion : on doit avoir la
+    photo du patient dans un cercle, à côté le prénom du patient, en dessous le statut de la
+    conversation, et à l'extrême droite le badge du compteur à rebours comme dans le téléphone, y
+    compris un badge qui montre le temps de retard »*.
+
+    Ce que l'écran disait avant : une tuile d'icône, le mot « Échange », et « Chiffré de bout en
+    bout au repos ». *Trois éléments dont aucun ne disait avec QUI l'on parle.* Un soignant qui
+    enchaîne trois consultations dans l'après-midi avait trois en-têtes identiques.
+  */
+  describe('C5 — le bandeau de la discussion (chantier 98)', () => {
+    it('nomme le patient au lieu de dire « Échange »', async () => {
+      await monter(seance({ patientFirstName: 'Mireille' }))
+
+      expect(await fil().findByRole('heading', { name: 'Mireille', level: 2 })).toBeInTheDocument()
+    })
+
+    /*
+      ⚠️ **Les initiales ne sont pas un repli de fortune.** Un rond vide dit « il manque quelque
+      chose » ; deux lettres disent QUI. Et la forme demandée porte une information : le NOM en
+      majuscule, le prénom en minuscule — on lit « Nm » et on sait lequel est lequel.
+    */
+    it('⚠️ sans photo, montre les initiales — nom en majuscule, prénom en minuscule', async () => {
+      await monter(seance({ patientFirstName: 'Mireille', patientLastName: 'Nkouka', patientAvatarKey: null }))
+      await fil().findByRole('heading', { level: 2 })
+
+      expect(fil().getByText('Nm')).toBeInTheDocument()
+    })
+
+    it('et avec une photo, c’est la photo', async () => {
+      await monter(seance({ patientAvatarKey: 'av_patiente.jpg' }))
+      await fil().findByRole('heading', { level: 2 })
+
+      const bandeau = fil().getByRole('heading', { level: 2 }).closest('div')?.parentElement as HTMLElement
+      expect(bandeau.querySelector('img')).toHaveAttribute('src', expect.stringContaining('av_patiente.jpg'))
+    })
+
+    it('dit que le patient est en ligne', async () => {
+      await monter(seance({ otherPartyPresence: { online: true, since: new Date().toISOString() } }))
+
+      expect(await fil().findByText('en ligne')).toBeInTheDocument()
+    })
+
+    it('et qu’il est en train d’écrire, ce qui passe avant tout le reste', async () => {
+      await monter(seance({ otherPartyTyping: true, otherPartyPresence: { online: true, since: null } }))
+
+      expect(await fil().findByText(/en train d’écrire/)).toBeInTheDocument()
+      expect(fil().queryByText('en ligne')).not.toBeInTheDocument()
+    })
+
+    it('sinon, depuis quand on ne l’a pas vu', async () => {
+      const ilYADouzeMinutes = new Date(Date.now() - 12 * 60_000).toISOString()
+      await monter(seance({ otherPartyPresence: { online: false, since: ilYADouzeMinutes } }))
+
+      expect(await fil().findByText('vu il y a 12 min')).toBeInTheDocument()
+    })
+
+    /*
+      ⚠️ **Et le quatrième état, celui qu'on oublie : « on ne sait pas ».** Quand le serveur n'a
+      JAMAIS reçu de signe de vie de quelqu'un, écrire « vu il y a 3 ans » serait une affirmation
+      qu'on ne peut pas tenir — et c'est exactement ce qui serait arrivé avant le chantier 98, où
+      l'application du patient n'envoyait aucun battement de présence.
+
+      *Un statut qu'on ne peut jamais contredire n'est pas un statut : c'est une décoration.*
+    */
+    it('⚠️ et ne prétend rien quand le serveur n’a jamais eu de nouvelles', async () => {
+      await monter(seance({ otherPartyPresence: { online: false, since: null } }))
+
+      expect(await fil().findByText('hors ligne')).toBeInTheDocument()
+      expect(fil().queryByText(/vu il y a/)).not.toBeInTheDocument()
+    })
+
+    /*
+      ⚠️ **Le retard apparaît ENFIN du côté de celui qu'il juge.** Il était mesuré, servi, et affiché
+      au patient sur son téléphone en rouge — pendant que le soignant ne savait même pas que la
+      mesure existait. *On ne peut pas corriger ce qu'on ne voit pas, et on ne peut pas contester ce
+      qu'on ignore.* Asymétrie signalée au porteur aux chantiers 93 et 94, tranchée ici.
+    */
+    it('⚠️ montre au soignant le retard qu’on lui compte', async () => {
+      await monter(seance({ professionalDelaySec: 95 }))
+
+      /*
+        `01:35` et non `1:35` : le web remplit les minutes d'un zero, le telephone non. On garde
+        la convention du web — la pastille de retard est collee au minuteur, qui remplit deja, et
+        deux formats cote a cote dans le meme bandeau se remarqueraient plus que l'ecart avec le
+        telephone.
+      */
+      expect(await fil().findByText(/retard 01:35/)).toBeInTheDocument()
+    })
+
+    it('et ne l’affiche pas quand il n’y en a pas', async () => {
+      await monter(seance({ professionalDelaySec: 0 }))
+      await fil().findByRole('heading', { level: 2 })
+
+      expect(fil().queryByText(/retard/)).not.toBeInTheDocument()
+    })
   })
 
   it('une séance close n’affiche aucun minuteur', async () => {

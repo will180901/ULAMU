@@ -33,6 +33,8 @@ import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { StorageService } from "../../common/storage.service";
 import { PaymentsService } from "../m13-payments/m13.payments.service";
+/* La MEME regle de fraicheur que l'annuaire : deux definitions de « en ligne » finiraient par diverger. */
+import { presenceIsAvailable } from "../m05-directory/m05.policies";
 import {
   accumulatedProfessionalDelaySec,
   autoStartDue,
@@ -108,6 +110,39 @@ export interface SessionView {
    */
   patientAvatarKey: string | null;
   professionalAvatarKey: string | null;
+  /**
+   * L'identité des deux participants — chantier 98.
+   *
+   * ── ⚠️ Pourquoi le nom du PATIENT sort maintenant ───────────────────────────────────────────
+   *
+   * L'écran du soignant écrivait « Le patient », faute d'avoir mieux : la vue de séance ne portait
+   * aucune identité. Le porteur demande son prénom dans le bandeau de la discussion, et ses
+   * initiales quand il n'a pas de photo.
+   *
+   * La règle EF-06-01 (« la notification d'initiation ne porte que prénom + âge ») encadre la fiche
+   * **AVANT paiement** — précisément pour qu'un soignant ne choisisse pas ses patients sur autre
+   * chose que le motif. Une fois la séance payée et ouverte, le soignant lit déjà le Carnet :
+   * groupe sanguin, allergies, maladies chroniques. *Un prénom est moins que cela.*
+   *
+   * Le nom de famille ne sert qu'à une INITIALE côté écran ; il est servi entier faute de pouvoir
+   * couper proprement côté serveur sans figer une règle d'affichage dans le contrat.
+   */
+  patientFirstName: string | null;
+  patientLastName: string | null;
+  professionalFirstName: string | null;
+  professionalLastName: string | null;
+  /**
+   * La présence de l'AUTRE participant, vue par celui qui appelle — chantier 98.
+   *
+   * `online` suit la même règle que l'annuaire (PM-26 : un battement plus vieux que ce délai n'est
+   * plus une présence). `since` est l'instant du dernier signe de vie, pour dire « vu il y a 12 min ».
+   *
+   * ⚠️ `since` vaut `null` quand le serveur n'a **jamais** reçu de battement de cette personne. Ce
+   * n'est pas « hors ligne depuis longtemps », c'est « on ne sait pas » — et les deux ne s'écrivent
+   * pas pareil. *Dire « hors ligne depuis toujours » de quelqu'un dont on n'a simplement jamais eu
+   * de nouvelles est une affirmation qu'on ne peut pas tenir.*
+   */
+  otherPartyPresence: { online: boolean; since: string | null };
 }
 
 export interface SessionListItem {
@@ -652,15 +687,22 @@ export class SessionService {
       Les deux photos, lues en parallèle. `select` réduit à la seule clé : rien d'autre de ces deux
       profils n'a sa place dans une vue de séance.
     */
-    const [profilPatient, profilSoignant] = await Promise.all([
+    const autre =
+      actor.accountId === settled.patientAccountId ? settled.professionalId : settled.patientAccountId;
+    const [profilPatient, profilSoignant, presence, pm26S] = await Promise.all([
       this.prisma.patientProfile.findUnique({
         where: { accountId: settled.patientAccountId },
-        select: { avatarKey: true },
+        select: { avatarKey: true, firstName: true, lastName: true },
       }),
       this.prisma.professionalProfile.findUnique({
         where: { accountId: settled.professionalId },
-        select: { avatarKey: true },
+        select: { avatarKey: true, firstName: true, lastName: true },
       }),
+      this.prisma.presenceStatus.findUnique({
+        where: { accountId: autre },
+        select: { state: true, lastHeartbeatAt: true },
+      }),
+      this.params.getInt("PM-26"),
     ]);
     const now = Date.now();
     return {
@@ -696,6 +738,16 @@ export class SessionService {
       otherPartyTyping: this.otherPartyTyping(sessionId, actor.accountId),
       patientAvatarKey: profilPatient?.avatarKey ?? null,
       professionalAvatarKey: profilSoignant?.avatarKey ?? null,
+      patientFirstName: profilPatient?.firstName ?? null,
+      patientLastName: profilPatient?.lastName ?? null,
+      professionalFirstName: profilSoignant?.firstName ?? null,
+      professionalLastName: profilSoignant?.lastName ?? null,
+      otherPartyPresence: {
+        online: presence
+          ? presenceIsAvailable(presence.state, presence.lastHeartbeatAt.getTime(), now, pm26S)
+          : false,
+        since: presence ? presence.lastHeartbeatAt.toISOString() : null,
+      },
     };
   }
 

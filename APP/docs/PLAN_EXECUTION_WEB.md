@@ -683,6 +683,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **95** | **L'onde vocale qui n'avait plus de place** — 11/09, **vu sur l'écran du porteur juste après la mise en ligne du 94** : les deux lecteurs vocaux s'affichaient **sans aucune onde**. Mesuré dans la page servie : l'onde recevait **70 px**, là où trente-six barres de 3 px espacées de 2 px en réclament **178**. Les trente-cinq écarts consommaient les 70 px à eux seuls, et les barres — élastiques — tombaient à **0 px de large**. 📌 **La cause est une mesure reprise à moitié** : j'avais relevé « 36 barres » sur le téléphone sans relever la largeur qui va avec. *Une densité, ce n'est pas un nombre de barres : c'est un nombre de barres ET une largeur d'écran.* Le nombre suit maintenant la place — la géométrie du mobile (3 px + 2 px) est tenue à toute largeur, et on retrouve les 36 dès qu'il y a les 178 px. ⚠️ **Et un plancher que j'ai dû retirer avant même de le livrer** : j'avais posé « jamais moins de huit barres », or huit barres réclament 38 px — *un plancher qui ne tient pas sous le plancher n'est pas un plancher.* ⚠️ **Le même piège qu'au chantier 87** : le premier test comptait les barres avant que la mesure soit commise, et affirmait donc le contraire de ce qu'il vérifiait. **web 1 017 ✓ (1 011 + 6) · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **96** | **Le mobile aligné, la durée qui mentait, et le squelette qui manquait** — 12/09, quatre demandes du porteur en une. **(1) La règle de l'onde devient PARTAGÉE** (`packages/shared/src/onde-vocale.ts`, vendorée) : le téléphone dessinait lui aussi 36 barres dans 128 px, soit des barres de **1,6 px** au lieu des 3 annoncées en tête de son propre lecteur — *le web s'effondrait, le mobile s'étiolait, même cause*. **(2) ⚠️ La durée d'une note vocale était fausse une fois sur deux** : le lecteur attendait `onLoadedMetadata` par une propriété React, or quand le son est déjà en cache l'évènement passe **avant** que React ait branché l'écouteur. La même note affichait `1:16` en arrivant et `1:03` en y revenant — 1:03 étant la durée **annoncée par l'expéditeur**, fausse de 14 s. *Un évènement qu'on n'a pas entendu n'a pas eu lieu : on lit l'état au montage, puis on écoute.* Et l'arrondi divergeait (mobile 1:17, web 1:16) — même fichier, deux durées. **(3) Le squelette de la consultation** : l'écran s'ouvrait sur **une phrase et un rond**, puis toute la page se posait d'un coup. Le FIL avait pourtant son squelette depuis le chantier 21 — *le soin s'était arrêté à une porte*. **(4) Les trois derniers écarts de bulles** : espacement **10 px / 2 px groupés** (le web était à 12 / 6, et le regroupement ne se lisait plus comme un bloc), la trace d'un message supprimé qui redevient une **bulle** au lieu d'une pilule pointillée, « modifié » en italique. ⚠️ **Et un écart que je REFUSE de copier** : l'heure d'une bulle reçue, que le téléphone peint en `#52525B` sur `#1C1C20` — **2,2:1**. Le web l'avait relevée exprès le 09/09. *Aligner deux écrans ne veut pas dire recopier le moins lisible des deux.* **web 1 024 ✓ (1 017 + 7) · mobile 88 ✓ (84 + 4) · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **97** | **L'onde qui pulsait — et la photo de profil, enfin** — 12/09. ⚠️ **Le porteur a vu, sur la page servie, que l'onde vocale n'était toujours pas là** : ma correction du 95 ne corrigeait rien, et j'avais annoncé le contraire deux fois. Mesuré cette fois DANS la page : l'onde **oscillait** — `36 barres → 70 px → 14 → 26 px → 5 → 2 px → 1 → 0 px → 36 →` … quatre états par seconde. 📌 **La cause est une boucle que j'ai fermée moi-même** : la rangée du lecteur n'avait **aucune largeur de référence** (`w-full` dans une bulle qui se dimensionne sur son contenu), donc la largeur mesurée n'était que **la somme des écarts entre les barres**. Faire dépendre le nombre de barres de cette mesure fermait le cercle. *Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle, pas une mesure.* La rangée reçoit la largeur du téléphone — **244 px**, `styles.row.width` — qui est précisément ce qui empêchait le mobile d'osciller. ⚠️ **Et les tests du 95 ne pouvaient pas le voir** : jsdom ne calcule aucune mise en page, donc la boucle ne pouvait pas s'amorcer. Le nouveau test **émule la seule règle de mise en page qui compte** et vérifie que le nombre de barres se POSE. **(2) La photo de profil sur le cercle de lecture**, demandée au chantier 92 et bloquée cinq chantiers : le blocage n'était pas la base — les deux `avatarKey` y sont depuis août — mais **la vue de séance, qui ne portait aucune identité**. Elle porte maintenant les deux clés, web et mobile ensemble, avec un voile sous l'icône (*une icône posée sur une image dont on ne sait rien doit porter son propre contraste*). ⚠️ **Décision de produit posée au porteur** : l'écran du soignant écrit encore « Le patient » — montrer un visage sans nom est incohérent. **web 1 029 ✓ · mobile 91 ✓ · API unitaires 660 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **98** | **Le bandeau de la discussion : avec QUI l'on parle** — 12/09, demande détaillée du porteur. L'en-tête du fil disait « **Échange** » et « Chiffré de bout en bout au repos » — *trois éléments dont aucun ne disait avec qui*. Un soignant qui enchaîne trois consultations avait trois en-têtes identiques. Il porte maintenant le **visage** du patient (photo, ou initiales « Nm » — nom en majuscule, prénom en minuscule), son **prénom** à la place de « Le patient », l'**état de la conversation** en dessous, et à droite le **minuteur** et le **retard**. ⚠️ **Le statut n'existait pas** : l'application du patient n'envoyait **aucun** battement de présence, le serveur n'avait jamais entendu parler de lui et l'aurait dit hors ligne à perpétuité. *Un statut qu'on ne peut jamais contredire n'est pas un statut, c'est une décoration.* Le téléphone bat maintenant pendant la consultation, et la vue de séance sert la présence de l'autre — avec un quatrième état qu'on oublie toujours : **« on ne sait pas »**, qui ne s'écrit pas comme « hors ligne depuis toujours ». 📌 **Le retard apparaît enfin du côté de celui qu'il juge** (asymétrie signalée aux chantiers 93 et 94). ⚠️ **Et un test est tombé en déplaçant le minuteur, à raison** : j'avais réduit l'étiquette « Horloge serveur » à une infobulle — *une infobulle ne se lit qu'après l'avoir cherchée ; celui qui doute de son minuteur ne survole rien, il croit son navigateur.* Plus les deux corrections relevées la veille : le **compteur vocal qui MONTE** au lieu de décompter (le web lisait `1:13` quand le patient lisait `0:04` du même son) et le **zéro barré** (`0:08` se lisait `0:88` à 11 px, mal lu deux fois sur mes propres captures). **web 1 039 ✓ · mobile 91 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -731,6 +732,85 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 98 (le bandeau de la discussion) a appris
+
+*12/09/2026 — un en-tête qui ne disait pas avec qui l'on parle.*
+
+#### Trois éléments, aucun ne nommait personne
+
+La carte du fil portait une tuile d'icône, le mot « **Échange** », et « Chiffré de bout en bout au
+repos ». Chacun est vrai. Aucun ne répond à la question qu'on se pose en ouvrant l'écran.
+
+> Un soignant qui enchaîne trois consultations dans l'après-midi avait **trois en-têtes
+> identiques**. Le chiffrement, lui, n'a besoin d'être dit qu'une fois.
+
+Le porteur a demandé, pièce par pièce : le visage, le prénom, l'état de la conversation, le
+minuteur et le retard. C'est la composition de n'importe quelle messagerie — et ce n'est pas une
+imitation : c'est la seule disposition où l'on sait, sans lire, à qui l'on parle et combien de temps
+il reste.
+
+#### ⚠️ Le statut demandé n'existait pas
+
+« En ligne », « vu il y a 12 min » : la donnée n'existait nulle part. **L'application du patient
+n'envoie aucun battement de présence** — le module de présence avait été écrit pour la
+*disponibilité des soignants* dans l'annuaire, et personne n'avait jamais eu besoin de celle d'un
+patient.
+
+Le serveur aurait donc répondu « hors ligne » à toutes les questions, pour toujours.
+
+> **Un statut qu'on ne peut jamais contredire n'est pas un statut : c'est une décoration.**
+
+Le téléphone bat maintenant tant que la conversation est ouverte — *exactement quand la question
+« est-il devant son écran ? » se pose*. Et la vue de séance sert la présence de l'autre, avec la
+**même** règle de fraîcheur que l'annuaire : deux définitions de « en ligne » finiraient par
+diverger.
+
+#### Le quatrième état, celui qu'on oublie
+
+Trois états sautent aux yeux : en ligne, en train d'écrire, hors ligne. Le quatrième est **« on ne
+sait pas »** — le serveur n'a jamais reçu le moindre signe de vie de cette personne.
+
+> **« Hors ligne depuis toujours » est une affirmation qu'on ne peut pas tenir.** On écrit « hors
+> ligne », sans durée, et c'est tout ce qu'on sait.
+
+Un test le fixe, et c'était exactement l'état de **tous** les patients avant ce chantier.
+
+#### ⚠️ Un test est tombé en déplaçant le minuteur, et il avait raison
+
+Le minuteur descend du bandeau de page vers celui de la conversation, comme demandé. En le
+compactant en pastille, j'avais réduit l'étiquette « **Horloge serveur** » à une infobulle. Un test
+du chantier 75 est tombé.
+
+> **Une infobulle ne se lit qu'après l'avoir cherchée.** Celui qui doute de son minuteur ne survole
+> rien : il croit son navigateur — et l'horloge de ce poste n'est qu'indicative (RM-06-02).
+
+L'étiquette est redevenue visible, en très petit, sous le chiffre. *Un test qui tombe pendant un
+déménagement ne dit pas toujours « tu as cassé quelque chose » : parfois il dit « tu as laissé
+quelque chose derrière toi ».*
+
+Au passage, l'assertion de ce test portait sur une **classe de typographie**, qui avait bougé sans
+qu'aucune promesse ne change. Elle porte maintenant sur ce qui compte pour un chiffre réécrit chaque
+seconde : une **chasse fixe**, sans quoi les minutes sautillent latéralement.
+
+#### Le retard, enfin visible par celui qu'il juge
+
+Signalé au porteur aux chantiers 93 et 94, tranché ici : le compteur de retard était mesuré, servi,
+et affiché **en rouge sur le téléphone du patient** — pendant que le soignant ne savait même pas que
+la mesure existait.
+
+> **On ne peut pas corriger ce qu'on ne voit pas, et on ne peut pas contester ce qu'on ignore.**
+
+#### Deux détails relevés la veille, et ce qu'ils coûtaient
+
+**Le compteur d'une note vocale MONTE.** Le web décomptait, le téléphone comptait l'écoulé : sur la
+même note, au même instant, le soignant lisait `1:13` et le patient `0:04`. *Deux nombres contraires
+pour un seul son.*
+
+**Le zéro est barré.** Celui de JetBrains Mono est *pointé*, et sous 12 px le point se referme :
+`0:08` se lit `0:88`. Je l'ai moi-même mal lu deux fois sur mes propres captures avant de vérifier
+le texte réel. *Un chiffre qu'on doit vérifier n'est plus un chiffre.* La variante barrée est dans
+la police déjà chargée — aucun octet de plus, et la chasse ne bouge pas.
 
 ### Ce que le chantier 97 (l'onde qui pulsait) a appris
 

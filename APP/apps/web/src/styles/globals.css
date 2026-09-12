@@ -524,6 +524,17 @@
 .t-code    { font-family: var(--font-mono); font-size: var(--fs-code);    line-height: var(--lh-code);    font-weight: 400; }
 .t-code-sm { font-family: var(--font-mono); font-size: var(--fs-code-sm); line-height: var(--lh-code-sm); font-weight: 500; }
 
+/* Le ZÉRO BARRÉ de JetBrains Mono, pour les petits chiffres qu'on doit lire sans hésiter.
+
+   ⚠️ Le zéro par défaut de cette police est POINTÉ. Sous 12 px le point se referme et le glyphe
+   devient un huit : `0:08` se lit `0:88`. Relevé le 12/09 sur la durée d'une note vocale, mal lue
+   deux fois de suite avant vérification du texte réel.
+
+   `zero` est une variante OpenType de la police déjà chargée : aucun octet de plus, et la chasse
+   ne bouge pas — un tableau de chiffres reste aligné. On ne l'applique QU'AUX petits chiffres :
+   sur un identifiant en 13 px, le zéro pointé se lit très bien et le barré ferait bavard. */
+.ul-chiffre-clair { font-feature-settings: 'zero' 1; }
+
 /* ── Les quatre voix, en classes — 09/09/2026 ───────────────────────────────────────────────────
    Elles remplacent 78 recopies à l'identique dans les écrans. Chacune pose la famille, la taille,
    l'interlignage, la graisse ET la couleur d'un coup : une voix incomplète n'a pas de sens, et

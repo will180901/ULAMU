@@ -1350,6 +1350,92 @@ function CompteRendu({ session, onDepose }: { session: CareSession; onDepose: ()
 // ── Écran ──────────────────────────────────────────────────────────────────
 
 /**
+ * Le visage d'un participant — chantier 98.
+ *
+ * Demande du porteur : *« la photo du patient dans un cercle pas trop grand pas trop petit, au fond
+ * légèrement gris ; et si le patient n'a pas mis de photo, remplir cette zone par les premières
+ * lettres de son nom et prénom, nom en majuscule, prénom en minuscule »*.
+ *
+ * ⚠️ **Les initiales ne sont pas un repli de fortune.** Un rond vide dit « il manque quelque chose » ;
+ * deux lettres disent QUI. Sur un écran où l'on enchaîne trois consultations dans l'après-midi,
+ * c'est ce qui distingue une conversation d'une autre d'un coup d'œil.
+ */
+function Visage({ photo, nom, prenom }: { photo: string | null; nom: string | null; prenom: string | null }) {
+  /* « Konaté Armel » → « Ka ». Le nom porte la majuscule, le prénom la minuscule. */
+  const initiales = `${(nom ?? '').charAt(0).toUpperCase()}${(prenom ?? '').charAt(0).toLowerCase()}`.trim()
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-[var(--fond-surface-2)] text-[12px] font-semibold text-[var(--texte-secondaire)]"
+    >
+      {photo ? (
+        <img src={photo} alt="" className="size-full object-cover" />
+      ) : initiales ? (
+        initiales
+      ) : (
+        /* Ni photo, ni nom : on ne fabrique pas d'initiales à partir de rien. */
+        <UserRound size={16} strokeWidth={1.5} />
+      )}
+    </span>
+  )
+}
+
+/**
+ * « en ligne », « en train d'écrire… », « vu il y a 12 min » — le statut de la conversation.
+ *
+ * ⚠️ **Trois états, et un quatrième qu'il faut savoir dire : « on ne sait pas ».** Quand le serveur
+ * n'a jamais reçu de signe de vie de quelqu'un, écrire « hors ligne depuis toujours » serait une
+ * affirmation qu'on ne peut pas tenir. On écrit « hors ligne », sans durée.
+ */
+function StatutConversation({
+  close,
+  ecrit,
+  presence,
+}: {
+  close: boolean
+  ecrit: boolean
+  presence: { online: boolean; since: string | null }
+}) {
+  if (close) {
+    return <span className="text-[12px] text-[var(--texte-tertiaire)]">Conversation terminée · archivée</span>
+  }
+  if (ecrit) {
+    return (
+      <span className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ap-400)]">
+        <span aria-hidden="true" className="size-[6px] rounded-full bg-[var(--ap-400)]" />
+        en train d’écrire…
+      </span>
+    )
+  }
+  if (presence.online) {
+    return (
+      <span className="flex items-center gap-1.5 text-[12px] text-[var(--succes-texte)]">
+        <span aria-hidden="true" className="size-[6px] rounded-full bg-[var(--succes-texte)]" />
+        en ligne
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1.5 text-[12px] text-[var(--texte-tertiaire)]">
+      <span aria-hidden="true" className="size-[6px] rounded-full bg-[var(--bordure-normale)]" />
+      {presence.since ? `vu ${ilYA(presence.since)}` : 'hors ligne'}
+    </span>
+  )
+}
+
+/** « il y a 3 min », « il y a 2 h », « il y a 4 j » — un dernier passage, dit comme on le dit. */
+function ilYA(iso: string): string {
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
+  if (s < 60) return "à l'instant"
+  const min = Math.floor(s / 60)
+  if (min < 60) return `il y a ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `il y a ${h} h`
+  return `il y a ${Math.floor(h / 24)} j`
+}
+
+/**
  * Le squelette de la consultation — chantier 96.
  *
  * ── ⚠️ Ce qu'il remplace, et pourquoi c'était un défaut ───────────────────────────────────────
@@ -1891,41 +1977,22 @@ export function ConsultationPage() {
         </span>
         <Pilule ton={etat.ton}>{etat.libelle}</Pilule>
         {/*
-          ── Le minuteur devient un INSTRUMENT — chantier 75 ─────────────────────────────────────
+          ── ⚠️ Le minuteur n'est plus ici — chantier 98 ────────────────────────────────────────
 
-          Il s'écrivait en 20 px nus, posés entre une pastille d'état et le titre : la chose qui
-          DÉCIDE de cet écran était la moins mise en scène de la page. La maquette C5 l'encadre et
-          l'étiquette « HORLOGE SERVEUR » — et elle a raison, pour une raison qui n'est pas
-          esthétique : ce chiffre n'est pas une information parmi d'autres, c'est le temps que le
-          patient a payé.
+          Il y vivait depuis le chantier 75, encadré et étiqueté « Horloge serveur », et l'argument
+          était bon : *ce chiffre n'est pas une information parmi d'autres, c'est le temps que le
+          patient a payé.* Il tient toujours — mais ce temps décide de la **conversation**, et le
+          porteur le veut au-dessus d'elle, « comme dans le téléphone ». Il est donc descendu dans
+          le bandeau de la discussion, avec son étiquette de provenance passée en infobulle.
 
-          L'étiquette dit SERVEUR, et ce n'est pas un détail : l'horloge de ce poste n'est
-          qu'indicative (RM-06-02). Un médecin qui croit son navigateur plutôt que le serveur se
-          fait couper en pleine phrase.
+          *Le laisser aux deux endroits aurait donné deux minuteurs pour un seul temps : le jour où
+          l'un des deux se fige, on ne sait plus lequel croire.*
 
-          L'encre d'urgence est posée en style inline : `.ul-chiffre` fixe `color` et vit hors d'un
-          `@layer` — un utilitaire `text-[…]` n'aurait eu aucun effet, et le rouge des deux
-          dernières minutes ne se serait jamais allumé. Piège du chantier 74, déjà payé une fois.
+          Ce qui a déménagé avec lui, et qu'il ne faut pas reperdre : l'horloge de ce poste n'est
+          qu'INDICATIVE (RM-06-02) — d'où l'infobulle — et l'encre d'urgence des deux dernières
+          minutes se pose en style inline, parce que `.ul-chiffre` vit hors d'un `@layer` et bat
+          silencieusement les utilitaires (piège du chantier 74, déjà payé une fois).
         */}
-        {s.status === 'ACTIVE' || s.status === 'PREPARING' ? (
-          <span
-            className={
-              'flex shrink-0 flex-col items-end rounded-[10px] border px-3 py-1.5 ' +
-              (reste < 120 && active
-                ? 'border-[var(--erreur-bordure)] bg-[var(--erreur-fond)]'
-                : 'border-border bg-[var(--fond-surface-2)]')
-            }
-          >
-            <span
-              className="ul-chiffre-ligne"
-              style={{ color: reste < 120 && active ? 'var(--erreur-texte)' : undefined }}
-              aria-label="Temps restant"
-            >
-              {mmss(reste)}
-            </span>
-            <span className="ul-surtitre">Horloge serveur</span>
-          </span>
-        ) : null}
       </div>
 
       <div className="flex flex-col gap-4 md:min-h-0 md:flex-1 md:flex-row md:gap-4 lg:gap-5">
@@ -1957,11 +2024,78 @@ export function ConsultationPage() {
             </Avis>
           ) : null}
 
+          {/*
+            ── Le bandeau de la DISCUSSION — chantier 98 ──────────────────────────────────────
+
+            Demande du porteur, pièce par pièce : le visage du patient, son prénom, l'état de la
+            conversation en dessous, et **à l'extrême droite le minuteur, « comme dans le
+            téléphone »**.
+
+            ⚠️ **Le minuteur DESCEND ici depuis le bandeau de page**, où le chantier 75 l'avait
+            installé sous l'étiquette « Horloge serveur ». L'argument de l'époque tient toujours —
+            ce chiffre décide de l'écran — mais il décide de la CONVERSATION, et c'est au-dessus
+            d'elle qu'on le regarde. *Le laisser aux deux endroits aurait donné deux minuteurs pour
+            un seul temps : le jour où l'un des deux se fige, on ne sait plus lequel croire.*
+
+            Et le **retard** apparaît enfin côté soignant. Il était mesuré, servi, affiché au
+            patient sur son téléphone — et invisible pour celui qu'il juge. *On ne peut pas
+            corriger ce qu'on ne voit pas.*
+          */}
           <Carte
-            icone={UserRound}
-            titre="Échange"
-            sousTitre={active ? 'Chiffré de bout en bout au repos' : "L'échange est clos et archivé"}
             pleineHauteur
+            enTete={
+              <>
+                <Visage photo={avatarDe(s.patientAccountId)} nom={s.patientLastName} prenom={s.patientFirstName} />
+                <div className="min-w-0 flex-1 basis-32">
+                  <h2 className="ul-titre-panneau truncate">{s.patientFirstName ?? 'Le patient'}</h2>
+                  <div className="mt-0.5">
+                    <StatutConversation close={!active} ecrit={s.otherPartyTyping} presence={s.otherPartyPresence} />
+                  </div>
+                </div>
+                <span className="ml-auto flex shrink-0 items-center gap-2">
+                  {s.professionalDelaySec > 0 ? (
+                    <span
+                      className="ul-chiffre-clair flex items-center gap-1 rounded-full border border-[var(--erreur-bordure)] bg-[var(--erreur-fond)] px-2 py-[3px] text-[11px] font-semibold tabular-nums text-[var(--erreur-texte)]"
+                      title="Temps cumulé pendant lequel le patient a attendu votre réponse"
+                    >
+                      <Clock size={11} strokeWidth={2} aria-hidden="true" />
+                      {/* Un seul noeud de texte : « retard » et le chiffre se lisent ensemble. */}
+                      <span>{`retard ${mmss(s.professionalDelaySec)}`}</span>
+                    </span>
+                  ) : null}
+                  {/*
+                    ⚠️ **L'étiquette « Horloge serveur » reste VISIBLE**, et ce n'est pas de la
+                    nostalgie du chantier 75. Je l'avais d'abord réduite à une infobulle en
+                    déplaçant le minuteur ; un test est tombé, et il avait raison de tomber.
+
+                    *Une infobulle ne se lit qu'après l'avoir cherchée. Celui qui doute de son
+                    minuteur ne survole rien : il croit son navigateur, et il se fait couper en
+                    pleine phrase.* L'horloge de ce poste n'est qu'indicative (RM-06-02) — c'est
+                    précisément ce que ces deux mots empêchent d'oublier.
+                  */}
+                  {s.status === 'ACTIVE' || s.status === 'PREPARING' ? (
+                    <span
+                      className={
+                        'flex shrink-0 flex-col items-center rounded-[10px] border px-2.5 py-1 ' +
+                        (reste < 120 && active
+                          ? 'border-[var(--erreur-bordure)] bg-[var(--erreur-fond)]'
+                          : 'border-border bg-[var(--fond-surface-2)]')
+                      }
+                    >
+                      <span
+                        className="ul-chiffre-clair flex items-center gap-1 text-[14px] font-semibold leading-none tabular-nums"
+                        style={{ color: reste < 120 && active ? 'var(--erreur-texte)' : 'var(--ap-400)' }}
+                        aria-label="Temps restant"
+                      >
+                        <Clock size={12} strokeWidth={2} aria-hidden="true" />
+                        {mmss(reste)}
+                      </span>
+                      <span className="ul-surtitre mt-0.5 text-[8.5px] leading-none">Horloge serveur</span>
+                    </span>
+                  ) : null}
+                </span>
+              </>
+            }
           >
             {messages.isPending ? (
               <SqueletteFil nombre={4} libelle="Chargement du fil…" />

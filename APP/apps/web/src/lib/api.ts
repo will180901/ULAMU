@@ -626,6 +626,16 @@ export interface CareSession {
    */
   patientAvatarKey: string | null
   professionalAvatarKey: string | null
+  /** Identité des deux participants — chantier 98 (prénom affiché, initiales à défaut de photo). */
+  patientFirstName: string | null
+  patientLastName: string | null
+  professionalFirstName: string | null
+  professionalLastName: string | null
+  /**
+   * Présence de l'AUTRE participant. `since` = dernier signe de vie ; `null` quand le serveur n'en a
+   * jamais reçu — *« on ne sait pas » ne s'écrit pas comme « hors ligne depuis toujours »*.
+   */
+  otherPartyPresence: { online: boolean; since: string | null }
 }
 
 /**

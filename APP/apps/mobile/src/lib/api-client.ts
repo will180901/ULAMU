@@ -46,6 +46,7 @@ import {
   UploadMediaResponse,
   UpdateReminderRequest,
   DIRECTORY_ROUTES,
+  PRESENCE_ROUTES,
   SessionInfo,
   StartPhoneChangeRequest,
   HEALTH_ROUTES,
@@ -447,6 +448,10 @@ export class ApiClient {
   }
   poseAvailabilityAlert(id: string): Promise<AvailabilityAlertResponse> {
     return this.request('POST', DIRECTORY_ROUTES.availabilityAlert(id), undefined, true);
+  }
+  /** Un signe de vie. Voir `PRESENCE_ROUTES.heartbeat`. */
+  presenceHeartbeat(): Promise<unknown> {
+    return this.request('POST', PRESENCE_ROUTES.heartbeat, undefined, true);
   }
 
   // ── M16 / M14 — espace patient & notifications (authentifié) ──────────────

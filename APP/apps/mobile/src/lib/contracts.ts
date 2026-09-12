@@ -335,6 +335,16 @@ export interface SessionView {
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère ~6s). */
   otherPartyTyping: boolean;
+  /** Identité des deux participants — chantier 98 (prénom affiché, initiales à défaut de photo). */
+  patientFirstName: string | null;
+  patientLastName: string | null;
+  professionalFirstName: string | null;
+  professionalLastName: string | null;
+  /**
+   * Présence de l'AUTRE participant. `since` = dernier signe de vie ; `null` quand le serveur n'en a
+   * jamais reçu — *« on ne sait pas » ne s'écrit pas comme « hors ligne depuis toujours »*.
+   */
+  otherPartyPresence: {online: boolean; since: string | null};
   /**
    * Photos de profil des deux participants — clés de stockage, à passer à `avatarUrl()`.
    * `null` = pas de photo : l'écran retombe sur ce qu'il affichait avant (chantier 97).
@@ -617,6 +627,15 @@ export const ACCOUNT_ROUTES = {
   twoFactorEmailRequest: '/v1/accounts/me/2fa/email/request',
   twoFactorEmailEnable: '/v1/accounts/me/2fa/email/enable',
   twoFactorEmailDisable: '/v1/accounts/me/2fa/email/disable',
+} as const;
+
+export const PRESENCE_ROUTES = {
+  /**
+   * Le battement de présence. Côté SOIGNANT il sert sa disponibilité dans l'annuaire ; côté
+   * PATIENT, depuis le chantier 98, il sert seulement à ce que le soignant sache s'il est devant
+   * son écran. *Un « hors ligne » qu'on n'a aucun moyen de contredire n'est pas une information.*
+   */
+  heartbeat: '/v1/presence/heartbeat',
 } as const;
 
 export const DIRECTORY_ROUTES = {

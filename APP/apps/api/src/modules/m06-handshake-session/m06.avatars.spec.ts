@@ -1,5 +1,5 @@
 /**
- * Les photos de profil dans la vue d'une séance — chantier 97, 12/09/2026.
+ * L'identité dans la vue d'une séance — photos (chantier 97), prénoms et présence (chantier 98).
  *
  * ── Ce que ce fichier garde ───────────────────────────────────────────────────────────────────
  *
@@ -48,15 +48,28 @@ const SEANCE = {
  *
  * @param photos ce que la base rend pour chacun — `undefined` simule un profil absent.
  */
-function service(photos: { patient?: string | null; soignant?: string | null }): SessionService {
+function service(
+  photos: { patient?: string | null; soignant?: string | null },
+  presence?: { state: "ONLINE" | "OFFLINE" | "DO_NOT_DISTURB"; ageSec: number } | null,
+): SessionService {
   const prisma = {
     preConsultation: { findUnique: async () => null },
     sessionRating: { findUnique: async () => null },
     sessionMessage: { findMany: async () => [] },
-    patientProfile: { findUnique: async () => ({ avatarKey: photos.patient ?? null }) },
-    professionalProfile: { findUnique: async () => ({ avatarKey: photos.soignant ?? null }) },
+    patientProfile: {
+      findUnique: async () => ({ avatarKey: photos.patient ?? null, firstName: "Mireille", lastName: "Nkouka" }),
+    },
+    professionalProfile: {
+      findUnique: async () => ({ avatarKey: photos.soignant ?? null, firstName: "Armel", lastName: "Konaté" }),
+    },
+    /* `undefined` = le serveur n'a JAMAIS entendu parler de cette personne ; `null` explicite aussi. */
+    presenceStatus: {
+      findUnique: async () =>
+        presence ? { state: presence.state, lastHeartbeatAt: new Date(Date.now() - presence.ageSec * 1000) } : null,
+    },
   };
-  const params = { getInt: async () => 600 };
+  /* PM-28 (démarrage auto), PM-30 (dépôt) et PM-26 (fraîcheur d'une présence) passent tous par ici. */
+  const params = { getInt: async () => 900 };
 
   const s = new SessionService(
     prisma as never,
@@ -76,7 +89,7 @@ function service(photos: { patient?: string | null; soignant?: string | null }):
 
 const ACTEUR: Actor = { accountId: "pro-1", type: "PROFESSIONAL" };
 
-describe("La vue d'une séance porte les deux photos de profil", () => {
+describe("La vue d'une séance porte l'identité des deux participants", () => {
   it("sert la clé de chacun des deux participants", async () => {
     const vue = await service({ patient: "av_pat.jpg", soignant: "av_pro.jpg" }).getSession(ACTEUR as never, "s1");
 
@@ -94,6 +107,52 @@ describe("La vue d'une séance porte les deux photos de profil", () => {
 
     expect(vue.patientAvatarKey).toBeNull();
     expect(vue.professionalAvatarKey).toBeNull();
+  });
+
+  /*
+    ── La présence de l'autre participant — chantier 98 ────────────────────────────────────────
+
+    Le bandeau de la discussion dit « en ligne », « en train d'écrire… » ou « vu il y a 12 min ».
+    Les deux premiers viennent d'ailleurs ; le troisième vient d'ici.
+  */
+  it("dit en ligne quand le signe de vie est frais", async () => {
+    const vue = await service({}, { state: "ONLINE", ageSec: 30 }).getSession(ACTEUR as never, "s1");
+
+    expect(vue.otherPartyPresence.online).toBe(true);
+    expect(vue.otherPartyPresence.since).not.toBeNull();
+  });
+
+  /* Au-delà de PM-26, un battement n'est plus une présence — la MÊME règle que l'annuaire. */
+  it("et hors ligne quand il a vieilli au-delà du délai de l'annuaire", async () => {
+    const vue = await service({}, { state: "ONLINE", ageSec: 2000 }).getSession(ACTEUR as never, "s1");
+
+    expect(vue.otherPartyPresence.online).toBe(false);
+    expect(vue.otherPartyPresence.since).not.toBeNull();
+  });
+
+  /*
+    ⚠️ **« On ne sait pas » ne s'écrit pas comme « hors ligne depuis toujours ».** Quand le serveur
+    n'a jamais reçu le moindre battement — ce qui était le cas de TOUS les patients avant le
+    chantier 98, leur application n'en envoyant aucun — `since` doit rester nul, pour que l'écran
+    dise « hors ligne » sans inventer une durée.
+  */
+  it("⚠️ et ne date rien quand il n'a jamais eu de nouvelles", async () => {
+    const vue = await service({}, null).getSession(ACTEUR as never, "s1");
+
+    expect(vue.otherPartyPresence.online).toBe(false);
+    expect(vue.otherPartyPresence.since).toBeNull();
+  });
+
+  /*
+    Le prénom du patient, que l'écran du soignant affichait jusqu'ici comme « Le patient » faute de
+    l'avoir. Le nom de famille suit, pour la seule initiale du cercle.
+  */
+  it("sert le prénom et le nom des deux participants", async () => {
+    const vue = await service({}).getSession(ACTEUR as never, "s1");
+
+    expect(vue.patientFirstName).toBe("Mireille");
+    expect(vue.patientLastName).toBe("Nkouka");
+    expect(vue.professionalFirstName).toBe("Armel");
   });
 
   /* Un profil absent en base — un compte incomplet — ne doit pas faire tomber la consultation. */

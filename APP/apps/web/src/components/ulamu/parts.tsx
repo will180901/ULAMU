@@ -18,10 +18,17 @@ export function Carte({
   ton = 'accent',
   action,
   pleineHauteur = false,
+  enTete,
   children,
 }: {
-  icone: LucideIcon
-  titre: string
+  /*
+    ⚠️ `icone` et `titre` deviennent facultatifs à partir du moment où `enTete` existe (chantier 98).
+    Le type ne les rend pas EXCLUSIFS : une union discriminée compliquerait vingt-deux appels pour
+    interdire un cas qu'aucun n'écrit. Le rendu, lui, tranche — `enTete` l'emporte et le reste est
+    ignoré.
+  */
+  icone?: LucideIcon
+  titre?: string
   sousTitre?: string
   ton?: 'accent' | 'danger'
   /**
@@ -37,6 +44,18 @@ export function Carte({
    * qu'a ce pour quoi il est ecrit.
    */
   pleineHauteur?: boolean
+  /**
+   * Un en-tête SUR MESURE, à la place de l'icône et du titre — chantier 98.
+   *
+   * Il ne remplace que le CONTENU de la bande : le filet, le fond et les marges restent ceux de
+   * toutes les autres cartes. *Une carte qui porte une conversation a besoin d'un visage, d'un
+   * statut et d'un minuteur ; les vingt-deux autres n'ont besoin de rien de tout cela, et ne
+   * doivent pas payer pour celle-là.*
+   *
+   * ⚠️ Il reste responsable de son propre titre de niveau 2 : c'est par eux qu'un lecteur d'écran
+   * se déplace dans la page.
+   */
+  enTete?: React.ReactNode
   children: React.ReactNode
 }) {
   const tuile =
@@ -58,9 +77,13 @@ export function Carte({
         écran rien ne change : tout tient toujours sur une seule ligne.
       */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-[color-mix(in_srgb,var(--fond-surface-2)_55%,transparent)] px-4 py-3">
-        <span aria-hidden="true" className={'flex size-[26px] shrink-0 items-center justify-center rounded-md ' + tuile}>
-          <Icone size={14} strokeWidth={1.5} />
-        </span>
+        {enTete ?? (
+          <>
+        {Icone ? (
+          <span aria-hidden="true" className={'flex size-[26px] shrink-0 items-center justify-center rounded-md ' + tuile}>
+            <Icone size={14} strokeWidth={1.5} />
+          </span>
+        ) : null}
         {/*
           Le titre est un VRAI titre (`h2`), pas un `span` stylé. Un lecteur d'écran liste les titres
           d'une page pour s'y déplacer : avec des `span`, l'utilisateur devait parcourir la page
@@ -74,6 +97,8 @@ export function Carte({
           {sousTitre ? <p className="mt-0.5 ul-aide">{sousTitre}</p> : null}
         </div>
         {action ? <span className="ml-auto shrink-0">{action}</span> : null}
+          </>
+        )}
       </div>
       <div className={'flex flex-col gap-3 p-4' + (pleineHauteur ? ' min-h-0 flex-1' : '')}>{children}</div>
     </section>
