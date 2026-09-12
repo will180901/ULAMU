@@ -686,6 +686,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **98** | **Le bandeau de la discussion : avec QUI l'on parle** — 12/09, demande détaillée du porteur. L'en-tête du fil disait « **Échange** » et « Chiffré de bout en bout au repos » — *trois éléments dont aucun ne disait avec qui*. Un soignant qui enchaîne trois consultations avait trois en-têtes identiques. Il porte maintenant le **visage** du patient (photo, ou initiales « Nm » — nom en majuscule, prénom en minuscule), son **prénom** à la place de « Le patient », l'**état de la conversation** en dessous, et à droite le **minuteur** et le **retard**. ⚠️ **Le statut n'existait pas** : l'application du patient n'envoyait **aucun** battement de présence, le serveur n'avait jamais entendu parler de lui et l'aurait dit hors ligne à perpétuité. *Un statut qu'on ne peut jamais contredire n'est pas un statut, c'est une décoration.* Le téléphone bat maintenant pendant la consultation, et la vue de séance sert la présence de l'autre — avec un quatrième état qu'on oublie toujours : **« on ne sait pas »**, qui ne s'écrit pas comme « hors ligne depuis toujours ». 📌 **Le retard apparaît enfin du côté de celui qu'il juge** (asymétrie signalée aux chantiers 93 et 94). ⚠️ **Et un test est tombé en déplaçant le minuteur, à raison** : j'avais réduit l'étiquette « Horloge serveur » à une infobulle — *une infobulle ne se lit qu'après l'avoir cherchée ; celui qui doute de son minuteur ne survole rien, il croit son navigateur.* Plus les deux corrections relevées la veille : le **compteur vocal qui MONTE** au lieu de décompter (le web lisait `1:13` quand le patient lisait `0:04` du même son) et le **zéro barré** (`0:08` se lisait `0:88` à 11 px, mal lu deux fois sur mes propres captures). **web 1 039 ✓ · mobile 91 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **99** | **Un bouton, deux fonctions — et la porte ouverte à la vidéo** — 12/09, première des quatre étapes validées par le porteur après lecture de la messagerie de CMS. **(1) Le bouton intelligent** : champ vide → **micro** ; dès qu'on écrit → **flèche d'envoi**. Le composeur portait les deux en permanence, dont l'un toujours éteint — *deux commandes pour un seul geste possible, c'est une décision à prendre à chaque message alors qu'il n'y en a aucune : ce qu'on veut faire est déjà écrit dans le champ.* 📌 **Le mobile l'avait déjà** (`draft.trim() || editMsg ? envoi : micro`) : le web était le seul à ne pas l'avoir, et personne ne l'avait vu parce que les deux boutons marchaient. **(2) Le trombone à trois choix** — Photos et vidéos · Audio · Document — chacun ouvrant un sélecteur **filtré**, parce que *choisir « Document » et voir ses photos est une promesse trahie avant même d'avoir cliqué*. **(3) Le serveur ouvre la vidéo et le PDF** (`video/mp4`, `video/webm`, `video/quicktime`, `application/pdf`), décision du porteur. ⚠️ **Le plafond de 8 Mo ne bouge pas** : une vidéo le dépasse en quelques secondes, et c'est l'écran d'envoi qui la rognera (chantier 100). D'où une règle contre-intuitive posée ici : **une vidéo trop lourde n'est PAS refusée au choix** — *un refus qui précède le remède n'est pas une protection, c'est une porte fermée.* ⚠️ **Une faute injectée a révélé un test trop faible** : vérifier que les trois sélecteurs sont bien filtrés ne dit rien de QUI les ouvre — trois filtres corrects peuvent tous pendre au même fil. **web 1 047 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **100** | **Le moteur du rogneur de vidéo** — 12/09, deuxième étape, la pièce dont dépend toute la fonctionnalité : *le stockage plafonne à 8 Mo et une vidéo de téléphone pèse de 1 à 4 Mo par seconde ; sans découpe, ouvrir la vidéo reviendrait à l'ouvrir puis à la refuser presque toujours.* Six fonctions : durée réelle, **portion maximale**, poids estimé, débit à demander, **pellicule de vignettes**, et la découpe. 📌 **Deux bornes, et c'est la seconde qu'on oublie** : la portion est limitée par la durée voulue (30 s) ET par ce que le poids autorise — *une vidéo 4K de dix secondes pèse 40 Mo, sa portion tient en deux secondes, pas en trente*. ⚠️ **Sans consigne de débit, `MediaRecorder` produit plus gros que l'original** : *un rogneur qui rend un extrait plus lourd que le film n'a rien rogné du tout.* Le débit est donc borné par le budget de poids, sans dépasser la source, avec un plancher qui garde l'extrait regardable. ⚠️ **Et une différence assumée avec CMS** : eux découpent d'abord par **ffmpeg.wasm** — 31 Mo de cœur versionnés et téléchargés au premier usage — et ne retombent sur `MediaRecorder` qu'en second. ULAMU n'a que le second : *sur une connexion congolaise, télécharger 31 Mo pour économiser vingt secondes de traitement est une mauvaise affaire.* La porte reste ouverte. **web 1 057 ✓ · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
+| **101** | **L'écran d'aperçu : le média en grand, et la pellicule** — 12/09, troisième étape, sur le modèle de la messagerie de CMS. L'écran ne montrait que des **vignettes carrées de photos** ; depuis que le serveur accepte la vidéo, l'audio et le PDF, *une vidéo réduite à un carré gris ne se vérifie pas — on ne sait ni ce qu'elle montre, ni où elle commence.* Quatre pièces : le média **joué pour de vrai**, une bande de **miniatures**, une **légende**, et le **rogneur** avec sa pellicule de douze images, déplaçable à la souris **et au clavier**. 📌 **La légende existait déjà des deux côtés** — le serveur l'accepte dans `body`, le fil l'affiche depuis le chantier 75 — et **aucun écran ne permettait de l'écrire**. ⚠️ **Un changement de règle assumé** : une pièce refusée **bloque tout l'envoi** au lieu de rester au sol pendant que les autres partent. *Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne pas l'en informer.* ⚠️ **Et la décision du chantier 75 est renversée** : l'aperçu COUVRE le fil. La raison d'alors valait pour trois vignettes de 96 px, pas pour un rogneur. ⚠️ **Une faute injectée n'a réveillé personne, et c'était le plus instructif** : **jsdom ne lit la durée d'aucun média**, donc toute la branche vidéo n'était jamais parcourue — *un test qui ne peut pas atteindre le mécanisme ne le garde pas, et l'absence d'échec ressemble exactement à une réussite.* D'où un fichier à part qui double la seule chose que jsdom ignore. **web 1 069 ✓ · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -734,6 +735,74 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 101 (l'écran d'aperçu) a appris
+
+*12/09/2026 — une faute injectée qui ne réveille personne vaut mieux qu'une qui réveille tout.*
+
+#### ⚠️ jsdom ne lit la durée d'aucun média
+
+C'est la leçon du chantier. En injectant une faute dans la préparation d'une vidéo, **aucun test
+n'est tombé** — et pas parce qu'ils étaient mal écrits : parce qu'ils ne pouvaient pas atteindre le
+code. `HTMLMediaElement.duration` vaut toujours zéro sous jsdom, donc toute la branche vidéo — la
+fenêtre de découpe, le poids estimé, la pellicule — n'était **jamais parcourue**.
+
+> **Un test qui ne peut pas atteindre le mécanisme ne le garde pas.** Et l'absence d'échec ressemble
+> exactement à une réussite.
+
+La réponse n'est pas de renoncer, c'est de **doubler la seule chose que jsdom ignore** : la durée
+d'un fichier. Tout le reste — le calcul de la portion, le poids, le blocage, le clavier — reste le
+vrai code, dans un fichier à part qui dit pourquoi il existe.
+
+*C'est la troisième fois en trois chantiers qu'une faute injectée enseigne plus que les tests
+qu'elle traverse : au 99 elle a montré qu'un test sur les filtres ne dit rien de qui les ouvre ; au
+101, qu'un test peut être hors de portée du code qu'il croit défendre.*
+
+#### Ce qu'un carré gris ne dit pas
+
+L'écran montrait des vignettes de 96 px. Pour trois photos, cela suffit — on reconnaît ce qu'on a
+choisi. Pour une vidéo, non :
+
+> **On ne sait ni ce qu'elle montre, ni où elle commence.**
+
+D'où le média joué pour de vrai, en grand. Et pour la vidéo, la **pellicule** : douze images
+extraites du film, avec une fenêtre qu'on déplace. *Choisir un passage dans une barre grise, c'est
+choisir au hasard.*
+
+La fenêtre se déplace d'un bloc et ne s'étire pas : sa largeur est la portion maximale qui passe, et
+on veut la plus longue possible, pas une plus courte. Elle répond aussi aux flèches — *une commande
+qui n'existe qu'à la souris n'existe pas pour tout le monde.*
+
+#### ⚠️ Une pièce refusée bloque TOUT
+
+L'écran envoyait auparavant les fichiers valides et laissait les refusés au sol, **silencieusement**.
+
+> **Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne
+> pas l'en informer.**
+
+Celui qui a choisi trois clichés croit en avoir envoyé trois. L'écran bloque donc, nomme la pièce en
+cause avec son poids et la limite, et laisse la décision : retirer, ou renoncer. *Le motif vient de
+CMS ; la raison est la nôtre.*
+
+#### Une décision du chantier 75, renversée en connaissance de cause
+
+Le chantier 75 avait écrit : *« l'aperçu s'ouvre AU-DESSUS de la barre de saisie et ne la remplace
+pas : on peut toujours voir le fil »*. C'était juste — pour trois vignettes de 96 px.
+
+Un rogneur a besoin de hauteur, et *l'on ne lit pas la conversation pendant qu'on découpe un film*.
+L'aperçu couvre donc le fil. Le bandeau de la carte — nom du patient, minuteur — reste visible :
+**on perd le fil, pas le contexte.**
+
+> **Renverser une décision écrite demande de relire sa raison, pas seulement de la constater.** La
+> raison d'alors ne couvrait pas le cas d'aujourd'hui.
+
+#### La capacité à laquelle rien ne menait
+
+La **légende** existait des deux côtés depuis toujours : le serveur l'accepte dans `body`, et le fil
+l'affiche sous les pièces depuis le chantier 75. Aucun écran ne permettait de l'écrire.
+
+*C'est la troisième fois dans ce projet — après l'album de dix photos et le menu de l'archive. Une
+capacité complète, des deux bouts, et pas un bouton entre les deux.*
 
 ### Ce que le chantier 100 (le rogneur) a appris
 

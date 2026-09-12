@@ -100,7 +100,13 @@ export function Carte({
           </>
         )}
       </div>
-      <div className={'flex flex-col gap-3 p-4' + (pleineHauteur ? ' min-h-0 flex-1' : '')}>{children}</div>
+      {/*
+        `relative` : depuis le chantier 101, une carte peut porter un panneau qui la COUVRE — l'aperçu
+        avant envoi s'y pose en `absolute inset-0`. Sans repère de position, il se serait ancré sur la
+        page entière et aurait recouvert le rail et le bandeau. *Un panneau doit couvrir ce qu'il
+        remplace, et rien de plus.*
+      */}
+      <div className={'relative flex flex-col gap-3 p-4' + (pleineHauteur ? ' min-h-0 flex-1' : '')}>{children}</div>
     </section>
   )
 }

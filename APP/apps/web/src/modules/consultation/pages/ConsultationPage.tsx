@@ -122,7 +122,6 @@ import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import {
-  compresserImage,
   corpsNoteVocale,
   enBase64,
   MIMES_AUDIO,
@@ -1690,17 +1689,29 @@ export function ConsultationPage() {
    * jamais les octets.
    */
   const envoyerPhotos = useMutation({
-    mutationFn: async (fichiers: File[]) => {
+    mutationFn: async ({ fichiers, legende }: { fichiers: File[]; legende: string }) => {
       const cles: string[] = []
       for (const f of fichiers) {
-        const leger = await compresserImage(f)
-        const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(leger), mime: leger.type })
+        /*
+          ⚠️ **Plus de compression ici depuis le chantier 101.** Elle se fait à l'APERÇU, qui annonce
+          son résultat (« 4,2 Mo → 890 Ko ») ; la refaire au départ ré-encoderait une seconde fois —
+          et surtout, appliquée à un extrait vidéo ou à un PDF, elle n'aurait aucun sens.
+
+          *Un fichier qu'on a montré à quelqu'un doit partir tel qu'on le lui a montré.*
+        */
+        const up = await api.uploadSessionMedia(sessionId, { fileBase64: await enBase64(f), mime: f.type })
         cles.push(up.fileKey)
       }
       return api.sendMessage(sessionId, {
         clientMsgId: crypto.randomUUID(),
         kind: 'PHOTO',
-        // Une seule photo garde `fileKey` : c'est la forme que le serveur a toujours reçue, et
+        /*
+          La LÉGENDE voyage dans `body` — le fil l'affiche déjà sous les pièces (chantier 75), et le
+          serveur l'accepte depuis toujours. Elle était simplement inatteignable : aucun écran ne la
+          proposait.
+        */
+        ...(legende ? { body: legende } : {}),
+        // Une seule pièce garde `fileKey` : c'est la forme que le serveur a toujours reçue, et
         // rien ne gagne à envoyer un tableau d'un élément.
         ...(cles.length === 1 ? { fileKey: cles[0] } : { fileKeys: cles }),
       })
@@ -2276,19 +2287,26 @@ export function ConsultationPage() {
                 ) : null}
 
                 {/*
-                  Les deux surfaces d'envoi de média — chantier 75.
+                  ── Les deux surfaces d'envoi de média — chantier 75, revu au 101 ───────────────
 
-                  Elles s'ouvrent AU-DESSUS de la barre de saisie et ne la remplacent pas : on peut
-                  toujours voir le fil et le message qu'on était en train d'écrire. L'aperçu des
-                  photos et l'enregistreur ne coexistent jamais — le micro est désactivé tant qu'un
-                  aperçu est ouvert, et réciproquement.
+                  L'ENREGISTREUR s'ouvre au-dessus de la barre de saisie sans la remplacer : on voit
+                  toujours le fil et le message qu'on écrivait.
+
+                  ⚠️ **L'APERÇU, lui, couvre le fil depuis le chantier 101.** La règle d'origine
+                  valait pour trois vignettes de 96 px ; elle ne vaut plus pour un rogneur de vidéo,
+                  qui a besoin de hauteur. *Et l'on ne lit pas la conversation pendant qu'on découpe
+                  un film.* Le bandeau de la carte — nom du patient, minuteur — reste visible :
+                  on perd le fil, pas le contexte.
+
+                  Les deux ne coexistent jamais : le micro est éteint tant qu'un aperçu est ouvert.
                 */}
+
                 {apercu ? (
                   <ApercuMedias
                     fichiers={apercu}
                     enCours={envoyerPhotos.isPending}
                     onFermer={() => setApercu(null)}
-                    onEnvoyer={(f) => envoyerPhotos.mutate(f)}
+                    onEnvoyer={(f, legende) => envoyerPhotos.mutate({ fichiers: f, legende })}
                   />
                 ) : null}
 

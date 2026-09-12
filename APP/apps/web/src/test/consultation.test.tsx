@@ -795,7 +795,13 @@ describe('C5 — les photos (chantier 75)', () => {
     const champ = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(champ, { target: { files: [photo('a.jpg'), photo('b.jpg')] } })
 
-    expect(await screen.findByText(/2 photos à envoyer/)).toBeInTheDocument()
+    /*
+      L'écran ne compte plus les pièces dans son titre depuis le chantier 101 : il NOMME celle qu'on
+      regarde, et met le compte à côté (« 1/2 »). *Un aperçu qui dit « 2 photos » ne montre rien ; un
+      aperçu qui dit « a.jpg · 1/2 » montre laquelle.*
+    */
+    expect(await screen.findByRole('group', { name: 'Aperçu avant envoi' })).toBeInTheDocument()
+    expect(screen.getByText(/1\/2/)).toBeInTheDocument()
     // Rien n'est parti : c'est un aperçu, pas un envoi.
     expect(envoi).not.toHaveBeenCalled()
   })
@@ -832,7 +838,7 @@ describe('C5 — les photos (chantier 75)', () => {
 
     const champ = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(champ, { target: { files: [photo('a.jpg'), photo('b.jpg')] } })
-    fireEvent.click(await screen.findByRole('button', { name: /Envoyer les 2 photos/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Envoyer' }))
 
     await waitFor(() => expect(envoi).toHaveBeenCalledTimes(1))
     expect(envoi.mock.calls[0]![1]).toMatchObject({ kind: 'PHOTO', fileKeys: ['k1', 'k2'] })
@@ -849,7 +855,7 @@ describe('C5 — les photos (chantier 75)', () => {
 
     const champ = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(champ, { target: { files: [photo('a.jpg')] } })
-    fireEvent.click(await screen.findByRole('button', { name: /Envoyer la photo/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Envoyer' }))
 
     await waitFor(() => expect(envoi).toHaveBeenCalled())
     const dto = envoi.mock.calls[0]![1] as Record<string, unknown>
@@ -867,21 +873,151 @@ describe('C5 — les photos (chantier 75)', () => {
 
     *Afficher un refus ne sert à rien si le bouton ne le respecte pas.*
   */
-  it('les fichiers refusés ne partent pas, les autres oui', async () => {
-    vi.spyOn(api, 'uploadSessionMedia').mockResolvedValue({ fileKey: 'k1' })
+  it('⚠️ tant qu’une pièce est refusée, RIEN ne part', async () => {
     const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
     await monter(seance())
 
     const champ = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(champ, { target: { files: [photo('ok.jpg'), photo('enorme.jpg', 12 * 1024 * 1024)] } })
+    await screen.findByRole('group', { name: 'Aperçu avant envoi' })
 
-    // Le bouton ne propose QUE ce qui peut partir : une photo, pas deux.
-    fireEvent.click(await screen.findByRole('button', { name: /Envoyer la photo/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled())
+    expect(envoi).not.toHaveBeenCalled()
+  })
+
+  /*
+    ⚠️ **Et c'est un CHANGEMENT de règle, assumé au chantier 101.** L'écran expédiait auparavant les
+    fichiers valides en laissant les refusés au sol — silencieusement.
+
+    *Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne
+    pas l'en informer.* Sur un écran de soin, celui qui a choisi trois clichés croit en avoir envoyé
+    trois. L'écran bloque donc l'envoi, nomme la pièce en cause, et laisse la décision : retirer le
+    fichier, ou renoncer. Le motif vient de CMS, la raison est la nôtre.
+
+    Le refus reste dit avec son POIDS et la LIMITE — c'est ce qui distingue « ça ne marche pas » de
+    « voilà quoi faire ».
+  */
+  it('et l’écran dit laquelle, avec son poids et la limite', async () => {
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('ok.jpg'), photo('enorme.jpg', 12 * 1024 * 1024)] } })
+
+    // On regarde la pièce fautive : son refus s'affiche sur son aperçu.
+    fireEvent.click(await screen.findByRole('button', { name: 'Voir enorme.jpg' }))
+
+    expect(await screen.findByText(/12,0 Mo — maximum 8,0 Mo par fichier/)).toBeInTheDocument()
+  })
+
+  /* Et retirer la pièce fautive débloque l'envoi : la décision appartient à celui qui a choisi. */
+  it('et retirer la pièce fautive débloque l’envoi', async () => {
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('ok.jpg'), photo('enorme.jpg', 12 * 1024 * 1024)] } })
+    await screen.findByRole('group', { name: 'Aperçu avant envoi' })
+    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer enorme.jpg' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Envoyer' })).toBeEnabled())
+  })
+
+  /*
+    ── Ce que le chantier 101 a ajouté à l'aperçu ───────────────────────────────────────────────
+
+    L'écran ne montrait que des vignettes carrées de photos. Depuis que le serveur accepte la vidéo,
+    l'audio et le PDF, une vignette ne dit plus rien : *une vidéo réduite à un carré gris ne se
+    vérifie pas — on ne sait ni ce qu'elle montre, ni où elle commence.*
+  */
+  const piece = (nom: string, mime: string, octets = 1024) => {
+    const f = new File([new Uint8Array(Math.min(octets, 1024))], nom, { type: mime })
+    Object.defineProperty(f, 'size', { value: octets })
+    return f
+  }
+
+  it('montre chaque genre pour ce qu’il est', async () => {
+    await monter(seance())
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(champ, { target: { files: [piece('ordonnance.pdf', 'application/pdf', 200_000)] } })
+
+    /*
+      Un document n'a pas d'aperçu visuel : on donne son nom et son poids, pas un carré gris. Le nom
+      apparaît DEUX fois, et c'est voulu — dans l'en-tête (ce qu'on regarde) et sur l'aperçu lui-même
+      (ce qu'on enverra).
+    */
+    expect((await screen.findAllByText('ordonnance.pdf')).length).toBe(2)
+    expect(screen.getAllByText(/195 Ko/).length).toBeGreaterThan(0)
+  })
+
+  /*
+    ⚠️ **La légende, qui n'était atteignable par aucun écran.** Le serveur l'accepte depuis toujours
+    (`body` d'un message PHOTO) et le fil l'affiche déjà sous les pièces depuis le chantier 75 —
+    mais rien ne permettait de l'écrire. *Une capacité complète, des deux côtés, à laquelle rien ne
+    menait.*
+  */
+  it('⚠️ la légende part avec les pièces', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'uploadSessionMedia').mockResolvedValue({ fileKey: 'k1' })
+    const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('lesion.jpg')] } })
+    await screen.findByRole('group', { name: 'Aperçu avant envoi' })
+
+    await utilisateur.type(screen.getByLabelText('Légende'), 'lésion au bras gauche')
+    await utilisateur.click(screen.getByRole('button', { name: 'Envoyer' }))
 
     await waitFor(() => expect(envoi).toHaveBeenCalled())
-    const dto = envoi.mock.calls[0]![1] as Record<string, unknown>
-    expect(dto.fileKey).toBe('k1')
-    expect(dto.fileKeys).toBeUndefined()
+    expect(envoi.mock.calls[0]![1]).toMatchObject({ body: 'lésion au bras gauche' })
+  })
+
+  /* Sans légende, `body` reste absent : un champ vide n'est pas un message vide. */
+  it('et sans légende, rien n’est ajouté au message', async () => {
+    vi.spyOn(api, 'uploadSessionMedia').mockResolvedValue({ fileKey: 'k1' })
+    const envoi = vi.spyOn(api, 'sendMessage').mockResolvedValue({} as never)
+    await monter(seance())
+
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(champ, { target: { files: [photo('a.jpg')] } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Envoyer' }))
+
+    await waitFor(() => expect(envoi).toHaveBeenCalled())
+    expect((envoi.mock.calls[0]![1] as Record<string, unknown>).body).toBeUndefined()
+  })
+
+  /*
+    ⚠️ **Une vidéo n'est pas refusée sur son poids, contrairement à tout le reste.** Elle dépasse
+    presque toujours les 8 Mo, et le rogneur est son seul remède.
+
+    *Un refus qui précède le remède n'est pas une protection, c'est une porte fermée.*
+
+    (Sous jsdom la durée d'un média est illisible : ce test vérifie donc ce qui compte ici — que la
+    vidéo lourde ENTRE dans l'aperçu au lieu d'être rejetée à la porte. La mécanique de découpe,
+    elle, est éprouvée à part dans `rogneur.test.ts`.)
+  */
+  it('⚠️ une vidéo lourde entre dans l’aperçu au lieu d’être refusée à la porte', async () => {
+    await monter(seance())
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(champ, { target: { files: [piece('film.mp4', 'video/mp4', 40 * 1024 * 1024)] } })
+
+    expect(await screen.findByRole('group', { name: 'Aperçu avant envoi' })).toBeInTheDocument()
+    expect(screen.queryByText(/maximum 8,0 Mo par fichier/)).not.toBeInTheDocument()
+  })
+
+  /* Une IMAGE lourde, elle, reste refusée tout de suite : rien à l'écran ne peut la sauver. */
+  it('alors qu’une image lourde, elle, est refusée tout de suite', async () => {
+    await monter(seance())
+    const champ = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(champ, { target: { files: [photo('enorme.jpg', 40 * 1024 * 1024)] } })
+
+    expect(await screen.findByText(/maximum 8,0 Mo par fichier/)).toBeInTheDocument()
   })
 
   it('on peut renoncer : l’aperçu se ferme sans rien envoyer', async () => {
@@ -890,9 +1026,11 @@ describe('C5 — les photos (chantier 75)', () => {
 
     const champ = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(champ, { target: { files: [photo('a.jpg')] } })
-    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+    fireEvent.click(await screen.findByRole('button', { name: "Annuler l'envoi" }))
 
-    await waitFor(() => expect(screen.queryByText(/photo à envoyer/)).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByRole('group', { name: 'Aperçu avant envoi' })).not.toBeInTheDocument(),
+    )
     expect(envoi).not.toHaveBeenCalled()
   })
 })
