@@ -51,8 +51,8 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **1 069 ✓** (50 fichiers, + 6 todo) |
-| Mobile | `npm test` | **91 ✓** (11 suites) |
+| Web | `npx vitest run` | **1 070 ✓** (50 fichiers, + 6 todo) |
+| Mobile | `npm test` | **93 ✓** (12 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
 **vident vingt-quatre tables**. Elles ne tournent plus jamais (décision du chantier 38). Seul
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 101
+## 3. Ce qui a été fait — chantiers 58 à 102
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 102 | *(à pousser)* | ⚠️ **Trois défauts vus sur une consultation RÉELLE**, dans les dix premières minutes. (1) L'app du patient **s'arrêtait sur un écran rouge** : mon `useEffect` du 98 était après les retours anticipés. (2) Le **battement de présence était refusé** — route réservée au soignant, refus avalé par un `.catch` muet. (3) La **chaîne de hauteur** était rompue depuis le chantier 83 : sur une fenêtre de 860 px, la carte s'arrêtait à 373 px. ⚠️ Et le garde-fou écrit pour (1) ne l'attrapait pas — motif trop étroit. |
 | 101 | *(à pousser)* | **L'écran d'aperçu refait** : le média joué en grand, les miniatures, la **légende** (qui existait des deux côtés sans qu'aucun écran ne la propose), et le **rogneur** avec sa pellicule — souris et clavier. ⚠️ **Une pièce refusée bloque TOUT** au lieu de rester au sol en silence. ⚠️ L'aperçu couvre le fil : décision du chantier 75 renversée, sa raison ne couvrait pas le rogneur. ⚠️ **jsdom ne lit la durée d'aucun média** — toute la branche vidéo était hors de portée des tests, découvert par une faute injectée qui n'a réveillé personne. |
 | 100 | *(à pousser)* | **Le moteur du rogneur de vidéo** — la pièce dont dépend toute la fonctionnalité. 📌 La portion gardée a **deux** bornes : la durée voulue ET le poids — *une vidéo 4K de 10 s pèse 40 Mo, sa portion tient en 2 s*. ⚠️ Sans consigne de débit, `MediaRecorder` rend **plus gros que l'original**. ⚠️ Différence assumée avec CMS : pas de ffmpeg.wasm (31 Mo téléchargés au premier usage) — *sur une connexion congolaise, c'est une mauvaise affaire*. |
 | 99 | *(à pousser)* | **Un bouton, deux fonctions** : micro quand le champ est vide, flèche dès qu'on écrit. 📌 **Le mobile l'avait déjà** — le web était le seul à porter les deux en permanence. **Trombone à trois choix** (photos et vidéos · audio · document), chacun filtré. **Le serveur ouvre la vidéo et le PDF** (décision du porteur). ⚠️ Une vidéo trop lourde n'est PAS refusée au choix : le rogneur (chantier 100) est son seul remède. ⚠️ Une faute injectée a montré qu'un test sur les filtres ne dit rien de qui les ouvre. |

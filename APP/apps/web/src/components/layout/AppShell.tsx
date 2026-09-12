@@ -154,7 +154,25 @@ export function AppShell() {
               taperait dans un formulaire qu'on ne voit pas. Le voile ne couvre PAS la barre du
               haut, sinon le bouton qui l'a posé deviendrait inatteignable. */}
           <div className="h-full overflow-y-auto">
-            <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4">
+            {/*
+              ⚠️ **`md:h-full` — la hauteur qui manquait depuis le chantier 83.**
+
+              Cette colonne n'avait aucune hauteur propre : elle se réglait sur son contenu. Or la
+              consultation demande `md:h-full` pour tenir ses deux zones fixes — le fil d'un côté, le
+              rail de l'autre, chacun défilant chez lui. Un `h-full` dont le parent vaut « la hauteur
+              de ce qu'il contient » ne vaut rien : il retombe sur le contenu.
+
+              Personne ne l'avait vu parce que sur une fenêtre courte le contenu remplit de lui-même.
+              Vu le 12/09 sur une fenêtre de 860 px : la carte s'arrêtait à 373 px et laissait un
+              demi-écran vide sous elle.
+
+              *Une mise en page « pleine hauteur » ne tient que si la chaîne entière la porte —
+              rompue à un seul maillon, elle ne dit plus rien du tout.*
+
+              Le `md:` compte : sous cette largeur, les zones ne sont plus fixes et une hauteur
+              imposée empêcherait la page de s'allonger.
+            */}
+            <div style={{ maxWidth: 'var(--contenu-max)' }} className="mx-auto p-4 md:h-full">
               {/*
                 `key={pathname}` remonte la limite à chaque changement d'écran : sans elle, une fois
                 l'erreur affichée, elle resterait affichée sur TOUS les écrans suivants — la

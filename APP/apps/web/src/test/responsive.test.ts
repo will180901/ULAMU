@@ -161,6 +161,29 @@ describe('La hauteur suit le viewport RÉEL, pas l’écran', () => {
     expect(s, '`h-screen` (= 100vh) est revenu').not.toMatch(/className="[^"]*h-screen/)
   })
 
+  /*
+    ── ⚠️ La CHAÎNE de hauteur, rompue depuis le chantier 83 ────────────────────────────────────
+
+    Le chantier 83 a posé deux zones fixes en consultation — le fil d'un côté, le rail de l'autre,
+    chacun défilant chez lui — avec un `md:h-full` sur le conteneur de l'écran. Mais la colonne de
+    contenu de la coquille, au-dessus, n'avait **aucune hauteur propre** : elle se réglait sur son
+    contenu.
+
+    > **Un `h-full` dont le parent vaut « la hauteur de ce qu'il contient » ne vaut rien :** il
+    > retombe sur le contenu, et la mise en page « pleine hauteur » n'a jamais lieu.
+
+    Personne ne l'avait vu parce que sur une fenêtre courte le contenu remplit de lui-même. Relevé
+    le 12/09 sur une fenêtre de 860 px : la carte s'arrêtait à **373 px**, laissant un demi-écran
+    vide dessous — et l'aperçu avant envoi, qui la couvre, n'avait plus de place pour son rogneur.
+
+    *Une chaîne rompue à un seul maillon ne dit plus rien du tout.*
+  */
+  it('⚠️ la colonne de contenu porte la hauteur, sinon rien dessous ne peut la prendre', () => {
+    const s = source('components/layout/AppShell.tsx')
+
+    expect(s, 'la colonne de contenu a reperdu sa hauteur').toMatch(/mx-auto p-4 md:h-full/)
+  })
+
   it('les écrans pleine page aussi', () => {
     expect(source('components/layout/GardeFou.tsx')).toContain('min-h-dvh')
     expect(source('modules/auth/pages/TotpSetupPage.tsx')).toContain('min-h-dvh')

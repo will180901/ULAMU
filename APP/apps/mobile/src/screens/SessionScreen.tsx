@@ -202,6 +202,33 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
     return () => sub.remove();
   }, [sessionStatus]);
 
+  /*
+    ── ⚠️ Le patient donne signe de vie — chantier 98, REPLACÉ au chantier 102 ───────────────────
+
+    Le porteur veut, dans le bandeau du soignant, « en ligne » ou « vu il y a tant ». Or cette
+    application n'envoyait aucun battement de présence : le serveur n'avait jamais entendu parler du
+    patient, et l'aurait dit hors ligne en permanence. *Un statut qu'on ne peut jamais contredire
+    n'est pas un statut : c'est une décoration.*
+
+    Le battement part tant que cet écran est ouvert — exactement quand la question « est-il devant sa
+    conversation ? » se pose. PM-26 accorde 15 minutes de fraîcheur ; deux minutes d'intervalle
+    laissent de quoi en rater un sans passer pour parti.
+
+    ⚠️ **Il vit ICI, avec les autres effets, et surtout AVANT les retours anticipés de cet écran.**
+    Posé plus bas — après le `return` de la pré-consultation — il n'était appelé qu'à certains
+    rendus : React comptait un crochet de plus dès que la séance s'ouvrait, et l'application
+    s'arrêtait sur « Rendered more hooks than during the previous render ». *Un composant qui rend
+    plusieurs écrans selon son état n'a pas le droit d'avoir ses crochets dispersés entre eux.*
+  */
+  useEffect(() => {
+    const battre = () => {
+      api.presenceHeartbeat().catch(() => undefined);
+    };
+    battre();
+    const minuteur = setInterval(battre, 120_000);
+    return () => clearInterval(minuteur);
+  }, []);
+
   if (load === 'loading') {
     return (
       <Shell title="Consultation" onBack={() => navigation.goBack()}>
@@ -249,28 +276,6 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
     La photo de profil d'un participant (chantier 97). Les deux clés arrivent avec la séance ; avant,
     la vue ne portait aucune identité et il n'y avait rien à afficher.
   */
-  /*
-    ── ⚠️ Le patient donne signe de vie — chantier 98 ───────────────────────────────────────────
-
-    Le porteur veut, dans le bandeau du soignant, « en ligne » ou « vu il y a tant ». Or **cette
-    application n'envoyait aucun battement de présence** : le serveur n'avait jamais entendu parler
-    du patient, et l'aurait dit hors ligne en permanence.
-
-    *Un statut qu'on ne peut jamais contredire n'est pas un statut : c'est une décoration.*
-
-    Le battement part tant que cet écran est ouvert — c'est-à-dire exactement quand la question
-    « est-il devant sa conversation ? » se pose. PM-26 accorde 15 minutes de fraîcheur : deux
-    minutes d'intervalle laissent largement de quoi rater un battement sans passer pour parti.
-  */
-  useEffect(() => {
-    const battre = () => {
-      api.presenceHeartbeat().catch(() => undefined);
-    };
-    battre();
-    const minuteur = setInterval(battre, 120_000);
-    return () => clearInterval(minuteur);
-  }, []);
-
   const avatarDe = (senderId: string): string | null =>
     avatarUrl(senderId === session.professionalId ? session.professionalAvatarKey : session.patientAvatarKey);
 

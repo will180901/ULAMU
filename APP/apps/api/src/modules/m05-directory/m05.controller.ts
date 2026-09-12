@@ -70,13 +70,31 @@ export class M05Controller {
     await this.offers.deactivateOffer(actor, offerId);
   }
 
-  // ── Présence (EF-05-05/06 ; CU-05-04) — professionnel authentifié ───────────
+  // ── Présence (EF-05-05/06 ; CU-05-04) ───────────────────────────────────────
 
-  /** Battement de cœur web — upsert ONLINE sauf Ne pas déranger (PM-26 à la lecture). */
+  /**
+   * Battement de cœur — upsert ONLINE sauf Ne pas déranger (PM-26 à la lecture).
+   *
+   * ── ⚠️ Ouvert à TOUT compte depuis le chantier 102 ──────────────────────────────────────────
+   *
+   * Il était réservé au professionnel, et c'était juste tant que la présence ne servait qu'à une
+   * chose : la **disponibilité dans l'annuaire**. Depuis le chantier 98, le bandeau de consultation
+   * du soignant dit « en ligne » ou « vu il y a tant » **du patient** — et le patient ne pouvait pas
+   * donner signe de vie. *J'ai branché l'appel sans vérifier que la porte s'ouvrait, et le refus
+   * était avalé en silence : le statut disait « hors ligne » pour toujours, sans que rien ne le
+   * signale.*
+   *
+   * ⚠️ **Ce que cela n'ouvre PAS.** Une ligne de présence pour un patient n'entre nulle part
+   * ailleurs : l'annuaire ne lit la présence que des comptes qu'il a déjà retenus comme
+   * professionnels, et `fireAvailabilityAlerts` sort immédiatement faute d'offre de soin. Les deux
+   * routes qui décident vraiment de la disponibilité — `presence/state` et `presence/me` — restent
+   * réservées au professionnel.
+   *
+   * *Ouvrir une porte n'est pas ouvrir la maison : ce qui se lit derrière compte plus que qui frappe.*
+   */
   @Post("presence/heartbeat")
   @HttpCode(200)
   heartbeat(@Actor() actor: AuthenticatedActor) {
-    this.assertProfessional(actor);
     return this.presence.heartbeat(actor.accountId);
   }
 

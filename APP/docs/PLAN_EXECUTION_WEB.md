@@ -687,6 +687,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **99** | **Un bouton, deux fonctions — et la porte ouverte à la vidéo** — 12/09, première des quatre étapes validées par le porteur après lecture de la messagerie de CMS. **(1) Le bouton intelligent** : champ vide → **micro** ; dès qu'on écrit → **flèche d'envoi**. Le composeur portait les deux en permanence, dont l'un toujours éteint — *deux commandes pour un seul geste possible, c'est une décision à prendre à chaque message alors qu'il n'y en a aucune : ce qu'on veut faire est déjà écrit dans le champ.* 📌 **Le mobile l'avait déjà** (`draft.trim() || editMsg ? envoi : micro`) : le web était le seul à ne pas l'avoir, et personne ne l'avait vu parce que les deux boutons marchaient. **(2) Le trombone à trois choix** — Photos et vidéos · Audio · Document — chacun ouvrant un sélecteur **filtré**, parce que *choisir « Document » et voir ses photos est une promesse trahie avant même d'avoir cliqué*. **(3) Le serveur ouvre la vidéo et le PDF** (`video/mp4`, `video/webm`, `video/quicktime`, `application/pdf`), décision du porteur. ⚠️ **Le plafond de 8 Mo ne bouge pas** : une vidéo le dépasse en quelques secondes, et c'est l'écran d'envoi qui la rognera (chantier 100). D'où une règle contre-intuitive posée ici : **une vidéo trop lourde n'est PAS refusée au choix** — *un refus qui précède le remède n'est pas une protection, c'est une porte fermée.* ⚠️ **Une faute injectée a révélé un test trop faible** : vérifier que les trois sélecteurs sont bien filtrés ne dit rien de QUI les ouvre — trois filtres corrects peuvent tous pendre au même fil. **web 1 047 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **100** | **Le moteur du rogneur de vidéo** — 12/09, deuxième étape, la pièce dont dépend toute la fonctionnalité : *le stockage plafonne à 8 Mo et une vidéo de téléphone pèse de 1 à 4 Mo par seconde ; sans découpe, ouvrir la vidéo reviendrait à l'ouvrir puis à la refuser presque toujours.* Six fonctions : durée réelle, **portion maximale**, poids estimé, débit à demander, **pellicule de vignettes**, et la découpe. 📌 **Deux bornes, et c'est la seconde qu'on oublie** : la portion est limitée par la durée voulue (30 s) ET par ce que le poids autorise — *une vidéo 4K de dix secondes pèse 40 Mo, sa portion tient en deux secondes, pas en trente*. ⚠️ **Sans consigne de débit, `MediaRecorder` produit plus gros que l'original** : *un rogneur qui rend un extrait plus lourd que le film n'a rien rogné du tout.* Le débit est donc borné par le budget de poids, sans dépasser la source, avec un plancher qui garde l'extrait regardable. ⚠️ **Et une différence assumée avec CMS** : eux découpent d'abord par **ffmpeg.wasm** — 31 Mo de cœur versionnés et téléchargés au premier usage — et ne retombent sur `MediaRecorder` qu'en second. ULAMU n'a que le second : *sur une connexion congolaise, télécharger 31 Mo pour économiser vingt secondes de traitement est une mauvaise affaire.* La porte reste ouverte. **web 1 057 ✓ · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **101** | **L'écran d'aperçu : le média en grand, et la pellicule** — 12/09, troisième étape, sur le modèle de la messagerie de CMS. L'écran ne montrait que des **vignettes carrées de photos** ; depuis que le serveur accepte la vidéo, l'audio et le PDF, *une vidéo réduite à un carré gris ne se vérifie pas — on ne sait ni ce qu'elle montre, ni où elle commence.* Quatre pièces : le média **joué pour de vrai**, une bande de **miniatures**, une **légende**, et le **rogneur** avec sa pellicule de douze images, déplaçable à la souris **et au clavier**. 📌 **La légende existait déjà des deux côtés** — le serveur l'accepte dans `body`, le fil l'affiche depuis le chantier 75 — et **aucun écran ne permettait de l'écrire**. ⚠️ **Un changement de règle assumé** : une pièce refusée **bloque tout l'envoi** au lieu de rester au sol pendant que les autres partent. *Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne pas l'en informer.* ⚠️ **Et la décision du chantier 75 est renversée** : l'aperçu COUVRE le fil. La raison d'alors valait pour trois vignettes de 96 px, pas pour un rogneur. ⚠️ **Une faute injectée n'a réveillé personne, et c'était le plus instructif** : **jsdom ne lit la durée d'aucun média**, donc toute la branche vidéo n'était jamais parcourue — *un test qui ne peut pas atteindre le mécanisme ne le garde pas, et l'absence d'échec ressemble exactement à une réussite.* D'où un fichier à part qui double la seule chose que jsdom ignore. **web 1 069 ✓ · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
+| **102** | **Trois défauts vus sur une consultation RÉELLE** — 12/09, première séance ouverte de bout en bout depuis la refonte : le porteur paie 5 000 F, et l'application du patient **s'arrête sur un écran rouge**. **(1) ⚠️ *Rendered more hooks than during the previous render*** — mon `useEffect` du chantier 98 était posé **après les retours anticipés** d'un écran qui en rend quatre selon l'état de la séance. *Un composant qui rend plusieurs écrans n'a pas le droit d'avoir ses crochets dispersés entre eux.* **(2) ⚠️ Le battement de présence était refusé** : la route est réservée au professionnel, je l'avais branchée sans vérifier que la porte s'ouvrait, et le refus était avalé par un `.catch` muet — *le statut disait « hors ligne » pour toujours, sans que rien ne le signale.* Elle s'ouvre à tout compte ; les deux routes qui décident vraiment de la disponibilité restent fermées. **(3) ⚠️ La chaîne de hauteur était rompue depuis le chantier 83** : la colonne de contenu de la coquille n'avait aucune hauteur propre, donc le `md:h-full` des deux zones fixes retombait sur le contenu. Sur une fenêtre de 860 px, la carte s'arrêtait à **373 px**. *Un `h-full` dont le parent vaut « la hauteur de ce qu'il contient » ne vaut rien.* ⚠️ **Et le garde-fou écrit pour (1) ne l'attrapait pas** : son motif cherchait un `return` à deux espaces d'indentation, alors que les retours anticipés vivent dans un `if`. **web 1 070 ✓ · mobile 93 ✓ · API unitaires 667 ✓ · lint 0 · builds et types propres · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -735,6 +736,77 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 102 (la consultation réelle) a appris
+
+*12/09/2026 — la première séance ouverte de bout en bout depuis la refonte, et trois défauts qu'aucun
+test ne pouvait voir.*
+
+#### ⚠️ Le crash, et ce qu'il coûtait
+
+Le porteur ouvre une consultation depuis son téléphone — **5 000 F débités** — et l'application
+s'arrête sur un écran rouge : *Rendered more hooks than during the previous render.*
+
+C'est mon `useEffect` du chantier 98, le battement de présence, posé **après les retours anticipés**
+de `SessionScreen`. Cet écran en rend quatre selon l'état de la séance : chargement, erreur,
+pré-consultation, conversation. Chacun sort par son propre `return`. Le crochet n'était donc appelé
+que sur le dernier — et React comptait un crochet de plus dès que la séance s'ouvrait.
+
+> **Un composant qui rend plusieurs écrans selon son état n'a pas le droit d'avoir ses crochets
+> dispersés entre eux.**
+
+*Et le moment où cela se déclare est le pire possible : pas au chargement, pas au premier rendu — à
+la transition, c'est-à-dire exactement quand quelqu'un vient de payer.*
+
+#### ⚠️ Le garde-fou écrit pour ce crash ne l'attrapait pas
+
+J'ai écrit un test qui lit la position des crochets par rapport au premier retour. Il passait — avec
+et sans la faute. Son motif cherchait `\n  return (`, **deux** espaces d'indentation, alors que les
+retours anticipés vivent dans un `if` : quatre espaces. Il ne trouvait donc que le `return` final,
+après lequel il n'y a évidemment aucun crochet.
+
+> **Un garde-fou qu'on n'a pas vu échouer n'est pas un garde-fou.** C'est la raison d'être de
+> l'injection de fautes, et la troisième fois en quatre chantiers qu'elle rattrape un test complaisant.
+
+Et l'indentation seule ne suffisait pas non plus : `return () => clearInterval(…)` — le nettoyage
+d'un effet — vit au même niveau. On reconnaît un retour d'écran à ce qu'il rend : **du JSX**.
+
+#### ⚠️ Une porte que je n'avais pas essayée
+
+Le bandeau du soignant devait dire « en ligne » du patient. J'avais branché l'appel depuis le
+téléphone… sur une route **réservée au professionnel**. Chaque battement était refusé, et mon
+`.catch(() => undefined)` avalait le refus.
+
+> **Brancher un appel sans vérifier que la porte s'ouvre, puis avaler le refus, produit une
+> fonctionnalité qui a l'air de marcher et ne marche jamais.**
+
+La route s'ouvre à tout compte authentifié. Ce qu'elle n'ouvre pas : l'annuaire ne lit la présence
+que des comptes qu'il a déjà retenus comme professionnels, et les deux routes qui décident vraiment
+de la disponibilité restent fermées. *Ouvrir une porte n'est pas ouvrir la maison : ce qui se lit
+derrière compte plus que qui frappe.*
+
+#### ⚠️ Une chaîne rompue depuis dix-neuf chantiers
+
+Le chantier 83 a posé deux zones fixes en consultation, chacune défilant chez elle, avec un
+`md:h-full`. Mais la colonne de contenu de la coquille, au-dessus, n'avait **aucune hauteur propre**.
+
+> **Un `h-full` dont le parent vaut « la hauteur de ce qu'il contient » ne vaut rien :** il retombe
+> sur le contenu, et la mise en page « pleine hauteur » n'a jamais lieu.
+
+Personne ne l'avait vu parce que sur une fenêtre courte le contenu remplit de lui-même — et les
+écrans du porteur font 494 px de haut. Mesuré sur une fenêtre de 860 px : la carte s'arrêtait à
+**373 px**, laissant un demi-écran vide. *Une mise en page ne se vérifie pas à une seule taille ; un
+défaut de hauteur se cache derrière un écran court.*
+
+#### Ce que trois défauts en une heure disent du reste
+
+Aucun des trois n'était visible dans les tests, et les trois se sont montrés dans les **dix premières
+minutes** d'un usage réel. Deux d'entre eux dataient de chantiers déclarés vérifiés.
+
+> **Une consultation ouverte de bout en bout vaut plus que mille tests** — non parce que les tests
+> mentent, mais parce qu'ils ne peuvent pas franchir les frontières : un crochet ne casse qu'à la
+> transition, une route ne se refuse qu'en ligne, une hauteur ne manque qu'à partir d'une certaine
+> fenêtre.
 
 ### Ce que le chantier 101 (l'écran d'aperçu) a appris
 
