@@ -37,6 +37,8 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api, getAuthToken} from '../services/api';
 import {PickedImage, avatarUrl, pickSessionImageAssets, sessionMediaUrl} from '../services/media';
+import {doitEtreRognee, ouvrirLeRogneur, rogneurDisponible} from '../services/rogneur';
+import {LIMITE_OCTETS, formatOctets, genreDuMime} from '../lib/media-regles';
 import {cancelRecording, fileToBase64, startRecording, stopRecording} from '../services/audio';
 import {ChatActionSheet} from '../components/ChatActionSheet';
 import {FeuilleSignalement} from '../components/FeuilleSignalement';
@@ -600,21 +602,74 @@ function Composer({
       alertSafe('Photo indisponible — réessayez.');
     }
   };
+  /**
+   * Prépare UN fichier pour l'envoi : rogne la vidéo si nécessaire, puis l'encode.
+   *
+   * ⚠️ **L'encodage se fait ICI et pas à la sélection.** Une vidéo de 8 Mo fait une chaîne de 11 Mo
+   * en mémoire : la produire pour un fichier qu'on va peut-être retirer, ou dont on ne gardera que
+   * trois secondes, serait payer d'avance pour un peut-être.
+   *
+   * ⚠️ Et le poids de l'EXTRAIT est vérifié après la découpe, jamais avant : *une estimation sert à
+   * prévenir, c'est le fichier produit qui décide.*
+   */
+  const preparerPourEnvoi = async (p: PickedImage): Promise<{base64: string; mime: string}> => {
+    if (genreDuMime(p.mime) !== 'video') {
+      return {base64: p.base64, mime: p.mime};
+    }
+    let chemin = p.uri;
+    if (doitEtreRognee(p.tailleOctets ?? 0, p.dureeSec ?? 0)) {
+      if (!rogneurDisponible()) {
+        throw new Error('Cet appareil ne sait pas découper une vidéo — filmez plus court.');
+      }
+      const extrait = await ouvrirLeRogneur(p.uri, {
+        accent: colors.accent500,
+        fond: colors.surface,
+        texte: colors.textPrimary,
+      });
+      if (!extrait) {
+        throw new Error('annule');
+      }
+      chemin = extrait.chemin;
+    }
+    const base64 = await fileToBase64(chemin);
+    // 3 caractères de base64 pour 4 octets : on retrouve le poids réel sans relire le fichier.
+    const octets = Math.floor((base64.length * 3) / 4);
+    if (octets > LIMITE_OCTETS) {
+      throw new Error(
+        `L'extrait pèse ${formatOctets(octets)} — maximum ${formatOctets(LIMITE_OCTETS)}. Gardez un passage plus court.`,
+      );
+    }
+    // Le rogneur rend toujours du MP4, quel que soit le format d'entrée.
+    return {base64, mime: chemin === p.uri ? p.mime : 'video/mp4'};
+  };
+
   const sendPreview = async (caption: string) => {
     if (preview.length === 0) {
       return;
     }
     setPreviewBusy(true);
     try {
-      const keys = await Promise.all(
-        preview.map(p => api.uploadSessionMedia(sessionId, {fileBase64: p.base64, mime: p.mime}).then(up => up.fileKey)),
-      );
+      /*
+        ⚠️ En SÉRIE, pas en parallèle : le rogneur ouvre un écran, et deux écrans de découpe
+        simultanés se recouvriraient. *Ce qui demande un geste ne se parallélise pas.*
+      */
+      const keys: string[] = [];
+      for (const p of preview) {
+        const pret = await preparerPourEnvoi(p);
+        const up = await api.uploadSessionMedia(sessionId, {fileBase64: pret.base64, mime: pret.mime});
+        keys.push(up.fileKey);
+      }
       // 1 photo → fileKey (compat) ; plusieurs → mediaKeys (bulle album).
       const extra = keys.length === 1 ? {fileKey: keys[0]} : {mediaKeys: keys};
       await emit('PHOTO', {...extra, ...(caption ? {body: caption} : {})});
       setPreview([]);
     } catch (e) {
-      alertSafe(e instanceof ApiError ? e.message : 'Photo non envoyée — réessayez.');
+      // Renoncer au rognage n'est pas une panne : on referme sans rien dire.
+      if (e instanceof Error && e.message === 'annule') {
+        setPreviewBusy(false);
+        return;
+      }
+      alertSafe(e instanceof ApiError || e instanceof Error ? e.message : 'Pièce non envoyée — réessayez.');
     } finally {
       setPreviewBusy(false);
     }
@@ -758,7 +813,7 @@ function Composer({
         </View>
       )}
 
-      <MediaPreview visible={preview.length > 0} uris={preview.map(p => p.uri)} busy={previewBusy} onCancel={() => setPreview([])} onSend={sendPreview} />
+      <MediaPreview visible={preview.length > 0} pieces={preview} busy={previewBusy} onCancel={() => setPreview([])} onSend={sendPreview} />
     </View>
   );
 }
@@ -828,10 +883,37 @@ function EndedFooter({session, onRated, onLeave}: {session: SessionView; onRated
 
 /* ── Bulle de message (TEXTE / PHOTO / VOICE) ── */
 /** Grille album (1 à N photos en une bulle) — façon WhatsApp ; tap → ouvre l'image au plein cadre. */
+/**
+ * Le genre d'une pièce, lu dans sa CLÉ (`sm_<uuid>.mp4`) — sans rien télécharger.
+ *
+ * ⚠️ Au niveau du MODULE, et non dans l'écran : `MediaGrid` en a besoin, et c'est un composant
+ * voisin. *Une fonction définie dans un composant n'existe pas pour celui d'à côté — et le
+ * compilateur ne l'a pas vu parce qu'un autre nom existait ailleurs.*
+ */
+function estUneVideo(cle: string): boolean {
+  return /\.(mp4|webm|mov)$/i.test(cle);
+}
+
 function MediaGrid({keys, headers, onOpen}: {keys: string[]; headers?: Record<string, string>; onOpen: (key: string) => void}) {
   const styles = useThemedStyles(makeStyles);
   if (keys.length === 1) {
     const uri = sessionMediaUrl(keys[0]) ?? undefined;
+    /*
+      ⚠️ **Une vidéo ne se met pas dans une `<Image>`** — elle y donne un carré vide. Et on ne la
+      télécharge pas non plus d'entrée : elle pèse plusieurs mégaoctets. *Charger dix vidéos pour en
+      regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien demandé à voir* — même règle
+      que le web (chantier 104). Le genre se lit dans la CLÉ, qui porte son extension.
+    */
+    if (estUneVideo(keys[0])) {
+      return (
+        <Pressable onPress={() => onOpen(keys[0])} style={styles.videoMsg}>
+          <View style={styles.videoRond}>
+            <Icon name="play" size={20} color="#fff" />
+          </View>
+          <Text style={styles.videoLabel}>Vidéo</Text>
+        </Pressable>
+      );
+    }
     return (
       <Pressable onPress={() => onOpen(keys[0])}>
         <Image source={{uri, headers}} style={styles.photoMsg} resizeMode="cover" />
@@ -959,6 +1041,7 @@ function Bubble({
           visible={!!viewerKey}
           uri={viewerKey ? sessionMediaUrl(viewerKey) ?? null : null}
           headers={headers}
+          video={!!viewerKey && /\.(mp4|webm|mov)$/i.test(viewerKey)}
           onClose={() => setViewerKey(null)}
         />
       </View>
@@ -1132,6 +1215,9 @@ const makeStyles = (colors: Palette) =>
   // Bulle photo
   photoBubble: {padding: 4},
   photoMsg: {width: 210, height: 210, borderRadius: 9},
+  videoMsg: {width: 210, height: 132, borderRadius: 9, backgroundColor: '#0B1220', alignItems: 'center', justifyContent: 'center', gap: 8},
+  videoRond: {width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center'},
+  videoLabel: {fontFamily: fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.8)'},
   photoCaption: {marginTop: 5, marginHorizontal: 4},
   photoTime: {marginRight: 4, marginBottom: 2},
   // Bulle vocale (lecteur riche en colonne : onde + heure dessous)

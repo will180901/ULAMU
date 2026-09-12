@@ -1,22 +1,32 @@
 /**
- * Aperçu de 1..N photos AVANT envoi (adaptation RN de SARIS §9.9 « MediaPreview ») : image en grand,
- * pellicule des photos choisies, champ légende, bouton envoyer. Plein écran (mobile).
+ * Aperçu de 1..N pièces AVANT envoi (adaptation RN de SARIS §9.9) : média en grand, pellicule des
+ * pièces choisies, champ légende, bouton envoyer. Plein écran.
+ *
+ * ── ⚠️ Depuis le chantier 106 : les vidéos ────────────────────────────────────────────────────
+ *
+ * Une vidéo n'est pas une image : l'afficher dans un `<Image>` donnait un carré vide. Elle a
+ * maintenant son lecteur, et **l'écran annonce la découpe** quand elle dépasse — *un traitement qui
+ * s'ouvre sans prévenir ressemble à une panne, même quand il fait exactement ce qu'il faut.*
  */
 import React, {useEffect, useState} from 'react';
 import {ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import Video from 'react-native-video';
 import {Icon} from './Icon';
 import {fonts, Palette, radius} from '../theme';
+import {LIMITE_OCTETS, VIDEO_MAX_S, formatOctets, genreDuMime} from '../lib/media-regles';
+import {doitEtreRognee} from '../services/rogneur';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 
 export function MediaPreview({
   visible,
-  uris,
+  pieces,
   busy,
   onCancel,
   onSend,
 }: {
   visible: boolean;
-  uris: string[];
+  /** Les pièces choisies — chacune sait si elle est une vidéo et si elle devra être rognée. */
+  pieces: {uri: string; mime: string; tailleOctets?: number; dureeSec?: number}[];
   busy: boolean;
   onCancel: () => void;
   onSend: (caption: string) => void;
@@ -33,7 +43,9 @@ export function MediaPreview({
     }
   }, [visible]);
 
-  const main = uris[Math.min(active, uris.length - 1)] ?? null;
+  const courante = pieces[Math.min(active, pieces.length - 1)] ?? null;
+  const estVideo = courante ? genreDuMime(courante.mime) === 'video' : false;
+  const aRogner = courante ? estVideo && doitEtreRognee(courante.tailleOctets ?? 0, courante.dureeSec ?? 0) : false;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
@@ -42,14 +54,45 @@ export function MediaPreview({
           <Pressable onPress={onCancel} style={styles.iconBtn} hitSlop={6}>
             <Icon name="x" size={20} color={colors.textSecondary} />
           </Pressable>
-          <Text style={styles.title}>{uris.length > 1 ? `Aperçu · ${uris.length} photos` : 'Aperçu'}</Text>
+          <Text style={styles.title}>{pieces.length > 1 ? `Aperçu · ${pieces.length} pièces` : 'Aperçu'}</Text>
         </View>
-        <View style={styles.stage}>{main ? <Image source={{uri: main}} style={styles.img} resizeMode="contain" /> : null}</View>
-        {uris.length > 1 ? (
+        <View style={styles.stage}>
+          {courante ? (
+            estVideo ? (
+              <Video source={{uri: courante.uri}} style={styles.img} resizeMode="contain" controls paused />
+            ) : (
+              <Image source={{uri: courante.uri}} style={styles.img} resizeMode="contain" />
+            )
+          ) : null}
+        </View>
+
+        {/*
+          ⚠️ **La découpe s'annonce.** Sans cette ligne, appuyer sur « envoyer » ouvrirait un écran
+          de rognage venu de nulle part — *et un écran qu'on n'attendait pas ressemble à une panne,
+          même quand il fait exactement ce qu'il faut.*
+        */}
+        {aRogner ? (
+          <View style={styles.avis}>
+            {/* Pas de ciseaux dans notre jeu d'icones : l'horloge dit aussi bien « c'est une affaire de duree ». */}
+            <Icon name="clock" size={13} color={colors.accent} />
+            <Text style={styles.avisText}>
+              Cette vidéo dépasse {VIDEO_MAX_S} s ou {formatOctets(LIMITE_OCTETS)} — vous choisirez le
+              passage à envoyer.
+            </Text>
+          </View>
+        ) : null}
+
+        {pieces.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-            {uris.map((u, i) => (
-              <Pressable key={u} onPress={() => setActive(i)} style={[styles.thumbWrap, i === active && styles.thumbActive]}>
-                <Image source={{uri: u}} style={styles.thumb} resizeMode="cover" />
+            {pieces.map((p, i) => (
+              <Pressable key={p.uri} onPress={() => setActive(i)} style={[styles.thumbWrap, i === active && styles.thumbActive]}>
+                {genreDuMime(p.mime) === 'video' ? (
+                  <View style={styles.thumbVideo}>
+                    <Icon name="play" size={16} color="#fff" />
+                  </View>
+                ) : (
+                  <Image source={{uri: p.uri}} style={styles.thumb} resizeMode="cover" />
+                )}
               </Pressable>
             ))}
           </ScrollView>
@@ -84,6 +127,9 @@ const makeStyles = (colors: Palette) =>
     thumbWrap: {width: 56, height: 56, borderRadius: radius.sm, borderWidth: 2, borderColor: 'transparent', overflow: 'hidden'},
     thumbActive: {borderColor: colors.accent},
     thumb: {width: '100%', height: '100%'},
+    thumbVideo: {width: '100%', height: '100%', backgroundColor: '#0B1220', alignItems: 'center', justifyContent: 'center'},
+    avis: {flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.accent50},
+    avisText: {flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 16, color: colors.textSecondary},
     footer: {flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderSubtle},
     caption: {flex: 1, minHeight: 44, borderRadius: 22, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.bgMuted, paddingHorizontal: 16, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary},
     send: {width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accent500, alignItems: 'center', justifyContent: 'center'},

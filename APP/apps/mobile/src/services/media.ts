@@ -97,10 +97,16 @@ export async function pickAndUploadSessionImage(sessionId: string): Promise<stri
   return up.fileKey;
 }
 
+/**
+ * Un fichier choisi. `base64` est vide pour une vidéo — elle est lue à l'envoi, après rognage.
+ * `tailleOctets` et `dureeSec` servent à décider s'il faut rogner (voir `services/rogneur.ts`).
+ */
 export interface PickedImage {
   uri: string;
   base64: string;
   mime: string;
+  tailleOctets?: number;
+  dureeSec?: number;
 }
 
 /** Choisit une photo SANS l'envoyer (pour l'aperçu avant envoi). null si annulé. */
@@ -121,9 +127,19 @@ export async function pickSessionImageAsset(): Promise<PickedImage | null> {
 }
 
 /** Choisit 1..N photos (album) SANS les envoyer — pour l'aperçu groupé. [] si annulé. */
+/**
+ * Photos ET vidéos — chantier 106.
+ *
+ * ⚠️ **`includeBase64` ne vaut que pour les images.** Une vidéo n'en reçoit pas : le sélecteur ne
+ * sait pas l'encoder, et une vidéo de 8 Mo ferait de toute façon une chaîne de 11 Mo en mémoire
+ * avant même qu'on sache si elle sera gardée. On lit donc la vidéo **au moment de l'envoi**, une
+ * fois rognée — c'est-à-dire quand elle est petite et qu'on sait qu'elle part.
+ *
+ * *Encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.*
+ */
 export async function pickSessionImageAssets(limit = 10): Promise<PickedImage[]> {
   const res = await launchImageLibrary({
-    mediaType: 'photo',
+    mediaType: 'mixed',
     includeBase64: true,
     selectionLimit: limit,
     maxWidth: 1280,
@@ -137,7 +153,18 @@ export async function pickSessionImageAssets(limit = 10): Promise<PickedImage[]>
     dialogs.alert({title: 'Photos', message: res.errorMessage || "Impossible d'accéder aux images."});
     return [];
   }
+  /*
+    ⚠️ Une vidéo passe SANS base64 : le champ reste vide et sera rempli à l'envoi, après rognage.
+    Filtrer sur `base64` comme avant l'aurait fait disparaître en silence — *un fichier choisi qui
+    n'arrive jamais dans l'aperçu ressemble à une application qui ne répond pas.*
+  */
   return (res.assets ?? [])
-    .filter(a => a.base64 && a.uri)
-    .map(a => ({uri: a.uri as string, base64: a.base64 as string, mime: mimeOf(a)}));
+    .filter(a => a.uri)
+    .map(a => ({
+      uri: a.uri as string,
+      base64: a.base64 ?? '',
+      mime: mimeOf(a),
+      tailleOctets: a.fileSize ?? 0,
+      dureeSec: a.duration ?? 0,
+    }));
 }

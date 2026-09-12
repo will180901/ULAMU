@@ -691,6 +691,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **103** | **La prolongation sans plafond** — 12/09, décision du porteur : *« le médecin a le droit d'ajouter autant de minutes »*. 📌 **Le plafond n'est pas retiré du code : il devient une valeur.** PM-29 à **zéro** signifie « sans limite ». *Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie* — D-016 avait posé ces trente minutes pour une raison, et la remettre coûte un chiffre dans l'écran d'administration, sans déploiement. ⚠️ **Une valeur NÉGATIVE reste une erreur franche** : elle voudrait dire « prolongation jamais permise » sans que personne l'ait décidé — *on préfère l'exception au silence.* ⚠️ **Et l'écran cessait de recopier la règle** : il portait `extensionTotalSec < 1800` en dur et cachait le bouton de son propre chef. *Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que lui — et c'est toujours l'écran qui a tort, en silence.* Le bouton unique « +10 minutes » devient **quatre durées** (5 · 10 · 15 · 30) : sans plafond, offrir une demi-heure demandait trois clics. ⚠️ **Un test a perdu son déclencheur** — celui du rail qui ne doit pas rester sur un onglet disparu se fondait sur le plafond atteint ; il se fonde maintenant sur la FIN de la séance, qui est le cas le plus courant. **web 1 071 ✓ · API unitaires 668 ✓ · lint 0 · builds et types propres.** | ⏸ en attente | ⏸ |
 | **104** | **Les pièces se relisent enfin — et le décompteur part au premier message du patient** — 12/09, deux demandes du porteur. **(1) ⚠️ On pouvait envoyer une vidéo et un PDF depuis le chantier 99, et PAS les relire** : le fil ne connaissait que le son et l'image, et une vidéo reçue tombait dans une balise `<img>` — *c'est-à-dire nulle part*. Quatre rendus maintenant, sur le modèle de CMS : photo cliquable, vidéo en carte « ▶ », document en fiche, note vocale inchangée — plus un **lecteur plein panneau**. 📌 **Ce qu'on fait autrement que CMS** : eux téléchargent chaque pièce dès que la bulle apparaît ; ULAMU **ne charge que ce qui se regarde sans être demandé** — *charger dix vidéos pour en regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien demandé à voir.* Le genre se lit dans la CLÉ, qui porte son extension depuis toujours. ⚠️ **Et une clé sans extension ne doit pas faire perdre le genre** : le `kind` du message sert de secours — *deux sources imparfaites qui se complètent valent mieux qu'une seule qui se tait.* **(2) Le décompteur part au PREMIER MESSAGE DU PATIENT**, décision du porteur qui remplace la pré-consultation. ⚠️ **Les messages du soignant n'ouvrent rien** : il peut saluer pendant la préparation sans qu'une minute payée soit consommée — *le temps appartient au patient, personne d'autre ne peut décider qu'il commence.* ⚠️ **Trois pièges de syntaxe payés d'affilée** : un commentaire JSX en position d'expression, puis le même commentaire qui se referme sur lui-même en citant sa propre syntaxe, puis un heredoc qui mange les échappements — **la huitième fois** pour celui-là. **web 1 081 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **105** | **La pré-consultation retirée partout** — 12/09, décision du porteur : *« ça ne sert plus »*. Vingt fichiers touchés, trois applications. Le patient entre désormais **directement dans la conversation** et décrit son motif comme il parle — *demander les mêmes mots deux fois, une fois dans un formulaire puis une fois dans la conversation, était le vrai coût de cet écran.* Ce qu'elle faisait — démarrer le décompteur — était déjà repris par le premier message du patient (chantier 104). 📌 **Les données ne sont PAS détruites** : la table reste, avec les symptômes des consultations passées. *Retirer une fonctionnalité, c'est fermer une porte — pas brûler ce qu'il y a derrière.* ⚠️ **Ce que le chantier 76 avait gagné n'est pas perdu** : il avait gagné que l'écran se NOMME, pour qu'un soignant qui ouvre trois séances ne voie pas trois onglets identiques. Le titre porte maintenant la **date** — la matière a changé, l'exigence non. ⚠️ **Douze tests sont tombés, et aucun n'était à jeter** : un seul défendait la pré-consultation elle-même ; les onze autres s'ANCRAIENT dessus pour vérifier tout autre chose. *Un test qui perd son ancre ne perd pas son sujet.* ⚠️ **Et mon remplacement en masse a inversé le sens d'un test** : en renommant deux onglets par le même nom, il lui faisait vérifier qu'une flèche ne change rien. ⚠️ **Trois fautes injectées sur cinq sont passées** — dont une date ABÎMÉE, que mon test ne visitait pas parce qu'il ne posait qu'une date VIDE. **web 1 082 ✓ · mobile 94 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 5 fautes injectées, 4 détectées, 1 bénigne.** | ⏸ en attente | ⏸ |
+| **106** | **La vidéo sur le téléphone, rogneur compris** — 12/09, décision du porteur : *« je veux aussi un rogneur sur le mobile »*, après avoir écarté mon option « filmer court ». 📌 **La brique retenue et pourquoi** : `react-native-video-processing` est resté à React Native 0.4x et son rognage Android n'a jamais été écrit ; `ffmpeg-kit` a été **abandonné par son auteur en 2025** ; **`react-native-video-trim`** est publié depuis un mois, MIT, sans dépendance de code, et réclame exactement le `minSdk 24` et le NDK que ce projet a déjà. ⚠️ **Prix dit avant d'installer** : +15 à 25 Mo d'APK, et une reconstruction obligatoire. ⚠️ **`npm install` échouait AVANT mon paquet** : `react-native-ota-hot-update` réclame `react-native-fs`, absent du projet — *un conflit latent qui ne se déclare qu'au prochain ajout, c'est-à-dire au plus mauvais moment.* ⚠️ **Et la brique plante à l'IMPORT là où le binaire natif manque** (`TurboModuleRegistry.getEnforcing`) : l'écran entier tombait avant d'avoir pu vérifier que le rogneur existe. *Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.* Chargement TARDIF, comme `ota.ts` le faisait déjà — et le motif y était écrit. 📌 **L'encodage se fait à l'ENVOI, pas à la sélection** : une vidéo de 8 Mo fait une chaîne de 11 Mo en mémoire, et *encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.* ⚠️ **Et en SÉRIE** : le rogneur ouvre un écran, deux découpes simultanées se recouvriraient — *ce qui demande un geste ne se parallélise pas.* **mobile 107 ✓ · types propres · 10 fautes injectées, 10 attrapées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -739,6 +740,98 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 106 (la vidéo sur le téléphone) a appris
+
+*12/09/2026 — choisir une dépendance, c'est choisir qui la réparera.*
+
+#### Le choix, et ce qui l'a décidé
+
+Le rogneur du web repose sur `MediaRecorder`, qui n'existe pas en React Native. Trois candidats :
+
+| | |
+|---|---|
+| `react-native-video-processing` | resté à React Native 0.4x ; son rognage Android n'a **jamais été écrit** |
+| `ffmpeg-kit-react-native` | **abandonné par son auteur en 2025** |
+| **`react-native-video-trim`** | publié il y a un mois, MIT, zéro dépendance, `minSdk 24` et NDK **déjà ceux du projet** |
+
+> **Une brique qu'on accroche à un écran de soin doit avoir quelqu'un derrière.** Un projet
+> abandonné ne se répare pas le jour où Android change.
+
+⚠️ Et le prix, dit **avant** d'installer, pas après : +15 à 25 Mo d'APK, et une reconstruction
+obligatoire pour le porteur.
+
+#### ⚠️ Le conflit latent qui attendait le prochain ajout
+
+`npm install` a échoué — **avant même d'atteindre mon paquet**. `react-native-ota-hot-update`
+réclame `react-native-fs` comme pair, et il n'est pas dans le projet. L'arbre installé date d'avant
+que cette exigence devienne bloquante.
+
+> **Un conflit de dépendances latent ne se déclare qu'au prochain ajout** — c'est-à-dire au moment
+> où l'on cherche autre chose, et où l'erreur semble venir de ce qu'on installe.
+
+#### ⚠️ Un garde-fou placé trop tard ne garde rien
+
+J'avais écrit `rogneurDisponible()` pour ne jamais ouvrir un rogneur absent. Inutile : la brique
+appelle `TurboModuleRegistry.getEnforcing('VideoTrim')` **dès qu'on l'importe**, et cet appel lève
+une exception là où le binaire natif n'est pas là — un APK construit avant l'ajout, une suite de
+tests, un appareil où l'édition a échoué. **L'écran entier tombait** avant que la vérification ait
+lieu.
+
+> **Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.**
+
+La brique se charge donc **tardivement**, au moment de s'en servir. *Le motif était déjà dans le
+projet, écrit en toutes lettres en tête de `services/ota.ts` — « les modules natifs sont chargés en
+lazy require ». Je l'ai relu après coup.*
+
+#### Payer d'avance pour un peut-être
+
+Le sélecteur d'images encode les photos en base64 au moment du choix. Pour une vidéo, ce serait une
+chaîne de 11 Mo en mémoire — produite pour un fichier qu'on va peut-être retirer, ou dont on ne
+gardera que trois secondes.
+
+> **Encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.**
+
+L'encodage se fait donc à l'envoi, après la découpe : quand le fichier est petit et qu'on sait qu'il
+part.
+
+⚠️ **Et en SÉRIE, pas en parallèle.** Le rogneur ouvre un écran ; deux découpes simultanées se
+recouvriraient. *Ce qui demande un geste ne se parallélise pas.*
+
+#### Une bibliothèque qu'on ajoute doit être ajoutée à ce qui vérifie
+
+La suite de tests est tombée sur un `import` qu'elle ne savait pas lire : `react-native-video-trim`
+est livrée en modules ES, et Jest ne transforme rien dans `node_modules` sans qu'on le lui dise.
+L'erreur accusait le fichier de test, pas la dépendance.
+
+*Le coût d'une dépendance ne s'arrête pas à son poids : il inclut la ligne de configuration qu'elle
+oblige à écrire, et l'heure passée à comprendre pourquoi l'erreur désigne autre chose.*
+
+#### Les fautes qu’on a injectées pour voir si les tests dorment
+
+Dix fautes, celles qu’un chantier comme celui-ci produit vraiment : le poids qui se remet à refuser
+les vidéos, le plafond du téléphone qui s’écarte de celui du web, le poids écrit avec un point au
+lieu d’une virgule, la borne qui glisse de `>` à `>=`, le rognage qui ne regarde plus que la durée,
+l’encodage remonté avant la découpe, les pièces reparties en parallèle, l’avis de rognage effacé, la
+vidéo remise dans une `<Image>` — dans la bulle puis en plein écran.
+
+**Les dix sont tombées**, chacune sur le test écrit pour elle.
+
+*Deux d’entre elles en ont fait tomber DEUX au lieu d’un* — le poids qui refuse les vidéos a emporté
+aussi le `.mov` des iPhone, et la borne de poids a emporté le test des bornes. C’est bon signe :
+*une règle qui sert à plusieurs situations doit se briser partout où elle sert.*
+
+⚠️ **Et le script d’injection lui-même a d’abord raté quatre ancres.** Les fichiers nés de ce
+chantier sont en LF, ceux d’avant en CRLF : une ancre de plusieurs lignes ne se trouvait pas dans
+les seconds — et le script l’a signalé, mais il aurait aussi bien pu compter ces quatre fautes comme
+« non attrapées ».
+
+> **Un outil de vérification qui échoue à trouver ce qu’il cherche ressemble exactement à un outil
+> qui n’a rien trouvé à redire.**
+
+L’ancre se plie désormais aux fins de ligne du fichier qu’elle vise. *C’est la même leçon que les
+chantiers précédents ont déjà écrite sur les scripts d’édition ; elle valait aussi pour ceux qui
+vérifient.*
 
 ### Ce que le chantier 105 (la pré-consultation retirée) a appris
 

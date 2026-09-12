@@ -28,7 +28,8 @@
     "react-native-safe-area-context": "4.14.0",
     "react-native-screens": "4.4.0",
     "react-native-svg": "^15.9.0",
-    "react-native-video": "^6.19.2"
+    "react-native-video": "^6.19.2",
+    "react-native-video-trim": "^8.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
