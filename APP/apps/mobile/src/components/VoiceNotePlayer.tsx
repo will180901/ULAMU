@@ -10,6 +10,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {GestureResponderEvent, LayoutChangeEvent, Pressable, StyleSheet, Text, View} from 'react-native';
 import Video, {OnLoadData, OnProgressData, VideoRef} from 'react-native-video';
 import {Icon} from './Icon';
+import {Image} from 'react-native';
 import {getAuthToken} from '../services/api';
 import {claimPlayback, releasePlayback} from '../services/voicePlayback';
 import {fonts} from '../theme';
@@ -41,7 +42,23 @@ function pseudoWave(seed: string): number[] {
 /* Le format vient de la source partagée : une seconde d'écart entre les deux écrans se voit. */
 const fmt = (ms: number): string => formatDureeVocale(ms / 1000);
 
-export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: boolean; durationSec?: number}) {
+/**
+ * @param avatar photo de profil de CELUI QUI A ENVOYÉ la note — demande du porteur : *« pour ce
+ *   cercle il faut mettre la photo de profil de celui qui a envoyé ça »*. `null` = pas de photo, le
+ *   cercle reste le bouton plein qu'il était. *Un rond gris générique ressemblerait à la
+ *   fonctionnalité sans en être une.*
+ */
+export function VoiceNotePlayer({
+  uri,
+  mine,
+  durationSec,
+  avatar = null,
+}: {
+  uri: string;
+  mine: boolean;
+  durationSec?: number;
+  avatar?: string | null;
+}) {
   const {colors} = useTheme();
   const ref = useRef<VideoRef>(null);
   const [playing, setPlaying] = useState(false);
@@ -126,7 +143,19 @@ export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: bo
         style={styles.hidden}
       />
       <Pressable onPress={toggle} style={[styles.play, {backgroundColor: mine ? 'rgba(255,255,255,0.92)' : colors.accent500}]}>
-        <Icon name={playing ? 'pause' : 'play'} size={14} color={mine ? colors.accent : '#fff'} />
+        {/*
+          ⚠️ Le voile sombre n'est pas un effet de style : une photo quelconque — un visage en plein
+          soleil, une chemise blanche — rendrait le chevron invisible, et le seul contrôle du lecteur
+          deviendrait introuvable. *Une icône posée sur une image dont on ne sait rien doit porter
+          son propre contraste.*
+        */}
+        {avatar ? (
+          <>
+            <Image source={{uri: avatar}} style={styles.avatar} />
+            <View style={styles.voile} />
+          </>
+        ) : null}
+        <Icon name={playing ? 'pause' : 'play'} size={14} color={avatar ? '#fff' : mine ? colors.accent : '#fff'} />
       </Pressable>
       <Pressable style={styles.wave} onLayout={onWaveLayout} onPress={onWavePress}>
         {visibles.map((hgt, i) => {
@@ -156,7 +185,9 @@ export function VoiceNotePlayer({uri, mine, durationSec}: {uri: string; mine: bo
 const styles = StyleSheet.create({
   row: {flexDirection: 'row', alignItems: 'center', gap: 8, width: 244, paddingVertical: 2},
   hidden: {position: 'absolute', width: 1, height: 1, opacity: 0},
-  play: {width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center'},
+  play: {width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', overflow: 'hidden'},
+  avatar: {...StyleSheet.absoluteFillObject},
+  voile: {...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)'},
   wave: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2, height: 30, position: 'relative'},
   playhead: {position: 'absolute', top: '50%', marginTop: -5, width: 10, height: 10, borderRadius: 5, elevation: 2, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 1.5},
   dur: {fontFamily: fonts.mono, fontSize: 10.5, minWidth: 28, textAlign: 'right'},

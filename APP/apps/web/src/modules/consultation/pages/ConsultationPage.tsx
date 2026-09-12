@@ -107,6 +107,7 @@ import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
   lireMediaSession,
+  urlAvatar,
   type CareSession,
   type CareSessionStatus,
   type RecordEntry,
@@ -187,12 +188,15 @@ function Media({
   fileKey,
   surAccent = false,
   dureeAnnoncee,
+  avatar = null,
 }: {
   fileKey: string
   /** Le média est posé sur MA bulle, devenue un accent saturé au chantier 92 : encre claire. */
   surAccent?: boolean
   /** Voir `LecteurVocal` : la durée envoyée par l'expéditeur, avant que le son soit chargé. */
   dureeAnnoncee?: number | null
+  /** La photo de l'expéditeur, pour le cercle du lecteur vocal (chantier 97). */
+  avatar?: string | null
 }) {
   const [url, setUrl] = useState<string | null>(null)
   // Le TYPE servi par le serveur : c'est lui qui distingue une photo d'une note vocale. Il était
@@ -224,7 +228,8 @@ function Media({
   if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
   if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
   // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
-  if (type?.startsWith('audio/')) return <LecteurVocal url={url} surAccent={surAccent} dureeAnnoncee={dureeAnnoncee} />
+  if (type?.startsWith('audio/'))
+    return <LecteurVocal url={url} surAccent={surAccent} dureeAnnoncee={dureeAnnoncee} avatar={avatar} />
   return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
 }
 
@@ -586,6 +591,7 @@ function Bulle({
   onReagir,
   onReagirLibre,
   onAllerAuCite,
+  avatarExpediteur,
 }: {
   m: SessionMessage
   aMoi: boolean
@@ -602,6 +608,8 @@ function Bulle({
   /** Ouvre le sélecteur complet pour CE message — le « + » de la bande de réactions. */
   onReagirLibre: () => void
   onAllerAuCite: (id: string) => void
+  /** La photo de profil de l'expéditeur de CE message — `null` s'il n'en a pas (chantier 97). */
+  avatarExpediteur: string | null
 }) {
   const cles = m.mediaKeys.length > 0 ? m.mediaKeys : m.fileKey ? [m.fileKey] : []
 
@@ -842,7 +850,7 @@ function Bulle({
           ) : null}
 
           {cles.map((k) => (
-            <Media key={k} fileKey={k} surAccent={aMoi} dureeAnnoncee={dureeVocale} />
+            <Media key={k} fileKey={k} surAccent={aMoi} dureeAnnoncee={dureeVocale} avatar={avatarExpediteur} />
           ))}
           {/*
             ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
@@ -1743,6 +1751,19 @@ export function ConsultationPage() {
   const prixPatient = (demandes.data?.items ?? []).find((h) => h.sessionId === s.id)?.offerPriceXaf ?? null
   const peutProlonger = active && s.extensionTotalSec < 1800
   const nomAuteur = (senderId: string) => (senderId === s.professionalId ? 'Vous' : 'Le patient')
+  /*
+    ── La photo de profil d'un participant — chantier 97 ────────────────────────────────────────
+
+    Les deux clés arrivent avec la séance depuis le chantier 97 ; avant, la vue ne portait aucune
+    identité et il n'y avait rien à afficher.
+
+    `null` quand la personne n'a pas de photo : l'écran reprend alors exactement ce qu'il montrait
+    avant. *Un rond gris générique ressemblerait à la fonctionnalité sans en être une.*
+  */
+  const avatarDe = (senderId: string): string | null => {
+    const cle = senderId === s.professionalId ? s.professionalAvatarKey : s.patientAvatarKey
+    return cle ? urlAvatar(cle) : null
+  }
   const enCoursDEnvoi = envoyer.isPending || modifier.isPending
   const nbOrdonnances = (prescrites.data?.items ?? []).filter((p) => p.sessionId === s.id).length
 
@@ -2022,6 +2043,7 @@ export function ConsultationPage() {
                             onReagir={(emoji) => reagir.mutate({ id: m.id, emoji })}
                             onReagirLibre={() => setReactionLibre(m.id)}
                             onAllerAuCite={allerAuCite}
+                            avatarExpediteur={avatarDe(m.senderId)}
                           />
                         </div>
                       )

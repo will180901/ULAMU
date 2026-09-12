@@ -77,6 +77,8 @@ function seance(over: Partial<CareSession> = {}): CareSession {
       submittedAt: '2026-08-24T08:01:00.000Z',
     },
     rated: false,
+    patientAvatarKey: null,
+    professionalAvatarKey: null,
     otherPartyTyping: false,
     ...over,
   }
@@ -1109,6 +1111,97 @@ describe('C5 — la note vocale (chantier 90)', () => {
   })
 
   /*
+    ── ⚠️ LA BOUCLE, et pourquoi aucun test ne pouvait la voir (chantier 97) ────────────────────
+
+    Le porteur l'a vue avant moi et l'a décrite comme « une réaction bizarre ». Relevé sur la page
+    servie : l'onde **pulsait**, quatre états par seconde.
+
+        36 barres → 70 px mesurés → 14 barres → 26 px → 5 barres → 2 px → 1 barre → 0 px
+        → 36 barres (largeur inconnue) → …
+
+    La cause est une boucle que j'ai fermée moi-même au chantier 95 : la rangée n'avait **aucune
+    largeur de référence** — `w-full` dans une bulle qui se dimensionne sur son contenu retombe sur
+    la largeur intrinsèque de ce contenu. Pour une onde faite de barres élastiques de base nulle,
+    cette largeur intrinsèque est **la somme de ses seuls écarts**. Donc : moins de barres → moins
+    d'écarts → rangée plus étroite → encore moins de barres.
+
+    > **Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle, pas une mesure.**
+
+    ⚠️ **Et voici pourquoi les tests du chantier 95 l'ont laissée passer** : jsdom ne calcule aucune
+    mise en page. Toute largeur y vaut zéro, donc l'onde restait figée à 36 barres et la boucle ne
+    pouvait pas s'amorcer. *Un test qui ne peut pas reproduire le mécanisme ne le garde pas — il
+    garde l'arithmétique à côté.*
+
+    Ce test ÉMULE donc la règle de mise en page qui compte, et rien d'autre : une rangée sans
+    largeur définie se dimensionne sur ses écarts ; une rangée avec largeur définie ne bouge plus.
+    Puis il fait tourner le cycle de mesure et vérifie que le nombre de barres **se pose**.
+  */
+  it('⚠️ l’onde se STABILISE au lieu de pulser', async () => {
+    /* Le bouton, la durée, la pastille de vitesse et les trois écarts de la rangée. */
+    const PARTIES_FIXES = 34 + 28 + 30 + 3 * 8
+
+    const rappels: (() => void)[] = []
+    const vraiObservateur = window.ResizeObserver
+    window.ResizeObserver = class {
+      constructor(rappel: () => void) {
+        rappels.push(rappel)
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver
+
+    const vraiRect = Element.prototype.getBoundingClientRect
+    Element.prototype.getBoundingClientRect = function () {
+      const r = vraiRect.call(this) as DOMRect
+      const el = this as HTMLElement
+      if (typeof el.className !== 'string' || !el.className.includes('gap-[2px]')) return r
+
+      const rangee = el.parentElement as HTMLElement
+      /*
+        ⚠️ `(?:^|\\s)` n'est pas de la coquetterie : sans lui, le motif attrape le `w-[264px]`
+        de **`max-w-[264px]`** — donc il croit à une largeur définie là où il n'y en a pas, et
+        la faute injectée passe sans réveiller personne. *C'est arrivé.*
+      */
+      const definie = /(?:^|\s)w-\[(\d+)px\]/.exec(rangee?.className ?? '')
+      const barres = el.children.length - 1 // la tête de lecture ne compte pas
+
+      const largeur = definie
+        ? Number(definie[1]) - PARTIES_FIXES
+        : // Sans largeur définie : la rangée se dimensionne sur le contenu, donc sur les écarts.
+          Math.max(0, (barres - 1) * 2)
+
+      return { ...r, width: largeur } as DOMRect
+    }
+
+    try {
+      servirUnSon()
+      await monter(seance(), [vocal()])
+      await fil().findByLabelText('Écouter la note vocale')
+
+      const compter = () =>
+        document.querySelectorAll('[aria-hidden="true"] > span[style*="height"]').length
+
+      const suite: number[] = []
+      for (let i = 0; i < 8; i += 1) {
+        await act(async () => {
+          rappels.forEach((r) => r())
+        })
+        suite.push(compter())
+      }
+
+      // Les trois derniers états sont identiques : l'onde s'est POSÉE.
+      const [a, b, c] = suite.slice(-3)
+      expect(`${a},${b},${c}`, `l'onde oscille : ${suite.join(' → ')}`).toBe(`${c},${c},${c}`)
+      // Et elle s'est posée sur une onde, pas sur un trait.
+      expect(c, `l'onde s'est effondrée : ${suite.join(' → ')}`).toBeGreaterThanOrEqual(20)
+    } finally {
+      Element.prototype.getBoundingClientRect = vraiRect
+      window.ResizeObserver = vraiObservateur
+    }
+  })
+
+  /*
     ── ⚠️ La durée LUE, et non attendue (chantier 96) ──────────────────────────────────────────
 
     Vu en ligne sur la consultation du porteur : la MÊME note vocale affichait `1:16` en arrivant et
@@ -1153,6 +1246,78 @@ describe('C5 — la note vocale (chantier 90)', () => {
     expect(formatDureeVocale(76.693333)).toBe('1:17')
     expect(formatDureeVocale(8.419542)).toBe('0:08')
     expect(formatDureeVocale(59.6)).toBe('1:00')
+  })
+
+  /*
+    ── La photo de l'expéditeur sur le cercle de lecture (chantier 97) ─────────────────────────
+
+    Demande du porteur, posée au chantier 92 et restée bloquée cinq chantiers : *« pour ce cercle il
+    faut mettre la photo de profil de celui qui a envoyé ça »*. Le blocage n'était pas la base — les
+    deux photos y sont depuis août — mais la vue de séance, qui ne portait **aucune identité**.
+
+    Le geste ne change pas : c'est toujours le bouton lecture/pause, la photo en devient le fond.
+  */
+  it('le cercle de lecture porte la photo de celui qui a envoyé la note', async () => {
+    servirUnSon()
+    await monter(seance({ patientAvatarKey: 'av_patient.jpg' }), [vocal()])
+
+    const bouton = await fil().findByLabelText('Écouter la note vocale')
+    const photo = bouton.querySelector('img')
+
+    expect(photo).not.toBeNull()
+    expect(photo).toHaveAttribute('src', expect.stringContaining('av_patient.jpg'))
+    // La photo est décorative : le bouton dit déjà ce qu'il fait.
+    expect(photo).toHaveAttribute('alt', '')
+  })
+
+  /*
+    ⚠️ **Et l'icône reste lisible sur n'importe quelle photo.** Un visage en plein soleil, une
+    chemise blanche : sans voile, le chevron blanc disparaîtrait et le SEUL contrôle du lecteur
+    deviendrait introuvable.
+
+    *Une icône posée sur une image dont on ne sait rien doit porter son propre contraste.*
+  */
+  it('⚠️ et l’icône reste lisible quelle que soit la photo', async () => {
+    servirUnSon()
+    await monter(seance({ patientAvatarKey: 'av_patient.jpg' }), [vocal()])
+
+    const bouton = await fil().findByLabelText('Écouter la note vocale')
+
+    // Un voile entre la photo et l'icône.
+    expect(bouton.querySelector('[class*="bg-black/"]')).not.toBeNull()
+  })
+
+  /*
+    Pas de photo : le cercle reste exactement ce qu'il était. *Un rond gris générique ressemblerait à
+    la fonctionnalité sans en être une — et c'est précisément ce qu'on avait refusé de livrer au
+    chantier 92.*
+  */
+  it('et sans photo, le cercle reste ce qu’il était', async () => {
+    servirUnSon()
+    await monter(seance(), [vocal()])
+
+    const bouton = await fil().findByLabelText('Écouter la note vocale')
+
+    expect(bouton.querySelector('img')).toBeNull()
+  })
+
+  /*
+    ⚠️ **La photo suit l'EXPÉDITEUR, pas le lecteur.** Servir la même des deux côtés donnerait un
+    fil où chaque note vocale porte le visage de la même personne — pire que pas de photo du tout,
+    parce que ce serait faux au lieu d'être absent.
+  */
+  it('⚠️ et c’est bien la photo de l’expéditeur, pas la mienne', async () => {
+    servirUnSon()
+    await monter(
+      seance({ patientAvatarKey: 'av_patient.jpg', professionalAvatarKey: 'av_soignant.jpg' }),
+      // `vocal()` est envoyé par `pat-1` ; le lecteur, lui, est le professionnel `pro-1`.
+      [vocal()],
+    )
+
+    const photo = (await fil().findByLabelText('Écouter la note vocale')).querySelector('img')
+
+    expect(photo).toHaveAttribute('src', expect.stringContaining('av_patient.jpg'))
+    expect(photo?.getAttribute('src')).not.toContain('av_soignant.jpg')
   })
 
   /*

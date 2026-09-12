@@ -98,6 +98,7 @@ export function LecteurVocal({
   url,
   surAccent = false,
   dureeAnnoncee,
+  avatar = null,
 }: {
   url: string
   /**
@@ -119,6 +120,14 @@ export function LecteurVocal({
    * téléchargement, et on ne saurait pas si la note dure cinq secondes ou deux minutes.
    */
   dureeAnnoncee?: number | null
+  /**
+   * La photo de profil de CELUI QUI A ENVOYÉ la note — demande du porteur, relevée sur son écran :
+   * *« pour ce cercle il faut mettre la photo de profil de celui qui a envoyé ça »*.
+   *
+   * `null` = pas de photo : le cercle reste ce qu'il était, un bouton plein. *Un rond gris générique
+   * ressemblerait à la fonctionnalité sans en être une.*
+   */
+  avatar?: string | null
 }) {
   const audio = useRef<HTMLAudioElement | null>(null)
   const onde = useRef<HTMLDivElement | null>(null)
@@ -236,8 +245,35 @@ export function LecteurVocal({
   const jouee = surAccent ? '#FFFFFF' : 'var(--ap-400)'
   const aVenir = surAccent ? 'rgba(255,255,255,.42)' : 'var(--bordure-normale)'
 
+  /*
+    ── ⚠️ La rangée a une largeur DÉFINIE, et c'est la pièce qui manquait (chantier 97) ──────────
+
+    **Le défaut que j'ai créé au chantier 95.** La rangée était `w-full max-w-[264px]` — mais la
+    bulle qui la contient se dimensionne sur SON contenu (`items-end` sur la ligne du message). Il
+    n'y avait donc aucune largeur de référence : `w-full` retombait sur la largeur intrinsèque du
+    contenu, c'est-à-dire, pour une onde faite de barres élastiques de base nulle, **la somme de ses
+    seuls écarts**.
+
+    Tant que le nombre de barres était FIXE, cela donnait une valeur stable (70 px de vide, une onde
+    invisible — le défaut du chantier 95). En faisant dépendre le nombre de barres de la largeur
+    mesurée, j'ai fermé une boucle :
+
+        36 barres → 70 px mesurés → 14 barres → 26 px → 5 barres → 2 px → 1 barre → 0 px
+        → 36 barres (largeur inconnue) → …
+
+    Relevé sur la page servie : l'onde **pulsait**, quatre états par seconde. *Le porteur l'a vu
+    avant moi, et il avait raison de le décrire comme « une réaction bizarre ».*
+
+    > **Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle — pas une mesure.**
+    > Il faut une référence qui ne dépende PAS du résultat.
+
+    Cette référence, c'est la largeur du téléphone : **244 px**, exactement `styles.row.width` de
+    `VoiceNotePlayer.tsx`. Le mobile ne pouvait pas osciller parce qu'il l'avait depuis le début.
+    `max-w-full` la laisse rétrécir dans une bulle étroite — la bulle, elle, a une largeur définie
+    (un pourcentage du fil), donc la boucle ne se reforme pas.
+  */
   return (
-    <span className="flex w-full max-w-[264px] items-center gap-2 py-0.5">
+    <span className="flex w-[244px] max-w-full items-center gap-2 py-0.5">
       <audio
         ref={audio}
         src={url}
@@ -268,11 +304,34 @@ export function LecteurVocal({
           }
         }}
         className={
-          'flex size-[34px] shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
+          'relative flex size-[34px] shrink-0 items-center justify-center overflow-hidden rounded-full focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ' +
           (surAccent ? 'bg-white text-[var(--ap-400)]' : 'bg-[var(--ap-400)] text-white')
         }
       >
-        {joue ? <Pause size={14} strokeWidth={2} aria-hidden="true" /> : <Play size={14} strokeWidth={2} aria-hidden="true" />}
+        {/*
+          ── Le cercle porte la photo de l'expéditeur — chantier 97 ─────────────────────────────
+
+          Demande du porteur. Le geste ne change pas : c'est toujours le bouton lecture/pause, la
+          photo en devient le fond.
+
+          ⚠️ **Le voile sombre n'est pas un effet de style.** Une photo quelconque — un visage en
+          plein soleil, une chemise blanche — rendrait un chevron blanc invisible, et le seul
+          contrôle du lecteur deviendrait introuvable. *Une icône posée sur une image dont on ne
+          sait rien doit porter son propre contraste.* La photo reste parfaitement reconnaissable :
+          on la regarde, on ne la lit pas.
+
+          `alt=""` : le bouton porte déjà « Écouter la note vocale ». Décrire la photo en plus
+          ferait entendre deux fois le même objet.
+        */}
+        {avatar ? (
+          <>
+            <img src={avatar} alt="" aria-hidden="true" className="absolute inset-0 size-full object-cover" />
+            <span aria-hidden="true" className="absolute inset-0 bg-black/45" />
+          </>
+        ) : null}
+        <span className={'relative ' + (avatar ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.6)]' : '')}>
+          {joue ? <Pause size={14} strokeWidth={2} aria-hidden="true" /> : <Play size={14} strokeWidth={2} aria-hidden="true" />}
+        </span>
       </button>
 
       {/*

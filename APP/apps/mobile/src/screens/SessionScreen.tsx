@@ -36,7 +36,7 @@ import {dialogs} from '../components/Dialog';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api, getAuthToken} from '../services/api';
-import {PickedImage, pickSessionImageAssets, sessionMediaUrl} from '../services/media';
+import {PickedImage, avatarUrl, pickSessionImageAssets, sessionMediaUrl} from '../services/media';
 import {cancelRecording, fileToBase64, startRecording, stopRecording} from '../services/audio';
 import {ChatActionSheet} from '../components/ChatActionSheet';
 import {FeuilleSignalement} from '../components/FeuilleSignalement';
@@ -245,6 +245,12 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
   const cancellable = session.status === 'ACTIVE' && !proReplied && openedFor5min;
   const within15 = (iso: string) => Date.now() - new Date(iso).getTime() < 15 * 60 * 1000;
   const isMine = (m: MessageView) => m.senderId === session.patientAccountId;
+  /*
+    La photo de profil d'un participant (chantier 97). Les deux clés arrivent avec la séance ; avant,
+    la vue ne portait aucune identité et il n'y avait rien à afficher.
+  */
+  const avatarDe = (senderId: string): string | null =>
+    avatarUrl(senderId === session.professionalId ? session.professionalAvatarKey : session.patientAvatarKey);
 
   const deleteMsg = async (m: MessageView, forEveryone: boolean) => {
     setActionMsg(null);
@@ -361,6 +367,7 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
               <Bubble
                 msg={item}
                 mine={isMine(item)}
+                avatarExpediteur={avatarDe(item.senderId)}
                 grouped={index > 0 && messages[index - 1].senderId === item.senderId && !item.replyTo}
                 patientId={session.patientAccountId}
                 docName={docName}
@@ -892,6 +899,7 @@ function MediaGrid({keys, headers, onOpen}: {keys: string[]; headers?: Record<st
 function Bubble({
   msg,
   mine,
+  avatarExpediteur,
   grouped,
   patientId,
   docName,
@@ -902,6 +910,8 @@ function Bubble({
 }: {
   msg: MessageView;
   mine: boolean;
+  /** Photo de profil de l'expéditeur — `null` s'il n'en a pas (chantier 97). */
+  avatarExpediteur: string | null;
   grouped: boolean;
   patientId: string;
   docName: string;
@@ -1000,7 +1010,7 @@ function Bubble({
         <View style={styles.bubbleWrap}>
           <Pressable onLongPress={onLongPress} delayLongPress={300} style={[...bubbleStyle, styles.voiceBubble]}>
             {replyCard}
-            {uri ? <VoiceNotePlayer uri={uri} mine={mine} durationSec={durationSec} /> : null}
+            {uri ? <VoiceNotePlayer uri={uri} mine={mine} durationSec={durationSec} avatar={avatarExpediteur} /> : null}
             {footer}
           </Pressable>
           <ReactionsRow reactions={msg.reactions} mine={mine} onToggle={onReact} />

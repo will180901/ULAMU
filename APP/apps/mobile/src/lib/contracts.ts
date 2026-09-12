@@ -335,6 +335,12 @@ export interface SessionView {
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère ~6s). */
   otherPartyTyping: boolean;
+  /**
+   * Photos de profil des deux participants — clés de stockage, à passer à `avatarUrl()`.
+   * `null` = pas de photo : l'écran retombe sur ce qu'il affichait avant (chantier 97).
+   */
+  patientAvatarKey: string | null;
+  professionalAvatarKey: string | null;
 }
 export type SessionMessageKind = 'TEXT' | 'PHOTO' | 'VOICE' | 'DOCUMENT';
 export interface MessageReplyPreview {

@@ -80,3 +80,47 @@ describe("L'onde d'une note vocale", () => {
     expect(formatDureeVocale(8.419542)).toBe('0:08');
   });
 });
+
+/*
+  ── La photo de l'expéditeur sur le cercle de lecture — chantier 97 ────────────────────────────
+
+  Demande du porteur posée au chantier 92, restée bloquée cinq chantiers : le blocage n'était pas la
+  base — les deux `avatarKey` y sont depuis août — mais la vue de séance, qui ne portait AUCUNE
+  identité. Les deux applications n'avaient rien à afficher.
+
+  Ces vérifications sont au niveau de la SOURCE : rendre `VoiceNotePlayer` demanderait de doubler
+  `react-native-video`, pour ne rien prouver de plus que ce qui est lu ici. *Le comportement, lui,
+  est éprouvé côté web, où la même règle est écrite.*
+*/
+describe("La photo de l'expéditeur", () => {
+  it('le cercle de lecture affiche la photo de celui qui a envoyé la note', () => {
+    const lecteur = source('components/VoiceNotePlayer.tsx');
+    const ecran = source('screens/SessionScreen.tsx');
+
+    expect(lecteur).toContain('avatar ? (');
+    expect(lecteur).toContain('source={{uri: avatar}}');
+    // Et l'écran passe bien la photo de l'EXPÉDITEUR du message, pas celle du lecteur.
+    expect(ecran).toContain('avatarExpediteur={avatarDe(item.senderId)}');
+  });
+
+  /*
+    ⚠️ **L'icône doit rester lisible sur n'importe quelle photo.** Un visage en plein soleil, une
+    chemise blanche : sans voile, le chevron blanc disparaîtrait et le SEUL contrôle du lecteur
+    deviendrait introuvable.
+
+    *Une icône posée sur une image dont on ne sait rien doit porter son propre contraste.*
+  */
+  it("⚠️ et un voile garde l'icône lisible par-dessus", () => {
+    const lecteur = source('components/VoiceNotePlayer.tsx');
+
+    expect(lecteur).toContain('styles.voile');
+    expect(lecteur).toMatch(/voile: \{[^}]*rgba\(0,0,0,0\.\d+\)/);
+  });
+
+  /* Pas de photo : le cercle reste le bouton plein qu'il était, jamais un rond gris générique. */
+  it("et sans photo, le cercle reste ce qu'il était", () => {
+    const lecteur = source('components/VoiceNotePlayer.tsx');
+
+    expect(lecteur).toContain('avatar = null');
+  });
+});

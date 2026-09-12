@@ -51,8 +51,8 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **1 024 ✓** (48 fichiers, + 6 todo) |
-| Mobile | `npm test` | **88 ✓** (11 suites) |
+| Web | `npx vitest run` | **1 029 ✓** (48 fichiers, + 6 todo) |
+| Mobile | `npm test` | **91 ✓** (11 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
 **vident vingt-quatre tables**. Elles ne tournent plus jamais (décision du chantier 38). Seul
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 96
+## 3. Ce qui a été fait — chantiers 58 à 97
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 97 | *(à pousser)* | ⚠️ **L'onde vocale PULSAIT** — et mes deux corrections précédentes n'en étaient pas : je les avais annoncées sans regarder la page servie. Relevé en ligne : 36 barres → 70 px → 14 → 26 px → 5 → 2 px → 1 → 0 px → 36, quatre états par seconde. 📌 Une boucle que j'avais fermée moi-même : la rangée n'avait aucune largeur de référence. Elle reçoit celle du téléphone (244 px). ⚠️ jsdom ne calcule aucune mise en page — le nouveau test l'émule. **Et la photo de profil sur le cercle de lecture**, bloquée cinq chantiers sur une conclusion trop lourde de ma part : les clés existaient en base, seule la vue de séance ne les portait pas. |
 | 96 | *(à pousser)* | **Le mobile aligné, la durée qui mentait, le squelette qui manquait.** La règle de l'onde devient partagée et vendorée — le téléphone dessinait des barres de 1,6 px. ⚠️ **La durée d'une note vocale était fausse une fois sur deux** : l'évènement de métadonnée passait avant que React l'écoute, et la durée retombait sur celle, fausse, annoncée par l'expéditeur. ⚠️ L'écran s'ouvrait sur un rond ; il s'ouvre sur la forme de la page. Trois derniers écarts de bulles repris (espacement 10/2, trace de suppression, « modifié »). ⚠️ **Un écart REFUSÉ** : l'heure d'une bulle reçue est à 2,2:1 de contraste sur le mobile — c'est à lui de monter. |
 | 95 | *(à pousser)* | ⚠️ **L'onde des notes vocales ne s'affichait plus du tout.** Vu en ligne : 70 px pour l'onde, 178 px nécessaires aux 36 barres du mobile — les écarts consommaient tout, les barres tombaient à 0 px. 📌 *Une densité, ce n'est pas un nombre de barres : c'est un nombre de barres ET une largeur d'écran.* ⚠️ Le mobile est construit pareil : le défaut n'y est pas visible, la construction qui le permet, si — **décision posée au porteur**. |
 | 94 | *(à pousser)* | **Précédent / Suivant, et la mémoire d'écran.** Une pile de navigation à nous (*React Router ne dit pas si l'on peut reculer*), un traqueur `PUSH`/`REPLACE`/`POP`, des flèches **montées même éteintes**, et un état d'écran rangé par page dans le stockage de session. 📌 Règle reprise de CMS : **jamais de brouillon ni de modale** — *une décision en suspens qu'on ne se souvient pas d'avoir commencée est une confirmation donnée sans l'avoir voulue*. ⚠️ 20 tests tombés d'un coup : vider le stockage ne vide pas un magasin qui vit en mémoire. Et deux couleurs d'onde relevées sur une capture du téléphone. |

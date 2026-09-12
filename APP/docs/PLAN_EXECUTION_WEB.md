@@ -682,6 +682,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **94** | **Précédent / Suivant, et la mémoire d'écran** — 11/09, demande du porteur (« comme avec le projet CMS, va voir »), motif lu dans `navStack.store.ts` et `usePersistedState.ts` puis adapté. Quatre pièces : **une pile à nous** — *React Router ne dit pas si l'on peut avancer ou reculer*, et sans elle les deux flèches seraient toujours actives ; **un traqueur** qui distingue `PUSH` / `REPLACE` / `POP`, faute de quoi une redirection laisse une trace et « retour » ramène là où l'on n'a jamais voulu aller ; **les flèches** dans le bandeau, **montées même éteintes** (*une commande qui apparaît et disparaît se cherche ; une commande éteinte s'attend*) ; **la mémoire d'écran**, rangée par écran et par clé dans le stockage de session. 📌 **La règle reprise telle quelle de CMS** : jamais de brouillon ni de fenêtre modale dans cette mémoire — *rouvrir un écran et y trouver une décision en suspens qu'on ne se souvient pas d'avoir commencée, sur un écran de soin, c'est une confirmation donnée sans l'avoir voulue.* ⚠️ **Vingt tests sont tombés d'un coup** : vider `sessionStorage` ne vide pas un magasin qui vit en mémoire — la remise à zéro se paie une fois, dans le harnais commun. Et deux couleurs d'onde **relevées sur une capture du téléphone** au lieu d'être déduites de la palette. **web 1 011 ✓ (996 + 15) · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **95** | **L'onde vocale qui n'avait plus de place** — 11/09, **vu sur l'écran du porteur juste après la mise en ligne du 94** : les deux lecteurs vocaux s'affichaient **sans aucune onde**. Mesuré dans la page servie : l'onde recevait **70 px**, là où trente-six barres de 3 px espacées de 2 px en réclament **178**. Les trente-cinq écarts consommaient les 70 px à eux seuls, et les barres — élastiques — tombaient à **0 px de large**. 📌 **La cause est une mesure reprise à moitié** : j'avais relevé « 36 barres » sur le téléphone sans relever la largeur qui va avec. *Une densité, ce n'est pas un nombre de barres : c'est un nombre de barres ET une largeur d'écran.* Le nombre suit maintenant la place — la géométrie du mobile (3 px + 2 px) est tenue à toute largeur, et on retrouve les 36 dès qu'il y a les 178 px. ⚠️ **Et un plancher que j'ai dû retirer avant même de le livrer** : j'avais posé « jamais moins de huit barres », or huit barres réclament 38 px — *un plancher qui ne tient pas sous le plancher n'est pas un plancher.* ⚠️ **Le même piège qu'au chantier 87** : le premier test comptait les barres avant que la mesure soit commise, et affirmait donc le contraire de ce qu'il vérifiait. **web 1 017 ✓ (1 011 + 6) · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **96** | **Le mobile aligné, la durée qui mentait, et le squelette qui manquait** — 12/09, quatre demandes du porteur en une. **(1) La règle de l'onde devient PARTAGÉE** (`packages/shared/src/onde-vocale.ts`, vendorée) : le téléphone dessinait lui aussi 36 barres dans 128 px, soit des barres de **1,6 px** au lieu des 3 annoncées en tête de son propre lecteur — *le web s'effondrait, le mobile s'étiolait, même cause*. **(2) ⚠️ La durée d'une note vocale était fausse une fois sur deux** : le lecteur attendait `onLoadedMetadata` par une propriété React, or quand le son est déjà en cache l'évènement passe **avant** que React ait branché l'écouteur. La même note affichait `1:16` en arrivant et `1:03` en y revenant — 1:03 étant la durée **annoncée par l'expéditeur**, fausse de 14 s. *Un évènement qu'on n'a pas entendu n'a pas eu lieu : on lit l'état au montage, puis on écoute.* Et l'arrondi divergeait (mobile 1:17, web 1:16) — même fichier, deux durées. **(3) Le squelette de la consultation** : l'écran s'ouvrait sur **une phrase et un rond**, puis toute la page se posait d'un coup. Le FIL avait pourtant son squelette depuis le chantier 21 — *le soin s'était arrêté à une porte*. **(4) Les trois derniers écarts de bulles** : espacement **10 px / 2 px groupés** (le web était à 12 / 6, et le regroupement ne se lisait plus comme un bloc), la trace d'un message supprimé qui redevient une **bulle** au lieu d'une pilule pointillée, « modifié » en italique. ⚠️ **Et un écart que je REFUSE de copier** : l'heure d'une bulle reçue, que le téléphone peint en `#52525B` sur `#1C1C20` — **2,2:1**. Le web l'avait relevée exprès le 09/09. *Aligner deux écrans ne veut pas dire recopier le moins lisible des deux.* **web 1 024 ✓ (1 017 + 7) · mobile 88 ✓ (84 + 4) · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
+| **97** | **L'onde qui pulsait — et la photo de profil, enfin** — 12/09. ⚠️ **Le porteur a vu, sur la page servie, que l'onde vocale n'était toujours pas là** : ma correction du 95 ne corrigeait rien, et j'avais annoncé le contraire deux fois. Mesuré cette fois DANS la page : l'onde **oscillait** — `36 barres → 70 px → 14 → 26 px → 5 → 2 px → 1 → 0 px → 36 →` … quatre états par seconde. 📌 **La cause est une boucle que j'ai fermée moi-même** : la rangée du lecteur n'avait **aucune largeur de référence** (`w-full` dans une bulle qui se dimensionne sur son contenu), donc la largeur mesurée n'était que **la somme des écarts entre les barres**. Faire dépendre le nombre de barres de cette mesure fermait le cercle. *Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle, pas une mesure.* La rangée reçoit la largeur du téléphone — **244 px**, `styles.row.width` — qui est précisément ce qui empêchait le mobile d'osciller. ⚠️ **Et les tests du 95 ne pouvaient pas le voir** : jsdom ne calcule aucune mise en page, donc la boucle ne pouvait pas s'amorcer. Le nouveau test **émule la seule règle de mise en page qui compte** et vérifie que le nombre de barres se POSE. **(2) La photo de profil sur le cercle de lecture**, demandée au chantier 92 et bloquée cinq chantiers : le blocage n'était pas la base — les deux `avatarKey` y sont depuis août — mais **la vue de séance, qui ne portait aucune identité**. Elle porte maintenant les deux clés, web et mobile ensemble, avec un voile sous l'icône (*une icône posée sur une image dont on ne sait rien doit porter son propre contraste*). ⚠️ **Décision de produit posée au porteur** : l'écran du soignant écrit encore « Le patient » — montrer un visage sans nom est incohérent. **web 1 029 ✓ · mobile 91 ✓ · API unitaires 660 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -730,6 +731,84 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 97 (l'onde qui pulsait) a appris
+
+*12/09/2026 — j'ai annoncé deux fois une correction qui n'en était pas une.*
+
+#### ⚠️ Le fait, d'abord
+
+Aux chantiers 95 et 96 j'ai écrit au porteur que l'onde des notes vocales était réparée. **Elle ne
+l'était pas.** Il l'a vue sur sa page, deux fois, et me l'a redit. Ce que j'avais vérifié à chaque
+fois, c'était l'arithmétique dans les tests — jamais le rendu dans la page servie.
+
+> **Une correction annoncée sans avoir été regardée là où le défaut a été vu n'est pas une
+> correction : c'est une hypothèse présentée comme un résultat.**
+
+#### La boucle
+
+Mesuré cette fois DANS la page, en relevant la largeur et le nombre de barres huit fois de suite :
+
+```
+36 barres → 70 px → 14 barres → 26 px → 5 barres → 2 px → 1 barre → 0 px → 36 barres → …
+```
+
+L'onde **pulsait**, quatre états par seconde. C'est ce que le porteur a appelé « une réaction
+bizarre », et c'était la description exacte.
+
+La cause est une boucle que j'ai **fermée moi-même au chantier 95**. La rangée du lecteur était
+`w-full` — mais la bulle qui la contient se dimensionne sur SON contenu. Il n'existait donc aucune
+largeur de référence : `w-full` retombait sur la largeur intrinsèque du contenu, c'est-à-dire, pour
+une onde faite de barres élastiques de base nulle, **la somme de ses seuls écarts**.
+
+Tant que le nombre de barres était fixe, cela donnait une valeur stable — 70 px de vide, l'onde
+invisible du chantier 95. En faisant dépendre le nombre de barres de la mesure, j'ai relié les deux
+bouts.
+
+> **Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle, pas une mesure.** Il
+> faut une référence qui ne dépende pas du résultat.
+
+Cette référence existait depuis le début, dans le fichier que je lisais pour m'aligner : **`width:
+244`** sur la rangée du téléphone. C'est elle qui empêchait le mobile d'osciller, et je l'avais lue
+sans en voir la fonction. *On copie facilement ce qu'une valeur vaut, difficilement ce qu'elle
+empêche.*
+
+#### ⚠️ Pourquoi aucun test ne pouvait l'attraper
+
+jsdom ne calcule **aucune mise en page** : toute largeur y vaut zéro. L'onde restait donc figée à 36
+barres, la boucle ne pouvait pas s'amorcer, et les six fautes injectées au chantier 96 sont toutes
+tombées à côté du vrai mécanisme.
+
+> **Un test qui ne peut pas reproduire le mécanisme ne le garde pas — il garde l'arithmétique
+> d'à côté, et il le fait très bien.**
+
+Le nouveau test **émule la seule règle de mise en page qui compte** : une rangée sans largeur
+définie se dimensionne sur ses écarts, une rangée avec largeur définie ne bouge plus. Puis il fait
+tourner le cycle de mesure huit fois et vérifie que le nombre de barres **se pose**.
+
+⚠️ Et sa première version ne détectait rien : son motif `/w-\[(\d+)px\]/` attrapait le `w-[264px]`
+de **`max-w-[264px]`**, donc il croyait à une largeur définie là où il n'y en avait pas. *Une
+émulation fausse ne prouve rien, et elle le prouve avec conviction.* Seule l'injection de la faute
+l'a montré.
+
+#### La photo de profil : le blocage n'était pas là où je l'avais dit
+
+Au chantier 92 j'ai écrit que la photo demandée par le porteur exigeait « une migration de la vue de
+séance ». C'était à moitié vrai, et la moitié fausse est celle qui l'a fait attendre cinq chantiers :
+**les deux `avatarKey` existent en base depuis août**, et la vitrine publique sert déjà celle du
+soignant. Il n'y avait aucune migration à faire — seulement deux champs à ajouter à une vue.
+
+> **« Ça demande une migration » et « la base ne le porte pas » ne sont pas la même phrase.** J'avais
+> vérifié la vue, pas le modèle, et j'ai rapporté la conclusion la plus lourde.
+
+Le cercle de lecture porte donc la photo, sur les deux applications, avec un **voile** sous l'icône :
+une photo quelconque — un visage en plein soleil, une chemise blanche — rendrait le chevron
+invisible, et le seul contrôle du lecteur deviendrait introuvable. *Une icône posée sur une image
+dont on ne sait rien doit porter son propre contraste.*
+
+⚠️ **Une décision de produit reste posée** : l'écran du soignant écrit encore « Le patient », sans
+nom. Montrer un visage à côté de ces deux mots est incohérent — soit le nom apparaît, soit la photo
+du patient n'a pas sa place. La photo du soignant, elle, est déjà publique sur la vitrine.
 
 ### Ce que le chantier 96 (le mobile, la durée, le squelette) a appris
 

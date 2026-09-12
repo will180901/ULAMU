@@ -617,6 +617,15 @@ export interface CareSession {
   preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null
   rated: boolean
   otherPartyTyping: boolean
+  /**
+   * Photos de profil des deux participants — clés de stockage, à passer à `urlAvatar()`.
+   * `null` = pas de photo, l'écran retombe sur ce qu'il affichait avant.
+   *
+   * Servies depuis le chantier 97 : elles existaient en base depuis août, mais la vue de séance ne
+   * portait aucune identité, et les écrans n'avaient donc rien à montrer.
+   */
+  patientAvatarKey: string | null
+  professionalAvatarKey: string | null
 }
 
 /**

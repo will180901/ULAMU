@@ -83,6 +83,31 @@ export interface SessionView {
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère, TTL ~6s). */
   otherPartyTyping: boolean;
+  /**
+   * Photos de profil des deux participants — clés `StorageService`, servies par la route publique
+   * `media/avatars/<clé>`. `null` = pas de photo, l'écran retombe sur les initiales.
+   *
+   * ── Pourquoi elles sortent d'ici et pas d'ailleurs ──────────────────────────────────────────
+   *
+   * Les deux existent en base depuis août (`PatientProfile.avatarKey`,
+   * `ProfessionalProfile.avatarKey`) et la vitrine publique sert déjà celle du soignant. Mais la
+   * vue de séance ne portait AUCUNE identité — ni nom, ni photo — et les écrans de consultation
+   * n'avaient donc rien à montrer. Le porteur demandait la photo de l'expéditeur sur ses notes
+   * vocales ; il n'y avait pas de quoi la construire.
+   *
+   * ⚠️ **Ce n'est servi qu'aux DEUX participants de la séance** : `loadForParticipant` refuse tout
+   * autre appelant. La clé est un identifiant aléatoire, non devinable, et la route qui la sert
+   * est publique comme l'est déjà celle de la vitrine.
+   *
+   * ⚠️ **Et la photo du patient est une exposition NOUVELLE vers le soignant.** Elle se défend :
+   * pendant une séance payée, le soignant lit déjà le Carnet du patient — groupe sanguin,
+   * allergies, maladies chroniques. Une photo de profil est moins sensible que cela. La règle
+   * EF-06-01 (« prénom + âge, pas plus ») encadre la fiche AVANT paiement, pas la séance ouverte.
+   * *Mais l'écran du soignant écrit encore « Le patient » : montrer un visage sans nom est
+   * incohérent, et c'est une décision de produit posée au porteur, pas un défaut de code.*
+   */
+  patientAvatarKey: string | null;
+  professionalAvatarKey: string | null;
 }
 
 export interface SessionListItem {
@@ -623,6 +648,20 @@ export class SessionService {
       }),
     ]);
     const professionalDelaySec = accumulatedProfessionalDelaySec(msgs, settled.professionalId);
+    /*
+      Les deux photos, lues en parallèle. `select` réduit à la seule clé : rien d'autre de ces deux
+      profils n'a sa place dans une vue de séance.
+    */
+    const [profilPatient, profilSoignant] = await Promise.all([
+      this.prisma.patientProfile.findUnique({
+        where: { accountId: settled.patientAccountId },
+        select: { avatarKey: true },
+      }),
+      this.prisma.professionalProfile.findUnique({
+        where: { accountId: settled.professionalId },
+        select: { avatarKey: true },
+      }),
+    ]);
     const now = Date.now();
     return {
       id: settled.id,
@@ -655,6 +694,8 @@ export class SessionService {
         : null,
       rated: rating !== null,
       otherPartyTyping: this.otherPartyTyping(sessionId, actor.accountId),
+      patientAvatarKey: profilPatient?.avatarKey ?? null,
+      professionalAvatarKey: profilSoignant?.avatarKey ?? null,
     };
   }
 
