@@ -685,6 +685,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **97** | **L'onde qui pulsait — et la photo de profil, enfin** — 12/09. ⚠️ **Le porteur a vu, sur la page servie, que l'onde vocale n'était toujours pas là** : ma correction du 95 ne corrigeait rien, et j'avais annoncé le contraire deux fois. Mesuré cette fois DANS la page : l'onde **oscillait** — `36 barres → 70 px → 14 → 26 px → 5 → 2 px → 1 → 0 px → 36 →` … quatre états par seconde. 📌 **La cause est une boucle que j'ai fermée moi-même** : la rangée du lecteur n'avait **aucune largeur de référence** (`w-full` dans une bulle qui se dimensionne sur son contenu), donc la largeur mesurée n'était que **la somme des écarts entre les barres**. Faire dépendre le nombre de barres de cette mesure fermait le cercle. *Mesurer une chose pour décider de ce qui la dimensionne, c'est une boucle, pas une mesure.* La rangée reçoit la largeur du téléphone — **244 px**, `styles.row.width` — qui est précisément ce qui empêchait le mobile d'osciller. ⚠️ **Et les tests du 95 ne pouvaient pas le voir** : jsdom ne calcule aucune mise en page, donc la boucle ne pouvait pas s'amorcer. Le nouveau test **émule la seule règle de mise en page qui compte** et vérifie que le nombre de barres se POSE. **(2) La photo de profil sur le cercle de lecture**, demandée au chantier 92 et bloquée cinq chantiers : le blocage n'était pas la base — les deux `avatarKey` y sont depuis août — mais **la vue de séance, qui ne portait aucune identité**. Elle porte maintenant les deux clés, web et mobile ensemble, avec un voile sous l'icône (*une icône posée sur une image dont on ne sait rien doit porter son propre contraste*). ⚠️ **Décision de produit posée au porteur** : l'écran du soignant écrit encore « Le patient » — montrer un visage sans nom est incohérent. **web 1 029 ✓ · mobile 91 ✓ · API unitaires 660 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **98** | **Le bandeau de la discussion : avec QUI l'on parle** — 12/09, demande détaillée du porteur. L'en-tête du fil disait « **Échange** » et « Chiffré de bout en bout au repos » — *trois éléments dont aucun ne disait avec qui*. Un soignant qui enchaîne trois consultations avait trois en-têtes identiques. Il porte maintenant le **visage** du patient (photo, ou initiales « Nm » — nom en majuscule, prénom en minuscule), son **prénom** à la place de « Le patient », l'**état de la conversation** en dessous, et à droite le **minuteur** et le **retard**. ⚠️ **Le statut n'existait pas** : l'application du patient n'envoyait **aucun** battement de présence, le serveur n'avait jamais entendu parler de lui et l'aurait dit hors ligne à perpétuité. *Un statut qu'on ne peut jamais contredire n'est pas un statut, c'est une décoration.* Le téléphone bat maintenant pendant la consultation, et la vue de séance sert la présence de l'autre — avec un quatrième état qu'on oublie toujours : **« on ne sait pas »**, qui ne s'écrit pas comme « hors ligne depuis toujours ». 📌 **Le retard apparaît enfin du côté de celui qu'il juge** (asymétrie signalée aux chantiers 93 et 94). ⚠️ **Et un test est tombé en déplaçant le minuteur, à raison** : j'avais réduit l'étiquette « Horloge serveur » à une infobulle — *une infobulle ne se lit qu'après l'avoir cherchée ; celui qui doute de son minuteur ne survole rien, il croit son navigateur.* Plus les deux corrections relevées la veille : le **compteur vocal qui MONTE** au lieu de décompter (le web lisait `1:13` quand le patient lisait `0:04` du même son) et le **zéro barré** (`0:08` se lisait `0:88` à 11 px, mal lu deux fois sur mes propres captures). **web 1 039 ✓ · mobile 91 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **99** | **Un bouton, deux fonctions — et la porte ouverte à la vidéo** — 12/09, première des quatre étapes validées par le porteur après lecture de la messagerie de CMS. **(1) Le bouton intelligent** : champ vide → **micro** ; dès qu'on écrit → **flèche d'envoi**. Le composeur portait les deux en permanence, dont l'un toujours éteint — *deux commandes pour un seul geste possible, c'est une décision à prendre à chaque message alors qu'il n'y en a aucune : ce qu'on veut faire est déjà écrit dans le champ.* 📌 **Le mobile l'avait déjà** (`draft.trim() || editMsg ? envoi : micro`) : le web était le seul à ne pas l'avoir, et personne ne l'avait vu parce que les deux boutons marchaient. **(2) Le trombone à trois choix** — Photos et vidéos · Audio · Document — chacun ouvrant un sélecteur **filtré**, parce que *choisir « Document » et voir ses photos est une promesse trahie avant même d'avoir cliqué*. **(3) Le serveur ouvre la vidéo et le PDF** (`video/mp4`, `video/webm`, `video/quicktime`, `application/pdf`), décision du porteur. ⚠️ **Le plafond de 8 Mo ne bouge pas** : une vidéo le dépasse en quelques secondes, et c'est l'écran d'envoi qui la rognera (chantier 100). D'où une règle contre-intuitive posée ici : **une vidéo trop lourde n'est PAS refusée au choix** — *un refus qui précède le remède n'est pas une protection, c'est une porte fermée.* ⚠️ **Une faute injectée a révélé un test trop faible** : vérifier que les trois sélecteurs sont bien filtrés ne dit rien de QUI les ouvre — trois filtres corrects peuvent tous pendre au même fil. **web 1 047 ✓ · API unitaires 664 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
+| **100** | **Le moteur du rogneur de vidéo** — 12/09, deuxième étape, la pièce dont dépend toute la fonctionnalité : *le stockage plafonne à 8 Mo et une vidéo de téléphone pèse de 1 à 4 Mo par seconde ; sans découpe, ouvrir la vidéo reviendrait à l'ouvrir puis à la refuser presque toujours.* Six fonctions : durée réelle, **portion maximale**, poids estimé, débit à demander, **pellicule de vignettes**, et la découpe. 📌 **Deux bornes, et c'est la seconde qu'on oublie** : la portion est limitée par la durée voulue (30 s) ET par ce que le poids autorise — *une vidéo 4K de dix secondes pèse 40 Mo, sa portion tient en deux secondes, pas en trente*. ⚠️ **Sans consigne de débit, `MediaRecorder` produit plus gros que l'original** : *un rogneur qui rend un extrait plus lourd que le film n'a rien rogné du tout.* Le débit est donc borné par le budget de poids, sans dépasser la source, avec un plancher qui garde l'extrait regardable. ⚠️ **Et une différence assumée avec CMS** : eux découpent d'abord par **ffmpeg.wasm** — 31 Mo de cœur versionnés et téléchargés au premier usage — et ne retombent sur `MediaRecorder` qu'en second. ULAMU n'a que le second : *sur une connexion congolaise, télécharger 31 Mo pour économiser vingt secondes de traitement est une mauvaise affaire.* La porte reste ouverte. **web 1 057 ✓ · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -733,6 +734,58 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 100 (le rogneur) a appris
+
+*12/09/2026 — le calcul qui décide si l'extrait passera, et qu'on ne voit pas à l'œil.*
+
+#### La borne qu'on oublie
+
+La plus longue portion sélectionnable a **deux** limites. La première saute aux yeux : trente
+secondes, la durée qu'on s'autorise. La seconde est celle qu'on oublie : **ce que le poids
+autorise**.
+
+> Une vidéo 4K de dix secondes pèse 40 Mo. Sa portion tient en **deux** secondes, pas en trente.
+
+Sans cette borne, l'écran proposerait de garder trente secondes d'un film dont trois ne passent pas
+— et le refus arriverait après le traitement, c'est-à-dire au pire moment.
+
+*Trente secondes n'est pas non plus un chiffre rond choisi au hasard : au-delà, la fenêtre de
+sélection couvre tout le film et ne se déplace plus. On croit alors le rogneur bloqué. CMS est passé
+de 120 s à 30 s pour cette raison exacte, et la note est restée dans leur code.*
+
+#### ⚠️ Un rogneur peut rendre plus gros que l'original
+
+`MediaRecorder`, lancé sans consigne de débit, produit couramment un fichier **plus lourd que le
+film d'origine**. On découperait alors dix secondes d'une vidéo de 40 Mo pour obtenir un extrait de
+12 Mo — refusé, après trente secondes d'attente.
+
+> **Un rogneur qui rend un extrait plus lourd que le film n'a rien rogné du tout.**
+
+Le débit demandé est donc le plus petit de deux : celui de la **source** (ré-encoder plus riche que
+l'original ajoute des octets sans ajouter une image) et celui que le **budget de poids** autorise
+pour la durée retenue. Avec un plancher : *une vidéo de soin qu'on ne peut pas regarder ne vaut pas
+mieux qu'une vidéo absente.*
+
+#### Ce qu'on ne reprend pas de CMS, et le prix qu'on refuse
+
+CMS découpe d'abord avec **ffmpeg.wasm** : une copie de flux, quasi instantanée, sans ré-encodage.
+C'est meilleur — et cela coûte **31 Mo** de cœur WebAssembly, versionnés dans leur dépôt et
+téléchargés par l'utilisateur au premier découpage.
+
+> **Sur une connexion congolaise, télécharger 31 Mo pour économiser vingt secondes de traitement est
+> une mauvaise affaire.**
+
+ULAMU garde donc le second chemin seul : le ré-encodage prend le temps de l'extrait — trente
+secondes au pire, avec une barre de progression honnête — et ne coûte pas un octet de réseau. *Ce
+n'est pas une limite technique, c'est un arbitrage, et il se rouvre en une fonction le jour où
+l'attente gêne plus que le téléchargement.*
+
+#### Pourquoi ces calculs sont testés à part
+
+Ils ne se voient pas. Une portion maximale fausse d'un facteur dix ne change rien à l'écran : la
+fenêtre se déplace, la pellicule défile, tout a l'air normal — et l'envoi échoue à la fin. *Une
+erreur qui ne se manifeste qu'après le travail de l'utilisateur est la plus coûteuse qui soit.*
 
 ### Ce que le chantier 99 (le composeur) a appris
 
