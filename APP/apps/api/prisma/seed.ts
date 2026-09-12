@@ -41,7 +41,7 @@ export const PLATFORM_PARAMETERS: Param[] = [
   { key: "PM-26", value: "900", description: "Bascule automatique en absent — inactivité web (s) — 15 min (D-031)" },
   { key: "PM-27", value: "3", description: "Sessions actives simultanées max par professionnel (D-032)" },
   { key: "PM-28", value: "600", description: "Démarrage automatique de session après paiement (s) — 10 min (D-032)" },
-  { key: "PM-29", value: "1800", description: "Prolongation gratuite cumulée max (s) — +30 min (D-032)" },
+  { key: "PM-29", value: "0", description: "Prolongation gratuite cumulée max (s) — 0 = SANS LIMITE (décision du porteur, 12/09/2026 ; remettre 1800 pour rétablir le plafond de 30 min de D-016)" },
   { key: "PM-30", value: "86400", description: "Délai de dépôt du compte-rendu (s) — 24 h, gains gelés au-delà (D-032)" },
   { key: "PM-31", value: "10", description: "Conservation du Carnet après clôture (ans) — à confirmer avocat (D-033)" },
   { key: "PM-32", value: "60", description: "Alerte de péremption proche du stock (jours) (D-035)" },

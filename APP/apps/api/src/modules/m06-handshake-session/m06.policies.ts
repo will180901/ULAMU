@@ -111,13 +111,28 @@ export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number): num
  * strictement positive, et un CUMUL plafonné à PM-29 secondes (≤ inclusif : on peut
  * atteindre exactement le plafond). Le service rejoue cette condition en updateMany
  * conditionnel (compare-and-swap sur extensionTotalSec, D-046).
+ *
+ * ── ⚠️ PM-29 à ZÉRO = aucun plafond (chantier 103, 12/09/2026) ────────────────────────────────
+ *
+ * Décision du porteur : *« pour le prolongement, le médecin a le droit d'ajouter autant de minutes »*.
+ *
+ * Le plafond n'est pas RETIRÉ du code — il devient une valeur. Zéro veut dire « sans limite ». Deux
+ * raisons de faire ainsi plutôt que d'effacer la règle :
+ *
+ *   • la décision reste **réversible depuis l'écran d'administration**, sans nous ni déploiement ;
+ *   • D-016 avait posé ce plafond pour une raison ; l'effacer du code effacerait la question avec.
+ *     *Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie.*
+ *
+ * ⚠️ **Une valeur NÉGATIVE reste une erreur** : elle signifierait « plafond impossible », c'est-à-dire
+ * une prolongation jamais permise sans que personne l'ait décidé. On préfère l'exception au silence.
  */
 export function canExtend(extensionTotalSec: number, addSec: number, pm29S: number): boolean {
-  if (!Number.isFinite(pm29S) || pm29S <= 0) {
-    throw new Error("Paramètre PM-29 invalide : plafond en secondes strictement positif attendu");
+  if (!Number.isFinite(pm29S) || pm29S < 0) {
+    throw new Error("Paramètre PM-29 invalide : plafond en secondes positif attendu (0 = sans limite)");
   }
   if (!Number.isInteger(addSec) || addSec <= 0) return false;
   if (!Number.isInteger(extensionTotalSec) || extensionTotalSec < 0) return false;
+  if (pm29S === 0) return true;
   return extensionTotalSec + addSec <= pm29S;
 }
 

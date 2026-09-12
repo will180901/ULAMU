@@ -688,6 +688,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **100** | **Le moteur du rogneur de vidéo** — 12/09, deuxième étape, la pièce dont dépend toute la fonctionnalité : *le stockage plafonne à 8 Mo et une vidéo de téléphone pèse de 1 à 4 Mo par seconde ; sans découpe, ouvrir la vidéo reviendrait à l'ouvrir puis à la refuser presque toujours.* Six fonctions : durée réelle, **portion maximale**, poids estimé, débit à demander, **pellicule de vignettes**, et la découpe. 📌 **Deux bornes, et c'est la seconde qu'on oublie** : la portion est limitée par la durée voulue (30 s) ET par ce que le poids autorise — *une vidéo 4K de dix secondes pèse 40 Mo, sa portion tient en deux secondes, pas en trente*. ⚠️ **Sans consigne de débit, `MediaRecorder` produit plus gros que l'original** : *un rogneur qui rend un extrait plus lourd que le film n'a rien rogné du tout.* Le débit est donc borné par le budget de poids, sans dépasser la source, avec un plancher qui garde l'extrait regardable. ⚠️ **Et une différence assumée avec CMS** : eux découpent d'abord par **ffmpeg.wasm** — 31 Mo de cœur versionnés et téléchargés au premier usage — et ne retombent sur `MediaRecorder` qu'en second. ULAMU n'a que le second : *sur une connexion congolaise, télécharger 31 Mo pour économiser vingt secondes de traitement est une mauvaise affaire.* La porte reste ouverte. **web 1 057 ✓ · lint 0 · build et types propres · 5 fautes injectées, 5 détectées.** | ⏸ en attente | ⏸ |
 | **101** | **L'écran d'aperçu : le média en grand, et la pellicule** — 12/09, troisième étape, sur le modèle de la messagerie de CMS. L'écran ne montrait que des **vignettes carrées de photos** ; depuis que le serveur accepte la vidéo, l'audio et le PDF, *une vidéo réduite à un carré gris ne se vérifie pas — on ne sait ni ce qu'elle montre, ni où elle commence.* Quatre pièces : le média **joué pour de vrai**, une bande de **miniatures**, une **légende**, et le **rogneur** avec sa pellicule de douze images, déplaçable à la souris **et au clavier**. 📌 **La légende existait déjà des deux côtés** — le serveur l'accepte dans `body`, le fil l'affiche depuis le chantier 75 — et **aucun écran ne permettait de l'écrire**. ⚠️ **Un changement de règle assumé** : une pièce refusée **bloque tout l'envoi** au lieu de rester au sol pendant que les autres partent. *Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne pas l'en informer.* ⚠️ **Et la décision du chantier 75 est renversée** : l'aperçu COUVRE le fil. La raison d'alors valait pour trois vignettes de 96 px, pas pour un rogneur. ⚠️ **Une faute injectée n'a réveillé personne, et c'était le plus instructif** : **jsdom ne lit la durée d'aucun média**, donc toute la branche vidéo n'était jamais parcourue — *un test qui ne peut pas atteindre le mécanisme ne le garde pas, et l'absence d'échec ressemble exactement à une réussite.* D'où un fichier à part qui double la seule chose que jsdom ignore. **web 1 069 ✓ · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **102** | **Trois défauts vus sur une consultation RÉELLE** — 12/09, première séance ouverte de bout en bout depuis la refonte : le porteur paie 5 000 F, et l'application du patient **s'arrête sur un écran rouge**. **(1) ⚠️ *Rendered more hooks than during the previous render*** — mon `useEffect` du chantier 98 était posé **après les retours anticipés** d'un écran qui en rend quatre selon l'état de la séance. *Un composant qui rend plusieurs écrans n'a pas le droit d'avoir ses crochets dispersés entre eux.* **(2) ⚠️ Le battement de présence était refusé** : la route est réservée au professionnel, je l'avais branchée sans vérifier que la porte s'ouvrait, et le refus était avalé par un `.catch` muet — *le statut disait « hors ligne » pour toujours, sans que rien ne le signale.* Elle s'ouvre à tout compte ; les deux routes qui décident vraiment de la disponibilité restent fermées. **(3) ⚠️ La chaîne de hauteur était rompue depuis le chantier 83** : la colonne de contenu de la coquille n'avait aucune hauteur propre, donc le `md:h-full` des deux zones fixes retombait sur le contenu. Sur une fenêtre de 860 px, la carte s'arrêtait à **373 px**. *Un `h-full` dont le parent vaut « la hauteur de ce qu'il contient » ne vaut rien.* ⚠️ **Et le garde-fou écrit pour (1) ne l'attrapait pas** : son motif cherchait un `return` à deux espaces d'indentation, alors que les retours anticipés vivent dans un `if`. **web 1 070 ✓ · mobile 93 ✓ · API unitaires 667 ✓ · lint 0 · builds et types propres · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
+| **103** | **La prolongation sans plafond** — 12/09, décision du porteur : *« le médecin a le droit d'ajouter autant de minutes »*. 📌 **Le plafond n'est pas retiré du code : il devient une valeur.** PM-29 à **zéro** signifie « sans limite ». *Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie* — D-016 avait posé ces trente minutes pour une raison, et la remettre coûte un chiffre dans l'écran d'administration, sans déploiement. ⚠️ **Une valeur NÉGATIVE reste une erreur franche** : elle voudrait dire « prolongation jamais permise » sans que personne l'ait décidé — *on préfère l'exception au silence.* ⚠️ **Et l'écran cessait de recopier la règle** : il portait `extensionTotalSec < 1800` en dur et cachait le bouton de son propre chef. *Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que lui — et c'est toujours l'écran qui a tort, en silence.* Le bouton unique « +10 minutes » devient **quatre durées** (5 · 10 · 15 · 30) : sans plafond, offrir une demi-heure demandait trois clics. ⚠️ **Un test a perdu son déclencheur** — celui du rail qui ne doit pas rester sur un onglet disparu se fondait sur le plafond atteint ; il se fonde maintenant sur la FIN de la séance, qui est le cas le plus courant. **web 1 071 ✓ · API unitaires 668 ✓ · lint 0 · builds et types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -736,6 +737,54 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 103 (la prolongation) a appris
+
+*12/09/2026 — désactiver une règle plutôt que l'effacer.*
+
+#### Un plafond qui devient une valeur
+
+Le porteur demande que le soignant puisse offrir autant de minutes qu'il veut. Le réflexe serait de
+retirer le plafond du code. On en fait une **valeur** : PM-29 à zéro signifie « sans limite ».
+
+> **Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie.**
+
+D-016 avait posé ces trente minutes pour une raison — qui n'est écrite nulle part ailleurs que dans
+ce plafond. En le laissant vivre comme paramètre, la question reste posée, et le rétablir coûte un
+chiffre dans l'écran d'administration, sans déploiement ni développeur.
+
+⚠️ **Zéro veut dire « sans limite » ; négatif reste une erreur.** Une valeur négative signifierait
+« plafond impossible », c'est-à-dire une prolongation jamais permise, sans que personne l'ait
+décidé. *On préfère l'exception au silence : une fonctionnalité qui disparaît sans message est pire
+qu'un serveur qui refuse de démarrer.*
+
+#### ⚠️ L'écran recopiait la règle du serveur
+
+Il portait `extensionTotalSec < 1800` **en dur**, et cachait le bouton de son propre chef.
+
+> **Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que lui — et
+> c'est toujours l'écran qui a tort, en silence.**
+
+Il ne devine plus : s'il reste un plafond et qu'il est atteint, le serveur refuse et l'écran le dit.
+*C'est le même défaut de forme que le « 24 heures » écrit en dur du chantier 84, et que le « 48 h »
+des maquettes avant lui. Il revient à chaque fois qu'un chiffre du serveur est plus commode à
+recopier qu'à demander.*
+
+#### Une commande qu'on doit répéter dit qu'il manque un choix
+
+Le bouton n'offrait que dix minutes. Sans plafond, donner une demi-heure demandait trois clics et
+trois allers-retours au serveur. Quatre durées le remplacent.
+
+#### ⚠️ Un test qui perd son déclencheur ne perd pas sa raison
+
+Le rail garde une promesse : *ne jamais laisser quelqu'un sur un onglet qui vient de disparaître
+sous ses yeux* — ni à l'écran, ni au clavier. Son test se déclenchait sur le plafond de
+prolongation, qui n'existe plus.
+
+> **Un test dont le déclencheur disparaît ne défend pas moins ; il faut lui rendre un déclencheur.**
+
+Il se fonde maintenant sur la **fin de la séance** — le cas le plus courant, et celui qui arrive
+vraiment : le minuteur s'épuise pendant qu'on regarde l'onglet « Prolonger ».
 
 ### Ce que le chantier 102 (la consultation réelle) a appris
 

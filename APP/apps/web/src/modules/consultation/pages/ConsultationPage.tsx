@@ -1777,7 +1777,7 @@ export function ConsultationPage() {
   })
 
   const prolonger = useMutation({
-    mutationFn: () => api.extendSession(sessionId, 10),
+    mutationFn: (minutes: number) => api.extendSession(sessionId, minutes),
     onSuccess: rafraichir,
     onError: (e) => setErreur(messageErreur(e)),
   })
@@ -1883,7 +1883,18 @@ export function ConsultationPage() {
   const pre = s.preConsultation
   /* Le prix payé par le patient pour CETTE séance — voir la note sur `demandes` plus haut. */
   const prixPatient = (demandes.data?.items ?? []).find((h) => h.sessionId === s.id)?.offerPriceXaf ?? null
-  const peutProlonger = active && s.extensionTotalSec < 1800
+  /*
+    ── ⚠️ Plus de plafond écrit dans l'écran — chantier 103 ──────────────────────────────────────
+
+    Décision du porteur : *« le médecin a le droit d'ajouter autant de minutes »*. Le plafond vit
+    désormais dans le paramètre PM-29 (zéro = sans limite), et **le serveur seul le fait respecter**.
+
+    L'écran écrivait `< 1800` en dur : il cachait donc le bouton selon SA propre idée de la règle.
+    *Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que lui — et
+    c'est toujours l'écran qui a tort, en silence.* S'il reste un plafond et qu'il est atteint, le
+    serveur refuse et l'écran le dit ; il ne devine plus.
+  */
+  const peutProlonger = !!active
   const nomAuteur = (senderId: string) => (senderId === s.professionalId ? 'Vous' : 'Le patient')
   /*
     ── La photo de profil d'un participant — chantier 97 ────────────────────────────────────────
@@ -2697,17 +2708,37 @@ export function ConsultationPage() {
                         <Carte icone={HeartPulse} titre="Prolonger" sousTitre="Gratuit pour le patient">
                           <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
                             Vous ne pouvez pas mettre fin à la séance : le patient a payé {s.durationMin} minutes, elles
-                            lui appartiennent. Vous pouvez en revanche lui en offrir.
+                            lui appartiennent. Vous pouvez en revanche lui en offrir autant que vous voulez.
                           </p>
-                          <div>
-                            <Button type="button" size="sm" variant="outline" onClick={() => prolonger.mutate()} disabled={prolonger.isPending}>
-                              <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
-                              {prolonger.isPending ? 'Prolongation…' : 'Prolonger de 10 minutes'}
-                            </Button>
-                            <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
-                              {Math.round(s.extensionTotalSec / 60)} min déjà offertes sur 30 au maximum.
-                            </p>
+                          {/*
+                            ── Plusieurs durées, plutôt qu'un seul bouton — chantier 103 ─────────
+
+                            Le bouton n'offrait que dix minutes. Sans plafond, ajouter une demi-heure
+                            demandait trois clics et trois allers-retours au serveur. *Une commande
+                            qu'on doit répéter dit qu'il manque un choix.*
+                          */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {[5, 10, 15, 30].map((min) => (
+                              <Button
+                                key={min}
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => prolonger.mutate(min)}
+                                disabled={prolonger.isPending}
+                              >
+                                <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
+                                {min} min
+                              </Button>
+                            ))}
                           </div>
+                          <p className="text-[11px] text-[var(--texte-tertiaire)]">
+                            {prolonger.isPending
+                              ? 'Prolongation…'
+                              : s.extensionTotalSec > 0
+                                ? `${Math.round(s.extensionTotalSec / 60)} min déjà offertes.`
+                                : 'Aucune minute offerte pour l’instant.'}
+                          </p>
                         </Carte>
                       ),
                     },

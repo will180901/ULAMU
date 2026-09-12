@@ -183,8 +183,33 @@ describe("canExtend — prolongation gratuite plafonnée PM-29 (EF-06-07, D-016)
     expect(canExtend(0.5, 60, pm29S)).toBe(false);
   });
 
-  it("PM-29 corrompu → erreur franche", () => {
-    expect(() => canExtend(0, 60, 0)).toThrow();
+  /*
+    ── ⚠️ Zéro ne veut plus dire « corrompu » (chantier 103, 12/09/2026) ────────────────────────
+
+    Décision du porteur : *« pour le prolongement, le médecin a le droit d'ajouter autant de
+    minutes »*. Le plafond n'est pas retiré du code — **il devient une valeur**, et zéro veut dire
+    « sans limite ».
+
+    *Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie.* D-016 avait posé
+    ce plafond pour une raison : la remettre coûte un chiffre dans l'écran d'administration, sans
+    déploiement.
+  */
+  it("⚠️ PM-29 à zéro = SANS LIMITE, et non plus une erreur", () => {
+    expect(canExtend(0, 60, 0)).toBe(true);
+    // Même après des heures déjà offertes.
+    expect(canExtend(36_000, 3600, 0)).toBe(true);
+    // Mais les règles de forme tiennent toujours : une durée nulle ou négative reste refusée.
+    expect(canExtend(0, 0, 0)).toBe(false);
+    expect(canExtend(0, -60, 0)).toBe(false);
+  });
+
+  /*
+    ⚠️ Une valeur NÉGATIVE reste une erreur franche : elle signifierait « plafond impossible »,
+    c'est-à-dire une prolongation jamais permise sans que personne l'ait décidé. *On préfère
+    l'exception au silence.*
+  */
+  it("⚠️ mais un PM-29 négatif ou illisible reste une erreur franche", () => {
+    expect(() => canExtend(0, 60, -1)).toThrow();
     expect(() => canExtend(0, 60, Number.NaN)).toThrow();
   });
 });

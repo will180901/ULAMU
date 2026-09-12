@@ -428,16 +428,44 @@ describe('C5 — ce que le professionnel ne peut pas faire', () => {
     expect(screen.queryByRole('button', { name: /Prolonger/ })).not.toBeInTheDocument()
   })
 
-  it('la prolongation est offerte tant que le plafond n’est pas atteint (EF-06-07)', async () => {
+  /*
+    ── ⚠️ Plus de plafond — chantier 103, décision du porteur ────────────────────────────────────
+
+    *« Pour le prolongement, le médecin a le droit d'ajouter autant de minutes. »* Le plafond de
+    trente minutes (D-016) n'est pas supprimé du code : il devient la valeur **zéro** du paramètre
+    PM-29, qui signifie « sans limite ». *Une règle qu'on désactive se rediscute ; une règle qu'on
+    supprime s'oublie.*
+
+    Et l'écran ne recopie plus la règle : il n'écrivait `< 1800` que pour cacher le bouton de son
+    propre chef. *Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que
+    lui — et c'est toujours l'écran qui a tort, en silence.*
+  */
+  it('⚠️ la prolongation reste offerte, quel que soit le temps déjà donné', async () => {
     const utilisateur = userEvent.setup()
-    const prolonger = vi.spyOn(api, 'extendSession').mockResolvedValue(seance({ extensionTotalSec: 600 }))
-    await monter(seance({ extensionTotalSec: 600 }))
+    const prolonger = vi.spyOn(api, 'extendSession').mockResolvedValue(seance({ extensionTotalSec: 7200 }))
+    // Deux heures déjà offertes : au-delà de l'ancien plafond, et de loin.
+    await monter(seance({ extensionTotalSec: 7200 }))
     await ouvrir('Prolonger')
 
-    await utilisateur.click(await screen.findByRole('button', { name: /Prolonger de 10 minutes/ }))
-    await waitFor(() => expect(prolonger).toHaveBeenCalledWith('s1', 10))
+    await utilisateur.click(await screen.findByRole('button', { name: /^30 min$/ }))
+
+    await waitFor(() => expect(prolonger).toHaveBeenCalledWith('s1', 30))
     // Gratuite pour le patient : c'est le sens de « à la seule initiative du professionnel ».
     expect(screen.getByText(/Gratuit pour le patient/)).toBeInTheDocument()
+  })
+
+  /*
+    Plusieurs durées, plutôt qu'un seul bouton de dix minutes : sans plafond, offrir une demi-heure
+    demandait trois clics et trois allers-retours. *Une commande qu'on doit répéter dit qu'il manque
+    un choix.*
+  */
+  it('et propose plusieurs durées au lieu d’un seul pas', async () => {
+    await monter(seance())
+    await ouvrir('Prolonger')
+
+    for (const min of [5, 10, 15, 30]) {
+      expect(screen.getByRole('button', { name: new RegExp(`^${min} min$`) })).toBeInTheDocument()
+    }
   })
 })
 
@@ -2768,14 +2796,22 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
   it('un onglet qui disparaît pendant qu’on le regarde ne laisse pas le rail sur du vide', async () => {
     const utilisateur = userEvent.setup()
     vi.spyOn(api, 'extendSession').mockResolvedValue(undefined as never)
-    await monter(seance({ extensionTotalSec: 1200 }))
+    await monter(seance())
 
     await ouvrir('Prolonger')
     expect(screen.getByRole('tab', { name: /^Prolonger/ })).toHaveAttribute('aria-selected', 'true')
 
-    // Le plafond est atteint : la relecture de la séance fait tomber l'onglet sous les yeux.
-    vi.spyOn(api, 'session').mockResolvedValue(seance({ extensionTotalSec: 1800 }))
-    await utilisateur.click(screen.getByRole('button', { name: /Prolonger de 10 minutes/ }))
+    /*
+      ⚠️ Ce test se déclenchait sur le PLAFOND de prolongation, qui n'existe plus depuis le
+      chantier 103. Le cas qu'il défend, lui, n'a pas disparu — il est même devenu le plus courant :
+      **la séance se termine pendant qu'on regarde l'onglet**, et « Prolonger » n'a plus de sens.
+
+      *Un test dont le déclencheur disparaît ne défend pas moins ; il faut lui rendre un déclencheur.*
+    */
+    vi.spyOn(api, 'session').mockResolvedValue(
+      seance({ status: 'ENDED' as CareSessionStatus, endedAt: '2026-08-24T08:32:00.000Z', remainingSeconds: 0 }),
+    )
+    await utilisateur.click(screen.getByRole('button', { name: /^10 min$/ }))
 
     await waitFor(() => expect(screen.queryByRole('tab', { name: /^Prolonger/ })).not.toBeInTheDocument())
     // Le rail est retombé sur un onglet réel, et son panneau porte du contenu.
