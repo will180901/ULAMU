@@ -48,10 +48,32 @@ const EXT_BY_MIME: Record<string, string> = {
   "audio/mpeg": "mp3",
   "audio/ogg": "ogg",
   "audio/wav": "wav",
+  /*
+    ── Les vidéos — chantier 99, 12/09/2026 ───────────────────────────────────────────────────
+
+    Décision du porteur : une consultation peut porter une vidéo. Trois types seulement, et le
+    choix se justifie :
+
+      • `video/mp4`       — ce que produit tout appareil, et ce que tout navigateur relit ;
+      • `video/webm`      — ce que produit un enregistrement navigateur, et ce que rend le rogneur ;
+      • `video/quicktime` — le `.mov` des iPhone, que l'on refuserait sinon à l'ouverture du
+                            sélecteur, avant même de pouvoir proposer de le convertir.
+
+    ⚠️ **Le plafond de 8 Mo ne bouge pas.** Une vidéo le dépasse en quelques secondes — c'est
+    précisément pourquoi l'écran d'envoi la ROGNE avant de la transmettre. *Ouvrir la porte sans
+    ouvrir la limite est un choix : on préfère une vidéo courte qui arrive à une longue qui se fait
+    refuser après avoir traversé le réseau.*
+  */
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
 };
 
 const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
   jpg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",

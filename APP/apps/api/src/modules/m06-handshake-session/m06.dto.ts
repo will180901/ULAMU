@@ -129,13 +129,46 @@ export class ReactToMessageDto {
   emoji!: string;
 }
 
-/** Téléversement d'un média de session (photo ou note vocale) — fichier encodé en base64. */
+/**
+ * Téléversement d'un média de session — fichier encodé en base64.
+ *
+ * ── Ce qui passe, et pourquoi (chantier 99) ───────────────────────────────────────────────────
+ *
+ * Image, audio, **vidéo** et **document PDF**. Les deux derniers sont arrivés le 12/09, sur demande
+ * du porteur : *« note vocale, texte, image optionnelle ou vidéo optionnelle »*.
+ *
+ * ⚠️ **Cette liste est la SEULE barrière.** Le stockage refait la vérification, mais c'est ici que
+ * le refus arrive vite — avant que le fichier ait fini de traverser le réseau. *Sur une connexion
+ * congolaise, un refus tardif coûte plusieurs minutes à quelqu'un qui attend.*
+ *
+ * Le PDF n'est jamais rendu dans le contexte de l'application : il est lu depuis un `blob:` isolé.
+ * C'est la même précaution que pour les pièces de vérification, et elle vaut ici aussi.
+ */
 export class UploadSessionMediaDto {
   // 112M caractères ≈ 80 Mo décodés (base64 ×4/3 + marge) — cohérent avec StorageService.maxBytes.
   @IsString() @IsNotEmpty() @MaxLength(112_000_000) fileBase64!: string;
-  @IsIn(["image/jpeg", "image/jpg", "image/png", "image/webp", "audio/mp4", "audio/m4a", "audio/aac", "audio/mpeg", "audio/ogg", "audio/wav"], {
-    message: "Média non supporté : image (JPEG/PNG/WebP) ou audio (m4a/aac/mp3/ogg/wav) attendu",
-  })
+  @IsIn(
+    [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "audio/mp4",
+      "audio/m4a",
+      "audio/aac",
+      "audio/mpeg",
+      "audio/ogg",
+      "audio/wav",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "application/pdf",
+    ],
+    {
+      message:
+        "Média non supporté : image (JPEG/PNG/WebP), audio (m4a/aac/mp3/ogg/wav), vidéo (MP4/WebM/MOV) ou PDF attendu",
+    },
+  )
   mime!: string;
 }
 

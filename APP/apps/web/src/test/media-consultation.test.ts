@@ -75,9 +75,39 @@ describe('Ce qui empêche un fichier de partir', () => {
   })
 
   it('un format que le serveur refuserait est refusé ICI, pas après le réseau', () => {
-    expect(refusDEnvoi(fichier('application/pdf', 1000))).toMatch(/Format non accepté/)
+    /*
+      ⚠️ Le PDF est SORTI de cette liste au chantier 99 : le serveur l'accepte désormais dans une
+      consultation, sur décision du porteur. *Un test qui garde un refus doit tomber le jour où le
+      refus n'a plus lieu d'être — sinon il défend une règle qui n'existe plus.*
+    */
     // `audio/webm` est ce que produisent les navigateurs Chromium — et le serveur n'en veut pas.
     expect(refusDEnvoi(fichier('audio/webm', 1000))).toMatch(/Format non accepté/)
+    // Un format tordu, choisi au hasard du disque.
+    expect(refusDEnvoi(fichier('application/zip', 1000))).toMatch(/Format non accepté/)
+  })
+
+  /*
+    ── Ce que le chantier 99 a ouvert ───────────────────────────────────────────────────────────
+
+    La vidéo et le document PDF, demandés par le porteur pour la pré-consultation comme pour le fil.
+  */
+  it('une vidéo et un PDF passent maintenant', () => {
+    expect(refusDEnvoi(fichier('video/mp4', 2_000_000))).toBeNull()
+    expect(refusDEnvoi(fichier('application/pdf', 200_000))).toBeNull()
+  })
+
+  /*
+    ⚠️ **Et une vidéo trop lourde n'est PAS refusée ici.** Elle arrive presque toujours au-dessus des
+    8 Mo, et l'écran d'aperçu sait la rogner : la refuser d'emblée priverait de la seule chose qui
+    pourrait la sauver.
+
+    *Un refus qui précède le remède n'est pas une protection, c'est une porte fermée.* Le contrôle
+    de poids se fait sur l'extrait, juste avant l'envoi.
+  */
+  it('⚠️ mais une vidéo lourde attend le rogneur au lieu d’être refusée tout de suite', () => {
+    expect(refusDEnvoi(fichier('video/mp4', 40 * 1024 * 1024))).toBeNull()
+    // Une IMAGE lourde, elle, reste refusée : rien ne peut la sauver à l'écran.
+    expect(refusDEnvoi(fichier('image/jpeg', 40 * 1024 * 1024))).toMatch(/maximum/)
   })
 
   it('une note vocale au bon format passe', () => {

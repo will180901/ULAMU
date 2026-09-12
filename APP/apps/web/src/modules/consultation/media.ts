@@ -38,6 +38,39 @@ export const MIMES_IMAGE = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'
  */
 export const MIMES_AUDIO = ['audio/mp4', 'audio/m4a', 'audio/aac', 'audio/mpeg', 'audio/ogg', 'audio/wav'] as const
 
+/**
+ * Les vidéos que le serveur accepte — chantier 99, sur décision du porteur.
+ *
+ * `video/quicktime` est le `.mov` des iPhone : sans lui, le sélecteur de fichiers refuserait le
+ * film avant même qu'on puisse proposer de le rogner. *Un refus au moment de choisir ne se
+ * comprend pas ; un refus avec sa raison, si.*
+ */
+export const MIMES_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'] as const
+
+/** Les documents. Un seul type : le PDF, lu depuis un `blob:` isolé, jamais rendu dans la page. */
+export const MIMES_DOCUMENT = ['application/pdf'] as const
+
+/**
+ * Durée maximale d'une vidéo envoyée — **30 secondes**.
+ *
+ * ⚠️ Le chiffre n'est pas une préférence, c'est une conséquence : le stockage plafonne à 8 Mo, et
+ * une vidéo de téléphone pèse de 1 à 4 Mo par seconde. Trente secondes est aussi le seuil qui rend
+ * le rogneur UTILISABLE — au-delà de la durée du film, la fenêtre de sélection couvre tout et ne
+ * se déplace plus, ce qui fait croire qu'elle est bloquée. *Repris de CMS, où le passage de 120 s à
+ * 30 s avait été fait pour cette raison exacte.*
+ */
+export const VIDEO_MAX_S = 30
+
+/** Le genre d'un fichier, tel que l'écran d'aperçu le traite. */
+export type GenreMedia = 'image' | 'video' | 'audio' | 'document'
+
+export function genreDuMime(mime: string): GenreMedia {
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (mime.startsWith('audio/')) return 'audio'
+  return 'document'
+}
+
 /** Photos par bulle — le serveur en accepte dix (`fileKeys`, `@ArrayMaxSize(10)`). */
 export const PHOTOS_MAX = 10
 
@@ -157,11 +190,17 @@ export async function compresserImage(f: File, cote = 1600, qualite = 0.82): Pro
  * « fichier trop volumineux ». Quelqu'un qui voit « 12,4 Mo · maximum 8 Mo » sait quoi faire.
  */
 export function refusDEnvoi(f: File): string | null {
-  const accepte = [...MIMES_IMAGE, ...MIMES_AUDIO] as readonly string[]
+  const accepte = [...MIMES_IMAGE, ...MIMES_AUDIO, ...MIMES_VIDEO, ...MIMES_DOCUMENT] as readonly string[]
   if (!accepte.includes(f.type)) {
-    return `Format non accepté (${f.type || 'inconnu'}) — images JPEG, PNG, WebP ou notes vocales uniquement.`
+    return `Format non accepté (${f.type || 'inconnu'}) — image, vidéo, note vocale ou PDF uniquement.`
   }
-  if (f.size > LIMITE_OCTETS) {
+  /*
+    ⚠️ **La vidéo ne se refuse PAS sur son poids ici.** Elle arrive presque toujours au-dessus des
+    8 Mo, et l'écran d'aperçu sait la rogner : la refuser d'emblée priverait de la seule chose qui
+    pourrait la sauver. *Un refus qui précède le remède n'est pas une protection, c'est une porte
+    fermée.* Le contrôle de poids se fait sur l'extrait, juste avant l'envoi.
+  */
+  if (genreDuMime(f.type) !== 'video' && f.size > LIMITE_OCTETS) {
     return `${formatOctets(f.size)} — maximum ${formatOctets(LIMITE_OCTETS)} par fichier.`
   }
   return null

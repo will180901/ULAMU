@@ -1693,6 +1693,116 @@ describe('C5 — le minuteur (chantier 75)', () => {
     })
   })
 
+  /*
+    ── Le composeur : UN bouton, deux fonctions — chantier 99, 12/09/2026 ───────────────────────
+
+    Demande du porteur, reprise de la messagerie de CMS : *« par défaut c'est un bouton avec icône
+    de micro fait pour la note vocale, mais si l'utilisateur écrit un texte ça change de fonction et
+    d'icône »*.
+
+    Le composeur portait les DEUX en permanence, côte à côte, dont l'un toujours éteint. *Deux
+    commandes pour un seul geste possible, c'est une décision à prendre à chaque message alors qu'il
+    n'y en a aucune : ce que l'on veut faire est déjà écrit dans le champ.*
+  */
+  describe('C5 — le composeur (chantier 99)', () => {
+    it('champ vide : c’est le micro, et rien d’autre', async () => {
+      await monter(seance())
+      await screen.findByLabelText('Votre message')
+
+      expect(screen.getByRole('button', { name: /Enregistrer une note vocale/i })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^Envoyer$/ })).not.toBeInTheDocument()
+    })
+
+    it('⚠️ dès qu’on écrit, le micro devient la flèche d’envoi', async () => {
+      const utilisateur = userEvent.setup()
+      await monter(seance())
+      await utilisateur.type(await screen.findByLabelText('Votre message'), 'Bonjour')
+
+      expect(screen.getByRole('button', { name: /^Envoyer$/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Enregistrer une note vocale/i })).not.toBeInTheDocument()
+    })
+
+    /*
+      ⚠️ Et il redevient le micro quand on efface. *Un bouton qui change d'avis doit savoir changer
+      dans les deux sens : sinon, effacer son message laisse une flèche qui n'envoie rien.*
+    */
+    it('⚠️ et redevient le micro quand on efface tout', async () => {
+      const utilisateur = userEvent.setup()
+      await monter(seance())
+      const champ = await screen.findByLabelText('Votre message')
+      await utilisateur.type(champ, 'Bonjour')
+      await utilisateur.clear(champ)
+
+      expect(screen.getByRole('button', { name: /Enregistrer une note vocale/i })).toBeInTheDocument()
+    })
+
+    /*
+      Le trombone nomme ce qu'il propose. Un sélecteur de fichiers FILTRE selon ce qu'on lui
+      annonce : choisir « Document » et voir ses photos serait une promesse trahie avant même
+      d'avoir cliqué.
+    */
+    it('le trombone propose photos et vidéos, audio, document', async () => {
+      const utilisateur = userEvent.setup()
+      await monter(seance())
+
+      await utilisateur.click(await screen.findByRole('button', { name: 'Joindre un fichier' }))
+
+      expect(await screen.findByRole('button', { name: 'Photos et vidéos' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Audio' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Document' })).toBeInTheDocument()
+    })
+
+    /*
+      ⚠️ **Et chaque choix filtre vraiment.** Le menu pourrait nommer trois entrées qui ouvrent
+      toutes le même sélecteur — l'écran dirait vrai et le geste, non.
+    */
+    it('⚠️ et chaque choix ouvre un sélecteur restreint à son type', async () => {
+      await monter(seance())
+      await screen.findByLabelText('Votre message')
+
+      const champs = [...document.querySelectorAll('input[type="file"]')].map((c) =>
+        (c as HTMLInputElement).accept,
+      )
+
+      expect(champs.some((a) => a.includes('image/png') && a.includes('video/mp4'))).toBe(true)
+      expect(champs.some((a) => a.includes('audio/mpeg') && !a.includes('image/'))).toBe(true)
+      expect(champs.some((a) => a === 'application/pdf')).toBe(true)
+    })
+
+    /*
+      ⚠️ **Et chaque ligne ouvre bien LE SIEN.** Ce test-ci est né d'une faute injectée que le
+      précédent laissait passer : trois champs correctement filtrés peuvent parfaitement être
+      ouverts par la même ligne. *L'écran dirait vrai, et le geste, non — ce qui est pire qu'un
+      écran qui se trompe, parce qu'on ne le soupçonne pas.*
+
+      On note QUEL champ reçoit le clic, plutôt que de vérifier qu'un clic a lieu.
+    */
+    it('⚠️ et « Document » ouvre le sélecteur de documents, pas celui des photos', async () => {
+      const utilisateur = userEvent.setup()
+      await monter(seance())
+      await screen.findByLabelText('Votre message')
+
+      const ouverts: string[] = []
+      const vraiClic = HTMLInputElement.prototype.click
+      HTMLInputElement.prototype.click = function () {
+        if (this.type === 'file') ouverts.push(this.accept)
+      }
+
+      try {
+        await utilisateur.click(screen.getByRole('button', { name: 'Joindre un fichier' }))
+        await utilisateur.click(await screen.findByRole('button', { name: 'Document' }))
+        expect(ouverts).toEqual(['application/pdf'])
+
+        await utilisateur.click(screen.getByRole('button', { name: 'Joindre un fichier' }))
+        await utilisateur.click(await screen.findByRole('button', { name: 'Audio' }))
+        expect(ouverts[1]).toContain('audio/mpeg')
+        expect(ouverts[1]).not.toContain('image/')
+      } finally {
+        HTMLInputElement.prototype.click = vraiClic
+      }
+    })
+  })
+
   it('une séance close n’affiche aucun minuteur', async () => {
     await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }))
     await screen.findByRole('heading', { level: 1 })

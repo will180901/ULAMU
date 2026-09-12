@@ -61,6 +61,7 @@
  * `MediaRecorder`, un encodage et une gestion de permission micro — un chantier à part. Texte et
  * photos suffisent à la démonstration, et l'API accepte déjà les deux.
  */
+import type { LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
@@ -76,6 +77,8 @@ import {
   CornerUpLeft,
   Eye,
   FileText,
+  Music,
+  Paperclip,
   Flag,
   HeartPulse,
   Hourglass,
@@ -118,7 +121,16 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
-import { compresserImage, corpsNoteVocale, enBase64, MIMES_IMAGE, titreConsultation } from '../media'
+import {
+  compresserImage,
+  corpsNoteVocale,
+  enBase64,
+  MIMES_AUDIO,
+  MIMES_DOCUMENT,
+  MIMES_IMAGE,
+  MIMES_VIDEO,
+  titreConsultation,
+} from '../media'
 import { Emoji, seulementDesEmoji } from '../Emoji'
 import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
 import { LecteurVocal } from '../LecteurVocal'
@@ -1435,6 +1447,28 @@ function ilYA(iso: string): string {
   return `il y a ${Math.floor(h / 24)} j`
 }
 
+/** Une ligne du menu du trombone : une icône, un mot, et rien d'autre à décider. */
+function LigneJoindre({
+  icone: Icone,
+  libelle,
+  onChoisir,
+}: {
+  icone: LucideIcon
+  libelle: string
+  onChoisir: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChoisir}
+      className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-foreground transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
+    >
+      <Icone size={15} strokeWidth={1.6} aria-hidden="true" className="shrink-0 text-[var(--ap-600)]" />
+      {libelle}
+    </button>
+  )
+}
+
 /**
  * Le squelette de la consultation — chantier 96.
  *
@@ -1538,6 +1572,9 @@ export function ConsultationPage() {
   const recuA = useRef(Date.now())
   const finFil = useRef<HTMLDivElement>(null)
   const champFichier = useRef<HTMLInputElement>(null)
+  const champAudio = useRef<HTMLInputElement>(null)
+  const champDocument = useRef<HTMLInputElement>(null)
+  const [trombone, setTrombone] = useState(false)
   const champTexte = useRef<HTMLTextAreaElement>(null)
 
   const session = useQuery({
@@ -2264,11 +2301,24 @@ export function ConsultationPage() {
                 ) : null}
 
                 <div className="flex items-end gap-2">
+                  {/*
+                    ── Le TROMBONE, et ses trois choix — chantier 99 ─────────────────────────────
+
+                    Le composeur portait un seul bouton, un appareil photo, qui ne pouvait offrir que
+                    des images : le serveur n'acceptait rien d'autre. Il accepte maintenant la vidéo
+                    et le PDF, et le sélecteur de fichiers d'un navigateur **filtre selon ce qu'on
+                    lui annonce** — un seul champ « tout accepter » ferait remonter n'importe quoi
+                    pour le refuser ensuite.
+
+                    Trois champs, trois filtres, un menu qui les nomme. *Le modèle est la messagerie
+                    de CMS ; la raison est que choisir « Document » et voir ses photos est une
+                    promesse trahie avant même d'avoir cliqué.*
+                  */}
                   <input
                     ref={champFichier}
                     type="file"
-                    accept={MIMES_IMAGE.join(',')}
-                    /* `multiple` : le serveur accepte dix photos par bulle. Sans cet attribut, la
+                    accept={[...MIMES_IMAGE, ...MIMES_VIDEO].join(',')}
+                    /* `multiple` : le serveur accepte dix pièces par bulle. Sans cet attribut, la
                        capacité restait inatteignable depuis le sélecteur lui-même. */
                     multiple
                     className="sr-only"
@@ -2279,29 +2329,76 @@ export function ConsultationPage() {
                       if (choisis.length > 0) setApercu(choisis)
                     }}
                   />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    aria-label="Envoyer une photo"
-                    className="rounded-full"
-                    onClick={() => champFichier.current?.click()}
-                    // Une photo ne se glisse pas au milieu d'une retouche de texte : le serveur ne
-                    // sait pas « modifier un message en y ajoutant une image ».
-                    disabled={envoyerPhotos.isPending || mode.type === 'edition'}
-                  >
-                    {envoyerPhotos.isPending ? <Spinner className="size-4" /> : <ImagePlus size={16} strokeWidth={1.6} aria-hidden="true" />}
-                  </Button>
-                  {/* Le micro, à côté de l'appareil photo : les deux ouvrent une surface d'envoi,
-                      aucun n'envoie directement. Désactivé pendant une retouche, pour la même
-                      raison que la photo. */}
-                  <BoutonMicro
-                    onOuvrir={() => {
-                      setErreur(null)
-                      setVocalOuvert(true)
+                  <input
+                    ref={champAudio}
+                    type="file"
+                    accept={MIMES_AUDIO.join(',')}
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      const choisis = Array.from(e.target.files ?? [])
+                      e.target.value = ''
+                      if (choisis.length > 0) setApercu(choisis)
                     }}
-                    disabled={envoyerVocal.isPending || mode.type === 'edition'}
                   />
+                  <input
+                    ref={champDocument}
+                    type="file"
+                    accept={MIMES_DOCUMENT.join(',')}
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      const choisis = Array.from(e.target.files ?? [])
+                      e.target.value = ''
+                      if (choisis.length > 0) setApercu(choisis)
+                    }}
+                  />
+                  <Popover open={trombone} onOpenChange={setTrombone}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        aria-label="Joindre un fichier"
+                        className="rounded-full"
+                        // Une pièce jointe ne se glisse pas au milieu d'une retouche de texte : le
+                        // serveur ne sait pas « modifier un message en y ajoutant un fichier ».
+                        disabled={envoyerPhotos.isPending || mode.type === 'edition'}
+                      >
+                        {envoyerPhotos.isPending ? (
+                          <Spinner className="size-4" />
+                        ) : (
+                          <Paperclip size={16} strokeWidth={1.6} aria-hidden="true" />
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" side="top" sideOffset={8} className="w-56 p-1">
+                      <LigneJoindre
+                        icone={ImagePlus}
+                        libelle="Photos et vidéos"
+                        onChoisir={() => {
+                          setTrombone(false)
+                          champFichier.current?.click()
+                        }}
+                      />
+                      <LigneJoindre
+                        icone={Music}
+                        libelle="Audio"
+                        onChoisir={() => {
+                          setTrombone(false)
+                          champAudio.current?.click()
+                        }}
+                      />
+                      <LigneJoindre
+                        icone={FileText}
+                        libelle="Document"
+                        onChoisir={() => {
+                          setTrombone(false)
+                          champDocument.current?.click()
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   {/*
                     ── Le sélecteur d'emoji — chantier 78 ─────────────────────────────────────
 
@@ -2370,21 +2467,52 @@ export function ConsultationPage() {
                     de saisie. Ce champ n'a plus rien de particulier — et c'est le but : *deux
                     chemins pour la même fonction finissent toujours par diverger.*
                   */}
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label={mode.type === 'edition' ? 'Enregistrer la modification' : 'Envoyer'}
-                    disabled={enCoursDEnvoi || brouillon.trim().length === 0}
-                  >
-                    {enCoursDEnvoi ? (
-                      <Spinner className="size-4" />
-                    ) : mode.type === 'edition' ? (
-                      <Check size={16} strokeWidth={2} aria-hidden="true" />
-                    ) : (
-                      <Send size={16} strokeWidth={1.6} aria-hidden="true" />
-                    )}
-                  </Button>
+                  {/*
+                    ── ⚠️ UN seul bouton, deux fonctions — chantier 99 ───────────────────────────
+
+                    Demande du porteur, reprise de la messagerie de CMS : *« par défaut c'est un
+                    bouton avec icône de micro fait pour la note vocale, mais si l'utilisateur écrit
+                    un texte ça change de fonction et d'icône »*.
+
+                    Le composeur portait les DEUX en permanence, côte à côte — un micro et une
+                    flèche — dont l'un était toujours éteint. *Deux commandes pour un seul geste
+                    possible, c'est une décision à prendre à chaque message alors qu'il n'y en a
+                    aucune : ce que l'on veut faire est déjà écrit dans le champ.*
+
+                    Trois états, et l'ordre compte :
+
+                      • en RETOUCHE  → toujours la coche, quoi qu'il y ait dans le champ ;
+                      • champ ÉCRIT  → la flèche, en rond plein d'accent ;
+                      • champ VIDE   → le micro, discret, qui ouvre l'enregistreur.
+
+                    ⚠️ Le micro n'est pas un `submit` : il n'envoie rien, il ouvre une surface. D'où
+                    le `type="button"` — sans lui, il expédierait le formulaire vide.
+                  */}
+                  {mode.type !== 'edition' && brouillon.trim().length === 0 ? (
+                    <BoutonMicro
+                      onOuvrir={() => {
+                        setErreur(null)
+                        setVocalOuvert(true)
+                      }}
+                      disabled={envoyerVocal.isPending}
+                    />
+                  ) : (
+                    <Button
+                      type="submit"
+                      size="icon"
+                      className="rounded-full"
+                      aria-label={mode.type === 'edition' ? 'Enregistrer la modification' : 'Envoyer'}
+                      disabled={enCoursDEnvoi || brouillon.trim().length === 0}
+                    >
+                      {enCoursDEnvoi ? (
+                        <Spinner className="size-4" />
+                      ) : mode.type === 'edition' ? (
+                        <Check size={16} strokeWidth={2} aria-hidden="true" />
+                      ) : (
+                        <Send size={16} strokeWidth={1.6} aria-hidden="true" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </form>
             ) : null}
