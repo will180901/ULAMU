@@ -27,6 +27,7 @@ import {
   retryOrderRefForHandshake,
   SESSION_STATUSES,
   sessionRemainingSeconds,
+  messageOuvreLaSeance,
 } from "./m06.policies";
 
 const T0 = Date.UTC(2026, 5, 12, 12, 0, 0); // base de temps arbitraire
@@ -154,6 +155,41 @@ describe("sessionRemainingSeconds — l'horloge du serveur fait foi (RM-06-02, D
   it("échue ou dépassée → 0, jamais négatif", () => {
     expect(sessionRemainingSeconds(new Date(T0), T0)).toBe(0);
     expect(sessionRemainingSeconds(new Date(T0 - 60_000), T0)).toBe(0);
+  });
+});
+
+describe("messageOuvreLaSeance — le décompteur part au premier message DU PATIENT", () => {
+  const PATIENT = "pat-1";
+  const SOIGNANT = "pro-1";
+
+  /*
+    Décision du porteur (12/09/2026), qui remplace la pré-consultation : *« la séance démarre quand le
+    patient ouvre la conversation et écrit le premier message »*. C'est l'intention d'EF-06-04 rendue
+    plus juste — le patient n'a plus à remplir un formulaire pour signaler qu'il est prêt : il lui
+    suffit de parler.
+  */
+  it("le premier message du patient ouvre la séance", () => {
+    expect(messageOuvreLaSeance("PREPARING", PATIENT, PATIENT)).toBe(true);
+  });
+
+  /*
+    ⚠️ **C'est ICI que se joue la promesse.** Le soignant peut écrire pendant la préparation — saluer,
+    demander depuis quand — sans qu'une seule minute payée soit consommée.
+
+    *Le temps appartient au patient : personne d'autre ne peut décider qu'il commence.*
+  */
+  it("⚠️ mais les messages du soignant n'ouvrent RIEN, si nombreux soient-ils", () => {
+    expect(messageOuvreLaSeance("PREPARING", SOIGNANT, PATIENT)).toBe(false);
+  });
+
+  /* Une séance déjà ouverte ne se rouvre pas : le départ serait repoussé à chaque message. */
+  it("et une séance déjà ouverte ne repart pas", () => {
+    expect(messageOuvreLaSeance("ACTIVE", PATIENT, PATIENT)).toBe(false);
+  });
+
+  it("ni une séance close ou remboursée", () => {
+    expect(messageOuvreLaSeance("ENDED", PATIENT, PATIENT)).toBe(false);
+    expect(messageOuvreLaSeance("REFUNDED", PATIENT, PATIENT)).toBe(false);
   });
 });
 

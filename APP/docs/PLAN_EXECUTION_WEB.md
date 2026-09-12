@@ -689,6 +689,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **101** | **L'écran d'aperçu : le média en grand, et la pellicule** — 12/09, troisième étape, sur le modèle de la messagerie de CMS. L'écran ne montrait que des **vignettes carrées de photos** ; depuis que le serveur accepte la vidéo, l'audio et le PDF, *une vidéo réduite à un carré gris ne se vérifie pas — on ne sait ni ce qu'elle montre, ni où elle commence.* Quatre pièces : le média **joué pour de vrai**, une bande de **miniatures**, une **légende**, et le **rogneur** avec sa pellicule de douze images, déplaçable à la souris **et au clavier**. 📌 **La légende existait déjà des deux côtés** — le serveur l'accepte dans `body`, le fil l'affiche depuis le chantier 75 — et **aucun écran ne permettait de l'écrire**. ⚠️ **Un changement de règle assumé** : une pièce refusée **bloque tout l'envoi** au lieu de rester au sol pendant que les autres partent. *Laisser partir deux photos sur trois sans le dire, c'est décider à la place de quelqu'un et ne pas l'en informer.* ⚠️ **Et la décision du chantier 75 est renversée** : l'aperçu COUVRE le fil. La raison d'alors valait pour trois vignettes de 96 px, pas pour un rogneur. ⚠️ **Une faute injectée n'a réveillé personne, et c'était le plus instructif** : **jsdom ne lit la durée d'aucun média**, donc toute la branche vidéo n'était jamais parcourue — *un test qui ne peut pas atteindre le mécanisme ne le garde pas, et l'absence d'échec ressemble exactement à une réussite.* D'où un fichier à part qui double la seule chose que jsdom ignore. **web 1 069 ✓ · lint 0 · build et types propres · 7 fautes injectées, 7 détectées.** | ⏸ en attente | ⏸ |
 | **102** | **Trois défauts vus sur une consultation RÉELLE** — 12/09, première séance ouverte de bout en bout depuis la refonte : le porteur paie 5 000 F, et l'application du patient **s'arrête sur un écran rouge**. **(1) ⚠️ *Rendered more hooks than during the previous render*** — mon `useEffect` du chantier 98 était posé **après les retours anticipés** d'un écran qui en rend quatre selon l'état de la séance. *Un composant qui rend plusieurs écrans n'a pas le droit d'avoir ses crochets dispersés entre eux.* **(2) ⚠️ Le battement de présence était refusé** : la route est réservée au professionnel, je l'avais branchée sans vérifier que la porte s'ouvrait, et le refus était avalé par un `.catch` muet — *le statut disait « hors ligne » pour toujours, sans que rien ne le signale.* Elle s'ouvre à tout compte ; les deux routes qui décident vraiment de la disponibilité restent fermées. **(3) ⚠️ La chaîne de hauteur était rompue depuis le chantier 83** : la colonne de contenu de la coquille n'avait aucune hauteur propre, donc le `md:h-full` des deux zones fixes retombait sur le contenu. Sur une fenêtre de 860 px, la carte s'arrêtait à **373 px**. *Un `h-full` dont le parent vaut « la hauteur de ce qu'il contient » ne vaut rien.* ⚠️ **Et le garde-fou écrit pour (1) ne l'attrapait pas** : son motif cherchait un `return` à deux espaces d'indentation, alors que les retours anticipés vivent dans un `if`. **web 1 070 ✓ · mobile 93 ✓ · API unitaires 667 ✓ · lint 0 · builds et types propres · 4 fautes injectées, 4 détectées.** | ⏸ en attente | ⏸ |
 | **103** | **La prolongation sans plafond** — 12/09, décision du porteur : *« le médecin a le droit d'ajouter autant de minutes »*. 📌 **Le plafond n'est pas retiré du code : il devient une valeur.** PM-29 à **zéro** signifie « sans limite ». *Une règle qu'on désactive se rediscute ; une règle qu'on supprime s'oublie* — D-016 avait posé ces trente minutes pour une raison, et la remettre coûte un chiffre dans l'écran d'administration, sans déploiement. ⚠️ **Une valeur NÉGATIVE reste une erreur franche** : elle voudrait dire « prolongation jamais permise » sans que personne l'ait décidé — *on préfère l'exception au silence.* ⚠️ **Et l'écran cessait de recopier la règle** : il portait `extensionTotalSec < 1800` en dur et cachait le bouton de son propre chef. *Un écran qui recopie une règle du serveur finit par ne plus dire la même chose que lui — et c'est toujours l'écran qui a tort, en silence.* Le bouton unique « +10 minutes » devient **quatre durées** (5 · 10 · 15 · 30) : sans plafond, offrir une demi-heure demandait trois clics. ⚠️ **Un test a perdu son déclencheur** — celui du rail qui ne doit pas rester sur un onglet disparu se fondait sur le plafond atteint ; il se fonde maintenant sur la FIN de la séance, qui est le cas le plus courant. **web 1 071 ✓ · API unitaires 668 ✓ · lint 0 · builds et types propres.** | ⏸ en attente | ⏸ |
+| **104** | **Les pièces se relisent enfin — et le décompteur part au premier message du patient** — 12/09, deux demandes du porteur. **(1) ⚠️ On pouvait envoyer une vidéo et un PDF depuis le chantier 99, et PAS les relire** : le fil ne connaissait que le son et l'image, et une vidéo reçue tombait dans une balise `<img>` — *c'est-à-dire nulle part*. Quatre rendus maintenant, sur le modèle de CMS : photo cliquable, vidéo en carte « ▶ », document en fiche, note vocale inchangée — plus un **lecteur plein panneau**. 📌 **Ce qu'on fait autrement que CMS** : eux téléchargent chaque pièce dès que la bulle apparaît ; ULAMU **ne charge que ce qui se regarde sans être demandé** — *charger dix vidéos pour en regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien demandé à voir.* Le genre se lit dans la CLÉ, qui porte son extension depuis toujours. ⚠️ **Et une clé sans extension ne doit pas faire perdre le genre** : le `kind` du message sert de secours — *deux sources imparfaites qui se complètent valent mieux qu'une seule qui se tait.* **(2) Le décompteur part au PREMIER MESSAGE DU PATIENT**, décision du porteur qui remplace la pré-consultation. ⚠️ **Les messages du soignant n'ouvrent rien** : il peut saluer pendant la préparation sans qu'une minute payée soit consommée — *le temps appartient au patient, personne d'autre ne peut décider qu'il commence.* ⚠️ **Trois pièges de syntaxe payés d'affilée** : un commentaire JSX en position d'expression, puis le même commentaire qui se referme sur lui-même en citant sa propre syntaxe, puis un heredoc qui mange les échappements — **la huitième fois** pour celui-là. **web 1 081 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -737,6 +738,74 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 104 (les pièces, et le départ) a appris
+
+*12/09/2026 — ouvrir une porte sans ouvrir la sortie.*
+
+#### ⚠️ On pouvait envoyer, pas relire
+
+Le chantier 99 a ouvert la vidéo et le PDF côté serveur. Le fil, lui, ne connaissait que deux
+rendus : le son et l'image. Une vidéo reçue tombait donc dans une balise `<img>` — **nulle part**.
+
+> **Ouvrir une capacité d'envoi sans ouvrir la lecture, c'est livrer un aller sans retour.** Et cela
+> ne se voit pas en testant l'envoi : il réussit.
+
+C'est le porteur qui l'a dit, en une phrase, après avoir essayé : *« je ne peux ni rogner la vidéo,
+ni la lire après l'envoi »*.
+
+#### Ce qu'on fait autrement que CMS, et ce qu'on y gagne
+
+CMS télécharge chaque pièce dès que la bulle apparaît. ULAMU ne charge que **ce qui se regarde sans
+être demandé** — la photo et la note vocale. La vidéo et le document attendent le clic.
+
+> **Charger dix vidéos pour en regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien
+> demandé à voir.**
+
+Ce qui rend la chose possible : le genre se lit dans la **clé**, qui porte son extension depuis
+toujours (`sm_<uuid>.mp4`). On sait quoi montrer sans avoir rien téléchargé.
+
+⚠️ **Et une clé sans extension ne doit pas faire perdre le genre.** Une clé d'avant la convention
+ferait passer une note vocale pour un document, et le lecteur disparaîtrait sans que rien ne le
+signale. Le message porte son `kind` : il sert de secours. *Deux sources imparfaites qui se
+complètent valent mieux qu'une seule qui se tait.*
+
+#### Le temps appartient au patient
+
+La pré-consultation démarrait le décompteur. En la remplaçant, il fallait choisir ce qui le démarre
+— et le porteur a tranché : **le premier message du patient**.
+
+> **Les messages du soignant n'ouvrent rien.** Il peut saluer, demander depuis quand, préparer sa
+> question pendant la préparation : aucune minute payée n'est consommée. *Personne d'autre que le
+> patient ne peut décider que son temps commence.*
+
+C'est l'intention d'EF-06-04 rendue plus juste : la règle protégeait déjà les minutes d'un patient
+qui n'est pas encore là. Elle les protège mieux sans formulaire — *il suffit de parler.*
+
+La décision est sortie du service pour devenir une **règle**, à côté des autres. Non par élégance :
+une décision inline dans une transaction ne se vérifie qu'en montant toute la base. *Une règle qu'on
+ne peut pas isoler est une règle qu'on ne teste pas.*
+
+#### ⚠️ Trois pièges de syntaxe, d'affilée, tous déjà connus
+
+1. Un commentaire JSX **en position d'expression** — piège déjà payé deux fois dans ce fichier.
+2. Le commentaire qui le documentait s'est **refermé sur lui-même** en citant sa propre syntaxe : la
+   fin de citation terminait le commentaire avant sa fin. *Expliquer un piège peut le tendre.*
+3. Un *heredoc* qui mange les échappements — **la huitième fois**. Ma propre règle dit : *tout
+   contenu portant des échappements passe par un fichier.* Je l'ai enfreinte huit fois.
+
+> **Une règle qu'on se donne et qu'on enfreint huit fois n'est pas une règle : c'est un vœu.** Elle
+> ne devient une règle que le jour où le geste par défaut change — et le geste par défaut, ici,
+> c'est d'écrire le fichier sans se demander s'il contient des échappements.
+
+#### Ce qu'un test de règle ne couvre pas
+
+Les six fautes injectées sont détectées, mais deux d'entre elles portent sur la **règle** de
+démarrage, pas sur son **branchement** dans la transaction. Que le résultat de la règle soit
+réellement appliqué — que la séance passe bien à `ACTIVE` dans la même transaction que le message —
+ne se vérifie qu'avec une vraie base, donc sur une vraie consultation.
+
+*C'est dit ici pour que personne ne croie le contraire en lisant « 6 fautes, 6 détectées ».*
 
 ### Ce que le chantier 103 (la prolongation) a appris
 

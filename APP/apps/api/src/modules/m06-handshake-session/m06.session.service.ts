@@ -37,6 +37,7 @@ import { PaymentsService } from "../m13-payments/m13.payments.service";
 import { presenceIsAvailable } from "../m05-directory/m05.policies";
 import {
   accumulatedProfessionalDelaySec,
+  messageOuvreLaSeance,
   autoStartDue,
   canExtend,
   clampMessagePageSize,
@@ -477,11 +478,46 @@ export class SessionService {
     const session = await this.loadForParticipant(actor, sessionId);
     // AVANT TOUT : transitions paresseuses (démarrage auto PM-28, clôture, D-008).
     const settled = await this.settle(session);
-    if (settled.status !== CareSessionStatus.ACTIVE) {
-      throw new ConflictException(
-        "Aucun message ne peut exister hors d'une session active — la session est " +
-          this.statusLabel(settled.status),
-      );
+
+    /*
+      ── ⚠️ Le décompteur démarre au PREMIER MESSAGE DU PATIENT — chantier 104, 12/09/2026 ────────
+
+      Décision du porteur, qui remplace la pré-consultation : *« la séance démarre quand le patient
+      ouvre la conversation et écrit le premier message — même si le médecin envoie un tas de
+      messages, le compteur ne démarre pas tant que le patient n'écrit pas. »*
+
+      C'est l'intention d'EF-06-04 rendue plus juste. La règle disait « le décompteur ne démarre qu'à
+      la transmission » : elle protégeait les minutes payées d'un patient qui n'est pas encore là.
+      Elle les protège mieux maintenant — *le patient n'a plus à remplir un formulaire pour signaler
+      qu'il est prêt : il lui suffit de parler.*
+
+      ⚠️ **Et les messages du SOIGNANT ne démarrent rien.** Il peut écrire pendant la préparation —
+      saluer, demander depuis quand — sans qu'une seule minute payée soit consommée. *Le temps
+      appartient au patient : personne d'autre ne peut décider qu'il commence.*
+
+      ⚠️ **Le filet de PM-28 reste** : dix minutes après le paiement, la séance démarre toute seule.
+      Sans lui, un patient qui paie puis disparaît laisserait la séance ouverte indéfiniment, et le
+      professionnel ne serait jamais crédité.
+    */
+    const enPreparation = settled.status === CareSessionStatus.PREPARING;
+    const patientOuvreLaSeance = messageOuvreLaSeance(settled.status, actor.accountId, settled.patientAccountId);
+    /*
+      Le soignant qui écrit pendant la PRÉPARATION n'est pas en faute : son message est accepté et
+      n'ouvre rien. C'est le seul autre cas toléré hors session active.
+    */
+    const soignantEcritAvantLeDebut = enPreparation && actor.accountId === settled.professionalId;
+
+    if (settled.status !== CareSessionStatus.ACTIVE && !patientOuvreLaSeance) {
+      /*
+        Le soignant qui écrit pendant la PRÉPARATION n'est pas en faute : son message est accepté et
+        n'ouvre rien. C'est le seul autre cas toléré hors session active.
+      */
+      if (!soignantEcritAvantLeDebut) {
+        throw new ConflictException(
+          "Aucun message ne peut exister hors d'une session active — la session est " +
+            this.statusLabel(settled.status),
+        );
+      }
     }
     const mediaKeys = dto.mediaKeys ?? [];
     const hasMedia = !!dto.fileKey || mediaKeys.length > 0;
@@ -503,8 +539,48 @@ export class SessionService {
       const created = await this.prisma.$transaction(async (tx) => {
         // Re-vérification DANS la transaction : la clôture a pu gagner entre settle() et ici
         // (fenêtre résiduelle réduite à la transaction — RM-06-03 tenue au plus près).
+        /*
+          ⚠️ **C'est ICI que la séance s'ouvre**, dans la même transaction que le message : sans cela,
+          deux premiers messages envoyés coup sur coup pourraient chacun croire ouvrir la séance et
+          poser deux `startedAt` différents. La mise à jour est CONDITIONNELLE sur l'état — le second
+          ne trouve plus rien à changer, et se contente d'être un message.
+        */
+        if (patientOuvreLaSeance) {
+          const debut = new Date();
+          const fin = new Date(debut.getTime() + settled.durationMin * 60_000);
+          const { count } = await tx.careSession.updateMany({
+            where: { id: sessionId, status: CareSessionStatus.PREPARING },
+            data: { status: CareSessionStatus.ACTIVE, startedAt: debut, endsAt: fin },
+          });
+          if (count === 1) {
+            await this.outbox.emit(tx, {
+              type: "notify.request",
+              payload: { accountId: settled.professionalId, template: "m06.session.started", priority: "critical", sessionId },
+            });
+            await this.audit.emit(tx, {
+              actorId: actor.accountId,
+              actorType: "patient",
+              action: "m06.session.started",
+              resource: `session:${sessionId}`,
+              // Jamais le contenu du message (RM-04-03) : seulement ce qui a déclenché le départ.
+              context: { trigger: "first_patient_message" },
+            });
+          }
+        }
+
+        /*
+          Re-vérification DANS la transaction : la clôture a pu gagner entre `settle()` et ici.
+
+          ⚠️ Trois cas, et non plus un seul : la séance ACTIVE non expirée (le cas courant) ; la
+          séance que **le patient vient d'ouvrir** à la ligne du dessus ; et celle où **le soignant
+          écrit avant le début**, qui reste en préparation. *Une relecture qui ne connaît qu'un cas
+          rejette les deux autres sans le dire — et le message disparaît sans message d'erreur juste.*
+        */
         const live = await tx.careSession.findFirst({
-          where: { id: sessionId, status: CareSessionStatus.ACTIVE, endsAt: { gt: new Date() } },
+          where:
+            patientOuvreLaSeance || soignantEcritAvantLeDebut
+              ? { id: sessionId, status: { in: [CareSessionStatus.PREPARING, CareSessionStatus.ACTIVE] } }
+              : { id: sessionId, status: CareSessionStatus.ACTIVE, endsAt: { gt: new Date() } },
           select: { id: true },
         });
         if (!live) throw new ConflictException("La session vient de se terminer — le message n'a pas été envoyé");

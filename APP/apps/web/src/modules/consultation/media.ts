@@ -64,6 +64,44 @@ export const VIDEO_MAX_S = 30
 /** Le genre d'un fichier, tel que l'écran d'aperçu le traite. */
 export type GenreMedia = 'image' | 'video' | 'audio' | 'document'
 
+/**
+ * Le genre d'une pièce, lu dans sa CLÉ — chantier 104.
+ *
+ * Le serveur nomme ses fichiers `sm_<uuid>.<ext>` : l'extension est là depuis toujours. C'est ce qui
+ * permet au fil de savoir QUOI montrer **sans avoir rien téléchargé** — une carte « ▶ » pour une
+ * vidéo, une fiche pour un document — et de ne charger que ce qu'on regarde sans le demander.
+ *
+ * *Charger dix vidéos pour en regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien
+ * demandé à voir.*
+ *
+ * ⚠️ Extension inconnue ou clé sans point : on répond « document », le rendu le plus sobre et le
+ * seul qui ne promette rien. *Se tromper vers la fiche coûte un clic ; se tromper vers la vidéo
+ * affiche un lecteur qui ne lira jamais rien.*
+ */
+export function genreDeLaCle(cle: string, secours?: GenreMedia): GenreMedia {
+  const ext = cle.includes('.') ? cle.slice(cle.lastIndexOf('.') + 1).toLowerCase() : ''
+  if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'image'
+  if (['mp4', 'webm', 'mov'].includes(ext)) return 'video'
+  if (['m4a', 'aac', 'mp3', 'ogg', 'wav'].includes(ext)) return 'audio'
+  /*
+    ⚠️ **Extension inconnue : on demande au MESSAGE.** Une clé sans point — un fichier d'avant la
+    convention, une clé écrite à la main — ferait sinon passer une note vocale pour un document, et
+    le lecteur disparaîtrait sans que rien ne le signale.
+
+    Le message, lui, porte son `kind` (`VOICE`, `PHOTO`, `DOCUMENT`) depuis toujours : *deux sources
+    imparfaites qui se complètent valent mieux qu'une seule qui se tait.*
+  */
+  return secours ?? 'document'
+}
+
+/** Le genre qu'annonce le TYPE d'un message — le secours de `genreDeLaCle`. */
+export function genreDuKind(kind: string): GenreMedia | undefined {
+  if (kind === 'VOICE') return 'audio'
+  if (kind === 'PHOTO') return 'image'
+  if (kind === 'DOCUMENT') return 'document'
+  return undefined
+}
+
 export function genreDuMime(mime: string): GenreMedia {
   if (mime.startsWith('image/')) return 'image'
   if (mime.startsWith('video/')) return 'video'

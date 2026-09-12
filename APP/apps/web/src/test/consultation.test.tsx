@@ -219,7 +219,9 @@ const fil = () => within(screen.getByRole('region', { name: 'Fil de la consultat
  * peut pas l'espionner, il faut remplacer le module.
  *
  * ⚠️ Son comportement par défaut reste l'ÉCHEC, posé dans le `beforeEach`. Plusieurs tests
- * s'appuient dessus : ils s'ancrent sur « Média indisponible. » pour trouver une bulle de photo.
+ * s'appuient dessus : ils s'ancrent sur « Pièce indisponible. » pour trouver une bulle de média.
+ * (Le mot a changé au chantier 104 : une bulle ne porte plus seulement une photo ou un son, mais
+ * aussi une vidéo et un document — « média » désignait la moitié de ce qu'elle peut contenir.)
  * Le faire réussir par défaut les casserait tous — *une doublure qui change le comportement par
  * défaut change des tests qui ne parlent pas d'elle.*
  */
@@ -2179,7 +2181,7 @@ describe('C5 — les gestes sur un message', () => {
     ])
 
     // L'événement remonte jusqu'au conteneur de la bulle, qui porte `onContextMenu`.
-    const dansLaBulle = await screen.findByText('Média indisponible.')
+    const dansLaBulle = await screen.findByText('Pièce indisponible.')
     const clicDroit = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
     fireEvent(dansLaBulle, clicDroit)
 
@@ -2265,7 +2267,7 @@ describe('C5 — les gestes sur un message', () => {
       message({ senderId: 'pro-1', kind: 'PHOTO', body: '', mediaKeys: ['k1'] }),
     ])
 
-    await screen.findByText('Média indisponible.')
+    await screen.findByText('Pièce indisponible.')
     expect(screen.queryByLabelText('Actions sur ce message')).not.toBeInTheDocument()
   })
 
@@ -3112,7 +3114,7 @@ describe('C5 — signaler (chantier 41)', () => {
       message({ senderId: 'pro-1', kind: 'PHOTO', body: '', mediaKeys: ['k1'] }),
     ])
 
-    const dansLaBulle = await screen.findByText('Média indisponible.')
+    const dansLaBulle = await screen.findByText('Pièce indisponible.')
     /*
       ⚠️ On vise la bulle par sa STRUCTURE — le premier enfant du conteneur positionné — et non par
       une classe d'apparence. La première version cherchait `.rounded-lg` ; le chantier 92 a mis le

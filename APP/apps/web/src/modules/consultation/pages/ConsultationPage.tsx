@@ -109,7 +109,6 @@ import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
 import {
   api,
-  lireMediaSession,
   urlAvatar,
   type CareSession,
   type CareSessionStatus,
@@ -120,6 +119,8 @@ import {
 import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
+import { LecteurPiece, PieceJointe } from '../PieceJointe'
+import { genreDuKind } from '../media'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import {
   corpsNoteVocale,
@@ -132,7 +133,6 @@ import {
 } from '../media'
 import { Emoji, seulementDesEmoji } from '../Emoji'
 import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
-import { LecteurVocal } from '../LecteurVocal'
 import { SelecteurEmoji } from '../SelecteurEmoji'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -183,6 +183,7 @@ function jourFr(iso: string): string {
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
+
 /** « 22 h 41 min », « 41 min », « 3 min » — la durée restante avant une échéance, en clair. */
 function dureeFr(secondes: number): string {
   const s = Math.max(0, secondes)
@@ -194,55 +195,6 @@ function dureeFr(secondes: number): string {
 }
 
 // ── Une bulle du fil ───────────────────────────────────────────────────────
-
-function Media({
-  fileKey,
-  surAccent = false,
-  dureeAnnoncee,
-  avatar = null,
-}: {
-  fileKey: string
-  /** Le média est posé sur MA bulle, devenue un accent saturé au chantier 92 : encre claire. */
-  surAccent?: boolean
-  /** Voir `LecteurVocal` : la durée envoyée par l'expéditeur, avant que le son soit chargé. */
-  dureeAnnoncee?: number | null
-  /** La photo de l'expéditeur, pour le cercle du lecteur vocal (chantier 97). */
-  avatar?: string | null
-}) {
-  const [url, setUrl] = useState<string | null>(null)
-  // Le TYPE servi par le serveur : c'est lui qui distingue une photo d'une note vocale. Il était
-  // renvoyé par `lireMediaSession` depuis toujours, et jeté ici (chantier 75).
-  const [type, setType] = useState<string | null>(null)
-  const [echec, setEchec] = useState(false)
-
-  useEffect(() => {
-    let vivant = true
-    let cree: string | null = null
-    lireMediaSession(fileKey)
-      .then((f) => {
-        if (!vivant) {
-          URL.revokeObjectURL(f.url)
-          return
-        }
-        cree = f.url
-        setUrl(f.url)
-        setType(f.type)
-      })
-      .catch(() => vivant && setEchec(true))
-    // Libéré au démontage : une photo de consultation n'a pas à rester en mémoire de l'onglet.
-    return () => {
-      vivant = false
-      if (cree) URL.revokeObjectURL(cree)
-    }
-  }, [fileKey])
-
-  if (echec) return <p className="text-[11px] text-[var(--erreur-texte)]">Média indisponible.</p>
-  if (!url) return <span className="block h-32 w-48 animate-pulse rounded-md bg-secondary" />
-  // Le serveur sert le média avec son type : une note vocale ne se rend pas comme une photo.
-  if (type?.startsWith('audio/'))
-    return <LecteurVocal url={url} surAccent={surAccent} dureeAnnoncee={dureeAnnoncee} avatar={avatar} />
-  return <img src={url} alt="Photo transmise en consultation" className="max-h-64 rounded-md" />
-}
 
 /** Les réactions agrégées, sous la bulle. Un clic sur la mienne la retire — le serveur bascule. */
 function Reactions({
@@ -603,6 +555,7 @@ function Bulle({
   onReagirLibre,
   onAllerAuCite,
   avatarExpediteur,
+  onOuvrirPiece,
 }: {
   m: SessionMessage
   aMoi: boolean
@@ -621,6 +574,8 @@ function Bulle({
   onAllerAuCite: (id: string) => void
   /** La photo de profil de l'expéditeur de CE message — `null` s'il n'en a pas (chantier 97). */
   avatarExpediteur: string | null
+  /** Ouvre une pièce en grand — le lecteur plein panneau (chantier 104). */
+  onOuvrirPiece: (cle: string) => void
 }) {
   const cles = m.mediaKeys.length > 0 ? m.mediaKeys : m.fileKey ? [m.fileKey] : []
 
@@ -861,7 +816,15 @@ function Bulle({
           ) : null}
 
           {cles.map((k) => (
-            <Media key={k} fileKey={k} surAccent={aMoi} dureeAnnoncee={dureeVocale} avatar={avatarExpediteur} />
+            <PieceJointe
+              key={k}
+              cle={k}
+              surAccent={aMoi}
+              dureeAnnoncee={dureeVocale}
+              avatar={avatarExpediteur}
+              genreDeSecours={genreDuKind(m.kind)}
+              onOuvrir={onOuvrirPiece}
+            />
           ))}
           {/*
             ── Le rendu des emoji — chantier 78 ──────────────────────────────────────────────────
@@ -1558,6 +1521,8 @@ export function ConsultationPage() {
     jamais : on ne dicte pas une note vocale en regardant des photos.
   */
   const [apercu, setApercu] = useState<File[] | null>(null)
+  /** La pièce qu'on regarde en grand — le lecteur couvre le fil, comme l'aperçu. */
+  const [pieceOuverte, setPieceOuverte] = useState<string | null>(null)
   const [vocalOuvert, setVocalOuvert] = useState(false)
   /*
     Signalement (chantier 41). Deux états et non un : on signale soit LE PATIENT, soit UN MESSAGE
@@ -2237,6 +2202,7 @@ export function ConsultationPage() {
                             onReagirLibre={() => setReactionLibre(m.id)}
                             onAllerAuCite={allerAuCite}
                             avatarExpediteur={avatarDe(m.senderId)}
+                            onOuvrirPiece={setPieceOuverte}
                           />
                         </div>
                       )
@@ -2311,6 +2277,10 @@ export function ConsultationPage() {
 
                   Les deux ne coexistent jamais : le micro est éteint tant qu'un aperçu est ouvert.
                 */}
+
+                {pieceOuverte ? (
+                  <LecteurPiece cle={pieceOuverte} onFermer={() => setPieceOuverte(null)} />
+                ) : null}
 
                 {apercu ? (
                   <ApercuMedias
@@ -2630,8 +2600,21 @@ export function ConsultationPage() {
                         ) : null}
                         {pre.attachments.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
+                            {/*
+                              ⚠️ **Sans `onOuvrir` ici, et c'est voulu.** Ces pièces vivent dans le
+                              RAIL ; le lecteur plein panneau, lui, couvre la carte de l'échange. Lui
+                              donner un bouton « ouvrir » recouvrirait le mauvais panneau. *Une
+                              commande qui ne peut pas tenir sa promesse ne doit pas être offerte ;
+                              un bouton mort se remarque plus qu'un bouton absent.*
+
+                              ⚠️ Et le commentaire est ICI, au-dessus du `map`, et non à l'intérieur :
+                              un commentaire JSX en position d'EXPRESSION ne compile pas. Piège déjà
+                              payé deux fois dans ce fichier — et en l'écrivant j'ai failli le payer
+                              une troisième, en citant sa syntaxe DANS un commentaire : la fin de
+                              citation refermait le commentaire avant sa fin.
+                            */}
                             {pre.attachments.map((k) => (
-                              <Media key={k} fileKey={k} />
+                              <PieceJointe key={k} cle={k} />
                             ))}
                           </div>
                         ) : null}

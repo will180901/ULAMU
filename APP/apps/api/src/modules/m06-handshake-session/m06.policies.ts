@@ -104,6 +104,37 @@ export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number): num
   return Math.max(0, Math.ceil((endsAt.getTime() - nowMs) / 1000));
 }
 
+// ── Départ du décompteur (EF-06-04, revu au chantier 104) ────────────────────
+
+/**
+ * Ce message ouvre-t-il la séance ?
+ *
+ * ── ⚠️ La règle, et ce qu'elle protège ────────────────────────────────────────────────────────
+ *
+ * Décision du porteur (12/09/2026), qui remplace la pré-consultation : *« la séance démarre quand le
+ * patient ouvre la conversation et écrit le premier message — même si le médecin envoie un tas de
+ * messages, le compteur ne démarre pas tant que le patient n'écrit pas. »*
+ *
+ * C'est l'intention d'EF-06-04 rendue plus juste. La règle disait « le décompteur ne démarre qu'à la
+ * transmission » : elle protégeait les minutes payées d'un patient qui n'est pas encore là. Elle les
+ * protège mieux maintenant — *le patient n'a plus à remplir un formulaire pour signaler qu'il est
+ * prêt : il lui suffit de parler.*
+ *
+ * ⚠️ **Et les messages du SOIGNANT n'ouvrent rien.** Il peut écrire pendant la préparation — saluer,
+ * demander depuis quand — sans qu'une seule minute payée soit consommée. *Le temps appartient au
+ * patient : personne d'autre ne peut décider qu'il commence.*
+ *
+ * ⚠️ Le filet de PM-28 reste ailleurs : dix minutes après le paiement, la séance démarre seule.
+ * Sans lui, un patient qui paie puis disparaît laisserait la séance ouverte indéfiniment.
+ */
+export function messageOuvreLaSeance(
+  status: "PREPARING" | "ACTIVE" | "ENDED" | "REFUNDED",
+  senderId: string,
+  patientAccountId: string,
+): boolean {
+  return status === "PREPARING" && senderId === patientAccountId;
+}
+
 // ── Prolongation gratuite (EF-06-07 ; D-016) ─────────────────────────────────
 
 /**
