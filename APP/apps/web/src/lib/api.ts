@@ -614,7 +614,12 @@ export interface CareSession {
    * « 24 heures » en dur — ce qu'il faisait, et qui aurait menti au premier changement de PM-30.
    */
   reportDueAt: string | null
-  preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null
+  /*
+    ⚠️ **`preConsultation` a disparu au chantier 105** (décision du porteur). Ce qu'elle faisait —
+    démarrer le décompteur — est repris par le premier message du patient. Les données déjà
+    transmises restent en base : *retirer une fonctionnalité, c'est fermer une porte, pas brûler ce
+    qu'il y a derrière.*
+  */
   rated: boolean
   otherPartyTyping: boolean
   /**

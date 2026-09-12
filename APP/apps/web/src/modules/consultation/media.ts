@@ -245,36 +245,27 @@ export function refusDEnvoi(f: File): string | null {
 }
 
 /**
- * Le nom d'une consultation — chantier 76.
+ * Le nom d'une consultation — chantier 76, revu au chantier 105.
  *
  * ── Pourquoi une consultation a besoin d'un nom ───────────────────────────────────────────────
  *
  * Le titre de l'écran était le mot « Consultation », et la ligne du registre une référence
- * hexadécimale (`573DCCCB`). Trois séances ouvertes dans la journée donnaient trois onglets
- * identiques. La maquette C5 titre par le MOTIF, et c'est ce qu'un soignant reconnaît.
+ * hexadécimale. Trois séances ouvertes dans la journée donnaient **trois onglets identiques**.
  *
- * ── Ce qu'on prend, et ce qu'on ne prend pas ──────────────────────────────────────────────────
+ * ── ⚠️ Ce qui a changé, et ce qui ne change pas ───────────────────────────────────────────────
  *
- * On prend la **première ligne** des symptômes transmis par le patient, coupée net. Un patient
- * écrit souvent un paragraphe ; un titre est une ligne. Le texte entier reste lisible dans le rail,
- * et ce n'est pas ce titre qui sert à soigner — il sert à reconnaître.
+ * Le chantier 76 titrait par le MOTIF, pris dans la pré-consultation. Celle-ci a été retirée au
+ * chantier 105 (décision du porteur) : il reste la **date**.
  *
- * ⚠️ **Sans pré-consultation, on ne devine pas.** Une séance en préparation n'a pas encore de
- * motif : le titre reste « Consultation ». Fabriquer un nom à partir de rien serait pire que le mot
- * générique, parce qu'on lui ferait confiance.
- *
- * ⚠️ **Et jamais de titre vide** : des symptômes qui ne contiennent que des espaces ou des
- * retours à la ligne rendent une chaîne blanche, qui laisserait un `h1` invisible à l'écran comme
- * au lecteur d'écran.
+ * *Ce que le chantier 76 avait gagné n'est pas perdu — il avait gagné que l'écran se NOMME. La
+ * matière a changé, l'exigence non.* Et le nom du patient est désormais dans le bandeau de la
+ * discussion, ce qui n'existait pas à l'époque.
  */
-export function titreConsultation(pre: { symptoms: string } | null | undefined, longueurMax = 60): string {
-  const brut = (pre?.symptoms ?? '').split(/\r?\n/)[0]?.trim() ?? ''
-  if (brut.length === 0) return 'Consultation'
-  if (brut.length <= longueurMax) return brut
-  // On coupe au dernier espace pour ne pas trancher un mot en deux.
-  const coupe = brut.slice(0, longueurMax)
-  const espace = coupe.lastIndexOf(' ')
-  return `${(espace > longueurMax * 0.6 ? coupe.slice(0, espace) : coupe).trimEnd()}…`
+export function titreConsultation(paidAt: string | null | undefined): string {
+  if (!paidAt) return 'Consultation'
+  const d = new Date(paidAt)
+  if (Number.isNaN(d.getTime())) return 'Consultation'
+  return `Consultation du ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
 }
 
 /**

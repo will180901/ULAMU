@@ -77,6 +77,20 @@ describe("L'ordre des crochets de l'écran de consultation", () => {
   });
 
   /*
+    ── ⚠️ Une séance en PRÉPARATION ouvre la conversation — chantier 105 ────────────────────────
+
+    La pré-consultation a été retirée : le patient entre directement dans le fil, et son premier
+    message démarre le décompteur. Un retour anticipé sur `PREPARING` le renverrait devant un écran
+    d'attente — ou, pire, devant rien.
+
+    *Une faute injectée qui remettait ce retour n'a réveillé aucun test : la panne aurait été un
+    écran blanc au moment précis où quelqu'un vient de payer.*
+  */
+  it('⚠️ aucune sortie anticipée sur une séance en préparation', () => {
+    expect(corpsDuComposant()).not.toMatch(/if \(session\.status === 'PREPARING'\)/);
+  });
+
+  /*
     Et le battement de présence est bien là : c'est lui qui permet au soignant de voir « en ligne »
     plutôt que « hors ligne » pour toujours. Le retirer réglerait la panne de crochets et casserait
     la fonctionnalité — *le test qui garde la position doit aussi garder la présence.*

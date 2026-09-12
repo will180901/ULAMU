@@ -44,7 +44,7 @@ import {
   ratingValid,
   sessionRemainingSeconds,
 } from "./m06.policies";
-import { ExtendSessionDto, ListMessagesQueryDto, RateSessionDto, SendMessageDto, SubmitPreConsultationDto } from "./m06.dto";
+import { ExtendSessionDto, ListMessagesQueryDto, RateSessionDto, SendMessageDto } from "./m06.dto";
 
 // ── Vues ─────────────────────────────────────────────────────────────────────
 
@@ -82,7 +82,6 @@ export interface SessionView {
    * réel, et un « 24 heures » en dur dans C5 qui mentirait au premier changement de PM-30.
    */
   reportDueAt: string | null;
-  preConsultation: { symptoms: string; sinceWhen: string | null; attachments: string[]; submittedAt: string } | null;
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère, TTL ~6s). */
   otherPartyTyping: boolean;
@@ -416,62 +415,6 @@ export class SessionService {
 
   // ── EF-06-04 : pré-consultation (D-019) — transmise = la session démarre ────
 
-  async submitPreConsultation(actor: AuthenticatedActor, sessionId: string, dto: SubmitPreConsultationDto): Promise<SessionView> {
-    const session = await this.loadForParticipant(actor, sessionId);
-    if (session.patientAccountId !== actor.accountId) {
-      throw new ForbiddenException("Seul le patient remplit la pré-consultation");
-    }
-    const settled = await this.settle(session);
-    if (settled.status !== CareSessionStatus.PREPARING) {
-      if (settled.status === CareSessionStatus.ACTIVE) {
-        throw new ConflictException(
-          "La session a déjà démarré (démarrage automatique) — envoyez ces informations directement dans la conversation",
-        );
-      }
-      throw new ConflictException("La session n'est plus en préparation — la pré-consultation n'est plus attendue");
-    }
-
-    const now = new Date();
-    const endsAt = new Date(now.getTime() + settled.durationMin * 60_000);
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.preConsultation.create({
-          data: {
-            sessionId,
-            symptoms: dto.symptoms,
-            sinceWhen: dto.sinceWhen ?? null,
-            attachments: dto.attachments ?? [],
-            submittedAt: now,
-          },
-        });
-        // EF-06-04 : « le décompteur ne démarre qu'à la transmission » — transition conditionnelle.
-        const { count } = await tx.careSession.updateMany({
-          where: { id: sessionId, status: CareSessionStatus.PREPARING },
-          data: { status: CareSessionStatus.ACTIVE, startedAt: now, endsAt },
-        });
-        if (count === 0) throw new ConflictException("La session a démarré entre-temps — réessayez dans la conversation");
-        // D-019 : transmise au professionnel — la notification ne porte JAMAIS les symptômes (RM-06-06).
-        await this.outbox.emit(tx, {
-          type: "notify.request",
-          payload: { accountId: settled.professionalId, template: "m06.session.started", priority: "critical", sessionId },
-        });
-        await this.audit.emit(tx, {
-          actorId: actor.accountId,
-          actorType: "patient",
-          action: "m06.session.started",
-          resource: `session:${sessionId}`,
-          context: { trigger: "pre_consultation" }, // jamais le contenu médical (RM-04-03)
-        });
-      });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        throw new ConflictException("La pré-consultation a déjà été transmise pour cette session");
-      }
-      throw err;
-    }
-    return this.getSession(actor, sessionId);
-  }
-
   // ── EF-06-05/13 : messages (RM-06-03, ADR-12) ────────────────────────────────
 
   async sendMessage(actor: AuthenticatedActor, sessionId: string, dto: SendMessageDto): Promise<MessageView> {
@@ -749,8 +692,7 @@ export class SessionService {
     const session = await this.loadForParticipant(actor, sessionId);
     const settled = await this.settle(session);
     const [pm28S, pm30S] = await Promise.all([this.params.getInt("PM-28"), this.params.getInt("PM-30")]);
-    const [preConsultation, rating, msgs] = await Promise.all([
-      this.prisma.preConsultation.findUnique({ where: { sessionId } }),
+    const [rating, msgs] = await Promise.all([
       this.prisma.sessionRating.findUnique({ where: { sessionId }, select: { sessionId: true } }),
       this.prisma.sessionMessage.findMany({
         where: { sessionId, deletedAt: null },
@@ -802,14 +744,6 @@ export class SessionService {
       professionalDelaySec,
       reportDepositedAt: settled.reportDepositedAt ? settled.reportDepositedAt.toISOString() : null,
       reportDueAt: this.reportDueAt(settled.endedAt, pm30S),
-      preConsultation: preConsultation
-        ? {
-            symptoms: preConsultation.symptoms,
-            sinceWhen: preConsultation.sinceWhen,
-            attachments: preConsultation.attachments,
-            submittedAt: preConsultation.submittedAt.toISOString(),
-          }
-        : null,
       rated: rating !== null,
       otherPartyTyping: this.otherPartyTyping(sessionId, actor.accountId),
       patientAvatarKey: profilPatient?.avatarKey ?? null,

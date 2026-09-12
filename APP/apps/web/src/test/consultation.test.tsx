@@ -70,12 +70,6 @@ function seance(over: Partial<CareSession> = {}): CareSession {
     // Échéance servie par le serveur depuis le 28/08 (`endedAt` + PM-30) : l'écran décompte
     // au lieu d'écrire « 24 heures » en dur. `null` par défaut — chaque test la pose s'il en a besoin.
     reportDueAt: null,
-    preConsultation: {
-      symptoms: 'Palpitations nocturnes depuis trois nuits.',
-      sinceWhen: '3 jours',
-      attachments: [],
-      submittedAt: '2026-08-24T08:01:00.000Z',
-    },
     rated: false,
     patientAvatarKey: null,
     professionalAvatarKey: null,
@@ -607,17 +601,24 @@ describe('C5 — les états de la séance', () => {
 })
 
 describe('C5 — le contexte patient', () => {
-  it('affiche la pré-consultation, qui arrive APRÈS le paiement (EF-06-04)', async () => {
-    await monter(seance())
+  /*
+    ── ⚠️ La pré-consultation a été RETIRÉE au chantier 105 ─────────────────────────────────────
 
-    /*
-      ⚠️ Les symptômes apparaissent DEUX fois depuis le chantier 76 — en titre de l'écran et dans
-      le rail — et c'est voulu : le titre sert à reconnaître la séance, le rail à la lire en entier.
-      L'assertion vise donc le rail, seul endroit où le TEXTE COMPLET doit figurer.
-    */
-    const rail = (await screen.findByText('Contexte patient')).closest('section') as HTMLElement
-    expect(within(rail).getByText('Palpitations nocturnes depuis trois nuits.')).toBeInTheDocument()
-    expect(within(rail).getByText('3 jours')).toBeInTheDocument()
+    Décision du porteur : *« retire la fonctionnalité de pré-consultation partout, ça ne sert plus »*.
+    Le patient décrit son motif dans la conversation, comme il parle — en écrivant, en dictant, en
+    photographiant. *Demander les mêmes mots deux fois, une fois dans un formulaire puis une fois
+    dans la conversation, était le vrai coût de cet écran.*
+
+    Le test qui vérifiait l'affichage du formulaire disparaît donc avec lui. **Ce qu'il défendait, en
+    revanche, ne disparaît pas** : que le soignant sache de quoi souffre le patient. Cela se joue
+    maintenant dans le fil et dans le Carnet, qui ont leurs propres tests.
+  */
+  it('⚠️ et n’affiche plus rien qui la mentionne', async () => {
+    await monter(seance())
+    await screen.findByRole('heading', { level: 1 })
+
+    expect(screen.queryByText(/pré-consultation/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /Contexte/ })).not.toBeInTheDocument()
   })
 
   /*
@@ -629,23 +630,49 @@ describe('C5 — le contexte patient', () => {
     onglets identiques : impossible de les distinguer. Le motif était pourtant servi depuis
     toujours — rangé tout en bas du rail de droite, là où on ne le cherche pas.
   */
-  it('le titre porte le motif, pas le mot « Consultation »', async () => {
+  /*
+    Le chantier 76 titrait par le MOTIF, pris dans la pré-consultation — retirée au chantier 105. Il
+    reste la DATE.
+
+    *Ce que le chantier 76 avait gagné n'est pas perdu : il avait gagné que l'écran se NOMME, pour
+    qu'un soignant qui ouvre trois séances dans l'après-midi ne voie pas trois onglets identiques. La
+    matière a changé, l'exigence non.* Et le nom du patient, qui n'existait pas à l'époque, est
+    désormais dans le bandeau de la discussion.
+  */
+  it('le titre porte la date, pas seulement le mot « Consultation »', async () => {
     await monter(seance())
 
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
-      'Palpitations nocturnes depuis trois nuits.',
-    )
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Consultation du \d+ \w+/)
   })
 
   /*
-    ⚠️ Sans pré-consultation, on ne devine pas. Une séance en préparation n'a pas encore de motif :
-    fabriquer un nom à partir de rien serait pire que le mot générique, parce qu'on lui ferait
-    confiance.
-  */
-  it('sans pré-consultation, le titre reste générique plutôt qu’inventé', async () => {
-    await monter(seance({ status: 'PREPARING', preConsultation: null }))
+    ⚠️ **On ne devine toujours pas.** Le titre venait du motif ; il vient maintenant de la date de
+    paiement (chantier 105). Sans date lisible — une séance abîmée, un champ vide — il retombe sur le
+    mot générique plutôt que d'afficher « Consultation du Invalid Date ».
 
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Consultation')
+    *Un titre fabriqué à partir de rien est pire que le mot générique, parce qu'on lui fait
+    confiance.*
+  */
+  it('⚠️ sans date lisible, le titre reste générique plutôt qu’inventé', async () => {
+    await monter(seance({ status: 'PREPARING', paidAt: '' }))
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/^Consultation$/)
+  })
+
+  /*
+    ⚠️ **Absente et ILLISIBLE ne sont pas le même cas**, et le second est celui qu'on oublie : une
+    date vide passe par la garde du champ manquant, une date abîmée passe au travers et ressort en
+    « Consultation du Invalid Date ».
+
+    *C'est une faute injectée qui me l'a appris : mon premier test ne posait qu'une date vide, donc
+    il ne visitait jamais la seconde garde.*
+  */
+  it('⚠️ et une date ABÎMÉE ne produit pas « Consultation du Invalid Date »', async () => {
+    await monter(seance({ status: 'PREPARING', paidAt: 'pas-une-date' }))
+
+    const titre = await screen.findByRole('heading', { level: 1 })
+    expect(titre).toHaveTextContent(/^Consultation$/)
+    expect(titre.textContent).not.toMatch(/Invalid/)
   })
 
   /*
@@ -684,7 +711,7 @@ describe('C5 — le contexte patient', () => {
   it('sans demande correspondante, aucun montant n’est inventé', async () => {
     vi.spyOn(api, 'myHandshakes').mockResolvedValue({ items: [] })
     await monter(seance({ id: 's1' }))
-    await screen.findByText('Contexte patient')
+    await screen.findByRole('tab', { name: /^Carnet/ })
 
     // Ni la carte, ni l'ONGLET : sans montant lisible, aucun chemin ne mène à un montant inventé.
     expect(screen.queryByRole('tab', { name: /Honoraires/ })).not.toBeInTheDocument()
@@ -728,7 +755,7 @@ describe('C5 — le contexte patient', () => {
   */
   it('mais pas sur un fil vide', async () => {
     await monter(seance(), [])
-    await screen.findByText('Contexte patient')
+    await screen.findByRole('tab', { name: /^Carnet/ })
 
     expect(screen.queryByText(/Consultation ouverte · échange chiffré/)).not.toBeInTheDocument()
   })
@@ -739,9 +766,17 @@ describe('C5 — le contexte patient', () => {
     expect(await screen.findByText(/573DCCCB/)).toBeInTheDocument()
   })
 
-  it('dit son absence au lieu d’afficher un cadre vide', async () => {
-    await monter(seance({ status: 'PREPARING', preConsultation: null }))
-    expect(await screen.findByText(/n'a pas encore transmis sa pré-consultation/)).toBeInTheDocument()
+  /*
+    ⚠️ Ce test gardait une carte qui disait son vide au lieu d'un cadre muet. La carte a disparu avec
+    la pré-consultation (chantier 105) ; **la promesse d'en dessous, elle, s'est déplacée** : une
+    séance en préparation doit expliquer ce qu'on attend, au lieu de laisser un écran inerte.
+
+    *Une fonctionnalité qu'on retire emporte ses écrans, pas ses exigences.*
+  */
+  it('⚠️ une séance en préparation dit ce qu’on attend, au lieu de rester muette', async () => {
+    await monter(seance({ status: 'PREPARING' }))
+
+    expect(await screen.findByText(/premier message du patient/)).toBeInTheDocument()
   })
 })
 
@@ -2639,12 +2674,17 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     const utilisateur = userEvent.setup()
     await monter(seance())
 
-    const contexte = await screen.findByRole('tab', { name: /^Contexte/ })
-    expect(contexte).toHaveAttribute('aria-selected', 'true')
+    const premier = await screen.findByRole('tab', { name: /^Carnet/ })
+    expect(premier).toHaveAttribute('aria-selected', 'true')
 
-    contexte.focus()
+    /*
+      ⚠️ Le premier onglet est le **Carnet** depuis le chantier 105 — « Contexte » est parti avec la
+      pré-consultation. Une flèche droite mène donc à « Ordonnance ». *En réancrant ce test j'avais
+      remplacé les deux noms par le même, ce qui lui faisait vérifier qu'une flèche ne change rien.*
+    */
+    premier.focus()
     await utilisateur.keyboard('{ArrowRight}')
-    expect(await screen.findByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('tab', { name: /^Ordonnance/ })).toHaveAttribute('aria-selected', 'true')
 
     // Et la liste BOUCLE : depuis le premier, « gauche » va au dernier. Sinon une extrémité est un
     // cul-de-sac, et on ne sait pas si on est bloqué ou arrivé.
@@ -2680,7 +2720,7 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
   it('l’échéance du compte-rendu reste visible quel que soit l’onglet ouvert', async () => {
     await monter(close(3))
 
-    await ouvrir('Contexte')
+    await ouvrir('Carnet')
     expect(screen.getByRole('button', { name: /Compte-rendu à déposer/ })).toBeInTheDocument()
 
     await ouvrir('Carnet')
@@ -2691,7 +2731,7 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     const utilisateur = userEvent.setup()
     await monter(close(3))
 
-    await ouvrir('Contexte')
+    await ouvrir('Carnet')
     await utilisateur.click(screen.getByRole('button', { name: /Compte-rendu à déposer/ }))
 
     expect(await screen.findByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'true')
@@ -2764,10 +2804,14 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     expect(await screen.findByRole('tab', { name: /^Compte-rendu/ })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('mais une séance en cours s’ouvre sur le contexte du patient', async () => {
+  /*
+    L'onglet « Contexte » a disparu avec la pré-consultation : le rail s'ouvre sur le **Carnet**, qui
+    est ce qu'on vient chercher en ouvrant une consultation — de quoi souffre le patient.
+  */
+  it('mais une séance en cours s’ouvre sur le Carnet du patient', async () => {
     await monter(seance())
 
-    expect(await screen.findByRole('tab', { name: /^Contexte/ })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
   })
 
   /*
@@ -2816,10 +2860,10 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     await utilisateur.click(screen.getByRole('button', { name: /^10 min$/ }))
 
     await waitFor(() => expect(screen.queryByRole('tab', { name: /^Prolonger/ })).not.toBeInTheDocument())
-    // Le rail est retombé sur un onglet réel, et son panneau porte du contenu.
-    const contexte = screen.getByRole('tab', { name: /^Contexte/ })
-    expect(contexte).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveTextContent('Contexte patient')
+    // Le rail est retombé sur un onglet réel — le Carnet, premier de la liste — et son panneau
+    // porte du contenu.
+    expect(screen.getByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Carnet')
 
     /*
       ⚠️ **Et le CLAVIER doit suivre.** C'est ici que se joue le vrai garde-fou : l'affichage
@@ -2830,9 +2874,9 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
       Une faute injectée qui retirait ce repli ne réveillait aucun test tant qu'on ne regardait que
       l'affichage. *Un défaut qui ne se voit pas est celui qui survit le plus longtemps.*
     */
-    contexte.focus()
+    screen.getByRole('tab', { name: /^Carnet/ }).focus()
     await utilisateur.keyboard('{ArrowRight}')
-    expect(screen.getByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /^Ordonnance/ })).toHaveAttribute('aria-selected', 'true')
   })
 
   /* Et au PREMIER rendu, un souvenir qui ne désigne rien retombe aussi sur le premier onglet. */
@@ -2840,8 +2884,8 @@ describe('C5 — le rail d’informations (chantier 83)', () => {
     localStorage.setItem('ulamu.consultation.onglet.s1', 'un-onglet-qui-nexiste-plus')
     await monter(seance())
 
-    expect(await screen.findByRole('tab', { name: /^Contexte/ })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveTextContent('Contexte patient')
+    expect(await screen.findByRole('tab', { name: /^Carnet/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Carnet')
   })
 
   /* L'onglet de l'ordonnance compte les lignes déjà prescrites — sans ouvrir la carte. */
@@ -3270,9 +3314,16 @@ describe('C4 — filet de refonte : ce que le silence coûte', () => {
     automatiquement dix minutes après. Sans cette phrase, le soignant croit perdre du temps payé
     alors que rien ne tourne encore.
   */
-  it('dit quand le décompte démarre vraiment', async () => {
+  /*
+    ⚠️ **Ce que cet écran promet a changé au chantier 105**, et c'est ce qui compte le plus pour le
+    soignant : *il peut écrire tout de suite, cela ne coûte aucune minute au patient.* Sans cette
+    phrase, il attendrait — ou il écrirait en croyant consommer le temps payé.
+  */
+  it('dit quand le décompte démarre vraiment — et que l’on peut déjà écrire', async () => {
     await monter(seance({ status: 'PREPARING' }))
 
-    expect(await screen.findByText(/automatiquement dix minutes après le paiement/)).toBeInTheDocument()
+    expect(await screen.findByText(/premier message du patient/)).toBeInTheDocument()
+    expect(screen.getByText(/aucune minute/)).toBeInTheDocument()
+    expect(screen.getByText(/dix minutes après le paiement/)).toBeInTheDocument()
   })
 })

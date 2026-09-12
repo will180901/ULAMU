@@ -73,7 +73,6 @@ import {
   RecordPage,
   SendMessageRequest,
   SessionView,
-  SubmitPreConsultationRequest,
   DirectoryProfile,
   DirectoryQuery,
   DirectorySearchResponse,
@@ -508,9 +507,6 @@ export class ApiClient {
   // ── M06 — session de soin (authentifié, participants) ─────────────────────
   getCareSession(id: string): Promise<SessionView> {
     return this.request('GET', SESSION_ROUTES.one(id), undefined, true);
-  }
-  submitPreConsultation(id: string, dto: SubmitPreConsultationRequest): Promise<SessionView> {
-    return this.request('POST', SESSION_ROUTES.preConsultation(id), dto, true);
   }
   sendSessionMessage(id: string, dto: SendMessageRequest): Promise<MessageView> {
     return this.request('POST', SESSION_ROUTES.messages(id), dto, true);

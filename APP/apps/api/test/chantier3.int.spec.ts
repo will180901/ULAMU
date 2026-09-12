@@ -6,6 +6,7 @@
  * et l'invariant n°1 (pas de paiement sans confirmation valide).
  */
 import { Test } from "@nestjs/testing";
+import { randomUUID } from "node:crypto";
 import { CommonModule } from "../src/common/common.module";
 import { DevAggregatorGateway } from "../src/common/momo/aggregator.gateway";
 import { OutboxService } from "../src/common/outbox.service";
@@ -215,8 +216,18 @@ describe("Chantier 3 — parcours 🅰 complet (M01→M03→M05→M06→M07→M1
     await momo.confirmPending(payment.aggregatorRef as string, true);
     await drain();
     const session = await prisma.careSession.findFirstOrThrow({ where: { handshakeId: hs.id } });
-    // Pré-consultation transmise → session ACTIVE (démarrage du décompteur).
-    await sessionsSvc.submitPreConsultation(actor(patientAccountId, "PATIENT"), session.id, { symptoms: "Fièvre depuis 2 jours", attachments: [] });
+    /*
+      ⚠️ **La pré-consultation a été retirée au chantier 105.** Ce qui démarre le décompteur est
+      désormais le PREMIER MESSAGE DU PATIENT — c'est donc ainsi qu'on ouvre la séance ici.
+
+      *Un test d'intégration qui garde l'ancien geste ne teste plus le chemin que les gens
+      empruntent : il teste un chemin que personne ne prend plus.*
+    */
+    await sessionsSvc.sendMessage(actor(patientAccountId, "PATIENT"), session.id, {
+      clientMsgId: randomUUID(),
+      kind: "TEXT",
+      body: "Fièvre depuis 2 jours",
+    });
     return session.id;
   }
 

@@ -305,12 +305,6 @@ export interface CareSessionListResponse {
 }
 
 // ── M06 — Session de soin (détail, EF-06-04→11) ──────────────────────────────
-export interface PreConsultationView {
-  symptoms: string;
-  sinceWhen: string | null;
-  attachments: string[];
-  submittedAt: string;
-}
 export interface SessionView {
   id: string;
   handshakeId: string;
@@ -331,7 +325,12 @@ export interface SessionView {
   /** Retard cumulé du soignant (s) au-delà de la tolérance de 30 s entre messages (D-032). */
   professionalDelaySec: number;
   reportDepositedAt: string | null;
-  preConsultation: PreConsultationView | null;
+  /*
+    ⚠️ **`preConsultation` a disparu au chantier 105** (décision du porteur). Ce qu'elle faisait —
+    démarrer le décompteur — est repris par le premier message du patient. Les données déjà
+    transmises restent en base : *retirer une fonctionnalité, c'est fermer une porte, pas brûler ce
+    qu'il y a derrière.*
+  */
   rated: boolean;
   /** L'AUTRE participant est en train d'écrire/enregistrer (signal éphémère ~6s). */
   otherPartyTyping: boolean;
@@ -387,11 +386,6 @@ export interface ReactToMessageRequest {
 export interface MessageListResponse {
   items: MessageView[];
   nextCursor: string | null;
-}
-export interface SubmitPreConsultationRequest {
-  symptoms: string;
-  sinceWhen?: string;
-  attachments?: string[];
 }
 export interface SendMessageRequest {
   clientMsgId: string;
@@ -719,7 +713,6 @@ export const PAYMENT_ROUTES = {
 export const SESSION_ROUTES = {
   mine: '/v1/care-sessions/mine',
   one: (id: string): string => `/v1/care-sessions/${encodeURIComponent(id)}`,
-  preConsultation: (id: string): string => `/v1/care-sessions/${encodeURIComponent(id)}/pre-consultation`,
   messages: (id: string): string => `/v1/care-sessions/${encodeURIComponent(id)}/messages`,
   message: (id: string, messageId: string): string => `/v1/care-sessions/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
   messageDelete: (id: string, messageId: string): string => `/v1/care-sessions/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}/delete`,

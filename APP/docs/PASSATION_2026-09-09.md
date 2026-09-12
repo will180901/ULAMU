@@ -51,8 +51,8 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **1 081 ✓** (51 fichiers, + 6 todo) |
-| Mobile | `npm test` | **93 ✓** (12 suites) |
+| Web | `npx vitest run` | **1 082 ✓** (51 fichiers, + 6 todo) |
+| Mobile | `npm test` | **94 ✓** (12 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
 **vident vingt-quatre tables**. Elles ne tournent plus jamais (décision du chantier 38). Seul
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 104
+## 3. Ce qui a été fait — chantiers 58 à 105
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 105 | *(à pousser)* | **La pré-consultation retirée partout** (décision du porteur) — vingt fichiers, trois applications. Le patient entre directement dans la conversation. 📌 **Les données ne sont pas détruites** : la table reste, plus rien ne la lit. ⚠️ Le titre de la consultation venait du motif : il porte maintenant la **date** — *ce que le chantier 76 avait gagné, c'est que l'écran se NOMME.* ⚠️ Douze tests tombés, **aucun à jeter** : onze s'y ancraient pour vérifier autre chose. |
 | 104 | *(à pousser)* | ⚠️ **On pouvait envoyer une vidéo et un PDF, pas les relire** — une vidéo reçue tombait dans une balise `<img>`. Quatre rendus (photo, vidéo, document, son) et un **lecteur plein panneau**. 📌 Contrairement à CMS, **seul ce qui se regarde sans être demandé se télécharge** : le genre se lit dans la clé. **Et le décompteur part au PREMIER MESSAGE DU PATIENT** — les messages du soignant n'ouvrent rien. ⚠️ Le branchement du départ dans la transaction n'est pas couvert par un test unitaire : il demande une vraie base. |
 | 103 | *(à pousser)* | **La prolongation sans plafond**, décision du porteur. 📌 Le plafond n'est pas retiré du code : **PM-29 à zéro = sans limite** — *une règle qu'on désactive se rediscute, une règle qu'on supprime s'oublie*. ⚠️ L'écran recopiait `< 1800` en dur et cachait le bouton de son propre chef. Quatre durées (5 · 10 · 15 · 30) au lieu d'un seul pas. |
 | 102 | *(à pousser)* | ⚠️ **Trois défauts vus sur une consultation RÉELLE**, dans les dix premières minutes. (1) L'app du patient **s'arrêtait sur un écran rouge** : mon `useEffect` du 98 était après les retours anticipés. (2) Le **battement de présence était refusé** — route réservée au soignant, refus avalé par un `.catch` muet. (3) La **chaîne de hauteur** était rompue depuis le chantier 83 : sur une fenêtre de 860 px, la carte s'arrêtait à 373 px. ⚠️ Et le garde-fou écrit pour (1) ne l'attrapait pas — motif trop étroit. |

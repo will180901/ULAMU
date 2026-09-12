@@ -53,7 +53,6 @@ function service(
   presence?: { state: "ONLINE" | "OFFLINE" | "DO_NOT_DISTURB"; ageSec: number } | null,
 ): SessionService {
   const prisma = {
-    preConsultation: { findUnique: async () => null },
     sessionRating: { findUnique: async () => null },
     sessionMessage: { findMany: async () => [] },
     patientProfile: {

@@ -50,26 +50,6 @@ export class PayHandshakeDto {
 
 // ── Pré-consultation (EF-06-04 ; D-019) ──────────────────────────────────────
 
-export class SubmitPreConsultationDto {
-  @IsString()
-  @IsNotEmpty({ message: "Décrivez vos symptômes — c'est ce qui prépare le professionnel" })
-  @MaxLength(4000, { message: "Symptômes : 4000 caractères maximum" })
-  symptoms!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200, { message: "« Depuis quand » : 200 caractères maximum" })
-  sinceWhen?: string;
-
-  /** Clés de fichiers (photos) déjà téléversées — jamais d'URL publique. */
-  @IsOptional()
-  @IsArray({ message: "Pièces jointes : liste de clés de fichiers attendue" })
-  @ArrayMaxSize(10, { message: "Pièces jointes : 10 maximum" })
-  @IsString({ each: true, message: "Pièce jointe : clé de fichier attendue" })
-  @MaxLength(500, { each: true, message: "Clé de fichier trop longue" })
-  attachments?: string[];
-}
-
 // ── Messages (EF-06-05/13 ; RM-06-03, ADR-12) ────────────────────────────────
 
 export class SendMessageDto {

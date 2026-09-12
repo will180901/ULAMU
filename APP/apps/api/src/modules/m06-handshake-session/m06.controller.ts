@@ -25,7 +25,6 @@ import {
   RefuseHandshakeDto,
   SendMessageDto,
   SessionRecordQueryDto,
-  SubmitPreConsultationDto,
   UploadSessionMediaDto,
 } from "./m06.dto";
 import { HandshakeService } from "./m06.handshake.service";
@@ -105,15 +104,21 @@ export class M06Controller {
     return this.sessions.getSession(actor, sessionId);
   }
 
-  /** Pré-consultation (PATIENT, session PREPARING) — sa transmission DÉMARRE le décompteur (D-019). */
-  @Post("care-sessions/:sessionId/pre-consultation")
-  preConsultation(
-    @Actor() actor: AuthenticatedActor,
-    @Param("sessionId") sessionId: string,
-    @Body() dto: SubmitPreConsultationDto,
-  ) {
-    return this.sessions.submitPreConsultation(actor, sessionId, dto);
-  }
+  /*
+    ── ⚠️ La pré-consultation a été RETIRÉE — chantier 105, 12/09/2026 ──────────────────────────
+
+    Décision du porteur : *« retire la fonctionnalité de pré-consultation partout, ça ne sert plus »*.
+
+    Ce qu'elle faisait — démarrer le décompteur — est repris par le **premier message du patient**
+    (chantier 104, `messageOuvreLaSeance`). Le patient décrit son motif dans la conversation, comme
+    il parle. *Demander les mêmes mots deux fois, une fois dans un formulaire puis une fois dans la
+    conversation, était le vrai coût de cet écran.*
+
+    ⚠️ **Les données déjà transmises ne sont pas détruites.** La table `PreConsultation` reste, avec
+    les symptômes des consultations passées : ce sont des données de soin. *Retirer une
+    fonctionnalité, c'est fermer une porte — pas brûler ce qu'il y a derrière.* Plus rien ne les lit
+    ni ne les écrit ; elles restent atteignables en base si une obligation légale les réclame.
+  */
 
   /** Téléversement d'un média (photo / note vocale) → fileKey, puis envoyer un message kind PHOTO/VOICE. */
   @Post("care-sessions/:sessionId/media")

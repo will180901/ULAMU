@@ -1845,7 +1845,6 @@ export function ConsultationPage() {
 
   const s = session.data
   const etat = ETATS[s.status]
-  const pre = s.preConsultation
   /* Le prix payé par le patient pour CETTE séance — voir la note sur `demandes` plus haut. */
   const prixPatient = (demandes.data?.items ?? []).find((h) => h.sessionId === s.id)?.offerPriceXaf ?? null
   /*
@@ -1940,7 +1939,13 @@ export function ConsultationPage() {
 
     *Une capacité doit avoir un chemin — et le meilleur chemin, c'est parfois être déjà là.*
   */
-  const ongletParDefaut = !active && !s.reportDepositedAt && s.reportDueAt ? 'compte-rendu' : 'contexte'
+  /*
+    ⚠️ L'onglet « Contexte » a disparu au chantier 105 avec la pré-consultation : le rail s'ouvre
+    donc sur le **Carnet**, qui est ce qu'on vient chercher en ouvrant une consultation — de quoi
+    souffre le patient. La règle du compte-rendu, elle, ne change pas : quand il reste à déposer,
+    c'est lui qui s'ouvre, parce qu'il porte une échéance.
+  */
+  const ongletParDefaut = !active && !s.reportDepositedAt && s.reportDueAt ? 'compte-rendu' : 'carnet'
 
   return (
     /*
@@ -1978,15 +1983,17 @@ export function ConsultationPage() {
             journée ne pouvait pas les distinguer : trois onglets identiques, trois fois le même
             mot. La maquette C5 titre par le MOTIF (« Palpitations nocturnes ») — et elle a raison.
 
-            Le motif vient des symptômes de la pré-consultation, qui étaient déjà servis et déjà
-            affichés… tout en bas du rail de droite. La matière était là, rangée là où on ne la
-            cherche pas.
+            Le motif venait des symptômes de la pré-consultation.
 
-            ⚠️ Le titre reste « Consultation » tant que la pré-consultation n'est pas transmise —
-            une séance en préparation n'a pas encore de motif, et inventer un titre à partir de rien
-            serait pire que le mot générique.
+            ⚠️ **Elle a été retirée au chantier 105** (décision du porteur). Le titre redevient donc
+            le mot « Consultation », **suivi de sa date** : c'est ce qui reste pour distinguer trois
+            séances ouvertes le même après-midi, et c'est déjà mieux que trois titres identiques.
+
+            *Ce que le chantier 76 avait gagné n'est pas perdu : il avait gagné que l'écran se
+            NOMME. La matière a changé, l'exigence non.* Le nom du patient, lui, est juste en
+            dessous, dans le bandeau de la discussion (chantier 98).
           */}
-          <h1 className="ul-titre-page">{titreConsultation(s.preConsultation)}</h1>
+          <h1 className="ul-titre-page">{titreConsultation(s.paidAt)}</h1>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-[var(--texte-tertiaire)]">
             <Lock size={12} strokeWidth={1.8} aria-hidden="true" />
             Échange chiffré · {s.durationMin} minutes
@@ -2024,8 +2031,10 @@ export function ConsultationPage() {
           {s.status === 'PREPARING' ? (
             <Carte icone={Clock} titre="En attente du patient" sousTitre="Le décompteur n'a pas encore démarré">
               <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-                Le patient remplit sa pré-consultation. La séance démarrera à sa transmission — ou
-                automatiquement dix minutes après le paiement, sans quoi personne n'attendrait indéfiniment.
+                Le décompteur ne part qu'au premier message du patient : vous pouvez déjà lui
+                écrire, cela ne lui coûtera aucune minute. Faute de nouvelles, la séance démarrera
+                d'elle-même dix minutes après le paiement — sans quoi personne n'attendrait
+                indéfiniment.
               </p>
             </Carte>
           ) : null}
@@ -2581,52 +2590,6 @@ export function ConsultationPage() {
               ) : null
             }
             onglets={[
-              {
-                id: 'contexte',
-                nom: 'Contexte',
-                contenu: (
-                  <Carte icone={FileText} titre="Contexte patient" sousTitre="Transmis avec la pré-consultation">
-                    {pre ? (
-                      <>
-                        <div>
-                          <p className="ul-surtitre">Symptômes</p>
-                          <p className="mt-0.5 text-[13px] leading-[1.55] whitespace-pre-wrap text-foreground">{pre.symptoms}</p>
-                        </div>
-                        {pre.sinceWhen ? (
-                          <div>
-                            <p className="ul-surtitre">Depuis</p>
-                            <p className="mt-0.5 text-[13px] text-foreground">{pre.sinceWhen}</p>
-                          </div>
-                        ) : null}
-                        {pre.attachments.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {/*
-                              ⚠️ **Sans `onOuvrir` ici, et c'est voulu.** Ces pièces vivent dans le
-                              RAIL ; le lecteur plein panneau, lui, couvre la carte de l'échange. Lui
-                              donner un bouton « ouvrir » recouvrirait le mauvais panneau. *Une
-                              commande qui ne peut pas tenir sa promesse ne doit pas être offerte ;
-                              un bouton mort se remarque plus qu'un bouton absent.*
-
-                              ⚠️ Et le commentaire est ICI, au-dessus du `map`, et non à l'intérieur :
-                              un commentaire JSX en position d'EXPRESSION ne compile pas. Piège déjà
-                              payé deux fois dans ce fichier — et en l'écrivant j'ai failli le payer
-                              une troisième, en citant sa syntaxe DANS un commentaire : la fin de
-                              citation refermait le commentaire avant sa fin.
-                            */}
-                            {pre.attachments.map((k) => (
-                              <PieceJointe key={k} cle={k} />
-                            ))}
-                          </div>
-                        ) : null}
-                      </>
-                    ) : (
-                      <p className="text-[12px] leading-[1.5] text-[var(--texte-tertiaire)]">
-                        Le patient n'a pas encore transmis sa pré-consultation.
-                      </p>
-                    )}
-                  </Carte>
-                ),
-              },
               /* Le Carnet n'a de sens qu'une fois la séance ouverte : avant, le serveur refuse (409). */
               ...(s.status !== 'REFUNDED'
                 ? [

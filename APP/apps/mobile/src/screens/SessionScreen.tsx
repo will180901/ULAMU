@@ -244,12 +244,17 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
     );
   }
 
-  if (session.status === 'PREPARING') {
-    return <PreConsultation session={session} docName={docName} onBack={() => navigation.goBack()} onStarted={s => {
-      setSession(s);
-      setRemaining(s.remainingSeconds);
-    }} />;
-  }
+  /*
+    ── ⚠️ Plus de pré-consultation — chantier 105, 12/09/2026 ──────────────────────────────────
+
+    Une séance en PRÉPARATION ouvre désormais la **conversation**, pas un formulaire. Décision du
+    porteur : *« retire la fonctionnalité de pré-consultation partout, ça ne sert plus »*.
+
+    Le décompteur ne part qu'au **premier message du patient** (chantier 104) : entrer dans la
+    conversation ne coûte donc rien, et le patient décrit son motif comme il parle — en écrivant, en
+    dictant une note vocale, en envoyant une photo. *Demander les mêmes mots deux fois — une fois
+    dans un formulaire, une fois dans la conversation — était le vrai coût de cet écran.*
+  */
 
   if (session.status === 'REFUNDED') {
     return (
@@ -489,74 +494,6 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
 }
 
 /* ── Pré-consultation (PREPARING) ── */
-function PreConsultation({session, docName, onBack, onStarted}: {session: SessionView; docName: string; onBack: () => void; onStarted: (s: SessionView) => void}) {
-  const {colors} = useTheme();
-  const styles = useThemedStyles(makeStyles);
-  const [symptoms, setSymptoms] = useState('');
-  const [sinceWhen, setSinceWhen] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const submit = async () => {
-    if (symptoms.trim().length < 3) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const s = await api.submitPreConsultation(session.id, {symptoms: symptoms.trim(), sinceWhen: sinceWhen.trim() || undefined});
-      onStarted(s);
-    } catch (e) {
-      const msg = e instanceof ApiError ? e.message : 'Envoi impossible — réessayez.';
-      setBusy(false);
-      // Si la session a démarré automatiquement entre-temps, un refresh la basculera en ACTIVE.
-      if (e instanceof ApiError && e.status === 409) {
-        onStarted({...session, status: 'ACTIVE'});
-      } else {
-        // eslint-disable-next-line no-alert
-        alertSafe(msg);
-      }
-    }
-  };
-
-  return (
-    <Shell title="Pré-consultation" onBack={onBack}>
-      <ScrollView contentContainerStyle={styles.preContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.preIntro}>
-          <Text style={styles.bigTitle}>Préparez votre session</Text>
-          <Text style={styles.bigSub}>
-            Décrivez votre motif : {docName} le lira dès l'ouverture. La session de {session.durationMin} min démarre dès l'envoi.
-          </Text>
-        </View>
-
-        <Text style={styles.label}>Vos symptômes</Text>
-        <TextInput
-          style={styles.textArea}
-          value={symptoms}
-          onChangeText={setSymptoms}
-          placeholder="Ex : maux de tête le soir, fatigue inhabituelle…"
-          placeholderTextColor={colors.textDisabled}
-          multiline
-          textAlignVertical="top"
-        />
-        <Text style={styles.label}>Depuis quand ? (optionnel)</Text>
-        <TextInput
-          style={styles.input}
-          value={sinceWhen}
-          onChangeText={setSinceWhen}
-          placeholder="Ex : trois semaines"
-          placeholderTextColor={colors.textDisabled}
-        />
-
-        <Banner tone="info" title="Le décompteur ne tourne pas encore">
-          Il démarrera à l'envoi de votre pré-consultation (ou automatiquement après quelques minutes).
-        </Banner>
-      </ScrollView>
-      <View style={styles.preFooter}>
-        <PrimaryButton title="Envoyer et démarrer la session" iconRight="arrow-right" loading={busy} disabled={symptoms.trim().length < 3} onPress={submit} />
-      </View>
-    </Shell>
-  );
-}
-
 /* ── Composeur (ACTIVE) — texte + photo (aperçu avant envoi) + note vocale (onde live) ── */
 const REC_BARS = 44;
 
