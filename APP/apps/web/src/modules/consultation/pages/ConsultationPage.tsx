@@ -1556,6 +1556,25 @@ export function ConsultationPage() {
 
   const active = session.data?.status === 'ACTIVE'
   /*
+    ── ⚠️ Trois états, pas deux — chantier 108 ──────────────────────────────────────────────────
+
+    Avant le chantier 104, « pas ACTIVE » voulait dire « terminée », parce que la PRÉPARATION ne
+    durait qu'un instant. Depuis que la séance démarre au premier message du patient, **cet état
+    dure** — et tout ce qui traitait « non ACTIVE » comme « finie » s'est mis à mentir.
+
+    Constaté écran en main le 12/09, sur une consultation payée trois minutes plus tôt : le fil du
+    médecin affichait *« Conversation terminée · archivée »*, le carnet marqué **clos**, le compteur
+    à **00:00**, et **aucun champ pour écrire** — pendant que le bandeau juste au-dessus lui disait
+    « vous pouvez déjà lui écrire, cela ne lui coûtera aucune minute ».
+
+    *Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.*
+
+    `vivante` = la séance n'est pas finie. `active` = le décompteur tourne. Les deux existent parce
+    qu'ils ne répondent pas à la même question : *peut-on encore agir ?* et *le temps coule-t-il ?*
+    Le prolongement, lui, reste réservé à `active` : on ne prolonge pas ce qui n'a pas commencé.
+  */
+  const vivante = active || session.data?.status === 'PREPARING'
+  /*
     ── Ce que cette consultation rapporte — chantier 76 ─────────────────────────────────────────
 
     L'écran où un médecin passe trente minutes ne disait nulle part ce qu'elles lui rapportent. La
@@ -1590,7 +1609,7 @@ export function ConsultationPage() {
   const messages = useQuery({
     queryKey: ['session', sessionId, 'messages'],
     queryFn: () => api.sessionMessages(sessionId),
-    refetchInterval: active ? 3_000 : false,
+    refetchInterval: vivante ? 3_000 : false,
     enabled: !!session.data,
     retry: false,
   })
@@ -1945,7 +1964,7 @@ export function ConsultationPage() {
     souffre le patient. La règle du compte-rendu, elle, ne change pas : quand il reste à déposer,
     c'est lui qui s'ouvre, parce qu'il porte une échéance.
   */
-  const ongletParDefaut = !active && !s.reportDepositedAt && s.reportDueAt ? 'compte-rendu' : 'carnet'
+  const ongletParDefaut = !vivante && !s.reportDepositedAt && s.reportDueAt ? 'compte-rendu' : 'carnet'
 
   return (
     /*
@@ -2082,7 +2101,7 @@ export function ConsultationPage() {
                 <div className="min-w-0 flex-1 basis-32">
                   <h2 className="ul-titre-panneau truncate">{s.patientFirstName ?? 'Le patient'}</h2>
                   <div className="mt-0.5">
-                    <StatutConversation close={!active} ecrit={s.otherPartyTyping} presence={s.otherPartyPresence} />
+                    <StatutConversation close={!vivante} ecrit={s.otherPartyTyping} presence={s.otherPartyPresence} />
                   </div>
                 </div>
                 <span className="ml-auto flex shrink-0 items-center gap-2">
@@ -2165,14 +2184,23 @@ export function ConsultationPage() {
                   {items.length > 0 ? (
                     <li className="flex items-center justify-center gap-1.5 pt-1 ul-aide">
                       <Lock size={11} strokeWidth={1.8} aria-hidden="true" />
-                      {active
+                      {vivante
                         ? 'Consultation ouverte · échange chiffré de bout en bout'
                         : 'Consultation terminée · échange chiffré et archivé'}
                     </li>
                   ) : null}
                   {items.length === 0 ? (
                     <li className="py-6 text-center text-[12px] text-[var(--texte-tertiaire)]">
-                      {active ? 'La consultation vient de commencer.' : 'Aucun message n’a été échangé.'}
+                      {/*
+                        ⚠️ Trois phrases pour trois états. *« Aucun message n'a été échangé » sur une
+                        séance qui vient d'être payée se lit comme un constat d'échec* — alors que
+                        c'est le début normal, et que le médecin peut parler le premier.
+                      */}
+                      {active
+                        ? 'La consultation vient de commencer.'
+                        : vivante
+                          ? 'Le patient n’a pas encore écrit. Vous pouvez lui écrire : le décompteur ne partira qu’à son premier message.'
+                          : 'Aucun message n’a été échangé.'}
                     </li>
                   ) : (
                     items.map((m, i) => {
@@ -2201,7 +2229,7 @@ export function ConsultationPage() {
                             aMoi={m.senderId === moi?.accountId}
                             groupee={groupee}
                             surlignee={surligne === m.id}
-                            actif={!!active}
+                            actif={!!vivante}
                             nomAuteur={nomAuteur}
                             onRepondre={() => ouvrirReponse(m)}
                             onModifier={() => ouvrirEdition(m)}
@@ -2233,7 +2261,7 @@ export function ConsultationPage() {
               </p>
             ) : null}
 
-            {active ? (
+            {vivante ? (
               <form
                 className="flex flex-col gap-2"
                 onSubmit={(e) => {
@@ -2559,7 +2587,7 @@ export function ConsultationPage() {
                 La bande reste donc visible quel que soit l'onglet ouvert, et **elle conduit à la
                 carte** : une alerte qui ne mène nulle part ne fait qu'inquiéter.
               */
-              echeanceCompteRendu && !active ? (
+              echeanceCompteRendu && !vivante ? (
                 <button
                   type="button"
                   onClick={() => aller('compte-rendu')}
@@ -2597,14 +2625,14 @@ export function ConsultationPage() {
                       id: 'carnet',
                       nom: 'Carnet',
                       // « clos » plutôt qu'un cadenas : un mot se lit, un pictogramme se devine.
-                      marque: active ? undefined : ({ texte: 'clos' } as MarqueOnglet),
-                      contenu: <CarnetPatient sessionId={s.id} active={!!active} />,
+                      marque: vivante ? undefined : ({ texte: 'clos' } as MarqueOnglet),
+                      contenu: <CarnetPatient sessionId={s.id} active={!!vivante} />,
                     },
                     {
                       id: 'ordonnance',
                       nom: 'Ordonnance',
                       marque: nbOrdonnances > 0 ? ({ texte: String(nbOrdonnances) } as MarqueOnglet) : undefined,
-                      contenu: <PanneauOrdonnance sessionId={s.id} active={!!active} />,
+                      contenu: <PanneauOrdonnance sessionId={s.id} active={!!vivante} />,
                     },
                     {
                       id: 'compte-rendu',

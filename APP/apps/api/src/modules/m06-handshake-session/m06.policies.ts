@@ -95,12 +95,25 @@ export function autoStartDue(paidAtMs: number, pm28S: number, nowMs: number): bo
 }
 
 /**
- * RM-06-02 / D-025 : le décompteur est calculé par le SERVEUR — les horloges clientes
- * sont indicatives. endsAt absent (session pas encore démarrée) ou dépassé → 0.
- * Arrondi au plafond : tant qu'il reste une fraction de seconde, elle compte.
+ * RM-06-02 / D-025 : le décompteur est calculé par le SERVEUR — les horloges clientes sont
+ * indicatives. Arrondi au plafond : tant qu'il reste une fraction de seconde, elle compte.
+ *
+ * ── ⚠️ La séance PAYÉE mais PAS COMMENCÉE annonce son budget entier ───────────────────────────
+ *
+ * `endsAt` est absent tant que la séance n'a pas démarré — et rendre `0` faisait afficher
+ * **00:00** aux deux écrans. *Un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore
+ * commencé ».* C'est le contraire de la vérité : rien n'a été consommé, tout reste.
+ *
+ * Mesuré le 12/09 sur les deux écrans à la fois : le patient voyait `0:00` en rouge et le médecin
+ * `00:00 · horloge serveur` sur une consultation qu'il venait d'accepter.
+ *
+ * Depuis le chantier 104, cet état dure — il s'arrête au premier message du patient, pas à la
+ * minute du paiement. Un état qui dure doit se dire juste.
+ *
+ * `budgetS` vaut 0 par défaut : les appels qui ne le passent pas gardent l'ancien comportement.
  */
-export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number): number {
-  if (endsAt === null) return 0;
+export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number, budgetS = 0): number {
+  if (endsAt === null) return Math.max(0, Math.floor(budgetS));
   return Math.max(0, Math.ceil((endsAt.getTime() - nowMs) / 1000));
 }
 
@@ -153,6 +166,21 @@ export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number): num
  * consomme aucune minute ; c'est le message qui compte.*
  */
 export function mediaAccepteDansLaSeance(status: string): boolean {
+  return seanceVivante(status);
+}
+
+/**
+ * La séance est-elle VIVANTE — c'est-à-dire ni terminée, ni remboursée, ni expirée ?
+ *
+ * ⚠️ **Trois états, pas deux.** Avant le chantier 104, « pas ACTIVE » voulait dire « finie », parce
+ * que la PRÉPARATION ne durait qu'un instant. Depuis que la séance démarre au premier message du
+ * patient, cet état **dure** — et tout ce qui traitait « non ACTIVE » comme « finie » se met à
+ * mentir : le fil du médecin s'affichait « conversation terminée · archivée », son carnet fermé et
+ * son champ de saisie absent, sur une consultation qu'il venait d'accepter et de voir payer.
+ *
+ * *Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.*
+ */
+export function seanceVivante(status: string): boolean {
   return status === "ACTIVE" || status === "PREPARING";
 }
 

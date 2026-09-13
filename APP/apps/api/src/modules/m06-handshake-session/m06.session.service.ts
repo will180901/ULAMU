@@ -43,6 +43,7 @@ import {
   clampMessagePageSize,
   mediaAccepteDansLaSeance,
   ratingValid,
+  seanceVivante,
   sessionRemainingSeconds,
 } from "./m06.policies";
 import { ExtendSessionDto, ListMessagesQueryDto, RateSessionDto, SendMessageDto } from "./m06.dto";
@@ -742,7 +743,13 @@ export class SessionService {
       startedAt: settled.startedAt ? settled.startedAt.toISOString() : null,
       endsAt: settled.endsAt ? settled.endsAt.toISOString() : null,
       endedAt: settled.endedAt ? settled.endedAt.toISOString() : null,
-      remainingSeconds: settled.status === CareSessionStatus.ACTIVE ? sessionRemainingSeconds(settled.endsAt, now) : 0,
+      /*
+        ⚠️ La PRÉPARATION annonce le budget ENTIER, pas zéro : rien n'a encore été consommé. Voir
+        `sessionRemainingSeconds` — *un zéro se lit « il ne reste plus rien ».*
+      */
+      remainingSeconds: seanceVivante(settled.status)
+        ? sessionRemainingSeconds(settled.endsAt, now, settled.durationMin * 60)
+        : 0,
       autoStartAt:
         settled.status === CareSessionStatus.PREPARING
           ? new Date(settled.paidAt.getTime() + pm28S * 1000).toISOString()
@@ -795,7 +802,9 @@ export class SessionService {
         paidAt: session.paidAt.toISOString(),
         endsAt: session.endsAt ? session.endsAt.toISOString() : null,
         endedAt: session.endedAt ? session.endedAt.toISOString() : null,
-        remainingSeconds: session.status === CareSessionStatus.ACTIVE ? sessionRemainingSeconds(session.endsAt, Date.now()) : 0,
+        remainingSeconds: seanceVivante(session.status)
+          ? sessionRemainingSeconds(session.endsAt, Date.now(), session.durationMin * 60)
+          : 0,
         reportDepositedAt: session.reportDepositedAt ? session.reportDepositedAt.toISOString() : null,
         reportDueAt: this.reportDueAt(session.endedAt, pm30S),
         orderRef: session.orderRef,

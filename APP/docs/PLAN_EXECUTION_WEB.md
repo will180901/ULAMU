@@ -693,6 +693,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **105** | **La pré-consultation retirée partout** — 12/09, décision du porteur : *« ça ne sert plus »*. Vingt fichiers touchés, trois applications. Le patient entre désormais **directement dans la conversation** et décrit son motif comme il parle — *demander les mêmes mots deux fois, une fois dans un formulaire puis une fois dans la conversation, était le vrai coût de cet écran.* Ce qu'elle faisait — démarrer le décompteur — était déjà repris par le premier message du patient (chantier 104). 📌 **Les données ne sont PAS détruites** : la table reste, avec les symptômes des consultations passées. *Retirer une fonctionnalité, c'est fermer une porte — pas brûler ce qu'il y a derrière.* ⚠️ **Ce que le chantier 76 avait gagné n'est pas perdu** : il avait gagné que l'écran se NOMME, pour qu'un soignant qui ouvre trois séances ne voie pas trois onglets identiques. Le titre porte maintenant la **date** — la matière a changé, l'exigence non. ⚠️ **Douze tests sont tombés, et aucun n'était à jeter** : un seul défendait la pré-consultation elle-même ; les onze autres s'ANCRAIENT dessus pour vérifier tout autre chose. *Un test qui perd son ancre ne perd pas son sujet.* ⚠️ **Et mon remplacement en masse a inversé le sens d'un test** : en renommant deux onglets par le même nom, il lui faisait vérifier qu'une flèche ne change rien. ⚠️ **Trois fautes injectées sur cinq sont passées** — dont une date ABÎMÉE, que mon test ne visitait pas parce qu'il ne posait qu'une date VIDE. **web 1 082 ✓ · mobile 94 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 5 fautes injectées, 4 détectées, 1 bénigne.** | ⏸ en attente | ⏸ |
 | **106** | **La vidéo sur le téléphone, rogneur compris** — 12/09, décision du porteur : *« je veux aussi un rogneur sur le mobile »*, après avoir écarté mon option « filmer court ». 📌 **La brique retenue et pourquoi** : `react-native-video-processing` est resté à React Native 0.4x et son rognage Android n'a jamais été écrit ; `ffmpeg-kit` a été **abandonné par son auteur en 2025** ; **`react-native-video-trim`** est publié depuis un mois, MIT, sans dépendance de code, et réclame exactement le `minSdk 24` et le NDK que ce projet a déjà. ⚠️ **Prix dit avant d'installer** : +15 à 25 Mo d'APK, et une reconstruction obligatoire. ⚠️ **`npm install` échouait AVANT mon paquet** : `react-native-ota-hot-update` réclame `react-native-fs`, absent du projet — *un conflit latent qui ne se déclare qu'au prochain ajout, c'est-à-dire au plus mauvais moment.* ⚠️ **Et la brique plante à l'IMPORT là où le binaire natif manque** (`TurboModuleRegistry.getEnforcing`) : l'écran entier tombait avant d'avoir pu vérifier que le rogneur existe. *Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.* Chargement TARDIF, comme `ota.ts` le faisait déjà — et le motif y était écrit. 📌 **L'encodage se fait à l'ENVOI, pas à la sélection** : une vidéo de 8 Mo fait une chaîne de 11 Mo en mémoire, et *encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.* ⚠️ **Et en SÉRIE** : le rogneur ouvre un écran, deux découpes simultanées se recouvriraient — *ce qui demande un geste ne se parallélise pas.* **mobile 107 ✓ · types propres · 10 fautes injectées, 10 attrapées.** | ⏸ en attente | ⏸ |
 | **107** | **La vidéo du téléphone, prouvée écran en main** — 12-13/09, après l'échec du 106 en séance réelle. 📌 **Quatre fautes, dont trois à moi.** ① La vidéo choisie repartait en `image/jpeg` : le sélecteur passait par `mimeOf`, écrit pour les photos de profil — *ce n'est jamais la pièce qui a cédé, c'est le joint.* ② `refusDEnvoi` était juste, testée, et **appelée par personne** — *une règle jamais appelée protège autant qu'une règle qui n'existe pas.* ③ Un commentaire affirmait que le projet était sur l'ANCIENNE architecture RN ; `gradle.properties` dit `newArchEnabled=true` depuis toujours, et un TurboModule n'y est pas dans `NativeModules` — *une croyance sur la configuration n'est pas une connaissance tant qu'on n'a pas ouvert le fichier qui la porte.* ④ ⚠️ **L'écran de découpe de la brique fait QUITTER l'application** (`emitOnShow` → `AsyncEventEmitter::emit` → SIGSEGV, trace du téléphone) : on garde ses fonctions qui répondent (`isValidFile`, `getFrameAt`, `trim`) et **l'écran devient le nôtre** — *une bibliothèque a rarement une seule porte.* 📌 Et deux fautes trouvées en testant : les `PanResponder` reconstruits à chaque rendu perdaient le geste (*un objet reconstruit pendant qu'on s'en sert n'est plus le même objet*), et le serveur refusait le téléversement en PRÉPARATION — *une règle en deux temps ne se garde pas en un seul endroit* : le patient pouvait ouvrir la séance en écrivant, mais pas en montrant. **Chaîne complète vérifiée sur le téléphone du porteur : choix → aperçu → découpe → envoi → relecture.** **mobile 116 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
+| **108** | **La séance payée mais pas commencée** — 13/09, trou révélé par le test du 107. ⚠️ **L'écran du médecin se croyait terminé** sur une consultation payée trois minutes plus tôt : « Conversation terminée · archivée », carnet **clos**, compteur **00:00**, et **aucun champ pour écrire** — pendant que le bandeau juste au-dessus l'invitait à écrire le premier. 📌 **Cause** : avant le chantier 104, « pas ACTIVE » voulait dire « finie », parce que la PRÉPARATION ne durait qu'un instant ; depuis que la séance démarre au premier message du patient, **cet état dure**. *Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.* L'écran distingue désormais `vivante` (on peut agir) de `active` (le temps coule) — deux questions différentes. ⚠️ **Et le décompteur annonçait 00:00 aux DEUX écrans** : `endsAt` est absent tant que rien n'a commencé. *Un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore commencé ».* La séance non démarrée annonce son budget entier. ⚠️ **Un test gardait le bug** : il affirmait « pas de composeur » — *un test écrit en même temps que le code qu'il garde peut n'en être que le reflet.* **web 1088 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -741,6 +742,56 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 108 (la séance payée mais pas commencée) a appris
+
+*13/09/2026 — trouvé en testant autre chose : c'est presque toujours ainsi.*
+
+#### ⚠️ Un état transitoire qu'on rend durable
+
+Jusqu'au chantier 104, la PRÉPARATION ne durait qu'un instant : on payait, la séance démarrait. Tout
+l'écran pouvait donc lire « pas ACTIVE » comme « terminée » sans jamais se tromper.
+
+Le chantier 104 a fait démarrer la séance **au premier message du patient**. L'état intermédiaire est
+devenu un vrai séjour — et tout ce qui le traitait comme une fin s'est mis à mentir, **d'un coup, à
+six endroits** : le statut de la conversation, le compteur, le carnet, l'ordonnance, l'onglet ouvert
+par défaut, et le champ de saisie lui-même.
+
+> **Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.**
+
+La réparation ne consiste pas à corriger six lignes mais à nommer la bonne question. L'écran connaît
+maintenant deux mots :
+
+| | |
+|---|---|
+| `vivante` | la séance n'est pas finie — *peut-on encore agir ?* |
+| `active` | le décompteur tourne — *le temps coule-t-il ?* |
+
+Le prolongement reste réservé à `active` : *on ne prolonge pas ce qui n'a pas commencé.*
+
+#### ⚠️ Un zéro n'est pas une absence
+
+`endsAt` n'existe pas tant que la séance n'a pas démarré, et le serveur rendait `remainingSeconds:
+0`. Les deux écrans affichaient donc **00:00** — le patient en rouge, le médecin sous l'étiquette
+« horloge serveur ».
+
+> **Un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore commencé ».**
+
+C'est le contraire de la vérité : rien n'a été consommé, tout reste. Une séance non démarrée annonce
+désormais **son budget entier**. Corrigé côté serveur, donc corrigé pour les deux écrans à la fois —
+*une vérité qui se dit à deux endroits finit par se dire de deux façons.*
+
+#### ⚠️ Un test qui gardait le bug
+
+`consultation.test.tsx` affirmait, noir sur blanc : *« Pas de composeur : la séance n'est pas
+active »*. Écrit au chantier 104, en même temps que l'écran, et vert depuis quatre jours.
+
+> **Un test écrit en même temps que le code qu'il garde peut n'en être que le reflet.** Celui-ci
+> décrivait fidèlement un écran qui avait tort.
+
+Le signe qui aurait dû alerter : dans le même chantier, j'avais écrit un bandeau disant au médecin
+*« vous pouvez déjà lui écrire »*, et un test disant qu'il ne le pouvait pas. *Deux affirmations
+contraires dans un même chantier, et aucune des deux ne s'est levée pour contredire l'autre.*
 
 ### Ce que le chantier 107 (la vidéo prouvée écran en main) a appris
 

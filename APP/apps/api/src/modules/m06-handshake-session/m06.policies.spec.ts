@@ -145,6 +145,16 @@ describe("autoStartDue — démarrage automatique PM-28 (EF-06-04)", () => {
 describe("sessionRemainingSeconds — l'horloge du serveur fait foi (RM-06-02, D-025)", () => {
   it("session non démarrée (endsAt null) → 0", () => {
     expect(sessionRemainingSeconds(null, T0)).toBe(0);
+    /*
+      ⚠️ **Une séance payée mais pas commencée annonce son budget ENTIER.** Rendre 0 faisait
+      afficher « 00:00 » au patient comme au médecin sur une consultation qui venait d'être payée
+      — *un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore commencé ».*
+    */
+    expect(sessionRemainingSeconds(null, T0, 1800)).toBe(1800);
+    expect(sessionRemainingSeconds(null, T0, 0)).toBe(0);
+    expect(sessionRemainingSeconds(null, T0, -5)).toBe(0);
+    // Une fois démarrée, c'est `endsAt` qui commande : le budget ne s'y ajoute pas.
+    expect(sessionRemainingSeconds(new Date(T0 + 30_000), T0, 1800)).toBe(30);
   });
 
   it("compte à rebours exact, arrondi au plafond (une fraction de seconde compte)", () => {

@@ -559,13 +559,25 @@ describe('C5 — le fil', () => {
 })
 
 describe('C5 — les états de la séance', () => {
-  it('en préparation, le décompteur n’a pas démarré et l’écran le dit', async () => {
+  it('en préparation, le décompteur n’a pas démarré — et le médecin peut écrire le premier', async () => {
     await monter(seance({ status: 'PREPARING', startedAt: null, remainingSeconds: 1800 }))
 
     expect(await screen.findByText('En attente du patient')).toBeInTheDocument()
     expect(screen.getByText(/décompteur n'a pas encore démarré/)).toBeInTheDocument()
-    // Pas de composeur : la séance n'est pas active.
-    expect(screen.queryByLabelText('Votre message')).not.toBeInTheDocument()
+    /*
+      ⚠️ **Ce test affirmait le CONTRAIRE jusqu'au chantier 108** : « pas de composeur, la séance
+      n'est pas active ». Il décrivait fidèlement l'écran — et l'écran avait tort. Le bandeau du
+      chantier 104, trois lignes plus haut, invite le médecin à écrire le premier ; le champ pour
+      le faire n'existait pas, et le fil annonçait « Conversation terminée · archivée » sur une
+      consultation payée trois minutes plus tôt.
+
+      *Un test écrit en même temps que le code qu'il garde peut n'en être que le reflet.* Celui-ci
+      a tenu quatre jours sans rien protéger.
+    */
+    expect(screen.getByLabelText('Votre message')).toBeInTheDocument()
+    expect(screen.queryByText('Conversation terminée · archivée')).not.toBeInTheDocument()
+    // Le budget entier, pas un zéro : rien n'a encore été consommé.
+    expect(screen.getByLabelText('Temps restant')).toHaveTextContent('30:00')
   })
 
   it('remboursée, l’écran annonce qu’aucun gain ne sera crédité (D-008)', async () => {
