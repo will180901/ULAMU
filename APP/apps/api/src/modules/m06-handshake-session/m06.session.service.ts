@@ -41,6 +41,7 @@ import {
   autoStartDue,
   canExtend,
   clampMessagePageSize,
+  mediaAccepteDansLaSeance,
   ratingValid,
   sessionRemainingSeconds,
 } from "./m06.policies";
@@ -256,16 +257,22 @@ export class SessionService {
   ) {}
 
   /**
-   * Téléverse un média (photo / note vocale) DANS une session active — renvoie sa clé de stockage.
-   * Le client envoie ensuite un message {kind: PHOTO|VOICE, fileKey} (sendMessage). Réservé aux
-   * participants ; la session doit être ACTIVE (RM-06-03). Le média est servi par MediaController
-   * (route /v1/media/sessions/:key, vérifiée participant).
+   * Téléverse un média (photo / vidéo / note vocale) — renvoie sa clé de stockage. Le client envoie
+   * ensuite un message {kind: PHOTO|VOICE, fileKey} (sendMessage). Réservé aux participants.
+   * Le média est servi par MediaController (route /v1/media/sessions/:key, vérifiée participant).
+   *
+   * ⚠️ **La PRÉPARATION est acceptée depuis le 13/09** — voir `mediaAccepteDansLaSeance`. Un média
+   * part en deux temps (téléverser, puis envoyer le message qui le porte) : n'ouvrir que le second
+   * interdisait au patient d'ouvrir la séance par une photo ou une note vocale, c'est-à-dire par le
+   * seul moyen dont dispose celui qui ne peut pas écrire.
    */
   async uploadMedia(actor: AuthenticatedActor, sessionId: string, base64: string, mime: string): Promise<{ fileKey: string }> {
     const session = await this.loadForParticipant(actor, sessionId);
     const settled = await this.settle(session);
-    if (settled.status !== CareSessionStatus.ACTIVE) {
-      throw new ConflictException("Un média ne peut être envoyé que dans une session active");
+    if (!mediaAccepteDansLaSeance(settled.status)) {
+      throw new ConflictException(
+        "Un média ne peut être envoyé que dans une séance en cours — la séance est " + this.statusLabel(settled.status),
+      );
     }
     const fileKey = await this.storage.save("sm", base64, mime);
     return { fileKey };

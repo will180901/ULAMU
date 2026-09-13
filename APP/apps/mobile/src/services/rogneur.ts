@@ -1,5 +1,5 @@
 /**
- * Le rogneur de vidéo, côté patient — chantier 106, 12/09/2026.
+ * Le rogneur de vidéo, côté patient — chantiers 106 et 107, 12/09/2026.
  *
  * ── Pourquoi il existe ────────────────────────────────────────────────────────────────────────
  *
@@ -9,50 +9,43 @@
  *
  * Le porteur a tranché : **le rogneur est obligatoire sur le téléphone aussi.**
  *
- * ── ⚠️ Pourquoi une brique NATIVE, et laquelle ────────────────────────────────────────────────
+ * ── ⚠️ Pourquoi l'écran de découpe est le NÔTRE, et non celui de la brique ─────────────────────
  *
- * Le rogneur du web repose sur `MediaRecorder`, qui n'existe pas en React Native. Les seules voies
- * étaient une brique native ou rien.
+ * `react-native-video-trim` apporte un écran de découpe tout fait. Il a été essayé en séance
+ * réelle, le 12/09 : **l'application quittait d'elle-même à l'instant où cet écran s'affichait.**
+ * Le journal du téléphone nomme le coupable à la ligne près —
  *
- *   • `react-native-video-processing` : resté à React Native 0.4x, son rognage Android n'a jamais
- *     été écrit — écarté ;
- *   • `ffmpeg-kit-react-native` : **abandonné par son auteur en 2025** — écarté ;
- *   • **`react-native-video-trim`** : publié le 12/08/2026, MIT, aucune dépendance de code, et il
- *     réclame exactement le `minSdk 24` et le NDK que ce projet a déjà. Retenu.
+ *     BaseVideoTrimModule.showEditor → onShow → NativeVideoTrimSpec.emitOnShow
+ *     → AsyncEventEmitter<folly::dynamic>::emit → SIGSEGV
  *
- * ⚠️ **Ce qu'il coûte** : il embarque des binaires FFmpeg, et l'application est construite pour deux
- * architectures. Compter **+15 à 25 Mo sur l'APK**. C'est le prix d'un rogneur sur téléphone ; il
- * n'y en a pas d'autre. *Dit au porteur avant de l'installer, pas après.*
+ * — c'est-à-dire au moment où la brique **annonce** « je suis à l'écran ». L'annonce traverse le
+ * pont entre le code natif et le nôtre, et le pont casse. Trois pistes essayées, trois échecs :
+ * écouter les dix évènements plutôt que trois, vérifier que la brique est bien reliée (elle l'est :
+ * `libappmodules.so` contient son fournisseur), chercher une version corrigée (8.2.2 est la
+ * dernière, publiée il y a un mois).
  *
- * ── L'écran de découpe est celui de la brique, habillé aux couleurs d'ULAMU ────────────────────
+ * > **Une bibliothèque a rarement une seule porte.** Celle-ci en a deux : l'écran tout fait, qui
+ * > crie ses évènements — et des fonctions qui **répondent** au lieu de crier. Les secondes ne
+ * > touchent jamais le pont qui casse.
  *
- * Elle apporte un écran natif avec pellicule, poignées et accélération matérielle. En réécrire un
- * en React Native donnerait moins bien, plus lentement. *On reprend donc le sien — et comme il
- * accepte nos couleurs, il ne ressemble pas à une pièce rapportée.*
+ * On garde donc d'elle ce qui marche — extraire une image, découper un passage, mesurer une durée,
+ * le tout en FFmpeg natif — et **l'écran, lui, est à nous** (`components/RogneurVideo.tsx`). Il
+ * porte les couleurs d'ULAMU, il dit les secondes et le poids estimé, et il ne dépend d'aucun
+ * évènement. *Ce que le détour coûte en travail, il le rend en maîtrise.*
  */
-import {NativeEventEmitter, NativeModules} from 'react-native';
-
 import {LIMITE_OCTETS, VIDEO_MAX_S} from '../lib/media-regles';
 
-/** Ce que rend l'écran de découpe : le chemin de l'extrait, ou rien si l'on a renoncé. */
+/** Ce que rend la découpe : le chemin de l'extrait, et sa durée réelle. */
 export interface Extrait {
   chemin: string;
   dureeSec: number;
 }
 
-/**
- * Un évènement du rogneur, tel qu'il arrive sur l'émetteur natif.
- *
- * ⚠️ **On passe par `NativeEventEmitter` et non par les rappels typés de la brique**, parce qu'ils
- * n'existent que sur la NOUVELLE architecture React Native : les atteindre lève une exception sur
- * l'ancienne, avant même d'avoir ouvert le moindre écran. *Une API plus élégante qui ne marche que
- * sur la moitié des appareils n'est pas plus élégante.*
- */
-interface EvenementRogneur {
-  name: string;
-  outputPath?: string;
-  duration?: number;
-  message?: string;
+/** La brique, réduite aux trois fonctions qui répondent au lieu de crier. */
+interface Brique {
+  isValidFile: (url: string) => Promise<{isValid: boolean; fileType: string; duration: number}>;
+  getFrameAt: (url: string, o: {time: number; maxWidth: number}) => Promise<{outputPath: string}>;
+  trim: (url: string, o: {startTime: number; endTime: number}) => Promise<{outputPath: string; duration: number; success: boolean}>;
 }
 
 /**
@@ -66,24 +59,36 @@ interface EvenementRogneur {
  * *Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.*
  *
  * Même motif que `services/ota.ts`, pour la même raison, et il y était déjà écrit.
+ *
+ * ── ⚠️ Et la croyance qui a coûté une séance au porteur ───────────────────────────────────────
+ *
+ * La première version lisait `NativeModules.VideoTrim` pour savoir si le rogneur était là. Un
+ * commentaire affirmait même que ce projet tournait sur l'ANCIENNE architecture React Native.
+ * **C'était faux** : `android/gradle.properties` porte `newArchEnabled=true` depuis toujours, et
+ * sur la nouvelle architecture un TurboModule **n'apparaît pas dans `NativeModules`**. Le test
+ * répondait donc *non* sur un téléphone où la brique était parfaitement installée.
+ *
+ * > **Une croyance sur la configuration du projet n'est pas une connaissance tant qu'on n'a pas
+ * > ouvert le fichier qui la porte.**
+ *
+ * La seule question qui se vérifie honnêtement : *est-ce que la brique se charge et répond ?*
  */
-function chargerLaBrique(): {showEditor: (chemin: string, config: object) => void} | null {
+function chargerLaBrique(): Brique | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('react-native-video-trim');
+    const m = require('react-native-video-trim');
+    if (typeof m?.trim !== 'function' || typeof m?.getFrameAt !== 'function' || typeof m?.isValidFile !== 'function') {
+      return null;
+    }
+    return {isValidFile: m.isValidFile, getFrameAt: m.getFrameAt, trim: m.trim};
   } catch {
     return null;
   }
 }
 
-function moduleNatif(): object | null {
-  const m = (NativeModules as Record<string, unknown>).VideoTrim;
-  return m && typeof m === 'object' ? (m as object) : null;
-}
-
 /** Le rogneur est-il utilisable ici ? Sans lui, une vidéo trop lourde n'a aucun remède. */
 export function rogneurDisponible(): boolean {
-  return moduleNatif() !== null;
+  return chargerLaBrique() !== null;
 }
 
 /**
@@ -94,62 +99,89 @@ export function rogneurDisponible(): boolean {
  * ne dit rien de son poids.*
  */
 export function doitEtreRognee(tailleOctets: number, dureeSec: number): boolean {
+  /*
+    ⚠️ **Ni poids ni durée : on rogne.** Le sélecteur ne renseigne pas toujours ces deux champs, et
+    sans eux la vidéo passait pour minuscule — puis on l'encodait en entier en mémoire. *Ne rien
+    savoir d'une vidéo n'est pas une raison de la croire petite.*
+  */
+  if (tailleOctets <= 0 && dureeSec <= 0) {
+    return true;
+  }
   return tailleOctets > LIMITE_OCTETS || dureeSec > VIDEO_MAX_S;
 }
 
 /**
- * Ouvre l'écran de découpe et rend l'extrait — ou `null` si l'on a renoncé.
+ * La durée réelle d'une vidéo, en millisecondes — mesurée par la brique, pas devinée.
  *
- * ⚠️ **Les écouteurs sont posés AVANT l'ouverture et retirés dans tous les cas.** Un écouteur
- * oublié survit à l'écran : la découpe suivante en trouverait deux, et le même extrait partirait
- * deux fois.
+ * ⚠️ **C'est la source qui fait autorité, pas le sélecteur.** La galerie annonce parfois une durée
+ * absente ou fausse ; ici, c'est FFmpeg qui lit le fichier. `0` veut dire « illisible ».
  */
-export function ouvrirLeRogneur(
+export async function dureeVideoMs(chemin: string): Promise<number> {
+  const brique = chargerLaBrique();
+  if (!brique) {
+    return 0;
+  }
+  try {
+    const info = await brique.isValidFile(chemin);
+    return info.isValid && info.duration > 0 ? info.duration : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Les images de la pellicule, rendues UNE PAR UNE au fur et à mesure.
+ *
+ * ⚠️ **En série, et en rendant chaque image dès qu'elle arrive.** Extraire douze images d'un coup
+ * ferait attendre devant un écran vide pendant plusieurs secondes ; les donner au fil de l'eau
+ * remplit la pellicule sous les yeux. *Un écran qui se remplit lentement est vivant ; un écran vide
+ * qui se remplit d'un coup est une panne qui finit bien.*
+ *
+ * `surChaque` peut être appelée après la fermeture de l'écran : c'est à l'appelant d'ignorer ce
+ * qui arrive trop tard (`annule`).
+ */
+export async function pellicule(
   chemin: string,
-  couleurs: {accent: string; fond: string; texte: string},
-): Promise<Extrait | null> {
-  const natif = moduleNatif();
-  if (!natif) return Promise.reject(new Error('rogneur-indisponible'));
-
-  return new Promise((resoudre, rejeter) => {
-    const emetteur = new NativeEventEmitter(natif as never);
-    const abonnement = emetteur.addListener('VideoTrim', (e: EvenementRogneur) => {
-      switch (e.name) {
-        case 'onFinishTrimming':
-          abonnement.remove();
-          resoudre({chemin: e.outputPath ?? '', dureeSec: Math.round((e.duration ?? 0) / 1000)});
-          break;
-        case 'onCancel':
-          abonnement.remove();
-          resoudre(null);
-          break;
-        case 'onError':
-          abonnement.remove();
-          rejeter(new Error(e.message || 'rognage-echoue'));
-          break;
-        default:
-          /* Les autres évènements — ouverture, statistiques, journal — ne nous regardent pas. */
-          break;
-      }
-    });
-
-    const brique = chargerLaBrique();
-    if (!brique) {
-      abonnement.remove();
-      rejeter(new Error('rogneur-indisponible'));
+  dureeMs: number,
+  combien: number,
+  surChaque: (index: number, fichier: string) => void,
+  annule?: () => boolean,
+): Promise<void> {
+  const brique = chargerLaBrique();
+  if (!brique || dureeMs <= 0) {
+    return;
+  }
+  for (let i = 0; i < combien; i += 1) {
+    if (annule?.()) {
       return;
     }
+    // Au MILIEU de chaque tranche : la première image d'une vidéo est souvent noire.
+    const instant = Math.round((dureeMs * (i + 0.5)) / combien);
+    try {
+      const r = await brique.getFrameAt(chemin, {time: instant, maxWidth: 160});
+      if (!annule?.()) {
+        surChaque(i, r.outputPath);
+      }
+    } catch {
+      /* Une image manquante laisse un trou dans la pellicule — ce n'est pas une raison d'arrêter. */
+    }
+  }
+}
 
-    brique.showEditor(chemin, {
-      // La borne de durée est posée ICI : l'écran ne laisse pas choisir un passage qui sera refusé.
-      maxDuration: VIDEO_MAX_S * 1000,
-      saveToPhoto: false,
-      enableCancelDialog: false,
-      trimmerColor: couleurs.accent,
-      handleIconColor: couleurs.texte,
-      headerTextColor: couleurs.texte,
-      waveformColor: couleurs.accent,
-      waveformBackgroundColor: couleurs.fond,
-    });
-  });
+/**
+ * Découpe le passage choisi et rend l'extrait.
+ *
+ * ⚠️ **Aucun évènement n'est écouté ici** : la brique répond par une promesse, et c'est tout ce
+ * dont nous avons besoin. Voir l'en-tête du fichier pour ce que cette prudence a coûté à apprendre.
+ */
+export async function rognerVideo(chemin: string, debutMs: number, finMs: number): Promise<Extrait> {
+  const brique = chargerLaBrique();
+  if (!brique) {
+    throw new Error('rogneur-indisponible');
+  }
+  const r = await brique.trim(chemin, {startTime: Math.max(0, Math.round(debutMs)), endTime: Math.round(finMs)});
+  if (!r?.success || !r.outputPath) {
+    throw new Error('rognage-echoue');
+  }
+  return {chemin: r.outputPath, dureeSec: Math.round((r.duration ?? finMs - debutMs) / 1000)};
 }

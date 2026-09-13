@@ -7,6 +7,7 @@ import {PermissionsAndroid, Platform} from 'react-native';
 import {Asset, ImageLibraryOptions, launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {API_BASE_URL} from '../config';
 import {MeResponse, MEDIA_ROUTES} from '../lib/contracts';
+import {mimeMedia} from '../lib/media-regles';
 import {dialogs} from '../components/Dialog';
 import {api} from './api';
 
@@ -42,6 +43,12 @@ type AvatarMime = 'image/jpeg' | 'image/png' | 'image/webp';
 
 const AVATAR_OPTS: ImageLibraryOptions = {mediaType: 'photo', includeBase64: true, maxWidth: 640, maxHeight: 640, quality: 0.8};
 
+/**
+ * Le type d'une PHOTO DE PROFIL — et rien d'autre.
+ *
+ * ⚠️ Il rend toujours un `image/*`, même pour une vidéo. Pour un média de consultation, c'est
+ * `mimeMedia` qu'il faut : voir `lib/media-regles.ts`.
+ */
 function mimeOf(asset: Asset): AvatarMime {
   const t = (asset.type || '').toLowerCase();
   if (t.includes('png')) return 'image/png';
@@ -163,7 +170,7 @@ export async function pickSessionImageAssets(limit = 10): Promise<PickedImage[]>
     .map(a => ({
       uri: a.uri as string,
       base64: a.base64 ?? '',
-      mime: mimeOf(a),
+      mime: mimeMedia(a),
       tailleOctets: a.fileSize ?? 0,
       dureeSec: a.duration ?? 0,
     }));

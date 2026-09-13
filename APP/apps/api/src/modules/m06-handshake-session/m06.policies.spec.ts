@@ -12,6 +12,7 @@ import {
   canTransitionSession,
   clampMessagePageSize,
   DEFAULT_MESSAGE_PAGE_SIZE,
+  mediaAccepteDansLaSeance,
   HANDSHAKE_STATUSES,
   handshakeExpired,
   handshakeIdFromOrderRef,
@@ -392,5 +393,32 @@ describe("clampMessagePageSize — borne technique de pagination", () => {
     expect(clampMessagePageSize(-3)).toBe(DEFAULT_MESSAGE_PAGE_SIZE);
     expect(clampMessagePageSize(2.5)).toBe(DEFAULT_MESSAGE_PAGE_SIZE);
     expect(clampMessagePageSize(10_000)).toBe(MAX_MESSAGE_PAGE_SIZE);
+  });
+});
+
+describe("mediaAccepteDansLaSeance — le premier message peut être une pièce jointe", () => {
+  /*
+    ⚠️ **Un média part en DEUX temps** : on téléverse le fichier, puis on envoie le message qui le
+    porte. Le message était accepté pendant la préparation depuis le chantier 104 ; le téléversement,
+    lui, exigeait encore une séance ACTIVE — le patient pouvait donc ouvrir la séance en écrivant,
+    mais pas en montrant. Mesuré écran en main le 13/09.
+
+    *Une règle en deux temps ne se garde pas en un seul endroit.*
+  */
+  it("⚠️ la PRÉPARATION accepte le téléversement — sinon celui qui ne peut pas écrire ne peut rien dire", () => {
+    expect(mediaAccepteDansLaSeance("PREPARING")).toBe(true);
+    expect(mediaAccepteDansLaSeance("ACTIVE")).toBe(true);
+  });
+
+  it("et tout ce qui est terminé reste fermé — une archive ne reçoit plus rien", () => {
+    for (const status of ["ENDED", "REFUNDED", "EXPIRED", "CANCELLED", ""]) {
+      expect(mediaAccepteDansLaSeance(status)).toBe(false);
+    }
+  });
+
+  /* Déposer un fichier ne consomme aucune minute : c'est le MESSAGE qui ouvre la séance. */
+  it("téléverser n'ouvre pas la séance — seul le message du patient le fait", () => {
+    expect(messageOuvreLaSeance("PREPARING", "patient-1", "patient-1")).toBe(true);
+    expect(messageOuvreLaSeance("PREPARING", "medecin-1", "patient-1")).toBe(false);
   });
 });

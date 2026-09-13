@@ -692,6 +692,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **104** | **Les pièces se relisent enfin — et le décompteur part au premier message du patient** — 12/09, deux demandes du porteur. **(1) ⚠️ On pouvait envoyer une vidéo et un PDF depuis le chantier 99, et PAS les relire** : le fil ne connaissait que le son et l'image, et une vidéo reçue tombait dans une balise `<img>` — *c'est-à-dire nulle part*. Quatre rendus maintenant, sur le modèle de CMS : photo cliquable, vidéo en carte « ▶ », document en fiche, note vocale inchangée — plus un **lecteur plein panneau**. 📌 **Ce qu'on fait autrement que CMS** : eux téléchargent chaque pièce dès que la bulle apparaît ; ULAMU **ne charge que ce qui se regarde sans être demandé** — *charger dix vidéos pour en regarder une est un coût qu'on fait payer à quelqu'un qui n'a rien demandé à voir.* Le genre se lit dans la CLÉ, qui porte son extension depuis toujours. ⚠️ **Et une clé sans extension ne doit pas faire perdre le genre** : le `kind` du message sert de secours — *deux sources imparfaites qui se complètent valent mieux qu'une seule qui se tait.* **(2) Le décompteur part au PREMIER MESSAGE DU PATIENT**, décision du porteur qui remplace la pré-consultation. ⚠️ **Les messages du soignant n'ouvrent rien** : il peut saluer pendant la préparation sans qu'une minute payée soit consommée — *le temps appartient au patient, personne d'autre ne peut décider qu'il commence.* ⚠️ **Trois pièges de syntaxe payés d'affilée** : un commentaire JSX en position d'expression, puis le même commentaire qui se referme sur lui-même en citant sa propre syntaxe, puis un heredoc qui mange les échappements — **la huitième fois** pour celui-là. **web 1 081 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 6 fautes injectées, 6 détectées.** | ⏸ en attente | ⏸ |
 | **105** | **La pré-consultation retirée partout** — 12/09, décision du porteur : *« ça ne sert plus »*. Vingt fichiers touchés, trois applications. Le patient entre désormais **directement dans la conversation** et décrit son motif comme il parle — *demander les mêmes mots deux fois, une fois dans un formulaire puis une fois dans la conversation, était le vrai coût de cet écran.* Ce qu'elle faisait — démarrer le décompteur — était déjà repris par le premier message du patient (chantier 104). 📌 **Les données ne sont PAS détruites** : la table reste, avec les symptômes des consultations passées. *Retirer une fonctionnalité, c'est fermer une porte — pas brûler ce qu'il y a derrière.* ⚠️ **Ce que le chantier 76 avait gagné n'est pas perdu** : il avait gagné que l'écran se NOMME, pour qu'un soignant qui ouvre trois séances ne voie pas trois onglets identiques. Le titre porte maintenant la **date** — la matière a changé, l'exigence non. ⚠️ **Douze tests sont tombés, et aucun n'était à jeter** : un seul défendait la pré-consultation elle-même ; les onze autres s'ANCRAIENT dessus pour vérifier tout autre chose. *Un test qui perd son ancre ne perd pas son sujet.* ⚠️ **Et mon remplacement en masse a inversé le sens d'un test** : en renommant deux onglets par le même nom, il lui faisait vérifier qu'une flèche ne change rien. ⚠️ **Trois fautes injectées sur cinq sont passées** — dont une date ABÎMÉE, que mon test ne visitait pas parce qu'il ne posait qu'une date VIDE. **web 1 082 ✓ · mobile 94 ✓ · API unitaires 672 ✓ · lint 0 · builds et types propres · 5 fautes injectées, 4 détectées, 1 bénigne.** | ⏸ en attente | ⏸ |
 | **106** | **La vidéo sur le téléphone, rogneur compris** — 12/09, décision du porteur : *« je veux aussi un rogneur sur le mobile »*, après avoir écarté mon option « filmer court ». 📌 **La brique retenue et pourquoi** : `react-native-video-processing` est resté à React Native 0.4x et son rognage Android n'a jamais été écrit ; `ffmpeg-kit` a été **abandonné par son auteur en 2025** ; **`react-native-video-trim`** est publié depuis un mois, MIT, sans dépendance de code, et réclame exactement le `minSdk 24` et le NDK que ce projet a déjà. ⚠️ **Prix dit avant d'installer** : +15 à 25 Mo d'APK, et une reconstruction obligatoire. ⚠️ **`npm install` échouait AVANT mon paquet** : `react-native-ota-hot-update` réclame `react-native-fs`, absent du projet — *un conflit latent qui ne se déclare qu'au prochain ajout, c'est-à-dire au plus mauvais moment.* ⚠️ **Et la brique plante à l'IMPORT là où le binaire natif manque** (`TurboModuleRegistry.getEnforcing`) : l'écran entier tombait avant d'avoir pu vérifier que le rogneur existe. *Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.* Chargement TARDIF, comme `ota.ts` le faisait déjà — et le motif y était écrit. 📌 **L'encodage se fait à l'ENVOI, pas à la sélection** : une vidéo de 8 Mo fait une chaîne de 11 Mo en mémoire, et *encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.* ⚠️ **Et en SÉRIE** : le rogneur ouvre un écran, deux découpes simultanées se recouvriraient — *ce qui demande un geste ne se parallélise pas.* **mobile 107 ✓ · types propres · 10 fautes injectées, 10 attrapées.** | ⏸ en attente | ⏸ |
+| **107** | **La vidéo du téléphone, prouvée écran en main** — 12-13/09, après l'échec du 106 en séance réelle. 📌 **Quatre fautes, dont trois à moi.** ① La vidéo choisie repartait en `image/jpeg` : le sélecteur passait par `mimeOf`, écrit pour les photos de profil — *ce n'est jamais la pièce qui a cédé, c'est le joint.* ② `refusDEnvoi` était juste, testée, et **appelée par personne** — *une règle jamais appelée protège autant qu'une règle qui n'existe pas.* ③ Un commentaire affirmait que le projet était sur l'ANCIENNE architecture RN ; `gradle.properties` dit `newArchEnabled=true` depuis toujours, et un TurboModule n'y est pas dans `NativeModules` — *une croyance sur la configuration n'est pas une connaissance tant qu'on n'a pas ouvert le fichier qui la porte.* ④ ⚠️ **L'écran de découpe de la brique fait QUITTER l'application** (`emitOnShow` → `AsyncEventEmitter::emit` → SIGSEGV, trace du téléphone) : on garde ses fonctions qui répondent (`isValidFile`, `getFrameAt`, `trim`) et **l'écran devient le nôtre** — *une bibliothèque a rarement une seule porte.* 📌 Et deux fautes trouvées en testant : les `PanResponder` reconstruits à chaque rendu perdaient le geste (*un objet reconstruit pendant qu'on s'en sert n'est plus le même objet*), et le serveur refusait le téléversement en PRÉPARATION — *une règle en deux temps ne se garde pas en un seul endroit* : le patient pouvait ouvrir la séance en écrivant, mais pas en montrant. **Chaîne complète vérifiée sur le téléphone du porteur : choix → aperçu → découpe → envoi → relecture.** **mobile 116 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -740,6 +741,95 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 107 (la vidéo prouvée écran en main) a appris
+
+*13/09/2026 — le porteur : « ce petit travail que je t'ai donné tu ne réussis pas ». Il avait raison :
+le chantier 106 était vert de partout et ne marchait pas.*
+
+#### Le joint, pas la pièce
+
+Onze tests vérifiaient chaque règle une par une, et la vidéo choisie dans la galerie repartait quand
+même en `image/jpeg` — donc sans lecteur, sans avertissement de découpe, et vide à l'envoi. Le
+sélecteur demandait son type à `mimeOf`, une fonction écrite pour les photos de profil, dont le type
+de retour (`AvatarMime`) dit en toutes lettres qu'elle ne sait répondre que « image ».
+
+> **Ce n'est jamais la pièce qui a cédé, c'est le joint.** Aucun test ne regardait l'endroit où le
+> sélecteur donne la main aux règles.
+
+Le compilateur n'a rien dit : *un type plus étroit entre sans bruit là où l'on attend une chaîne.*
+
+#### Une règle qu'on n'appelle pas
+
+`refusDEnvoi` refusait proprement les formats et les poids interdits. Personne ne l'appelait.
+
+> **Une règle écrite, testée et jamais appelée protège exactement autant qu'une règle qui n'existe
+> pas.**
+
+#### ⚠️ Une croyance écrite en commentaire prend l'air d'une vérité vérifiée
+
+Pour savoir si le découpeur était présent, le code lisait `NativeModules.VideoTrim`. Un commentaire
+du même fichier expliquait que ce projet tournait sur l'ancienne architecture React Native.
+`android/gradle.properties` porte `newArchEnabled=true` depuis toujours — et sur la nouvelle
+architecture, un TurboModule **n'apparaît pas** dans cette table. Le test répondait donc « cet
+appareil ne sait pas découper » sur un téléphone où tout était installé.
+
+> **Une croyance sur la configuration du projet n'est pas une connaissance tant qu'on n'a pas ouvert
+> le fichier qui la porte.** Écrite en commentaire, elle se relit comme une vérité vérifiée — y
+> compris par celui qui l'a écrite.
+
+#### ⚠️ La bibliothèque avait deux portes
+
+Une fois branché correctement, l'écran de découpe de la brique **faisait quitter l'application**, à
+l'instant précis où il s'affichait. La trace du téléphone nomme le coupable :
+
+    BaseVideoTrimModule.showEditor → onShow → NativeVideoTrimSpec.emitOnShow
+    → AsyncEventEmitter<folly::dynamic>::emit → SIGSEGV (fault addr 0x40)
+
+C'est **l'annonce** « je suis à l'écran » qui tue le processus, pas la découpe. Trois vérifications
+avant de conclure : écouter les dix évènements au lieu de trois (même plantage), vérifier que la
+brique est bien reliée (`libappmodules.so` contient son fournisseur : elle l'est), chercher une
+version corrigée (8.2.2 est la dernière, publiée il y a un mois).
+
+> **Une bibliothèque a rarement une seule porte.** Celle-ci en a deux : l'écran tout fait, qui crie
+> ses évènements — et des fonctions qui **répondent** au lieu de crier (`isValidFile`, `getFrameAt`,
+> `trim`). Les secondes ne touchent jamais le pont qui casse.
+
+L'écran de découpe est donc le nôtre (`components/RogneurVideo.tsx`) : pellicule qui se remplit image
+par image, fenêtre qu'on déplace au doigt, deux poignées, et le poids estimé dit en toutes lettres.
+*Ce que le détour coûte en travail, il le rend en maîtrise* — et il ressemble enfin à ULAMU.
+
+#### ⚠️ Un objet reconstruit pendant qu'on s'en sert n'est plus le même objet
+
+Premier essai sur le téléphone : la fenêtre de sélection ne bougeait pas d'un pixel. Les trois
+`PanResponder` étaient reconstruits à chaque rendu pour voir les valeurs à jour ; au premier
+mouvement, `setDebut` provoquait un rendu, les `panHandlers` changeaient d'identité, et React Native
+perdait le geste en cours. Les poignées se créent maintenant **une fois**, et lisent l'état par
+référence.
+
+#### ⚠️ Une règle en deux temps ne se garde pas en un seul endroit
+
+Le rognage marchait, l'envoi partait — et le serveur répondait *« un média ne peut être envoyé que
+dans une session active »*. Depuis le chantier 104 la séance démarre au premier message du patient,
+et le message est accepté pendant la préparation. Mais **un média part en deux temps** : on téléverse
+le fichier, puis on envoie le message qui le porte — et le téléversement, lui, exigeait toujours une
+séance ACTIVE.
+
+Le patient pouvait donc ouvrir la séance **en écrivant, mais pas en montrant** — exactement le cas
+qui avait motivé le porteur à retirer la pré-consultation écrite : *« imaginons que l'utilisateur ne
+soit pas en mesure de répondre en écrivant, ou que le cas soit urgent et grave. »*
+
+> **Quand une action se fait en deux temps, la règle doit se tenir aux deux.**
+
+#### Ce que la vérification a coûté, et pourquoi elle valait ce prix
+
+Deux séances payées (5 000 F chacune) — **toutes deux remboursées automatiquement**, le soignant
+n'ayant jamais répondu : la règle de remboursement a fonctionné seule, sans un geste (« Session
+remboursée · aucune action requise »). *Une garantie qu'on n'a jamais vue jouer n'est qu'une
+promesse ; celle-ci a joué deux fois sous nos yeux.*
+
+Et surtout : **six fautes, dont aucune n'aurait été trouvée par les tests.** Le chantier 106 était
+vert de partout.
 
 ### Ce que le chantier 106 (la vidéo sur le téléphone) a appris
 

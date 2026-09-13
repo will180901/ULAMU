@@ -24,6 +24,7 @@ import {
   VIDEO_MAX_S,
   formatOctets,
   genreDuMime,
+  mimeMedia,
   refusDEnvoi,
 } from '../src/lib/media-regles';
 import {doitEtreRognee} from '../src/services/rogneur';
@@ -110,9 +111,9 @@ describe('Le chemin de la vidéo dans l’écran', () => {
     const ecran = source('screens/SessionScreen.tsx');
 
     expect(ecran).toContain('const preparerPourEnvoi');
-    expect(ecran).toContain('await ouvrirLeRogneur(');
-    // Et l'encodage vient APRÈS l'ouverture du rogneur, jamais avant.
-    expect(ecran.indexOf('ouvrirLeRogneur(')).toBeLessThan(ecran.indexOf('await fileToBase64(chemin)'));
+    expect(ecran).toContain('await demanderLePassage(p)');
+    // Et l'encodage vient APRÈS la découpe, jamais avant.
+    expect(ecran.indexOf('await rognerVideo(')).toBeLessThan(ecran.indexOf('await fileToBase64(chemin)'));
   });
 
   /*
@@ -149,5 +150,112 @@ describe('Ce que le format dit', () => {
   it('les poids se lisent comme on les dit', () => {
     expect(formatOctets(8 * MO)).toBe('8,0 Mo');
     expect(formatOctets(200_000)).toBe('195 Ko');
+  });
+});
+
+/*
+  ── Chantier 107 : la couture entre le sélecteur et les règles ────────────────────────────────
+
+  Le chantier 106 avait des règles justes et testées une par une — et une vidéo choisie dans la
+  galerie repartait quand même en `image/jpeg`, parce que le sélecteur la faisait passer par la
+  fonction écrite pour les photos de profil. *Ce n'est jamais la pièce qui a cédé, c'est le joint.*
+
+  Ces tests-ci regardent le joint.
+*/
+describe('Le type que le sélecteur annonce', () => {
+  it('⚠️ une vidéo choisie est annoncée comme une vidéo, pas comme une photo', () => {
+    expect(mimeMedia({type: 'video/mp4', fileName: 'VID_0001.mp4'})).toBe('video/mp4');
+    expect(genreDuMime(mimeMedia({type: 'video/mp4'}))).toBe('video');
+  });
+
+  /* Android laisse parfois le type vide : l'extension reste le dernier recours. */
+  it('et sans type annoncé, l’extension décide', () => {
+    expect(mimeMedia({type: null, fileName: 'VID_20260912.mp4'})).toBe('video/mp4');
+    expect(mimeMedia({type: '', uri: 'file:///stockage/film.MOV'})).toBe('video/quicktime');
+    expect(mimeMedia({type: '', fileName: 'photo.png'})).toBe('image/png');
+  });
+
+  it('une photo reste une photo', () => {
+    expect(mimeMedia({type: 'image/jpeg'})).toBe('image/jpeg');
+    expect(genreDuMime(mimeMedia({type: 'image/webp'}))).toBe('image');
+  });
+
+  /*
+    ⚠️ **Le joint lui-même.** `mimeOf` ne sait dire que des images — son type de retour l'annonce,
+    et le compilateur ne s'en émeut pas puisqu'une `AvatarMime` EST une chaîne. Seul un regard sur
+    l'appel voit le problème.
+  */
+  it('⚠️ et le sélecteur de consultation ne passe pas par la fonction des photos de profil', () => {
+    const svc = source('services/media.ts');
+    const choix = svc.slice(svc.indexOf('export async function pickSessionImageAssets'));
+
+    expect(choix).toContain('mimeMedia(a)');
+    expect(choix).not.toContain('mimeOf(a)');
+  });
+});
+
+describe('Ce qui est branché, et pas seulement écrit', () => {
+  /*
+    ⚠️ **Une règle jamais appelée protège autant qu'une règle qui n'existe pas.** `refusDEnvoi`
+    était juste, testée, et personne ne l'appelait : un fichier refusé par le serveur traversait
+    quand même le réseau pour l'apprendre.
+  */
+  it('⚠️ le refus est prononcé à la sélection, avant l’aperçu', () => {
+    const ecran = source('screens/SessionScreen.tsx');
+    const choix = ecran.slice(ecran.indexOf('const attachPhoto'), ecran.indexOf('const preparerPourEnvoi'));
+
+    expect(choix).toContain('refusDEnvoi(');
+  });
+
+  /*
+    ⚠️ **Ne rien savoir n'est pas une raison de croire que c'est petit.** Sans poids ni durée, la
+    vidéo passait pour minuscule — et on l'encodait en entier en mémoire.
+  */
+  it('⚠️ une vidéo dont on ne sait rien est rognée quand même', () => {
+    expect(doitEtreRognee(0, 0)).toBe(true);
+  });
+});
+
+describe('La brique et l’architecture que le projet construit vraiment', () => {
+  /*
+    ⚠️ **Le 12/09, en séance ouverte et payée**, le rogneur a répondu « cet appareil ne sait pas
+    découper une vidéo » sur un téléphone où il était parfaitement installé. Le code cherchait le
+    module dans `NativeModules` — où un TurboModule **n'apparaît pas**. Et un commentaire du même
+    fichier affirmait que le projet tournait sur l'ANCIENNE architecture, quand
+    `android/gradle.properties` porte `newArchEnabled=true` depuis toujours.
+
+    > *Une croyance sur la configuration du projet n'est pas une connaissance tant qu'on n'a pas
+    > ouvert le fichier qui la porte.*
+
+    Ce test relie les deux : le fichier de configuration, et la façon de s'abonner qu'il impose.
+  */
+  it('⚠️ le rogneur n’écoute AUCUN évènement de la brique', () => {
+    const props = readFileSync(resolve(__dirname, '../android/gradle.properties'), 'utf8');
+    const src = source('services/rogneur.ts');
+
+    expect(props).toMatch(/^newArchEnabled=true$/m);
+    /*
+      Les évènements de la brique font quitter l'application sur cette architecture (chantier 107).
+      On ne passe que par ses fonctions qui répondent : mesurer, extraire, découper.
+    */
+    expect(src).not.toContain('new NativeEventEmitter');
+    expect(src).not.toContain('onFinishTrimming');
+    // (`showEditor` est nommé dans l'en-tête du fichier — c'est l'APPEL qui doit avoir disparu.)
+    expect(src).not.toContain('.showEditor(');
+    expect(src).toContain('brique.trim(');
+    expect(src).toContain('brique.getFrameAt(');
+  });
+
+  /* L'écran de découpe est le nôtre, et il est bien branché à l'envoi. */
+  it('⚠️ et l’écran de découpe est le nôtre', () => {
+    const ecran = source('screens/SessionScreen.tsx');
+
+    expect(ecran).toContain('<RogneurVideo');
+    expect(source('components/RogneurVideo.tsx')).toContain('PanResponder');
+  });
+
+  /* Le chargement reste tardif : la brique lève une exception à l'import sans binaire natif. */
+  it('et elle se charge toujours au moment de s’en servir', () => {
+    expect(source('services/rogneur.ts')).toContain("require('react-native-video-trim')");
   });
 });

@@ -127,6 +127,35 @@ export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number): num
  * ⚠️ Le filet de PM-28 reste ailleurs : dix minutes après le paiement, la séance démarre seule.
  * Sans lui, un patient qui paie puis disparaît laisserait la séance ouverte indéfiniment.
  */
+/**
+ * Un média peut-il être téléversé dans cette séance ?
+ *
+ * ── ⚠️ Ce que le 13/09 a révélé, écran en main ────────────────────────────────────────────────
+ *
+ * Depuis le chantier 104, la séance démarre au PREMIER MESSAGE DU PATIENT, et le message lui-même
+ * est accepté pendant la préparation. Mais un média ne part pas en un geste : **on téléverse le
+ * fichier, PUIS on envoie le message qui le porte.** Et le téléversement, lui, exigeait toujours
+ * une séance ACTIVE.
+ *
+ * Conséquence, mesurée sur le téléphone du porteur : *« Un média ne peut être envoyé que dans une
+ * session active »* — le patient pouvait ouvrir la séance en écrivant, mais **pas en montrant.**
+ *
+ * > **Une règle en deux temps ne se garde pas en un seul endroit.** On avait ouvert la porte au
+ * > message et laissé fermée celle du fichier qu'il transporte.
+ *
+ * Or c'est précisément le cas qui a motivé le porteur à retirer la pré-consultation écrite : *« de
+ * nombreux utilisateurs n'ont pas la volonté d'écrire — imaginons que l'utilisateur ne soit pas en
+ * mesure de répondre en écrivant, ou que le cas soit urgent et grave. »* Une note vocale, une photo
+ * de la plaie, trente secondes de vidéo : voilà son premier message.
+ *
+ * La préparation est donc ouverte au téléversement. Ce qui décide du DÉMARRAGE reste inchangé :
+ * seul le message du patient ouvre la séance (`messageOuvreLaSeance`). *Déposer un fichier ne
+ * consomme aucune minute ; c'est le message qui compte.*
+ */
+export function mediaAccepteDansLaSeance(status: string): boolean {
+  return status === "ACTIVE" || status === "PREPARING";
+}
+
 export function messageOuvreLaSeance(
   status: "PREPARING" | "ACTIVE" | "ENDED" | "REFUNDED",
   senderId: string,

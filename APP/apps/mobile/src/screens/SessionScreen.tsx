@@ -37,12 +37,13 @@ import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api, getAuthToken} from '../services/api';
 import {PickedImage, avatarUrl, pickSessionImageAssets, sessionMediaUrl} from '../services/media';
-import {doitEtreRognee, ouvrirLeRogneur, rogneurDisponible} from '../services/rogneur';
-import {LIMITE_OCTETS, formatOctets, genreDuMime} from '../lib/media-regles';
+import {doitEtreRognee, rogneurDisponible, rognerVideo} from '../services/rogneur';
+import {LIMITE_OCTETS, formatOctets, genreDuMime, refusDEnvoi} from '../lib/media-regles';
 import {cancelRecording, fileToBase64, startRecording, stopRecording} from '../services/audio';
 import {ChatActionSheet} from '../components/ChatActionSheet';
 import {FeuilleSignalement} from '../components/FeuilleSignalement';
 import {MediaPreview} from '../components/MediaPreview';
+import {RogneurVideo} from '../components/RogneurVideo';
 import {TexteMisEnForme} from '../components/TexteMisEnForme';
 import {MediaViewer} from '../components/MediaViewer';
 import {VoiceNotePlayer} from '../components/VoiceNotePlayer';
@@ -533,6 +534,29 @@ function Composer({
   const [levels, setLevels] = useState<number[]>([]);
   const [preview, setPreview] = useState<PickedImage[]>([]);
   const [previewBusy, setPreviewBusy] = useState(false);
+  /*
+    ⚠️ **L'écran de découpe est une PROMESSE.** L'envoi est une suite d'étapes qui s'attendent —
+    rogner, encoder, vérifier le poids, téléverser — et au milieu il faut le doigt de quelqu'un.
+    On ouvre donc l'écran et on garde de côté la fonction qui répondra : le reste de la chaîne
+    attend là, sans rien savoir de l'interface. *Un geste humain, au milieu d'une suite d'étapes,
+    se tient comme une promesse : la chaîne ne se casse pas en deux.*
+  */
+  const [aDecouper, setADecouper] = useState<PickedImage | null>(null);
+  const repondrePassage = useRef<((p: {debut: number; fin: number} | null) => void) | null>(null);
+
+  const demanderLePassage = (p: PickedImage): Promise<{debut: number; fin: number} | null> =>
+    new Promise(repondre => {
+      repondrePassage.current = repondre;
+      setADecouper(p);
+    });
+
+  /** Referme l'écran et rend la réponse — `null` si l'on a renoncé. */
+  const fermerLeRogneur = (passage: {debut: number; fin: number} | null): void => {
+    setADecouper(null);
+    const repondre = repondrePassage.current;
+    repondrePassage.current = null;
+    repondre?.(passage);
+  };
   // Note vocale : AUCUNE limite de durée/taille (demande explicite) — juste un avertissement doux,
   // non bloquant, passé 90 min (batterie/stockage) ; l'enregistrement continue quoi qu'il arrive.
   const [batteryWarning, setBatteryWarning] = useState(false);
@@ -595,8 +619,29 @@ function Composer({
     }
     try {
       const assets = await pickSessionImageAssets(10);
-      if (assets.length > 0) {
-        setPreview(assets);
+      /*
+        ⚠️ **Le refus se dit ICI, avant l'aperçu.** La règle existait depuis le chantier 106 et
+        n'était appelée par personne : un fichier que le serveur rejettera de toute façon traversait
+        le réseau pour l'apprendre. *Une règle écrite et testée mais jamais appelée protège
+        exactement autant qu'une règle qui n'existe pas.*
+
+        La vidéo, elle, n'est jamais refusée sur son poids — le rogneur est son remède.
+      */
+      const gardes: PickedImage[] = [];
+      let refus: string | null = null;
+      for (const a of assets) {
+        const r = refusDEnvoi(a.mime, a.tailleOctets ?? 0);
+        if (r) {
+          refus = refus ?? r;
+        } else {
+          gardes.push(a);
+        }
+      }
+      if (refus) {
+        alertSafe(refus);
+      }
+      if (gardes.length > 0) {
+        setPreview(gardes);
       }
     } catch {
       alertSafe('Photo indisponible — réessayez.');
@@ -621,14 +666,11 @@ function Composer({
       if (!rogneurDisponible()) {
         throw new Error('Cet appareil ne sait pas découper une vidéo — filmez plus court.');
       }
-      const extrait = await ouvrirLeRogneur(p.uri, {
-        accent: colors.accent500,
-        fond: colors.surface,
-        texte: colors.textPrimary,
-      });
-      if (!extrait) {
+      const passage = await demanderLePassage(p);
+      if (!passage) {
         throw new Error('annule');
       }
+      const extrait = await rognerVideo(p.uri, passage.debut, passage.fin);
       chemin = extrait.chemin;
     }
     const base64 = await fileToBase64(chemin);
@@ -813,6 +855,14 @@ function Composer({
         </View>
       )}
 
+      <RogneurVideo
+        visible={aDecouper !== null}
+        uri={aDecouper?.uri ?? null}
+        tailleOctets={aDecouper?.tailleOctets ?? 0}
+        dureeConnueSec={aDecouper?.dureeSec ?? 0}
+        onAnnuler={() => fermerLeRogneur(null)}
+        onValider={(debut, fin) => fermerLeRogneur({debut, fin})}
+      />
       <MediaPreview visible={preview.length > 0} pieces={preview} busy={previewBusy} onCancel={() => setPreview([])} onSend={sendPreview} />
     </View>
   );

@@ -46,11 +46,79 @@ export function formatOctets(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`;
 }
 
+/**
+ * Le VRAI type d'un fichier choisi — image ou vidéo.
+ *
+ * ⚠️ **Ce qui a manqué au chantier 106.** Le sélecteur passait par `mimeOf`, écrit pour la photo de
+ * profil : son type de retour est `AvatarMime`, il ne sait dire que `image/jpeg`, `image/png` ou
+ * `image/webp`. Une vidéo choisie repartait donc en `image/jpeg` — plus de lecteur, plus
+ * d'avertissement de rognage, et un envoi vide. **Et le compilateur n'a rien dit** : un type plus
+ * étroit entre sans bruit là où l'on attend une chaîne.
+ *
+ * *Une fonction dont le nom ne dit pas ce qu'elle refuse finit par être appelée là où elle ne
+ * convient pas.*
+ *
+ * Android laisse parfois le type vide : l'extension du nom de fichier reste le dernier recours.
+ */
+export function mimeMedia(a: {type?: string | null; fileName?: string | null; uri?: string | null}): string {
+  const t = (a.type || '').toLowerCase();
+  if (t.startsWith('video/') || t.startsWith('image/')) {
+    return t;
+  }
+  const nom = (a.fileName || a.uri || '').toLowerCase();
+  const ext = nom.includes('.') ? nom.slice(nom.lastIndexOf('.') + 1) : '';
+  const parExtension: Record<string, string> = {
+    mp4: 'video/mp4',
+    m4v: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+    png: 'image/png',
+    webp: 'image/webp',
+  };
+  return parExtension[ext] ?? 'image/jpeg';
+}
+
 /** Le genre d'un fichier, tel que l'aperçu le traite. */
 export type GenreMedia = 'image' | 'video';
 
 export function genreDuMime(mime: string): GenreMedia {
   return mime.startsWith('video/') ? 'video' : 'image';
+}
+
+/**
+ * La plus longue portion sélectionnable, en secondes.
+ *
+ * ⚠️ **Deux bornes, et la seconde est celle qu'on oublie** : la durée maximale voulue (30 s), et ce
+ * que la limite de POIDS autorise au débit du fichier. *Une vidéo 4K de dix secondes peut peser
+ * 40 Mo : sa portion tient en deux secondes, pas en trente.*
+ *
+ * La marge de 10 % couvre l'en-tête du conteneur et l'arrondi sur l'image-clé.
+ *
+ * Miroir de `apps/web/src/modules/consultation/rogneur.ts` — même règle des deux côtés, pour la
+ * même raison que le plafond de durée : *deux limites différentes pour la même vidéo, selon
+ * l'appareil, seraient impossibles à expliquer.*
+ */
+export function portionMaximale(tailleOctets: number, dureeSec: number): number {
+  if (!(dureeSec > 0)) {
+    return VIDEO_MAX_S;
+  }
+  const octetsParSeconde = tailleOctets / dureeSec;
+  const parLePoids = octetsParSeconde > 0 ? (LIMITE_OCTETS * 0.9) / octetsParSeconde : VIDEO_MAX_S;
+  return Math.max(1, Math.min(VIDEO_MAX_S, parLePoids, dureeSec));
+}
+
+/**
+ * Le poids estimé d'une portion, à débit constant.
+ *
+ * ⚠️ C'est une **estimation**, affichée comme telle : le débit réel varie d'un plan à l'autre. Elle
+ * sert à prévenir avant l'envoi, pas à promettre. *Le poids vrai est mesuré sur l'extrait produit,
+ * et c'est lui qui décide.*
+ */
+export function poidsEstime(tailleOctets: number, dureeSec: number, portionSec: number): number {
+  if (!(dureeSec > 0)) {
+    return tailleOctets;
+  }
+  return Math.round((tailleOctets / dureeSec) * portionSec);
 }
 
 /**
