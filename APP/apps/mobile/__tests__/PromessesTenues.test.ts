@@ -153,3 +153,21 @@ verrouiller('Inscription', 'screens/RegisterScreen.tsx', [
     'on ne fait pas accepter un texte qu’aucun chemin ne donne à voir',
   ],
 ]);
+
+/*
+  ⚠️ **Ce qui se voit avant de payer ne se découvre pas après.**
+
+  Jusqu'au 14/09, l'écran de paiement demandait l'opérateur et ne disait jamais sur quel numéro la
+  demande partirait : elle partait sur le numéro de CONNEXION du compte. Un compte Airtel qui
+  choisissait « MTN MoMo » envoyait la demande vers un portefeuille qui n'existe pas — et la seule
+  chose que la personne voyait était une demande qui n'arrivait jamais.
+
+  Le carnet (chantier 113) a réglé le fond ; ces lignes gardent le fait qu'on le MONTRE.
+*/
+verrouiller('Paiement — le numéro débité (chantier 115)', 'screens/PayScreen.tsx', [
+  [/Débité sur/, "⚠️ l'écran annonce le numéro qui sera débité, avant de payer"],
+  [/Numéro de votre compte/, "⚠️ et il dit quand c'est le numéro du compte, faute d'enregistrement"],
+  [/Numéro enregistré pour cet opérateur/, "et quand c'est celui du carnet"],
+  [/momoNumbers\(\)/, "le carnet est bien lu par cet écran"],
+  [/looksRight/, "le doute sur l'opérateur se répète au dernier moment où il peut servir"],
+]);

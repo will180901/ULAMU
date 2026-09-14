@@ -15,7 +15,8 @@ import {Icon, IconName} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
-import {MomoOperator} from '../lib/contracts';
+import {MomoNumberView, MomoOperator} from '../lib/contracts';
+import {useMe} from '../state/MeContext';
 import {formatXaf} from '../services/directory';
 import {fonts, Palette, radius, shadow} from '../theme';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
@@ -31,11 +32,47 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
   const {colors, scheme} = useTheme();
   const styles = useThemedStyles(makeStyles);
   const {handshakeId, professionalName, amountXaf} = route.params;
+  const {me} = useMe();
   const [operator, setOperator] = useState<MomoOperator>('MTN_MOMO');
+  /*
+    ── ⚠️ Le numéro qui sera DÉBITÉ, dit avant de payer (chantier 115) ──────────────────────────
+
+    Jusqu'au 14/09, cet écran demandait l'opérateur et ne disait jamais sur quel numéro la demande
+    partirait. Elle partait sur le numéro de CONNEXION du compte — un compte Airtel qui choisissait
+    « MTN MoMo » envoyait donc la demande vers un portefeuille qui n'existe pas, et la seule chose
+    que la personne voyait était une demande qui n'arrivait jamais.
+
+    > **Ce qui se voit avant de payer ne se découvre pas après.**
+
+    Le carnet (chantier 113) a réglé le fond ; il restait à le MONTRER. `null` = carnet pas encore
+    lu : on ne promet rien tant qu'on ne sait pas.
+  */
+  const [carnet, setCarnet] = useState<MomoNumberView[] | null>(null);
   const [phase, setPhase] = useState<Phase>('choose');
   const [busy, setBusy] = useState(false);
   const [failMsg, setFailMsg] = useState('');
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    let mort = false;
+    api
+      .momoNumbers()
+      .then(rows => {
+        if (!mort) setCarnet(rows);
+      })
+      /* Carnet illisible : on retombe sur le numéro du compte, et on le dit quand même. */
+      .catch(() => {
+        if (!mort) setCarnet([]);
+      });
+    return () => {
+      mort = true;
+    };
+  }, []);
+
+  /** Le numéro qui sera débité pour l'opérateur choisi, et ce qu'on en sait. */
+  const enregistre = carnet?.find(n => n.operator === operator) ?? null;
+  const numeroDebite = enregistre?.msisdn ?? me?.phone ?? null;
+  const duCompte = enregistre === null;
 
   const stopPolling = () => {
     if (timer.current) {
@@ -179,6 +216,42 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
                 </Pressable>
               );
             })}
+            {/*
+              ⚠️ **Le numéro se dit sous l'opérateur choisi, pas ailleurs** : c'est la paire
+              (opérateur, numéro) qui fait la transaction, et les séparer laisserait croire que
+              l'un des deux suffit.
+            */}
+            {carnet !== null ? (
+              <View style={styles.numeroBloc}>
+                <Icon name="smartphone" size={14} color={colors.textSecondary} />
+                <View style={styles.flex}>
+                  {numeroDebite ? (
+                    <>
+                      <Text style={styles.numeroTexte}>
+                        Débité sur <Text style={styles.numeroFort}>{numeroDebite}</Text>
+                      </Text>
+                      <Text style={styles.numeroAide}>
+                        {duCompte
+                          ? 'Numéro de votre compte — aucun numéro enregistré pour cet opérateur.'
+                          : 'Numéro enregistré pour cet opérateur.'}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.numeroTexte}>Aucun numéro connu pour cet opérateur.</Text>
+                  )}
+                  {enregistre && !enregistre.looksRight ? (
+                    <Text style={styles.numeroDoute}>
+                      Ce numéro ne ressemble pas à un numéro {OPERATORS.find(o => o.code === operator)?.label} —
+                      vérifiez avant de payer.
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable onPress={() => navigation.navigate('Momo')} hitSlop={8}>
+                  <Text style={styles.numeroLien}>{duCompte ? 'Enregistrer' : 'Changer'}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             <PrimaryButton title={`Payer ${formatXaf(amountXaf)}`} iconLeft="credit-card" loading={busy} onPress={onPay} />
             <Text style={styles.foot}>Une demande sera poussée sur votre téléphone — confirmez avec votre code Mobile Money.</Text>
           </>
@@ -228,6 +301,22 @@ const makeStyles = (colors: Palette) =>
     receiptDivider: {height: 1, backgroundColor: colors.borderSubtle, marginVertical: 10},
     receiptTotalLabel: {fontFamily: fonts.displayBold, fontSize: 14, color: colors.textPrimary},
     receiptTotal: {fontFamily: fonts.display, fontSize: 19, letterSpacing: -0.4, color: colors.accent},
+    numeroBloc: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 9,
+      padding: 12,
+      borderRadius: radius.card,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgSubtle,
+      marginTop: 4,
+    },
+    numeroTexte: {fontFamily: fonts.body, fontSize: 12.5, color: colors.textPrimary},
+    numeroFort: {fontFamily: fonts.monoMedium, fontSize: 12.5, color: colors.textPrimary},
+    numeroAide: {fontFamily: fonts.body, fontSize: 11.5, color: colors.textTertiary, marginTop: 2},
+    numeroDoute: {fontFamily: fonts.body, fontSize: 11.5, color: colors.error, marginTop: 4},
+    numeroLien: {fontFamily: fonts.body, fontWeight: '600', fontSize: 12.5, color: colors.accent},
     receiptNote: {fontFamily: fonts.body, fontSize: 11, color: colors.textTertiary, marginTop: 10},
 
     section: {fontFamily: fonts.displayBold, fontSize: 14, color: colors.textPrimary, marginTop: 2},
