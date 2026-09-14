@@ -633,15 +633,26 @@ function DoctorRow({d, onPress}: {d: DoctorVM; onPress: () => void}) {
           ))}
         </View>
 
-        {/* CTA */}
+        {/*
+          ── ⚠️ Un bouton qui n'en était pas un — chantier 116, 14/09/2026 ────────────────────
+
+          « Voir le profil » était un simple `View` posé dans la carte : il ressemblait à un bouton,
+          il n'en avait aucun comportement — ni appui, ni retour visuel, ni libellé pour un lecteur
+          d'écran. Seule la carte entière réagissait. *Un objet qui a l'air d'un bouton et qui n'en
+          est pas déplace la faute sur celui qui appuie : il croit avoir mal visé.*
+
+          Et le carré de partage à côté est retiré (décision du porteur, « partout ») : il donnait à
+          la ligne deux cibles dont une ne menait nulle part.
+        */}
         <View style={styles.docCtaRow}>
-          <View style={[styles.docCta, {backgroundColor: colors.accent500}]}>
+          <Pressable
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Voir le profil de ${d.name}`}
+            style={({pressed}) => [styles.docCta, {backgroundColor: colors.accent500}, pressed && styles.docCtaPressed]}>
             <Icon name="stethoscope" size={14} color="#fff" />
             <Text style={[styles.docCtaText, {color: '#fff'}]}>Voir le profil</Text>
-          </View>
-          <View style={styles.docShare}>
-            <Icon name="share" size={14} color={colors.textSecondary} />
-          </View>
+          </Pressable>
         </View>
       </View>
       <AvatarViewer visible={avatarOpen} uri={null} name={d.name} onClose={() => setAvatarOpen(false)} />
@@ -819,5 +830,6 @@ const makeStyles = (colors: Palette) =>
   docCtaRow: {flexDirection: 'row', gap: 8, paddingBottom: 14, paddingTop: 2},
   docCta: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, borderRadius: radius.md},
   docCtaText: {fontFamily: fonts.body, fontWeight: '600', fontSize: 13},
-  docShare: {width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.bgMuted, borderWidth: 1, borderColor: colors.borderDefault, alignItems: 'center', justifyContent: 'center'},
+  /* L'appui se VOIT : sans retour visuel, on ne sait pas si le doigt a porté. */
+  docCtaPressed: {opacity: 0.85},
   });

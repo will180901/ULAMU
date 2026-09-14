@@ -28,11 +28,12 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 
 import {Banner, Card, IconButton, PhoneField, PrimaryButton} from '../components/ui';
-import {Icon} from '../components/Icon';
+import {LogoOperateur} from '../components/LogoOperateur';
 import {useDialog} from '../components/Dialog';
 import {Grain} from '../components/Grain';
 import {ApiError} from '../lib/api-client';
 import {MomoNumberView, MomoOperator} from '../lib/contracts';
+import {numeroLocalValide, refusDuNumero} from '../lib/numero';
 import {AppStackParamList} from '../navigation/types';
 import {api} from '../services/api';
 import {fonts, Palette, radius} from '../theme';
@@ -68,7 +69,12 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
 
   const enregistrer = async (operator: MomoOperator) => {
     const chiffres = local.replace(/\D/g, '');
-    if (chiffres.length < 9) {
+    /*
+      ⚠️ La même règle que le serveur, dite à la frappe : *un refus qui arrive après un aller-retour
+      réseau se lit comme une panne, et sur une connexion congolaise il se lit trois secondes plus
+      tard.*
+    */
+    if (!numeroLocalValide(chiffres)) {
       return;
     }
     setBusy(true);
@@ -120,7 +126,7 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
             return (
               <Card key={op.code} padding={14}>
                 <View style={styles.ligne}>
-                  <Icon name="smartphone" size={17} variant="tile" />
+                  <LogoOperateur operator={op.code} taille={34} />
                   <View style={styles.flex}>
                     <Text style={styles.nom}>{op.nom}</Text>
                     <Text style={styles.numero}>
@@ -145,11 +151,18 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
                 {enEdition ? (
                   <View style={styles.edition}>
                     <PhoneField value={local} onChangeText={setLocal} onSubmitEditing={() => enregistrer(op.code)} />
+                    {/*
+                      Le format se dit AVANT la faute, et ce qui manque se dit PENDANT : deux
+                      messages différents parce qu'ils ne répondent pas à la même question.
+                    */}
+                    <Text style={styles.regle}>
+                      {refusDuNumero(local.replace(/\D/g, '')) ?? '9 chiffres, commençant par 0 — ex. 06 612 45 90.'}
+                    </Text>
                     <PrimaryButton
                       title="Enregistrer"
                       iconRight="check"
                       loading={busy}
-                      disabled={local.replace(/\D/g, '').length < 9}
+                      disabled={!numeroLocalValide(local.replace(/\D/g, ''))}
                       onPress={() => enregistrer(op.code)}
                     />
                     <Pressable
@@ -199,6 +212,7 @@ const makeStyles = (colors: Palette) =>
     flex: {flex: 1},
     nom: {fontFamily: fonts.displayBold, fontSize: 13.5, color: colors.textPrimary},
     numero: {fontFamily: fonts.mono, fontSize: 12.5, color: colors.textSecondary, marginTop: 3},
+    regle: {fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.textTertiary},
     actions: {flexDirection: 'row', gap: 8, marginTop: 12},
     edition: {gap: 10, marginTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, paddingTop: 12},
     bouton: {paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.button, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.bgMuted},

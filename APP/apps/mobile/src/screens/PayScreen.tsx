@@ -12,6 +12,7 @@ import {Banner, IconButton, PrimaryButton} from '../components/ui';
 import {useAbandonGuard} from '../state/useAbandonGuard';
 import {Grain} from '../components/Grain';
 import {Icon, IconName} from '../components/Icon';
+import {LogoOperateur} from '../components/LogoOperateur';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
@@ -205,9 +206,12 @@ export function PayScreen({route, navigation}: NativeStackScreenProps<AppStackPa
               const on = operator === op.code;
               return (
                 <Pressable key={op.code} onPress={() => setOperator(op.code)} style={[styles.opCard, on && styles.opCardOn]}>
-                  <View style={[styles.opIcon, on && styles.opIconOn]}>
-                    <Icon name={op.icon} size={18} color={on ? '#fff' : colors.accent400} />
-                  </View>
+                  {/*
+                    ⚠️ Le LOGO, pas une icône générique : au moment de payer, ce qu'on cherche des
+                    yeux n'est pas le mot « MTN », c'est le jaune. *Une marque se reconnaît à sa
+                    couleur avant de se lire.*
+                  */}
+                  <LogoOperateur operator={op.code} taille={36} />
                   <View style={styles.flex}>
                     <Text style={styles.opLabel}>{op.label}</Text>
                     <Text style={styles.opHint}>{op.hint}</Text>

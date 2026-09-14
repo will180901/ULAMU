@@ -24,6 +24,7 @@ import {
 import Svg, {G, Path, Rect} from 'react-native-svg';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {fonts, Palette, radius, shadow, ToneName, toneForName} from '../theme';
+import {chiffresSeuls, NUMERO_LONGUEUR} from '../lib/numero';
 import {useTheme, useThemedStyles} from '../state/ThemeContext';
 import {Grain} from './Grain';
 import {Icon, IconName, toneForIcon} from './Icon';
@@ -272,6 +273,15 @@ export function FieldStatus({tone, children}: {tone: 'hint' | 'checking' | 'succ
 }
 
 /* ──────────── Champ téléphone (+242 figé + numéro) ──────────── */
+/**
+ * Champ de numéro congolais — indicatif fixe +242, partie nationale saisie à côté.
+ *
+ * ⚠️ **Il n'accepte QUE des chiffres, et jamais plus de neuf** (chantier 116, demande du porteur).
+ * Avant, il acceptait quatorze caractères quelconques : espaces, tirets, lettres. Chaque appelant
+ * faisait donc son propre `replace(/\D/g, '')` — et aucun ne disait à la personne pourquoi son
+ * numéro était refusé. *Un champ qui accepte ce qu'il ne pourra pas utiliser fabrique des erreurs
+ * qu'il faudra expliquer plus tard.*
+ */
 export function PhoneField({value, onChangeText, onSubmitEditing}: {value: string; onChangeText: (t: string) => void; onSubmitEditing?: () => void}) {
   const {colors} = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -286,11 +296,11 @@ export function PhoneField({value, onChangeText, onSubmitEditing}: {value: strin
         <TextInput
           style={styles.fieldInput}
           value={value}
-          onChangeText={onChangeText}
-          placeholder="06 612 45 90"
+          onChangeText={t => onChangeText(chiffresSeuls(t).slice(0, NUMERO_LONGUEUR))}
+          placeholder="066124590"
           placeholderTextColor={colors.textDisabled}
-          keyboardType="phone-pad"
-          maxLength={14}
+          keyboardType="number-pad"
+          maxLength={NUMERO_LONGUEUR}
           onFocus={() => setFocus(true)}
           onBlur={() => setFocus(false)}
           onSubmitEditing={onSubmitEditing}

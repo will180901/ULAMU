@@ -26,18 +26,30 @@
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Smartphone, TriangleAlert, Wallet } from 'lucide-react'
+import { Check, TriangleAlert, Wallet } from 'lucide-react'
+
+import airtelLogo from '@/assets/operateur-airtel.svg'
+import mtnLogo from '@/assets/operateur-mtn.svg'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avis, Carte } from '@/components/ulamu/parts'
 import { api, type MomoNumber, type MomoOperator } from '@/lib/api'
+import { chiffresSeuls, NUMERO_LONGUEUR, numeroLocalValide, refusDuNumero } from '@/lib/numero'
 import { messageErreur } from '@/lib/message-erreur'
 
 /** Les deux opérateurs du pays, dans l'ordre où on les cite. Le libellé est celui des écrans de paiement. */
-const OPERATEURS: { code: MomoOperator; nom: string; prefixe: string }[] = [
-  { code: 'MTN_MOMO', nom: 'MTN MoMo', prefixe: '06' },
-  { code: 'AIRTEL_MONEY', nom: 'Airtel Money', prefixe: '05' },
+const OPERATEURS: { code: MomoOperator; nom: string; prefixe: string; logo: string; fond: string }[] = [
+  /*
+    ⚠️ **Le cadre jaune de MTN n'est pas une décoration.** Le logo publié est une forme NOIRE : c'est
+    ainsi qu'il se pose sur le jaune de la marque, et le poser sur blanc donnerait un ovale que
+    personne ne reconnaîtrait. Airtel porte déjà son rouge et n'a besoin d'aucun fond.
+
+    *Deux marques, deux façons d'exister — les forcer dans le même gabarit les abîmerait toutes les
+    deux.* Provenance et conditions d'usage : `apps/mobile/assets/images/OPERATEURS.md`.
+  */
+  { code: 'MTN_MOMO', nom: 'MTN MoMo', prefixe: '06', logo: mtnLogo, fond: '#FFCB05' },
+  { code: 'AIRTEL_MONEY', nom: 'Airtel Money', prefixe: '05', logo: airtelLogo, fond: '#FFFFFF' },
 ]
 
 export function SectionMobileMoney() {
@@ -78,7 +90,7 @@ function LigneOperateur({
   enCours,
   onChange,
 }: {
-  operateur: { code: MomoOperator; nom: string; prefixe: string }
+  operateur: { code: MomoOperator; nom: string; prefixe: string; logo: string; fond: string }
   actuel: MomoNumber | null
   enCours: boolean
   onChange: () => void
@@ -104,7 +116,13 @@ function LigneOperateur({
     <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex min-w-0 items-center gap-2">
-          <Smartphone size={15} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-[var(--texte-tertiaire)]" />
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border"
+            style={{ background: operateur.fond }}
+          >
+            <img src={operateur.logo} alt="" className="max-h-4 max-w-[22px]" />
+          </span>
           <span className="min-w-0">
             <span className="block text-[13px] font-medium text-foreground">{operateur.nom}</span>
             <span className="block ul-aide">
@@ -151,20 +169,27 @@ function LigneOperateur({
           className="flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault()
-            if (saisie.trim()) enregistrer.mutate(saisie.trim())
+            if (numeroLocalValide(saisie)) enregistrer.mutate(saisie)
           }}
         >
           <span className="min-w-0 flex-1 basis-48">
+            {/*
+              ⚠️ **Chiffres seulement, neuf au plus** (chantier 116, demande du porteur). Le champ
+              acceptait n'importe quoi, et le refus n'arrivait qu'après un aller-retour au serveur.
+              *Une règle connue des deux côtés se dit à la frappe ; une règle connue d'un seul côté
+              se dit en retard.*
+            */}
             <Input
               autoFocus
               value={saisie}
-              onChange={(e) => setSaisie(e.target.value)}
-              placeholder={`${operateur.prefixe} 12 34 56 7`}
+              onChange={(e) => setSaisie(chiffresSeuls(e.target.value).slice(0, NUMERO_LONGUEUR))}
+              placeholder={`${operateur.prefixe}6124590`}
               aria-label={`Numéro ${operateur.nom}`}
-              inputMode="tel"
+              inputMode="numeric"
+              maxLength={NUMERO_LONGUEUR}
             />
           </span>
-          <Button type="submit" size="sm" disabled={!saisie.trim() || enregistrer.isPending}>
+          <Button type="submit" size="sm" disabled={!numeroLocalValide(saisie) || enregistrer.isPending}>
             <Check size={14} strokeWidth={2} aria-hidden="true" />
             Enregistrer
           </Button>
@@ -179,6 +204,14 @@ function LigneOperateur({
           >
             Annuler
           </Button>
+          {/*
+            Le format se dit AVANT la faute, et ce qui manque se dit PENDANT : deux messages
+            différents parce qu'ils ne répondent pas à la même question. *« Numéro invalide »
+            n'apprend rien à qui ne sait pas s'il en manque un chiffre ou si le premier est faux.*
+          */}
+          <span className="basis-full ul-aide">
+            {refusDuNumero(saisie) ?? '9 chiffres, commençant par 0 — ex. 066124590.'}
+          </span>
         </form>
       ) : null}
 

@@ -44,6 +44,20 @@ const MODULES = {
     web: 'src/modules/consultation/onde-vocale.ts',
     mobile: '../mobile/src/lib/onde-vocale.ts',
   },
+  /*
+    La règle d'un numéro congolais (chantier 116). Elle DOIT être la même des deux côtés : un numéro
+    accepté sur le téléphone et refusé sur l'ordinateur — ou l'inverse — se lirait comme une panne
+    de l'un des deux, et personne ne saurait lequel croire.
+
+    ⚠️ Et c'est un miroir du serveur (`m01.policies.normalizePhone`) : si la règle change là-bas,
+    les trois copies doivent suivre. Ce test ne peut pas le garder — il garde seulement que les
+    trois copies clientes ne divergent pas entre elles.
+  */
+  "la règle d'un numéro congolais": {
+    source: '../../packages/shared/src/numero.ts',
+    web: 'src/lib/numero.ts',
+    mobile: '../mobile/src/lib/numero.ts',
+  },
 } as const
 
 const empreinte = (chemin: string): string =>
