@@ -1479,6 +1479,20 @@ export const api = {
     request<MomoNumber>('PUT', `/v1/accounts/me/momo/${operator}`, { msisdn }, true),
   removeMomoNumber: (operator: MomoOperator) =>
     request<{ removed: boolean }>('DELETE', `/v1/accounts/me/momo/${operator}`, undefined, true),
+  /*
+    ⚠️ La vérification n'est exigée que pour RECEVOIR de l'argent (retrait des gains) — jamais pour
+    en envoyer : *un numéro qui reçoit doit être prouvé ; un numéro qui en envoie se prouve tout
+    seul*, puisque son titulaire confirme sur son téléphone.
+  */
+  requestMomoVerification: (operator: MomoOperator) =>
+    request<{ expiresInSeconds: number; debugCode?: string }>(
+      'POST',
+      `/v1/accounts/me/momo/${operator}/verify/request`,
+      undefined,
+      true,
+    ),
+  confirmMomoVerification: (operator: MomoOperator, otpCode: string) =>
+    request<MomoNumber>('POST', `/v1/accounts/me/momo/${operator}/verify/confirm`, { otpCode }, true),
 
   myOffers: () => request<Offer[]>('GET', '/v1/offers', undefined, true),
   /** Bornes PM-09/PM-06/PM-25 — annoncées AVANT la saisie, jamais écrites dans la page. */

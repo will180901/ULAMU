@@ -206,3 +206,8 @@ export class ConfirmEmailChangeDto {
 export class SetMomoNumberDto {
   @IsString() @IsNotEmpty({ message: "Numéro Mobile Money requis" }) @MaxLength(20) msisdn!: string;
 }
+
+/** Le code reçu par SMS sur le numéro Mobile Money qu'on cherche à prouver (chantier 117). */
+export class ConfirmMomoDto {
+  @IsString() @Length(6, 6) otpCode!: string;
+}

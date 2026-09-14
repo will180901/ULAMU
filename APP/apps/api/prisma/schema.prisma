@@ -183,6 +183,10 @@ enum OtpPurpose {
   /// clôturé, qui ne peut plus rien atteindre dans l'application. Usage DÉDIÉ : partagé avec
   /// PASSWORD_RESET, une demande de support mangerait le code de réinitialisation, et inversement.
   SUPPORT_ACCESS
+  /// Preuve qu'un numéro Mobile Money est bien tenu par le titulaire du compte (chantier 117).
+  /// Usage DÉDIÉ : le quota PM-19 se compte par usage, et un code de retrait qui mangerait celui
+  /// d'une action sensible enfermerait quelqu'un dehors au pire moment.
+  MOMO_VERIFY
 }
 
 /// Code OTP — usage unique, jamais stocké en clair (RM-01 / menaces T-11). Canal = phone (SMS) OU

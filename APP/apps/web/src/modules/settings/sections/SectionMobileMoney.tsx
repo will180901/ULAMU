@@ -26,7 +26,7 @@
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, TriangleAlert, Wallet } from 'lucide-react'
+import { BadgeCheck, Check, TriangleAlert, Wallet } from 'lucide-react'
 
 import airtelLogo from '@/assets/operateur-airtel.svg'
 import mtnLogo from '@/assets/operateur-mtn.svg'
@@ -97,6 +97,9 @@ function LigneOperateur({
 }) {
   const [edition, setEdition] = useState(false)
   const [saisie, setSaisie] = useState('')
+  /* La preuve se fait en deux temps : demander le code, puis le saisir. */
+  const [codeDemande, setCodeDemande] = useState(false)
+  const [code, setCode] = useState('')
 
   const enregistrer = useMutation({
     mutationFn: (msisdn: string) => api.setMomoNumber(operateur.code, msisdn),
@@ -110,6 +113,20 @@ function LigneOperateur({
   const retirer = useMutation({
     mutationFn: () => api.removeMomoNumber(operateur.code),
     onSuccess: onChange,
+  })
+
+  const demanderCode = useMutation({
+    mutationFn: () => api.requestMomoVerification(operateur.code),
+    onSuccess: () => setCodeDemande(true),
+  })
+
+  const confirmerCode = useMutation({
+    mutationFn: (c: string) => api.confirmMomoVerification(operateur.code, c),
+    onSuccess: () => {
+      setCodeDemande(false)
+      setCode('')
+      onChange()
+    },
   })
 
   return (
@@ -132,6 +149,23 @@ function LigneOperateur({
                   ? actuel.msisdn
                   : `Aucun numéro — commence habituellement par ${operateur.prefixe}`}
             </span>
+            {/*
+              ⚠️ **L'état de la preuve se voit sur la ligne, pas dans un écran à part.** Un numéro
+              non vérifié paie très bien ; il ne peut simplement pas RECEVOIR. *Dire à quoi un
+              numéro sert déjà, et à quoi il ne sert pas encore, évite de le croire cassé.*
+            */}
+            {actuel ? (
+              actuel.verified ? (
+                <span className="mt-1 flex items-center gap-1 text-[11.5px] text-[var(--succes-texte)]">
+                  <BadgeCheck size={12} strokeWidth={2} aria-hidden="true" />
+                  Vérifié — utilisable pour recevoir vos gains
+                </span>
+              ) : (
+                <span className="mt-1 block text-[11.5px] leading-[1.45] text-[var(--texte-tertiaire)]">
+                  Non vérifié — ce numéro peut payer, mais pas recevoir un retrait.
+                </span>
+              )
+            ) : null}
           </span>
         </span>
 
@@ -140,6 +174,16 @@ function LigneOperateur({
             <Button variant="secondary" size="sm" onClick={() => setEdition(true)}>
               {actuel ? 'Modifier' : 'Enregistrer'}
             </Button>
+            {actuel && !actuel.verified ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => demanderCode.mutate()}
+                disabled={demanderCode.isPending}
+              >
+                Vérifier
+              </Button>
+            ) : null}
             {actuel ? (
               <Button variant="ghost" size="sm" onClick={() => retirer.mutate()} disabled={retirer.isPending}>
                 Retirer
@@ -215,6 +259,43 @@ function LigneOperateur({
         </form>
       ) : null}
 
+      {/*
+        Le code part AU NUMÉRO LUI-MÊME, jamais à celui du compte : c'est ce numéro-là qu'on cherche
+        à prouver. *Envoyer la preuve à l'endroit qu'on veut vérifier est toute l'idée.*
+      */}
+      {codeDemande ? (
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (code.length === 6) confirmerCode.mutate(code)
+          }}
+        >
+          <span className="min-w-0 flex-1 basis-40">
+            <Input
+              autoFocus
+              value={code}
+              onChange={(e) => setCode(chiffresSeuls(e.target.value).slice(0, 6))}
+              placeholder="123456"
+              aria-label={`Code reçu sur le numéro ${operateur.nom}`}
+              inputMode="numeric"
+              maxLength={6}
+            />
+          </span>
+          <Button type="submit" size="sm" disabled={code.length !== 6 || confirmerCode.isPending}>
+            Confirmer
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setCodeDemande(false)}>
+            Annuler
+          </Button>
+          <span className="basis-full ul-aide">
+            Un code à 6 chiffres vient d'être envoyé par SMS sur {actuel?.msisdn}.
+          </span>
+        </form>
+      ) : null}
+
+      {demanderCode.isError ? <Avis ton="erreur">{messageErreur(demanderCode.error)}</Avis> : null}
+      {confirmerCode.isError ? <Avis ton="erreur">{messageErreur(confirmerCode.error)}</Avis> : null}
       {enregistrer.isError ? <Avis ton="erreur">{messageErreur(enregistrer.error)}</Avis> : null}
       {retirer.isError ? <Avis ton="erreur">{messageErreur(retirer.error)}</Avis> : null}
     </div>

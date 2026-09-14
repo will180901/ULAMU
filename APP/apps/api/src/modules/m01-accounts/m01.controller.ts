@@ -25,6 +25,7 @@ import {
   ResetPasswordDto,
   ResetPasswordTotpDto,
   ResetTotpDto,
+  ConfirmMomoDto,
   SetMomoNumberDto,
   StartEmailChangeDto,
   StartPhoneChangeDto,
@@ -348,6 +349,27 @@ export class M01Controller {
     @Body() dto: SetMomoNumberDto,
   ) {
     return this.service.setMomoNumber(actor.accountId, exigeOperateur(operator), dto.msisdn);
+  }
+
+  /*
+    ⚠️ La vérification n'est exigée que pour RECEVOIR de l'argent (retrait) — jamais pour en
+    envoyer. Voir `requestMomoVerification` : *un numéro qui reçoit doit être prouvé ; un numéro qui
+    envoie se prouve tout seul.*
+  */
+  @Post("accounts/me/momo/:operator/verify/request")
+  @HttpCode(200)
+  requestMomoVerification(@Actor() actor: AuthenticatedActor, @Param("operator") operator: string) {
+    return this.service.requestMomoVerification(actor.accountId, exigeOperateur(operator));
+  }
+
+  @Post("accounts/me/momo/:operator/verify/confirm")
+  @HttpCode(200)
+  confirmMomoVerification(
+    @Actor() actor: AuthenticatedActor,
+    @Param("operator") operator: string,
+    @Body() dto: ConfirmMomoDto,
+  ) {
+    return this.service.confirmMomoVerification(actor.accountId, exigeOperateur(operator), dto.otpCode);
   }
 
   @Delete("accounts/me/momo/:operator")

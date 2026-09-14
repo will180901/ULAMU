@@ -259,6 +259,12 @@ export class ApiClient {
   removeMomoNumber(operator: MomoOperator): Promise<{removed: boolean}> {
     return this.request('DELETE', ACCOUNT_ROUTES.momoOperator(operator), undefined, true);
   }
+  requestMomoVerification(operator: MomoOperator): Promise<{expiresInSeconds: number; debugCode?: string}> {
+    return this.request('POST', ACCOUNT_ROUTES.momoVerifyRequest(operator), undefined, true);
+  }
+  confirmMomoVerification(operator: MomoOperator, otpCode: string): Promise<MomoNumberView> {
+    return this.request('POST', ACCOUNT_ROUTES.momoVerifyConfirm(operator), {otpCode}, true);
+  }
   registerDevice(dto: RegisterDeviceRequest): Promise<{ok: true}> {
     return this.request('POST', NOTIFICATION_ROUTES.devices, dto, true);
   }

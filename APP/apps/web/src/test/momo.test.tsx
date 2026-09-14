@@ -99,3 +99,41 @@ describe('Mes numéros Mobile Money', () => {
     await waitFor(() => expect(oter).toHaveBeenCalledWith('MTN_MOMO'))
   })
 })
+
+describe('La preuve du numéro — chantier 117', () => {
+  /*
+    ⚠️ **Un numéro qui reçoit de l'argent doit être prouvé ; un numéro qui en envoie se prouve tout
+    seul**, puisque son titulaire confirme sur son propre téléphone.
+
+    Sur un paiement, un numéro faux donne une demande qui n'arrive pas. Sur un RETRAIT, il envoie
+    l'argent à un inconnu — et il ne revient pas. *La même erreur ne pèse pas le même prix selon le
+    sens dans lequel l'argent va.*
+  */
+  it('⚠️ un numéro non vérifié le dit, et dit ce qu’il peut quand même faire', async () => {
+    vi.spyOn(api, 'myMomoNumbers').mockResolvedValue([mtn])
+    monter()
+
+    expect(await screen.findByText(/peut payer, mais pas recevoir/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Vérifier' })).toBeInTheDocument()
+  })
+
+  it('un numéro vérifié le dit aussi', async () => {
+    vi.spyOn(api, 'myMomoNumbers').mockResolvedValue([{ ...mtn, verified: true }])
+    monter()
+
+    expect(await screen.findByText(/Vérifié/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Vérifier' })).not.toBeInTheDocument()
+  })
+
+  /* Le code part au NUMÉRO, pas au compte : c'est ce numéro-là qu'on cherche à prouver. */
+  it('⚠️ et le code s’annonce comme parti sur le numéro lui-même', async () => {
+    vi.spyOn(api, 'myMomoNumbers').mockResolvedValue([mtn])
+    const demander = vi.spyOn(api, 'requestMomoVerification').mockResolvedValue({ expiresInSeconds: 300 })
+    monter()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Vérifier' }))
+
+    await waitFor(() => expect(demander).toHaveBeenCalledWith('MTN_MOMO'))
+    expect(await screen.findByText(/envoyé par SMS sur \+242061234567/)).toBeInTheDocument()
+  })
+})

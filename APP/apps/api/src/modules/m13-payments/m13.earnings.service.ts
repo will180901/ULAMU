@@ -6,6 +6,7 @@
  * Retrait = action sensible : mot de passe + OTP (EF-13-07), commission ULAMU PM-02 (0 %).
  */
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -24,6 +25,7 @@ import { ProofRefusedException } from "../../common/auth/proof-refused";
 import { PrismaService } from "../../common/prisma.service";
 import { M01Service } from "../m01-accounts/m01.service";
 import { ConfirmWithdrawalDto, EarningsMeQueryDto, StartWithdrawalDto } from "./m13.dto";
+import { retraitAutorise } from "./m13.policies";
 import { PaymentsService } from "./m13.payments.service";
 import { decideOrphanWithdrawal, withdrawalFee } from "./m13.policies";
 
@@ -229,6 +231,50 @@ export class EarningsService {
     const actorAccount = await this.prisma.account.findUnique({ where: { id: actor.accountId } });
     if (!actorAccount) throw new UnauthorizedException("Compte introuvable");
 
+    /*
+      ── ⚠️ Le numéro de retrait : PROUVÉ, et pas celui de la connexion (chantier 117) ───────────
+
+      Jusqu'au 14/09, l'argent partait vers `actorAccount.phone` — l'identifiant de connexion. Deux
+      conséquences, et la seconde est la grave :
+
+        1. changer son identifiant de connexion déplaçait silencieusement l'argent des retraits ;
+        2. **rien ne prouvait que ce numéro était un portefeuille tenu par le titulaire.**
+
+      > **Un numéro qui reçoit de l'argent doit être prouvé ; un numéro qui en envoie se prouve tout
+      > seul**, puisque son titulaire doit confirmer sur son téléphone.
+
+      Sur un paiement, un numéro faux donne une demande qui n'arrive pas. Sur un retrait, il envoie
+      l'argent à un inconnu — et il ne revient pas. *La même erreur ne pèse pas le même prix selon le
+      sens dans lequel l'argent va.*
+    */
+    const destination = await this.prisma.momoNumber.findUnique({
+      where: { accountId_operator: { accountId: actor.accountId, operator: dto.operator } },
+    });
+    if (!destination) {
+      throw new BadRequestException(
+        "Aucun numéro enregistré pour cet opérateur — enregistrez-le dans Mobile Money, puis vérifiez-le",
+      );
+    }
+    if (destination.verifiedAt === null) {
+      throw new BadRequestException(
+        "Ce numéro n'est pas encore vérifié — demandez le code par SMS avant de retirer vos gains",
+      );
+    }
+
+    /*
+      ⚠️ **Et il attend.** PM-41 (24 h, décision du porteur) : le délai ne protège pas d'une erreur,
+      il protège d'un VOL. Un compte pris en main quelques minutes suffirait, sans lui, à détourner
+      un solde entier vers un numéro inconnu. *Il ne coûte qu'à celui qui change son numéro le jour
+      où il retire — c'est-à-dire au cas le plus rare et au plus suspect.*
+    */
+    const delaiS = await this.params.getInt("PM-41");
+    if (!retraitAutorise(destination.updatedAt.getTime(), Date.now(), delaiS)) {
+      const heures = Math.ceil((destination.updatedAt.getTime() + delaiS * 1000 - Date.now()) / 3600_000);
+      throw new BadRequestException(
+        `Ce numéro vient d'être modifié — le retrait sera possible dans ${heures} h. C'est une protection contre le vol de compte.`,
+      );
+    }
+
     const withdrawal = await this.prisma.$transaction(async (tx) => {
       const created = await tx.withdrawal.create({
         data: {
@@ -236,7 +282,7 @@ export class EarningsService {
           requestedBy: actor.accountId,
           amountXaf: dto.amountXaf,
           operator: dto.operator,
-          phone: actorAccount.phone,
+          phone: destination.msisdn,
         },
       });
       await this.audit.emit(tx, {

@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **684 ✓** (41 suites) |
-| Web | `npx vitest run` | **1 103 ✓** (53 fichiers, + 6 todo) |
+| Web | `npx vitest run` | **1 106 ✓** (53 fichiers, + 6 todo) |
 | Mobile | `npm test` | **121 ✓** (13 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 116
+## 3. Ce qui a été fait — chantiers 58 à 117
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 117 | *(à pousser)* | **Le numéro de retrait se prouve, et il attend.** Les gains partaient vers le numéro de connexion, sans preuve. Vérification par code SMS envoyé au numéro lui-même (`MOMO_VERIFY`), retrait refusé sans preuve, et **PM-41 : 24 h d'attente après un changement**. ⚠️ **Migration à appliquer au déploiement.** |
 | 116 | *(à pousser)* | **Trois demandes du porteur** : le partage retiré partout (et « Voir le profil » devenu un vrai bouton), la règle du numéro vendorée dans les trois copies (9 chiffres, commençant par 0, champs chiffres seulement), et les logos MTN / Airtel à la place de l'icône grise. |
 | 115 | *(à pousser)* | **Le numéro débité, dit avant de payer.** L'écran de paiement affiche, sous l'opérateur choisi, le numéro qui sera débité, d'où il vient (carnet ou compte), et répète le doute sur le préfixe. *Ce qui se voit avant de payer ne se découvre pas après.* |
 | 114 | *(à pousser)* | **Les écrans du carnet de numéros.** Onglet *Mobile Money* dans Mes paramètres (web) et écran *Mobile Money* dans les réglages (mobile) : un numéro par opérateur, le repli annoncé, le doute sur le préfixe affiché sans rien interdire. |

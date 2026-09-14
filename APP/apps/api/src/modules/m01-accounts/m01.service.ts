@@ -11,6 +11,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -1362,6 +1363,67 @@ export class M01Service {
       msisdn: row.msisdn,
       verified: row.verifiedAt !== null,
       looksRight: numeroRessembleALOperateur(row.operator, row.msisdn),
+    };
+  }
+
+  /**
+   * Envoie un code à ce numéro Mobile Money — la preuve qu'il est bien tenu par le titulaire.
+   *
+   * ── ⚠️ Pourquoi seul le RETRAIT l'exige ─────────────────────────────────────────────────────
+   *
+   * Un paiement se prouve tout seul : le payeur doit confirmer sur son propre téléphone, et une
+   * erreur de numéro se solde par une demande qui n'arrive pas. Un RETRAIT, lui, envoie de l'argent
+   * — et un numéro faux l'envoie à un inconnu.
+   *
+   * > **Un numéro qui reçoit de l'argent doit être prouvé ; un numéro qui en envoie se prouve tout
+   * > seul.**
+   *
+   * Le code part par SMS AU NUMÉRO LUI-MÊME, jamais à celui du compte : c'est ce numéro-là qu'on
+   * cherche à prouver. *Envoyer la preuve à l'endroit qu'on veut vérifier est toute l'idée ; l'envoyer
+   * ailleurs ne prouverait que ce qu'on sait déjà.*
+   */
+  async requestMomoVerification(accountId: string, operator: PaymentOperator): Promise<{ expiresInSeconds: number; debugCode?: string }> {
+    const ligne = await this.prisma.momoNumber.findUnique({ where: { accountId_operator: { accountId, operator } } });
+    if (!ligne) {
+      throw new NotFoundException("Aucun numéro enregistré pour cet opérateur — enregistrez-le d'abord");
+    }
+    return this.requestOtp({ phone: ligne.msisdn }, OtpPurpose.MOMO_VERIFY);
+  }
+
+  /**
+   * Confirme le code reçu : le numéro devient vérifié.
+   *
+   * ⚠️ La preuve porte sur la VALEUR du numéro, pas sur la ligne : si le numéro a changé entre
+   * l'envoi du code et sa saisie, le code ne vaut plus rien — il a été envoyé ailleurs.
+   */
+  async confirmMomoVerification(
+    accountId: string,
+    operator: PaymentOperator,
+    code: string,
+  ): Promise<{ operator: PaymentOperator; msisdn: string; verified: boolean; looksRight: boolean }> {
+    const ligne = await this.prisma.momoNumber.findUnique({ where: { accountId_operator: { accountId, operator } } });
+    if (!ligne) {
+      throw new NotFoundException("Aucun numéro enregistré pour cet opérateur");
+    }
+    const verifie = await this.prisma.$transaction(async (tx) => {
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: ligne.msisdn }, OtpPurpose.MOMO_VERIFY, code));
+      const maj = await tx.momoNumber.update({
+        where: { accountId_operator: { accountId, operator } },
+        data: { verifiedAt: new Date() },
+      });
+      await this.audit.emit(tx, {
+        actorId: accountId,
+        action: "m01.momo.number.verified",
+        resource: `account:${accountId}`,
+        context: { operator },
+      });
+      return maj;
+    });
+    return {
+      operator: verifie.operator,
+      msisdn: verifie.msisdn,
+      verified: verifie.verifiedAt !== null,
+      looksRight: numeroRessembleALOperateur(verifie.operator, verifie.msisdn),
     };
   }
 

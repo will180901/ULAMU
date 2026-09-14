@@ -1,5 +1,5 @@
 /**
- * Seed ULAMU — paramètres métier PM-01 → PM-40.
+ * Seed ULAMU — paramètres métier PM-01 → PM-41.
  * Source de vérité : docs/cahier_des_charges/01_architecture_fonctionnelle/parametres_metier.md
  * Les valeurs sont sérialisées en chaîne ; les durées sont en secondes sauf mention.
  */
@@ -53,6 +53,7 @@ export const PLATFORM_PARAMETERS: Param[] = [
   { key: "PM-38", value: "14400", description: "Validité du QR Urgence temporaire (s) — 4 h, non révocable (D-041)" },
   { key: "PM-39", value: "10", description: "Rayon d'intervention par défaut d'un soignant (km) (D-042)" },
   { key: "PM-40", value: "30", description: "Expiration d'une demande d'examens non réalisée (jours) (D-043)" },
+  { key: "PM-41", value: "86400", description: "Délai de sécurité après changement du numéro de retrait (s) — 24 h (décision porteur 14/09/2026)" },
 ];
 
 /**

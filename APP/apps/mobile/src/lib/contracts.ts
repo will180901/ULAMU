@@ -615,6 +615,9 @@ export const ACCOUNT_ROUTES = {
   /* Carnet de numéros Mobile Money (chantier 113) — un numéro par opérateur. */
   momo: '/v1/accounts/me/momo',
   momoOperator: (operator: string): string => `/v1/accounts/me/momo/${encodeURIComponent(operator)}`,
+  /* La preuve du numéro — exigée pour RECEVOIR de l'argent, jamais pour en envoyer (chantier 117). */
+  momoVerifyRequest: (operator: string): string => `/v1/accounts/me/momo/${encodeURIComponent(operator)}/verify/request`,
+  momoVerifyConfirm: (operator: string): string => `/v1/accounts/me/momo/${encodeURIComponent(operator)}/verify/confirm`,
   phoneChangeStart: '/v1/accounts/me/phone-change/start',
   phoneChangeConfirm: '/v1/accounts/me/phone-change/confirm',
   closeRequestOtp: '/v1/accounts/me/close/request-otp',

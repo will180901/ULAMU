@@ -27,7 +27,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useState} from 'react';
 import {ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 
-import {Banner, Card, IconButton, PhoneField, PrimaryButton} from '../components/ui';
+import {Banner, Card, IconButton, OtpInput, PhoneField, PrimaryButton} from '../components/ui';
 import {LogoOperateur} from '../components/LogoOperateur';
 import {useDialog} from '../components/Dialog';
 import {Grain} from '../components/Grain';
@@ -54,6 +54,9 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
   const [edite, setEdite] = useState<MomoOperator | null>(null);
   const [local, setLocal] = useState('');
   const [busy, setBusy] = useState(false);
+  /* La preuve se fait en deux temps : demander le code, puis le saisir. */
+  const [verifie, setVerifie] = useState<MomoOperator | null>(null);
+  const [code, setCode] = useState('');
 
   const charger = useCallback(async () => {
     try {
@@ -85,6 +88,42 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
       await charger();
     } catch (e) {
       await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Enregistrement impossible — réessayez.'});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Demande le code — envoyé AU NUMÉRO LUI-MÊME, jamais à celui du compte.
+   *
+   * *Envoyer la preuve à l'endroit qu'on veut vérifier est toute l'idée ; l'envoyer ailleurs ne
+   * prouverait que ce qu'on sait déjà.*
+   */
+  const demanderCode = async (operator: MomoOperator) => {
+    setBusy(true);
+    try {
+      await api.requestMomoVerification(operator);
+      setVerifie(operator);
+      setCode('');
+    } catch (e) {
+      await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Envoi impossible — réessayez.'});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmerCode = async (operator: MomoOperator) => {
+    if (code.length < 6) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.confirmMomoVerification(operator, code);
+      setVerifie(null);
+      setCode('');
+      await charger();
+    } catch (e) {
+      await alert({title: 'Oups', message: e instanceof ApiError ? e.message : 'Code refusé — redemandez-en un.'});
     } finally {
       setBusy(false);
     }
@@ -132,6 +171,18 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
                     <Text style={styles.numero}>
                       {actuel ? actuel.msisdn : `Aucun numéro — commence habituellement par ${op.prefixe}`}
                     </Text>
+                    {/*
+                      ⚠️ **L'état de la preuve se voit sur la ligne.** Un numéro non vérifié paie
+                      très bien ; il ne peut simplement pas RECEVOIR. *Dire à quoi un numéro sert
+                      déjà, et à quoi il ne sert pas encore, évite de le croire cassé.*
+                    */}
+                    {actuel ? (
+                      <Text style={actuel.verified ? styles.verifie : styles.nonVerifie}>
+                        {actuel.verified
+                          ? 'Vérifié — utilisable pour recevoir vos gains'
+                          : 'Non vérifié — ce numéro peut payer, mais pas recevoir un retrait.'}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
 
@@ -148,7 +199,24 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
                   </Banner>
                 ) : null}
 
-                {enEdition ? (
+                {verifie === op.code ? (
+                  <View style={styles.edition}>
+                    <Text style={styles.regle}>
+                      Un code à 6 chiffres vient d'être envoyé par SMS sur {actuel?.msisdn}.
+                    </Text>
+                    <OtpInput value={code} onChange={setCode} />
+                    <PrimaryButton
+                      title="Confirmer"
+                      iconRight="check"
+                      loading={busy}
+                      disabled={code.length < 6}
+                      onPress={() => confirmerCode(op.code)}
+                    />
+                    <Pressable onPress={() => setVerifie(null)} style={styles.lien}>
+                      <Text style={styles.lienTexte}>Annuler</Text>
+                    </Pressable>
+                  </View>
+                ) : enEdition ? (
                   <View style={styles.edition}>
                     <PhoneField value={local} onChangeText={setLocal} onSubmitEditing={() => enregistrer(op.code)} />
                     {/*
@@ -184,6 +252,11 @@ export function MomoScreen({navigation}: NativeStackScreenProps<AppStackParamLis
                       style={styles.bouton}>
                       <Text style={styles.boutonTexte}>{actuel ? 'Modifier' : 'Enregistrer'}</Text>
                     </Pressable>
+                    {actuel && !actuel.verified ? (
+                      <Pressable onPress={() => demanderCode(op.code)} disabled={busy} style={styles.bouton}>
+                        <Text style={styles.boutonTexte}>Vérifier</Text>
+                      </Pressable>
+                    ) : null}
                     {actuel ? (
                       <Pressable onPress={() => retirer(op.code)} disabled={busy} style={styles.lien}>
                         <Text style={styles.lienDanger}>Retirer</Text>
@@ -213,6 +286,8 @@ const makeStyles = (colors: Palette) =>
     nom: {fontFamily: fonts.displayBold, fontSize: 13.5, color: colors.textPrimary},
     numero: {fontFamily: fonts.mono, fontSize: 12.5, color: colors.textSecondary, marginTop: 3},
     regle: {fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.textTertiary},
+    verifie: {fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.success, marginTop: 3},
+    nonVerifie: {fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.textTertiary, marginTop: 3},
     actions: {flexDirection: 'row', gap: 8, marginTop: 12},
     edition: {gap: 10, marginTop: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle, paddingTop: 12},
     bouton: {paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.button, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.bgMuted},
