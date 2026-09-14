@@ -3,11 +3,16 @@
  * Branché M07 : fiche synthèse `GET /health-record/me/summary` (groupe sanguin, allergies, chroniques —
  * CALCULÉE serveur), chronologie `GET /health-record/me` (provenance visible RM-07-03, entrées immuables
  * RM-07-02 : une correction reste visible), déclaration patient `POST /me/entries` (CU-07-02 : « on protège
- * d'abord »), export `GET /me/export` (empreinte sha256 vérifiable ; PDF signé = lot ultérieur EF-07-08).
+ * d'abord »).
+ *
+ * ⚠️ **L'export « Exporter mon carnet » est retiré au chantier 112** (décision du porteur,
+ * 14/09/2026). La route serveur `GET /me/export` et son empreinte sha256 restent : c'est un
+ * droit du patient sur ses données, et le lot PDF signé (EF-07-08) s'y adossera. *Ce qui
+ * disparaît est le bouton, pas le droit.*
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useState} from 'react';
-import {Modal, Pressable, SafeAreaView, ScrollView, Share, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Modal, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
 import {Badge, Banner, Card, IconButton, PrimaryButton} from '../components/ui';
 import {EmptyState, ErrorState, LoadingState} from '../components/ScreenState';
 import {Grain} from '../components/Grain';
@@ -15,7 +20,7 @@ import {Icon, IconName} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
 import {api} from '../services/api';
-import {DeclarableType, HealthSummary, RecordEntry, RecordEntryType, RecordExport, RecordProvenance} from '../lib/contracts';
+import {DeclarableType, HealthSummary, RecordEntry, RecordEntryType, RecordProvenance} from '../lib/contracts';
 import {useAbandonGuard} from '../state/useAbandonGuard';
 import {useDialog} from '../components/Dialog';
 import {fonts, Palette, radius} from '../theme';
@@ -59,35 +64,11 @@ function entrySubtitle(e: RecordEntry): string {
   return s('label') ?? s('value') ?? s('diagnosis') ?? s('name') ?? s('summary') ?? TYPE_META[e.type]?.label ?? '';
 }
 
-/** Sérialise le carnet exporté en texte lisible, partageable via le Share natif (sans dépendance PDF). */
-function buildExportText(exp: RecordExport, title: string): string {
-  const c = exp.content as {entries?: RecordEntry[]};
-  const entries = Array.isArray(c.entries) ? c.entries : [];
-  const lines: string[] = [];
-  lines.push(`CARNET DE SANTÉ ULAMU — ${title}`);
-  lines.push(`Exporté le ${fmtDate(exp.generatedAt)}`);
-  lines.push(`Empreinte ${exp.algorithm} : ${exp.fingerprint}`);
-  lines.push('');
-  lines.push(`HISTORIQUE (${entries.length} entrée${entries.length > 1 ? 's' : ''})`);
-  lines.push('');
-  for (const e of entries) {
-    const meta = TYPE_META[e.type] ?? {label: e.type};
-    const corr = e.superseded ? ' (corrigée)' : '';
-    lines.push(`• ${fmtDate(e.createdAt)} — ${meta.label}${corr}`);
-    lines.push(`  ${entrySubtitle(e)}`);
-    lines.push(`  Provenance : ${PROVENANCE_LABEL[e.provenance] ?? e.provenance}`);
-  }
-  lines.push('');
-  lines.push("Document généré par ULAMU — gratuit, à vie, votre propriété. Vérifiez l'empreinte pour authentifier ce carnet.");
-  return lines.join('\n');
-}
-
 type Status = 'loading' | 'ready' | 'error';
 
 export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStackParamList, 'Carnet'>) {
   const {colors, scheme} = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const {alert} = useDialog();
   const sub = route.params?.subProfileId;
   const screenTitle = route.params?.title ?? 'Dossier médical';
   const [summary, setSummary] = useState<HealthSummary | null>(null);
@@ -110,18 +91,6 @@ export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStac
   useEffect(() => {
     load();
   }, [load]);
-
-  const onExport = async () => {
-    try {
-      const exp = await api.exportHealthRecord(sub);
-      await Share.share({title: `Carnet de santé — ${screenTitle}`, message: buildExportText(exp, screenTitle)});
-    } catch (e) {
-      // Le partage annulé par l'utilisateur rejette aussi → on n'alerte que sur une vraie erreur API.
-      if (e instanceof ApiError) {
-        alert({title: 'Oups', message: e.message});
-      }
-    }
-  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -186,10 +155,6 @@ export function CarnetScreen({route, navigation}: NativeStackScreenProps<AppStac
             </Card>
           )}
 
-          <Pressable onPress={onExport} style={styles.exportBtn}>
-            <Icon name="share" size={15} color={colors.textSecondary} />
-            <Text style={styles.exportText}>Exporter mon carnet</Text>
-          </Pressable>
           <Text style={styles.footNote}>Gratuit, à vie, votre propriété. Jamais de contenu médical sur l'écran verrouillé.</Text>
         </ScrollView>
       )}
@@ -353,8 +318,6 @@ const makeStyles = (colors: Palette) =>
   tlProv: {fontFamily: fonts.body, fontSize: 9.5, color: colors.textDisabled},
   tlCorrected: {fontFamily: fonts.body, fontSize: 9.5, color: colors.warning},
 
-  exportBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 12, borderRadius: radius.button, backgroundColor: colors.bgMuted, borderWidth: 1, borderColor: colors.borderDefault},
-  exportText: {fontFamily: fonts.body, fontWeight: '600', fontSize: 13, color: colors.textSecondary},
   footNote: {fontFamily: fonts.body, fontSize: 10.5, color: colors.textTertiary, textAlign: 'center', lineHeight: 15},
 
   // Declare modal

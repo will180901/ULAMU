@@ -553,6 +553,12 @@ export class ApiClient {
     const q = subProfileId ? `?subProfileId=${encodeURIComponent(subProfileId)}` : '';
     return this.request('POST', `${HEALTH_ROUTES.entries}${q}`, dto, true);
   }
+  /**
+   * ⚠️ **Aucun écran n'appelle ceci depuis le chantier 112** : le bouton « Exporter mon carnet » a
+   * été retiré sur décision du porteur. La route reste, parce que le droit du patient sur ses
+   * données reste, et que le lot PDF signé (EF-07-08) s'y adossera. *Une méthode qui n'est appelée
+   * par personne doit le dire, sinon quelqu'un la croira branchée.*
+   */
   exportHealthRecord(subProfileId?: string): Promise<RecordExport> {
     const q = subProfileId ? `?subProfileId=${encodeURIComponent(subProfileId)}` : '';
     return this.request('GET', `${HEALTH_ROUTES.export}${q}`, undefined, true);
