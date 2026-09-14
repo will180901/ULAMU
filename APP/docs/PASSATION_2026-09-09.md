@@ -51,7 +51,7 @@ arbre de travail propre.
 | Suite | Commande exacte | Résultat mesuré aujourd'hui |
 |---|---|---|
 | API | `npm run test:unit` **uniquement** | **641 ✓** (37 suites) |
-| Web | `npx vitest run` | **1 082 ✓** (51 fichiers, + 6 todo) |
+| Web | `npx vitest run` | **1 083 ✓** (51 fichiers, + 6 todo) |
 | Mobile | `npm test` | **116 ✓** (13 suites) |
 
 ⚠️ **`npm run test` sur l'API est interdit** : il inclut les sept suites d'intégration qui
@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 108
+## 3. Ce qui a été fait — chantiers 58 à 109
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 109 | *(à pousser)* | **Les pièces se relisent après la séance.** Le lecteur plein écran était monté dans le bloc d'envoi : sur une consultation terminée, aucune pièce ne s'ouvrait plus — *ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il sert le plus.* Signalé par le porteur, vérifié en ligne, 1 faute injectée / 1 attrapée. |
 | 108 | *(à pousser)* | **La séance payée mais pas commencée.** L'écran du médecin se croyait terminé (« conversation archivée », carnet clos, 00:00, pas de champ de saisie) sur une consultation payée trois minutes plus tôt — *un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible*. `vivante` / `active` distingués ; la séance non démarrée annonce son budget entier. ⚠️ Un test gardait le bug. |
 | 107 | *(à pousser)* | **La vidéo du téléphone, prouvée écran en main.** Quatre fautes du 106 réparées (la vidéo prise pour une photo ; une règle jamais appelée ; une croyance fausse sur l'architecture RN ; l'écran de la brique qui fait **quitter l'application**). **L'écran de découpe est désormais le nôtre.** ⚠️ Et le serveur refusait le téléversement en PRÉPARATION : le patient pouvait ouvrir la séance en écrivant, pas en montrant — corrigé (`mediaAccepteDansLaSeance`). **Chaîne vérifiée de bout en bout sur le téléphone du porteur.** |
 | 106 | *(à pousser)* | **La vidéo sur le téléphone, rogneur compris** (décision du porteur). 📌 `react-native-video-trim` retenue après avoir écarté deux briques mortes — *une brique accrochée à un écran de soin doit avoir quelqu'un derrière*. ⚠️ +15 à 25 Mo d'APK, reconstruction obligatoire. ⚠️ `npm install` échouait **avant** mon paquet (conflit latent `ota-hot-update` / `react-native-fs`). ⚠️ La brique **plante à l'import** sans binaire natif : chargement tardif, comme `ota.ts` le faisait déjà. |

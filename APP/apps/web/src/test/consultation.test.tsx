@@ -3339,3 +3339,34 @@ describe('C4 — filet de refonte : ce que le silence coûte', () => {
     expect(screen.getByText(/dix minutes après le paiement/)).toBeInTheDocument()
   })
 })
+
+describe('C5 — relire les pièces d’une consultation terminée', () => {
+  /*
+    ⚠️ **Signalé par le porteur le 14/09 : « il y a des boutons qui ne marchent pas pour la vidéo ».**
+
+    Le lecteur de pièce vivait DANS le bloc d'envoi. Sur une consultation terminée — donc sans barre
+    de saisie — il n'était plus monté du tout : le bouton répondait au clic, et il ne se passait
+    rien. Ni photo, ni vidéo, ni document.
+
+    C'est le moment où l'on en a le plus besoin : *le compte-rendu se rédige après la séance, à
+    partir de ce que le patient a montré.*
+
+    > **Ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il
+    > sert le plus.**
+  */
+  it('⚠️ une vidéo s’ouvre encore quand la séance est close', async () => {
+    await monter(seance({ status: 'ENDED' as CareSessionStatus, remainingSeconds: 0 }), [
+      message({ senderId: 'pat-1', kind: 'PHOTO', body: '', mediaKeys: ['sm_abc.mp4'] }),
+    ])
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Lire la vidéo' }))
+
+    expect(await screen.findByRole('group', { name: 'Pièce en grand' })).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Pas de jumeau pour la photo : en jsdom l'image n'est pas chargée (aucun réseau), donc son
+    bouton n'existe pas et le test ne prouverait rien. *Un test qui ne peut pas échouer n'est pas un
+    test.* Le chemin est le même — c'est le montage du lecteur qui était en cause, pas le genre.
+  */
+})

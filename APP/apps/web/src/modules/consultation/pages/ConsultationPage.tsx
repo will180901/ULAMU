@@ -2261,6 +2261,24 @@ export function ConsultationPage() {
               </p>
             ) : null}
 
+            {/*
+              ⚠️ **Lire n'est pas écrire.** Ce lecteur vivait DANS le bloc d'envoi : sur une
+              consultation terminée — donc sans barre de saisie — il n'était plus monté du tout, et
+              **aucune pièce ne s'ouvrait plus.** Le bouton répondait au clic et il ne se passait
+              rien : ni photo, ni vidéo, ni document, ni ordonnance jointe.
+
+              Signalé par le porteur le 14/09, vérifié dans la foulée sur une consultation
+              remboursée : *« il y a des boutons qui ne marchent pas pour la vidéo ».*
+
+              C'est exactement le moment où l'on a le plus besoin de relire les pièces : le
+              compte-rendu se rédige APRÈS la séance, et il se rédige à partir de ce que le patient
+              a montré. *Ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à
+              clé le jour où il sert le plus.*
+            */}
+            {pieceOuverte ? (
+              <LecteurPiece cle={pieceOuverte} onFermer={() => setPieceOuverte(null)} />
+            ) : null}
+
             {vivante ? (
               <form
                 className="flex flex-col gap-2"
@@ -2315,9 +2333,6 @@ export function ConsultationPage() {
                   Les deux ne coexistent jamais : le micro est éteint tant qu'un aperçu est ouvert.
                 */}
 
-                {pieceOuverte ? (
-                  <LecteurPiece cle={pieceOuverte} onFermer={() => setPieceOuverte(null)} />
-                ) : null}
 
                 {apercu ? (
                   <ApercuMedias

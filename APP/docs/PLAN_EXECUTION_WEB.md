@@ -694,6 +694,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **106** | **La vidéo sur le téléphone, rogneur compris** — 12/09, décision du porteur : *« je veux aussi un rogneur sur le mobile »*, après avoir écarté mon option « filmer court ». 📌 **La brique retenue et pourquoi** : `react-native-video-processing` est resté à React Native 0.4x et son rognage Android n'a jamais été écrit ; `ffmpeg-kit` a été **abandonné par son auteur en 2025** ; **`react-native-video-trim`** est publié depuis un mois, MIT, sans dépendance de code, et réclame exactement le `minSdk 24` et le NDK que ce projet a déjà. ⚠️ **Prix dit avant d'installer** : +15 à 25 Mo d'APK, et une reconstruction obligatoire. ⚠️ **`npm install` échouait AVANT mon paquet** : `react-native-ota-hot-update` réclame `react-native-fs`, absent du projet — *un conflit latent qui ne se déclare qu'au prochain ajout, c'est-à-dire au plus mauvais moment.* ⚠️ **Et la brique plante à l'IMPORT là où le binaire natif manque** (`TurboModuleRegistry.getEnforcing`) : l'écran entier tombait avant d'avoir pu vérifier que le rogneur existe. *Un garde-fou placé après le chargement ne garde rien : ce qu'il devait empêcher a déjà eu lieu.* Chargement TARDIF, comme `ota.ts` le faisait déjà — et le motif y était écrit. 📌 **L'encodage se fait à l'ENVOI, pas à la sélection** : une vidéo de 8 Mo fait une chaîne de 11 Mo en mémoire, et *encoder ce qu'on n'a pas encore décidé d'envoyer, c'est payer d'avance pour un peut-être.* ⚠️ **Et en SÉRIE** : le rogneur ouvre un écran, deux découpes simultanées se recouvriraient — *ce qui demande un geste ne se parallélise pas.* **mobile 107 ✓ · types propres · 10 fautes injectées, 10 attrapées.** | ⏸ en attente | ⏸ |
 | **107** | **La vidéo du téléphone, prouvée écran en main** — 12-13/09, après l'échec du 106 en séance réelle. 📌 **Quatre fautes, dont trois à moi.** ① La vidéo choisie repartait en `image/jpeg` : le sélecteur passait par `mimeOf`, écrit pour les photos de profil — *ce n'est jamais la pièce qui a cédé, c'est le joint.* ② `refusDEnvoi` était juste, testée, et **appelée par personne** — *une règle jamais appelée protège autant qu'une règle qui n'existe pas.* ③ Un commentaire affirmait que le projet était sur l'ANCIENNE architecture RN ; `gradle.properties` dit `newArchEnabled=true` depuis toujours, et un TurboModule n'y est pas dans `NativeModules` — *une croyance sur la configuration n'est pas une connaissance tant qu'on n'a pas ouvert le fichier qui la porte.* ④ ⚠️ **L'écran de découpe de la brique fait QUITTER l'application** (`emitOnShow` → `AsyncEventEmitter::emit` → SIGSEGV, trace du téléphone) : on garde ses fonctions qui répondent (`isValidFile`, `getFrameAt`, `trim`) et **l'écran devient le nôtre** — *une bibliothèque a rarement une seule porte.* 📌 Et deux fautes trouvées en testant : les `PanResponder` reconstruits à chaque rendu perdaient le geste (*un objet reconstruit pendant qu'on s'en sert n'est plus le même objet*), et le serveur refusait le téléversement en PRÉPARATION — *une règle en deux temps ne se garde pas en un seul endroit* : le patient pouvait ouvrir la séance en écrivant, mais pas en montrant. **Chaîne complète vérifiée sur le téléphone du porteur : choix → aperçu → découpe → envoi → relecture.** **mobile 116 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
 | **108** | **La séance payée mais pas commencée** — 13/09, trou révélé par le test du 107. ⚠️ **L'écran du médecin se croyait terminé** sur une consultation payée trois minutes plus tôt : « Conversation terminée · archivée », carnet **clos**, compteur **00:00**, et **aucun champ pour écrire** — pendant que le bandeau juste au-dessus l'invitait à écrire le premier. 📌 **Cause** : avant le chantier 104, « pas ACTIVE » voulait dire « finie », parce que la PRÉPARATION ne durait qu'un instant ; depuis que la séance démarre au premier message du patient, **cet état dure**. *Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.* L'écran distingue désormais `vivante` (on peut agir) de `active` (le temps coule) — deux questions différentes. ⚠️ **Et le décompteur annonçait 00:00 aux DEUX écrans** : `endsAt` est absent tant que rien n'a commencé. *Un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore commencé ».* La séance non démarrée annonce son budget entier. ⚠️ **Un test gardait le bug** : il affirmait « pas de composeur » — *un test écrit en même temps que le code qu'il garde peut n'en être que le reflet.* **web 1088 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
+| **109** | **Les pièces se relisent après la séance** — 14/09, signalé par le porteur : *« il y a des boutons qui ne marchent pas pour la vidéo »*. ⚠️ **Le lecteur de pièce vivait DANS le bloc d'envoi** : sur une consultation terminée — donc sans barre de saisie — il n'était plus monté du tout. Le bouton répondait au clic et il ne se passait rien : ni photo, ni vidéo, ni document. Vérifié en ligne sur une consultation remboursée avant de toucher au code. 📌 **Et c'est le moment où l'on en a le plus besoin** : le compte-rendu se rédige APRÈS la séance, à partir de ce que le patient a montré. *Ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il sert le plus.* **1 faute injectée, 1 attrapée · web 1089 ✓ · types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -742,6 +743,37 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 109 (les pièces relues après la séance) a appris
+
+*14/09/2026 — le porteur, en regardant une consultation remboursée : « il y a des boutons qui ne
+marchent pas pour la vidéo ».*
+
+#### Un outil de lecture rangé dans le tiroir de l'écriture
+
+Le lecteur plein écran d'une pièce jointe — photo, vidéo, document — était monté **à l'intérieur du
+bloc qui porte la barre de saisie**. C'était commode : l'aperçu d'envoi et le lecteur se ressemblent,
+ils occupent la même place, ils se ferment pareil.
+
+Mais la barre de saisie disparaît quand la séance se termine. Et avec elle, sans que personne l'ait
+voulu, **le lecteur**. Le bouton restait, il répondait au clic, et il ne se passait rien.
+
+> **Ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il sert
+> le plus.**
+
+Car c'est exactement après la séance qu'on relit les pièces : le compte-rendu se rédige ensuite, et
+il se rédige à partir de ce que le patient a montré. Le médecin avait 24 h pour écrire un
+compte-rendu sur des images qu'il ne pouvait plus ouvrir.
+
+#### Ce que ça dit du chantier 108, la veille
+
+Le chantier 108 avait déjà trouvé six endroits qui confondaient « pas en cours » et « terminée ».
+Celui-ci en était un septième — invisible ce jour-là parce qu'il ne se voit pas dans le code : rien
+n'y parle d'état de séance. **C'est la position dans l'arbre qui portait la règle**, et une règle
+portée par une position ne se lit nulle part.
+
+*Un test l'aurait dit ; il n'y en avait pas, parce qu'on ne teste pas volontiers ce qui « ne peut pas
+casser ».*
 
 ### Ce que le chantier 108 (la séance payée mais pas commencée) a appris
 
