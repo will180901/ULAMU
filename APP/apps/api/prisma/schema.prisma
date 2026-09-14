@@ -627,6 +627,16 @@ model Handshake {
   patientAccountId String
   professionalId   String
   offerId          String
+  /// Le prix, le libellé et la durée FIGÉS à l'instant de la demande (chantier 118).
+  ///
+  /// ⚠️ Le montant était relu dans l'offre au moment de PAYER : si le soignant modifiait son tarif
+  /// entre la demande et le paiement, le patient payait un prix qu'il n'avait jamais vu. *Un prix
+  /// montré est un engagement ; le relire plus tard, c'est se réserver le droit d'en changer.*
+  ///
+  /// Nullable pour les poignées d'AVANT le gel : elles retombent sur l'offre vivante, comme avant.
+  priceXaf         Int?
+  offerLabel       String?
+  offerDurationMin Int?
   /// Session « pour » une personne à charge (Carnet familial, CU-07-04).
   subProfileId     String?
   status           HandshakeStatus @default(INITIATED)

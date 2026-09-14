@@ -165,6 +165,26 @@ export function sessionRemainingSeconds(endsAt: Date | null, nowMs: number, budg
  * seul le message du patient ouvre la séance (`messageOuvreLaSeance`). *Déposer un fichier ne
  * consomme aucune minute ; c'est le message qui compte.*
  */
+/**
+ * Le montant à débiter : celui qui a été MONTRÉ, pas celui qui a cours.
+ *
+ * ── ⚠️ Ce que cette fonction empêche ──────────────────────────────────────────────────────────
+ *
+ * Le prix était relu dans l'offre au moment de payer. Entre la demande et le paiement il se passe
+ * plusieurs minutes — le soignant confirme, le patient sort son téléphone — et la vitrine invite le
+ * soignant à ajuster ses tarifs quand il veut, sans rien lui dire des demandes en cours.
+ *
+ * > **Un prix montré est un engagement ; le relire plus tard, c'est se réserver le droit d'en
+ * > changer.**
+ *
+ * `gele` vaut `null` pour les poignées d'avant le chantier 118 : elles retombent sur l'offre
+ * vivante, exactement comme avant. *Une valeur absente se dit absente ; on ne la remplace pas par
+ * un zéro qui aurait l'air d'un prix.*
+ */
+export function montantAFacturer(gele: number | null | undefined, prixActuel: number): number {
+  return typeof gele === "number" && gele > 0 ? gele : prixActuel;
+}
+
 export function mediaAccepteDansLaSeance(status: string): boolean {
   return seanceVivante(status);
 }

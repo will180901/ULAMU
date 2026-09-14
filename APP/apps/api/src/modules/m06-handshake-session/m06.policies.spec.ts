@@ -5,6 +5,7 @@
  * seed — mais chaque fonction reste paramétrée : aucun chiffre métier n'est figé en code.
  */
 import {
+  montantAFacturer,
   ageInYears,
   autoStartDue,
   canExtend,
@@ -430,5 +431,36 @@ describe("mediaAccepteDansLaSeance — le premier message peut être une pièce 
   it("téléverser n'ouvre pas la séance — seul le message du patient le fait", () => {
     expect(messageOuvreLaSeance("PREPARING", "patient-1", "patient-1")).toBe(true);
     expect(messageOuvreLaSeance("PREPARING", "medecin-1", "patient-1")).toBe(false);
+  });
+});
+
+describe("montantAFacturer — le prix montré est le prix payé", () => {
+  /*
+    ⚠️ **Le défaut, trouvé en relisant le parcours de paiement avec le porteur :** le montant était
+    relu dans l'offre AU MOMENT DE PAYER. Entre la demande et le paiement il se passe plusieurs
+    minutes — le soignant confirme, le patient sort son téléphone — et la vitrine invite le soignant
+    à ajuster ses tarifs quand il veut, sans rien lui dire des demandes en cours.
+
+    > **Un prix montré est un engagement ; le relire plus tard, c'est se réserver le droit d'en
+    > changer.**
+  */
+  it("⚠️ le prix figé l'emporte sur le prix courant, même s'il a baissé", () => {
+    expect(montantAFacturer(5000, 9000)).toBe(5000);
+    expect(montantAFacturer(5000, 2000)).toBe(5000);
+  });
+
+  /*
+    Les poignées d'AVANT le gel n'ont rien de figé : elles retombent sur l'offre vivante, exactement
+    comme avant. *Une valeur absente se dit absente ; on ne la remplace pas par un zéro qui aurait
+    l'air d'un prix.*
+  */
+  it("et sans prix figé, l'offre vivante fait foi", () => {
+    expect(montantAFacturer(null, 5000)).toBe(5000);
+    expect(montantAFacturer(undefined, 5000)).toBe(5000);
+  });
+
+  it("un zéro figé n'est pas un prix — c'est une absence", () => {
+    expect(montantAFacturer(0, 5000)).toBe(5000);
+    expect(montantAFacturer(-100, 5000)).toBe(5000);
   });
 });

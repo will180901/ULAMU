@@ -36,6 +36,7 @@ import {
   handshakeExpired,
   handshakeIdFromOrderRef,
   HandshakeStatusCode,
+  montantAFacturer,
   orderRefForHandshake,
   retryOrderRefForHandshake,
 } from "./m06.policies";
@@ -206,6 +207,17 @@ export class HandshakeService {
               patientAccountId: actor.accountId,
               professionalId: offer.professionalId,
               offerId: offer.id,
+              /*
+                ⚠️ **Le prix se fige ICI.** Il était relu dans l'offre au moment de payer : si le
+                soignant ajustait son tarif entre-temps — ce que la vitrine l'invite à faire — le
+                patient payait un prix qu'il n'avait jamais vu. *Un prix montré est un engagement.*
+
+                Le libellé et la durée sont figés aussi : un reçu qui dit « Consultation 30 min »
+                alors que l'offre s'appelle désormais autrement ne prouve plus rien.
+              */
+              priceXaf: offer.priceXaf,
+              offerLabel: offer.label,
+              offerDurationMin: offer.durationMin,
               subProfileId: dto.subProfileId ?? null,
               initiatedAt: now,
             },
@@ -427,11 +439,18 @@ export class HandshakeService {
     }
 
     // C1 : ordre référencé, capture DIFFÉRÉE (RM-06-04 : gains crédités au compte-rendu).
+    /*
+      ⚠️ **Le montant est celui qui a été MONTRÉ au patient**, figé à l'instant de la demande
+      (chantier 118) — pas celui que l'offre porte aujourd'hui. Voir `montantAFacturer` : *un prix
+      montré est un engagement ; le relire plus tard, c'est se réserver le droit d'en changer.*
+    */
+    const montant = montantAFacturer(fresh.priceXaf, offer.priceXaf);
+
     const charge = (orderRef: string) =>
       this.payments.requestCharge({
         orderRef,
         payerAccountId: actor.accountId,
-        amountXaf: offer.priceXaf,
+        amountXaf: montant,
         operator: dto.operator,
         beneficiary: { holderType: "PROFESSIONAL", holderId: fresh.professionalId },
         capture: "DEFERRED",
@@ -799,9 +818,10 @@ export class HandshakeService {
           {
             patientFirstName: personne?.firstName ?? null,
             patientAge: personne ? ageEnAnnees(personne.birthDate, maintenant) : null,
-            offerLabel: offre?.label ?? null,
-            offerDurationMin: offre?.durationMin ?? null,
-            offerPriceXaf: offre?.priceXaf ?? null,
+            /* Le prix FIGÉ d'abord : c'est celui que le patient a vu, et celui qu'il paiera. */
+            offerLabel: r.offerLabel ?? offre?.label ?? null,
+            offerDurationMin: r.offerDurationMin ?? offre?.durationMin ?? null,
+            offerPriceXaf: r.priceXaf ?? offre?.priceXaf ?? null,
           },
         ];
       }),
