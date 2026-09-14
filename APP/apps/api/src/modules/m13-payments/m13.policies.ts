@@ -16,6 +16,59 @@ export function operatorIsValid(operator: string): operator is MomoOperatorCode 
   return (MOMO_OPERATORS as readonly string[]).includes(operator);
 }
 
+// ── Numéros Mobile Money (chantier 113) ──────────────────────────────────────
+
+/**
+ * Les préfixes nationaux habituels de chaque opérateur, au Congo-Brazzaville.
+ *
+ * ⚠️ **Ce ne sont pas des règles, ce sont des HABITUDES.** La portabilité existe : un numéro en 05
+ * peut vivre chez MTN. C'est pourquoi rien ici ne bloque quoi que ce soit — la seule chose que ces
+ * préfixes autorisent est un AVERTISSEMENT : *« ce numéro ressemble à un numéro Airtel, et vous
+ * avez choisi MTN — vérifiez ».*
+ *
+ * *Un préfixe qui interdit se trompe le jour où l'opérateur ouvre une nouvelle tranche ; un préfixe
+ * qui prévient ne se trompe jamais tout à fait.* La règle « l'opérateur est un paramètre EXPLICITE,
+ * jamais déduit du préfixe » (EF-13-01) reste donc entière.
+ */
+const PREFIXES_HABITUELS: Record<MomoOperatorCode, readonly string[]> = {
+  MTN_MOMO: ["06"],
+  AIRTEL_MONEY: ["05"],
+};
+
+/**
+ * Ce numéro ressemble-t-il à un numéro de cet opérateur ?
+ *
+ * - `true` : le préfixe correspond, ou il est inconnu des deux (04, 07, 08 : on ne dit rien) ;
+ * - `false` : le préfixe est celui de l'AUTRE opérateur — c'est là, et seulement là, qu'on prévient.
+ *
+ * Le numéro est attendu au format canonique `+242XXXXXXXXX` (M01 `normalizePhone`).
+ */
+export function numeroRessembleALOperateur(operator: string, msisdn: string): boolean {
+  if (!operatorIsValid(operator)) return true;
+  const national = msisdn.startsWith("+242") ? msisdn.slice(4) : msisdn;
+  const prefixe = national.slice(0, 2);
+  const tous = Object.values(PREFIXES_HABITUELS).flat();
+  /* Préfixe qu'aucun opérateur ne revendique : on ne prétend pas savoir. */
+  if (!tous.includes(prefixe)) return true;
+  return PREFIXES_HABITUELS[operator].includes(prefixe);
+}
+
+/**
+ * Le délai de sécurité après un changement de numéro de RETRAIT — 24 h par défaut (D-porteur).
+ *
+ * ⚠️ Il ne protège pas d'une erreur, il protège d'un VOL : un compte pris en main quelques minutes
+ * suffirait, sans lui, à détourner un solde entier vers un numéro inconnu. Vingt-quatre heures,
+ * c'est le temps qu'il faut au titulaire pour s'apercevoir que quelque chose cloche.
+ *
+ * *Ce délai ne coûte qu'à celui qui change son numéro le jour où il retire — c'est-à-dire au cas le
+ * plus rare et au plus suspect.*
+ */
+export function retraitAutorise(numeroChangeAtMs: number | null, nowMs: number, delaiS: number): boolean {
+  if (numeroChangeAtMs === null) return true;
+  if (!Number.isFinite(delaiS) || delaiS < 0) throw new Error("Délai de sécurité invalide : secondes positives attendues");
+  return nowMs >= numeroChangeAtMs + delaiS * 1000;
+}
+
 // ── Montants ─────────────────────────────────────────────────────────────────
 
 /** Tout montant M13 est un entier strictement positif de francs CFA (pas de centimes au XAF). */

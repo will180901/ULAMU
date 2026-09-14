@@ -773,6 +773,29 @@ enum PaymentOperator {
   AIRTEL_MONEY
 }
 
+/// Carnet de numéros Mobile Money (chantier 113, 14/09/2026) — UN numéro par opérateur et par compte.
+///
+/// ⚠️ **Pourquoi ce n'est pas le numéro du compte.** Jusqu'ici, l'ordre de débit partait vers
+/// `Account.phone` — le numéro de CONNEXION — quel que soit l'opérateur choisi à l'écran. Un compte
+/// enregistré en Airtel qui choisissait « MTN MoMo » envoyait la demande vers un portefeuille MTN
+/// sur un numéro qui n'en a pas. *Un numéro de connexion prouve qui on est ; un numéro Mobile Money
+/// reçoit de l'argent. Ce n'est pas le même métier.*
+///
+/// `verifiedAt` reste nul tant qu'aucun code n'a été confirmé sur ce numéro : le paiement s'en
+/// contente (c'est le payeur qui confirme sur son téléphone), le RETRAIT ne s'en contentera pas.
+model MomoNumber {
+  accountId  String
+  operator   PaymentOperator
+  /// Format E.164 congolais, ex. +242061234567 — normalisé par M01 avant écriture.
+  msisdn     String
+  verifiedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@id([accountId, operator])
+  @@index([msisdn])
+}
+
 enum PaymentStatus {
   INITIATED
   SUCCEEDED

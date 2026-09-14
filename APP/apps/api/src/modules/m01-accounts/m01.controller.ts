@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { OtpPurpose } from "@prisma/client";
 import { Actor } from "../../common/auth/actor.decorator";
@@ -25,12 +25,28 @@ import {
   ResetPasswordDto,
   ResetPasswordTotpDto,
   ResetTotpDto,
+  SetMomoNumberDto,
   StartEmailChangeDto,
   StartPhoneChangeDto,
   UpdateAvatarDto,
   UpdateProfileDto,
 } from "./m01.dto";
 import { M01Service } from "./m01.service";
+import { PaymentOperator } from "@prisma/client";
+import { operatorIsValid } from "../m13-payments/m13.policies";
+
+/**
+ * L'opérateur vient de l'URL : il faut le vérifier avant d'en faire une valeur d'énumération.
+ *
+ * *Une chaîne venue du dehors n'est pas un type — la faire passer pour tel, c'est mentir au
+ * compilateur et se faire rattraper par la base.*
+ */
+function exigeOperateur(brut: string): PaymentOperator {
+  if (!operatorIsValid(brut)) {
+    throw new BadRequestException("Opérateur Mobile Money inconnu : MTN_MOMO ou AIRTEL_MONEY attendu");
+  }
+  return brut as PaymentOperator;
+}
 
 @Controller("v1")
 export class M01Controller {
@@ -311,5 +327,31 @@ export class M01Controller {
   @HttpCode(200)
   disableEmailTwoFactor(@Actor() actor: AuthenticatedActor, @Body() dto: DisableEmailTwoFactorDto) {
     return this.service.disableEmailTwoFactor(actor.accountId, dto.password);
+  }
+
+  // ── Carnet de numéros Mobile Money (chantier 113) ──────────────────────────
+  //
+  // ⚠️ Ces routes vivent dans M01 et non dans M13 : un numéro attaché à un compte est une donnée
+  // de COMPTE. L'invariant RM-13-01 — « l'Argent est aveugle, aucune entité métier » — interdit
+  // précisément à M13 de connaître des personnes. *Le module qui manipule des montants ne doit pas
+  // savoir à qui ils appartiennent.*
+
+  @Get("accounts/me/momo")
+  listMomoNumbers(@Actor() actor: AuthenticatedActor) {
+    return this.service.listMomoNumbers(actor.accountId);
+  }
+
+  @Put("accounts/me/momo/:operator")
+  setMomoNumber(
+    @Actor() actor: AuthenticatedActor,
+    @Param("operator") operator: string,
+    @Body() dto: SetMomoNumberDto,
+  ) {
+    return this.service.setMomoNumber(actor.accountId, exigeOperateur(operator), dto.msisdn);
+  }
+
+  @Delete("accounts/me/momo/:operator")
+  removeMomoNumber(@Actor() actor: AuthenticatedActor, @Param("operator") operator: string) {
+    return this.service.removeMomoNumber(actor.accountId, exigeOperateur(operator));
   }
 }

@@ -111,11 +111,31 @@ export class PaymentsService {
     const existing = await this.prisma.payment.findUnique({ where: { orderRef: order.orderRef } });
     if (existing) return this.toState(existing);
 
-    // Le téléphone MoMo du payeur est lu via son compte (M01 = identifiant racine).
     const payer = await this.prisma.account.findUnique({ where: { id: order.payerAccountId } });
     if (!payer || payer.status !== "ACTIVE") {
       throw new BadRequestException("Compte payeur introuvable ou inactif");
     }
+
+    /*
+      ── ⚠️ Le numéro débité : celui du CARNET, pas celui de la connexion (chantier 113) ─────────
+
+      Avant le 14/09, la demande partait vers `payer.phone` — le numéro qui sert à se connecter —
+      **quel que soit l'opérateur choisi à l'écran**. Un compte enregistré sur un numéro Airtel qui
+      cliquait « MTN MoMo » envoyait la demande vers un portefeuille MTN sur un numéro qui n'en a
+      pas. Signalé par le porteur : *« on enregistre les numéros selon les opérateurs pour éviter
+      les erreurs dans les transactions ».*
+
+      > **Un numéro de connexion prouve qui on est ; un numéro Mobile Money reçoit de l'argent. Ce
+      > n'est pas le même métier, et c'était le même champ.**
+
+      Le repli sur `payer.phone` reste, et il est volontaire : les comptes créés avant ce carnet
+      n'ont rien enregistré, et une fondation ne casse pas ce qui tient déjà dessus. L'écran, lui,
+      montre le numéro qui sera débité — *ce qui se voit avant de payer ne se découvre pas après.*
+    */
+    const duCarnet = await this.prisma.momoNumber.findUnique({
+      where: { accountId_operator: { accountId: order.payerAccountId, operator: order.operator } },
+    });
+    const numeroPayeur = duCarnet?.msisdn ?? payer.phone;
 
     // EF-13-02 / RM-13-07 : taux du CONTRAT EN VIGUEUR du bénéficiaire (M03), repli PM-01 ;
     // sans bénéficiaire = 100 % ULAMU (dévoilement, PM-03).
@@ -178,7 +198,7 @@ export class PaymentsService {
     try {
       const res = await this.gateway.requestCharge({
         aggregatorRef: paymentId,
-        phone: payer.phone,
+        phone: numeroPayeur,
         amountXaf: order.amountXaf,
         operator: order.operator,
       });

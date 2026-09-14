@@ -14,7 +14,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { OtpPurpose, Prisma } from "@prisma/client";
+import { OtpPurpose, PaymentOperator, Prisma } from "@prisma/client";
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { preuveEnSession, ProofRefusedException } from "../../common/auth/proof-refused";
@@ -30,6 +30,7 @@ import { ParamsService } from "../../common/params.service";
 import { PrismaService } from "../../common/prisma.service";
 import { SMS_GATEWAY, SmsGateway } from "../../common/sms/sms.service";
 import { StorageService } from "../../common/storage.service";
+import { numeroRessembleALOperateur } from "../m13-payments/m13.policies";
 import {
   canSendOtp,
   doitTracerConnexionSansSecondFacteur,
@@ -1302,5 +1303,83 @@ export class M01Service {
     await this.prisma.$transaction(async (tx) => {
       await this.audit.emit(tx, { actorType: "system", action, resource, context });
     });
+  }
+
+  // ── Carnet de numéros Mobile Money (chantier 113) ──────────────────────────
+
+  /**
+   * Les numéros Mobile Money du compte, un par opérateur.
+   *
+   * ⚠️ Chaque ligne dit si le numéro **ressemble** à son opérateur. Ce n'est pas une validation :
+   * la portabilité existe, un 05 peut vivre chez MTN. C'est un avertissement que l'écran affichera
+   * — *un préfixe qui interdit se trompe le jour où l'opérateur ouvre une tranche ; un préfixe qui
+   * prévient ne se trompe jamais tout à fait.*
+   */
+  async listMomoNumbers(accountId: string): Promise<
+    { operator: PaymentOperator; msisdn: string; verified: boolean; looksRight: boolean }[]
+  > {
+    const rows = await this.prisma.momoNumber.findMany({ where: { accountId }, orderBy: { operator: "asc" } });
+    return rows.map((r) => ({
+      operator: r.operator,
+      msisdn: r.msisdn,
+      verified: r.verifiedAt !== null,
+      looksRight: numeroRessembleALOperateur(r.operator, r.msisdn),
+    }));
+  }
+
+  /**
+   * Enregistre ou remplace le numéro d'un opérateur.
+   *
+   * ⚠️ **Tout remplacement efface la vérification.** Un numéro vérifié hier n'est pas le numéro
+   * tapé aujourd'hui : *une preuve porte sur une valeur, jamais sur un champ.*
+   */
+  async setMomoNumber(
+    accountId: string,
+    operator: PaymentOperator,
+    msisdnBrut: string,
+  ): Promise<{ operator: PaymentOperator; msisdn: string; verified: boolean; looksRight: boolean }> {
+    const msisdn = normalizePhone(msisdnBrut);
+    if (!msisdn) {
+      throw new BadRequestException("Numéro invalide : un numéro congolais est attendu, ex. 06 123 45 67");
+    }
+    const row = await this.prisma.$transaction(async (tx) => {
+      const ligne = await tx.momoNumber.upsert({
+        where: { accountId_operator: { accountId, operator } },
+        create: { accountId, operator, msisdn },
+        update: { msisdn, verifiedAt: null },
+      });
+      /* L'argent se déplace avec ce numéro : le journal doit en garder trace (M04). */
+      await this.audit.emit(tx, {
+        actorId: accountId,
+        action: "m01.momo.number.set",
+        resource: `account:${accountId}`,
+        context: { operator },
+      });
+      return ligne;
+    });
+    return {
+      operator: row.operator,
+      msisdn: row.msisdn,
+      verified: row.verifiedAt !== null,
+      looksRight: numeroRessembleALOperateur(row.operator, row.msisdn),
+    };
+  }
+
+  /** Retire le numéro d'un opérateur — le compte retombe alors sur son numéro de connexion. */
+  async removeMomoNumber(accountId: string, operator: PaymentOperator): Promise<{ removed: boolean }> {
+    const existe = await this.prisma.momoNumber.findUnique({
+      where: { accountId_operator: { accountId, operator } },
+    });
+    if (!existe) return { removed: false };
+    await this.prisma.$transaction(async (tx) => {
+      await tx.momoNumber.delete({ where: { accountId_operator: { accountId, operator } } });
+      await this.audit.emit(tx, {
+        actorId: accountId,
+        action: "m01.momo.number.removed",
+        resource: `account:${accountId}`,
+        context: { operator },
+      });
+    });
+    return { removed: true };
   }
 }

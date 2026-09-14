@@ -16,6 +16,8 @@ import {
   splitIsCapturable,
   withdrawalDebitAllowed,
   withdrawalFee,
+  numeroRessembleALOperateur,
+  retraitAutorise,
 } from "./m13.policies";
 
 describe("Opérateur Mobile Money explicite (EF-13-01)", () => {
@@ -258,5 +260,70 @@ describe("Retraits orphelins — décision (chantier 50)", () => {
 
   it("sans référence, il n’y a rien à décider", () => {
     expect(decideOrphanWithdrawal(null, ["ref-1"])).toBe("ATTENDRE");
+  });
+});
+
+describe("numeroRessembleALOperateur — prévenir, jamais interdire", () => {
+  /*
+    ⚠️ **Ce n'est pas une validation.** La portabilité existe : un numéro en 05 peut vivre chez MTN.
+    La règle « l'opérateur est un paramètre EXPLICITE, jamais déduit du préfixe » (EF-13-01) reste
+    entière — ceci ne sert qu'à AFFICHER un doute.
+
+    *Un préfixe qui interdit se trompe le jour où l'opérateur ouvre une nouvelle tranche ; un
+    préfixe qui prévient ne se trompe jamais tout à fait.*
+  */
+  it("le préfixe habituel de l'opérateur ne déclenche aucun doute", () => {
+    expect(numeroRessembleALOperateur("MTN_MOMO", "+242061234567")).toBe(true);
+    expect(numeroRessembleALOperateur("AIRTEL_MONEY", "+242051234567")).toBe(true);
+  });
+
+  it("⚠️ le préfixe de l'AUTRE opérateur, si — c'est là qu'on prévient", () => {
+    expect(numeroRessembleALOperateur("MTN_MOMO", "+242051234567")).toBe(false);
+    expect(numeroRessembleALOperateur("AIRTEL_MONEY", "+242061234567")).toBe(false);
+  });
+
+  /* Un préfixe qu'aucun opérateur ne revendique : on ne prétend pas savoir. */
+  it("et sur un préfixe inconnu des deux, on se tait", () => {
+    for (const n of ["+242041234567", "+242071234567", "+242081234567"]) {
+      expect(numeroRessembleALOperateur("MTN_MOMO", n)).toBe(true);
+      expect(numeroRessembleALOperateur("AIRTEL_MONEY", n)).toBe(true);
+    }
+  });
+
+  it("le numéro national sans indicatif se lit pareil", () => {
+    expect(numeroRessembleALOperateur("MTN_MOMO", "061234567")).toBe(true);
+    expect(numeroRessembleALOperateur("MTN_MOMO", "051234567")).toBe(false);
+  });
+
+  it("un opérateur inconnu ne prétend rien", () => {
+    expect(numeroRessembleALOperateur("ORANGE", "+242061234567")).toBe(true);
+  });
+});
+
+describe("retraitAutorise — le délai de sécurité après changement de numéro", () => {
+  const T0 = Date.UTC(2026, 8, 14, 10, 0, 0);
+  const JOUR = 86_400;
+
+  /*
+    ⚠️ Il ne protège pas d'une erreur, il protège d'un VOL : un compte pris en main quelques minutes
+    suffirait, sans lui, à détourner un solde entier vers un numéro inconnu.
+  */
+  it("⚠️ un numéro tout juste changé ne permet pas de retirer", () => {
+    expect(retraitAutorise(T0, T0 + 3600_000, JOUR)).toBe(false);
+    expect(retraitAutorise(T0, T0 + (JOUR - 1) * 1000, JOUR)).toBe(false);
+  });
+
+  it("et il permet de retirer à l'heure dite", () => {
+    expect(retraitAutorise(T0, T0 + JOUR * 1000, JOUR)).toBe(true);
+  });
+
+  /* Jamais changé = rien à attendre : le délai ne punit pas celui qui n'a rien touché. */
+  it("un numéro jamais changé n'attend pas", () => {
+    expect(retraitAutorise(null, T0, JOUR)).toBe(true);
+  });
+
+  it("et un délai absurde est une erreur de programmation, pas une politique", () => {
+    expect(() => retraitAutorise(T0, T0, -1)).toThrow(/Délai de sécurité invalide/);
+    expect(() => retraitAutorise(T0, T0, Number.NaN)).toThrow(/Délai de sécurité invalide/);
   });
 });

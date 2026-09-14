@@ -195,3 +195,14 @@ export class ConfirmEmailChangeDto {
   /** Code reçu à l'ANCIENNE adresse. Absent quand le compte n'en avait pas encore. */
   @IsOptional() @IsString() @Length(6, 6) oldEmailCode?: string;
 }
+
+/**
+ * Enregistrement d'un numéro Mobile Money (chantier 113).
+ *
+ * ⚠️ Le numéro est accepté tel que la personne le tape — avec ou sans indicatif, avec ou sans
+ * espaces : c'est le serveur qui normalise (`normalizePhone`). *Exiger un format à quelqu'un qui
+ * lit son numéro sur une carte SIM, c'est lui demander de faire le travail de la machine.*
+ */
+export class SetMomoNumberDto {
+  @IsString() @IsNotEmpty({ message: "Numéro Mobile Money requis" }) @MaxLength(20) msisdn!: string;
+}
