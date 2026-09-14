@@ -695,6 +695,7 @@ le 05/09 : il est appliqué, et vérifié sur le site en ligne.)*
 | **107** | **La vidéo du téléphone, prouvée écran en main** — 12-13/09, après l'échec du 106 en séance réelle. 📌 **Quatre fautes, dont trois à moi.** ① La vidéo choisie repartait en `image/jpeg` : le sélecteur passait par `mimeOf`, écrit pour les photos de profil — *ce n'est jamais la pièce qui a cédé, c'est le joint.* ② `refusDEnvoi` était juste, testée, et **appelée par personne** — *une règle jamais appelée protège autant qu'une règle qui n'existe pas.* ③ Un commentaire affirmait que le projet était sur l'ANCIENNE architecture RN ; `gradle.properties` dit `newArchEnabled=true` depuis toujours, et un TurboModule n'y est pas dans `NativeModules` — *une croyance sur la configuration n'est pas une connaissance tant qu'on n'a pas ouvert le fichier qui la porte.* ④ ⚠️ **L'écran de découpe de la brique fait QUITTER l'application** (`emitOnShow` → `AsyncEventEmitter::emit` → SIGSEGV, trace du téléphone) : on garde ses fonctions qui répondent (`isValidFile`, `getFrameAt`, `trim`) et **l'écran devient le nôtre** — *une bibliothèque a rarement une seule porte.* 📌 Et deux fautes trouvées en testant : les `PanResponder` reconstruits à chaque rendu perdaient le geste (*un objet reconstruit pendant qu'on s'en sert n'est plus le même objet*), et le serveur refusait le téléversement en PRÉPARATION — *une règle en deux temps ne se garde pas en un seul endroit* : le patient pouvait ouvrir la séance en écrivant, mais pas en montrant. **Chaîne complète vérifiée sur le téléphone du porteur : choix → aperçu → découpe → envoi → relecture.** **mobile 116 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
 | **108** | **La séance payée mais pas commencée** — 13/09, trou révélé par le test du 107. ⚠️ **L'écran du médecin se croyait terminé** sur une consultation payée trois minutes plus tôt : « Conversation terminée · archivée », carnet **clos**, compteur **00:00**, et **aucun champ pour écrire** — pendant que le bandeau juste au-dessus l'invitait à écrire le premier. 📌 **Cause** : avant le chantier 104, « pas ACTIVE » voulait dire « finie », parce que la PRÉPARATION ne durait qu'un instant ; depuis que la séance démarre au premier message du patient, **cet état dure**. *Un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible.* L'écran distingue désormais `vivante` (on peut agir) de `active` (le temps coule) — deux questions différentes. ⚠️ **Et le décompteur annonçait 00:00 aux DEUX écrans** : `endsAt` est absent tant que rien n'a commencé. *Un zéro se lit « il ne reste plus rien », jamais « ça n'a pas encore commencé ».* La séance non démarrée annonce son budget entier. ⚠️ **Un test gardait le bug** : il affirmait « pas de composeur » — *un test écrit en même temps que le code qu'il garde peut n'en être que le reflet.* **web 1088 ✓ · API 675 ✓ · types propres.** | ⏸ en attente | ⏸ |
 | **109** | **Les pièces se relisent après la séance** — 14/09, signalé par le porteur : *« il y a des boutons qui ne marchent pas pour la vidéo »*. ⚠️ **Le lecteur de pièce vivait DANS le bloc d'envoi** : sur une consultation terminée — donc sans barre de saisie — il n'était plus monté du tout. Le bouton répondait au clic et il ne se passait rien : ni photo, ni vidéo, ni document. Vérifié en ligne sur une consultation remboursée avant de toucher au code. 📌 **Et c'est le moment où l'on en a le plus besoin** : le compte-rendu se rédige APRÈS la séance, à partir de ce que le patient a montré. *Ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il sert le plus.* **1 faute injectée, 1 attrapée · web 1089 ✓ · types propres.** | ⏸ en attente | ⏸ |
+| **110** | **Les rappels qui se referment** — 14/09, demande du porteur : *« les petites notifications, on ne peut pas les fermer… il nous faut une petite croix, mais la notification revient pour rappel dans une période si le problème notifié n'est pas encore résolu »*. 📌 **La règle tient en une phrase** : *une notification qui rappelle une TÂCHE revient ; une notification qui constate un FAIT se ferme pour de bon.* Le retour se resserre — **la moitié du temps restant**, borné à une minute et deux heures : *le rappel se fait d'autant plus présent que le moment de le regretter approche.* 📌 Fermeture mémorisée dans le poste (préférence d'affichage, pas donnée de santé), lecture et écriture gardées — *entre oublier une alerte et la répéter, on répète.* ⚠️ **Et le filet a attrapé, en quelques secondes, la faute exacte qui avait fait tomber l'application du porteur au chantier 98** : un crochet posé après un retour anticipé. *Une leçon apprise ne protège pas — c'est le filet qui protège.* **web 1095 ✓ · types propres.** | ⏸ en attente | ⏸ |
 
 ### Ce que le chantier 68 (le filet) a appris
 
@@ -743,6 +744,67 @@ même fait ; ou la retirer des deux côtés si le produit a changé — et l'éc
 décision.
 
 *Supprimer une ligne du filet est une décision. La laisser tomber d'un écran ne l'était pas.*
+
+### Ce que le chantier 110 (les rappels refermables) a appris
+
+*14/09/2026 — demande du porteur, et une gifle du filet en cours de route.*
+
+#### Ce que gagne une croix, et ce qu'elle coûte
+
+Un bandeau qu'on ne peut pas fermer finit par ne plus être lu : l'œil apprend sa place et l'évite.
+
+> **Une alerte permanente n'alerte plus — elle décore.**
+
+Mais une alerte qu'on ferme pour de bon ne protège plus personne : le compte-rendu qu'on remet à
+plus tard gèle des gains réels au bout de vingt-quatre heures. D'où la règle, qui tranche par la
+NATURE du message et non par son ton :
+
+> **Une notification qui rappelle une TÂCHE revient ; une notification qui constate un FAIT se ferme
+> pour de bon.**
+
+« Compte-rendu à déposer » revient. « Cette consultation a été remboursée » ne revient pas.
+
+#### Le retour se resserre tout seul
+
+Un rappel qui revient toutes les heures est une nuisance à vingt heures de l'échéance et une
+négligence à une heure. Le délai est donc **la moitié du temps restant** — borné à une minute (sinon
+la croix ne sert à rien) et à deux heures (au-delà, on l'aurait oublié pour de bon).
+
+*Le rappel se fait d'autant plus présent que le moment de le regretter approche.*
+
+⚠️ Et c'est **l'instant du retour** qu'on mémorise, pas la durée : la durée se calcule sur un temps
+restant qui, lui, continue de fondre. *Une échéance se retient par sa date, jamais par ce qu'il en
+restait quand on l'a regardée.*
+
+#### ⚠️ Le filet a rattrapé la faute du chantier 98 — la même, au mot près
+
+J'ai posé le crochet du rappel **près de l'échéance qu'il concerne**, deux cents lignes plus bas dans
+le fichier : plus lisible, et **après** `if (session.isPending) return <SqueletteConsultation />`.
+
+React compte les crochets d'un rendu à l'autre. L'écran entier est tombé.
+
+C'est **exactement** la faute qui avait fait quitter l'application sur le téléphone du porteur au
+chantier 98 — *« Rendered more hooks than during the previous render »* — et dont j'avais écrit la
+leçon dans le journal, puis un garde-fou, puis un test. Je l'ai refaite six chantiers plus tard, en
+écrivant dans le même geste un commentaire qui expliquait pourquoi il ne fallait pas la faire.
+
+> **Une leçon apprise ne protège pas. C'est le filet qui protège.**
+
+La différence avec le chantier 98 ne tient pas à ma vigilance : elle tient à ce qu'un test d'écran
+existait cette fois, et qu'il a parlé en quelques secondes, avant le navigateur et avant le porteur.
+
+*Le corollaire est désagréable et vaut d'être écrit : tout ce qui, dans ce journal, ressemble à une
+leçon retenue n'est qu'une leçon ÉCRITE. Seules les lignes de test tiennent.*
+
+#### Où la fermeture est mémorisée
+
+Dans le `localStorage` du poste : c'est une préférence d'affichage, pas une donnée de santé. Elle ne
+suit donc pas le compte d'un appareil à l'autre — *fermer un rappel sur l'ordinateur du cabinet ne
+devrait pas le taire sur le téléphone.*
+
+Lecture et écriture sont gardées (navigation privée, quota, stockage bloqué) et le repli est le bon
+sens : **un rappel qu'on n'a pas pu mémoriser revient.** *Entre oublier une alerte et la répéter, on
+répète.*
 
 ### Ce que le chantier 109 (les pièces relues après la séance) a appris
 

@@ -120,6 +120,7 @@ import { PanneauOrdonnance } from '@/modules/ordonnance/PanneauOrdonnance'
 import { RailInfos, type MarqueOnglet, type OngletRail } from '../RailInfos'
 import { ApercuMedias } from '../ApercuMedias'
 import { LecteurPiece, PieceJointe } from '../PieceJointe'
+import { delaiDeRetour, useRappel } from '@/lib/rappels'
 import { genreDuKind } from '../media'
 import { BoutonMicro, EnregistreurVocal } from '../EnregistreurVocal'
 import {
@@ -1616,6 +1617,24 @@ export function ConsultationPage() {
 
   const reste = useDecompteurServeur(session.data?.remainingSeconds ?? 0, recuA.current)
 
+  /*
+    ⚠️ **Ce crochet vit ICI, avant tous les retours anticipés — et il a d'abord vécu ailleurs.**
+
+    Je l'avais posé près de l'échéance qu'il concerne, deux cents lignes plus bas : plus lisible, et
+    **après** `if (session.isPending) return <SqueletteConsultation />`. React a compté les crochets
+    d'un rendu à l'autre et a refusé l'écran entier. *C'est la faute exacte qui avait fait tomber
+    l'application sur le téléphone du porteur au chantier 98 — « Rendered more hooks than during the
+    previous render ».*
+
+    Elle a été attrapée en quelques secondes cette fois, par un test d'écran écrit avant d'ouvrir le
+    navigateur. **Une leçon apprise ne protège pas : c'est le filet qui protège.**
+
+    La clé se prend sur `sessionId` — celui de l'URL, disponible dès la première ligne — et non sur
+    `s.id`, qui n'existe qu'une fois la séance chargée. Les deux valent la même chose ; seule la
+    première existe assez tôt.
+  */
+  const rappelCompteRendu = useRappel(`compte-rendu:${sessionId}`)
+
   // On suit le bas du fil à chaque arrivée : une consultation se lit dans l'ordre, pas à rebours.
   useEffect(() => {
     finFil.current?.scrollIntoView({ block: 'end' })
@@ -2059,7 +2078,7 @@ export function ConsultationPage() {
           ) : null}
 
           {s.status === 'REFUNDED' ? (
-            <Avis ton="erreur">
+            <Avis ton="erreur" rappel={{ cle: `remboursee:${s.id}` }}>
               Cette consultation a été remboursée au patient, faute de réponse de votre part. Aucun gain
               ne sera crédité.
             </Avis>
@@ -2070,7 +2089,7 @@ export function ConsultationPage() {
             dit maintenant, il suffit d'un message pour qu'il disparaisse.
           */}
           {active && !aRepondu && !messages.isPending ? (
-            <Avis ton="alerte">
+            <Avis ton="alerte" rappel={{ cle: `sans-reponse:${s.id}`, revientDansS: delaiDeRetour(reste) }}>
               Vous n'avez encore écrit aucun message. Si la séance se termine ainsi, elle sera
               intégralement remboursée au patient et vous ne percevrez rien.
             </Avis>
@@ -2602,16 +2621,24 @@ export function ConsultationPage() {
                 La bande reste donc visible quel que soit l'onglet ouvert, et **elle conduit à la
                 carte** : une alerte qui ne mène nulle part ne fait qu'inquiéter.
               */
-              echeanceCompteRendu && !vivante ? (
-                <button
-                  type="button"
-                  onClick={() => aller('compte-rendu')}
-                  className="flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] leading-[1.4] transition-colors hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              echeanceCompteRendu && !vivante && !rappelCompteRendu.masque ? (
+                /*
+                  ⚠️ **La croix est à CÔTÉ du bouton, pas dedans** : un bouton dans un bouton n'est
+                  pas du HTML valide, et le clavier s'y perd. Les deux partagent la même bordure
+                  pour n'en faire qu'un objet à l'œil.
+                */
+                <span
+                  className="flex w-full items-stretch gap-1 rounded-md border"
                   style={{
                     borderColor: 'var(--erreur-bordure, var(--erreur-texte))',
                     background: 'var(--erreur-fond)',
                     color: 'var(--erreur-texte)',
                   }}
+                >
+                <button
+                  type="button"
+                  onClick={() => aller('compte-rendu')}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[11px] leading-[1.4] transition-colors hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
                 >
                   <AlertTriangle size={13} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
                   <span className="min-w-0 flex-1">
@@ -2630,6 +2657,21 @@ export function ConsultationPage() {
                     {echeanceCompteRendu.depasse ? 'Déposer' : 'Rédiger'}
                   </span>
                 </button>
+                {/*
+                  Le rappel revient à la MOITIÉ du temps qui reste : fermé à douze heures de
+                  l'échéance il revient dans six, fermé à deux heures il revient dans une. *Il se
+                  fait d'autant plus présent que le moment de le regretter approche.*
+                */}
+                <button
+                  type="button"
+                  onClick={() => rappelCompteRendu.fermer(delaiDeRetour(echeanceCompteRendu.secondes))}
+                  aria-label="Masquer ce rappel"
+                  title="Masquer — le rappel reviendra tant que le compte-rendu ne sera pas déposé"
+                  className="shrink-0 rounded-md px-1.5 opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+                >
+                  <X size={13} strokeWidth={2} aria-hidden="true" />
+                </button>
+                </span>
               ) : null
             }
             onglets={[

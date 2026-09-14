@@ -16,7 +16,7 @@
  * Le décompteur, lui, vient du SERVEUR (RM-06-02) : les tests vérifient qu'on affiche la valeur
  * reçue, jamais un calcul fait sur l'horloge du poste.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -3369,4 +3369,65 @@ describe('C5 — relire les pièces d’une consultation terminée', () => {
     bouton n'existe pas et le test ne prouverait rien. *Un test qui ne peut pas échouer n'est pas un
     test.* Le chemin est le même — c'est le montage du lecteur qui était en cause, pas le genre.
   */
+})
+
+describe('C5 — les rappels se referment (chantier 110)', () => {
+  /*
+    Demande du porteur, 14/09 : *« les petites notifications, on ne peut pas les fermer… il nous
+    faut une petite croix, mais la notification revient pour rappel dans une période si le problème
+    notifié n'est pas encore résolu. »*
+
+    > **Une notification qui rappelle une TÂCHE revient ; une notification qui constate un FAIT se
+    > ferme pour de bon.**
+  */
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const close = (heures: number) =>
+    seance({
+      status: 'ENDED' as CareSessionStatus,
+      endedAt: '2026-08-24T08:32:00.000Z',
+      remainingSeconds: 0,
+      reportDueAt: new Date(Date.now() + heures * 3_600_000 + 90_000).toISOString(),
+    })
+
+  it('⚠️ un FAIT se ferme pour de bon — le remboursement', async () => {
+    await monter(seance({ status: 'REFUNDED' as CareSessionStatus, remainingSeconds: 0 }))
+
+    expect(await screen.findByText(/remboursée au patient/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Fermer ce message' }))
+
+    expect(screen.queryByText(/remboursée au patient/)).not.toBeInTheDocument()
+  })
+
+  it('⚠️ une TÂCHE se masque — le compte-rendu à déposer', async () => {
+    await monter(close(3))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Masquer ce rappel' }))
+
+    expect(screen.queryByRole('button', { name: /Compte-rendu à déposer/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Et elle REVIENT.** C'est la moitié de la demande du porteur, et c'est celle qu'on oublie :
+    une croix sans retour transforme un garde-fou en interrupteur. Ici l'heure de retour est déjà
+    passée — l'écran doit reparler.
+  */
+  it('⚠️ et la tâche revient quand son heure est venue', async () => {
+    localStorage.setItem('ulamu.rappel.compte-rendu:s1', String(Date.now() - 1000))
+    await monter(close(3))
+
+    expect(await screen.findByRole('button', { name: /Compte-rendu à déposer/ })).toBeInTheDocument()
+  })
+
+  /* Tant que l'heure n'est pas venue, elle se tait : sinon la croix ne servirait à rien. */
+  it('mais elle se tait jusque-là', async () => {
+    localStorage.setItem('ulamu.rappel.compte-rendu:s1', String(Date.now() + 3_600_000))
+    await monter(close(3))
+
+    /* On attend que l'écran soit bel et bien monté avant de conclure à une absence. */
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('button', { name: /Compte-rendu à déposer/ })).not.toBeInTheDocument()
+  })
 })

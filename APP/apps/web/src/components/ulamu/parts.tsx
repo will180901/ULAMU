@@ -8,7 +8,8 @@
  * quinzième version finit par dériver de la première.
  */
 import type { LucideIcon } from 'lucide-react'
-import { AlertTriangle, Check } from 'lucide-react'
+import { AlertTriangle, Check, X } from 'lucide-react'
+import { useRappel } from '@/lib/rappels'
 
 /** Carte à bandeau. `ton="danger"` réserve la tuile rouge à la clôture de compte. */
 export function Carte({
@@ -192,7 +193,26 @@ export function Critere({ ok, label }: { ok: boolean; label: string }) {
  * cosmétique : « aucun tarif publié » n'est pas une panne, c'est une étape qui reste à faire, et la
  * teinte rouge de l'erreur y ferait chercher un problème qui n'existe pas.
  */
-export function Avis({ ton, children }: { ton: 'erreur' | 'alerte' | 'succes' | 'info'; children: React.ReactNode }) {
+export function Avis({
+  ton,
+  children,
+  rappel,
+}: {
+  ton: 'erreur' | 'alerte' | 'succes' | 'info'
+  children: React.ReactNode
+  /**
+   * Rend l'avis refermable — une croix apparaît à droite.
+   *
+   * ⚠️ **`rappel` est facultatif, et c'est volontaire.** La plupart des `Avis` de l'application
+   * disent qu'une action vient d'échouer ; ceux-là disparaissent d'eux-mêmes quand l'action
+   * réussit, et leur mettre une croix inviterait à masquer un échec sans le corriger. *Ne se ferme
+   * que ce dont on peut décider qu'on l'a lu.*
+   *
+   * `revientDansS` absent = un FAIT constaté, il ne revient jamais. `revientDansS` fourni = une
+   * TÂCHE, elle revient — voir `lib/rappels.ts`.
+   */
+  rappel?: { cle: string; revientDansS?: number }
+}) {
   const styles = {
     erreur: 'border-[var(--erreur-bordure)] bg-[var(--erreur-fond)] text-[var(--erreur-texte)]',
     alerte: 'border-[var(--alerte-bordure)] bg-[var(--alerte-fond)] text-[var(--alerte-texte)]',
@@ -200,10 +220,33 @@ export function Avis({ ton, children }: { ton: 'erreur' | 'alerte' | 'succes' | 
     info: 'border-border bg-secondary text-muted-foreground',
   }[ton]
   const Icone = ton === 'succes' ? Check : AlertTriangle
+  /*
+    ⚠️ Le crochet est appelé À CHAQUE rendu, même sans `rappel` : une clé vide suffit, et la règle
+    des crochets interdit de l'appeler sous condition. *Un appel conditionnel casse l'écran entier
+    au premier changement d'état* — la leçon du chantier 98, payée sur le téléphone du porteur.
+  */
+  const { masque, fermer } = useRappel(rappel?.cle ?? '')
+  if (rappel && masque) return null
+
   return (
     <p role={ton === 'erreur' ? 'alert' : 'status'} className={'flex items-start gap-2 rounded-md border px-3 py-2 text-[12px] leading-[1.5] ' + styles}>
       <Icone size={13} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0" />
-      <span className="min-w-0">{children}</span>
+      <span className="min-w-0 flex-1">{children}</span>
+      {rappel ? (
+        <button
+          type="button"
+          onClick={() => fermer(rappel.revientDansS)}
+          aria-label={rappel.revientDansS === undefined ? 'Fermer ce message' : 'Masquer ce rappel'}
+          title={
+            rappel.revientDansS === undefined
+              ? 'Fermer'
+              : 'Masquer — le rappel reviendra tant que ce ne sera pas fait'
+          }
+          className="-mr-1 -mt-0.5 shrink-0 rounded p-0.5 opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+        >
+          <X size={13} strokeWidth={2} aria-hidden="true" />
+        </button>
+      ) : null}
     </p>
   )
 }
