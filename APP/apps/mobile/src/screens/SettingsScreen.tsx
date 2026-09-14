@@ -156,6 +156,18 @@ export function SettingsScreen({navigation}: NativeStackScreenProps<AppStackPara
             <Row icon="lock" title="Changer mon mot de passe" sub="Ferme les autres appareils connectés" chevron onPress={() => setMdpOpen(true)} />
             <View style={styles.rowBorder} />
             <Row icon="phone" title="Changer de numéro" sub={me.phone ?? undefined} chevron onPress={() => navigation.navigate('PhoneChange')} />
+            {/*
+              ⚠️ Juste sous « changer de numéro », et ce n'est pas un hasard : c'est là qu'on
+              comprend que les deux ne sont pas la même chose. *Un numéro de connexion prouve qui on
+              est ; un numéro Mobile Money reçoit de l'argent.*
+            */}
+            <Row
+              icon="smartphone"
+              title="Mobile Money"
+              sub="Les numéros qui paient — MTN, Airtel"
+              chevron
+              onPress={() => navigation.navigate('Momo')}
+            />
             <View style={styles.rowBorder} />
             <Row icon="log-out" title="Clôturer mon compte" sub="Action définitive après 30 jours" danger chevron onPress={() => navigation.navigate('CloseAccount')} />
           </View>

@@ -39,6 +39,7 @@ export type AppStackParamList = {
   Payments: undefined; // reçus de paiement (M13)
   Settings: undefined; // réglages compte & sécurité (M01)
   PhoneChange: undefined; // changement de numéro (OTP ancien + nouveau)
+  Momo: undefined; // carnet de numéros Mobile Money (chantier 114)
   CloseAccount: undefined; // clôture de compte
   Aide: undefined; // écrire à l'administration et lire sa réponse (M16, chantier 61)
   MentionsLegales: undefined; // CGU, confidentialité, et ce à quoi on a consenti (EF-01-08, chantier 62)

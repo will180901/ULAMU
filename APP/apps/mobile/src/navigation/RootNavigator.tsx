@@ -20,6 +20,7 @@ import {OrdonnanceScreen} from '../screens/OrdonnanceScreen';
 import {PaymentsScreen} from '../screens/PaymentsScreen';
 import {PayScreen} from '../screens/PayScreen';
 import {PhoneChangeScreen} from '../screens/PhoneChangeScreen';
+import {MomoScreen} from '../screens/MomoScreen';
 import {SessionScreen} from '../screens/SessionScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {RecoursScreen} from '../screens/RecoursScreen';
@@ -69,6 +70,7 @@ export function RootNavigator() {
           <AppStack.Screen name="Payments" component={PaymentsScreen} />
           <AppStack.Screen name="Settings" component={SettingsScreen} />
           <AppStack.Screen name="PhoneChange" component={PhoneChangeScreen} />
+          <AppStack.Screen name="Momo" component={MomoScreen} />
           <AppStack.Screen name="CloseAccount" component={CloseAccountScreen} />
           <AppStack.Screen name="Aide" component={AideScreen} />
           <AppStack.Screen name="MentionsLegales" component={MentionsLegalesScreen} />

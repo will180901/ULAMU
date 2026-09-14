@@ -335,6 +335,14 @@ export interface OfferLimits {
   activeOffers: number
 }
 
+/** Un numéro Mobile Money du carnet. `looksRight` est un DOUTE, pas un verdict — voir m13.policies. */
+export interface MomoNumber {
+  operator: MomoOperator
+  msisdn: string
+  verified: boolean
+  looksRight: boolean
+}
+
 export interface Offer {
   id: string
   professionalId: string
@@ -1459,6 +1467,19 @@ export const api = {
    */
   updateMyProfessionalProfile: (dto: { biography?: string; district?: string }) =>
     request<MeResponse>('PATCH', '/v1/me/professional-profile', dto, true),
+  /*
+    ── Carnet de numéros Mobile Money (chantier 113) ─────────────────────────────────────────────
+
+    ⚠️ C'est le numéro DÉBITÉ, et ce n'est pas celui de la connexion. Avant le 14/09 l'ordre partait
+    vers le numéro de connexion quel que soit l'opérateur choisi — un compte Airtel qui cliquait
+    « MTN MoMo » envoyait la demande sur un portefeuille qui n'existait pas.
+  */
+  myMomoNumbers: () => request<MomoNumber[]>('GET', '/v1/accounts/me/momo', undefined, true),
+  setMomoNumber: (operator: MomoOperator, msisdn: string) =>
+    request<MomoNumber>('PUT', `/v1/accounts/me/momo/${operator}`, { msisdn }, true),
+  removeMomoNumber: (operator: MomoOperator) =>
+    request<{ removed: boolean }>('DELETE', `/v1/accounts/me/momo/${operator}`, undefined, true),
+
   myOffers: () => request<Offer[]>('GET', '/v1/offers', undefined, true),
   /** Bornes PM-09/PM-06/PM-25 — annoncées AVANT la saisie, jamais écrites dans la page. */
   offerLimits: () => request<OfferLimits>('GET', '/v1/offers/limits', undefined, true),

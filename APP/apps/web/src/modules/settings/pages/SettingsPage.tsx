@@ -13,12 +13,13 @@
  * Chaque section porte en tête le détail de ce qui a été ajouté et de ce qui reste absent.
  */
 import { useEffect } from 'react'
-import { KeyRound, LifeBuoy, MonitorSmartphone, Scale, Settings2, SlidersHorizontal } from 'lucide-react'
+import { KeyRound, LifeBuoy, MonitorSmartphone, Scale, Settings2, SlidersHorizontal, Wallet } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { SectionLegal } from '../sections/SectionLegal'
 import { SectionPreferences } from '../sections/SectionPreferences'
 import { SectionSecurite } from '../sections/SectionSecurite'
 import { SectionAide } from '../sections/SectionAide'
+import { SectionMobileMoney } from '../sections/SectionMobileMoney'
 import { SectionSessions } from '../sections/SectionSessions'
 import { Segments } from '@/components/ulamu/parts'
 import { useEtroit } from '@/hooks/use-mobile'
@@ -33,6 +34,12 @@ const SECTIONS = [
   */
   { cle: 'preferences', label: 'Préférences', court: 'Réglages', aide: 'Thème, page d’accueil, notifications', icone: SlidersHorizontal },
   { cle: 'securite', label: 'Sécurité du compte', court: 'Sécurité', aide: 'Adresse, mot de passe, 2FA, photo', icone: KeyRound },
+  /*
+    ⚠️ Mobile Money se place AVANT les appareils, et ce n'est pas un détail de rangement : c'est
+    l'onglet où l'on répare une erreur qui coûte de l'argent. *Ce qu'on vient chercher en panique
+    ne se met pas en quatrième position.*
+  */
+  { cle: 'momo', label: 'Mobile Money', court: 'Paiement', aide: 'Vos numéros MTN et Airtel', icone: Wallet },
   { cle: 'sessions', label: 'Sessions & appareils', court: 'Appareils', aide: 'Postes connectés, clôture', icone: MonitorSmartphone },
   { cle: 'legal', label: 'Langue & mentions légales', court: 'Légal', aide: 'CGU, confidentialité, version', icone: Scale },
   /*
@@ -165,6 +172,7 @@ export function SettingsPage() {
         <div className="min-w-0 flex-1">
           {active === 'preferences' ? <SectionPreferences /> : null}
           {active === 'securite' && me ? <SectionSecurite me={me} rafraichir={(m: MeResponse) => setMe(m)} /> : null}
+          {active === 'momo' ? <SectionMobileMoney /> : null}
           {active === 'sessions' ? <SectionSessions /> : null}
           {active === 'legal' ? <SectionLegal /> : null}
           {active === 'aide' ? <SectionAide /> : null}

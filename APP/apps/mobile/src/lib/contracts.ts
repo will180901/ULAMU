@@ -598,12 +598,23 @@ export const REMINDER_ROUTES = {
   taken: (id: string): string => `/v1/reminders/${encodeURIComponent(id)}/taken`,
 } as const;
 
+/** Un numéro du carnet Mobile Money. `looksRight` est un DOUTE affichable, jamais un verdict. */
+export interface MomoNumberView {
+  operator: MomoOperator;
+  msisdn: string;
+  verified: boolean;
+  looksRight: boolean;
+}
+
 export const ACCOUNT_ROUTES = {
   me: '/v1/accounts/me',
   avatar: '/v1/accounts/me/avatar',
   sessions: '/v1/accounts/me/sessions',
   session: (id: string): string => `/v1/accounts/me/sessions/${encodeURIComponent(id)}`,
   logout: '/v1/accounts/me/logout',
+  /* Carnet de numéros Mobile Money (chantier 113) — un numéro par opérateur. */
+  momo: '/v1/accounts/me/momo',
+  momoOperator: (operator: string): string => `/v1/accounts/me/momo/${encodeURIComponent(operator)}`,
   phoneChangeStart: '/v1/accounts/me/phone-change/start',
   phoneChangeConfirm: '/v1/accounts/me/phone-change/confirm',
   closeRequestOtp: '/v1/accounts/me/close/request-otp',

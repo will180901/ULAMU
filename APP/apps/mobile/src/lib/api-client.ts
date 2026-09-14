@@ -97,6 +97,8 @@ import {
   TotpConfirmResponse,
   TotpSetupResponse,
   UnreadCountResponse,
+  MomoNumberView,
+  MomoOperator,
 } from './contracts';
 
 export class ApiError extends Error {
@@ -240,6 +242,22 @@ export class ApiClient {
   }
   removeAvatar(): Promise<MeResponse> {
     return this.request('DELETE', ACCOUNT_ROUTES.avatar, undefined, true);
+  }
+
+  /*
+    ── Carnet de numéros Mobile Money (chantier 113) ───────────────────────────────────────────
+
+    ⚠️ C'est le numéro DÉBITÉ, et ce n'est pas celui de la connexion. Avant le 14/09, l'ordre
+    partait vers le numéro du compte quel que soit l'opérateur choisi à l'écran.
+  */
+  momoNumbers(): Promise<MomoNumberView[]> {
+    return this.request('GET', ACCOUNT_ROUTES.momo, undefined, true);
+  }
+  setMomoNumber(operator: MomoOperator, msisdn: string): Promise<MomoNumberView> {
+    return this.request('PUT', ACCOUNT_ROUTES.momoOperator(operator), {msisdn}, true);
+  }
+  removeMomoNumber(operator: MomoOperator): Promise<{removed: boolean}> {
+    return this.request('DELETE', ACCOUNT_ROUTES.momoOperator(operator), undefined, true);
   }
   registerDevice(dto: RegisterDeviceRequest): Promise<{ok: true}> {
     return this.request('POST', NOTIFICATION_ROUTES.devices, dto, true);
