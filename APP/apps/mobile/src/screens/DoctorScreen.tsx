@@ -3,11 +3,10 @@
  * branché sur GET /v1/directory/:id (M05). Les TARIFS n'apparaissent QUE sur cet écran (règle handoff §5).
  * Footer collant : en ligne → « Initier la consultation » (poignée de main M06) ;
  * hors ligne → cloche « M'avertir quand il est disponible » (CU-05-05 / EF-05-06).
- * Header : bouton Partager (Share natif iOS/Android).
  */
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useState} from 'react';
-import {Pressable, SafeAreaView, ScrollView, Share, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Avatar, Badge, Banner, Card, IconButton, PrimaryButton, VerifiedBadge, VerifiedTag} from '../components/ui';
 import {AvatarViewer} from '../components/AvatarViewer';
 import {FeuilleSignalement} from '../components/FeuilleSignalement';
@@ -74,20 +73,6 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
     }
   };
 
-  const onShare = async () => {
-    if (!doctor) {
-      return;
-    }
-    try {
-      const price = doctor.consultPrice != null ? ` — consultation ${formatXaf(doctor.consultPrice)}` : '';
-      await Share.share({
-        message: `${doctor.name}, ${doctor.spec} (${doctor.zone}) sur ULAMU${price}. Consultez en ligne, ordonnance signée incluse.`,
-      });
-    } catch {
-      // Partage annulé ou indisponible — on ignore silencieusement (comportement standard iOS/Android).
-    }
-  };
-
   const onAlert = async () => {
     if (!doctor) {
       return;
@@ -113,7 +98,6 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
       <View style={styles.header}>
         <IconButton icon="arrow-left" onPress={() => navigation.goBack()} variant="tile" size={19} accessibilityLabel="Retour" />
         <Text style={styles.headerTitle}>Profil du soignant</Text>
-        <IconButton icon="share" onPress={onShare} disabled={status !== 'ready'} variant="tile" size={18} accessibilityLabel="Partager ce profil" />
       </View>
 
       {status === 'loading' && <LoadingState label="Chargement du profil…" />}
@@ -184,19 +168,16 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               </View>
             </Card>
 
-            {/* Pré-consultation */}
-            <SectionLabel>Avant la session</SectionLabel>
-            <Card padding={14}>
-              <View style={styles.preRow}>
-                <Icon name="file-medical" size={17} variant="tile" />
-                <View style={styles.flex}>
-                  <Text style={styles.preTitle}>Pré-consultation gratuite</Text>
-                  <Text style={styles.preText}>
-                    Décrivez votre motif en quelques questions. {doctor.name.split(' ').slice(0, 2).join(' ')} le lira dès la poignée de main.
-                  </Text>
-                </View>
-              </View>
-            </Card>
+            {/*
+              ⚠️ **Plus de « pré-consultation », ici non plus** — chantier 111, 14/09/2026.
+
+              Le chantier 105 l'avait retirée du parcours ; cette carte en parlait encore sur la
+              fiche du soignant, et promettait un formulaire qui n'existe plus. *Une promesse qui
+              survit à la fonctionnalité qu'elle décrivait est un mensonge poli.*
+
+              Ce que le patient fait maintenant : il ouvre la conversation et il parle — texte, note
+              vocale, photo ou vidéo. C'est son premier message qui démarre la séance.
+            */}
 
             <Banner tone="info" title="Poignée de main avant paiement">
               Aucun franc n'est débité tant que le soignant n'a pas confirmé être prêt. Remboursement automatique en cas de défaillance.
@@ -209,10 +190,9 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               Mais quand on en a besoin, il faut le trouver sans chercher — et sur cet écran, tout
               ce qu'il y a à savoir de la personne est déjà lu.
 
-              Il n'est PAS dans l'en-tête : les deux boutons qui s'y trouvent — revenir, partager —
-              sont ceux pour lesquels on vient, et un troisième les serre. Dans une SESSION, où le
-              drapeau est en en-tête, il n'existe aucun autre chemin ; ici, la fiche entière est
-              devant nous.
+              Il n'est PAS dans l'en-tête : le bouton qui s'y trouve — revenir — est celui pour
+              lequel on vient, et un second le serre. Dans une SESSION, où le drapeau est en
+              en-tête, il n'existe aucun autre chemin ; ici, la fiche entière est devant nous.
             */}
             <Pressable onPress={() => setSignaler(true)} style={styles.signalerRow} accessibilityRole="button">
               <Icon name="flag" size={14} color={colors.textTertiary} />
@@ -336,11 +316,6 @@ const makeStyles = (colors: Palette) =>
   tariffTitle: {fontFamily: fonts.body, fontWeight: '600', fontSize: 13.5, color: colors.textPrimary},
   tariffSub: {fontFamily: fonts.body, fontSize: 11.5, color: colors.textTertiary},
   tariffPrice: {fontFamily: fonts.displayBold, fontSize: 14, color: colors.textPrimary},
-
-  // Pré-consultation
-  preRow: {flexDirection: 'row', gap: 11},
-  preTitle: {fontFamily: fonts.displayBold, fontSize: 13.5, color: colors.textPrimary},
-  preText: {fontFamily: fonts.body, fontSize: 12.5, lineHeight: 19, color: colors.textSecondary, marginTop: 3},
 
   // Section label
   sectionLabel: {flexDirection: 'row', alignItems: 'center', gap: 8},

@@ -1,7 +1,8 @@
 /**
  * Session de soin chronométrée — cœur de Maquettes_ULAMU/ui_kits/patient_mobile/session.jsx (SessionView).
  * États pilotés par le SERVEUR (M06) et interrogés en polling (pas de SSE) :
- *  • PREPARING : formulaire de pré-consultation → POST /pre-consultation DÉMARRE le décompteur (D-019) ;
+ *  • PREPARING : séance payée, PAS encore commencée — le décompteur part au PREMIER MESSAGE DU
+ *                PATIENT (chantier 104), ou seul dix minutes après le paiement (PM-28) ;
  *  • ACTIVE    : messagerie TEXTE (GET/POST /messages), minuteur `remainingSeconds` serveur (RM-06-02),
  *                annulation possible tant que le pro n'a jamais répondu (EF-06-10) ;
  *  • ENDED     : fil en lecture seule + compte-rendu (versé au Carnet) + notation (POST /rating) ;
@@ -21,14 +22,13 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import {Banner, IconButton, PrimaryButton} from '../components/ui';
+import {IconButton, PrimaryButton} from '../components/ui';
 import {ErrorState, LoadingState} from '../components/ScreenState';
 import {Icon} from '../components/Icon';
 import {Grain} from '../components/Grain';
@@ -496,7 +496,6 @@ export function SessionScreen({route, navigation}: NativeStackScreenProps<AppSta
   );
 }
 
-/* ── Pré-consultation (PREPARING) ── */
 /* ── Composeur (ACTIVE) — texte + photo (aperçu avant envoi) + note vocale (onde live) ── */
 const REC_BARS = 44;
 
@@ -1310,12 +1309,7 @@ const makeStyles = (colors: Palette) =>
   replyWho: {fontFamily: fonts.displayBold, fontSize: 11.5, color: colors.accent},
   replyPrev: {fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary},
 
-  // Pré-consultation
-  preContent: {padding: 16, gap: 10},
-  preIntro: {gap: 6, marginBottom: 4},
-  label: {fontFamily: fonts.body, fontSize: 12.5, fontWeight: '600', color: colors.textSecondary, marginTop: 6},
   input: {minHeight: 46, borderRadius: radius.field, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.surface, paddingHorizontal: 14, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary},
-  textArea: {minHeight: 110, borderRadius: radius.field, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.surface, padding: 14, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary},
   preFooter: {padding: 16, borderTopWidth: 1, borderTopColor: colors.borderSubtle, backgroundColor: colors.surface},
 
   // États centrés

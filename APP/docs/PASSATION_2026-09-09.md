@@ -86,7 +86,7 @@ endormi n'exécute aucun `@Cron`.
 
 ---
 
-## 3. Ce qui a été fait — chantiers 58 à 110
+## 3. Ce qui a été fait — chantiers 58 à 111
 
 Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 
@@ -102,6 +102,7 @@ Tous poussés. Une ligne chacun ; le détail est dans `PLAN_EXECUTION_WEB.md`.
 | 65 | `06360b8` | ⚠️ Le **seul soignant de l'annuaire était injoignable** et sa fiche disait « Sur devis » — un mécanisme qui n'existe pas. Fiche corrigée, alerte de disponibilité conditionnée à une offre STANDARD active, et le mobile ne vend plus une consultation au tarif de suivi. |
 | 66 | `42becd4` | ⚠️ **Trouvé par le porteur sur son propre écran** : une offre désactivée ne pouvait plus jamais être rallumée, ni modifiée. Édition en ligne + « Réactiver ». |
 | 67 | `fe8f276` | ⚠️ Trois **seconds temps** inexistants : une demande de bannissement que rien ne permettait de trancher, des procédures support qu'on ne pouvait pas clore, et **le numéro de téléphone absent du web** — alors que **le retrait d'argent part sur le numéro du compte**. |
+| 111 | *(à pousser)* | **Deux retraits demandés par le porteur** : la carte « Pré-consultation gratuite » qui survivait sur la fiche du soignant, et le **partage du profil**. Les partages *fonctionnels* du téléphone (export du Carnet, code de remise familial) sont intacts — question posée avant d'y toucher. |
 | 110 | *(à pousser)* | **Les rappels qui se referment** (demande du porteur). Une croix sur les bandeaux ; *une TÂCHE revient, un FAIT se ferme pour de bon* ; le retour est la moitié du temps restant. ⚠️ Le filet a rattrapé en route la faute du chantier 98 (crochet après un retour anticipé) — *une leçon apprise ne protège pas, c'est le filet qui protège.* |
 | 109 | *(à pousser)* | **Les pièces se relisent après la séance.** Le lecteur plein écran était monté dans le bloc d'envoi : sur une consultation terminée, aucune pièce ne s'ouvrait plus — *ranger un outil de lecture dans le tiroir de l'écriture, c'est le fermer à clé le jour où il sert le plus.* Signalé par le porteur, vérifié en ligne, 1 faute injectée / 1 attrapée. |
 | 108 | *(à pousser)* | **La séance payée mais pas commencée.** L'écran du médecin se croyait terminé (« conversation archivée », carnet clos, 00:00, pas de champ de saisie) sur une consultation payée trois minutes plus tôt — *un état transitoire qu'on rend durable révèle tous les endroits où on l'avait cru impossible*. `vivante` / `active` distingués ; la séance non démarrée annonce son budget entier. ⚠️ Un test gardait le bug. |
