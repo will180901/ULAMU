@@ -246,3 +246,59 @@ describe('B1 — le format mobile', () => {
     expect((document.querySelector('main') as HTMLElement).style.left).toBe('0px')
   })
 })
+
+/*
+  ── ⚠️ Un lien sans nom n'est pas un lien — chantier 128, 15/09/2026 ─────────────────────────────
+
+  **Mesuré sur le site en ligne**, dans l'arbre d'accessibilité, sur le compte d'Armel : les sept
+  liens de navigation s'annonçaient `link`, sans plus. L'icône porte `aria-hidden`, le libellé
+  n'existe que déployé, et l'infobulle de Radix ne nomme le lien que pendant qu'elle est OUVERTE.
+  Au repos, la navigation principale était donc **muette pour un lecteur d'écran**.
+
+  📌 Les boutons voisins, eux, étaient déjà nommés — « Notifications : 24 non lues », « Ma
+  présence : En ligne ». *Ce n'était pas une négligence, c'était un trou — et un trou ne se voit
+  que si on va mesurer.*
+
+  ⚠️ Ce fichier lui-même expliquait pourquoi il n'interrogeait QUE les `href` : « au repos la barre
+  n'affiche que les icônes ». La raison était juste, et c'est elle qui a laissé le trou : *tester
+  l'accès sans tester le nom, c'est vérifier qu'une porte existe sans regarder si elle est
+  signalée.*
+*/
+describe('B1 — chaque lien de navigation porte son nom (chantier 128)', () => {
+  it('au repos, aucun lien ne reste anonyme', () => {
+    monter('/dashboard')
+
+    const sansNom = liensNav().filter((a) => {
+      const aria = (a.getAttribute('aria-label') ?? '').trim()
+      const texte = (a.textContent ?? '').trim()
+      return aria.length === 0 && texte.length === 0
+    })
+
+    expect(sansNom.map((a) => a.getAttribute('href'))).toEqual([])
+  })
+
+  it('le nom dit vraiment où le lien mène', () => {
+    monter('/dashboard')
+
+    const parHref = new Map(
+      liensNav().map((a) => [a.getAttribute('href'), (a.getAttribute('aria-label') ?? a.textContent ?? '').trim()]),
+    )
+
+    expect(parHref.get('/gains')).toMatch(/gains/i)
+    expect(parHref.get('/verification')).toMatch(/vérification/i)
+  })
+
+  /*
+    Déployée, la barre affiche le libellé en toutes lettres : y ajouter `aria-label` le ferait
+    annoncer deux fois. *Un nom donné deux fois n'est pas deux fois plus clair.*
+  */
+  it('déployée, elle ne double pas le libellé', () => {
+    monter('/dashboard', {}, 500) // sous 768 px, la barre est un tiroir ouvert
+
+    for (const a of liensNav()) {
+      if ((a.textContent ?? '').trim().length > 0) {
+        expect(a.getAttribute('aria-label')).toBeNull()
+      }
+    }
+  })
+})

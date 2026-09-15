@@ -130,6 +130,23 @@ export function Sidebar({
                   key={item.key}
                   to={item.href}
                   aria-current={actif ? 'page' : undefined}
+                  /*
+                    ⚠️ **Un lien sans nom n'est pas un lien** — chantier 128, 15/09/2026.
+
+                    Mesuré sur le site en ligne, dans l'arbre d'accessibilité : les sept liens de
+                    navigation s'annonçaient « lien », sans plus. L'icône porte `aria-hidden`, le
+                    libellé n'existe que déployé, et l'infobulle de Radix ne nomme le lien que
+                    pendant qu'elle est OUVERTE. Au repos, la navigation principale était donc
+                    muette pour un lecteur d'écran.
+
+                    📌 Les boutons voisins, eux, étaient déjà nommés — « Notifications : 24 non
+                    lues », « Ma présence : En ligne ». *Ce n'était pas une négligence, c'était un
+                    trou : et un trou ne se voit que si on va mesurer.*
+
+                    Le nom est posé au repos SEULEMENT : déployé, le texte visible le donne déjà, et
+                    doubler les deux ferait annoncer le libellé deux fois.
+                  */
+                  aria-label={ouverte ? undefined : item.label}
                   className={
                     /* Anneau de focus : CG-05 §01 le veut « jamais supprimé », et il manquait.
                        Au repos, les 14px de marge latérale laissent la place de l'afficher sans

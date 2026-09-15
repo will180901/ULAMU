@@ -131,6 +131,36 @@ describe('WCAG AA — les trois encres restent lisibles sur les surfaces, dans l
   }
 
   /*
+    ── ⚠️ La pastille de compteur — chantier 128, 15/09/2026 ────────────────────────────────────
+
+    Elle empruntait `--erreur-accent`. **Mesuré sur le site en ligne** : en thème SOMBRE, le chiffre
+    blanc y tombait à **4,36** pour un seuil de 4,5. C'était le dernier écart de contraste connu du
+    produit, signalé dès le 09/09 et rangé « au chantier de la coque ».
+
+    ⚠️ **La note de la passation se trompait sur le remède** : elle annonçait « agrandir la pastille
+    (15 → 16 px) ». Le seuil ne s'assouplit qu'à partir de 24 px, ou 18,7 px en gras — à 9 px il
+    reste 4,5 quelle que soit la taille. *Un seuil qu'on croit franchir en grossissant ne bouge pas
+    d'un pouce.*
+
+    Et on ne pouvait pas assombrir `--erreur-accent` : il sert aussi aux BORDURES des champs en
+    erreur, que l'assombrir rendrait moins visibles sur fond sombre. *Deux usages qui demandent des
+    directions opposées ont besoin de deux jetons.*
+  */
+  for (const bloc of themes) {
+    const nomTheme = bloc === ':root' ? 'clair' : 'sombre'
+    it(`${nomTheme} : le chiffre blanc de la pastille de compteur reste lisible`, () => {
+      const fond = token(bloc, '--pastille-compteur')
+      expect(fond, `--pastille-compteur absent de ${bloc}`).toBeTruthy()
+
+      const mesure = contraste('#FFFFFF', fond as string)
+      expect(
+        mesure,
+        `${nomTheme} : blanc sur --pastille-compteur (${fond}) donne ${mesure}:1, il faut ${SEUIL_AA}`,
+      ).toBeGreaterThanOrEqual(SEUIL_AA)
+    })
+  }
+
+  /*
     ⚠️ Le piège nommé, pour qu'il ne se retrouve pas dans un écran par accident.
 
     `--fond-surface-2` est la surface la plus CLAIRE du thème clair (#E4E6E9) : l'encre tertiaire y

@@ -196,7 +196,7 @@ export function CentreNotifications() {
         ) : nonLues !== undefined && nonLues > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--erreur-accent)] px-1 font-mono text-[9px] leading-none font-semibold text-white"
+            className="absolute -top-0.5 -right-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--pastille-compteur)] px-1 font-mono text-[9px] leading-none font-semibold text-white"
           >
             {nonLues > PLAFOND_BADGE ? `${PLAFOND_BADGE}+` : nonLues}
           </span>

@@ -25,7 +25,7 @@ import { TraqueurNavigation } from '@/components/layout/FlechesNavigation'
 import { useRaccourcisGlobaux } from '@/hooks/useRaccourcisGlobaux'
 import { NAV_GROUPS } from '@/config/navigation.config'
 import { useIdleLogout } from '@/state/useIdleLogout'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useIsMobile, useSansSurvol } from '@/hooks/use-mobile'
 
 /** Titre de la page courante, déduit de l'URL — évite de le répéter dans chaque écran. */
 function useTitrePage(): string {
@@ -50,6 +50,7 @@ export function AppShell() {
   const [aideOuverte, setAideOuverte] = useState(false)
 
   const estMobile = useIsMobile()
+  const sansSurvol = useSansSurvol()
   const titre = useTitrePage()
   const { pathname } = useLocation()
 
@@ -68,7 +69,14 @@ export function AppShell() {
     setNavMobile(false)
   }, [pathname])
 
-  const ouverte = estMobile ? true : survol
+  /*
+    ⚠️ **Sur un appareil sans souris, la barre ne peut pas attendre un survol** (chantier 128).
+    Une tablette de 800 px passe la bascule mobile de 768 px : elle était donc traitée comme un
+    ordinateur, et ses sept icônes restaient muettes puisque rien ne pouvait les survoler.
+
+    *Une interface qui ne se lit qu'à la souris est illisible pour qui n'en a pas.*
+  */
+  const ouverte = estMobile || sansSurvol ? true : survol
 
   /*
     `h-dvh` et non `h-screen` (= 100vh) — corrigé le 01/09/2026.

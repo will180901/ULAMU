@@ -100,6 +100,20 @@
   /* ── Sémantique — strictement séparée de l'accent/des tons décoratifs (jamais un choix esthétique) ── */
   --succes-fond: #EAF3EC; --succes-texte: #2D6A3F; --succes-accent: #3D7A5E; --succes-bordure: rgba(45, 106, 63, 0.2);
   --erreur-fond: #F5EAEA; --erreur-texte: #7A2E2E; --erreur-accent: #9B4444; --erreur-bordure: rgba(122, 46, 46, 0.2);
+  /*
+    Pastille de compteur — chantier 128, 15/09/2026.
+
+    ⚠️ Elle empruntait `--erreur-accent`. En thème SOMBRE, le chiffre blanc y tombait à **4,36**
+    pour un seuil de 4,5 — mesuré sur le site en ligne. On ne pouvait pas assombrir ce jeton :
+    il sert aussi aux BORDURES des champs en erreur, que l'assombrir rendrait moins visibles sur
+    fond sombre. *Deux usages qui demandent des directions opposées ont besoin de deux jetons.*
+
+    ⚠️ Et agrandir la pastille n'aurait rien changé, contrairement à ce qu'annonçait la passation
+    du 09/09 : le seuil ne s'assouplit qu'à partir de 24 px (ou 18,7 px en gras). À 9 px, il
+    reste 4,5 quelle que soit la taille — *un seuil qu'on croit franchir en grossissant ne bouge
+    pas d'un pouce.*
+  */
+  --pastille-compteur: #9B4444;
   --alerte-fond: #F5EEDF; --alerte-texte: #6B4D1A; --alerte-accent: #8A6A2A; --alerte-bordure: rgba(107, 77, 26, 0.2);
   --info-fond: #E6EFF5; --info-texte: #2A4F6B; --info-accent: #3A6080; --info-bordure: rgba(42, 79, 107, 0.2);
 
@@ -347,6 +361,8 @@
   /* Recalculées pour le sombre (pas juste éclaircies) : fond quasi-noir teinté + texte/accent lumineux. */
   --succes-fond: #16281D; --succes-texte: #7EE2A0; --succes-accent: #56C47A; --succes-bordure: rgba(126, 226, 160, 0.22);
   --erreur-fond: #2A1818; --erreur-texte: #E29999; --erreur-accent: #C45656; --erreur-bordure: rgba(226, 153, 153, 0.22);
+  /* 5,49 pour un chiffre blanc — au-dessus du seuil de 4,5 (le rouge d'erreur, lui, reste clair pour les bordures). */
+  --pastille-compteur: #B34444;
   --alerte-fond: #2A2415; --alerte-texte: #E2C978; --alerte-accent: #C4A156; --alerte-bordure: rgba(226, 201, 120, 0.22);
   --info-fond: #17202B; --info-texte: #99BFE2; --info-accent: #5691C4; --info-bordure: rgba(153, 191, 226, 0.22);
 
