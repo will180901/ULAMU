@@ -28,6 +28,19 @@
 
 ALTER TYPE "OtpPurpose" ADD VALUE IF NOT EXISTS 'MOMO_VERIFY';
 
-INSERT INTO "PlatformParameter" ("key", "value", "description")
-VALUES ('PM-41', '86400', 'Délai de sécurité après changement du numéro de retrait (s) — 24 h (décision porteur 14/09/2026)')
+-- ⚠️ **`updatedAt` DOIT être fourni ici** — corrigé le 15/09/2026, après trois heures de panne.
+--
+-- Cette insertion, écrite sans `updatedAt`, a fait échouer la migration le 14/09 à 22:50 UTC. La
+-- transaction a été annulée, la migration marquée `failed`, et **P3009 a dès lors bloqué toutes
+-- les suivantes** : le chantier 118 n'est jamais passé, et l'API n'a plus démarré du tout.
+--
+-- 📌 La cause est une asymétrie facile à ne pas voir : `@updatedAt` est tenu par le **client**
+-- Prisma, jamais par la base. La colonne est donc `NOT NULL` **sans valeur par défaut**, et tout le
+-- code applicatif — le seed compris — la remplit sans y penser. *Une colonne qu'un outil remplit
+-- toujours pour vous finit par passer pour une colonne qui se remplit toute seule.*
+--
+-- Le filet qui garde cette règle pour les migrations à venir :
+-- `src/common/migrations-insert-colonnes.spec.ts`.
+INSERT INTO "PlatformParameter" ("key", "value", "description", "updatedAt")
+VALUES ('PM-41', '86400', 'Délai de sécurité après changement du numéro de retrait (s) — 24 h (décision porteur 14/09/2026)', CURRENT_TIMESTAMP)
 ON CONFLICT ("key") DO NOTHING;
