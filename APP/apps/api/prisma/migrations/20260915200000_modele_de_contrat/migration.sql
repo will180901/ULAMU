@@ -1,0 +1,29 @@
+-- Le modèle de rédaction d'un contrat (chantier 133, 15/09/2026).
+--
+-- ⚠️ CE QUE CETTE MIGRATION REND POSSIBLE, ET CE QU'ELLE ÉVITE
+--
+-- Le texte du contrat n'est PAS stocké : il est régénéré à chaque lecture par `buildAgreementText`,
+-- puis comparé à l'empreinte scellée (`bodyHash`). Si les deux divergent, le serveur refuse de
+-- servir le texte — et l'écran affiche « ce contrat ne correspond plus à son empreinte ».
+--
+-- C'est une bonne défense : elle interdit de réécrire en silence un contrat déjà signé.
+--
+-- Mais elle a une conséquence que rien ne disait : **modifier la fonction casse TOUS les contrats
+-- déjà signés d'un coup.** Un soignant qui rouvre le sien ne le voit plus, sans avoir rien fait.
+--
+-- > **Une empreinte qui protège un texte protège aussi la faute qu'il contient : on ne peut plus
+-- > le corriger sans détruire les preuves de ceux qui l'ont signé.**
+--
+-- La colonne `template` dit AVEC QUEL MODÈLE une version a été rédigée. L'ancien reste figé pour
+-- ceux qui l'ont signé ; le nouveau sert aux versions suivantes. Personne ne perd son contrat, et
+-- personne ne se retrouve engagé par un texte qu'il n'a pas lu.
+--
+-- ⚠️ NULLABLE, et ce n'est pas un oubli : `NULL` désigne le modèle d'origine (celui d'avant cette
+-- colonne). *Une colonne NOT NULL qu'on remplirait d'une valeur inventée ferait croire que ces
+-- contrats ont été rédigés avec un modèle nommé, alors qu'ils l'ont été avant que les modèles
+-- existent.*
+--
+-- ⚠️ Aucun INSERT ici — le filet `migrations-insert-colonnes.spec.ts`, né de la panne du 14/09,
+-- le vérifie à chaque exécution.
+
+ALTER TABLE "AgreementVersion" ADD COLUMN IF NOT EXISTS "template" TEXT;

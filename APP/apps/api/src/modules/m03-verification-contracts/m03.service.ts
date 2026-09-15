@@ -28,6 +28,8 @@ import { M01Service } from "../m01-accounts/m01.service";
 import { AddDocumentDto, DecideDto, SignAgreementDto, UploadDocumentDto } from "./m03.dto";
 import {
   buildAgreementText,
+  MODELE_CONTRAT_COURANT,
+  type ModeleContrat,
   canAddDocuments,
   canPracticeEffective,
   canTransition,
@@ -425,7 +427,18 @@ export class M03Service {
       effectiveAt: Date | null;
     } | null = null;
     if (latest) {
-      const regenerated = buildAgreementText(subject.name, latest.commissionPct, latest.version);
+      /*
+        ⚠️ **Le modèle de CETTE version, pas le modèle courant.** Régénérer un contrat signé avec la
+        rédaction du jour ferait diverger l'empreinte : le titulaire ne verrait plus son propre
+        contrat, sans avoir rien fait. *On relit un contrat avec les mots qu'il portait quand il a
+        été signé, jamais avec ceux d'aujourd'hui.*
+      */
+      const regenerated = buildAgreementText(
+        subject.name,
+        latest.commissionPct,
+        latest.version,
+        latest.template as ModeleContrat,
+      );
       const integrity = sha256(regenerated) === latest.bodyHash;
       agreement = {
         version: latest.version,
@@ -949,12 +962,28 @@ export class M03Service {
     const last = (
       await tx.agreementVersion.findMany({ where: { agreementId: agreement.id }, orderBy: { version: "desc" }, take: 1 })
     ).at(0);
-    // Une version non signée au taux courant attend déjà sa signature → rien à régénérer (idempotence).
-    if (last && last.signedAt === null && last.commissionPct === commissionPct) return;
+    /*
+      Une version non signée, au taux courant ET au modèle courant, attend déjà sa signature : rien
+      à régénérer (idempotence).
+
+      ⚠️ **Le MODÈLE entre dans cette condition** — chantier 133. Sans lui, une nouvelle rédaction
+      ne serait jamais proposée à personne : le taux n'ayant pas changé, la fonction repartait sans
+      rien faire, et les praticiens restaient engagés par l'ancien texte. *Une correction de contrat
+      que personne n'est invité à signer n'a corrigé aucun contrat.*
+    */
+    if (last && last.signedAt === null && last.commissionPct === commissionPct && last.template === MODELE_CONTRAT_COURANT) {
+      return;
+    }
     const version = (last?.version ?? 0) + 1;
-    const body = buildAgreementText(signerName, commissionPct, version);
+    const body = buildAgreementText(signerName, commissionPct, version, MODELE_CONTRAT_COURANT);
     await tx.agreementVersion.create({
-      data: { agreementId: agreement.id, version, commissionPct, bodyHash: sha256(body) },
+      data: {
+        agreementId: agreement.id,
+        version,
+        commissionPct,
+        bodyHash: sha256(body),
+        template: MODELE_CONTRAT_COURANT,
+      },
     });
   }
 }

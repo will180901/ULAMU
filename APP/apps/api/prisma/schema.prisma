@@ -433,6 +433,8 @@ model AgreementVersion {
   version       Int
   commissionPct Int // lu de PM-01 au moment de la génération
   bodyHash      String // empreinte sha256 du texte du contrat
+  /// Modèle de rédaction employé (chantier 133). `null` = le modèle d'origine, d'avant la colonne.
+  template      String?
   signedAt      DateTime?
   signedBy      String? // accountId du signataire
   effectiveAt   DateTime?

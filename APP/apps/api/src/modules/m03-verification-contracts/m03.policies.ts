@@ -115,12 +115,50 @@ export function isOverdue(waitingSinceMs: number, pm11Hours: number, nowMs: numb
 }
 
 /**
+ * Le modèle de rédaction d'un contrat.
+ *
+ * ⚠️ **Le texte d'un contrat signé ne se réécrit JAMAIS.** Il n'est pas stocké : il est régénéré à
+ * chaque lecture, puis comparé à l'empreinte scellée. Modifier la rédaction sans versionner le
+ * modèle ferait basculer d'un coup **tous les contrats déjà signés** en « intégrité rompue » — et
+ * leur titulaire ne les verrait plus, sans avoir rien fait.
+ *
+ * > **Une empreinte qui protège un texte protège aussi la faute qu'il contient : on ne peut plus le
+ * > corriger sans détruire les preuves de ceux qui l'ont signé.**
+ *
+ * `null` désigne le modèle d'origine, celui d'avant que les modèles existent.
+ */
+export type ModeleContrat = "2026-09" | null;
+
+/** Le modèle employé pour toute NOUVELLE version émise à partir d'aujourd'hui. */
+export const MODELE_CONTRAT_COURANT: ModeleContrat = "2026-09";
+
+/**
  * Texte du contrat numérique (EF-03-06, D-011) — DÉTERMINISTE : mêmes entrées ⇒ même texte
  * ⇒ même empreinte sha256 (scellement CU-03-03). Aucune horloge, aucun aléa ici.
- * Contenu exigé : identité du signataire, taux (PM-01 injecté), engagements de service,
- * clause de mise à jour du stock pour les pharmacies.
  */
-export function buildAgreementText(name: string, commissionPct: number, version: number): string {
+export function buildAgreementText(
+  name: string,
+  commissionPct: number,
+  version: number,
+  modele: ModeleContrat = null,
+): string {
+  return modele === "2026-09"
+    ? contrat2026_09(name, commissionPct, version)
+    : contratOrigine(name, commissionPct, version);
+}
+
+/**
+ * ⚠️ **LE MODÈLE D'ORIGINE — INTOUCHABLE.**
+ *
+ * Des contrats signés en dépendent : leur empreinte a été calculée sur ces octets exacts. Changer
+ * ne serait-ce qu'une virgule ici les rendrait illisibles pour ceux qui les ont signés.
+ *
+ * Il contient une faute connue — un « Article 4 » sur le stock des pharmacies, alors que la chaîne
+ * du médicament a été retirée du produit (D-052) et les structures aussi (D-051). **Cette faute
+ * reste ici**, parce qu'elle a été signée : *on ne corrige pas un contrat déjà signé, on en émet un
+ * nouveau.* C'est ce que fait le modèle 2026-09.
+ */
+function contratOrigine(name: string, commissionPct: number, version: number): string {
   return [
     `CONTRAT NUMÉRIQUE ULAMU — VERSION ${version}`,
     ``,
@@ -149,6 +187,124 @@ export function buildAgreementText(name: string, commissionPct: number, version:
     `Article 6 — Révocation`,
     `En cas de fraude ou de manquement grave, ULAMU peut révoquer le Badge Vérifié ;`,
     `les sessions déjà payées sont honorées ou remboursées.`,
+    ``,
+    `Signataire : ${name} — Version ${version} — Commission : ${commissionPct} %.`,
+  ].join("\n");
+}
+
+/**
+ * ── Le modèle 2026-09 — chantier 133, 15/09/2026 ──────────────────────────────────────────────
+ *
+ * Écrit après relecture du modèle d'origine, qui présentait **une clause fausse et sept manques** :
+ *
+ *   ⚠️ **Article 4 sur le stock des pharmacies** : la chaîne du médicament a été retirée du produit
+ *      (D-052), les structures aussi (D-051). *On faisait signer à des médecins un engagement sur
+ *      un stock de pharmacie, pour une fonctionnalité qui n'existe plus.*
+ *
+ * Et ce qui manquait, dans un contrat de TÉLÉMÉDECINE :
+ *
+ *   1. **la responsabilité de l'acte** — la clause la plus importante d'un contrat de soin, et la
+ *      seule qui compte le jour d'un litige ; elle était absente ;
+ *   2. **la résiliation par le Signataire** — seule ULAMU pouvait rompre : *un contrat où une seule
+ *      partie peut sortir n'est pas un contrat, c'est une adhésion* ;
+ *   3. **les données de santé** — le Signataire accède à des Carnets de patients, et rien ne
+ *      l'encadrait ;
+ *   4. **le paiement des gains** — retrait à tout moment, commission de retrait (PM-02), délai de
+ *      sécurité de 24 h après changement de numéro (PM-41) ;
+ *   5. **le remboursement automatique** — règle réelle du produit : le soignant qui ne répond pas
+ *      n'est pas payé. *Une règle qui décide de votre rémunération doit figurer au contrat qui la
+ *      fonde, pas seulement dans le code qui l'applique* ;
+ *   6. **la loi applicable et le tribunal compétent** — un contrat congolais qui ne dit pas devant
+ *      qui l'on plaide laisse la question ouverte au pire moment ;
+ *   7. **la durée et l'entrée en vigueur**.
+ *
+ * ⚠️ **Toujours DÉTERMINISTE** : aucune date, aucune horloge, aucun aléa. La date de signature vit
+ * sur la version, pas dans le texte — *un texte qui contient sa propre date change d'empreinte
+ * chaque jour et ne peut plus être scellé.*
+ *
+ * 📌 Les montants et délais ne sont PAS écrits en dur : la commission est injectée (PM-01). Les
+ * autres paramètres sont nommés sans être chiffrés — *un contrat qui recopie un chiffre réglable
+ * ment le jour où l'administration le change.*
+ */
+function contrat2026_09(name: string, commissionPct: number, version: number): string {
+  return [
+    `CONTRAT DE PARTENARIAT ULAMU`,
+    `Version ${version} — modèle 2026-09`,
+    ``,
+    `ENTRE :`,
+    `ULAMU, plateforme de télémédecine exploitée en République du Congo, ci-après « la Plateforme ».`,
+    ``,
+    `ET :`,
+    `${name}, professionnel de santé vérifié, ci-après « le Praticien ».`,
+    ``,
+    `ARTICLE 1 — OBJET`,
+    `La Plateforme met à la disposition du Praticien un service de mise en relation avec des`,
+    `patients, un espace de consultation par messagerie, et les outils associés : compte-rendu,`,
+    `ordonnance électronique et encaissement des honoraires.`,
+    `La Plateforme n'exerce aucune activité de soin et ne s'immisce dans aucune décision médicale.`,
+    ``,
+    `ARTICLE 2 — RESPONSABILITÉ DE L'ACTE MÉDICAL`,
+    `Le Praticien exerce en son nom propre, sous sa seule responsabilité professionnelle, et`,
+    `demeure seul responsable de ses diagnostics, prescriptions et conseils.`,
+    `Il lui appartient d'apprécier si l'état du patient permet une prise en charge à distance et,`,
+    `à défaut, de l'orienter vers une consultation en présentiel ou vers l'urgence.`,
+    `Le Praticien déclare être couvert par une assurance de responsabilité civile professionnelle`,
+    `en cours de validité.`,
+    ``,
+    `ARTICLE 3 — CONDITIONS D'EXERCICE SUR LA PLATEFORME`,
+    `Le Praticien s'engage à exercer sous l'identité vérifiée par la Plateforme, à maintenir à jour`,
+    `ses informations professionnelles, et à répondre aux consultations qu'il a acceptées.`,
+    `Il respecte le secret professionnel et n'utilise les informations auxquelles il accède qu'aux`,
+    `fins du soin.`,
+    ``,
+    `ARTICLE 4 — DONNÉES DE SANTÉ`,
+    `Le Praticien accède au dossier médical du patient pendant la durée de la consultation, et`,
+    `uniquement dans cette limite. Chaque accès est journalisé.`,
+    `Il s'interdit d'extraire, de conserver hors de la Plateforme ou de communiquer à un tiers les`,
+    `données auxquelles il accède, sauf obligation légale ou continuité des soins.`,
+    `Les échanges et les pièces sont chiffrés au repos par la Plateforme.`,
+    ``,
+    `ARTICLE 5 — HONORAIRES ET COMMISSION`,
+    `Le Praticien fixe librement le prix de ses offres, dans les bornes publiées par la Plateforme.`,
+    `Le prix affiché au patient est le prix final : aucun frais ne s'y ajoute.`,
+    `La Plateforme retient une commission de ${commissionPct} % sur chaque prestation payée. Le solde`,
+    `est crédité au Praticien.`,
+    ``,
+    `ARTICLE 6 — VERSEMENT DES GAINS`,
+    `Les gains crédités sont retirables à tout moment, sans montant minimum, vers un numéro Mobile`,
+    `Money dont le Praticien a prouvé qu'il en dispose.`,
+    `Une commission de retrait, publiée par la Plateforme, peut s'appliquer.`,
+    `Tout changement du numéro de retrait ouvre un délai de sécurité avant le retrait suivant.`,
+    ``,
+    `ARTICLE 7 — CONSULTATION NON HONORÉE`,
+    `Lorsqu'une consultation payée reste sans réponse du Praticien, le patient est intégralement`,
+    `remboursé par la Plateforme et aucun gain n'est crédité au Praticien.`,
+    `Lorsque le compte-rendu n'est pas déposé dans le délai publié, les gains correspondants ne sont`,
+    `pas crédités.`,
+    ``,
+    `ARTICLE 8 — DURÉE ET RÉSILIATION`,
+    `Le contrat prend effet à sa signature électronique et se poursuit sans terme fixé.`,
+    `Le Praticien peut y mettre fin à tout moment depuis son espace, sans motif ni préavis. Les`,
+    `consultations déjà payées et en cours sont menées à leur terme, et les gains acquis lui restent`,
+    `dus.`,
+    `La Plateforme peut suspendre ou révoquer le Badge Vérifié en cas de fraude, de manquement grave`,
+    `ou de perte des conditions d'exercice ; la décision est motivée et notifiée.`,
+    `Dans tous les cas, les consultations déjà payées sont honorées ou remboursées.`,
+    ``,
+    `ARTICLE 9 — ÉVOLUTION DU CONTRAT`,
+    `Toute évolution des conditions fait l'objet d'une nouvelle version, notifiée au Praticien.`,
+    `Elle doit être signée pour que l'activité se poursuive ; à défaut, le compte reste accessible`,
+    `mais le Praticien n'apparaît plus dans l'annuaire.`,
+    ``,
+    `ARTICLE 10 — PREUVE`,
+    `La signature s'effectue par mot de passe et code à usage unique. Le texte signé est scellé par`,
+    `une empreinte cryptographique qui permet, à tout moment, de vérifier qu'il n'a pas été modifié.`,
+    `Les parties reconnaissent à ce procédé la valeur de preuve de leur engagement.`,
+    ``,
+    `ARTICLE 11 — LOI APPLICABLE`,
+    `Le présent contrat est régi par le droit de la République du Congo.`,
+    `Les parties rechercheront une solution amiable avant toute action ; à défaut, le litige relève`,
+    `des tribunaux compétents de Brazzaville.`,
     ``,
     `Signataire : ${name} — Version ${version} — Commission : ${commissionPct} %.`,
   ].join("\n");
