@@ -342,7 +342,15 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               <Text style={styles.footerPrice}>
                 {offreChoisie != null ? formatXaf(offreChoisie.priceXaf) : 'Pas de consultation'}
               </Text>
-              <Text style={styles.footerSub} numberOfLines={1}>
+              {/*
+                ⚠️ **Deux lignes, pas une** — vu sur le téléphone le 15/09 : à une seule ligne,
+                « débité après la poignée de main » se coupait en « …poignée de m… ».
+
+                La limite existe pour qu'un libellé d'offre bavard ne fasse pas gonfler le pied ;
+                elle ne doit pas manger la phrase qui dit QUAND l'argent part. *Un garde-fou posé
+                contre un cas rare ne doit pas abîmer le cas ordinaire.*
+              */}
+              <Text style={styles.footerSub} numberOfLines={2}>
                 {offreChoisie === null
                   ? 'ce soignant ne propose pas de consultation en ce moment'
                   : !doctor.online
