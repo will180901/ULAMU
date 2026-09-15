@@ -170,3 +170,45 @@ export class DirectoryQueryDto {
   @Min(1, { message: "Taille de page : 1 au minimum" })
   pageSize?: number;
 }
+
+// ── Avis d'un professionnel (EF-05-07 ; CU-05-02) ────────────────────────────
+
+/**
+ * Comment on parcourt les avis d'un soignant — chantier 123, 15/09/2026.
+ *
+ * ⚠️ **Jusqu'ici il n'existait AUCUN moyen de les parcourir.** La fiche en servait dix, sans
+ * curseur, sans tri, sans filtre, et sans dire qu'il y en avait d'autres. Question du porteur :
+ * *« supposant qu'on atteint une grande audience, comment les avis vont s'afficher ? »* — la
+ * réponse était : dix, toujours les dix mêmes, et les trois cent quatre-vingt-dix autres invisibles.
+ *
+ * 📌 `score` filtre sur une note précise : c'est ce que fait un lecteur qui touche la barre des
+ * « 1 étoile » — *la seule question qu'on se pose vraiment devant une note moyenne est « qu'est-ce
+ * qui s'est mal passé chez les mécontents ? ».*
+ */
+export const REVIEW_SORTS = ["recent", "best", "worst"] as const;
+export type ReviewSortCode = (typeof REVIEW_SORTS)[number];
+
+export class DirectoryReviewsQueryDto {
+  /** Curseur opaque : l'identifiant de séance du dernier avis reçu. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64, { message: "Curseur invalide" })
+  cursor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "Taille de page : entier attendu" })
+  @Min(1, { message: "Taille de page : 1 au minimum" })
+  limit?: number;
+
+  /** Ne garder que les avis portant CETTE note (barre touchée dans la répartition). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "Note : entier attendu" })
+  @Min(0, { message: "Note : valeur positive attendue" })
+  score?: number;
+
+  @IsOptional()
+  @IsIn([...REVIEW_SORTS], { message: "Tri inconnu : recent, best ou worst attendu" })
+  sort?: ReviewSortCode;
+}

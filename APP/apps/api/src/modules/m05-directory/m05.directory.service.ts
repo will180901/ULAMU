@@ -36,7 +36,7 @@ import {
   relevanceScore,
 } from "./m05.policies";
 import { PresenceService } from "./m05.presence.service";
-import { DirectoryQueryDto } from "./m05.dto";
+import { DirectoryQueryDto, DirectoryReviewsQueryDto } from "./m05.dto";
 
 // ── Vues publiques (EF-05-01) ────────────────────────────────────────────────
 
@@ -100,6 +100,28 @@ export interface DirectoryProfileView extends DirectoryItemView {
   offers: DirectoryOfferView[]; // offres ACTIVES uniquement (CU-05-02)
   ratingDistribution: Record<string, number>; // EF-05-07 : répartition par note
   latestComments: Array<{ score: number; comment: string; createdAt: string }>; // anonymes
+}
+
+/**
+ * Un avis, tel qu'il se lit — chantier 123, 15/09/2026.
+ *
+ * ⚠️ **Aucun identifiant de patient n'en sort, et ce n'est pas un oubli.** Sur une plateforme de
+ * soin, « Mireille a consulté le Dr X » n'est pas un avis : c'est une information médicale sur une
+ * personne identifiable. Dans un quartier de Brazzaville, un prénom suffit souvent ; et si le
+ * soignant est gynécologue, psychiatre ou infectiologue, l'avis révèle la MALADIE.
+ *
+ * > **Ce qui rassure n'est pas QUI a écrit, c'est que la personne ait vraiment payé et consulté.**
+ *
+ * D'où `consultationsWithPro`, décidé par le porteur le 15/09 en connaissance de cause : *quelqu'un
+ * qui REVIENT est le signal le plus fort qui existe, et il ne nomme personne.* Le `patientId` sert
+ * à le calculer côté serveur et ne franchit jamais la frontière HTTP.
+ */
+export interface DirectoryReviewView {
+  score: number;
+  comment: string | null;
+  createdAt: string;
+  /** Combien de consultations ce patient a eues avec CE soignant — 1 = première fois. */
+  consultationsWithPro: number;
 }
 
 /** Ligne interne enrichie avant filtrage/tri en mémoire. */
@@ -275,6 +297,107 @@ export class DirectoryService {
         comment: c.comment as string,
         createdAt: c.createdAt.toISOString(),
       })),
+    };
+  }
+
+  // ── EF-05-07 : parcourir les avis d'un soignant (CU-05-02) ──────────────────
+
+  /**
+   * Les avis, page par page, triés et filtrables — chantier 123, 15/09/2026.
+   *
+   * ⚠️ **Cette route n'existait pas.** La fiche servait `latestComments` : les **dix** derniers,
+   * sans curseur, sans tri, sans filtre, et sans dire qu'il y en avait d'autres. Question du
+   * porteur : *« supposant qu'on atteint une grande audience, comment les avis vont s'afficher ? »*
+   * La réponse honnête était : dix, toujours les dix mêmes, et les trois cent quatre-vingt-dix
+   * autres inaccessibles à jamais.
+   *
+   * > **Une moyenne sans ses avis est un chiffre qu'on doit croire sur parole.**
+   *
+   * 📌 **Tous les avis, pas seulement ceux qui portent un texte.** Une note sans commentaire
+   * compte autant dans la moyenne ; l'exclure de la liste ferait deux totaux qui ne se répondent
+   * pas — *« 400 avis » en haut et 120 lignes en dessous se lit comme une dissimulation.*
+   *
+   * 📌 **Le filtre par note** sert la barre qu'on touche dans la répartition : *la seule question
+   * qu'on se pose vraiment devant une moyenne est « qu'est-ce qui s'est mal passé chez les
+   * mécontents ? »*, et aucune plateforme ne la rend facile.
+   *
+   * ⚠️ **Le professionnel doit être visible** — mêmes règles que la fiche (RM-05-01/05) : sans ce
+   * contrôle, les avis d'un compte suspendu resteraient lisibles par leur seule URL.
+   */
+  async getReviews(
+    professionalId: string,
+    query: DirectoryReviewsQueryDto,
+  ): Promise<{ items: DirectoryReviewView[]; nextCursor: string | null; total: number }> {
+    const visible = await this.prisma.professionalProfile.findFirst({
+      where: {
+        accountId: professionalId,
+        account: { status: "ACTIVE" }, // RM-05-05
+        verificationCase: { status: "VERIFIED", agreement: { versions: { some: { signedAt: { not: null } }, none: { signedAt: null } } } }, // RM-05-01
+      },
+      select: { accountId: true },
+    });
+    if (!visible) throw new NotFoundException("Professionnel introuvable");
+
+    const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
+    const where = {
+      session: { professionalId },
+      ...(query.score !== undefined ? { score: query.score } : {}),
+    };
+
+    /*
+      ⚠️ **`sessionId` ferme chaque tri.** « Meilleurs d'abord » range par score, et des dizaines
+      d'avis partagent la même note : sans dernier critère unique, deux pages successives peuvent
+      rendre deux fois la même ligne et en sauter une autre. *Un curseur n'a de sens que sur un
+      ordre total.*
+    */
+    const orderBy =
+      query.sort === "best"
+        ? ([{ score: "desc" }, { createdAt: "desc" }, { sessionId: "asc" }] as const)
+        : query.sort === "worst"
+          ? ([{ score: "asc" }, { createdAt: "desc" }, { sessionId: "asc" }] as const)
+          : ([{ createdAt: "desc" }, { sessionId: "asc" }] as const);
+
+    const [rows, total] = await Promise.all([
+      this.prisma.sessionRating.findMany({
+        where,
+        orderBy: [...orderBy],
+        take: limit + 1, // une de plus : elle dit s'il reste une page, sans second comptage
+        ...(query.cursor ? { cursor: { sessionId: query.cursor }, skip: 1 } : {}),
+        select: { sessionId: true, patientId: true, score: true, comment: true, createdAt: true },
+      }),
+      this.prisma.sessionRating.count({ where }),
+    ]);
+
+    const page = rows.slice(0, limit);
+    const nextCursor = rows.length > limit ? page[page.length - 1].sessionId : null;
+
+    /*
+      La fidélité, en UNE requête pour toute la page — jamais une par avis.
+
+      📌 Et `patientId` s'arrête ici : il sert de clé de regroupement, il ne figure dans aucune
+      valeur renvoyée. *Une donnée qu'on lit pour compter n'est pas une donnée qu'on publie.*
+    */
+    const patients = [...new Set(page.map((r) => r.patientId))];
+    const compte = new Map<string, number>();
+    if (patients.length > 0) {
+      const groupes = await this.prisma.careSession.groupBy({
+        by: ["patientAccountId"],
+        where: { professionalId, patientAccountId: { in: patients } },
+        _count: { _all: true },
+      });
+      for (const g of groupes) compte.set(g.patientAccountId, g._count._all);
+    }
+
+    return {
+      items: page.map((r) => ({
+        score: r.score,
+        comment: r.comment,
+        createdAt: r.createdAt.toISOString(),
+        // Au moins 1 : l'avis prouve à lui seul qu'une consultation a eu lieu.
+        consultationsWithPro: Math.max(1, compte.get(r.patientId) ?? 1),
+      })),
+      nextCursor,
+      total,
     };
   }
 

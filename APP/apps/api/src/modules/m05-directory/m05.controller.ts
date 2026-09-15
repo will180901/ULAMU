@@ -10,7 +10,7 @@
 import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
 import { Actor } from "../../common/auth/actor.decorator";
 import { AuthenticatedActor, Public } from "../../common/auth/auth.guard";
-import { CreateOfferDto, DirectoryQueryDto, SetPresenceStateDto, UpdateMyProfileDto, UpdateOfferDto } from "./m05.dto";
+import { CreateOfferDto, DirectoryQueryDto, DirectoryReviewsQueryDto, SetPresenceStateDto, UpdateMyProfileDto, UpdateOfferDto } from "./m05.dto";
 import { DirectoryService } from "./m05.directory.service";
 import { OffersService } from "./m05.offers.service";
 import { PresenceService } from "./m05.presence.service";
@@ -127,6 +127,18 @@ export class M05Controller {
   @Get("directory/:professionalId")
   profile(@Param("professionalId") professionalId: string) {
     return this.directory.getProfile(professionalId);
+  }
+
+  /**
+   * Les avis, page par page — publique comme la fiche (EF-05-04/07), chantier 123.
+   *
+   * ⚠️ Elle n'existait pas : la fiche servait dix commentaires et rien ne permettait d'aller
+   * au-delà. *Une moyenne sans ses avis est un chiffre qu'on doit croire sur parole.*
+   */
+  @Public()
+  @Get("directory/:professionalId/reviews")
+  reviews(@Param("professionalId") professionalId: string, @Query() query: DirectoryReviewsQueryDto) {
+    return this.directory.getReviews(professionalId, query);
   }
 
   // ── Cloche (EF-05-06 ; CU-05-05) — patient authentifié ──────────────────────
