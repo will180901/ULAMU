@@ -749,6 +749,13 @@ export interface Receipt {
   orderRef: string;
   amountXaf: number;
   createdAt: string;
+  /**
+   * Ce qui a été acheté, en toutes lettres — figé à la commande (chantier 126).
+   *
+   * `null` pour les paiements d'avant que cette colonne existe : l'écran retombe alors sur sa
+   * déduction depuis `orderRef`. *Mieux vaut une catégorie honnête qu'un nom inventé.*
+   */
+  label: string | null;
 }
 
 export const NOTIFICATION_ROUTES = {

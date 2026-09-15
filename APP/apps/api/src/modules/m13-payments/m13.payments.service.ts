@@ -50,6 +50,18 @@ export interface ChargeOrder {
   /** Absent = encaissement 100 % ULAMU (dévoilement, PM-03). */
   beneficiary?: ChargeBeneficiary;
   capture: CaptureMode;
+  /**
+   * Ce qui est acheté, en toutes lettres — pour le reçu (chantier 126).
+   *
+   * ⚠️ **M13 reste AVEUGLE au métier** (RM-13-01) : il ne DÉDUIT rien de ce texte, il le range et
+   * le ressort. C'est l'appelant qui sait ce qu'il vend, et lui seul. Le reçu affichait jusqu'ici
+   * « Consultation », un mot deviné depuis la référence d'ordre, alors que le soignant nomme son
+   * offre librement. *Un reçu est une trace : il doit dire ce qui a été acheté, pas la catégorie
+   * dans laquelle on le range.*
+   *
+   * Facultatif : un ordre qui ne sait pas se nommer ne se nomme pas — il n'invente pas.
+   */
+  label?: string;
 }
 
 export interface PaymentState {
@@ -153,6 +165,9 @@ export class PaymentsService {
             payerId: order.payerAccountId,
             amountXaf: order.amountXaf,
             operator: order.operator,
+            // Ce qui est acheté, tel que l'appelant le nomme — M13 le range, il ne l'interprète
+            // jamais (RM-13-01). Un ordre qui ne sait pas se nommer ne se nomme pas.
+            label: order.label ?? null,
             // aggregatorRef = payment.id : notre référence d'idempotence côté agrégateur.
             aggregatorRef: paymentId,
           },
@@ -488,7 +503,9 @@ export class PaymentsService {
   // ── EF-13-05 : reçus consultables et exportables à vie (côté payeur) ────────
 
   /** Reçus du payeur authentifié — consultables à vie (D-010). */
-  async listReceiptsForPayer(payerId: string): Promise<Array<{ number: string; kind: string; orderRef: string; amountXaf: number; createdAt: Date }>> {
+  async listReceiptsForPayer(
+    payerId: string,
+  ): Promise<Array<{ number: string; kind: string; orderRef: string; amountXaf: number; createdAt: Date; label: string | null }>> {
     const receipts = await this.prisma.receipt.findMany({
       where: { payment: { payerId } },
       include: { payment: true },
@@ -501,6 +518,16 @@ export class PaymentsService {
       orderRef: r.payment.orderRef,
       amountXaf: r.payment.amountXaf,
       createdAt: r.createdAt,
+      /*
+        ⚠️ **Ce qui a été acheté, en toutes lettres.** Le reçu affichait « Consultation », un mot
+        DÉDUIT de la référence d'ordre par l'écran — alors que le soignant nomme son offre
+        librement : « Bilan santé 60 min » se rangeait sous « Consultation ».
+
+        `null` pour les paiements d'avant la colonne dont le rattrapage n'a rien trouvé : l'écran
+        retombe alors sur son ancienne déduction. *Mieux vaut une catégorie honnête qu'un nom
+        inventé.*
+      */
+      label: r.payment.label,
     }));
   }
 

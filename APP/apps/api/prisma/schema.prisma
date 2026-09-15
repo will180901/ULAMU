@@ -829,6 +829,8 @@ model Payment {
   orderRef      String          @unique
   payerId       String
   amountXaf     Int
+  /// Ce qui a été acheté, FIGÉ à la commande (chantier 126) — null pour les paiements d'avant.
+  label         String?
   operator      PaymentOperator
   status        PaymentStatus   @default(INITIATED)
   aggregatorRef String?         @unique

@@ -494,6 +494,13 @@ export class HandshakeService {
         operator: dto.operator,
         beneficiary: { holderType: "PROFESSIONAL", holderId: fresh.professionalId },
         capture: "DEFERRED",
+        /*
+          ⚠️ **Le libellé FIGÉ d'abord, l'offre vivante seulement en repli** — exactement la même
+          règle que le montant juste au-dessus. Le soignant peut renommer son offre entre la demande
+          et le paiement ; le reçu doit porter ce que le patient a lu, pas ce que l'offre est
+          devenue. *Un reçu qui suit sa source n'est plus une trace.*
+        */
+        label: fresh.offerLabel ?? offer.label,
       });
 
     // Premier essai : référence stable (idempotente, RM-13-04). FAILED est TERMINAL côté

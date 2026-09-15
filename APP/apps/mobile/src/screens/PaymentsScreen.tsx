@@ -23,11 +23,33 @@ const fmtDate = (iso: string): string => {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-/** Libellé + sens de l'opération depuis l'orderRef OPAQUE (handshake:/disclosure:/session:…) + kind. */
+/**
+ * Libellé + sens de l'opération.
+ *
+ * ── ⚠️ Le reçu dit ce qui a été ACHETÉ — chantier 126, 15/09/2026 ────────────────────────────
+ *
+ * Cet écran écrivait « Consultation » pour tout ce qui venait d'une poignée de main : un mot
+ * DÉDUIT de la référence d'ordre. Or le soignant nomme son offre librement (120 caractères) —
+ * quelqu'un qui avait payé « Bilan santé 60 min » recevait un reçu disant « Consultation ».
+ *
+ * > **Un reçu est une trace : il doit dire ce qui a été acheté, pas la catégorie dans laquelle on
+ * > le range.**
+ *
+ * Le serveur fige désormais ce libellé sur le paiement, à la commande — il ne suit pas l'offre si
+ * le soignant la renomme plus tard (même règle que le montant, chantier 118).
+ *
+ * 📌 La déduction reste, **en second** : les reçus d'avant cette colonne n'ont pas de libellé, et
+ * pour eux une catégorie honnête vaut mieux qu'un nom inventé. C'est aussi le repli des ordres qui
+ * ne viennent pas d'une consultation.
+ */
 function describe(r: Receipt): {label: string; icon: IconName; refund: boolean} {
   const ref = (r.orderRef || '').toLowerCase();
   const kind = (r.kind || '').toLowerCase();
   const refund = kind.includes('refund') || kind.includes('rembours');
+  const nomme = (r.label ?? '').trim();
+  if (nomme.length > 0 && (ref.startsWith('handshake') || ref.startsWith('session'))) {
+    return {label: nomme, icon: 'stethoscope', refund};
+  }
   if (ref.startsWith('handshake') || ref.startsWith('session')) return {label: 'Consultation', icon: 'stethoscope', refund};
   if (ref.startsWith('disclosure') || ref.startsWith('devoilement')) return {label: 'Dévoilement pharmacie', icon: 'pill', refund};
   if (ref.startsWith('mission') || ref.startsWith('triage')) return {label: 'Triage à domicile', icon: 'activity', refund};
