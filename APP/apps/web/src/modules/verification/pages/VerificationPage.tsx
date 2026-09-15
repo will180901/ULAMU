@@ -46,6 +46,8 @@
  * de taux se déclenche. Les deux écrans forment une seule fonctionnalité.
  */
 import { useEffect, useRef, useState } from 'react'
+import { Printer } from 'lucide-react'
+import { ContratImprimable } from '@/components/impression/ContratImprimable'
 import { formatTaille, MIMES_PIECE, refusFichier, TAILLE_MAX_OCTETS } from '@/lib/fichier'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -416,15 +418,20 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
     onError: (e) => setErreur(messageErreur(e)),
   })
 
-  const telecharger = () => {
-    if (!a?.body) return
-    const url = URL.createObjectURL(new Blob([a.body], { type: 'text/plain;charset=utf-8' }))
-    const lien = window.document.createElement('a')
-    lien.href = url
-    lien.download = `contrat-ulamu-v${a.version}.txt`
-    lien.click()
-    URL.revokeObjectURL(url)
-  }
+  /*
+    ── ⚠️ Un contrat signé ne se livre pas en `.txt` — chantier 132, 15/09/2026 ────────────────
+
+    Ce bouton produisait un fichier texte brut : sans en-tête, sans date de signature, sans
+    l'empreinte qui prouve qu'il s'agit bien du texte accepté — et sans rien qui permette de le
+    présenter à une banque, à un comptable ou à un tribunal.
+
+    > **Un contrat qu'on ne peut pas présenter n'engage personne à vos yeux, même s'il vous engage
+    > en droit.**
+
+    L'aperçu imprimable porte les trois choses qui manquaient, et que la base détenait déjà :
+    l'empreinte du texte signé, la date et l'heure de signature, et le nom du signataire.
+  */
+  const [imprimable, setImprimable] = useState(false)
 
   if (!a) {
     return (
@@ -537,10 +544,28 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
             Signé électroniquement par {nomComplet} · empreinte {a.bodyHash.slice(0, 4)}…{a.bodyHash.slice(-4)}
           </p>
           <div>
-            <Button type="button" size="sm" variant="outline" onClick={telecharger}>
-              Télécharger
+            {/*
+              « Télécharger » ne disait pas QUOI : il sortait un fichier texte. Le mot dit
+              désormais ce que le bouton fait — *un intitulé qui promet moins que ce qu'on obtient
+              fait manquer ce qu'on cherchait.*
+            */}
+            <Button type="button" size="sm" variant="outline" onClick={() => setImprimable(true)}>
+              <Printer size={14} aria-hidden="true" />
+              Imprimer ou enregistrer en PDF
             </Button>
           </div>
+          {imprimable && a.body ? (
+            <ContratImprimable
+              version={a.version}
+              commissionPct={a.commissionPct}
+              bodyHash={a.bodyHash}
+              corps={a.body}
+              signePar={nomComplet}
+              signeLe={a.signedAt}
+              effectifLe={a.effectiveAt}
+              onFermer={() => setImprimable(false)}
+            />
+          ) : null}
         </>
       ) : (
         <div className="flex flex-col gap-3 rounded-md border border-border bg-secondary p-3">

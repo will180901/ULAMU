@@ -24,6 +24,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { Prescription } from '@/lib/api'
 import { OrdonnanceImprimable } from '@/components/impression/OrdonnanceImprimable'
+import { ContratImprimable } from '@/components/impression/ContratImprimable'
+import { RecuImprimable } from '@/components/impression/RecuImprimable'
 
 // Le QR est fabriqué sur le poste par `qrcode` : on le remplace, les règles testées sont ailleurs.
 vi.mock('qrcode', () => ({ default: { toDataURL: () => Promise.resolve('data:image/png;base64,x') } }))
@@ -200,5 +202,180 @@ describe('Le gabarit A4 — ce qui le fait sortir droit', () => {
   */
   it('imprime sur du blanc, quel que soit le thème de l’application', () => {
     expect(source).toMatch(/background: '#FFFFFF'/)
+  })
+})
+
+/*
+  ── Le contrat et le reçu — chantier 132, 15/09/2026 ──────────────────────────────────────────
+
+  ⚠️ **Le contrat signé se téléchargeait en `.txt`.** Un document juridique, en texte brut : sans
+  en-tête, sans date de signature, et **sans l'empreinte qui prouve qu'il s'agit bien du texte
+  accepté**. Elle existait pourtant en base — personne ne la montrait.
+
+  > **Un contrat qu'on ne peut pas présenter n'engage personne à vos yeux, même s'il vous engage en
+  > droit.**
+
+  ⚠️ **Le reçu ne vivait qu'à l'écran d'un téléphone.** Or un reçu n'existe pas pour celui qui
+  l'émet : il existe pour celui qui devra le présenter à un employeur, une mutuelle, un comptable.
+  *Un justificatif qui ne peut pas quitter l'appareil ne justifie rien.*
+*/
+describe('Le contrat imprimé', () => {
+  const monterContrat = (p: Partial<Parameters<typeof ContratImprimable>[0]> = {}) =>
+    render(
+      <ContratImprimable
+        version={2}
+        commissionPct={10}
+        bodyHash="a3f9beefcafebabedeadbeef0000c210"
+        corps={'Article 1.\nLe partenaire exerce en son nom propre.'}
+        signePar="Armel Konaté"
+        signeLe="2026-08-24T08:26:00.000Z"
+        effectifLe="2026-08-24T08:26:00.000Z"
+        onFermer={() => {}}
+        {...p}
+      />,
+    )
+
+  /*
+    ⚠️ LE test de ce document : sans l'empreinte, une copie de contrat ne se distingue pas d'une
+    version réécrite après coup.
+  */
+  it('porte l’empreinte du texte signé, en entier', () => {
+    monterContrat()
+
+    expect(screen.getByText('a3f9beefcafebabedeadbeef0000c210')).toBeInTheDocument()
+    expect(screen.getByText(/change au moindre caractère modifié/)).toBeInTheDocument()
+  })
+
+  it('nomme le signataire et la date de signature', () => {
+    monterContrat()
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).toContain('Armel Konaté')
+    expect(texte).toMatch(/24 août 2026/)
+  })
+
+  /*
+    La commission est la seule clause que le soignant relira : elle décide de ce qu'il gagne.
+    Enfouie dans le corps, elle serait introuvable sur une feuille dense.
+  */
+  it('met la commission en évidence, hors du corps', () => {
+    monterContrat({ commissionPct: 12 })
+
+    expect(screen.getByText('12 %')).toBeInTheDocument()
+  })
+
+  /*
+    C'est un texte juridique : reformater un contrat, c'est en changer la lecture — et l'empreinte
+    imprimée à côté ne correspondrait plus à ce qu'on lit.
+  */
+  it('rend le corps tel quel, sans le reformater', () => {
+    monterContrat()
+
+    expect(screen.getByText(/Le partenaire exerce en son nom propre/)).toBeInTheDocument()
+  })
+})
+
+describe('Le reçu imprimé', () => {
+  const RECU = {
+    number: 'REC-000123',
+    kind: 'PAYMENT',
+    orderRef: 'handshake:h1',
+    amountXaf: 5000,
+    createdAt: '2026-09-12T10:30:00.000Z',
+    label: 'Consultation générale 30 min',
+  }
+
+  it('porte le libellé FIGÉ de ce qui a été acheté', () => {
+    render(<RecuImprimable recu={RECU} payeur="Mireille Nkouka" onFermer={() => {}} />)
+
+    expect(screen.getByText('Consultation générale 30 min')).toBeInTheDocument()
+    // En-tête et pied portent tous deux la référence : le gabarit la répète volontairement.
+    expect(screen.getAllByText('REC-000123').length).toBeGreaterThan(0)
+  })
+
+  /*
+    Mieux vaut une catégorie honnête qu'un nom inventé : les reçus d'avant la colonne `label`
+    retombent sur la déduction, comme l'écran le fait déjà.
+  */
+  it('retombe sur une catégorie honnête quand le libellé manque', () => {
+    render(<RecuImprimable recu={{ ...RECU, label: null }} payeur="Mireille Nkouka" onFermer={() => {}} />)
+
+    expect(screen.getByText('Consultation')).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Présenter un remboursement comme une dépense fausserait une note de frais : le mot ET le
+    signe changent.
+  */
+  it('distingue un remboursement d’un paiement', () => {
+    render(<RecuImprimable recu={{ ...RECU, kind: 'REFUND' }} payeur="Mireille Nkouka" onFermer={() => {}} />)
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).toContain('Reçu de remboursement')
+    expect(texte).toContain('Total remboursé')
+    expect(texte).not.toContain('Total payé')
+  })
+
+  /*
+    La garantie donnée AVANT le paiement se retrouve sur la preuve du paiement (D-010 : prix final,
+    commission incluse ; les frais d'opérateur sortent de la commission d'ULAMU).
+  */
+  /*
+    Le numéro figure en en-tête et en pied — c'est le rôle du gabarit. L'écrire une troisième fois
+    dans le bloc « Opération » n'apprenait rien : *deux fois la même information n'est pas deux fois
+    plus sûre, c'est une ligne de moins pour ce qui manque.*
+  */
+  it('ne répète pas le numéro une troisième fois dans le corps', () => {
+    render(<RecuImprimable recu={RECU} payeur="Mireille Nkouka" onFermer={() => {}} />)
+
+    expect(screen.queryByText('Numéro de reçu')).not.toBeInTheDocument()
+    expect(screen.getByText('Référence')).toBeInTheDocument()
+  })
+
+  it('répète la garantie « aucun frais en plus »', () => {
+    render(<RecuImprimable recu={RECU} payeur="Mireille Nkouka" onFermer={() => {}} />)
+
+    expect(screen.getByText(/sans aucun frais supplémentaire/)).toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ Deux règles que rien ne retenait — chantier 132 ────────────────────────────────────────
+
+  L'injection du 15/09 l'a montré : on pouvait **reformater le corps du contrat** et **faire repartir
+  le contrat en fichier `.txt`** sans qu'un seul test tombe. Les cas précédents éprouvaient ce que
+  les documents AFFICHENT ; ceux-ci gardent comment ils sont produits.
+
+  Ces deux règles vivent dans un attribut de style et dans un branchement d'écran : les éprouver au
+  rendu demanderait de monter toute la page de vérification pour vérifier un `white-space`. On les
+  ancre dans la SOURCE, comme le filet des promesses d'écran le fait déjà.
+*/
+describe('Comment ces documents sont produits', () => {
+  const sourceContrat = readFileSync(resolve(__dirname, '../components/impression/ContratImprimable.tsx'), 'utf8')
+  const sourcePage = readFileSync(resolve(__dirname, '../modules/verification/pages/VerificationPage.tsx'), 'utf8')
+
+  /*
+    C'est un texte juridique. Reformater un contrat, c'est en changer la lecture — et l'empreinte
+    imprimée à côté ne correspondrait plus à ce qu'on lit.
+  */
+  it('le corps du contrat s’imprime tel qu’il a été signé', () => {
+    expect(sourceContrat).toMatch(/whiteSpace: 'pre-wrap' \}\}>\{corps\}/)
+    expect(sourceContrat).not.toMatch(/corps\.replace/)
+  })
+
+  /*
+    ⚠️ **Le contrat ne repart pas en `.txt`.** Un document juridique signé, livré en texte brut,
+    n'a ni en-tête, ni date de signature, ni empreinte : il ne se présente à personne.
+  */
+  it('l’écran de vérification n’émet plus de fichier texte', () => {
+    /*
+      ⚠️ `[\s/>]` n'est pas un détail : sans lui, le motif correspondait aussi à
+      `<ContratImprimableAutreChose`, et l'injection du 15/09 est passée à travers. *Une ancre qui
+      accepte un préfixe ne garde pas un nom, elle garde un début de nom.*
+    */
+    expect(sourcePage).toMatch(/<ContratImprimable[\s/>]/)
+    expect(sourcePage).toMatch(/import \{ ContratImprimable \}/)
+    expect(sourcePage).not.toMatch(/text\/plain/)
+    expect(sourcePage).not.toMatch(/contrat-ulamu-v.*\.txt/)
   })
 })

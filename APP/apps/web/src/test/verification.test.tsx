@@ -188,7 +188,16 @@ describe('C1 — le contrat de partenariat', () => {
 
     expect(screen.getByText(/Contrat signé le/)).toBeInTheDocument()
     expect(screen.getByText(/empreinte a3f9…c210/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Télécharger' })).toBeInTheDocument()
+    /*
+      ⚠️ **Ancre changée EN CONSCIENCE au chantier 132.** Elle exigeait un bouton « Télécharger »,
+      qui produisait un fichier `.txt` : un contrat signé électroniquement livré en texte brut, sans
+      en-tête, sans date de signature et sans l'empreinte qui prouve qu'il s'agit du texte accepté.
+
+      Ce que ce cas défend n'a pas changé — *le contrat signé doit pouvoir sortir d'ULAMU* — mais il
+      en sort désormais en document imprimable, et l'intitulé du bouton dit ce qu'il fait. *Un
+      intitulé qui promet moins que ce qu'on obtient fait manquer ce qu'on cherchait.*
+    */
+    expect(screen.getByRole('button', { name: /Imprimer ou enregistrer en PDF/ })).toBeInTheDocument()
     expect(screen.queryByLabelText(/saisissez votre nom complet/i)).not.toBeInTheDocument()
   })
 
