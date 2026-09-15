@@ -45,7 +45,16 @@ export interface RecuAImprimer {
   label: string | null
 }
 
-import { FeuilleImpression, IMPRESSION_DOUX, IMPRESSION_FILET, IMPRESSION_GRIS, TitreSection } from './FeuilleImpression'
+import {
+  FeuilleImpression,
+  IMPRESSION_ACCENT,
+  IMPRESSION_CHIFFRES,
+  IMPRESSION_DOUX,
+  IMPRESSION_FILET,
+  IMPRESSION_GRIS,
+  IMPRESSION_TITRAGE,
+  TitreSection,
+} from './FeuilleImpression'
 
 const dateHeureFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) +
@@ -104,7 +113,7 @@ export function RecuImprimable({ recu, payeur, onFermer }: RecuImprimableProps) 
 
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
         <tbody>
-          <tr style={{ borderBottom: `1px solid ${IMPRESSION_FILET}` }}>
+          <tr data-insecable style={{ borderBottom: `1px solid ${IMPRESSION_FILET}` }}>
             <td style={{ padding: '11px 0' }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 12.5 }}>{intitule}</p>
               <p style={{ margin: '2px 0 0', fontSize: 9.5, color: IMPRESSION_GRIS }}>
@@ -113,7 +122,7 @@ export function RecuImprimable({ recu, payeur, onFermer }: RecuImprimableProps) 
                   : 'Consultation par messagerie sur ULAMU, payée par Mobile Money.'}
               </p>
             </td>
-            <td style={{ padding: '11px 0', textAlign: 'right', fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>
+            <td style={{ padding: '11px 0', textAlign: 'right', fontFamily: IMPRESSION_CHIFFRES, fontSize: 13, whiteSpace: 'nowrap' }}>
               {remboursement ? '+' : ''}
               {montantXaf(recu.amountXaf)}
             </td>
@@ -125,11 +134,33 @@ export function RecuImprimable({ recu, payeur, onFermer }: RecuImprimableProps) 
         ⚠️ **Le TOTAL, en grand.** C'est le seul chiffre que le lecteur du reçu cherchera — un
         comptable, un employeur. L'enfouir dans un tableau le ferait recompter à la main.
       */}
-      <div style={{ background: IMPRESSION_DOUX, borderRadius: 6, padding: '13px 16px', marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16 }}>
-        <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, color: IMPRESSION_GRIS }}>
+      <div
+        data-insecable
+        style={{
+          background: IMPRESSION_DOUX,
+          border: `1px solid ${IMPRESSION_FILET}`,
+          borderLeft: `3px solid ${IMPRESSION_ACCENT}`,
+          padding: '14px 17px',
+          marginTop: 16,
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: IMPRESSION_TITRAGE,
+            fontSize: 9,
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            fontWeight: 700,
+            color: IMPRESSION_ACCENT,
+          }}
+        >
           {remboursement ? 'Total remboursé' : 'Total payé'}
         </span>
-        <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: 25, fontWeight: 800, letterSpacing: '-0.02em', fontFamily: IMPRESSION_CHIFFRES }}>
           {montantXaf(recu.amountXaf)}
         </span>
       </div>
@@ -139,7 +170,7 @@ export function RecuImprimable({ recu, payeur, onFermer }: RecuImprimableProps) 
         D-010 — le prix servi est FINAL, commission incluse, et les frais d'opérateur sortent de la
         commission d'ULAMU (décision du porteur, 14/09).
       */}
-      <p style={{ margin: '14px 0 0', fontSize: 10, lineHeight: 1.55, color: IMPRESSION_GRIS }}>
+      <p style={{ margin: '14px 0 0', fontSize: 10, lineHeight: 1.65, color: IMPRESSION_GRIS, textAlign: 'justify' }}>
         Le montant ci-dessus est celui qui a été débité, sans aucun frais supplémentaire : les frais
         de l’opérateur Mobile Money sont pris en charge par ULAMU.
       </p>

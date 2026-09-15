@@ -24,8 +24,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { Prescription } from '@/lib/api'
 import { OrdonnanceImprimable } from '@/components/impression/OrdonnanceImprimable'
-import { ContratImprimable } from '@/components/impression/ContratImprimable'
+import { ContratImprimable, decouperContrat } from '@/components/impression/ContratImprimable'
 import { RecuImprimable } from '@/components/impression/RecuImprimable'
+
+/**
+ * Le saut de ligne des textes d'exemple.
+ *
+ * ⚠️ Nommé plutôt qu'écrit en toute lettre : ce fichier est produit par des scripts d'édition, et
+ * *le projet a déjà payé huit fois le prix des échappements mangés en chemin* — un `\n` littéral y
+ * devient un vrai retour à la ligne, et la chaîne ne se referme plus.
+ */
+const SAUT = String.fromCharCode(10)
 
 // Le QR est fabriqué sur le poste par `qrcode` : on le remplace, les règles testées sont ailleurs.
 vi.mock('qrcode', () => ({ default: { toDataURL: () => Promise.resolve('data:image/png;base64,x') } }))
@@ -219,22 +228,22 @@ describe('Le gabarit A4 — ce qui le fait sortir droit', () => {
   l'émet : il existe pour celui qui devra le présenter à un employeur, une mutuelle, un comptable.
   *Un justificatif qui ne peut pas quitter l'appareil ne justifie rien.*
 */
-describe('Le contrat imprimé', () => {
-  const monterContrat = (p: Partial<Parameters<typeof ContratImprimable>[0]> = {}) =>
-    render(
-      <ContratImprimable
-        version={2}
-        commissionPct={10}
-        bodyHash="a3f9beefcafebabedeadbeef0000c210"
-        corps={'Article 1.\nLe partenaire exerce en son nom propre.'}
-        signePar="Armel Konaté"
-        signeLe="2026-08-24T08:26:00.000Z"
-        effectifLe="2026-08-24T08:26:00.000Z"
-        onFermer={() => {}}
-        {...p}
-      />,
-    )
+const monterContrat = (p: Partial<Parameters<typeof ContratImprimable>[0]> = {}) =>
+  render(
+    <ContratImprimable
+      version={2}
+      commissionPct={10}
+      bodyHash="a3f9beefcafebabedeadbeef0000c210"
+      corps={'Article 1.\nLe partenaire exerce en son nom propre.'}
+      signePar="Armel Konaté"
+      signeLe="2026-08-24T08:26:00.000Z"
+      effectifLe="2026-08-24T08:26:00.000Z"
+      onFermer={() => {}}
+      {...p}
+    />,
+  )
 
+describe('Le contrat imprimé', () => {
   /*
     ⚠️ LE test de ce document : sans l'empreinte, une copie de contrat ne se distingue pas d'une
     version réécrite après coup.
@@ -243,7 +252,7 @@ describe('Le contrat imprimé', () => {
     monterContrat()
 
     expect(screen.getByText('a3f9beefcafebabedeadbeef0000c210')).toBeInTheDocument()
-    expect(screen.getByText(/change au moindre caractère modifié/)).toBeInTheDocument()
+    expect(screen.getByText(/change au moindre caractère modifié/i)).toBeInTheDocument()
   })
 
   it('nomme le signataire et la date de signature', () => {
@@ -353,14 +362,92 @@ describe('Le reçu imprimé', () => {
 describe('Comment ces documents sont produits', () => {
   const sourceContrat = readFileSync(resolve(__dirname, '../components/impression/ContratImprimable.tsx'), 'utf8')
   const sourcePage = readFileSync(resolve(__dirname, '../modules/verification/pages/VerificationPage.tsx'), 'utf8')
+  const sourceFeuille = readFileSync(resolve(__dirname, '../components/impression/FeuilleImpression.tsx'), 'utf8')
 
   /*
-    C'est un texte juridique. Reformater un contrat, c'est en changer la lecture — et l'empreinte
-    imprimée à côté ne correspondrait plus à ce qu'on lit.
+    ⚠️ **Ancre remplacée EN CONSCIENCE au chantier 134.** Elle exigeait `white-space: pre-wrap` et
+    interdisait tout `replace` : c'était une façon indirecte de dire « ne touche pas au texte », et
+    elle interdisait du même coup de le METTRE EN PAGE.
+
+    Or le texte arrive en lignes coupées à largeur fixe. Rendues telles quelles, elles donnent un
+    bloc en escalier — une page web imprimée, pas un acte. Les réunir en paragraphes justifiés ne
+    réécrit rien : *lire le même texte dans une autre police ne le réécrit pas ; réunir deux lignes
+    qu'un retour forcé avait séparées non plus.*
+
+    La règle qui compte est donc vérifiée directement, et elle est PLUS forte que l'ancienne : la
+    suite des mots rendus doit être identique, mot pour mot, à celle du texte signé — puisque c'est
+    cette suite que l'empreinte scelle.
   */
-  it('le corps du contrat s’imprime tel qu’il a été signé', () => {
-    expect(sourceContrat).toMatch(/whiteSpace: 'pre-wrap' \}\}>\{corps\}/)
-    expect(sourceContrat).not.toMatch(/corps\.replace/)
+  it('ne change aucun mot du texte signé, ni leur ordre', () => {
+    const texte = [
+      'CONTRAT DE PARTENARIAT ULAMU',
+      '',
+      'ENTRE :',
+      'ULAMU, plateforme de télémédecine, ci-après « la Plateforme ».',
+      '',
+      'ARTICLE 1 — OBJET',
+      'La Plateforme met à disposition un service de mise en relation avec des',
+      'patients, et les outils associés.',
+      '',
+      'ARTICLE 2 — LOI APPLICABLE',
+      'Le présent contrat est régi par le droit de la République du Congo.',
+      '',
+      'Signataire : Armel Konaté — Version 3 — Commission : 10 %.',
+    ].join(SAUT)
+
+    const { preambule, articles, cloture } = decouperContrat(texte)
+
+    /*
+      Tout ce que le découpage produit, remis bout à bout dans l'ordre où le document le rend.
+      Le titre d'article y figure TEL QUEL — « ARTICLE 1 — OBJET », capitales comprises : le
+      recomposer en « Article 1 » changerait la casse d'un mot scellé.
+    */
+    const rendu = [
+      ...preambule,
+      ...articles.flatMap((a) => [a.entete, ...a.alineas]),
+      ...cloture,
+    ].join(' ')
+
+    const mots = (x: string) => x.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
+
+    // La suite des mots est identique, mot pour mot : c'est elle que l'empreinte scelle.
+    expect(mots(rendu)).toEqual(mots(texte))
+  })
+
+  /*
+    Et la mise en page fait bien son travail : articles numérotés, texte justifié. Sans cela, le
+    contrat resterait le bloc en escalier qu'il était.
+  */
+  it('rend les articles numérotés, en texte justifié', () => {
+    expect(sourceContrat).toMatch(/<ArticleImprime/)
+    expect(sourceFeuille).toMatch(/textAlign: 'justify'/)
+  })
+
+  /*
+    ⚠️ Un analyseur qui jette ce qu'il ne reconnaît pas fait disparaître des clauses. Le découpage
+    doit couvrir les DEUX modèles de rédaction — le contrat d'archive doit rester présentable.
+  */
+  it('découpe les deux modèles de rédaction, sans rien perdre', () => {
+    const origine = ['Article 1 — Objet', 'Le présent contrat encadre.', '', 'Article 2 — Suite', 'Deuxième.'].join(SAUT)
+    const moderne = ['ARTICLE 1 — OBJET', 'Le présent contrat encadre.', '', 'ARTICLE 2 — SUITE', 'Deuxième.'].join(SAUT)
+
+    for (const texte of [origine, moderne]) {
+      const { articles } = decouperContrat(texte)
+      expect(articles).toHaveLength(2)
+      expect(articles[0].entete).toMatch(/^(ARTICLE|Article) 1/)
+      expect(articles[1].alineas.join(' ')).toContain('Deuxième')
+    }
+  })
+
+  it('garde le préambule et la clôture, qui n’appartiennent à aucun article', () => {
+    const texte = ['CONTRAT ULAMU', 'ENTRE : la Plateforme', '', 'ARTICLE 1 — OBJET', 'Un.', '', 'Signataire : X — Version 1.'].join(SAUT)
+
+    const { preambule, articles, cloture } = decouperContrat(texte)
+
+    expect(preambule.join(' ')).toContain('CONTRAT ULAMU')
+    expect(preambule.join(' ')).toContain('ENTRE')
+    expect(cloture.join(' ')).toContain('Signataire')
+    expect(articles[0].alineas.join(' ')).not.toContain('Signataire')
   })
 
   /*
@@ -377,5 +464,136 @@ describe('Comment ces documents sont produits', () => {
     expect(sourcePage).toMatch(/import \{ ContratImprimable \}/)
     expect(sourcePage).not.toMatch(/text\/plain/)
     expect(sourcePage).not.toMatch(/contrat-ulamu-v.*\.txt/)
+  })
+})
+
+/*
+  ── ⚠️ À quoi un acte se reconnaît avant d'être lu — chantier 134, 15/09/2026 ─────────────
+
+  L'injection de fautes du 15/09 a ouvert trois trous, tous du même côté : on pouvait **repasser le
+  corps en sans-serif**, **ramener les marges à celles d'une page web** et **retirer la règle qui
+  empêche un article de se couper en deux** sans qu'un seul test tombe.
+
+  Les filets précédents gardaient ce que les documents DISENT. Aucun ne gardait ce à quoi ils
+  RESSEMBLENT — *or une police, une marge et un saut de page ne sont pas de la décoration : ce sont
+  les trois signes auxquels on reconnaît un acte avant d'en avoir lu un mot.*
+*/
+describe('À quoi ces documents doivent ressembler', () => {
+  const sourceFeuille = readFileSync(resolve(__dirname, '../components/impression/FeuilleImpression.tsx'), 'utf8')
+
+  /*
+    Sur du papier, une serif se lit plus vite sur de longs blocs, et c'est la convention de tout acte
+    écrit. Les replis comptent autant que la police elle-même : *une police absente qui retombe sur du
+    sans-serif ferait deux documents différents selon le poste qui imprime.*
+  */
+  it('imprime le corps en serif, avec de quoi retomber', () => {
+    const corps = sourceFeuille.match(/const CORPS = "([^"]+)"/)?.[1] ?? ''
+
+    expect(corps).not.toBe('')
+    expect(corps).toMatch(/serif/)
+    expect(corps).not.toMatch(/sans-serif/)
+    expect(corps.split(',').length).toBeGreaterThanOrEqual(3)
+    // Déclarer la police ne suffit pas : la feuille doit la porter.
+    expect(sourceFeuille).toMatch(/fontFamily: CORPS/)
+  })
+
+  /*
+    22 mm, c'est la marge d'un acte : elle laisse la place à une reliure, à un tampon, à une
+    annotation de pharmacien. *Un texte qui touche le bord de la feuille se lit comme un tract.*
+  */
+  it('garde les marges d’un acte, pas celles d’une page web', () => {
+    const mm = Number(sourceFeuille.match(/const MARGE = ([\d.]+) \* 3\.7795/)?.[1])
+
+    expect(mm).toBeGreaterThanOrEqual(18)
+    expect(mm).toBeLessThanOrEqual(30)
+  })
+
+  /*
+    Un article coupé entre deux pages se relit deux fois ; un titre resté seul en bas d'une page
+    annonce un texte qui n'est pas là.
+  */
+  it('déclare les règles de saut de page', () => {
+    expect(sourceFeuille).toMatch(/\[data-insecable\] \{ break-inside: avoid/)
+    expect(sourceFeuille).toMatch(/\[data-titre\] \{ break-after: avoid/)
+  })
+
+  /*
+    ⚠️ Et ces règles ne valent que si les blocs les portent : *une règle CSS que rien ne déclenche
+    est une intention, pas un comportement.*
+  */
+  it('marque l’article du contrat comme insécable', () => {
+    monterContrat({ corps: ['ARTICLE 1 — OBJET', 'Un texte de clause.'].join(SAUT) })
+
+    const article = [...document.querySelectorAll('[data-insecable]')].find(
+      (b) => b.querySelector('[data-titre]')?.textContent === 'ARTICLE 1 — OBJET',
+    )
+
+    expect(article).toBeDefined()
+    expect(article?.textContent).toContain('Un texte de clause')
+  })
+
+  it('marque le sceau de l’ordonnance comme insécable', () => {
+    monter()
+
+    const blocs = [...document.querySelectorAll('[data-insecable]')]
+    expect(blocs.some((b) => b.textContent?.includes('Sceau de l’ordonnance'))).toBe(true)
+  })
+
+  it('marque le total du reçu comme insécable', () => {
+    render(
+      <RecuImprimable
+        recu={{
+          number: 'REC-000123',
+          kind: 'PAYMENT',
+          orderRef: 'handshake:h1',
+          amountXaf: 5000,
+          createdAt: '2026-09-12T10:30:00.000Z',
+          label: 'Consultation générale 30 min',
+        }}
+        payeur="Mireille Nkouka"
+        onFermer={() => {}}
+      />,
+    )
+
+    const blocs = [...document.querySelectorAll('[data-insecable]')]
+    expect(blocs.some((b) => b.textContent?.includes('Total payé'))).toBe(true)
+  })
+
+  /*
+    ⚠️ **Une seule typographie, jamais recopiée.** L'ordonnance nommait `'monospace'` et
+    `'Inter, sans-serif'` dans ses cellules — Inter n'étant même pas la police de titrage des
+    documents. *Une typographie recopiée dans un coin ne suit pas le gabarit : le jour où il change,
+    ce coin-là reste en arrière, et deux documents d'ULAMU cessent de se ressembler.*
+  */
+  it('ne recopie aucune police dans les corps de documents', () => {
+    for (const nom of ['OrdonnanceImprimable', 'RecuImprimable', 'ContratImprimable']) {
+      const src = readFileSync(resolve(__dirname, `../components/impression/${nom}.tsx`), 'utf8')
+
+      expect(src, nom).not.toMatch(/fontFamily: ['"]/)
+    }
+  })
+
+  /*
+    ⚠️ **Ce que le gabarit ne fait PAS, et qu'il ne doit pas prétendre faire.** Son en-tête a un
+    temps annoncé une pagination « Page 1 sur N » que le pied n'imprime pas. *Un commentaire qui
+    annonce une pagination inexistante est plus dangereux que l'absence de pagination : il empêche de
+    la remarquer.* Tant que le pied ne numérote pas, il ne l'écrit pas.
+  */
+  it('n’annonce pas une pagination qu’il n’imprime pas', () => {
+    const imprime = /counter\(page/.test(sourceFeuille)
+    const dementi = /ne numérote PAS les pages/.test(sourceFeuille)
+
+    /*
+      L'un OU l'autre, jamais les deux, jamais aucun. Le jour où la pagination arrivera, le démenti
+      devra partir avec elle — *une limite qu'on documente et qu'on oublie d'effacer devient un
+      mensonge au moment même où on la lève.*
+
+      ⚠️ Première écriture de ce filet : il interdisait la simple présence des mots « Page 1 sur N ».
+      Il est tombé sur le démenti lui-même, qui les cite pour expliquer leur absence. *Un filet qui
+      cherche des mots ne distingue pas une promesse d'un aveu ; celui-ci cherche l'accord entre ce
+      que le fichier dit et ce qu'il fait.*
+    */
+    expect(imprime).toBe(!dementi)
+    expect(sourceFeuille).not.toMatch(/📌 \*\*Pagination/)
   })
 })

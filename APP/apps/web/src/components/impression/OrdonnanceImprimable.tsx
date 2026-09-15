@@ -35,20 +35,40 @@
  * signe cette feuille à la main — la signature est électronique, et sa preuve est le QR. *Un cadre
  * vide sur un document médical invite à le remplir après coup.*
  */
-import { useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import type { Prescription } from '@/lib/api'
 import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
 import {
   FeuilleImpression,
   IMPRESSION_ACCENT,
+  IMPRESSION_CHIFFRES,
   IMPRESSION_DOUX,
   IMPRESSION_FILET,
   IMPRESSION_GRIS,
+  IMPRESSION_TITRAGE,
   TitreSection,
 } from './FeuilleImpression'
 
 const dateFr = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+
+/**
+ * L'en-tête des colonnes, dans le titrage du gabarit — écrit UNE fois.
+ *
+ * ⚠️ Les trois cellules le recopiaient chacune de leur côté, et deux replis nommaient « Inter »
+ * en toutes lettres — une police qui n'est même pas celle du titrage des documents. *Une
+ * typographie recopiée dans un coin ne suit pas le gabarit : le jour où il change, ce coin-là reste
+ * en arrière, et deux documents d'ULAMU cessent de se ressembler.*
+ */
+const ENTETE_COLONNE: CSSProperties = {
+  padding: '7px 10px',
+  fontFamily: IMPRESSION_TITRAGE,
+  fontSize: 8,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.14em',
+  color: IMPRESSION_ACCENT,
+}
 
 /** Le sceau, fabriqué SUR LE POSTE : le jeton ne part vers aucun service extérieur. */
 function SceauQr({ jeton }: { jeton: string }) {
@@ -105,15 +125,24 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
       */}
       {annulee || perimee ? (
         <div
+          data-insecable
           style={{
             border: `2px solid ${annulee ? '#9B4444' : '#8A6D1F'}`,
             background: annulee ? '#F7EDED' : '#FBF5E4',
-            borderRadius: 6,
-            padding: '10px 14px',
+            padding: '11px 15px',
             marginBottom: 16,
           }}
         >
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: annulee ? '#7A2E2E' : '#6B5417' }}>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: IMPRESSION_TITRAGE,
+              fontSize: 13,
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              color: annulee ? '#7A2E2E' : '#6B5417',
+            }}
+          >
             {annulee ? 'ORDONNANCE ANNULÉE — NE PAS DÉLIVRER' : 'ORDONNANCE PÉRIMÉE — NE PAS DÉLIVRER'}
           </p>
           {annulee && ordonnance.cancelReason ? (
@@ -127,15 +156,15 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
         <thead>
           <tr style={{ background: IMPRESSION_DOUX }}>
-            <th style={{ textAlign: 'left', padding: '7px 10px', fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '0.1em', color: IMPRESSION_ACCENT, width: 26 }}>#</th>
-            <th style={{ textAlign: 'left', padding: '7px 10px', fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '0.1em', color: IMPRESSION_ACCENT }}>Médicament et posologie</th>
-            <th style={{ textAlign: 'right', padding: '7px 10px', fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '0.1em', color: IMPRESSION_ACCENT, width: 118 }}>Quantité</th>
+            <th style={{ ...ENTETE_COLONNE, textAlign: 'left', width: 26 }}>#</th>
+            <th style={{ ...ENTETE_COLONNE, textAlign: 'left' }}>Médicament et posologie</th>
+            <th style={{ ...ENTETE_COLONNE, textAlign: 'right', width: 118 }}>Quantité</th>
           </tr>
         </thead>
         <tbody>
           {ordonnance.lines.map((l, i) => (
-            <tr key={l.id} style={{ borderBottom: `1px solid ${IMPRESSION_FILET}`, pageBreakInside: 'avoid' }}>
-              <td style={{ padding: '9px 10px', verticalAlign: 'top', color: IMPRESSION_GRIS, fontFamily: 'monospace' }}>{i + 1}</td>
+            <tr key={l.id} data-insecable style={{ borderBottom: `1px solid ${IMPRESSION_FILET}` }}>
+              <td style={{ padding: '9px 10px', verticalAlign: 'top', color: IMPRESSION_GRIS, fontFamily: IMPRESSION_CHIFFRES }}>{i + 1}</td>
               <td style={{ padding: '9px 10px', verticalAlign: 'top' }}>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 12 }}>
                   {l.medicationName ?? l.freeText ?? `Ligne ${i + 1}`}
@@ -153,15 +182,15 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
                   <TexteMisEnForme texte={l.posology} />
                 </div>
               </td>
-              <td style={{ padding: '9px 10px', verticalAlign: 'top', textAlign: 'right', fontFamily: 'monospace', fontSize: 11 }}>
+              <td style={{ padding: '9px 10px', verticalAlign: 'top', textAlign: 'right', fontFamily: IMPRESSION_CHIFFRES, fontSize: 11 }}>
                 {l.qtyPrescribed}
                 {l.durationDays ? (
-                  <span style={{ display: 'block', fontSize: 9, color: IMPRESSION_GRIS, fontFamily: 'Inter, sans-serif' }}>
+                  <span style={{ display: 'block', fontSize: 9, color: IMPRESSION_GRIS, fontFamily: IMPRESSION_TITRAGE }}>
                     {l.durationDays} jour{l.durationDays > 1 ? 's' : ''}
                   </span>
                 ) : null}
                 {l.qtyDispensed > 0 ? (
-                  <span style={{ display: 'block', fontSize: 9, color: IMPRESSION_GRIS, fontFamily: 'Inter, sans-serif' }}>
+                  <span style={{ display: 'block', fontSize: 9, color: IMPRESSION_GRIS, fontFamily: IMPRESSION_TITRAGE }}>
                     {l.qtyDispensed} déjà délivré{l.qtyDispensed > 1 ? 's' : ''}
                   </span>
                 ) : null}
@@ -176,7 +205,18 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
         qui distingue cette feuille d'une liste écrite à la main.
       */}
       {ordonnance.qrToken && !annulee && !perimee ? (
-        <div style={{ marginTop: 22, display: 'flex', gap: 18, alignItems: 'center', border: `1px solid ${IMPRESSION_FILET}`, borderRadius: 8, padding: 14, pageBreakInside: 'avoid' }}>
+        <div
+          data-insecable
+          style={{
+            marginTop: 22,
+            display: 'flex',
+            gap: 18,
+            alignItems: 'center',
+            border: `1px solid ${IMPRESSION_FILET}`,
+            borderLeft: `3px solid ${IMPRESSION_ACCENT}`,
+            padding: 15,
+          }}
+        >
           <SceauQr jeton={ordonnance.qrToken} />
           <div>
             <TitreSection>Sceau de l’ordonnance</TitreSection>
