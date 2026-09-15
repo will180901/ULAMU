@@ -21,7 +21,7 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { CareSessionStatus, Handshake, HandshakeStatus, Prisma, SubProfileStatus } from "@prisma/client";
+import { CareOfferKind, CareSessionStatus, Handshake, HandshakeStatus, Prisma, SubProfileStatus } from "@prisma/client";
 import { AuditEmitter } from "../../common/audit.emitter";
 import { AuthenticatedActor } from "../../common/auth/auth.guard";
 import { OutboxService, TxClient } from "../../common/outbox.service";
@@ -156,6 +156,46 @@ export class HandshakeService {
         throw new ConflictException("Ce profil a été transféré à son titulaire — il consulte désormais avec son propre compte");
       }
       subProfile = { firstName: sp.firstName, birthDate: sp.birthDate };
+    }
+
+    /*
+      ── ⚠️ Le tarif de SUIVI n'est pas ouvert à tout le monde (chantier 125, 15/09/2026) ────────
+
+      **`initiate()` acceptait n'importe quelle offre ACTIVE**, `FOLLOW_UP` comprise. Les écrans ne
+      la proposaient plus depuis longtemps — chantier 65 sur la fiche, chantier 120 dans le choix —
+      mais un simple appel HTTP avec l'`offerId` du suivi vendait toujours une PREMIÈRE consultation
+      au tarif réduit. Et cet identifiant n'est pas secret : l'annuaire le sert publiquement.
+
+      > **Une règle que seul l'écran applique n'est pas une règle : c'est une convention entre gens
+      > bien élevés.**
+
+      Ce que le suivi est, dans le produit : le tarif de quelqu'un qu'on suit DÉJÀ. Il se déclenche
+      sur proposition du soignant après un compte-rendu (EF-06-12 / CU-06-05), par une notification
+      qui renvoie vers cette même route. La condition s'écrit donc telle quelle : **il faut une
+      consultation antérieure avec CE professionnel.**
+
+      📌 **Pour la MÊME personne soignée.** Un parent qui a consulté pour lui-même n'ouvre pas le
+      tarif de suivi de son enfant : *ce n'est pas le payeur qu'on suit, c'est le patient.* D'où le
+      `subProfileId` dans la condition — `null` désignant le titulaire du compte.
+
+      📌 Une session existe dès le PAIEMENT (statut `PREPARING`, chantier 108) : aucun statut n'est
+      exigé ici. *Quelqu'un qui a payé une consultation chez ce soignant est déjà son patient, même
+      si la séance s'est mal passée ensuite* — et lui refuser le tarif réduit à ce moment-là
+      punirait la victime de la défaillance.
+    */
+    if (offer.kind === CareOfferKind.FOLLOW_UP) {
+      const dejaVenu = await this.prisma.careSession.count({
+        where: {
+          patientAccountId: actor.accountId,
+          professionalId: offer.professionalId,
+          subProfileId: dto.subProfileId ?? null,
+        },
+      });
+      if (dejaVenu === 0) {
+        throw new ConflictException(
+          "Ce tarif de suivi est réservé aux patients déjà reçus par ce professionnel — passez par une consultation.",
+        );
+      }
     }
 
     // EF-06-01 : fiche ANONYMISÉE — prénom + âge, rien de plus avant paiement.
