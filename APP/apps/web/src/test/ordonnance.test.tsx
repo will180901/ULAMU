@@ -76,7 +76,7 @@ async function monter(active = true, deja: Prescription[] = []) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <PanneauOrdonnance sessionId="s1" active={active} />
+      <PanneauOrdonnance sessionId="s1" active={active} patient="Mireille Nkouka" soignant="Armel Konaté" />
     </QueryClientProvider>,
   )
   await screen.findByRole('heading', { name: 'Ordonnance' })

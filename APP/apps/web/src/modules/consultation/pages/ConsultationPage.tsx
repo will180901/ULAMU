@@ -2689,7 +2689,17 @@ export function ConsultationPage() {
                       id: 'ordonnance',
                       nom: 'Ordonnance',
                       marque: nbOrdonnances > 0 ? ({ texte: String(nbOrdonnances) } as MarqueOnglet) : undefined,
-                      contenu: <PanneauOrdonnance sessionId={s.id} active={!!vivante} />,
+                      contenu: (
+                        <PanneauOrdonnance
+                          sessionId={s.id}
+                          active={!!vivante}
+                          /* Le document imprimé nomme les deux parties. Un nom manquant devient
+                             « Patient » / « Soignant » plutôt qu'un blanc : une ligne vide sur une
+                             ordonnance se lit comme une erreur d'impression. */
+                          patient={[s.patientFirstName, s.patientLastName].filter(Boolean).join(' ') || 'Patient'}
+                          soignant={[s.professionalFirstName, s.professionalLastName].filter(Boolean).join(' ') || 'Soignant'}
+                        />
+                      ),
                     },
                     {
                       id: 'compte-rendu',

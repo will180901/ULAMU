@@ -30,6 +30,8 @@
  * c'est la même règle que le compte-rendu de C5, et pour la même raison.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { Printer } from 'lucide-react'
+import { OrdonnanceImprimable } from '@/components/impression/OrdonnanceImprimable'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import {
@@ -422,7 +424,18 @@ function CodeQR({ jeton }: { jeton: string }) {
   )
 }
 
-function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription; onAnnulee: () => void }) {
+function OrdonnanceScellee({
+  ordonnance,
+  onAnnulee,
+  patient,
+  soignant,
+}: {
+  ordonnance: Prescription
+  onAnnulee: () => void
+  patient: string
+  soignant: string
+}) {
+  const [imprimable, setImprimable] = useState(false)
   const [motif, setMotif] = useState('')
   const [demandeAnnulation, setDemandeAnnulation] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -492,6 +505,32 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
           . Le patient en est informé — prévenez-le aussi de vive voix s'il a déjà pu la présenter.
         </Avis>
       )}
+
+      {/*
+        ── ⚠️ Une ordonnance qui ne quitte pas l'écran — chantier 131, 15/09/2026 ────────────────
+
+        Jusqu'ici, la seule façon de sortir cette ordonnance d'ULAMU était de tendre un téléphone.
+        Or elle se présente EN PHARMACIE : *un écran demande une batterie, du réseau, et un comptoir
+        qui accepte qu'on le regarde.*
+
+        Le bouton n'ouvre pas un téléchargement : il ouvre un APERÇU de la feuille telle qu'elle
+        sortira. *Imprimer sans voir, c'est découvrir la mise en page sur le papier.*
+      */}
+      <div className="flex justify-end">
+        <Button type="button" size="sm" variant="outline" onClick={() => setImprimable(true)}>
+          <Printer size={14} aria-hidden="true" />
+          Imprimer l'ordonnance
+        </Button>
+      </div>
+
+      {imprimable ? (
+        <OrdonnanceImprimable
+          ordonnance={ordonnance}
+          patient={patient}
+          soignant={soignant}
+          onFermer={() => setImprimable(false)}
+        />
+      ) : null}
 
       <ul className="flex flex-col gap-2">
         {ordonnance.lines.map((l, i) => (
@@ -583,7 +622,19 @@ function OrdonnanceScellee({ ordonnance, onAnnulee }: { ordonnance: Prescription
  *
  * C'est aussi non pour le nom venant du référentiel : ce n'est pas du texte d'utilisateur.
  */
-export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; active: boolean }) {
+export function PanneauOrdonnance({
+  sessionId,
+  active,
+  patient,
+  soignant,
+}: {
+  sessionId: string
+  active: boolean
+  /* Les identités VOYAGENT depuis la consultation, qui les a déjà : les redemander ferait un appel
+     de plus pour deux chaînes que l'écran affiche à trois pixels de là. */
+  patient: string
+  soignant: string
+}) {
   const qc = useQueryClient()
   const [ouvert, setOuvert] = useState(false)
   const [lignes, setLignes] = useState<LigneBrouillon[]>(() => [ligneVide()])
@@ -709,6 +760,8 @@ export function PanneauOrdonnance({ sessionId, active }: { sessionId: string; ac
                 key={o.id}
                 ordonnance={o}
                 onAnnulee={() => void qc.invalidateQueries({ queryKey: ['prescriptions', 'prescribed'] })}
+                patient={patient}
+                soignant={soignant}
               />
             ))}
 
