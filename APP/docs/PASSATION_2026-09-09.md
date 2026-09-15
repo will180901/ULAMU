@@ -1,5 +1,9 @@
 # Passation — 9 septembre 2026
 
+> ⚠️ **Une passation plus récente existe : `PASSATION_2026-09-15.md`** (session du 12 au 15/09,
+> chantiers 106 à 118). Elle dit où l'on s'est arrêté et ce qui vient ensuite ; celle-ci reste l'état
+> général du projet.
+
 > **À lire en entier, en premier, avant toute action.**
 >
 > Ce document existe pour une raison précise : **reprendre le travail dans une autre conversation
