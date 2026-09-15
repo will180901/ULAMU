@@ -46,6 +46,7 @@
  * de taux se déclenche. Les deux écrans forment une seule fonctionnalité.
  */
 import { useEffect, useRef, useState } from 'react'
+import { formatTaille, MIMES_PIECE, refusFichier, TAILLE_MAX_OCTETS } from '@/lib/fichier'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BadgeCheck,
@@ -170,8 +171,20 @@ const PIECES: Record<DocumentKind, { titre: string; icone: typeof IdCard; aide: 
   },
 }
 
-const MIMES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-const TAILLE_MAX = 5 * 1024 * 1024
+/*
+  ⚠️ **Il y avait TROIS plafonds pour une seule règle** — chantier 130, 15/09/2026.
+
+  Cet écran refusait au-delà de 5 Mo ; le contrat d'envoi acceptait ~8 Mo ; le stockage plafonne à
+  8 Mo. Un diplôme scanné de 6 Mo était donc refusé ici alors que le serveur l'aurait pris — et le
+  message disait « 5 Mo maximum », si bien que le déposant réduisait son fichier pour rien.
+
+  > **Trois chiffres pour une même règle finissent par faire trois règles.**
+
+  La règle vit maintenant dans `lib/fichier.ts`, vendorée depuis `packages/shared` et miroir du
+  serveur. Les deux constantes locales disparaissent : *une valeur recopiée est une valeur qui
+  dérive.*
+*/
+const MIMES = MIMES_PIECE
 
 /**
  * Une pièce justificative et ses fichiers.
@@ -213,13 +226,11 @@ function BlocPiece({
     setErreur(null)
     if (!f) return
     // Refusé avant l'envoi : téléverser 8 Mo depuis Brazzaville pour lire « trop lourd » à l'arrivée,
-    // c'est plusieurs minutes perdues sur une connexion mobile.
-    if (f.size > TAILLE_MAX) {
-      setErreur('Fichier trop lourd : 5 Mo maximum.')
-      return
-    }
-    if (!MIMES.includes(f.type)) {
-      setErreur('Format accepté : PDF, JPEG, PNG ou WebP.')
+    // c'est plusieurs minutes perdues sur une connexion mobile. La règle et son message viennent
+    // désormais de la source partagée — l'écran ne décide plus du plafond.
+    const refus = refusFichier(f, MIMES)
+    if (refus) {
+      setErreur(refus)
       return
     }
     onDeposer(f)
@@ -786,7 +797,7 @@ export function VerificationPage() {
             titre="Pièces justificatives"
             sousTitre={
               d.documentsEditable
-                ? 'PDF ou image · 5 Mo maximum'
+                ? `PDF ou image · ${formatTaille(TAILLE_MAX_OCTETS)} maximum`
                 : decide
                   ? 'La décision est prise — les pièces restent au dossier et ne se modifient plus'
                   : 'Le dossier est en cours d’examen — les pièces sont figées jusqu’à la décision'

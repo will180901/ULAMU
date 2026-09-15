@@ -38,11 +38,40 @@ export class UploadDocumentDto {
    * Borne de taille — elle manquait, et le corps accepté monte à 130 Mo.
    *
    * Sans elle, un seul envoi pouvait remplir un quart du quota de la base et faire tomber une
-   * instance de 512 Mo de mémoire. 11 Mo de base64 valent ~8 Mo de fichier : la marge exacte du
-   * plafond de `StorageService`, au-dessus des 5 Mo annoncés par les écrans.
+   * instance de 512 Mo de mémoire.
+   *
+   * ⚠️ **Elle était trop BASSE de 184 812 caractères** — trouvé le 15/09 par le test qui compare
+   * les plafonds entre eux, pas à l'œil. Le base64 coûte 4 caractères pour 3 octets : transporter
+   * les 8 Mo que `StorageService` accepte en demande **11 184 812**, et non 11 000 000. Le vrai
+   * plafond effectif était donc **7,87 Mo**, et un fichier de 7,9 Mo se voyait refuser par une
+   * erreur de validation générique — sans que rien, nulle part, n'annonce ce chiffre-là.
+   *
+   * > **Un plafond dérivé d'un autre par un calcul qu'on fait de tête finit par ne plus lui
+   * > correspondre.**
+   *
+   * La marge au-delà couvre le préfixe data-URI (`data:application/pdf;base64,`) que le stockage
+   * tolère. Elle reste courte : au-delà, on décoderait de la mémoire pour rien.
    */
-  @IsString() @IsNotEmpty() @MaxLength(11_000_000) fileBase64!: string;
-  @IsString() @IsNotEmpty() @MaxLength(120) mime!: string;
+  @IsString() @IsNotEmpty() @MaxLength(11_200_000) fileBase64!: string;
+  /**
+   * ⚠️ **Le type était accepté en texte libre** — chantier 130, 15/09/2026.
+   *
+   * M01 (avatar) et M06 (média de session) valident le leur au contrat ; celui-ci s'en remettait à
+   * `StorageService`, qui refuse bien tout type hors de sa table. La défense tenait donc — mais
+   * elle arrivait après avoir reçu et décodé onze mégaoctets de base64, et rendait « Type de
+   * fichier non supporté » sans dire lesquels sont acceptés.
+   *
+   * > **Deux modules qui appliquent une règle et un troisième qui s'en remet au suivant, c'est la
+   * > règle qui finira par diverger.**
+   *
+   * La liste est plus étroite que celle du stockage, et c'est voulu : celui-ci connaît aussi
+   * l'audio et la vidéo, qui n'ont rien à faire dans un dossier de vérification. *Une liste blanche
+   * qui autorise plus que le besoin finit par servir à autre chose.*
+   */
+  @IsIn(["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"], {
+    message: "Pièce justificative : PDF, JPEG, PNG ou WebP attendu",
+  })
+  mime!: string;
   @IsOptional() @IsISO8601() expiresAt?: string;
 }
 

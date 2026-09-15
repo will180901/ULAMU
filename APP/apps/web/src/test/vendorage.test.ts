@@ -29,6 +29,19 @@ import { describe, expect, it } from 'vitest'
  * n'est pas un garde-fou : c'est une exception qui a eu de la chance.*
  */
 const MODULES = {
+  /*
+    La règle d'un fichier téléversé (chantier 130). Elle DOIT être la même partout : il y avait
+    TROIS plafonds pour une seule règle — 5 Mo à l'écran, ~8 Mo au contrat, 8 Mo au stockage. Un
+    diplôme de 6 Mo était refusé par l'écran alors que le serveur l'aurait pris.
+
+    ⚠️ Et c'est un miroir du serveur (`StorageService.maxBytes`) : si le plafond change là-bas, les
+    trois copies doivent suivre.
+  */
+  "la règle d'un fichier téléversé": {
+    source: '../../packages/shared/src/fichier.ts',
+    web: 'src/lib/fichier.ts',
+    mobile: '../mobile/src/lib/fichier.ts',
+  },
   'la grammaire de mise en forme': {
     source: '../../packages/shared/src/texte-riche.ts',
     web: 'src/modules/consultation/texte-riche.ts',
