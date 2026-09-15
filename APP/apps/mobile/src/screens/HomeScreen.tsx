@@ -668,8 +668,17 @@ function DoctorRow({d, onPress}: {d: DoctorVM; onPress: () => void}) {
             {d.price != null ? (
               <>
                 <Text style={styles.docPrixValeur}>{formatXaf(d.price)}</Text>
+                {/*
+                  ⚠️ **Plus le mot « consultation » ici non plus** (chantier 122) : il nomme le TYPE
+                  de l'offre, alors que le soignant en choisit librement le nom. « la consultation »
+                  sous un prix tiré d'une offre nommée « Bilan santé » dit deux choses à la fois.
+
+                  À la place, ce que ce prix garantit vraiment : **tout compris**. C'est exact —
+                  D-010, le prix servi est FINAL, commission incluse — et aucun libellé ne peut le
+                  contredire. *Quand on ne peut pas nommer, on peut encore garantir.*
+                */}
                 <Text style={styles.docPrixNote} numberOfLines={1}>
-                  {d.consultationCount > 1 ? 'à partir de · consultation' : 'la consultation'}
+                  {d.consultationCount > 1 ? 'à partir de · tout compris' : 'tout compris'}
                 </Text>
               </>
             ) : (

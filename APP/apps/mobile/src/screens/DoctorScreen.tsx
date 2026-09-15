@@ -248,14 +248,31 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               deux sont donc séparées : ce qu'on choisit ici, puis ce qui vient avec.
             */}
             {/*
-              ⚠️ **Le titre n'invite à choisir que s'il y a un choix.** Mesuré en ligne le 15/09 : le
-              seul soignant de l'annuaire n'a **qu'une** offre active — « Choisissez votre
-              consultation » se serait affiché au-dessus d'une ligne unique et non cochable.
+              ── ⚠️ Un titre ne nomme jamais ce que quelqu'un d'autre nomme — chantier 122, 15/09 ─
 
-              C'est la même règle que la case à cocher absente, appliquée au mot : *inviter à choisir
-              là où il n'y a rien à choisir fait chercher une option qui n'existe pas.*
+              Le titre disait « Consultation » / « Choisissez votre consultation ». Ce mot vient du
+              **type** de l'offre côté serveur (`STANDARD` vs `FOLLOW_UP`) ; le **nom**, lui, est
+              écrit librement par le soignant, jusqu'à 120 caractères. Trouvé par le porteur :
+              qu'Armel supprime tout et crée « Bilan santé », et l'écran affiche
+
+                  CONSULTATION
+                  Bilan santé · 30 min · 5 000 F
+
+              — un titre et un nom qui ne se répondent pas.
+
+              > **Un titre qui nomme la chose entre en concurrence avec celui qui la nomme
+              > vraiment ; un titre qui décrit ce qu'on fait ne peut contredire personne.**
+
+              📌 Recopier le libellé dans le titre ne marcherait pas non plus : *avec deux offres,
+              quel nom prendrait le titre ?*
+
+              ⚠️ Et pas « réserver » ni « rendez-vous » : ULAMU n'a **ni créneau ni agenda**, et le
+              soignant peut refuser. *Un mot qui promet un horaire, ou qui fait croire que c'est
+              acquis, ment avant même que l'écran suivant s'ouvre.* Les titres suivent donc la voix
+              des autres sections de cette fiche — « ce qu'il dit de sa pratique », « ce que disent
+              ses patients » —, et le second n'apparaît que s'il y a vraiment un choix (chantier 120).
             */}
-            <SectionLabel>{doctor.consultOffers.length > 1 ? 'Choisissez votre consultation' : 'Consultation'}</SectionLabel>
+            <SectionLabel>{doctor.consultOffers.length > 1 ? 'À vous de choisir' : 'Ce qu’il propose'}</SectionLabel>
             <Card padding={0}>
               <View style={styles.tariffs}>
                 {doctor.consultOffers.length === 0 ? (

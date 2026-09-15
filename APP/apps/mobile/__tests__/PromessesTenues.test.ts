@@ -147,9 +147,20 @@ verrouiller('Fiche du soignant', 'screens/DoctorScreen.tsx', [
     Le téléphone imposait la première offre standard du soignant : les autres n'étaient jamais
     montrées. Ces quatre lignes gardent les trois choses qui font que le choix est un vrai choix.
   */
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 122.** Elle exigeait « Choisissez votre
+    consultation ». Ce mot nommait le TYPE de l'offre là où le soignant en choisit librement le
+    nom : « CONSULTATION / Bilan santé » disait deux choses à la fois. Ce que la ligne défend n'a
+    pas changé — le titre invite à choisir dès qu'il y a un choix —, seule la formulation a cessé
+    de nommer ce que quelqu'un d'autre nomme.
+  */
   [
-    /Choisissez votre consultation/,
-    'chantier 120 — le titre dit que c’est À LUI de choisir ; sans cela, une liste de prix se lit comme un tarif affiché',
+    /À vous de choisir/,
+    'chantiers 120 et 122 — le titre dit que c’est À LUI de choisir, sans nommer une offre que le soignant nomme lui-même',
+  ],
+  [
+    /Ce qu['’]il propose/,
+    '⚠️ et quand il n’y a qu’une offre, le titre la décrit sans prétendre la nommer — un titre qui nomme entre en concurrence avec celui qui nomme vraiment',
   ],
   [
     /payez qu['’]une seule fois[\s\S]{0,80}couvre toute la consultation/,
@@ -224,6 +235,10 @@ verrouiller('Accueil — la carte du soignant (chantier 121)', 'screens/HomeScre
   [
     /d\.consultationCount > 1 \?/,
     '⚠️ « à partir de » n’apparaît que s’il y a VRAIMENT plusieurs consultations — sinon il fait chercher un tarif moins cher qui n’existe pas',
+  ],
+  [
+    /tout compris/,
+    '⚠️ chantier 122 — sous le prix, ce qu’on peut GARANTIR (prix final, commission incluse, D-010) plutôt qu’un mot de catégorie qui contredirait le nom choisi par le soignant',
   ],
   [
     /Pas de consultation/,
