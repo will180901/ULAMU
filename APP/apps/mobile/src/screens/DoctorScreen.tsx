@@ -63,6 +63,19 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
   }, [load]);
 
   /*
+    ⚠️ **L'échelle des notes ne s'écrit pas en dur.** Elle est un paramètre de plateforme (PM-13) que
+    le super-administrateur peut changer ; la recopier en « 1 à 5 » ici, c'est créer une deuxième
+    vérité qui dérivera le jour où la première bouge — le projet a déjà payé ce motif sur les
+    « 12 % » et les « 48 h ».
+
+    Les CLÉS de la répartition servie par le serveur SONT l'échelle : on les lit.
+  */
+  const echelle = Object.keys(doctor?.ratingDistribution ?? {})
+    .map(Number)
+    .filter(n => Number.isFinite(n))
+    .sort((a, b) => a - b);
+
+  /*
     L'offre retenue, avec son filet : un identifiant qui ne correspond à rien — la fiche s'est
     rechargée, le soignant a retiré cette offre entre-temps — retombe sur la moins chère plutôt que
     de laisser l'écran sans prix. *Une sélection périmée est une absence de sélection, pas une
@@ -157,15 +170,38 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
                     {doctor.zone}
                   </Badge>
                 </View>
+                {/*
+                  « Vu il y a 2 h » — seulement quand il est absent, comme sur la carte de l'accueil.
+                  Le modèle de vue le portait, cette fiche ne l'affichait pas : *on décidait d'attendre
+                  quelqu'un sans savoir s'il était parti depuis dix minutes ou depuis une semaine.*
+                */}
+                {!doctor.online && doctor.lastSeen ? <Text style={styles.lastSeen}>{doctor.lastSeen}</Text> : null}
               </View>
             </View>
 
             {/* Stats segmentées */}
             <Card padding={0}>
               <View style={styles.statsRow}>
+                {/*
+                  ── ⚠️ Le TAUX DE CONFIRMATION manquait — chantier 121, 15/09/2026 ─────────────
+
+                  EF-05-01 range l'« indicateur de réactivité » parmi ce qui est public, et le
+                  définit en deux moitiés : **taux ET délai moyen de confirmation**. La fiche
+                  n'affichait que le délai. Le modèle de vue portait pourtant `confirmPct` depuis
+                  toujours, et la carte de l'accueil, elle, l'affichait.
+
+                  > **Le délai dit en combien de temps il répond ; le taux dit s'il répond.** Sans
+                  > le second, « ~1 min » se lit comme une promesse alors qu'il ne décrit que les
+                  > fois où la réponse est venue.
+
+                  📌 Il prend la place de la DURÉE, qui est juste en dessous sur la ligne de
+                  l'offre — *deux fois la même information, c'est une place perdue pour celle qui
+                  manque.* Et la fiche affiche désormais les trois mêmes chiffres que la carte de
+                  l'annuaire : on retrouve ce qu'on a cliqué.
+                */}
                 {([
                   ['star', doctor.ratingLabel ?? 'Nouveau', doctor.reviews > 0 ? `${doctor.reviews} avis` : 'récent'],
-                  ['clock', offreChoisie != null ? `${offreChoisie.durationMin} min` : '—', 'par session'],
+                  ['shield-check', `${doctor.confirmPct}%`, 'confirmation'],
                   ['send', doctor.resp ?? '—', 'réponse'],
                 ] as [IconName, string, string][]).map(([ic, v, l], i) => (
                   <View key={l} style={[styles.stat, i > 0 && styles.statBorder]}>
@@ -176,6 +212,29 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
                 ))}
               </View>
             </Card>
+
+            {/*
+              ── ⚠️ La BIOGRAPHIE n'était affichée nulle part — chantier 121, 15/09/2026 ────────
+
+              EF-05-01 la range parmi ce qui est public. Le serveur la sert, le modèle de vue la
+              porte (`bio`), et **aucun écran ne l'a jamais montrée**. Celle d'Armel Konaté, écrite
+              et enregistrée depuis des semaines, disait : *« Écoute d'abord, prescrit ensuite.
+              Spécialiste du suivi hypertension et diabète. »*
+
+              > **C'est la seule ligne de la fiche où le soignant parle en son nom.** Tout le reste
+              > — note, taux, délai, tarifs — est calculé sur lui. La retirer, c'est choisir un
+              > médecin sur des chiffres seuls.
+
+              12ᵉ occurrence du motif : une capacité existe côté serveur, aucun écran n'y mène.
+            */}
+            {doctor.bio ? (
+              <>
+                <SectionLabel>Ce qu’il dit de sa pratique</SectionLabel>
+                <Card>
+                  <Text style={styles.bioTexte}>{doctor.bio}</Text>
+                </Card>
+              </>
+            ) : null}
 
             {/*
               ── Ce qui SE VEND, et ce qui est INCLUS (chantier 120, 15/09/2026) ────────────────
@@ -294,6 +353,82 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               Ce que le patient fait maintenant : il ouvre la conversation et il parle — texte, note
               vocale, photo ou vidéo. C'est son premier message qui démarre la séance.
             */}
+
+            {/*
+              ── ⚠️ Les AVIS des patients — chantier 121, 15/09/2026 ───────────────────────────
+
+              EF-05-07 exige « moyenne, **répartition**, **derniers commentaires** ». Le serveur
+              sert les trois depuis toujours ; la fiche n'affichait que la moyenne — et le modèle
+              de vue ne portait même pas les deux autres. Armel avait deux avis écrits par de vrais
+              patients ; personne ne pouvait les lire.
+
+              > **Sur une plateforme où l'on confie sa santé à quelqu'un qu'on ne rencontrera
+              > jamais, les mots des autres patients sont le seul élément de preuve qui ne vienne
+              > ni du soignant, ni de la plateforme.**
+
+              📌 La répartition, et pas seulement la moyenne : *« 3,5 » né de deux avis moyens n'est
+              pas « 3,5 » né d'un enthousiasme et d'un désastre.* Les barres le montrent d'un coup
+              d'œil, ce qu'aucune moyenne ne peut faire.
+
+              📌 Les commentaires sont ANONYMES côté serveur — aucun identifiant de patient n'est
+              exposé —, et chacun reste signalable depuis le bas de cette fiche.
+            */}
+            {doctor.reviews > 0 && (
+              <>
+                <SectionLabel>Ce que disent ses patients</SectionLabel>
+                <Card>
+                  <View style={styles.avisEntete}>
+                    <Text style={styles.avisNote}>{doctor.ratingLabel}</Text>
+                    <View style={styles.flex}>
+                      <Text style={styles.avisCompte}>
+                        {doctor.reviews} avis {doctor.reviews > 1 ? 'vérifiés' : 'vérifié'}
+                      </Text>
+                      <Text style={styles.avisAide}>déposés après une consultation payée</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.avisBarres}>
+                    {[...echelle].reverse().map(note => {
+                      const combien = doctor.ratingDistribution[String(note)] ?? 0;
+                      const part = doctor.reviews > 0 ? combien / doctor.reviews : 0;
+                      return (
+                        <View key={note} style={styles.avisLigne}>
+                          <Text style={styles.avisLigneNote}>{note}</Text>
+                          <Icon name="star" size={10} color="#C49128" />
+                          <View style={styles.avisPiste}>
+                            <View style={[styles.avisRemplissage, {width: `${Math.round(part * 100)}%`}]} />
+                          </View>
+                          <Text style={styles.avisLigneCompte}>{combien}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+
+                  {doctor.comments.length > 0 && (
+                    <View style={styles.avisListe}>
+                      {doctor.comments.map((c, i) => (
+                        <View key={`${c.dateLabel}-${i}`} style={[styles.avisItem, i > 0 && styles.avisItemBorder]}>
+                          <View style={styles.avisItemEntete}>
+                            <View style={styles.avisEtoiles}>
+                              {echelle.map(n => (
+                                <Icon
+                                  key={n}
+                                  name="star"
+                                  size={11}
+                                  color={n <= c.score ? '#C49128' : colors.borderSubtle}
+                                />
+                              ))}
+                            </View>
+                            {c.dateLabel ? <Text style={styles.avisDate}>{c.dateLabel}</Text> : null}
+                          </View>
+                          <Text style={styles.avisTexte}>{c.comment}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </Card>
+              </>
+            )}
 
             <Banner tone="info" title="Poignée de main avant paiement">
               Aucun franc n'est débité tant que le soignant n'a pas confirmé être prêt. Remboursement automatique en cas de défaillance.
@@ -459,6 +594,31 @@ const makeStyles = (colors: Palette) =>
   suiviBloc: {flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 2},
   suiviTexte: {flex: 1, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.textTertiary},
   suiviFort: {fontWeight: '700', color: colors.textSecondary},
+
+  // Dernière vue — discret : ni pastille, ni cadre, comme sur la carte de l'accueil.
+  lastSeen: {fontFamily: fonts.body, fontSize: 11, color: colors.textTertiary, marginTop: 6},
+
+  // Biographie — la seule ligne où le soignant parle en son nom.
+  bioTexte: {fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: colors.textSecondary},
+
+  // Avis des patients (EF-05-07)
+  avisEntete: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  avisNote: {fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.textPrimary},
+  avisCompte: {fontFamily: fonts.body, fontWeight: '700', fontSize: 13, color: colors.textPrimary},
+  avisAide: {fontFamily: fonts.body, fontSize: 11, color: colors.textTertiary, marginTop: 1},
+  avisBarres: {marginTop: 12, gap: 5},
+  avisLigne: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  avisLigneNote: {fontFamily: fonts.mono, fontSize: 10.5, color: colors.textTertiary, width: 9, textAlign: 'right'},
+  avisPiste: {flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderSubtle, overflow: 'hidden'},
+  avisRemplissage: {height: 6, borderRadius: 3, backgroundColor: '#C49128'},
+  avisLigneCompte: {fontFamily: fonts.mono, fontSize: 10.5, color: colors.textTertiary, width: 16, textAlign: 'right'},
+  avisListe: {marginTop: 14},
+  avisItem: {paddingVertical: 10},
+  avisItemBorder: {borderTopWidth: 1, borderTopColor: colors.borderSubtle},
+  avisItemEntete: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  avisEtoiles: {flexDirection: 'row', gap: 1.5},
+  avisDate: {fontFamily: fonts.body, fontSize: 10.5, color: colors.textTertiary},
+  avisTexte: {fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondary, marginTop: 5},
 
   // Section label
   sectionLabel: {flexDirection: 'row', alignItems: 'center', gap: 8},

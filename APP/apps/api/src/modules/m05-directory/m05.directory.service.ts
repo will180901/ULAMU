@@ -80,6 +80,18 @@ export interface DirectoryItemView {
    */
   lastSeenSeconds: number | null;
   cheapestOffer: DirectoryOfferView | null; // CU-05-01
+  /**
+   * Combien de CONSULTATIONS actives — pour que la liste sache dire « 5 000 F » ou « à partir de
+   * 5 000 F » sans se tromper (chantier 121).
+   *
+   * ⚠️ Sans ce compte, l'écran n'a que deux mauvais choix : écrire « à partir de » toujours — ce
+   * qui invente un choix chez un soignant qui n'a qu'un tarif — ou ne l'écrire jamais, et faire
+   * passer le moins cher pour le seul. *Un « à partir de » qui ne correspond à rien fait chercher
+   * une offre moins chère qui n'existe pas ; son absence fait croire qu'il n'y en a pas d'autre.*
+   *
+   * Le suivi n'y est pas compté : il ne s'achète pas depuis l'annuaire.
+   */
+  consultationCount: number;
   relevanceScore: number; // transparence du classement (RM-05-02)
 }
 
@@ -106,6 +118,7 @@ interface EnrichedRow {
   availableNow: boolean;
   lastSeenSeconds: number | null;
   cheapestOffer: DirectoryOfferView | null;
+  consultationCount: number;
   score: number;
   ratingAvg: number | null;
   ratingCount: number;
@@ -336,9 +349,36 @@ export class DirectoryService {
 
     const statsById = new Map(statsRows.map((s) => [s.professionalId, s]));
     const presenceById = new Map(presenceRows.map((p) => [p.accountId, p]));
+
+    /*
+      ── Le prix d'appel est celui d'une CONSULTATION (chantier 121, 15/09/2026) ─────────────────
+
+      ⚠️ Cette boucle retenait la moins chère **tous types confondus**. Mesuré en production le
+      15/09, dès qu'une offre de suivi a été publiée : la carte du seul soignant de l'annuaire
+      annonçait **15 min et 3 000 XAF** — les chiffres de son SUIVI — alors que sa consultation
+      dure 30 min et coûte 5 000 XAF. C'est le défaut que le chantier 65 avait corrigé sur la
+      fiche, resté ici, sur l'écran que tout le monde voit en premier.
+
+      > **Un prix d'appel qu'on ne peut pas payer n'est pas un prix, c'est un appât.**
+
+      Le suivi ne s'achète pas depuis l'annuaire : il se déclenche sur proposition du soignant
+      après un compte-rendu. Un patient qui ouvre l'application ne peut PAS obtenir ce tarif.
+
+      📌 Et ce n'est pas qu'une question d'affichage : la même valeur porte le **tri par prix** et
+      le **filtre « prix maximum »** (EF-05-03). Un soignant dont le suivi est à 2 500 remonterait
+      en tête d'un filtre « ≤ 3 000 » pour une consultation facturée 12 000. *Corriger l'affichage
+      sans corriger le filtre déplacerait le mensonge au lieu de le retirer.*
+
+      ⚠️ Conséquence assumée : un soignant qui n'a QUE des offres de suivi n'a plus de prix d'appel
+      et sort des filtres de prix. C'est exact — il n'a rien à vendre à un nouveau patient, et le
+      chantier 65 a déjà tranché ce cas sur la fiche.
+    */
     const cheapestById = new Map<string, (typeof activeOffers)[number]>();
+    const consultationsById = new Map<string, number>();
     for (const offer of activeOffers) {
+      if (offer.kind !== "STANDARD") continue;
       if (!cheapestById.has(offer.professionalId)) cheapestById.set(offer.professionalId, offer);
+      consultationsById.set(offer.professionalId, (consultationsById.get(offer.professionalId) ?? 0) + 1);
     }
 
     return profiles.map((profile) => {
@@ -389,6 +429,7 @@ export class DirectoryService {
         cheapestOffer: cheapest
           ? { id: cheapest.id, label: cheapest.label, durationMin: cheapest.durationMin, priceXaf: cheapest.priceXaf, kind: cheapest.kind }
           : null,
+        consultationCount: consultationsById.get(profile.accountId) ?? 0,
         score: relevanceScore(stats, recent, ratingScale),
         ratingAvg: avg === null ? null : Math.round(avg * 10) / 10,
         ratingCount: stats?.ratingCount ?? 0,
@@ -452,6 +493,7 @@ export class DirectoryService {
       availableNow: row.availableNow,
       lastSeenSeconds: row.lastSeenSeconds,
       cheapestOffer: row.cheapestOffer,
+      consultationCount: row.consultationCount,
       relevanceScore: Math.round(row.score * 1000) / 1000,
     };
   }

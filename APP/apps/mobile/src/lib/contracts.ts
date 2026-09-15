@@ -233,6 +233,13 @@ export interface DirectoryItem {
    */
   lastSeenSeconds?: number | null;
   cheapestOffer: DirectoryOffer | null;
+  /**
+   * Combien de CONSULTATIONS actives ce soignant propose — pour dire « 5 000 F » quand il n'y a
+   * qu'un tarif, et « à partir de 5 000 F » quand il y en a plusieurs (chantier 121).
+   *
+   * Le suivi n'y est pas compté : il ne s'achète pas depuis l'annuaire.
+   */
+  consultationCount: number;
   relevanceScore: number;
 }
 

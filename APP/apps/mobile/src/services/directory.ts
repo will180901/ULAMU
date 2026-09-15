@@ -40,8 +40,22 @@ export interface DoctorVM {
   confirmPct: number;
   /** Délai de réponse « ~3 min » ou null. */
   resp: string | null;
+  /**
+   * Le prix de la CONSULTATION la moins chère — ce qu'un nouveau patient peut réellement payer.
+   *
+   * ⚠️ Jusqu'au 15/09 le serveur y mettait la moins chère **tous types confondus** : dès qu'un
+   * soignant publiait un tarif de suivi, sa carte annonçait ce tarif-là. Vu en production ce
+   * jour-là : « 15 min · 3 000 F » pour une consultation de 30 min à 5 000 F. *Un prix d'appel
+   * qu'on ne peut pas payer n'est pas un prix, c'est un appât.*
+   *
+   * `null` quand il n'y a aucune consultation active : il n'y a alors rien à vendre, et l'écran
+   * le dit plutôt que d'afficher un zéro ou le prix d'autre chose.
+   */
   price: number | null;
+  /** La durée de cette même offre — les deux décrivent la même chose, ou aucun des deux n'est vrai. */
   durationMin: number | null;
+  /** Combien de consultations au choix : décide du « à partir de » (chantier 121). */
+  consultationCount: number;
   /** Icône en filigrane de la bannière, selon la catégorie. */
   watermark: IconName;
 }
@@ -69,6 +83,29 @@ export interface DoctorProfileVM extends DoctorVM {
   followOfferId: string | null;
   followPrice: number | null;
   followDurationMin: number | null;
+  /**
+   * La répartition des notes — « 1 patient sur 5 », « 0 sur 4 »… (EF-05-07).
+   *
+   * ⚠️ Servie par l'API depuis toujours, **portée par aucun modèle de vue et affichée nulle part**
+   * jusqu'au 15/09. Or une moyenne seule ne dit pas la même chose selon ce qu'elle recouvre :
+   * *« 3,5 » né de deux avis moyens n'est pas « 3,5 » né d'un enthousiasme et d'un désastre.*
+   */
+  ratingDistribution: Record<string, number>;
+  /**
+   * Ce que les patients ont écrit — anonymes, au plus dix, du plus récent au plus ancien (EF-05-07).
+   *
+   * ⚠️ Idem : servis depuis toujours, jamais montrés. Sur une plateforme où l'on confie sa santé à
+   * quelqu'un qu'on ne rencontrera jamais, *les mots des autres patients sont le seul élément de
+   * preuve qui ne vienne ni du soignant, ni de la plateforme.*
+   */
+  comments: DoctorComment[];
+}
+
+export interface DoctorComment {
+  score: number;
+  comment: string;
+  /** « 11 sept. » — déjà mis en forme : l'écran n'a pas à connaître le format ISO. */
+  dateLabel: string;
 }
 
 interface CategoryMeta {
@@ -147,6 +184,7 @@ const meta: CategoryMeta = CATEGORY_META[item.category] ?? {label: item.category
     resp: formatResp(item.reactivity.avgConfirmDelayS),
     price: item.cheapestOffer?.priceXaf ?? null,
     durationMin: item.cheapestOffer?.durationMin ?? null,
+    consultationCount: item.consultationCount,
     watermark: meta.icon,
   };
 }
@@ -192,7 +230,29 @@ export function toDoctorProfileVM(p: DirectoryProfile): DoctorProfileVM {
     followOfferId: follow?.id ?? null,
     followPrice: follow?.priceXaf ?? null,
     followDurationMin: follow?.durationMin ?? null,
+    ratingDistribution: p.ratingDistribution,
+    comments: p.latestComments.map(c => ({score: c.score, comment: c.comment, dateLabel: formatDateCourte(c.createdAt)})),
   };
+}
+
+/**
+ * « 2026-09-11T20:05:41Z » → « 11 sept. ».
+ *
+ * ⚠️ Écrit à la main, sans `Intl` : Hermes est livré sans données ICU complètes selon la version
+ * du moteur, et `toLocaleDateString('fr-FR')` y rend tantôt « 11 septembre », tantôt « 9/11/2026 ».
+ * C'est la même raison qui a fait écrire `formatXaf` à la main.
+ */
+const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+export function formatDateCourte(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    // Une date illisible ne vaut pas une date inventée : on n'écrit rien plutôt qu'un « 1 janv. 1970 ».
+    return '';
+  }
+  const annee = d.getFullYear();
+  const cetteAnnee = new Date().getFullYear();
+  return `${d.getDate()} ${MOIS_COURTS[d.getMonth()]}${annee === cetteAnnee ? '' : ` ${annee}`}`;
 }
 
 export interface DoctorList {

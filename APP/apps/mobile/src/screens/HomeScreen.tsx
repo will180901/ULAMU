@@ -18,7 +18,7 @@ import {Grain} from '../components/Grain';
 import {ThemeToggle} from '../components/ThemeToggle';
 import {AppStackParamList, PatientTabParamList} from '../navigation/types';
 import {api} from '../services/api';
-import {ChipId, DoctorVM, fetchDoctors} from '../services/directory';
+import {ChipId, DoctorVM, fetchDoctors, formatXaf} from '../services/directory';
 import {avatarUrl} from '../services/media';
 import {syncReminderNotifications} from '../services/notifications';
 import {AvatarViewer} from '../components/AvatarViewer';
@@ -644,7 +644,43 @@ function DoctorRow({d, onPress}: {d: DoctorVM; onPress: () => void}) {
           Et le carré de partage à côté est retiré (décision du porteur, « partout ») : il donnait à
           la ligne deux cibles dont une ne menait nulle part.
         */}
+        {/*
+          ── ⚠️ Le PRIX manquait sur la carte — chantier 121, 15/09/2026 ──────────────────────
+
+          CU-05-01 l'exige mot pour mot : chaque résultat montre « photo, badge, note, **prix de
+          l'offre la moins chère**, présence ». Une règle de maquette (« les tarifs n'apparaissent
+          que sur la fiche ») l'avait emporté sur le cahier des charges, et personne ne l'avait
+          revu depuis.
+
+          > **Le prix est le premier critère de choix, et c'était le seul qu'il fallait ouvrir
+          > une fiche pour connaître.** Comparer trois soignants demandait six navigations.
+
+          📌 « À partir de » n'apparaît **que s'il y a plusieurs consultations** — le serveur les
+          compte (`consultationCount`). *Un « à partir de » qui ne correspond à rien fait chercher
+          une offre moins chère qui n'existe pas ; son absence fait croire qu'il n'y en a pas
+          d'autre.*
+
+          📌 Le prix est posé **à gauche du bouton**, comme au bas de la fiche du soignant : le
+          même couple (montant, action) au même endroit aux deux écrans où l'on décide.
+        */}
         <View style={styles.docCtaRow}>
+          <View style={styles.docPrix}>
+            {d.price != null ? (
+              <>
+                <Text style={styles.docPrixValeur}>{formatXaf(d.price)}</Text>
+                <Text style={styles.docPrixNote} numberOfLines={1}>
+                  {d.consultationCount > 1 ? 'à partir de · consultation' : 'la consultation'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.docPrixVide}>Pas de consultation</Text>
+                <Text style={styles.docPrixNote} numberOfLines={1}>
+                  rien à réserver pour l’instant
+                </Text>
+              </>
+            )}
+          </View>
           <Pressable
             onPress={onPress}
             accessibilityRole="button"
@@ -827,7 +863,13 @@ const makeStyles = (colors: Palette) =>
   docStatVal: {flexDirection: 'row', alignItems: 'center', gap: 4},
   docStatNum: {fontFamily: fonts.display, fontSize: 13.5, color: colors.textPrimary},
   docStatLbl: {fontFamily: fonts.body, fontSize: 9.5, color: colors.textTertiary},
-  docCtaRow: {flexDirection: 'row', gap: 8, paddingBottom: 14, paddingTop: 2},
+  docCtaRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 14, paddingTop: 2},
+
+  // Le prix, à gauche du bouton — même couple (montant, action) qu'au bas de la fiche du soignant.
+  docPrix: {flexShrink: 1, minWidth: 92},
+  docPrixValeur: {fontFamily: fonts.display, fontSize: 17, letterSpacing: -0.4, color: colors.textPrimary},
+  docPrixVide: {fontFamily: fonts.body, fontWeight: '700', fontSize: 12.5, color: colors.textTertiary},
+  docPrixNote: {fontFamily: fonts.body, fontSize: 10, color: colors.textTertiary, marginTop: 1},
   docCta: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, borderRadius: radius.md},
   docCtaText: {fontFamily: fonts.body, fontWeight: '600', fontSize: 13},
   /* L'appui se VOIT : sans retour visuel, on ne sait pas si le doigt a porté. */

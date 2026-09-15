@@ -17,7 +17,7 @@
  * l'annuaire en ce que l'écran affiche.
  */
 import {describe, expect, it} from '@jest/globals';
-import {toDoctorProfileVM} from '../src/services/directory';
+import {formatDateCourte, toDoctorProfileVM, toDoctorVM} from '../src/services/directory';
 import {DirectoryProfile} from '../src/lib/contracts';
 
 const BASE: DirectoryProfile = {
@@ -33,6 +33,7 @@ const BASE: DirectoryProfile = {
   availableNow: false,
   lastSeenSeconds: 3600,
   cheapestOffer: null,
+  consultationCount: 0,
   relevanceScore: 0,
   biography: null,
   offers: [],
@@ -131,5 +132,110 @@ describe('Le choix de l’offre (chantier 120)', () => {
   it('ne se laisse pas remplir par une offre de suivi moins chère que tout le reste', () => {
     const vm = toDoctorProfileVM({...BASE, offers: [SUIVI], cheapestOffer: SUIVI});
     expect(vm.consultOffers).toEqual([]);
+  });
+});
+
+/*
+  ── Ce que le serveur servait et que personne ne voyait — chantier 121, 15/09/2026 ─────────────
+
+  ⚠️ **Trois données exigées par le cahier des charges, servies par l'API depuis toujours, et que
+  le modèle de vue ne portait même pas** : la biographie (EF-05-01), la répartition des notes et
+  les commentaires (EF-05-07). Armel Konaté avait une biographie écrite et deux avis de vrais
+  patients ; aucun écran ne pouvait les montrer.
+
+  12ᵉ occurrence du motif du projet : *une capacité existe côté serveur, aucun écran n'offre de
+  chemin pour l'atteindre.*
+*/
+describe('Ce que la fiche doit porter (chantier 121)', () => {
+  const AVIS = [
+    {score: 4, comment: 'C’était bien cette consultation', createdAt: '2026-09-11T20:05:41.834Z'},
+    {score: 3, comment: 'C’est une bonne prestation', createdAt: '2026-09-14T08:00:00.000Z'},
+  ];
+
+  it('porte la biographie du soignant', () => {
+    const vm = toDoctorProfileVM({...BASE, biography: 'Écoute d’abord, prescrit ensuite.'});
+    expect(vm.bio).toBe('Écoute d’abord, prescrit ensuite.');
+  });
+
+  /*
+    La répartition, et pas seulement la moyenne : « 3,5 » né de deux avis moyens n'est pas « 3,5 »
+    né d'un enthousiasme et d'un désastre. C'est la distinction que les barres rendent visible.
+  */
+  it('porte la répartition des notes, telle que le serveur la donne', () => {
+    const vm = toDoctorProfileVM({...BASE, ratingDistribution: {'1': 0, '2': 0, '3': 1, '4': 1, '5': 0}});
+    expect(vm.ratingDistribution).toEqual({'1': 0, '2': 0, '3': 1, '4': 1, '5': 0});
+  });
+
+  /*
+    ⚠️ Les clés de cette répartition SONT l'échelle des notes (PM-13) : l'écran les lit au lieu
+    d'écrire « 1 à 5 » en dur. Une échelle recopiée est une échelle qui dérive.
+  */
+  it('rend une répartition dont les clés décrivent l’échelle en vigueur', () => {
+    const vm = toDoctorProfileVM({...BASE, ratingDistribution: {'1': 2, '2': 0, '3': 0}});
+    expect(Object.keys(vm.ratingDistribution).map(Number).sort((a, b) => a - b)).toEqual([1, 2, 3]);
+  });
+
+  it('porte les commentaires, avec leur date déjà lisible', () => {
+    const vm = toDoctorProfileVM({...BASE, latestComments: AVIS});
+    expect(vm.comments).toHaveLength(2);
+    expect(vm.comments[0].comment).toBe('C’était bien cette consultation');
+    expect(vm.comments[0].score).toBe(4);
+    expect(vm.comments[0].dateLabel).toBe('11 sept.');
+  });
+
+  /*
+    Hermes est livré sans données ICU complètes : `toLocaleDateString('fr-FR')` y rend tantôt
+    « 11 septembre », tantôt « 9/11/2026 ». La mise en forme est donc écrite à la main — comme
+    `formatXaf` l'est déjà —, et ce test la garde.
+  */
+  it('écrit les dates en français, sans dépendre du moteur', () => {
+    expect(formatDateCourte('2026-01-03T10:00:00.000Z')).toBe('3 janv.');
+    expect(formatDateCourte('2026-08-30T10:00:00.000Z')).toBe('30 août');
+  });
+
+  /*
+    Une date illisible ne vaut pas une date inventée : mieux vaut ne rien écrire qu'un « 1 janv.
+    1970 » qui ferait croire à un avis vieux de cinquante ans.
+  */
+  it('n’invente aucune date quand elle est illisible', () => {
+    expect(formatDateCourte('pas-une-date')).toBe('');
+  });
+
+  it('montre l’année quand l’avis n’est pas de cette année', () => {
+    expect(formatDateCourte('2024-03-05T10:00:00.000Z')).toBe('5 mars 2024');
+  });
+});
+
+/*
+  ── La CARTE de l'annuaire — chantier 121 ──────────────────────────────────────────────────────
+
+  ⚠️ CU-05-01 exige que chaque résultat montre « photo, badge, note, **prix de l'offre la moins
+  chère**, présence ». Le prix en était absent, et la durée affichée venait de l'offre de SUIVI —
+  mesuré en production le 15/09 : « 15 min · 3 000 F » pour une consultation de 30 min à 5 000 F.
+
+  Le serveur ne sert plus que des consultations dans `cheapestOffer` (m05.prix-dappel.spec.ts le
+  garde côté API) ; ici on garde le **compte**, qui décide du « à partir de ».
+*/
+describe('La carte de l’annuaire (chantier 121)', () => {
+  it('porte le prix et la durée de l’offre servie', () => {
+    const vm = toDoctorVM({...BASE, cheapestOffer: OFFRE_STANDARD, consultationCount: 1});
+    expect(vm.price).toBe(5000);
+    expect(vm.durationMin).toBe(30);
+  });
+
+  /*
+    Le compte décide d'un seul mot à l'écran — « à partir de » — mais ce mot change ce qu'on croit :
+    *un « à partir de » qui ne correspond à rien fait chercher une offre moins chère qui n'existe
+    pas ; son absence fait croire qu'il n'y en a pas d'autre.*
+  */
+  it('porte le nombre de consultations, qui décide du « à partir de »', () => {
+    expect(toDoctorVM({...BASE, cheapestOffer: OFFRE_STANDARD, consultationCount: 3}).consultationCount).toBe(3);
+    expect(toDoctorVM({...BASE, cheapestOffer: OFFRE_STANDARD, consultationCount: 1}).consultationCount).toBe(1);
+  });
+
+  it('n’affiche aucun prix quand il n’y a rien à vendre', () => {
+    const vm = toDoctorVM({...BASE, cheapestOffer: null, consultationCount: 0});
+    expect(vm.price).toBeNull();
+    expect(vm.consultationCount).toBe(0);
   });
 });

@@ -171,6 +171,64 @@ verrouiller('Fiche du soignant', 'screens/DoctorScreen.tsx', [
     /offreChoisie != null \? formatXaf\(offreChoisie\.priceXaf\)/,
     '⚠️ le prix du bas est celui de l’offre cochée : le chiffre sur lequel on appuie et celui qu’on paiera sont le même',
   ],
+  /*
+    ⚠️ **Chantier 121 — ce que le serveur servait et que la fiche jetait.**
+
+    Trois données exigées par le cahier des charges, servies par l'API depuis toujours, affichées
+    nulle part : la biographie (EF-05-01), le taux de confirmation (EF-05-01), la répartition des
+    notes et les commentaires (EF-05-07).
+
+    ⚠️ Ces quatre lignes existent parce que l'injection de fautes du 15/09 a montré que **rien** ne
+    les retenait : on pouvait les retirer de l'écran sans qu'un seul test tombe. *Une donnée qu'on
+    vient d'ajouter est exactement celle que la prochaine refonte retirera sans le savoir.*
+  */
+  [
+    /dit de sa pratique/,
+    'chantier 121 — la biographie : la seule ligne de la fiche où le soignant parle en son nom, tout le reste est calculé sur lui',
+  ],
+  [
+    /doctor\.confirmPct/,
+    '⚠️ EF-05-01 — le taux de confirmation : le délai dit en combien de temps il répond, le taux dit S’IL répond',
+  ],
+  [
+    /disent ses patients/,
+    'chantier 121 — EF-05-07 : les avis sont le seul élément de preuve qui ne vienne ni du soignant ni de la plateforme',
+  ],
+  [
+    /doctor\.ratingDistribution\[String\(note\)\]/,
+    '⚠️ la RÉPARTITION, pas seulement la moyenne : « 3,5 » né de deux avis moyens n’est pas « 3,5 » né d’un enthousiasme et d’un désastre',
+  ],
+  [
+    /Object\.keys\(doctor\?\.ratingDistribution/,
+    '⚠️ l’échelle des notes se lit dans ce que le serveur envoie (PM-13), jamais écrite en dur — une règle recopiée est une règle qui dérive',
+  ],
+]);
+
+/*
+  ⚠️ **Le prix manquait sur la carte de l'annuaire — chantier 121, 15/09/2026.**
+
+  CU-05-01 l'exige mot pour mot : chaque résultat montre « photo, badge, note, **prix de l'offre la
+  moins chère**, présence ». Une règle de maquette l'avait emporté sur le cahier des charges, et
+  comparer trois soignants demandait six navigations.
+
+  Et le prix affiché doit être celui d'une CONSULTATION : jusqu'au 15/09, dès qu'un soignant
+  publiait un tarif de suivi, la carte annonçait ce tarif-là — mesuré en production, « 15 min ·
+  3 000 F » pour une consultation de 30 min à 5 000 F. Le serveur ne sert plus que des
+  consultations (`m05.prix-dappel.spec.ts`) ; ici on garde ce que l'écran en fait.
+*/
+verrouiller('Accueil — la carte du soignant (chantier 121)', 'screens/HomeScreen.tsx', [
+  [
+    /formatXaf\(d\.price\)/,
+    '⚠️ CU-05-01 — le prix est sur la carte : c’est le premier critère de choix, et le seul qu’il fallait ouvrir une fiche pour connaître',
+  ],
+  [
+    /d\.consultationCount > 1 \?/,
+    '⚠️ « à partir de » n’apparaît que s’il y a VRAIMENT plusieurs consultations — sinon il fait chercher un tarif moins cher qui n’existe pas',
+  ],
+  [
+    /Pas de consultation/,
+    'sans offre active il n’y a rien à réserver, et la carte le dit plutôt que d’afficher un zéro ou le prix d’autre chose',
+  ],
 ]);
 
 verrouiller('Inscription', 'screens/RegisterScreen.tsx', [
