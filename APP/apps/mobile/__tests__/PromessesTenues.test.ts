@@ -141,6 +141,36 @@ verrouiller('Fiche du soignant', 'screens/DoctorScreen.tsx', [
     /ne propose pas de consultation/,
     'chantier 65 — « Sur devis » décrivait un mécanisme qui n’existe pas, et le bouton menait à une impasse',
   ],
+  /*
+    ⚠️ **Chantier 120 — le patient choisit, et il ne paie qu'une fois.**
+
+    Le téléphone imposait la première offre standard du soignant : les autres n'étaient jamais
+    montrées. Ces quatre lignes gardent les trois choses qui font que le choix est un vrai choix.
+  */
+  [
+    /Choisissez votre consultation/,
+    'chantier 120 — le titre dit que c’est À LUI de choisir ; sans cela, une liste de prix se lit comme un tarif affiché',
+  ],
+  [
+    /payez qu['’]une seule fois[\s\S]{0,80}couvre toute la consultation/,
+    '⚠️ la demande du porteur, mot pour mot : « lorsqu’on paie, on paie une seule fois » — dit là où l’on choisit, pas après',
+  ],
+  [
+    /Inclus, sans supplément/,
+    'chantier 120 — ce qui porte un prix dans la même colonne se lit comme ce qu’on peut choisir : l’ordonnance gratuite en sort',
+  ],
+  [
+    /ne s['’]achète pas ici[\s\S]{0,120}après un compte-rendu/,
+    '⚠️ le tarif de SUIVI est annoncé mais pas cochable — le chantier 65 avait déjà réparé une fois qu’il se vendait comme une première consultation',
+  ],
+  [
+    /offerId: offreChoisie\.id/,
+    '⚠️ c’est bien l’offre COCHÉE qui part au serveur, pas la première de la liste',
+  ],
+  [
+    /offreChoisie != null \? formatXaf\(offreChoisie\.priceXaf\)/,
+    '⚠️ le prix du bas est celui de l’offre cochée : le chiffre sur lequel on appuie et celui qu’on paiera sont le même',
+  ],
 ]);
 
 verrouiller('Inscription', 'screens/RegisterScreen.tsx', [

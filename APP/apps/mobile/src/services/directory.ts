@@ -10,7 +10,7 @@
  * durée de session, délai de réponse — RM-05-01/02), qui sont aussi la preuve sociale d'ULAMU.
  */
 import {IconName} from '../components/Icon';
-import {DirectoryItem, DirectoryProfile, DirectoryQuery, ProfessionalCategory} from '../lib/contracts';
+import {DirectoryItem, DirectoryOffer, DirectoryProfile, DirectoryQuery, ProfessionalCategory} from '../lib/contracts';
 import {api} from './api';
 
 /** Onglets de filtre de l'Accueil (maquette) ; « autre » n'apparaît que sous « Tous ». */
@@ -48,12 +48,27 @@ export interface DoctorVM {
 
 export interface DoctorProfileVM extends DoctorVM {
   bio: string | null;
-  /** Offre de consultation STANDARD — point de départ de la poignée de main (M06). */
-  consultOfferId: string | null;
-  consultPrice: number | null;
-  consultDurationMin: number | null;
+  /**
+   * **Toutes** les offres de consultation actives, de la moins chère à la plus chère.
+   *
+   * ⚠️ Ce champ remplace le trio `consultOfferId / consultPrice / consultDurationMin`, qui ne
+   * portait que la PREMIÈRE offre standard rencontrée : le soignant peut en publier jusqu'à cinq
+   * (PM-25), et le téléphone en imposait une sans jamais montrer les autres. *Choisir à la place de
+   * quelqu'un ce qu'il va payer, c'est décider pour lui de ce dont il a besoin.*
+   *
+   * Le tarif de SUIVI n'y est pas : voir `followPrice`.
+   */
+  consultOffers: DirectoryOffer[];
+  /**
+   * Le tarif de suivi, pour information seulement — il n'entre pas dans le choix du patient.
+   *
+   * C'est le prix de quelqu'un qu'on suit DÉJÀ : il se déclenche sur proposition du soignant après
+   * un compte-rendu. L'afficher comme une consultation vendrait 2 500 XAF ce qui en vaut 5 000
+   * (défaut corrigé au chantier 65) ; le taire laisserait croire qu'un suivi se repaie plein tarif.
+   */
   followOfferId: string | null;
   followPrice: number | null;
+  followDurationMin: number | null;
 }
 
 interface CategoryMeta {
@@ -152,19 +167,31 @@ export function toDoctorProfileVM(p: DirectoryProfile): DoctorProfileVM {
 
     Le repli est donc retiré : sans offre STANDARD active, il n'y a pas de consultation à vendre, et
     l'écran le dit.
+
+    ── Le patient choisit son offre (chantier 120, 15/09/2026) ─────────────────────────────────
+
+    Cette ligne se lisait `find(o => o.kind === 'STANDARD')` — LA PREMIÈRE offre standard, et l'écran
+    n'affichait qu'elle. Le soignant peut pourtant en publier jusqu'à cinq (PM-25) : une courte, une
+    longue, une de nuit. **Le patient n'en voyait qu'une, et c'est celle-là qu'il payait.**
+
+    ⚠️ Et « la première » ne voulait rien dire de stable : l'annuaire sert les offres par prix
+    croissant, donc l'ordre du menu changeait dès que le soignant retouchait un tarif.
+
+    Elles sont désormais **toutes** rendues, triées du moins cher au plus cher — le tri du serveur
+    est déjà celui-là, on ne s'y fie pas pour autant : une liste dont l'ordre décide de ce qui est
+    coché par défaut ne se laisse pas à la bonne volonté de son fournisseur.
   */
-  const standard = p.offers.find(o => o.kind === 'STANDARD') ?? null;
+  const consultOffers = p.offers.filter(o => o.kind === 'STANDARD').sort((a, b) => a.priceXaf - b.priceXaf);
   const follow = p.offers.find(o => o.kind === 'FOLLOW_UP') ?? null;
   return {
     ...base,
     bio: p.biography,
-    consultOfferId: standard?.id ?? null,
     // `base.price` est l'offre la MOINS CHÈRE, tous types confondus : s'en servir ici afficherait le
-    // tarif de suivi comme prix de consultation. Sans offre standard, il n'y a pas de prix.
-    consultPrice: standard?.priceXaf ?? null,
-    consultDurationMin: standard?.durationMin ?? null,
+    // tarif de suivi comme prix de consultation. Sans offre standard, il n'y a rien à vendre.
+    consultOffers,
     followOfferId: follow?.id ?? null,
     followPrice: follow?.priceXaf ?? null,
+    followDurationMin: follow?.durationMin ?? null,
   };
 }
 

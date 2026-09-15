@@ -16,6 +16,7 @@ import {Grain} from '../components/Grain';
 import {Icon, IconName} from '../components/Icon';
 import {AppStackParamList} from '../navigation/types';
 import {ApiError} from '../lib/api-client';
+import {DirectoryOffer} from '../lib/contracts';
 import {api} from '../services/api';
 import {alertAvailability, DoctorProfileVM, fetchDoctorProfile, formatXaf} from '../services/directory';
 import {fonts, Palette} from '../theme';
@@ -34,11 +35,23 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
   const [initiating, setInitiating] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [signaler, setSignaler] = useState(false);
+  /**
+   * L'offre que le patient a cochée. `null` tant que la fiche n'est pas chargée — et **posée sur la
+   * MOINS CHÈRE** dès qu'elle l'est.
+   *
+   * ⚠️ Pourquoi une case déjà cochée, et pourquoi celle-là. Ne rien cocher obligerait à choisir même
+   * quand il n'y a qu'une offre, et laisserait le prix du bas vide au moment où l'on décide. Cocher
+   * la moins chère ne peut jamais coûter à quelqu'un qui n'a pas regardé : *un défaut qui pousse
+   * vers la dépense n'est pas un défaut, c'est une vente.*
+   */
+  const [offerId, setOfferId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setStatus('loading');
     try {
-      setDoctor(await fetchDoctorProfile(id));
+      const vm = await fetchDoctorProfile(id);
+      setDoctor(vm);
+      setOfferId(vm.consultOffers[0]?.id ?? null);
       setStatus('ready');
     } catch {
       setStatus('error');
@@ -49,21 +62,35 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
     load();
   }, [load]);
 
+  /*
+    L'offre retenue, avec son filet : un identifiant qui ne correspond à rien — la fiche s'est
+    rechargée, le soignant a retiré cette offre entre-temps — retombe sur la moins chère plutôt que
+    de laisser l'écran sans prix. *Une sélection périmée est une absence de sélection, pas une
+    erreur à afficher.*
+  */
+  const offreChoisie: DirectoryOffer | null =
+    doctor?.consultOffers.find(o => o.id === offerId) ?? doctor?.consultOffers[0] ?? null;
+
   const onInitiate = async () => {
     if (!doctor) {
       return;
     }
-    if (!doctor.consultOfferId) {
+    if (!offreChoisie) {
       await alert({title: 'Indisponible', message: "Ce soignant n'a pas d'offre de consultation active pour l'instant."});
       return;
     }
     setInitiating(true);
     try {
-      const hs = await api.initiateHandshake({offerId: doctor.consultOfferId});
+      /*
+        ⚠️ **C'est l'offre COCHÉE qui part**, pas la première de la liste. Le serveur fige ensuite
+        son prix, son libellé et sa durée sur la poignée de main (chantier 118) : ce que le patient
+        vient de lire est exactement ce qu'il paiera, et ce que le reçu portera.
+      */
+      const hs = await api.initiateHandshake({offerId: offreChoisie.id});
       navigation.navigate('Handshake', {
         handshakeId: hs.id,
         professionalName: doctor.name,
-        amountXaf: doctor.consultPrice ?? 0,
+        amountXaf: offreChoisie.priceXaf,
       });
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'Action impossible — réessayez.';
@@ -138,7 +165,7 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               <View style={styles.statsRow}>
                 {([
                   ['star', doctor.ratingLabel ?? 'Nouveau', doctor.reviews > 0 ? `${doctor.reviews} avis` : 'récent'],
-                  ['clock', doctor.consultDurationMin != null ? `${doctor.consultDurationMin} min` : '—', 'par session'],
+                  ['clock', offreChoisie != null ? `${offreChoisie.durationMin} min` : '—', 'par session'],
                   ['send', doctor.resp ?? '—', 'réponse'],
                 ] as [IconName, string, string][]).map(([ic, v, l], i) => (
                   <View key={l} style={[styles.stat, i > 0 && styles.statBorder]}>
@@ -150,23 +177,104 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               </View>
             </Card>
 
-            {/* Tarifs */}
-            <SectionLabel>Tarifs</SectionLabel>
+            {/*
+              ── Ce qui SE VEND, et ce qui est INCLUS (chantier 120, 15/09/2026) ────────────────
+
+              Une seule liste « Tarifs » portait jusqu'ici trois choses de natures différentes : la
+              consultation qu'on achète, le tarif de suivi qu'on n'achète pas ici, et l'ordonnance
+              qui ne s'achète pas du tout. Alignées avec un prix à droite, elles se lisaient comme
+              un menu — dont deux lignes sur trois n'étaient pas commandables.
+
+              *Ce qui porte un prix dans une même colonne se lit comme ce qu'on peut choisir.* Les
+              deux sont donc séparées : ce qu'on choisit ici, puis ce qui vient avec.
+            */}
+            <SectionLabel>Choisissez votre consultation</SectionLabel>
+            <Card padding={0}>
+              <View style={styles.tariffs}>
+                {doctor.consultOffers.length === 0 ? (
+                  <TariffRow
+                    icon="stethoscope"
+                    title="Aucune consultation proposée"
+                    sub="ce soignant n’a pas d’offre active en ce moment"
+                    price="—"
+                    first
+                  />
+                ) : doctor.consultOffers.length === 1 ? (
+                  /*
+                    Une seule offre : pas de case à cocher. *Un interrupteur qui ne change rien est
+                    pire qu'un interrupteur absent* — il fait croire à un choix, et fait chercher
+                    l'autre branche.
+                  */
+                  <TariffRow
+                    icon="stethoscope"
+                    title={doctor.consultOffers[0].label}
+                    sub={`${doctor.consultOffers[0].durationMin} min · messagerie`}
+                    price={formatXaf(doctor.consultOffers[0].priceXaf)}
+                    first
+                  />
+                ) : (
+                  doctor.consultOffers.map((o, i) => {
+                    const coche = offreChoisie?.id === o.id;
+                    return (
+                      <Pressable
+                        key={o.id}
+                        onPress={() => setOfferId(o.id)}
+                        style={[styles.tariffRow, i > 0 && styles.tariffBorder]}
+                        accessibilityRole="radio"
+                        accessibilityState={{selected: coche}}
+                        accessibilityLabel={`${o.label}, ${o.durationMin} minutes, ${formatXaf(o.priceXaf)}`}>
+                        <View style={[styles.radio, coche && styles.radioOn]}>{coche && <View style={styles.radioDot} />}</View>
+                        <View style={styles.flex}>
+                          <Text style={styles.tariffTitle} numberOfLines={2}>
+                            {o.label}
+                          </Text>
+                          <Text style={styles.tariffSub}>{o.durationMin} min · messagerie</Text>
+                        </View>
+                        <Text style={[styles.tariffPrice, coche && {color: colors.accent500}]}>{formatXaf(o.priceXaf)}</Text>
+                      </Pressable>
+                    );
+                  })
+                )}
+              </View>
+            </Card>
+            {doctor.consultOffers.length > 1 && (
+              <Text style={styles.choixAide}>
+                Vous ne payez qu’une seule fois : le tarif coché couvre toute la consultation.
+              </Text>
+            )}
+
+            <SectionLabel>Inclus, sans supplément</SectionLabel>
             <Card padding={0}>
               <View style={styles.tariffs}>
                 <TariffRow
-                  icon="stethoscope"
-                  title="Consultation"
-                  sub={`${doctor.consultDurationMin ?? '—'} min · messagerie`}
-                  price={doctor.consultPrice != null ? formatXaf(doctor.consultPrice) : '—'}
+                  icon="file-medical"
+                  title="Ordonnance signée"
+                  sub="si le soignant en établit une"
+                  price="Gratuit"
                   first
+                  free
                 />
-                {doctor.followPrice != null && (
-                  <TariffRow icon="refresh" title="Session de suivi" sub="tarif réduit" price={formatXaf(doctor.followPrice)} />
-                )}
-                <TariffRow icon="file-medical" title="Ordonnance signée" sub="incluse" price="Gratuit" free />
               </View>
             </Card>
+
+            {/*
+              ⚠️ **Le suivi n'entre pas dans le choix** — c'est le tarif de quelqu'un qu'on suit
+              DÉJÀ, proposé par le soignant après un compte-rendu. Le chantier 65 avait déjà réparé
+              une fois le fait qu'il se vendait comme une première consultation ; le remettre dans
+              une liste cochable le revendrait de la même manière.
+
+              Il reste ANNONCÉ, hors du choix : le taire laisserait croire qu'un second rendez-vous
+              se repaie plein tarif — et c'est justement ce qui fait renoncer à revenir.
+            */}
+            {doctor.followPrice != null && (
+              <View style={styles.suiviBloc}>
+                <Icon name="refresh" size={14} color={colors.textTertiary} />
+                <Text style={styles.suiviTexte}>
+                  <Text style={styles.suiviFort}>Session de suivi · {formatXaf(doctor.followPrice)}</Text> — elle ne s’achète pas
+                  ici : le soignant vous la propose après un compte-rendu, si un suivi est nécessaire.
+                </Text>
+              </View>
+            )}
 
             {/*
               ⚠️ **Plus de « pré-consultation », ici non plus** — chantier 111, 14/09/2026.
@@ -218,18 +326,25 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
           */}
           <View style={styles.footer}>
             <View style={styles.flex}>
+              {/*
+                ⚠️ **Le prix du bas est celui de l'offre COCHÉE**, plus « la première trouvée ». Un
+                bouton qui engage doit porter le montant qu'il engage : *le chiffre sur lequel on
+                appuie et celui qu'on paiera sont le même chiffre, ou l'écran ment.*
+              */}
               <Text style={styles.footerPrice}>
-                {doctor.consultPrice != null ? formatXaf(doctor.consultPrice) : 'Pas de consultation'}
+                {offreChoisie != null ? formatXaf(offreChoisie.priceXaf) : 'Pas de consultation'}
               </Text>
-              <Text style={styles.footerSub}>
-                {doctor.consultOfferId === null
+              <Text style={styles.footerSub} numberOfLines={1}>
+                {offreChoisie === null
                   ? 'ce soignant ne propose pas de consultation en ce moment'
-                  : doctor.online
-                    ? 'débité après la poignée de main'
-                    : 'indisponible pour le moment'}
+                  : !doctor.online
+                    ? 'indisponible pour le moment'
+                    : doctor.consultOffers.length > 1
+                      ? `${offreChoisie.label} · débité après la poignée de main`
+                      : 'débité après la poignée de main'}
               </Text>
             </View>
-            {doctor.online && doctor.consultOfferId !== null ? (
+            {doctor.online && offreChoisie !== null ? (
               <PrimaryButton title="Initier la consultation" iconLeft="stethoscope" loading={initiating} onPress={onInitiate} />
             ) : (
               <PrimaryButton title="M'avertir" iconLeft="bell" loading={alerting} onPress={onAlert} />
@@ -316,6 +431,18 @@ const makeStyles = (colors: Palette) =>
   tariffTitle: {fontFamily: fonts.body, fontWeight: '600', fontSize: 13.5, color: colors.textPrimary},
   tariffSub: {fontFamily: fonts.body, fontSize: 11.5, color: colors.textTertiary},
   tariffPrice: {fontFamily: fonts.displayBold, fontSize: 14, color: colors.textPrimary},
+
+  // Choix de l'offre — mêmes proportions que le choix d'opérateur de l'écran de paiement, pour que
+  // le geste soit le même aux deux endroits où l'on choisit quelque chose qui se paie.
+  radio: {width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center'},
+  radioOn: {borderColor: colors.accent500},
+  radioDot: {width: 11, height: 11, borderRadius: 6, backgroundColor: colors.accent500},
+  choixAide: {fontFamily: fonts.body, fontSize: 11.5, color: colors.textTertiary, marginTop: -6, paddingHorizontal: 2},
+
+  // Suivi — annoncé, jamais cochable
+  suiviBloc: {flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 2},
+  suiviTexte: {flex: 1, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: colors.textTertiary},
+  suiviFort: {fontWeight: '700', color: colors.textSecondary},
 
   // Section label
   sectionLabel: {flexDirection: 'row', alignItems: 'center', gap: 8},
