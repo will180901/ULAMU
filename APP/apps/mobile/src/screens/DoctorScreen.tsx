@@ -188,7 +188,15 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
               *Ce qui porte un prix dans une même colonne se lit comme ce qu'on peut choisir.* Les
               deux sont donc séparées : ce qu'on choisit ici, puis ce qui vient avec.
             */}
-            <SectionLabel>Choisissez votre consultation</SectionLabel>
+            {/*
+              ⚠️ **Le titre n'invite à choisir que s'il y a un choix.** Mesuré en ligne le 15/09 : le
+              seul soignant de l'annuaire n'a **qu'une** offre active — « Choisissez votre
+              consultation » se serait affiché au-dessus d'une ligne unique et non cochable.
+
+              C'est la même règle que la case à cocher absente, appliquée au mot : *inviter à choisir
+              là où il n'y a rien à choisir fait chercher une option qui n'existe pas.*
+            */}
+            <SectionLabel>{doctor.consultOffers.length > 1 ? 'Choisissez votre consultation' : 'Consultation'}</SectionLabel>
             <Card padding={0}>
               <View style={styles.tariffs}>
                 {doctor.consultOffers.length === 0 ? (
