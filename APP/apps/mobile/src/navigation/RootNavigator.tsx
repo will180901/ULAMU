@@ -8,6 +8,7 @@ import {AideScreen} from '../screens/AideScreen';
 import {MentionsLegalesScreen} from '../screens/MentionsLegalesScreen';
 import {CloseAccountScreen} from '../screens/CloseAccountScreen';
 import {DoctorScreen} from '../screens/DoctorScreen';
+import {AvisScreen} from '../screens/AvisScreen';
 import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {FamilyScreen} from '../screens/FamilyScreen';
 import {RemindersScreen} from '../screens/RemindersScreen';
@@ -58,6 +59,7 @@ export function RootNavigator() {
         <AppStack.Navigator screenOptions={{headerShown: false}}>
           <AppStack.Screen name="Tabs" component={PatientTabs} />
           <AppStack.Screen name="Doctor" component={DoctorScreen} />
+          <AppStack.Screen name="Avis" component={AvisScreen} />
           <AppStack.Screen name="Handshake" component={HandshakeScreen} />
           <AppStack.Screen name="Pay" component={PayScreen} />
           <AppStack.Screen name="Session" component={SessionScreen} />

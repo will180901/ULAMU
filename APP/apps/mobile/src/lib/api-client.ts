@@ -75,6 +75,8 @@ import {
   SessionView,
   DirectoryProfile,
   DirectoryQuery,
+  DirectoryReviewsQuery,
+  DirectoryReviewsResponse,
   DirectorySearchResponse,
   LoginRequest,
   LoginResponse,
@@ -468,6 +470,10 @@ export class ApiClient {
   }
   getProfessionalProfile(id: string): Promise<DirectoryProfile> {
     return this.request('GET', DIRECTORY_ROUTES.profile(id));
+  }
+  /** Les avis d'un soignant, page par page (EF-05-07) — publique, comme la fiche. */
+  listProfessionalReviews(id: string, query: DirectoryReviewsQuery = {}): Promise<DirectoryReviewsResponse> {
+    return this.request('GET', `${DIRECTORY_ROUTES.reviews(id)}${buildQuery(query)}`);
   }
   poseAvailabilityAlert(id: string): Promise<AvailabilityAlertResponse> {
     return this.request('POST', DIRECTORY_ROUTES.availabilityAlert(id), undefined, true);

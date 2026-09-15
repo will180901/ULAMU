@@ -227,6 +227,44 @@ verrouiller('Fiche du soignant', 'screens/DoctorScreen.tsx', [
   3 000 F » pour une consultation de 30 min à 5 000 F. Le serveur ne sert plus que des
   consultations (`m05.prix-dappel.spec.ts`) ; ici on garde ce que l'écran en fait.
 */
+/*
+  ⚠️ **Tous les avis, et ce qu'on ne dit JAMAIS d'eux — chantier 124, 15/09/2026.**
+
+  On ne pouvait lire que dix avis, toujours les dix mêmes. Cet écran les ouvre tous. Ces lignes
+  gardent les trois décisions qui le rendent honnête : le total est dit, la personne n'est jamais
+  nommée, et les notes sans commentaire restent visibles.
+*/
+verrouiller('Tous les avis (chantier 124)', 'screens/AvisScreen.tsx', [
+  [
+    /avis affichés sur/,
+    '⚠️ on dit toujours où l’on en est : un total affiché sans dire ce qu’on en montre est la moitié d’une information',
+  ],
+  [
+    /Tous les avis sont affichés/,
+    'et quand on a tout lu, on le dit — sinon on continue de faire défiler dans le vide',
+  ],
+  [
+    /consultationsWithPro > 1[\s\S]{0,120}revenu/,
+    '⚠️ la FIDÉLITÉ à la place du nom : un patient qui revient est le signal le plus fort qui existe, et il ne nomme personne',
+  ],
+  [
+    /Avis vérifié[\s\S]{0,40}consultation payée/,
+    'à la première consultation, on dit ce qu’on peut dire : que l’avis est adossé à une consultation réellement payée',
+  ],
+  [
+    /noté sans écrire/,
+    '⚠️ une note sans commentaire compte dans la moyenne : la cacher ferait deux totaux qui ne se répondent pas',
+  ],
+  [
+    /setScore\(actif \? null : note\)/,
+    '⚠️ les barres sont des BOUTONS — « qu’est-ce qui s’est mal passé chez les mécontents ? » est la seule question qu’on se pose vraiment',
+  ],
+  [
+    /Object\.keys\(distribution\)/,
+    'l’échelle des notes se lit dans ce que le serveur envoie (PM-13), jamais écrite en dur',
+  ],
+]);
+
 verrouiller('Accueil — la carte du soignant (chantier 121)', 'screens/HomeScreen.tsx', [
   [
     /formatXaf\(d\.price\)/,

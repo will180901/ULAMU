@@ -251,6 +251,40 @@ export interface DirectoryProfile extends DirectoryItem {
   latestComments: Array<{score: number; comment: string; createdAt: string}>;
 }
 
+/**
+ * Un avis, tel que le serveur le sert (chantier 123).
+ *
+ * ⚠️ **Aucun identifiant de patient, et ce n'est pas un oubli** : « Mireille a consulté le Dr X »
+ * est une information médicale sur une personne identifiable. À la place, la FIDÉLITÉ — *quelqu'un
+ * qui revient est le signal le plus fort qui existe, et il ne nomme personne.*
+ */
+export interface DirectoryReview {
+  score: number;
+  /** `null` quand la personne a noté sans écrire — la note compte quand même dans la moyenne. */
+  comment: string | null;
+  createdAt: string;
+  /** Combien de consultations ce patient a eues avec CE soignant — 1 = première fois. */
+  consultationsWithPro: number;
+}
+
+export type ReviewSort = 'recent' | 'best' | 'worst';
+
+export interface DirectoryReviewsQuery {
+  cursor?: string;
+  limit?: number;
+  /** Ne garder que cette note — la barre qu'on touche dans la répartition. */
+  score?: number;
+  sort?: ReviewSort;
+}
+
+export interface DirectoryReviewsResponse {
+  items: DirectoryReview[];
+  /** `null` = il n'y a plus rien après. */
+  nextCursor: string | null;
+  /** Le total qui correspond au filtre en cours, pas la taille de la page. */
+  total: number;
+}
+
 export interface DirectorySearchResponse {
   items: DirectoryItem[];
   page: number;
@@ -657,6 +691,7 @@ export const DIRECTORY_ROUTES = {
   search: '/v1/directory',
   profile: (id: string): string => `/v1/directory/${encodeURIComponent(id)}`,
   availabilityAlert: (id: string): string => `/v1/directory/${encodeURIComponent(id)}/availability-alert`,
+  reviews: (id: string): string => `/v1/directory/${encodeURIComponent(id)}/reviews`,
 } as const;
 
 export const SPACE_ROUTES = {

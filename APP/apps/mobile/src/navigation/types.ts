@@ -24,6 +24,19 @@ export type PatientTabParamList = {
 export type AppStackParamList = {
   Tabs: NavigatorScreenParams<PatientTabParamList> | undefined;
   Doctor: {id: string}; // fiche publique d'un soignant (M05)
+  /**
+   * Tous les avis d'un soignant (chantier 124). La répartition et la moyenne VOYAGENT avec la
+   * navigation : la fiche vient de les afficher, les redemander ferait clignoter des chiffres
+   * déjà lus. `scoreInitial` porte la barre touchée sur la fiche.
+   */
+  Avis: {
+    professionalId: string;
+    professionalName: string;
+    ratingLabel: string | null;
+    ratingCount: number;
+    distribution: Record<string, number>;
+    scoreInitial?: number;
+  };
   Handshake: {handshakeId: string; professionalName: string; amountXaf: number}; // attente de confirmation (M06)
   Pay: {handshakeId: string; professionalName: string; amountXaf: number}; // paiement Mobile Money (M06/M13)
   Session: {sessionId: string}; // session de soin chronométrée (M06)

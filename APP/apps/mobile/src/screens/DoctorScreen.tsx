@@ -84,6 +84,21 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
   const offreChoisie: DirectoryOffer | null =
     doctor?.consultOffers.find(o => o.id === offerId) ?? doctor?.consultOffers[0] ?? null;
 
+  /** Ouvre l'écran des avis — avec la note touchée quand on vient d'une barre. */
+  const ouvrirAvis = (scoreInitial?: number): void => {
+    if (!doctor) {
+      return;
+    }
+    navigation.navigate('Avis', {
+      professionalId: doctor.id,
+      professionalName: doctor.name,
+      ratingLabel: doctor.ratingLabel,
+      ratingCount: doctor.reviews,
+      distribution: doctor.ratingDistribution,
+      ...(scoreInitial !== undefined ? {scoreInitial} : {}),
+    });
+  };
+
   const onInitiate = async () => {
     if (!doctor) {
       return;
@@ -404,26 +419,40 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
                     </View>
                   </View>
 
+                  {/*
+                    ⚠️ **Les barres sont des BOUTONS** (chantier 124). Toucher « 1 ★ » ouvre les
+                    avis filtrés sur cette note. *La seule question qu'on se pose vraiment devant
+                    une moyenne est « qu'est-ce qui s'est mal passé chez les mécontents ? »*, et
+                    presque aucune plateforme ne la rend facile.
+
+                    Le visuel ne bouge pas — c'est celui que le porteur a retenu — il devient
+                    seulement un chemin.
+                  */}
                   <View style={styles.avisBarres}>
                     {[...echelle].reverse().map(note => {
                       const combien = doctor.ratingDistribution[String(note)] ?? 0;
                       const part = doctor.reviews > 0 ? combien / doctor.reviews : 0;
                       return (
-                        <View key={note} style={styles.avisLigne}>
+                        <Pressable
+                          key={note}
+                          onPress={() => ouvrirAvis(note)}
+                          style={styles.avisLigne}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${combien} avis à ${note} étoile${note > 1 ? 's' : ''} — les voir`}>
                           <Text style={styles.avisLigneNote}>{note}</Text>
                           <Icon name="star" size={10} color="#C49128" />
                           <View style={styles.avisPiste}>
                             <View style={[styles.avisRemplissage, {width: `${Math.round(part * 100)}%`}]} />
                           </View>
                           <Text style={styles.avisLigneCompte}>{combien}</Text>
-                        </View>
+                        </Pressable>
                       );
                     })}
                   </View>
 
                   {doctor.comments.length > 0 && (
                     <View style={styles.avisListe}>
-                      {doctor.comments.map((c, i) => (
+                      {doctor.comments.slice(0, 3).map((c, i) => (
                         <View key={`${c.dateLabel}-${i}`} style={[styles.avisItem, i > 0 && styles.avisItemBorder]}>
                           <View style={styles.avisItemEntete}>
                             <View style={styles.avisEtoiles}>
@@ -442,6 +471,23 @@ export function DoctorScreen({route, navigation}: NativeStackScreenProps<AppStac
                         </View>
                       ))}
                     </View>
+                  )}
+
+                  {/*
+                    ⚠️ **Le chemin vers TOUS les avis** (chantier 124). La fiche en montre trois :
+                    au-delà, elle deviendrait un mur de texte devant le bouton qui compte. Mais on
+                    dit combien il y en a, et on y mène — *un extrait qui ne dit pas qu'il est un
+                    extrait se fait passer pour le tout.*
+                  */}
+                  {doctor.reviews > 3 && (
+                    <Pressable
+                      onPress={() => ouvrirAvis()}
+                      style={styles.avisTout}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Voir les ${doctor.reviews} avis`}>
+                      <Text style={styles.avisToutTexte}>Voir les {doctor.reviews} avis</Text>
+                      <Icon name="chevron-right" size={15} color={colors.accent500} />
+                    </Pressable>
                   )}
                 </Card>
               </>
@@ -636,6 +682,9 @@ const makeStyles = (colors: Palette) =>
   avisEtoiles: {flexDirection: 'row', gap: 1.5},
   avisDate: {fontFamily: fonts.body, fontSize: 10.5, color: colors.textTertiary},
   avisTexte: {fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondary, marginTop: 5},
+
+  avisTout: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 12, marginTop: 2, borderTopWidth: 1, borderTopColor: colors.borderSubtle},
+  avisToutTexte: {fontFamily: fonts.body, fontSize: 13, fontWeight: '700', color: colors.accent500},
 
   // Section label
   sectionLabel: {flexDirection: 'row', alignItems: 'center', gap: 8},
