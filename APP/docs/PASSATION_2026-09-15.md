@@ -24,51 +24,57 @@
 
 ## 2. Où l'on s'est arrêté — LA SUITE IMMÉDIATE
 
-**Le choix de l'offre par le patient.** C'est le dernier point du plan « paiement » qu'il a validé, et
-c'est celui qu'il avait demandé en premier :
+> ✅ **Le choix de l'offre par le patient est FAIT** (chantier 120), et quatre chantiers ont suivi
+> dans la même séance — 121 à 124. Ce qui suit dit ce qui reste.
 
-> *« Lorsqu'on paie, on paie une seule fois. Or le patient doit être libre de choisir l'offre pour
-> la consultation. »*
+### Ce qui a été livré le 15/09 — chantiers 119 à 124
 
-### Ce qui existe déjà (vérifié le 14/09)
+| | |
+|---|---|
+| **119** | ⚠️ **La plateforme relevée.** L'API n'avait plus démarré pendant trois heures : la migration du 117 insérait PM-41 sans `updatedAt` (`NOT NULL`, sans défaut), et P3009 bloquait toutes les suivantes. Filet posé : `migrations-insert-colonnes.spec.ts`. |
+| **120** | **Le patient choisit son offre.** Toutes les consultations actives, à cocher ; la moins chère par défaut ; une seule offre → pas de case ; ce qui se vend séparé de ce qui est inclus ; le suivi annoncé mais pas achetable. |
+| **121** | **Ce que le serveur servait et que personne ne voyait** : le prix d'appel (il montrait le tarif de SUIVI), le prix sur la carte, la biographie, le taux de confirmation, les avis. |
+| **122** | **Un titre ne nomme jamais ce que quelqu'un d'autre nomme** — trouvé par le porteur. |
+| **123** | **La route des avis** : curseur, tri, filtre par note, total. Aucun identifiant de patient. |
+| **124** | **L'écran « Tous les avis »** : défilement infini, tri, barres cliquables, fidélité affichée. |
 
-- Le modèle `CareOffer` porte `label`, `durationMin`, `priceXaf`, `kind` (`STANDARD` | `FOLLOW_UP`),
-  `active`. **Un soignant peut déjà en créer plusieurs** depuis *Ma vitrine* (web).
-- L'annuaire (`m05.directory.service`) **sert déjà la liste complète** des offres au téléphone.
-- `Handshake.offerId` existe, et depuis le chantier 118 la poignée fige aussi `priceXaf`,
-  `offerLabel`, `offerDurationMin`.
-
-### Ce qui manque — le travail à faire
-
-`apps/mobile/src/services/directory.ts` prend **la première offre `STANDARD`** et l'impose :
-
-```ts
-const standard = p.offers.find(o => o.kind === 'STANDARD') ?? null;
-// consultOfferId: standard?.id ?? null
-```
-
-`DoctorScreen` appelle ensuite `api.initiateHandshake({offerId: doctor.consultOfferId})`. **Le patient
-ne choisit rien.**
-
-Il faut donc, sur `DoctorScreen` (mobile) :
-
-1. afficher **toutes les offres `STANDARD` actives** (libellé, durée, prix) sous « Tarifs » ;
-2. permettre d'en **sélectionner une** (une seule — *on paie une seule fois*) ;
-3. envoyer l'`offerId` choisi à `initiateHandshake` ;
-4. le bouton du bas doit afficher **le prix de l'offre sélectionnée**, pas le moins cher.
-
-### Les trois pièges à ne pas rater
-
-- ⚠️ **L'offre de SUIVI (`FOLLOW_UP`) n'est pas une consultation.** C'est le tarif de quelqu'un qu'on
-  suit déjà, et le chantier 65 a déjà corrigé une fois le fait qu'elle se vendait comme une première
-  consultation. **Elle ne doit pas entrer dans le choix du patient.**
-- ⚠️ **« Ordonnance signée — Gratuit » n'est pas une offre** : c'est un service inclus. La liste
-  « Tarifs » les mélange aujourd'hui. Le porteur a validé qu'il faut **séparer ce qui se vend de ce
-  qui est inclus** (voir §4).
-- ⚠️ Sans offre `STANDARD` active, il n'y a **rien à vendre** et l'écran doit le dire (comportement
-  actuel, à conserver).
+**Tout est vérifié écran en main**, sur le téléphone du porteur, dans les deux thèmes.
 
 ---
+
+### ⚠️ CE QUI RESTE SUR LE BUREAU DU PORTEUR — à faire avant tout le reste
+
+**PM-20 déconnecte les patients toutes les ~30 minutes.** Mesuré deux fois le 15/09 : la session de
+Mireille meurt après 19 puis 25 minutes d'inactivité. Or la règle du produit est claire —
+`session-expiry.ts` : **web 30 min (ENF-07), mobile PM-20**, semé à **30 jours** (D-027).
+
+Le code est juste : le mobile déclare bien `client: 'mobile'` (`config.ts`), la garde lit PM-20.
+**La seule explication qui reste est que PM-20 vaut ~1800 en base de production.** C'est le même
+motif que PM-29, resté à 1800 alors que le code attend 0.
+
+> *Un patient qui pose son téléphone vingt minutes doit ressaisir son mot de passe. Sur une
+> application de santé, c'est rédhibitoire — et rien dans le code ne le trahit.*
+
+**Geste :** écran d'administration → Paramètres → **PM-20 → `2592000`** (30 jours). Et **PM-29 → `0`**
+pendant qu'on y est. ⚠️ Une session Claude ne peut pas lire la base de production (bloqué par le
+harnais) : **seul le porteur peut constater ces valeurs.**
+
+---
+
+### La suite de travail proposée, par ordre d'utilité
+
+1. **L'offre de suivi n'est toujours pas protégée côté serveur.** `initiate()` accepte n'importe
+   quelle offre ACTIVE, y compris `FOLLOW_UP` : les écrans ne la proposent plus (chantiers 65, 120),
+   mais un appel direct à l'API la vend encore comme une première consultation. *Une règle que seul
+   l'écran applique n'est pas une règle.* Décision déjà prise par le porteur, jamais codée.
+2. **Le reçu doit porter le libellé de l'offre choisie.** Le chantier 118 le fige sur la poignée
+   (`offerLabel`) ; aucun écran ne l'affiche encore.
+3. **Le web n'a pas d'annuaire patient.** EF-05-04 promet une « vitrine consultable sans compte » ;
+   côté web, seul le soignant voit sa propre fiche (*Ma vitrine*, 3 avis). Les chantiers 121-124 ne
+   concernent que le mobile.
+4. **Passe 1 de la refonte**, écrans restants : *Ma vérification* · *Ordonnance (visuel)* ·
+   *Mes paramètres* · *la coque*. **Passe 2** : 7 écrans d'administration, non commencée.
+
 
 ## 3. Ce que cette session a fait — chantiers 106 à 118
 
