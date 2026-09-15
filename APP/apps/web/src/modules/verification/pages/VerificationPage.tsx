@@ -260,8 +260,20 @@ function BlocPiece({
         <span className="min-w-0 flex-1 basis-52">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] font-medium text-foreground">{info.titre}</span>
+            {/*
+              ⚠️ **« À déposer » est une CONSIGNE, pas un constat** (chantier 127). Quand le dépôt est
+              fermé — dossier en examen ou décision prise —, elle demande un geste que l'écran
+              interdit trois lignes plus bas : *une consigne qu'on ne peut pas suivre n'est pas une
+              consigne, c'est un reproche.* On dit alors ce qui EST.
+            */}
             <Pilule ton={depose ? 'succes' : 'neutre'}>
-              {depose ? (documents.length > 1 ? `${documents.length} pages` : 'Déposée') : 'À déposer'}
+              {depose
+                ? documents.length > 1
+                  ? `${documents.length} pages`
+                  : 'Déposée'
+                : modifiable
+                  ? 'À déposer'
+                  : 'Non fournie'}
             </Pilule>
           </span>
           <span className="mt-0.5 block ul-aide">{info.aide}</span>
@@ -676,6 +688,34 @@ export function VerificationPage() {
 
   const d = dossier.data
   const etat = ETATS[d.status]
+
+  /*
+    ── ⚠️ « On attend » et « c'est décidé » ne sont pas le même état — chantier 127, 15/09/2026 ──
+
+    **Mesuré en ligne sur le compte d'Armel Konaté, dossier VÉRIFIÉ.** L'écran disait, en même
+    temps et sur la même hauteur d'écran :
+
+      • « Vérifié » · « Vous pouvez exercer : votre badge est actif »
+      • « Le dossier est en cours d'examen — les pièces sont figées jusqu'à la décision »
+      • quatre pièces « À déposer »
+      • « Ce qui se passe maintenant — Rien n'est attendu de vous », puis un délai de 3 jours
+
+    Un soignant qui lit cela ne sait pas s'il doit déposer ses papiers. Armel, lui, EXERCE : il est
+    dans l'annuaire et a reçu des consultations payées.
+
+    > **Un écran qui ne sait pas dire où en est votre dossier est pire qu'un écran laid.**
+
+    📌 La cause n'est pas une donnée fausse — le serveur dit vrai. C'est que l'écran ne lisait qu'un
+    seul signal, `documentsEditable`, qui vaut `false` pour DEUX raisons opposées : *le dossier est
+    entre les mains d'un vérificateur*, ou *la décision est déjà tombée*. **Un même symptôme pour
+    deux causes contraires ne peut pas produire une phrase juste.**
+
+    D'où ces deux mots, lus partout ci-dessous.
+  */
+  /** Le dossier attend une décision : quelqu'un va se prononcer, il n'y a rien à faire. */
+  const enAttenteDeDecision = d.status === 'SUBMITTED' || d.status === 'IN_REVIEW'
+  /** La décision est tombée — dans un sens ou dans l'autre. Plus rien n'est « en cours ». */
+  const decide = d.status === 'VERIFIED' || d.status === 'REJECTED' || d.status === 'REVOKED'
   const enCours = televerser.isPending || retirer.isPending
   // Regroupé par TYPE : une pièce peut avoir plusieurs pages (recto/verso, diplôme scanné page à page).
   const parKind = new Map<DocumentKind, VerificationCase['documents']>()
@@ -747,7 +787,9 @@ export function VerificationPage() {
             sousTitre={
               d.documentsEditable
                 ? 'PDF ou image · 5 Mo maximum'
-                : 'Le dossier est en cours d’examen — les pièces sont figées jusqu’à la décision'
+                : decide
+                  ? 'La décision est prise — les pièces restent au dossier et ne se modifient plus'
+                  : 'Le dossier est en cours d’examen — les pièces sont figées jusqu’à la décision'
             }
           >
             <ul className="flex flex-col gap-2">
@@ -791,16 +833,32 @@ export function VerificationPage() {
         </div>
 
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-72">
-          <Carte icone={Clock} titre="Délai de traitement" sousTitre="Délai annoncé par la plateforme">
+          {/*
+            ⚠️ **Un délai d'attente n'a de sens que si l'on attend** (chantier 127). Cette carte
+            annonçait « 3 jours » et « vous êtes prévenu dès qu'une décision est prise » à quelqu'un
+            dont la décision était **déjà prise** — vu en ligne sur un dossier VÉRIFIÉ.
+
+            Elle garde son historique (décisions et dépôts), qui reste vrai dans tous les cas : le
+            compte à rebours seul disparaît. *Ce qui s'est passé reste ; ce qui va se passer, non.*
+          */}
+          <Carte
+            icone={Clock}
+            titre={decide ? 'Historique du dossier' : 'Délai de traitement'}
+            sousTitre={decide ? 'Ce qui a été fait, et quand' : 'Délai annoncé par la plateforme'}
+          >
+            {decide ? null : (
             <p className="flex items-baseline gap-2">
               <span className="font-[family-name:var(--font-display)] text-[26px] font-bold leading-none tracking-[-0.02em] text-foreground">
                 {heures < 48 ? heures : Math.round(heures / 24)}
               </span>
               <span className="text-[12px] text-[var(--texte-tertiaire)]">{heures < 48 ? 'heures' : 'jours'}</span>
             </p>
+            )}
+            {decide ? null : (
             <p className="text-[11px] leading-[1.5] text-[var(--texte-tertiaire)]">
               Compté à partir du dépôt. Vous êtes prévenu par notification dès qu'une décision est prise.
             </p>
+            )}
             {d.decisions.length > 0 || d.documents.length > 0 ? (
               <>
                 <span aria-hidden="true" className="h-px bg-border" />
@@ -846,12 +904,32 @@ export function VerificationPage() {
 
             Reste ce qui est vrai, et qui répond à la vraie inquiétude : rien n'est attendu de vous.
           */}
-          <Carte icone={Clock} titre="Ce qui se passe maintenant" sousTitre="Rien n'est attendu de vous">
-            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-              Les dossiers sont examinés du plus ancien au plus récent : le vôtre avance à chaque
-              dossier traité. Vous serez prévenu par notification dès qu'une décision est prise — il
-              n'y a rien à relancer.
-            </p>
+          {/*
+            ⚠️ **La file d'attente ne concerne que ceux qui y sont** (chantier 127). Cette carte
+            décrivait « les dossiers examinés du plus ancien au plus récent » et promettait une
+            notification à venir — sur un dossier déjà VÉRIFIÉ.
+
+            *Une explication juste, donnée à quelqu'un qu'elle ne concerne pas, devient une fausse
+            nouvelle.*
+
+            ⚠️ **Mais la carte ne DISPARAÎT pas** : elle porte « Écrire à l'administration », seul
+            chemin vers le support depuis cet écran — et le plus utile justement quand un dossier
+            vient d'être refusé. *Masquer une explication périmée ne doit pas emporter le bouton qui
+            l'accompagnait* : c'est la faute que ce projet a déjà payée en retirant des chemins avec
+            leur habillage. Seule la phrase d'attente s'en va.
+          */}
+          <Carte
+            icone={Clock}
+            titre={enAttenteDeDecision ? 'Ce qui se passe maintenant' : 'Une question sur votre dossier ?'}
+            sousTitre={enAttenteDeDecision ? "Rien n'est attendu de vous" : "L'administration vous répond ici"}
+          >
+            {enAttenteDeDecision ? (
+              <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                Les dossiers sont examinés du plus ancien au plus récent : le vôtre avance à chaque
+                dossier traité. Vous serez prévenu par notification dès qu'une décision est prise — il
+                n'y a rien à relancer.
+              </p>
+            ) : null}
             {/*
               Le bouton ouvrait un `mailto:` vers `support@ulamu.cg` — un domaine qui n'appartient
               pas au projet, donc une adresse que personne ne relevait. Il mène désormais au

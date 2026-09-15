@@ -508,8 +508,23 @@ describe('C1 — ce que la maquette promettait et qui n’existe pas', () => {
     },
   }
 
+  /*
+    ⚠️ **Ces deux cas montaient un dossier VÉRIFIÉ et exigeaient la file d'attente** — ils gardaient
+    donc le défaut corrigé au chantier 127 : l'écran annonçait « les dossiers sont examinés du plus
+    ancien au plus récent » et « vous serez prévenu dès qu'une décision est prise » à quelqu'un dont
+    la décision ÉTAIT PRISE.
+
+    Ce qu'ils défendaient reste entier — la maquette promettait « une réponse sous 24 heures
+    ouvrées » que rien ne tenait, et on dit à la place ce qui est vrai. Seul l'ÉTAT change : ces
+    phrases n'ont de sens que pendant l'attente, et c'est sur un dossier en attente qu'on les
+    éprouve désormais.
+
+    *Un test posé sur le mauvais état ne prouve pas la règle : il fige l'endroit où elle est fausse.*
+  */
+  const enExamen = { ...signe, status: 'IN_REVIEW' as const, canPractice: false }
+
   it('n’annonce aucun délai de réponse de l’administration', async () => {
-    await monter(signe)
+    await monter(enExamen)
 
     // La phrase promettait une réponse « sous 24 heures ouvrées » alors qu'aucune messagerie
     // support n'existe : aucun bouton ne permettait même de poser la question.
@@ -519,10 +534,37 @@ describe('C1 — ce que la maquette promettait et qui n’existe pas', () => {
   })
 
   it('dit ce qui est vrai à la place : rien n’est attendu du soignant', async () => {
-    await monter(signe)
+    await monter(enExamen)
 
     expect(await screen.findByText(/du plus ancien au plus récent/)).toBeInTheDocument()
     expect(screen.getByText(/il n'y a rien à relancer/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Le cas qui manquait, et qui a laissé passer la contradiction** — chantier 127, mesuré en
+    ligne sur le compte d'Armel Konaté : dossier VÉRIFIÉ, badge actif, et l'écran disait quand même
+    « en cours d'examen », « À déposer » et « vous serez prévenu ».
+
+    > *Un écran qui ne sait pas dire où en est votre dossier est pire qu'un écran laid.*
+  */
+  it('sur un dossier VÉRIFIÉ, ne parle plus d’examen ni d’attente', async () => {
+    await monter(signe)
+
+    expect(await screen.findByText(/Vous pouvez exercer/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('du plus ancien au plus récent')
+    expect(document.body.textContent).not.toContain('en cours d’examen')
+    expect(document.body.textContent).not.toContain('À déposer')
+  })
+
+  /*
+    ⚠️ Masquer une explication périmée ne doit pas emporter le bouton qui l'accompagnait : c'est le
+    SEUL chemin vers l'administration depuis cet écran, et le plus utile quand un dossier vient
+    d'être refusé.
+  */
+  it('garde « Écrire à l’administration » quand la décision est prise', async () => {
+    await monter(signe)
+
+    expect(await screen.findByText(/Écrire à l'administration/)).toBeInTheDocument()
   })
 
   it('ne parle d’aucun versement mensuel : le retrait se demande', async () => {
