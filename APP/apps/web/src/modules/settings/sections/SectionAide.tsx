@@ -162,7 +162,7 @@ export function SectionAide() {
             {miennes.data.map((d) => (
               <li key={d.id} className="rounded-md border border-border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[13px] font-medium text-foreground">
+                  <span className="ul-intitule">
                     {LABEL_SUJET.get(d.subject) ?? d.subject}
                   </span>
                   {d.status === 'ANSWERED' ? (

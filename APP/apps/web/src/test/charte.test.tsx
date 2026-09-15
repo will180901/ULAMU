@@ -18,7 +18,7 @@
  * (« jamais plat »). D'où le token `--ombre-flottante`, défini séparément dans les deux thèmes.
  */
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const CSS = readFileSync(resolve(__dirname, '../styles/globals.css'), 'utf8')
@@ -177,5 +177,122 @@ describe('WCAG AA — les trois encres restent lisibles sur les surfaces, dans l
     expect(mesure).toBeLessThan(SEUIL_AA)
     // Si un jour la palette est retouchée et que cette paire devient sûre, ce test tombe : le
     // supprimer sera alors une bonne nouvelle, à écrire au journal.
+  })
+})
+
+/*
+  ── ⚠️ L'intitulé d'une ligne doit dominer son aide — chantier 129, 15/09/2026 ──────────────────
+
+  **Mesuré sur le site en ligne**, dans « Mes paramètres » : l'intitulé de ce qu'on règle
+  (« Thème », « Densité », « Sons de l'interface ») s'écrivait à **13 px**, et l'explication juste
+  en dessous à **12 px**. **Un pixel d'écart.** Sur cet écran, 21 textes partageaient exactement la
+  même taille — le sous-titre de la page, les six onglets, et chaque intitulé de réglage.
+
+  > **Un intitulé qui a la taille de son explication ne s'annonce plus : il se confond avec elle.**
+
+  C'est très précisément ce que le porteur décrivait en disant « sans vie » : l'œil n'a aucun point
+  d'entrée dans la page.
+
+  📌 Ce test ne fige pas des pixels — il fige un ÉCART. La fondation peut resserrer toute l'échelle
+  pour l'administration (elle le fait), mais le rang doit tenir dans les deux zones : *ce qui doit
+  rester vrai n'est pas la taille, c'est l'ordre.*
+*/
+describe('CG-02 — l’intitulé d’une ligne se lit avant son aide (chantier 129)', () => {
+  const paliers: Record<string, number> = {
+    '--fs-display-xl': 32,
+    '--fs-display-lg': 24,
+    '--fs-display-md': 20,
+    '--fs-display-sm': 18,
+    '--fs-text-xl': 18,
+    '--fs-text-lg': 16,
+    '--fs-text-md': 15,
+    '--fs-text-sm': 13,
+    '--fs-text-xs': 12,
+    '--fs-caption': 11,
+  }
+
+  /** La taille en pixels d'une voix, résolue à travers le palier qu'elle désigne. */
+  function taille(bloc: ':root' | '.dark' | '[data-zone=\'administration\']', voix: string): number {
+    const brut = token(bloc as ':root', voix)
+    expect(brut, `${voix} absent de ${bloc}`).toBeTruthy()
+    const palier = /var\((--[a-z0-9-]+)\)/.exec(brut as string)
+    expect(palier, `${voix} ne désigne aucun palier : ${brut}`).toBeTruthy()
+    const px = paliers[(palier as RegExpExecArray)[1]]
+    expect(px, `palier inconnu : ${(palier as RegExpExecArray)[1]}`).toBeTruthy()
+    return px
+  }
+
+  it('la zone « soin » les sépare vraiment', () => {
+    const intitule = taille(':root', '--voix-intitule')
+    const aide = taille(':root', '--voix-aide')
+
+    expect(intitule).toBeGreaterThan(aide)
+    // Un seul pixel d'écart, c'est ce qu'il y avait avant : le rang doit se VOIR.
+    expect(intitule - aide).toBeGreaterThanOrEqual(3)
+  })
+
+  it('le rôle existe et porte les trois marques à la fois', () => {
+    const regle = /\.ul-intitule\s*\{([^}]*)\}/.exec(CSS)
+    expect(regle, '.ul-intitule absent de la feuille').toBeTruthy()
+
+    const corps = (regle as RegExpExecArray)[1]
+    // La taille seule ne suffisait pas : à 1 px d'écart, ni la graisse ni l'encre ne rattrapaient.
+    expect(corps).toContain('var(--voix-intitule)')
+    expect(corps).toMatch(/font-weight:\s*600/)
+    expect(corps).toContain('var(--texte-primaire)')
+  })
+
+  /*
+    L'administration resserre toute l'échelle — c'est voulu (on y balaye des files). Mais resserrer
+    ne doit pas remettre l'intitulé au niveau de son aide : *une densité qui efface une hiérarchie
+    n'est plus une densité, c'est une bouillie.*
+  */
+  it('l’administration resserre sans écraser le rang', () => {
+    const zone = "[data-zone='administration']" as const
+    const intitule = taille(zone, '--voix-intitule')
+    const aide = taille(zone, '--voix-aide')
+
+    expect(intitule).toBeGreaterThan(aide)
+  })
+})
+
+/*
+  ── ⚠️ Un rôle que personne n'emploie ne corrige rien — chantier 129 ───────────────────────────
+
+  L'injection de fautes du 15/09 l'a montré : on pouvait remettre `text-[13px] font-medium` dans le
+  composant partagé `Reglage` **sans qu'un seul test tombe**. La charte vérifiait que le rôle
+  EXISTE ; personne ne vérifiait qu'on s'en sert.
+
+  *Une voix qu'on définit et que les écrans continuent d'ignorer est une décision qui n'a pas eu
+  lieu.* C'est exactement ce que le chantier 69 avait corrigé en remplaçant 83 recopies par cinq
+  voix — et ce qui recommence dès qu'un écran réinvente sa taille.
+
+  📌 **L'administration est hors de ce filet, et c'est délibéré** : elle porte encore 13 recopies,
+  et sa passe de refonte n'a pas commencé. Les y interdire aujourd'hui casserait 7 écrans que
+  personne n'a encore repris. La ligne est donc posée là où la passe est passée — *un filet qu'on
+  tend trop large se coupe pour passer, et ne retient plus rien.*
+*/
+describe('CG-02 — les écrans du soignant emploient le rôle, au lieu de le réinventer', () => {
+  const RECOPIE = 'text-[13px] font-medium text-foreground'
+
+  const lire = (rel: string) => readFileSync(resolve(__dirname, '..', rel), 'utf8')
+
+  it('la ligne de réglage partagée porte `ul-intitule`', () => {
+    const source = lire('components/ulamu/parts.tsx')
+
+    expect(source).toContain('block ul-intitule')
+    expect(source.includes(RECOPIE), `parts.tsx réinvente la taille au lieu d'employer le rôle`).toBe(false)
+  })
+
+  it('aucune section de « Mes paramètres » ne réinvente la taille d’un intitulé', () => {
+    const dossier = resolve(__dirname, '..', 'modules/settings/sections')
+    const coupables: string[] = []
+
+    for (const nom of readdirSync(dossier)) {
+      if (!nom.endsWith('.tsx')) continue
+      if (readFileSync(resolve(dossier, nom), 'utf8').includes(RECOPIE)) coupables.push(nom)
+    }
+
+    expect(coupables).toEqual([])
   })
 })

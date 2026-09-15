@@ -182,7 +182,7 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
 
   return (
     <Carte icone={Phone} titre="Numéro de téléphone" sousTitre="C'est sur ce numéro que partent vos retraits">
-      <p className="text-[13px] font-medium text-foreground">{me.phone}</p>
+      <p className="ul-intitule">{me.phone}</p>
 
       {/*
         La conséquence, dite ici et pas ailleurs : c'est le seul endroit où l'on change ce numéro, et
@@ -354,7 +354,7 @@ function BlocEmail({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
       }
     >
       {me.email ? (
-        <p className="text-[13px] font-medium text-foreground">{me.email}</p>
+        <p className="ul-intitule">{me.email}</p>
       ) : (
         <Avis ton="erreur">
           Ce compte n'a pas d'adresse email. En cas de mot de passe oublié, aucun code ne pourrait vous être envoyé.
@@ -786,7 +786,7 @@ function Formulaire({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border bg-secondary p-3">
       <div>
-        <p className="text-[13px] font-medium text-foreground">{titre}</p>
+        <p className="ul-intitule">{titre}</p>
         <p className="mt-0.5 ul-aide">{explication}</p>
       </div>
       <div className="flex flex-wrap gap-3">

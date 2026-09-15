@@ -159,12 +159,27 @@ export function Segments<T extends string>({
   )
 }
 
-/** Ligne « intitulé + aide » à gauche, contrôle à droite. Le motif des réglages de la maquette. */
+/**
+ * Ligne « intitulé + aide » à gauche, contrôle à droite. Le motif des réglages de la maquette.
+ *
+ * ── ⚠️ L'intitulé se lisait comme son explication — chantier 129, 15/09/2026 ──────────────────
+ *
+ * Mesuré sur le site en ligne : le titre s'écrivait à **13 px** et l'aide juste en dessous à
+ * **12 px**. **Un pixel d'écart.** Sur « Mes paramètres », 21 textes partageaient exactement la
+ * même taille — le sous-titre de la page, les six onglets, et l'intitulé de chaque réglage. L'œil
+ * n'avait aucun point d'entrée : c'est cela, très précisément, qu'on décrit en disant « sans vie ».
+ *
+ * > **Un intitulé qui a la taille de son explication ne s'annonce plus : il se confond avec elle.**
+ *
+ * `ul-intitule` porte le rôle qui manquait à la fondation. Ce composant étant partagé par huit
+ * écrans, il les redresse tous d'un coup — *un motif recopié huit fois se corrige une fois, ou
+ * jamais.*
+ */
 export function Reglage({ titre, aide, children }: { titre: string; aide?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <span className="min-w-0 flex-1 basis-52">
-        <span className="block text-[13px] font-medium text-foreground">{titre}</span>
+        <span className="block ul-intitule">{titre}</span>
         {aide ? <span className="mt-0.5 block ul-aide">{aide}</span> : null}
       </span>
       <span className="shrink-0">{children}</span>

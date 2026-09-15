@@ -141,7 +141,7 @@ function LigneOperateur({
             <img src={operateur.logo} alt="" className="max-h-4 max-w-[22px]" />
           </span>
           <span className="min-w-0">
-            <span className="block text-[13px] font-medium text-foreground">{operateur.nom}</span>
+            <span className="block ul-intitule">{operateur.nom}</span>
             <span className="block ul-aide">
               {enCours
                 ? 'Lecture…'

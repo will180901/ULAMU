@@ -57,7 +57,7 @@ function Appareil({ s, onRevoke, enCours }: { s: SessionInfo; onRevoke: (id: str
     <li className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5">
       <IconeClient client={s.client} />
       <span className="min-w-0 flex-1 basis-40">
-        <span className="block text-[13px] font-medium text-foreground">
+        <span className="block ul-intitule">
           {s.deviceLabel ?? (s.client === 'mobile' ? 'ULAMU Mobile' : 'ULAMU Web')}
           {s.current ? (
             <span className="ml-2 rounded border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">

@@ -210,6 +210,23 @@
      chaque liste réinventait sa taille — le tableau de bord écrivait ses comptes à 15 px, soit
      exactement celle de leur propre légende. */
   --voix-chiffre-ligne: var(--fs-display-md);  /* 20px */
+  /*
+    L'INTITULÉ d'une ligne — ajouté au chantier 129, 15/09/2026.
+
+    ⚠️ Mesuré sur le site en ligne : dans « Mes paramètres », l'intitulé de ce qu'on règle
+    (« Thème », « Densité », « Sons de l'interface ») s'écrivait à **13 px**, et son explication
+    juste en dessous à **12 px**. **Un pixel d'écart.** Rien ne distinguait l'objet du réglage de
+    la phrase qui le commente — et l'œil n'avait aucun point d'entrée dans la page.
+
+    > **Un intitulé qui a la taille de son explication ne s'annonce plus : il se confond avec
+    > elle.**
+
+    C'est le pendant exact de `--voix-chiffre-ligne`, né au chantier 70 pour la raison inverse :
+    là, la valeur devait dominer son intitulé ; ici, l'intitulé doit dominer son aide. La
+    fondation ne se rouvre pas pour ajuster une valeur — elle s'étend quand un RÔLE manque, et
+    celui-ci manquait dans 8 écrans qui l'ont chacun réinventé à 13 px.
+  */
+  --voix-intitule:      var(--fs-text-md);     /* 15px */
 
   /* Noms hérités du port SARIS, REMAPPÉS sur les valeurs CG-02 ci-dessus. Ils restent le temps que les
      composants passent aux classes `.t-*` — migration prévue en tâche 0.2 du plan, qui supprime de
@@ -418,6 +435,7 @@
   --voix-titre-panneau: var(--fs-text-lg);     /* 18 → 16px */
   --voix-chiffre:       var(--fs-display-lg);  /* 32 → 24px */
   --voix-aide:          var(--fs-caption);     /* 12 → 11px */
+  --voix-intitule:      var(--fs-text-sm);     /* 15 → 13px */
   --voix-chiffre-ligne: var(--fs-display-sm);  /* 20 → 18px */
 }
 
@@ -568,6 +586,10 @@
    taille que CG-02 ne contient pas. Il prend ici le palier de légende (11px) qui, lui, existe. */
 .ul-surtitre      { font-family: var(--font-mono);    font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texte-tertiaire); }
 .ul-aide          { font-family: var(--font-body);    font-size: var(--voix-aide);  line-height: 1.5;              font-weight: 400; color: var(--texte-tertiaire); }
+/* L'INTITULÉ d'une ligne : ce qu'on règle, ce qu'on choisit, le nom d'une entrée. Il doit se lire
+   AVANT l'aide qui le commente — d'où la taille, la graisse ET l'encre primaire, les trois
+   ensemble : à un seul pixel d'écart, comme c'était le cas, aucune des trois ne suffisait. */
+.ul-intitule      { font-family: var(--font-body);    font-size: var(--voix-intitule); line-height: 1.4; font-weight: 600; color: var(--texte-primaire); }
 /* Le chiffre d'une ligne : en MONOSPACE, contrairement au chiffre héros. Dans une colonne de
    valeurs, c'est l'alignement qui fait lire — une chasse fixe range les unités sous les unités. */
 .ul-chiffre-ligne { font-family: var(--font-mono);    font-size: var(--voix-chiffre-ligne); line-height: 1; font-weight: 700; color: var(--texte-primaire); font-variant-numeric: tabular-nums; }
