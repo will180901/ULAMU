@@ -450,13 +450,24 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
   const [motDePasse, setMotDePasse] = useState('')
   const [otp, setOtp] = useState('')
   const [envoye, setEnvoye] = useState(false)
+  /**
+   * Où le code est parti — dit par le SERVEUR (chantier 138, 16/09/2026).
+   *
+   * ⚠️ L'écran annonçait « un code de confirmation vient de vous être envoyé » sans dire OÙ. Le
+   * code partait alors par SMS, c'est-à-dire dans les journaux du serveur et nulle part ailleurs :
+   * le porteur l'a cherché pendant de longues minutes, pendant que l'annuaire restait vide.
+   *
+   * > **On ne cherche pas dans une boîte dont on ignore l'existence.**
+   */
+  const [envoi, setEnvoi] = useState<{ hint?: string } | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   const [imprimable, setImprimable] = useState(false)
   const a = dossier.agreement
 
   const demarrer = useMutation({
     mutationFn: () => api.verificationSignStart(),
-    onSuccess: () => {
+    onSuccess: (r) => {
+      setEnvoi(r)
       setEnvoye(true)
       setErreur(null)
     },
@@ -644,7 +655,16 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
             */}
             {envoye ? (
               <>
-                <Avis ton="info">Un code de confirmation vient de vous être envoyé.</Avis>
+                {/*
+                  L'adresse n'est affichée que si le serveur l'a dite — leçon du chantier 137 : le web
+                  et l'API ne se déploient pas ensemble. *Un écran qui affiche « undefined » a l'air
+                  cassé ; un écran qui invente une réponse est pire.*
+                */}
+                <Avis ton="info">
+                  {envoi?.hint
+                    ? `Un code de signature a été envoyé à ${envoi.hint}.`
+                    : 'Un code de confirmation vient de vous être envoyé.'}
+                </Avis>
                 <div className="flex flex-wrap gap-3">
                   <div className="min-w-0 flex-1 basis-44">
                     <Label htmlFor="signature-mdp" className="mb-1.5 block text-[13px]">

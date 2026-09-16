@@ -118,8 +118,14 @@ export class StartPhoneChangeDto {
 
 export class ConfirmPhoneChangeDto {
   @IsString() @IsNotEmpty() newPhone!: string;
-  @IsString() @Length(6, 6) oldPhoneCode!: string;
-  @IsString() @Length(6, 6) newPhoneCode!: string;
+  /**
+   * UN seul code, reçu par email — chantier 138.
+   *
+   * ⚠️ Il en fallait deux, par SMS, sur un déploiement où aucun SMS ne part : changer de numéro
+   * était donc impossible. Le nouveau numéro n'est plus prouvé mais déclaré — décision du porteur
+   * du 16/09, cohérente avec son rôle : une information de contact, pas un canal d'argent.
+   */
+  @IsString() @Length(6, 6) code!: string;
 }
 
 export class CloseAccountDto {

@@ -222,22 +222,56 @@ describe("M01 — intégration (CU-01-01 → CU-01-08)", () => {
     expect(ok.accountId).toBe(accountId);
   });
 
-  it("CU-01-05 — changement de numéro : OTP sur l'ancien ET le nouveau", async () => {
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 138, 16/09/2026.** Elle exigeait « OTP sur l'ancien
+    ET le nouveau » — deux SMS, sur un déploiement où **aucun SMS ne part**. La règle était juste et
+    le parcours impossible : personne ne pouvait corriger son numéro, et rien ne le disait.
+
+    > **Une preuve qu'on ne peut pas faire ne protège personne.**
+
+    Ce que ce cas défend n'a pas changé — *une session volée ne doit pas suffire à détourner le
+    numéro d'un compte* (menace T-01) — mais la preuve porte désormais sur l'EMAIL du compte, seule
+    boîte que le titulaire relève réellement.
+
+    ⚠️ Et ce que ce cas ne défend PLUS, dit ici plutôt que tu : **le nouveau numéro n'est pas
+    prouvé, il est déclaré.** Décision du porteur du 16/09, cohérente avec le rôle de ce numéro —
+    une information de contact, pas un canal d'argent : les retraits partent d'un `MomoNumber`
+    vérifié à part, dont la vérification, elle, reste au SMS.
+  */
+  it("CU-01-05 — changement de numéro : un code par EMAIL, le nouveau numéro est déclaré", async () => {
     const oldPhone = "+242061000004";
     const newPhone = "+242061000005";
     const { accountId } = await registerPatient(oldPhone);
 
-    await service.startPhoneChange(accountId, newPhone);
-    const oldCode = lastOtpFor(oldPhone);
-    const newCode = lastOtpFor(newPhone);
-    await service.confirmPhoneChange(accountId, newPhone, oldCode, newCode);
+    const envoi = await service.startPhoneChange(accountId, newPhone);
+    expect(envoi.channel).toBe("email");
+    // L'adresse est masquée mais reconnaissable : on doit savoir QUELLE boîte relever.
+    expect(envoi.hint).toContain("@");
+
+    await service.confirmPhoneChange(accountId, newPhone, lastEmailOtpFor(oldPhone));
 
     const account = await prisma.account.findUnique({ where: { id: accountId } });
     expect(account?.phone).toBe(newPhone);
-    // Notifications de sécurité aux deux numéros (sans lien — T-13).
-    const security = sms.sent.filter((m) => m.message.includes("identifiant") || m.message.includes("remplacé"));
-    expect(security.length).toBeGreaterThanOrEqual(2);
-    expect(sms.sent.every((m) => !m.message.includes("http"))).toBe(true);
+
+    // L'avis de sécurité part là où la personne lit — et sans lien cliquable (menace T-13).
+    const avis = mail.sent.filter((m) => m.subject.includes("numéro de téléphone"));
+    expect(avis.length).toBe(1);
+    expect(avis[0].html).not.toContain("http");
+
+    // ⚠️ Plus AUCUN SMS dans ce parcours : c'est ce qui le rendait impossible.
+    expect(sms.sent.filter((m) => m.phone === oldPhone || m.phone === newPhone)).toHaveLength(0);
+  });
+
+  /*
+    ⚠️ **Un code envoyé nulle part est pire qu'un refus qui dit comment s'en sortir.** Un compte sans
+    adresse attendait un SMS qui n'arriverait jamais ; il reçoit maintenant le geste à faire.
+  */
+  it("CU-01-05 — sans adresse email, le refus dit quoi faire", async () => {
+    const phone = "+242061000014";
+    const { accountId } = await registerPatient(phone);
+    await prisma.account.update({ where: { id: accountId }, data: { email: null } });
+
+    await expect(service.startPhoneChange(accountId, "+242061000015")).rejects.toThrow(/Mes paramètres/);
   });
 
   it("CU-01-04 — réinitialisation : nouveau mot de passe + révocation de toutes les sessions", async () => {

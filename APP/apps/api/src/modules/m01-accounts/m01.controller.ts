@@ -234,7 +234,7 @@ export class M01Controller {
   @Post("accounts/me/phone-change/confirm")
   @HttpCode(200)
   confirmPhoneChange(@Actor() actor: AuthenticatedActor, @Body() dto: ConfirmPhoneChangeDto) {
-    return this.service.confirmPhoneChange(actor.accountId, dto.newPhone, dto.oldPhoneCode, dto.newPhoneCode);
+    return this.service.confirmPhoneChange(actor.accountId, dto.newPhone, dto.code);
   }
 
   /**

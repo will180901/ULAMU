@@ -402,13 +402,31 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
     ecran: 'Réglages · sécurité',
     fichier: 'modules/settings/sections/SectionSecurite.tsx',
     promesses: [
+      /*
+        ⚠️ **Deux promesses qui avaient CESSÉ d'être vraies** — chantiers 138 et 139, 16/09/2026.
+
+        • « les retraits partent sur le numéro du compte » l'était au chantier 67. **Plus depuis le
+          chantier 117** (14/09) : ils partent d'un `MomoNumber` vérifié, jamais de `Account.phone`.
+          Ce filet-ci a donc tenu l'écran sur une phrase fausse pendant deux jours, et l'aurait
+          défendue contre quiconque aurait voulu la corriger.
+
+        • « un code sur l'ANCIEN et sur le nouveau » était une bonne règle sur un déploiement où
+          **aucun SMS ne part** : le parcours était impossible, et l'écran l'annonçait comme une
+          garantie.
+
+        > **Une promesse qu'on garde après qu'elle a cessé d'être vraie n'est plus une promesse :
+        > c'est un mensonge sous surveillance.**
+
+        Ce que ces deux lignes défendent ne change pas — *ce qui touche l'argent se dit là où l'on
+        agit*, et *une règle s'annonce avant le geste* — mais elles exigent désormais la vérité.
+      */
       {
-        quoi: 'les retraits partent sur le numéro du compte : le changer engage l’argent',
-        motif: /gains sont virés sur ce numéro/,
+        quoi: 'les retraits ne partent PAS de ce numéro — et l’écran dit où ils partent',
+        motif: /Vos retraits ne partent pas d'ici/,
       },
       {
-        quoi: 'changer de numéro exige un code sur l’ANCIEN et sur le nouveau (parade T-01)',
-        motif: /sans preuve sur l'ancien numéro/,
+        quoi: 'le code de changement part par email, et le nouveau numéro n’est pas vérifié',
+        motif: /n'est pas\s+vérifié/,
       },
       {
         quoi: 'les codes de secours ne seront plus jamais réaffichés',

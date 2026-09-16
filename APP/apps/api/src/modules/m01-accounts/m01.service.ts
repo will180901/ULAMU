@@ -57,10 +57,13 @@ function masquerEmail(email: string): string {
   return `${nom.slice(0, 3)}${"*".repeat(Math.max(1, nom.length - 3))}@${domaine}`;
 }
 
-/** « +242 06 ** ** 4 21 » — mêmes raisons, on ne montre que la fin. */
-function masquerTelephone(phone: string): string {
-  return `${"*".repeat(Math.max(0, phone.length - 3))}${phone.slice(-3)}`;
-}
+/*
+  ⚠️ `masquerTelephone` a été retiré au chantier 138 : plus aucun code destiné au titulaire ne part
+  par SMS, donc plus rien à masquer de ce côté. *Une fonction qu'on garde « au cas où » après que
+  son dernier appelant a disparu devient une piste morte que quelqu'un suivra un jour.* Elle tient
+  en deux lignes : le jour où une vraie passerelle SMS existera, elle se réécrira plus vite qu'on
+  ne l'aura cherchée.
+*/
 
 /** Cible d'un OTP : SOIT un téléphone (SMS — changement de numéro, action sensible), SOIT un email
  * (inscription, réinitialisation mot de passe — 2026-07). Jamais les deux à la fois. */
@@ -785,23 +788,41 @@ export class M01Service {
 
   // ── Changement de numéro (EF-01-07 ; CU-01-05) ─────────────────────────────
 
-  async startPhoneChange(accountId: string, rawNewPhone: string): Promise<void> {
-    const account = await this.requireAccount(accountId);
+  /**
+   * ── ⚠️ Changer de numéro était IMPOSSIBLE — chantier 138, 16/09/2026 ──────────────────
+   *
+   * Deux SMS étaient exigés — ancien numéro et nouveau — sur un déploiement où **aucun SMS ne
+   * part**. Personne ne pouvait donc corriger son numéro, et l'écran n'en disait rien.
+   *
+   * 📌 **Une seule preuve désormais : l'email du compte.** C'est la parade qui compte contre une
+   * session volée (menace T-01) — celui qui pousse le changement doit relever la boîte du compte.
+   *
+   * ⚠️ **Et il faut le dire : le nouveau numéro n'est plus PROUVÉ, il est DÉCLARÉ.** Le prouver
+   * demanderait un SMS sur cette ligne, ce qui n'existe pas ici. Le porteur l'a tranché le 16/09,
+   * en connaissance de cause, et c'est cohérent avec le nouveau rôle de ce numéro : une information
+   * de contact, par laquelle l'administration peut joindre un praticien — **pas un canal d'argent**,
+   * les retraits partant d'un `MomoNumber` vérifié à part. *Une preuve qu'on ne peut pas faire ne
+   * protège personne ; ce qui protège, c'est de dire ce qu'on ne vérifie pas.*
+   */
+  async startPhoneChange(
+    accountId: string,
+    rawNewPhone: string,
+  ): Promise<{ channel: "email"; hint: string; expiresInSeconds: number }> {
     const newPhone = this.normalizeOrThrow(rawNewPhone);
     await this.ensurePhoneFree(newPhone);
-    await this.requestOtp({ phone: account.phone }, OtpPurpose.PHONE_CHANGE_OLD);
-    await this.requestOtp({ phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW);
+    return this.requestOtpToOwner(accountId, OtpPurpose.PHONE_CHANGE_OLD);
   }
 
-  async confirmPhoneChange(accountId: string, rawNewPhone: string, oldPhoneCode: string, newPhoneCode: string): Promise<void> {
+  async confirmPhoneChange(accountId: string, rawNewPhone: string, code: string): Promise<void> {
     const account = await this.requireAccount(accountId);
     const newPhone = this.normalizeOrThrow(rawNewPhone);
     await this.ensurePhoneFree(newPhone);
     const oldPhone = account.phone;
+    if (!account.email) throw new BadRequestException("Ajoutez une adresse email avant de changer de numéro.");
+    const email = account.email;
     await this.prisma.$transaction(async (tx) => {
-      // OTP sur l'ANCIEN ET le NOUVEAU numéro (EF-01-07 — parade T-01).
-      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: oldPhone }, OtpPurpose.PHONE_CHANGE_OLD, oldPhoneCode));
-      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { phone: newPhone }, OtpPurpose.PHONE_CHANGE_NEW, newPhoneCode));
+      // La preuve porte sur l'EMAIL du compte : c'est la parade contre une session volée (T-01).
+      await preuveEnSession(() => this.consumeOtpOrThrow(tx, { email }, OtpPurpose.PHONE_CHANGE_OLD, code));
       await tx.account.update({ where: { id: accountId }, data: { phone: newPhone } });
       await this.audit.emit(tx, {
         actorId: accountId,
@@ -810,8 +831,19 @@ export class M01Service {
         context: { from: oldPhone, to: newPhone },
       });
     });
-    await this.sms.send(oldPhone, "ULAMU : votre numéro a été remplacé sur votre compte. Si ce n'est pas vous, contactez le support immédiatement.");
-    await this.sms.send(newPhone, "ULAMU : ce numéro est désormais l'identifiant de votre compte.");
+    /*
+      L'avis de sécurité suivait les deux numéros — donc les journaux du serveur. Il part maintenant
+      là où la personne lit : *prévenir quelqu'un sur un canal qu'il ne relève pas, ce n'est pas le
+      prévenir.* Sans lien cliquable (menace T-13), comme tous les avis ULAMU.
+    */
+    await this.email.send(
+      email,
+      "Votre numéro de téléphone ULAMU a changé",
+      avisSecuriteTemplate(
+        "Votre numéro de téléphone a changé",
+        "Le numéro de contact de votre compte ULAMU vient d'être remplacé. Si vous n'êtes pas à l'origine de ce changement, changez votre mot de passe et écrivez à l'administration depuis votre espace.",
+      ),
+    );
   }
 
   // ── Clôture (EF-01-09 ; CU-01-07) ──────────────────────────────────────────
@@ -880,13 +912,15 @@ export class M01Service {
    * dit par où, pour que l'écran n'ait pas à le deviner.
    */
   async requestCloseOtp(accountId: string): Promise<{ channel: "email" | "sms"; hint: string }> {
-    const account = await this.requireAccount(accountId);
-    if (account.email) {
-      await this.requestOtp({ email: account.email }, OtpPurpose.SENSITIVE_ACTION);
-      return { channel: "email", hint: masquerEmail(account.email) };
-    }
-    await this.requestOtp({ phone: account.phone }, OtpPurpose.SENSITIVE_ACTION);
-    return { channel: "sms", hint: masquerTelephone(account.phone) };
+    /*
+      ⚠️ **Le repli SMS a été retiré au chantier 138.** Il était né ici, comme une précaution — mais
+      il retombait sur un canal qui n'arrive nulle part : quelqu'un sans adresse attendait un code
+      qui n'existerait jamais, et ne savait pas pourquoi. Le refus, lui, dit quoi faire.
+
+      Le type de retour garde `"sms"` : c'est ce que l'écran sait afficher, et le jour où une vraie
+      passerelle existera, ce chemin se rouvrira sans toucher à l'écran.
+    */
+    return this.requestOtpToOwner(accountId, OtpPurpose.SENSITIVE_ACTION);
   }
 
   async closeAccount(accountId: string, password: string, otpCode: string): Promise<void> {
@@ -1194,9 +1228,52 @@ export class M01Service {
   // ── OTP d'action sensible — exposé aux autres modules (signature M03, transferts M02) ──
 
   /** Envoie un OTP « action sensible » sur le téléphone du compte (signature de contrat, transfert…). */
-  async requestSensitiveActionOtp(accountId: string): Promise<{ expiresInSeconds: number }> {
+  /**
+   * Par où part un code destiné au TITULAIRE d'un compte — écrit ICI, une seule fois.
+   *
+   * ── ⚠️ Aucun SMS ne quitte ce déploiement — chantier 138, 16/09/2026 ────────────────
+   *
+   * La seule passerelle branchée est celle de développement : elle journalise le message et
+   * n'appelle aucun opérateur. **Le constat existait déjà** — `requestCloseOtp` l'écrivait noir sur
+   * blanc — mais il avait été tiré à UN seul endroit : la signature de contrat, elle, est restée au
+   * SMS, et le porteur a cherché pendant de longues minutes un code qui n'arrivait nulle part.
+   *
+   * > **Un correctif appliqué à un seul appelant n'est pas un correctif, c'est une exception.**
+   *
+   * 📌 **Pas de repli SMS.** Retomber sur un canal qui n'arrive nulle part fait croire qu'un code
+   * est parti, et laisse quelqu'un l'attendre : *un code envoyé nulle part est pire qu'un refus qui
+   * dit comment s'en sortir.* On refuse donc, et le refus porte le geste à faire.
+   *
+   * ⚠️ **Ce chemin ne couvre QUE les codes envoyés au titulaire.** Deux usages gardent le SMS par
+   * nature, et les convertir serait une faute : prouver qu'on tient une ligne téléphonique
+   * (`PHONE_CHANGE_NEW`) et prouver qu'on tient la ligne Mobile Money qui REÇOIT L'ARGENT
+   * (`MOMO_VERIFY`). *Un code envoyé ailleurs qu'à la ligne qu'il prétend prouver ne prouve rien.*
+   */
+  private async requestOtpToOwner(
+    accountId: string,
+    purpose: OtpPurpose,
+  ): Promise<{ channel: "email"; hint: string; expiresInSeconds: number }> {
     const account = await this.requireAccount(accountId);
-    return this.requestOtp({ phone: account.phone }, OtpPurpose.SENSITIVE_ACTION);
+    if (!account.email) {
+      throw new BadRequestException(
+        "Ce code part par email, et votre compte n'a pas encore d'adresse. Ajoutez-en une dans « Mes paramètres », puis recommencez.",
+      );
+    }
+    const { expiresInSeconds } = await this.requestOtp({ email: account.email }, purpose);
+    return { channel: "email", hint: masquerEmail(account.email), expiresInSeconds };
+  }
+
+  /**
+   * Le code d'une action sensible — signature de contrat (CU-03-03).
+   *
+   * ⚠️ Il partait au TÉLÉPHONE, donc dans les journaux du serveur et nulle part ailleurs. La
+   * réponse dit maintenant OÙ le code est parti : *l'écran disait « un code vient de vous être
+   * envoyé » sans dire où — et on ne cherche pas dans une boîte dont on ignore l'existence.*
+   */
+  async requestSensitiveActionOtp(
+    accountId: string,
+  ): Promise<{ channel: "email"; hint: string; expiresInSeconds: number }> {
+    return this.requestOtpToOwner(accountId, OtpPurpose.SENSITIVE_ACTION);
   }
 
   /** Consomme un OTP « action sensible » dans la transaction appelante. Jette si invalide. */

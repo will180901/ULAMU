@@ -13,7 +13,7 @@
  */
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AtSign, Camera, KeyRound, Lock, MailCheck, Phone, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
@@ -145,59 +145,85 @@ function BlocPhoto({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
  * l'ancien, une session volée suffirait à détourner la ligne — puis les virements. On le dit avant,
  * plutôt que de laisser découvrir qu'il faut deux codes une fois le premier reçu.
  */
+/**
+ * Le numéro de téléphone du compte — chantiers 138 et 139, 16/09/2026.
+ *
+ * ── ⚠️ Ce bloc affirmait quelque chose de faux ────────────────────────────────────────────────
+ *
+ * Il annonçait « C'est sur ce numéro que partent vos retraits », puis « Vos gains sont virés sur ce
+ * numéro. S'il change et que vous ne le mettez pas à jour ici, les virements partiront vers une
+ * ligne que vous ne contrôlez plus. »
+ *
+ * **C'est faux depuis le chantier 117.** Les retraits partent d'un numéro Mobile Money vérifié à
+ * part, par opérateur. Le schéma de la base le dit lui-même : *un numéro de connexion prouve qui on
+ * est ; un numéro Mobile Money reçoit de l'argent — ce n'est pas le même métier.*
+ *
+ * > **Un écran qui dit à un médecin que tenir CE numéro à jour protège son argent le détourne de
+ * > l'endroit où son argent se règle vraiment.**
+ *
+ * 📌 Ce numéro sert à l'identifier et à permettre à l'administration de le joindre. Le bloc le dit,
+ * et renvoie là où l'argent se règle — *corriger une phrase fausse sans montrer la vraie porte
+ * laisse la personne au même endroit.*
+ *
+ * ── ⚠️ Et le changer était IMPOSSIBLE ─────────────────────────────────────────────────────────
+ *
+ * Il exigeait deux codes par SMS — l'ancien numéro et le nouveau — sur un déploiement où **aucun
+ * SMS ne part**. Personne ne pouvait donc corriger son numéro, et rien ne le disait. Un seul code
+ * arrive maintenant, par email, à l'adresse du compte.
+ *
+ * 📌 **Ce qui n'est plus vérifié est écrit** : le nouveau numéro est déclaré, pas prouvé. *Taire ce
+ * qu'on ne vérifie pas laisse croire qu'on le vérifie.*
+ */
 function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeResponse) => void }) {
-  const [etape, setEtape] = useState<'repos' | 'codes'>('repos')
+  const [etape, setEtape] = useState<'repos' | 'code'>('repos')
   const [numero, setNumero] = useState('')
-  const [codeAncien, setCodeAncien] = useState('')
-  const [codeNouveau, setCodeNouveau] = useState('')
+  const [code, setCode] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
   const [fait, setFait] = useState(false)
+  /** Où le code est parti — servi par le serveur, jamais deviné ici. */
+  const [envoi, setEnvoi] = useState<{ hint?: string } | null>(null)
 
   const demarrer = useMutation({
     mutationFn: () => api.startPhoneChange({ newPhone: numero.trim() }),
-    onSuccess: () => {
-      setEtape('codes')
+    onSuccess: (r) => {
+      setEnvoi(r)
+      setEtape('code')
       setErreur(null)
     },
     onError: (e) => setErreur(messageErreur(e)),
   })
 
   const confirmer = useMutation({
-    mutationFn: () =>
-      api.confirmPhoneChange({
-        newPhone: numero.trim(),
-        oldPhoneCode: codeAncien.trim(),
-        newPhoneCode: codeNouveau.trim(),
-      }),
+    mutationFn: () => api.confirmPhoneChange({ newPhone: numero.trim(), code: code.trim() }),
     onSuccess: async () => {
       setFait(true)
       setEtape('repos')
       setNumero('')
-      setCodeAncien('')
-      setCodeNouveau('')
+      setCode('')
+      setEnvoi(null)
       rafraichir(await api.me())
     },
     onError: (e) => setErreur(messageErreur(e)),
   })
 
   return (
-    <Carte icone={Phone} titre="Numéro de téléphone" sousTitre="C'est sur ce numéro que partent vos retraits">
+    <Carte icone={Phone} titre="Numéro de téléphone" sousTitre="Votre numéro de contact — l'administration peut vous y joindre">
       <p className="ul-intitule">{me.phone}</p>
 
       {/*
-        La conséquence, dite ici et pas ailleurs : c'est le seul endroit où l'on change ce numéro, et
-        le seul moment où l'on peut prévenir que l'argent le suit.
+        ⚠️ La phrase qui était fausse, remplacée par celle qui est vraie — et par le chemin vers
+        l'endroit qui compte vraiment.
       */}
       <Avis ton="info">
-        Vos gains sont virés sur ce numéro. S'il change et que vous ne le mettez pas à jour ici, les
-        virements partiront vers une ligne que vous ne contrôlez plus.
+        Ce numéro sert à vous identifier et à permettre à l'administration de vous joindre.{' '}
+        <strong className="font-semibold">Vos retraits ne partent pas d'ici</strong> : ils partent du
+        numéro Mobile Money vérifié, que vous réglez dans l'onglet Mobile Money.
       </Avis>
-
-      {/*
-        La conséquence, dite ici et pas ailleurs : c'est le seul endroit où l'on change ce numéro, et
-        le seul moment où l'on peut prévenir que l'argent le suit.
-      */}
-
+      <div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="?section=momo">Voir mes numéros Mobile Money</Link>
+        </Button>
+      </div>
 
       {etape === 'repos' ? (
         <>
@@ -224,44 +250,42 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
               }}
               disabled={numero.trim().length < 9 || demarrer.isPending}
             >
-              {demarrer.isPending ? 'Envoi…' : 'Envoyer les codes'}
+              {demarrer.isPending ? 'Envoi…' : 'Recevoir mon code'}
             </Button>
           </div>
+          {/*
+            ⚠️ Deux SMS étaient annoncés ici, dont aucun n'arrivait. Le texte dit maintenant par où le
+            code passe, et ce qui n'est PAS vérifié.
+          */}
           <p className="ul-aide">
-            Deux codes seront envoyés : un sur votre numéro actuel, un sur le nouveau. Les deux codes
-            sont exigés — sans preuve sur l'ancien numéro, une session volée suffirait à détourner vos
-            virements.
+            Un code part à l'adresse email de votre compte : c'est ce qui empêche qu'une session
+            laissée ouverte suffise à changer votre numéro. Le nouveau numéro, lui, n'est pas
+            vérifié — saisissez-le avec attention.
           </p>
           {fait ? <Avis ton="succes">Numéro enregistré.</Avis> : null}
         </>
       ) : (
         <>
+          {/*
+            L'adresse n'est affichée que si le serveur l'a dite (leçon du chantier 137 : le web et
+            l'API ne se déploient pas ensemble). *Un écran qui affiche « undefined » a l'air cassé ;
+            un écran qui invente une réponse est pire.*
+          */}
           <Avis ton="info">
-            Deux codes ont été envoyés : un sur {me.phone}, un sur {numero}.
+            {envoi?.hint ? `Un code a été envoyé à ${envoi.hint}.` : 'Un code vient de vous être envoyé.'}
           </Avis>
-          <div className="flex flex-wrap gap-3">
-            <div className="min-w-0 flex-1 basis-40">
-              <Label htmlFor="code-ancien-tel" className="mb-1.5 block text-[13px]">
-                Code reçu sur l'ancien numéro
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-0 flex-1 basis-44">
+              <Label htmlFor="code-changement-tel" className="mb-1.5 block text-[13px]">
+                Code reçu
               </Label>
               <Input
-                id="code-ancien-tel"
+                id="code-changement-tel"
                 inputMode="numeric"
                 maxLength={6}
-                value={codeAncien}
-                onChange={(e) => setCodeAncien(e.target.value)}
-              />
-            </div>
-            <div className="min-w-0 flex-1 basis-40">
-              <Label htmlFor="code-nouveau-tel" className="mb-1.5 block text-[13px]">
-                Code reçu sur le nouveau
-              </Label>
-              <Input
-                id="code-nouveau-tel"
-                inputMode="numeric"
-                maxLength={6}
-                value={codeNouveau}
-                onChange={(e) => setCodeNouveau(e.target.value)}
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
               />
             </div>
           </div>
@@ -269,7 +293,7 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
             <Button
               type="button"
               onClick={() => confirmer.mutate()}
-              disabled={codeAncien.trim().length < 6 || codeNouveau.trim().length < 6 || confirmer.isPending}
+              disabled={code.trim().length < 6 || confirmer.isPending}
             >
               {confirmer.isPending ? 'Vérification…' : 'Confirmer le changement'}
             </Button>
@@ -278,8 +302,8 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
               variant="ghost"
               onClick={() => {
                 setEtape('repos')
-                setCodeAncien('')
-                setCodeNouveau('')
+                setCode('')
+                setEnvoi(null)
                 setErreur(null)
               }}
               disabled={confirmer.isPending}

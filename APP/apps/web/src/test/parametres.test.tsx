@@ -639,87 +639,125 @@ describe('B3 — la 2FA par email est enfin réglable', () => {
   })
 })
 
-describe('B3 — le numéro de téléphone (chantier 67)', () => {
+describe('B3 — le numéro de téléphone (chantiers 67, 138 et 139)', () => {
   /*
-    ⚠️ `startPhoneChange` et `confirmPhoneChange` étaient déclarés côté client et AUCUN écran ne les
-    appelait : le web n'offrait aucun moyen de changer de numéro. On pouvait croire à un choix — le
-    patient le fait depuis l'application mobile.
+    ── ⚠️ Ce bloc a gardé un MENSONGE pendant deux jours — chantier 139, 16/09/2026 ────────
 
-    Sauf que le RETRAIT D'ARGENT part sur le numéro DU COMPTE (`phone: actorAccount.phone`). Un
-    soignant qui change de ligne sans pouvoir le mettre à jour verrait ses gains virés vers un numéro
-    qu'il ne contrôle plus — ou vers la personne à qui l'opérateur l'a réattribué. Et le soignant n'a
-    pas d'application mobile : le web est son seul écran.
+    Le cas s'appelait « affiche le numéro du compte et **dit que les retraits y partent** », et il
+    exigeait la phrase « Vos gains sont virés sur ce numéro ». C'était vrai au chantier 67.
 
-    Ce n'était pas un choix, c'était un trou, et il touchait l'argent.
+    **Ce ne l'est plus depuis le chantier 117** (14/09) : les retraits partent d'un `MomoNumber`
+    vérifié, par opérateur, et jamais de `Account.phone`. Le service le dit noir sur blanc — *un
+    numéro qui reçoit de l'argent doit être prouvé*. L'écran, lui, est resté sur l'ancienne vérité,
+    et ce cas-ci l'y a TENU.
+
+    > **Un test qui exige une phrase devenue fausse ne garde plus une règle : il garde une erreur,
+    > et il la défend contre celui qui voudrait la corriger.**
+
+    Ce que le cas défend ne change pas — *ce qui touche l'argent se dit là où l'on agit* — mais il
+    exige désormais la vérité, et le chemin vers l'endroit qui compte.
   */
-  it('affiche le numéro du compte et dit que les retraits y partent', async () => {
+  it('affiche le numéro du compte et dit que les retraits n’en partent PAS', async () => {
     monter('securite')
 
     expect(await screen.findByText(BASE_MOI.phone)).toBeInTheDocument()
-    // La conséquence, dite là où l'on change le numéro — le seul endroit où elle sert.
-    expect(screen.getByText(/Vos gains sont virés sur ce numéro/)).toBeInTheDocument()
+    expect(screen.getByText(/Vos retraits ne partent pas d'ici/)).toBeInTheDocument()
+    // ⚠️ L'ancienne phrase ne doit jamais revenir : elle envoyait un médecin surveiller la mauvaise ligne.
+    expect(document.body.textContent ?? '').not.toContain('Vos gains sont virés sur ce numéro')
   })
 
-  it('demande les deux codes, et dit pourquoi avant de les envoyer', async () => {
-    const utilisateur = userEvent.setup()
-    const demarrer = vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+  /* *Corriger une phrase fausse sans montrer la vraie porte laisse la personne au même endroit.* */
+  it('renvoie là où l’argent se règle vraiment', async () => {
     monter('securite')
 
-    // La règle est annoncée AVANT le premier code, pas découverte après.
-    expect(await screen.findByText(/Les deux codes\s+sont exigés/)).toBeInTheDocument()
+    const lien = await screen.findByRole('link', { name: /numéros Mobile Money/i })
+    expect(lien).toHaveAttribute('href', expect.stringContaining('section=momo'))
+  })
+
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 138.** Elle exigeait « les deux codes sont exigés »
+    — deux SMS, sur un déploiement où **aucun SMS ne part** : le parcours était impossible et l'écran
+    l'annonçait comme une garantie. Ce que le cas défend est inchangé : *la règle est annoncée AVANT
+    le premier code, pas découverte après* — et elle inclut maintenant ce qui n'est PAS vérifié.
+  */
+  it('dit par où le code part, et ce qui n’est pas vérifié, avant de l’envoyer', async () => {
+    const utilisateur = userEvent.setup()
+    const demarrer = vi
+      .spyOn(api, 'startPhoneChange')
+      .mockResolvedValue({ expiresInSeconds: 300, channel: 'email', hint: 'dr*@exemple.cg' })
+    monter('securite')
+
+    expect(await screen.findByText(/Un code part à l'adresse email de votre compte/)).toBeInTheDocument()
+    expect(screen.getByText(/Le nouveau numéro, lui, n'est pas\s+vérifié/)).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
-    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+    await utilisateur.click(screen.getByRole('button', { name: /Recevoir mon code/i }))
 
     expect(demarrer).toHaveBeenCalledWith({ newPhone: '+242060000001' })
   })
 
-  it('confirme avec le code de l’ancien ET celui du nouveau numéro', async () => {
+  /* *On ne cherche pas dans une boîte dont on ignore l'existence.* */
+  it('dit À QUELLE adresse le code est parti', async () => {
     const utilisateur = userEvent.setup()
-    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({
+      expiresInSeconds: 300,
+      channel: 'email',
+      hint: 'dr*@exemple.cg',
+    })
+    monter('securite')
+
+    fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Recevoir mon code/i }))
+
+    expect(await screen.findByText(/Un code a été envoyé à dr\*@exemple\.cg/)).toBeInTheDocument()
+  })
+
+  it('confirme avec l’unique code reçu par email', async () => {
+    const utilisateur = userEvent.setup()
+    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300, channel: 'email', hint: 'd*@x.cg' })
     const confirmer = vi.spyOn(api, 'confirmPhoneChange').mockResolvedValue({ ...BASE_MOI, phone: '+242060000001' })
     vi.spyOn(api, 'me').mockResolvedValue({ ...BASE_MOI, phone: '+242060000001' })
     monter('securite')
 
     fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
-    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+    await utilisateur.click(screen.getByRole('button', { name: /Recevoir mon code/i }))
 
-    fireEvent.change(await screen.findByLabelText(/Code reçu sur l'ancien numéro/i), { target: { value: '111111' } })
-    fireEvent.change(screen.getByLabelText(/Code reçu sur le nouveau/i), { target: { value: '222222' } })
+    fireEvent.change(await screen.findByLabelText(/Code reçu/i), { target: { value: '111111' } })
     await utilisateur.click(screen.getByRole('button', { name: /Confirmer le changement/i }))
 
-    expect(confirmer).toHaveBeenCalledWith({
-      newPhone: '+242060000001',
-      oldPhoneCode: '111111',
-      newPhoneCode: '222222',
-    })
+    expect(confirmer).toHaveBeenCalledWith({ newPhone: '+242060000001', code: '111111' })
   })
 
-  it('n’envoie rien tant qu’il manque un des deux codes', async () => {
+  it('n’envoie rien tant que le code est incomplet', async () => {
     const utilisateur = userEvent.setup()
-    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300 })
+    vi.spyOn(api, 'startPhoneChange').mockResolvedValue({ expiresInSeconds: 300, channel: 'email', hint: 'd*@x.cg' })
     const confirmer = vi.spyOn(api, 'confirmPhoneChange')
     monter('securite')
 
     fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
-    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
-    fireEvent.change(await screen.findByLabelText(/Code reçu sur l'ancien numéro/i), { target: { value: '111111' } })
+    await utilisateur.click(screen.getByRole('button', { name: /Recevoir mon code/i }))
+    fireEvent.change(await screen.findByLabelText(/Code reçu/i), { target: { value: '111' } })
 
     expect(screen.getByRole('button', { name: /Confirmer le changement/i })).toBeDisabled()
     expect(confirmer).not.toHaveBeenCalled()
   })
 
+  /*
+    ⚠️ **Le refus qui compte le plus** : un compte sans adresse email ne peut plus recevoir de code.
+    Le serveur le dit, et l'écran le répète tel quel — *un code envoyé nulle part est pire qu'un refus
+    qui dit comment s'en sortir.*
+  */
   it('affiche le refus du serveur tel quel', async () => {
     const utilisateur = userEvent.setup()
     vi.spyOn(api, 'startPhoneChange').mockRejectedValue(
-      new ApiError(409, 'CONFLICT', 'Ce numéro est déjà enregistré sur un autre compte'),
+      new ApiError(400, 'BAD_REQUEST', "Ce code part par email, et votre compte n'a pas encore d'adresse. Ajoutez-en une dans « Mes paramètres », puis recommencez."),
     )
     monter('securite')
 
     fireEvent.change(await screen.findByLabelText(/Nouveau numéro/i), { target: { value: '+242060000001' } })
-    await utilisateur.click(screen.getByRole('button', { name: /Envoyer les codes/i }))
+    await utilisateur.click(screen.getByRole('button', { name: /Recevoir mon code/i }))
 
-    expect(await screen.findByText(/déjà enregistré sur un autre compte/)).toBeInTheDocument()
+    expect(await screen.findByText(/n'a pas encore d'adresse/)).toBeInTheDocument()
   })
 })
 

@@ -1329,9 +1329,21 @@ export const api = {
   // M01 — sécurité du compte
   sessions: () => request<SessionInfo[]>('GET', '/v1/accounts/me/sessions', undefined, true),
   revokeSession: (id: string) => request<void>('DELETE', `/v1/accounts/me/sessions/${id}`, undefined, true),
+  /**
+   * Changer de numéro — UN seul code, par email (chantier 138, 16/09/2026).
+   *
+   * ⚠️ Il en fallait deux, par SMS, sur un déploiement où **aucun SMS ne part** : le parcours était
+   * impossible et rien ne le disait. `hint` porte l'adresse masquée — *on ne cherche pas dans une
+   * boîte dont on ignore l'existence.*
+   */
   startPhoneChange: (dto: { newPhone: string }) =>
-    request<{ expiresInSeconds: number }>('POST', '/v1/accounts/me/phone-change/start', dto, true),
-  confirmPhoneChange: (dto: { newPhone: string; oldPhoneCode: string; newPhoneCode: string }) =>
+    request<{ expiresInSeconds: number; channel: 'email'; hint: string }>(
+      'POST',
+      '/v1/accounts/me/phone-change/start',
+      dto,
+      true,
+    ),
+  confirmPhoneChange: (dto: { newPhone: string; code: string }) =>
     request<MeResponse>('POST', '/v1/accounts/me/phone-change/confirm', dto, true),
   /**
    * Mot de passe changé depuis une session ouverte — à ne pas confondre avec `resetPasswordBy*`, qui
@@ -2133,7 +2145,14 @@ export const api = {
   /** Retrait d'une pièce, pour la remplacer. Refusé dès que le dossier est en examen. */
   verificationRemoveDocument: (id: string) =>
     request<{ removed: true }>('DELETE', `/v1/verification/me/documents/${id}`, undefined, true),
-  verificationSignStart: () => request<{ expiresInSeconds: number; debugCode?: string }>(
+  /**
+   * Le code de signature du contrat — par email depuis le chantier 138.
+   *
+   * ⚠️ Il partait au TÉLÉPHONE, donc dans les journaux du serveur et nulle part ailleurs : le
+   * porteur a cherché un « code reçu » qui n'arrivait pas, pendant que l'annuaire restait vide.
+   * `hint` dit à quelle adresse regarder.
+   */
+  verificationSignStart: () => request<{ expiresInSeconds: number; channel?: 'email'; hint?: string; debugCode?: string }>(
     'POST',
     '/v1/verification/me/agreement/sign/start',
     undefined,

@@ -861,3 +861,65 @@ describe('C1 — la référence du dossier sert à quelque chose', () => {
     expect(screen.getByText('AB12CD34')).toBeInTheDocument()
   })
 })
+
+/*
+  ── ⚠️ « Où je trouve ce code ? » — chantier 138, 16/09/2026 ───────────────────────
+
+  **Mesuré en ligne, sur le porteur lui-même.** L'écran annonçait « un code de confirmation vient de
+  vous être envoyé », sans dire OÙ. Le code partait alors par SMS — c'est-à-dire dans les journaux du
+  serveur et nulle part ailleurs, ce déploiement n'ayant aucune passerelle SMS réelle. Il a cherché,
+  et l'annuaire est resté vide pendant ce temps.
+
+  > **On ne cherche pas dans une boîte dont on ignore l'existence.**
+*/
+describe('C1 — le code de signature dit où il est parti', () => {
+  const aSigner = {
+    status: 'VERIFIED' as const,
+    canPractice: false,
+    agreement: {
+      version: 1,
+      commissionPct: 10,
+      bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+      body: 'CONTRAT SOIGNANT ULAMU',
+      integrity: true,
+      signedAt: null,
+      effectiveAt: null,
+    },
+    lastSigned: null,
+  }
+
+  it('nomme l’adresse à laquelle le code a été envoyé', async () => {
+    vi.spyOn(api, 'verificationSignStart').mockResolvedValue({
+      expiresInSeconds: 300,
+      channel: 'email',
+      hint: 'ang*******@exemple.cg',
+    })
+    await monter(aSigner)
+
+    const { fireEvent } = await import('@testing-library/react')
+    fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
+      target: { value: 'Ange Makaya' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir mon code de signature' }))
+
+    expect(await screen.findByText(/envoyé à ang\*+@exemple\.cg/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Leçon du chantier 137** : le web et l'API ne se déploient pas ensemble. Face au serveur
+    d'avant, `hint` manque — l'écran retombe sur sa phrase générale plutôt que d'écrire « undefined ».
+  */
+  it('ne dit pas « undefined » quand le serveur ne dit pas encore où', async () => {
+    vi.spyOn(api, 'verificationSignStart').mockResolvedValue({ expiresInSeconds: 300 })
+    await monter(aSigner)
+
+    const { fireEvent } = await import('@testing-library/react')
+    fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
+      target: { value: 'Ange Makaya' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir mon code de signature' }))
+
+    expect(await screen.findByText(/Un code de confirmation vient de vous être envoyé/)).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toContain('undefined')
+  })
+})
