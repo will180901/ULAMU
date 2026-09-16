@@ -25,6 +25,7 @@ import { render, screen } from '@testing-library/react'
 import type { Prescription } from '@/lib/api'
 import { OrdonnanceImprimable } from '@/components/impression/OrdonnanceImprimable'
 import { ContratImprimable } from '@/components/impression/ContratImprimable'
+import { repartirEnPages } from '@/lib/pagination-a4'
 // Le découpage a quitté le composant d'impression au chantier 135 : l'écran de signature le lit
 // lui aussi, et *deux lectures d'un même texte scellé font une lecture gardée et une lecture
 // livrée à elle-même.* Le filet ci-dessous vaut désormais pour les deux rendus.
@@ -604,22 +605,21 @@ describe('À quoi ces documents doivent ressembler', () => {
     annonce une pagination inexistante est plus dangereux que l'absence de pagination : il empêche de
     la remarquer.* Tant que le pied ne numérote pas, il ne l'écrit pas.
   */
-  it('n’annonce pas une pagination qu’il n’imprime pas', () => {
-    const imprime = /counter\(page/.test(sourceFeuille)
-    const dementi = /ne numérote PAS les pages/.test(sourceFeuille)
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 141, 16/09/2026.** Elle exigeait « ou le compteur
+    `counter(page)`, ou le démenti » — parce qu'au chantier 134 la pagination paraissait hors
+    d'atteinte sans bibliothèque. **Elle l'était par cette voie-là ; elle ne l'était pas par la
+    mesure.** *Une impossibilité constatée sur un seul chemin n'est pas une impossibilité : c'est un
+    chemin fermé.*
 
-    /*
-      L'un OU l'autre, jamais les deux, jamais aucun. Le jour où la pagination arrivera, le démenti
-      devra partir avec elle — *une limite qu'on documente et qu'on oublie d'effacer devient un
-      mensonge au moment même où on la lève.*
-
-      ⚠️ Première écriture de ce filet : il interdisait la simple présence des mots « Page 1 sur N ».
-      Il est tombé sur le démenti lui-même, qui les cite pour expliquer leur absence. *Un filet qui
-      cherche des mots ne distingue pas une promesse d'un aveu ; celui-ci cherche l'accord entre ce
-      que le fichier dit et ce qu'il fait.*
-    */
-    expect(imprime).toBe(!dementi)
-    expect(sourceFeuille).not.toMatch(/📌 \*\*Pagination/)
+    Ce que ce cas défend n'a pas bougé — *le gabarit ne dit jamais faire ce qu'il ne fait pas* —
+    mais il exige maintenant la chose elle-même, et non plus l'aveu de son absence.
+  */
+  it('imprime la pagination, et ne se contente plus de l’annoncer', () => {
+    expect(sourceFeuille).toMatch(/Page \$\{numero\} sur \$\{total\}/)
+    expect(sourceFeuille).toMatch(/repartirEnPages\(/)
+    // Le démenti du 134 devait partir avec la limite qu'il décrivait.
+    expect(sourceFeuille).not.toMatch(/ne numérote PAS les pages/)
   })
 })
 
@@ -676,5 +676,139 @@ describe('Le contrat imprimé avant d’être signé', () => {
     expect(texte).not.toContain('PROJET DE CONTRAT')
     expect(screen.getByText('Preuve de signature')).toBeInTheDocument()
     expect(screen.getByText(/EMPREINTE DU TEXTE SIGNÉ/)).toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ La feuille ne connaissait pas la notion de PAGE — chantier 141, 16/09/2026 ────────
+
+  **Mesuré en ligne sur le contrat d'Armel Konaté** : 452 mm de contenu dans une feuille de 297 mm.
+  Il dépassait de **155 mm — plus d'une demi-page** — et l'aperçu ne le montrait même pas : la
+  feuille restait bloquée à sa hauteur et écrasait le reste.
+
+  > **Un aperçu qui ment sur ce qui va sortir est pire qu'une absence d'aperçu.**
+
+  La répartition est de l'arithmétique : elle s'éprouve. La MESURE, elle, demande un vrai moteur de
+  rendu — jsdom donne zéro partout. *On éprouve ce qui se calcule, et on ancre ce qui se mesure.*
+*/
+describe('La répartition en pages', () => {
+  it('remplit une page avant d’en ouvrir une autre', () => {
+    expect(repartirEnPages([30, 30, 30], 100)).toEqual([[0, 1, 2]])
+    expect(repartirEnPages([40, 40, 40], 100)).toEqual([[0, 1], [2]])
+  })
+
+  /*
+    ⚠️ **Le cas qui compte.** Un bloc plus haut qu'une page prend sa page à lui seul et déborde.
+    Le refuser le ferait disparaître — une clause de contrat, une ligne d'ordonnance.
+    *Un débordement se voit et se corrige ; une disparition, non.*
+  */
+  it('donne sa page à un bloc trop grand, au lieu de le perdre', () => {
+    expect(repartirEnPages([250], 100)).toEqual([[0]])
+    expect(repartirEnPages([10, 250, 10], 100)).toEqual([[0], [1], [2]])
+  })
+
+  it('n’ouvre jamais une page vide', () => {
+    for (const pages of [repartirEnPages([250, 250], 100), repartirEnPages([100, 100], 100)]) {
+      expect(pages.every((p) => p.length > 0)).toBe(true)
+    }
+  })
+
+  /*
+    ⚠️ **Le filet le plus important de tous.** Quoi qu'il arrive, tous les blocs sortent, une seule
+    fois, dans l'ordre. Une répartition qui perd un bloc fait disparaître une clause d'un contrat
+    signé — et personne ne s'en apercevrait avant le jour du litige.
+  */
+  it('ne perd et ne duplique aucun bloc, quelles que soient les hauteurs', () => {
+    const cas = [
+      [30, 30, 30],
+      [40, 40, 40],
+      [250],
+      [10, 250, 10],
+      [100, 1, 100, 1],
+      [],
+      [0, 0, 0],
+      [100, 0], // une page exactement pleine, puis un bloc de hauteur nulle
+    ]
+
+    for (const hauteurs of cas) {
+      const plat = repartirEnPages(hauteurs, 100).flat()
+      expect(plat).toEqual(hauteurs.map((_, i) => i))
+    }
+
+    /*
+      \u26a0\ufe0f **Et un balayage, parce qu'une liste \u00e9crite \u00e0 la main s'arr\u00eate o\u00f9 s'arr\u00eate
+      l'imagination.** L'injection du 16/09 l'a montr\u00e9 : une faute qui perdait un bloc lorsqu'une page
+      \u00e9tait EXACTEMENT pleine est pass\u00e9e sous les sept cas ci-dessus \u2014 aucun ne produisait ce moment.
+      *Un filet qui n'\u00e9prouve que les cas auxquels on a pens\u00e9 ne garde que contre les fautes
+      auxquelles on a pens\u00e9.*
+
+      Tirage d\u00e9terministe : la m\u00eame graine donne la m\u00eame s\u00e9rie \u00e0 chaque ex\u00e9cution \u2014 un filet qui
+      \u00e9choue une fois sur dix n'est pas un filet, c'est une superstition.
+    */
+    let graine = 7
+    const suivant = () => {
+      graine = (graine * 1103515245 + 12345) % 2147483648
+      return graine / 2147483648
+    }
+
+    for (let n = 0; n < 300; n++) {
+      const combien = Math.floor(suivant() * 9)
+      // Des hauteurs qui tombent souvent sur 0, sur 50 et sur 100 : les bords, pas le milieu.
+      const hauteurs = Array.from({ length: combien }, () => Math.floor(suivant() * 5) * 50)
+      expect(repartirEnPages(hauteurs, 100).flat()).toEqual(hauteurs.map((_, i) => i))
+    }
+  })
+
+  it('rend toujours au moins une page, même sans contenu', () => {
+    expect(repartirEnPages([], 100)).toEqual([[]])
+  })
+})
+
+/*
+  ⚠️ **Le banc de mesure ne doit pas devenir une pièce du bâtiment.**
+
+  Pour mesurer, le gabarit rend le corps une première fois, invisible. Deux fautes guettent :
+    • le laisser DANS `#idRacine` — la règle d'impression rend visible tout ce qui s'y trouve, et le
+      document sortirait en DOUBLE sur le papier ;
+    • le laisser monté après la mesure — le document existerait deux fois dans la page, lu deux fois
+      par un lecteur d'écran.
+
+  *Un instrument de mesure qu'on oublie de ranger devient une pièce du bâtiment.*
+*/
+describe('Le banc de mesure', () => {
+  const sourceFeuille = readFileSync(resolve(__dirname, '../components/impression/FeuilleImpression.tsx'), 'utf8')
+
+  it('est rangé dès la mesure faite', () => {
+    monterContrat()
+
+    expect(document.querySelectorAll('[data-mesure-bloc]')).toHaveLength(0)
+    expect(document.querySelectorAll('[data-mesure-habillage]')).toHaveLength(0)
+  })
+
+  it('n’existe qu’en dehors de la racine imprimée', () => {
+    // Le banc est rendu APRÈS la fermeture de `<div id={idRacine}>` — donc jamais dedans.
+    const racine = sourceFeuille.indexOf('<div id={idRacine}')
+    const banc = sourceFeuille.indexOf('ref={refMesure}')
+    const finDuConteneur = sourceFeuille.indexOf('{/*', racine)
+
+    expect(racine).toBeGreaterThan(0)
+    expect(banc).toBeGreaterThan(finDuConteneur)
+  })
+
+  /* Le document ne doit figurer qu'UNE fois dans la page une fois la mesure faite. */
+  it('ne laisse pas le document en double dans la page', () => {
+    monterContrat({ corps: ['ARTICLE 1 — OBJET', 'Une clause unique et reconnaissable.'].join(SAUT) })
+
+    const occurrences = [...document.querySelectorAll('*')].filter(
+      (e) => e.children.length === 0 && (e.textContent ?? '').includes('Une clause unique et reconnaissable'),
+    )
+
+    expect(occurrences).toHaveLength(1)
+  })
+
+  /* Chaque feuille occupe une page, et la dernière n'en ouvre pas une de plus. */
+  it('déclare une coupure de page entre les feuilles, jamais après la dernière', () => {
+    expect(sourceFeuille).toMatch(/\[data-page\] \{[\s\S]*?break-after: page;/)
+    expect(sourceFeuille).toMatch(/\[data-page\]:last-of-type \{ break-after: auto; \}/)
   })
 })
