@@ -27,8 +27,8 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { AlertCircle, AlertTriangle, Check, Copy, Download, RotateCcw, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Spinner } from '@/components/ui/spinner'
 import { api, ApiError } from '@/lib/api'
 import { EtapesAuth } from '@/components/auth/EtapesAuth'
@@ -375,13 +375,18 @@ export function TotpSetupPage() {
 
                 <div>
                   <span className="mb-1.5 block text-xs font-semibold leading-[1.4] text-muted-foreground">Code TOTP</span>
-                  <InputOTP maxLength={6} value={code} onChange={setCode} onComplete={() => void activer()} autoFocus>
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
+                  {/*
+                    ⚠️ `Libelle` est un `<span>`, pas un `<label>` : il ne désigne rien. Sans `aria-label`, ces
+                    six cases n'avaient **aucun nom accessible** — un lecteur d'écran annonçait un champ vide.
+                    *Un champ qu'un lecteur d'écran ne sait pas nommer n'est pas un champ, c'est un obstacle.*
+                  */}
+                  <ChampCode
+                    aria-label="Code TOTP"
+                    valeur={code}
+                    onChange={setCode}
+                    onComplete={() => void activer()}
+                    autoFocus
+                  />
                   <div className="mt-2">
                     <DecompteTotp />
                   </div>

@@ -68,6 +68,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avis, Carte, Pilule, type TonPilule } from '@/components/ulamu/parts'
@@ -682,14 +683,12 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
                     <Label htmlFor="signature-otp" className="mb-1.5 block text-[13px]">
                       Code reçu
                     </Label>
-                    <Input
-                      id="signature-otp"
-                      inputMode="numeric"
-                      maxLength={6}
-                      autoComplete="one-time-code"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                    />
+                    {/*
+                      ⚠️ Aucune validation automatique au sixième chiffre : signer un contrat engage
+                      juridiquement. *Un geste qu'on ne peut pas défaire ne se déclenche pas à la
+                      sixième frappe.*
+                    */}
+                    <ChampCode id="signature-otp" valeur={otp} onChange={setOtp} />
                   </div>
                 </div>
                 <div>

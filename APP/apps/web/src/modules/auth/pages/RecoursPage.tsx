@@ -23,8 +23,8 @@ import { useMutation } from '@tanstack/react-query'
 import { LifeBuoy } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Input } from '@/components/ui/input'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Label } from '@/components/ui/label'
 import { Liste } from '@/components/ulamu/Liste'
 import { Spinner } from '@/components/ui/spinner'
@@ -136,13 +136,7 @@ export function RecoursPage() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="code-recours">Code reçu par email</Label>
-            <InputOTP id="code-recours" maxLength={6} value={code} onChange={setCode}>
-              <InputOTPGroup>
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <InputOTPSlot key={i} index={i} />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
+            <ChampCode id="code-recours" valeur={code} onChange={setCode} />
           </div>
 
           <div className="flex flex-col gap-1.5">

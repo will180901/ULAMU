@@ -19,8 +19,8 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { AlertCircle, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Input } from '@/components/ui/input'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Spinner } from '@/components/ui/spinner'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
@@ -220,13 +220,18 @@ export function LoginPage() {
               <div>
                 <Libelle>Code reçu par email (6 chiffres)</Libelle>
                 <div className="mt-1.5">
-                  <InputOTP maxLength={6} value={totpCode} onChange={setTotpCode} onComplete={() => void lancer()} autoFocus>
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
+                  {/*
+                    ⚠️ `Libelle` est un `<span>`, pas un `<label>` : il ne désigne rien. Sans `aria-label`, ces
+                    six cases n'avaient **aucun nom accessible** — un lecteur d'écran annonçait un champ vide.
+                    *Un champ qu'un lecteur d'écran ne sait pas nommer n'est pas un champ, c'est un obstacle.*
+                  */}
+                  <ChampCode
+                    aria-label="Code reçu par email"
+                    valeur={totpCode}
+                    onChange={setTotpCode}
+                    onComplete={() => void lancer()}
+                    autoFocus
+                  />
                 </div>
                 {/*
                   Aucun code de secours ici, et ce n'est pas un oubli : les codes de secours sont
@@ -242,21 +247,16 @@ export function LoginPage() {
               <div>
                 <Libelle>Code TOTP (6 chiffres)</Libelle>
                 <div className="mt-1.5">
-                  <InputOTP
-                    maxLength={6}
-                    value={totpCode}
+                  {/* Six chiffres saisis = on soumet : réclamer un clic de plus n'apporte rien, le
+                      code est complet ou il ne l'est pas. Se connecter se refait — c'est ce qui
+                      autorise la validation automatique ici, et l'interdit sur une signature. */}
+                  <ChampCode
+                    aria-label="Code TOTP"
+                    valeur={totpCode}
                     onChange={setTotpCode}
-                    /* Six chiffres saisis = on soumet. Réclamer un clic de plus après le dernier
-                       chiffre n'apporte rien : le code est complet ou il ne l'est pas. */
                     onComplete={() => void lancer()}
                     autoFocus
-                  >
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
+                  />
                 </div>
 
                 {/* Le rythme du code (chantier 34) — uniquement sous les six cases du TOTP : le

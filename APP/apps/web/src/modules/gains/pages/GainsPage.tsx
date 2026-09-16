@@ -61,6 +61,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Pilule, Segments, type TonPilule } from '@/components/ulamu/parts'
 import { Liste } from '@/components/ulamu/Liste'
@@ -246,7 +247,8 @@ function Retrait({ gains, telephone, onFini }: { gains: Earnings; telephone: str
               <Label htmlFor="retrait-code" className="mb-1.5 block text-[13px]">
                 Code reçu
               </Label>
-              <Input id="retrait-code" inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
+              {/* Pas d'`onComplete` : *un geste qu'on ne peut pas défaire ne se déclenche pas à la sixième frappe.* */}
+              <ChampCode id="retrait-code" valeur={code} onChange={setCode} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">

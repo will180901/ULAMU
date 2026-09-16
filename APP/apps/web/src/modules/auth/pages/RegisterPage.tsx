@@ -22,8 +22,8 @@ import { AlertCircle, Info } from 'lucide-react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { EtapesAuth } from '@/components/auth/EtapesAuth'
 import { Button } from '@/components/ui/button'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Input } from '@/components/ui/input'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Liste } from '@/components/ulamu/Liste'
 import { Spinner } from '@/components/ui/spinner'
 import { api, ApiError, type ProfessionalCategory } from '@/lib/api'
@@ -346,13 +346,18 @@ export function RegisterPage() {
             <div>
               <Libelle>Code reçu par email</Libelle>
               <div className="mt-1.5">
-                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} onComplete={() => void creerLeCompte()} autoFocus>
-                  <InputOTPGroup>
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <InputOTPSlot key={i} index={i} />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+                {/*
+                  ⚠️ `Libelle` est un `<span>`, pas un `<label>` : il ne désigne rien. Sans `aria-label`, ces
+                  six cases n'avaient **aucun nom accessible** — un lecteur d'écran annonçait un champ vide.
+                  *Un champ qu'un lecteur d'écran ne sait pas nommer n'est pas un champ, c'est un obstacle.*
+                */}
+                <ChampCode
+                  aria-label="Code reçu par email"
+                  valeur={otpCode}
+                  onChange={setOtpCode}
+                  onComplete={() => void creerLeCompte()}
+                  autoFocus
+                />
               </div>
             </div>
 

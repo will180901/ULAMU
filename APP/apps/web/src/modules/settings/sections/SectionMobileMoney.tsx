@@ -33,6 +33,7 @@ import mtnLogo from '@/assets/operateur-mtn.svg'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Avis, Carte } from '@/components/ulamu/parts'
 import { api, type MomoNumber, type MomoOperator } from '@/lib/api'
 import { chiffresSeuls, NUMERO_LONGUEUR, numeroLocalValide, refusDuNumero } from '@/lib/numero'
@@ -272,14 +273,15 @@ function LigneOperateur({
           }}
         >
           <span className="min-w-0 flex-1 basis-40">
-            <Input
+            {/*
+              Aucun intitulé visible n'accompagne ce champ : l'`aria-label` dit DE QUEL numéro il
+              s'agit — six cases nues ne le diraient à personne.
+            */}
+            <ChampCode
               autoFocus
-              value={code}
-              onChange={(e) => setCode(chiffresSeuls(e.target.value).slice(0, 6))}
-              placeholder="123456"
+              valeur={code}
+              onChange={(v) => setCode(chiffresSeuls(v).slice(0, 6))}
               aria-label={`Code reçu sur le numéro ${operateur.nom}`}
-              inputMode="numeric"
-              maxLength={6}
             />
           </span>
           <Button type="submit" size="sm" disabled={code.length !== 6 || confirmerCode.isPending}>

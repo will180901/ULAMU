@@ -17,6 +17,7 @@ import { Laptop, MonitorSmartphone, Smartphone, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { accord } from '@/lib/accord'
 import { Input } from '@/components/ui/input'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import {
@@ -194,7 +195,8 @@ function BlocCloture() {
               <Label htmlFor="cloture-otp" className="mb-1.5 block text-[13px]">
                 Code reçu
               </Label>
-              <Input id="cloture-otp" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value)} />
+              {/* Clôturer un compte ne se défait pas : aucune validation automatique au sixième chiffre. */}
+              <ChampCode id="cloture-otp" valeur={otp} onChange={setOtp} />
             </div>
             <div>
               <Label htmlFor="cloture-mot" className="mb-1.5 block text-[13px]">

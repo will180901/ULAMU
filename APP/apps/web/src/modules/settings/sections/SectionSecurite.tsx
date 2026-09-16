@@ -18,6 +18,7 @@ import { AtSign, Camera, KeyRound, Lock, MailCheck, Phone, ShieldCheck } from 'l
 import { Button } from '@/components/ui/button'
 import { DecompteTotp } from '@/components/ulamu/DecompteTotp'
 import { Input } from '@/components/ui/input'
+import { ChampCode } from '@/components/ulamu/ChampCode'
 import { Label } from '@/components/ui/label'
 import { Avis, Carte, Critere, Reglage } from '@/components/ulamu/parts'
 import { api, urlAvatar, type MeResponse } from '@/lib/api'
@@ -279,14 +280,7 @@ function BlocTelephone({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeR
               <Label htmlFor="code-changement-tel" className="mb-1.5 block text-[13px]">
                 Code reçu
               </Label>
-              <Input
-                id="code-changement-tel"
-                inputMode="numeric"
-                maxLength={6}
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+              <ChampCode id="code-changement-tel" valeur={code} onChange={setCode} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -427,26 +421,14 @@ function BlocEmail({ me, rafraichir }: { me: MeResponse; rafraichir: (m: MeRespo
               <Label htmlFor="code-nouvelle" className="mb-1.5 block text-[13px]">
                 Code reçu à la nouvelle adresse
               </Label>
-              <Input
-                id="code-nouvelle"
-                inputMode="numeric"
-                maxLength={6}
-                value={codeNouvelle}
-                onChange={(e) => setCodeNouvelle(e.target.value)}
-              />
+              <ChampCode id="code-nouvelle" valeur={codeNouvelle} onChange={setCodeNouvelle} />
             </div>
             {indice?.deuxCodes ? (
               <div className="min-w-0 flex-1 basis-40">
                 <Label htmlFor="code-ancienne" className="mb-1.5 block text-[13px]">
                   Code reçu à l'ancienne
                 </Label>
-                <Input
-                  id="code-ancienne"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={codeAncienne}
-                  onChange={(e) => setCodeAncienne(e.target.value)}
-                />
+                <ChampCode id="code-ancienne" valeur={codeAncienne} onChange={setCodeAncienne} />
               </div>
             ) : null}
           </div>
@@ -959,10 +941,16 @@ function BlocDeuxFacteursEmail({ me, rafraichir }: { me: MeResponse; rafraichir:
           <p className="m-0 text-[12px] leading-[1.5] text-[var(--texte-secondaire)]">
             Un code à 6 chiffres vient de partir à {me.email}. Saisissez-le pour confirmer.
           </p>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold leading-[1.4] text-muted-foreground">Code reçu</span>
-            <Input value={code} onChange={(e) => setCode(e.target.value.trim())} maxLength={6} inputMode="numeric" autoComplete="one-time-code" autoFocus />
-          </label>
+          <div className="flex flex-col gap-1">
+            {/*
+              L'intitulé désigne le champ par son `id` plutôt que de l'envelopper : six cases dans un
+              `<label>` ne s'associent pas aussi sûrement qu'une boîte unique.
+            */}
+            <Label htmlFor="code-2fa-email" className="text-xs font-semibold leading-[1.4] text-muted-foreground">
+              Code reçu
+            </Label>
+            <ChampCode id="code-2fa-email" valeur={code} onChange={(v) => setCode(v.trim())} autoFocus />
+          </div>
           {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={() => activer.mutate()} disabled={enCours || code.trim().length < 6}>
