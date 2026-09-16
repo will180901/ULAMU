@@ -21,6 +21,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { VerificationPage } from '@/modules/verification/pages/VerificationPage'
 import { useSessionStore } from '@/state/session.store'
 import { api, lirePieceJustificative, type MeResponse, type VerificationCase } from '@/lib/api'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+/**
+ * Les cinq décisions que l'écran sait dire, lues DANS l'écran.
+ *
+ * ⚠️ Les recopier ici ferait une troisième liste — après celle du serveur et celle de la page — et
+ * *trois listes pour une même règle finissent par faire trois règles.*
+ */
+const LIBELLES_DECISION = [
+  ...readFileSync(resolve(__dirname, '../modules/verification/pages/VerificationPage.tsx'), 'utf8')
+    .split('const DECISIONS: Record<string, string> = {')[1]
+    .split('}')[0]
+    .matchAll(/^\s*([A-Z_]+):/gm),
+].map((m) => m[1])
 
 /**
  * Seule `lirePieceJustificative` est remplacée : elle fait un `fetch` avec jeton puis fabrique une
@@ -187,7 +202,18 @@ describe('C1 — le contrat de partenariat', () => {
     })
 
     expect(screen.getByText(/Contrat signé le/)).toBeInTheDocument()
-    expect(screen.getByText(/empreinte a3f9…c210/)).toBeInTheDocument()
+    /*
+      ⚠️ **Ancre changée EN CONSCIENCE au chantier 135.** Elle exigeait l'empreinte TRONQUÉE
+      (« a3f9…c210 ») — alors que la feuille imprimée affirme, elle, qu'« une empreinte tronquée ne
+      prouve rien ». Elle a raison : c'est en comparant l'empreinte du papier à celle de l'écran
+      qu'on vérifie qu'ils portent le même texte, et huit caractères ne permettent pas cette
+      comparaison. *Deux versions d'une même preuve, c'est une preuve de moins.*
+
+      Ce que le cas défend n'a pas bougé — *l'écran montre de quoi rattacher ce contrat au texte
+      accepté* — et l'ancre est maintenant PLUS forte : elle exige les 32 caractères.
+    */
+    expect(screen.getByText('a3f9beefcafebabedeadbeef0000c210')).toBeInTheDocument()
+    expect(screen.getByText(/change au moindre caractère modifié/)).toBeInTheDocument()
     /*
       ⚠️ **Ancre changée EN CONSCIENCE au chantier 132.** Elle exigeait un bouton « Télécharger »,
       qui produisait un fichier `.txt` : un contrat signé électroniquement livré en texte brut, sans
@@ -198,7 +224,7 @@ describe('C1 — le contrat de partenariat', () => {
       intitulé qui promet moins que ce qu'on obtient fait manquer ce qu'on cherchait.*
     */
     expect(screen.getByRole('button', { name: /Imprimer ou enregistrer en PDF/ })).toBeInTheDocument()
-    expect(screen.queryByLabelText(/saisissez votre nom complet/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/recopiez votre nom complet/i)).not.toBeInTheDocument()
   })
 
   it('empreinte rompue : le texte n’est pas affiché et la signature est impossible', async () => {
@@ -218,7 +244,7 @@ describe('C1 — le contrat de partenariat', () => {
 
     expect(screen.getByText(/ne correspond plus à son empreinte scellée/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Lire le contrat' })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/saisissez votre nom complet/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/recopiez votre nom complet/i)).not.toBeInTheDocument()
   })
 
   it('la signature exige un nom qui correspond à celui du compte', async () => {
@@ -235,17 +261,20 @@ describe('C1 — le contrat de partenariat', () => {
       },
     })
 
-    const champ = screen.getByLabelText(/saisissez votre nom complet/i)
-    const continuer = screen.getByRole('button', { name: 'Continuer' })
+    const champ = screen.getByLabelText(/recopiez votre nom complet/i)
+    // « Continuer » ne prévenait de rien : ce bouton envoie un code à usage unique.
+    const continuer = screen.getByRole('button', { name: 'Recevoir mon code de signature' })
     expect(continuer).toBeDisabled()
 
     const { fireEvent } = await import('@testing-library/react')
     fireEvent.change(champ, { target: { value: 'Jean Dupont' } })
     await waitFor(() => expect(screen.getByText(/ne correspond pas à celui de votre compte/)).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Recevoir mon code de signature' })).toBeDisabled()
 
     fireEvent.change(champ, { target: { value: 'ange makaya' } }) // la casse ne doit pas bloquer
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Continuer' })).toBeEnabled())
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Recevoir mon code de signature' })).toBeEnabled(),
+    )
   })
 })
 
@@ -442,11 +471,27 @@ describe('C1 — l’avenant au contrat', () => {
     expect(screen.getByText('12 %')).toBeInTheDocument()
   })
 
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 135.** Ce cas s'appelle « le bouton dit ce qu'on
+    regagne en signant » et vérifiait… l'existence du bouton « Lire le nouveau contrat » — qui
+    n'était pas le bouton dont il parle. Le contrat non signé étant désormais déployé, ce bouton
+    n'existe plus ; le cas va maintenant jusqu'au bouton qu'il annonçait.
+
+    *Un cas qui s'arrête avant ce qu'il prétend vérifier passe même quand la chose a disparu.*
+  */
   it('le bouton dit ce qu’on regagne en signant', async () => {
+    vi.spyOn(api, 'verificationSignStart').mockResolvedValue({ expiresInSeconds: 300 })
     await monter(reedite(10, 12))
 
-    // Le nom saisi ouvre le parcours ; le libellé du bouton final est le point vérifié.
-    expect(await screen.findByRole('button', { name: 'Lire le nouveau contrat' })).toBeInTheDocument()
+    const { fireEvent } = await import('@testing-library/react')
+    fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
+      target: { value: 'Ange Makaya' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir mon code de signature' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Re-signer et reprendre mon activité' }),
+    ).toBeInTheDocument()
   })
 
   it('une baisse de taux est un avenant comme un autre — l’écran ne suppose pas le sens', async () => {
@@ -472,7 +517,9 @@ describe('C1 — l’avenant au contrat', () => {
       lastSigned: null,
     })
 
-    await screen.findByRole('button', { name: 'Lire le contrat' })
+    // Le contrat non signé est déployé : plus de bouton « Lire le contrat » à attendre. On attend
+    // ce qui est propre à une signature en cours — le champ du nom.
+    await screen.findByLabelText(/recopiez votre nom complet/i)
     expect(screen.queryByText('Ce que vous aviez signé')).not.toBeInTheDocument()
     expect(screen.queryByText(/vous n'apparaissez plus dans l'annuaire/)).not.toBeInTheDocument()
   })
@@ -606,5 +653,211 @@ describe('C2 — filet de refonte : ce que le soignant attend, et pourquoi', () 
     await monter({ status: 'VERIFIED', canPractice: false, agreement: null })
 
     expect(await screen.findByText(/L'administration l'établit après avoir vérifié vos pièces/)).toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ On pouvait signer sans avoir lu — chantier 135, 16/09/2026 ─────────────────────
+
+  Le texte s'affichait dans un `<pre>` gris de 11 px, haut de 288 px, replié derrière un bouton
+  « Lire le contrat » — et le bouton de signature s'activait **que cette boîte ait été ouverte ou
+  non**. On pouvait signer onze articles sans en avoir vu un seul.
+
+  > **Un texte qu'on présente en petit, en gris et replié n'est pas présenté : il est rangé.**
+
+  Pas de case « j'ai lu », pas de détection de défilement : *la preuve qu'on a lu, c'est qu'on a dû
+  passer devant.* Le texte est déployé, la signature est en bas.
+*/
+describe('C1 — le contrat qu’on doit signer se lit sans un geste', () => {
+  const SAUT = String.fromCharCode(10)
+
+  const CORPS = [
+    'CONTRAT DE PARTENARIAT ULAMU',
+    '',
+    'ENTRE : ULAMU, plateforme de télémédecine, ci-après « la Plateforme ».',
+    '',
+    'ARTICLE 1 — OBJET',
+    'La Plateforme met à disposition un service de mise en relation.',
+    '',
+    'ARTICLE 2 — RESPONSABILITÉ DE L’ACTE MÉDICAL',
+    'Le praticien demeure seul responsable de ses actes.',
+    '',
+    'ARTICLE 3 — HONORAIRES ET COMMISSION',
+    'La commission est retenue sur chaque consultation réglée.',
+    '',
+    'ARTICLE 4 — LOI APPLICABLE',
+    'Le présent contrat est régi par le droit de la République du Congo.',
+    '',
+    'Signataire : Ange Makaya — Version 1.',
+  ].join(SAUT)
+
+  const aSigner = (corps = CORPS) => ({
+    status: 'VERIFIED' as const,
+    canPractice: false,
+    agreement: {
+      version: 1,
+      commissionPct: 10,
+      bodyHash: 'a3f9beefcafebabedeadbeef0000c210',
+      body: corps,
+      integrity: true,
+      signedAt: null,
+      effectiveAt: null,
+    },
+    lastSigned: null,
+  })
+
+  it('affiche les articles sans qu’on ait à déplier quoi que ce soit', async () => {
+    await monter(aSigner())
+
+    /*
+      ⚠️ On vise le TITRE, pas le lien : l'intitulé figure aussi dans le sommaire, et `getByText`
+      en trouvait deux. *Une ancre qui tombe sur deux éléments ne dit pas lequel elle garde.*
+    */
+    expect(await screen.findByRole('heading', { name: 'ARTICLE 1 — OBJET' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'ARTICLE 2 — RESPONSABILITÉ DE L’ACTE MÉDICAL' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/seul responsable de ses actes/)).toBeInTheDocument()
+    // Et le bouton qui servait à le déplier n'a plus lieu d'être.
+    expect(screen.queryByRole('button', { name: 'Lire le contrat' })).not.toBeInTheDocument()
+  })
+
+  /*
+    Onze articles sans table des matières se parcourent au jugé. *Ce qu'on relira — la commission, la
+    résiliation, la responsabilité — doit se trouver sans être cherché.*
+  */
+  it('donne un sommaire, avec les intitulés tels qu’ils sont écrits', async () => {
+    await monter(aSigner())
+
+    const sommaire = within(await screen.findByRole('navigation', { name: 'Sommaire du contrat' }))
+    expect(sommaire.getByRole('link', { name: 'ARTICLE 3 — HONORAIRES ET COMMISSION' })).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Emporter le texte AVANT de s'engager.** Le bouton d'impression n'apparaissait qu'une fois le
+    contrat signé : personne ne pouvait le montrer à un juriste avant. *Demander une signature sans
+    laisser emporter le texte, c'est demander de signer sur place.*
+  */
+  it('se sort en document AVANT la signature', async () => {
+    await monter(aSigner())
+
+    expect(await screen.findByRole('button', { name: /Imprimer ce projet/ })).toBeInTheDocument()
+    expect(screen.getByText(/montrer à un juriste/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Un bouton gris sans raison se lit comme une panne.** Quatre conditions le grisaient, une
+    seule était expliquée.
+  */
+  it('dit ce qui manque encore pour signer, au lieu de griser en silence', async () => {
+    vi.spyOn(api, 'verificationSignStart').mockResolvedValue({ expiresInSeconds: 300 })
+    await monter(aSigner())
+
+    const { fireEvent } = await import('@testing-library/react')
+    fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
+      target: { value: 'Ange Makaya' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir mon code de signature' }))
+
+    expect(await screen.findByText(/votre mot de passe et le code à 6 chiffres/)).toBeInTheDocument()
+  })
+
+  /*
+    Le texte est scellé par une empreinte. Le mettre en page : oui. En changer un mot, un ordre ou une
+    CASSE : jamais — *une empreinte ne voit que des octets qui ont changé.*
+  */
+  it('ne perd ni la clôture, ni le préambule', async () => {
+    await monter(aSigner())
+
+    expect(await screen.findByText(/ci-après « la Plateforme »/)).toBeInTheDocument()
+    expect(screen.getByText(/Signataire : Ange Makaya/)).toBeInTheDocument()
+  })
+
+  it('range le contrat une fois qu’il est signé', async () => {
+    await monter({
+      ...aSigner(),
+      canPractice: true,
+      agreement: { ...aSigner().agreement, signedAt: '2026-08-22T16:42:00.000Z', effectiveAt: '2026-08-22T16:42:00.000Z' },
+    })
+
+    // Signé : le texte se range derrière un bouton. *Un contrat qu'on doit signer se déplie, un
+    // contrat signé se range.*
+    expect(await screen.findByRole('button', { name: 'Lire le contrat' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'ARTICLE 1 — OBJET' })).not.toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ « Décision : VERIFIED » — chantier 135 ──────────────────────────────────
+
+  L'historique recopiait le mot-clé de la base : un médecin de Brazzaville lisait « VERIFIED » dans
+  la colonne de son propre dossier.
+
+  > **Un mot que le produit n'a jamais traduit est un mot que le produit n'a jamais lu.**
+*/
+describe('C1 — l’historique parle français', () => {
+  const avecDecision = (code: string) => ({
+    status: 'VERIFIED' as const,
+    canPractice: true,
+    documentsEditable: false,
+    decisions: [
+      { id: 'x1', decision: code, reasons: 'Pièces conformes.', documentId: null, documentKind: null, decidedAt: '2026-08-22T16:42:00.000Z' },
+    ],
+  })
+
+  it('traduit la décision au lieu de recopier le mot-clé du serveur', async () => {
+    await monter(avecDecision('VERIFIED'))
+
+    expect(await screen.findByText('Dossier vérifié')).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toContain('VERIFIED')
+  })
+
+  it('en fait autant des quatre autres', async () => {
+    for (const [code, attendu] of [
+      ['REJECTED', 'Dossier refusé'],
+      ['NEEDS_INFO', 'Complément demandé'],
+      ['REVOKED', 'Vérification révoquée'],
+      ['REINSTATED', 'Vérification rétablie'],
+    ] as const) {
+      const { unmount } = await monter(avecDecision(code))
+      expect(await screen.findByText(attendu)).toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  /*
+    ⚠️ **Le filet qui compte.** La table ci-dessus est une recopie des valeurs que le serveur
+    déclare dans son schéma. *Une recopie ne suit pas sa source : le jour où une sixième décision
+    apparaît côté serveur, l'écran se remet à afficher un mot-clé anglais sans que personne ne le
+    voie.* On va donc lire les valeurs LÀ OÙ LE SERVEUR LES ÉCRIT.
+  */
+  it('couvre exactement les décisions que le serveur déclare', () => {
+    const schema = readFileSync(resolve(__dirname, '../../../api/prisma/schema.prisma'), 'utf8')
+    const ligne = schema.split(String.fromCharCode(10)).find((l) => /^\s*decision\s+String/.test(l)) ?? ''
+    const duServeur = [...ligne.matchAll(/"([A-Z_]+)"/g)].map((m) => m[1])
+
+    // Si la lecture du schéma échoue, le cas doit TOMBER, pas passer sur une liste vide.
+    expect(duServeur.length).toBeGreaterThanOrEqual(5)
+    expect([...duServeur].sort()).toEqual([...LIBELLES_DECISION].sort())
+  })
+})
+
+/*
+  ⚠️ **« dossier 3F8A2C10 »** — un identifiant technique tronqué, affiché en sous-titre sans rien
+  dire. Montré à quelqu'un qui n'a personne à qui le donner, ce n'est pas une information : c'est un
+  reste de machine.
+*/
+describe('C1 — la référence du dossier sert à quelque chose', () => {
+  it('dit à quoi elle sert, au lieu de la poser là', async () => {
+    await monter({
+      status: 'REJECTED',
+      documentsEditable: true,
+      decisions: [
+        { id: 'x1', decision: 'REJECTED', reasons: 'Copie illisible.', documentId: null, documentKind: null, decidedAt: '2026-08-22T16:42:00.000Z' },
+      ],
+    })
+
+    expect(await screen.findByText(/Référence à rappeler si vous écrivez à l'administration/)).toBeInTheDocument()
+    expect(screen.getByText('AB12CD34')).toBeInTheDocument()
   })
 })

@@ -18,13 +18,21 @@
  *
  * 📌 Les lignes d'un même alinéa sont donc **réunies en paragraphes**, et les paragraphes sont
  * **justifiés**. C'est de la PRÉSENTATION : les mots, leur ordre et leur orthographe ne changent
- * pas d'un caractère. *Lire le même texte dans une autre police ne le réécrit pas ; réunir deux
- * lignes qu'un retour forcé avait séparées non plus.*
+ * pas d'un caractère. Le découpage vit dans `lib/contrat.ts` depuis le chantier 135 — *l'écran de
+ * signature et la feuille imprimée lisent désormais le contrat de la même façon, donc le même filet
+ * les garde tous les deux.*
  *
- * ⚠️ **Et c'est exactement la limite à ne pas franchir.** Le texte est scellé par une empreinte :
- * ajouter, retirer ou déplacer un seul mot le trahirait. Le filet ne vérifie donc plus « aucun
- * `replace` » — il vérifie ce qui compte vraiment : **que la suite des mots rendus soit identique,
- * mot pour mot, à celle du texte signé.**
+ * ── ⚠️ Un contrat NON SIGNÉ ne s'imprime pas comme un contrat signé — chantier 135 ────────────
+ *
+ * Le praticien peut désormais sortir le contrat **avant** de s'engager, pour le lire au calme ou le
+ * montrer à un juriste. Ce tirage-là ne doit surtout pas ressembler au tirage d'un acte conclu : la
+ * mention de pied, le nom du document et le bloc de preuve changent, et un bandeau le dit en tête.
+ *
+ * > **Un projet de contrat qui s'imprime comme un contrat signé est un faux que personne n'a voulu
+ * > fabriquer.**
+ *
+ * C'est la discipline de l'ordonnance annulée : *ce qui invalide un document doit se lire avant son
+ * contenu, pas après.*
  *
  * ── Ce qu'il porte, et que le `.txt` ne portait pas ───────────────────────────────────────────
  *
@@ -33,6 +41,7 @@
  * 📌 **La commission en tête** : la seule clause que le praticien relira. *Ce qu'on relit doit se
  * trouver sans être cherché.*
  */
+import { decouperContrat, enParagraphes } from '@/lib/contrat'
 import {
   ArticleImprime,
   FeuilleImpression,
@@ -48,82 +57,6 @@ const dateHeureFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) +
   ' à ' +
   new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-
-interface Article {
-  /**
-   * La ligne d'en-tête, **telle quelle** — « ARTICLE 1 — OBJET », capitales comprises.
-   *
-   * ⚠️ Le premier jet la recomposait en « Article 1 » + « OBJET ». C'est une transformation de
-   * CASSE sur un texte scellé : le mot « ARTICLE » devenait « Article ». *Une empreinte ne fait pas
-   * la différence entre une faute de frappe et une jolie mise en forme : elle ne voit que des
-   * octets qui ont changé.* On met en page ce qui se présente, on ne réécrit pas ce qui se lit.
-   */
-  entete: string
-  alineas: string[]
-}
-
-/**
- * Découpe le texte signé en préambule, articles et clôture.
- *
- * ⚠️ **Rien n'est retiré.** Ce qui n'entre dans aucun article reste dans le préambule ou la
- * clôture : *un analyseur qui jette ce qu'il ne reconnaît pas fait disparaître des clauses.*
- *
- * Les deux modèles de rédaction sont couverts — « ARTICLE 1 — OBJET » (2026-09) et
- * « Article 1 — Objet » (origine) —, car un contrat d'archive doit rester présentable.
- */
-export function decouperContrat(texte: string): { preambule: string[]; articles: Article[]; cloture: string[] } {
-  const lignes = texte.split('\n')
-  const preambule: string[] = []
-  const articles: Article[] = []
-  const cloture: string[] = []
-
-  const enTete = /^(ARTICLE|Article)\s+(\d+)\s*[—-]\s*(.+)$/
-  let courant: Article | null = null
-
-  for (const ligne of lignes) {
-    if (enTete.test(ligne.trim())) {
-      courant = { entete: ligne.trim(), alineas: [] }
-      articles.push(courant)
-      continue
-    }
-    if (ligne.trim() === '') {
-      // Une ligne vide ferme l'alinéa en cours sans fermer l'article : l'article suivant a son titre.
-      if (courant) courant.alineas.push('')
-      else if (preambule.length > 0) preambule.push('')
-      continue
-    }
-    if (courant) courant.alineas.push(ligne.trim())
-    else preambule.push(ligne.trim())
-  }
-
-  // La ligne de clôture (« Signataire : … ») appartient au dernier article par construction :
-  // on la lui retire pour la rendre à part, en pied de texte.
-  const dernier = articles.at(-1)
-  if (dernier) {
-    while (dernier.alineas.length > 0 && dernier.alineas.at(-1) === '') dernier.alineas.pop()
-    const queue = dernier.alineas.at(-1)
-    if (queue && /^Signataire\s*:/.test(queue)) {
-      cloture.push(dernier.alineas.pop() as string)
-      while (dernier.alineas.length > 0 && dernier.alineas.at(-1) === '') dernier.alineas.pop()
-    }
-  }
-
-  return { preambule, articles, cloture }
-}
-
-/** Réunit les lignes d'un même alinéa — les lignes vides séparent les alinéas. */
-function enParagraphes(alineas: string[]): string[] {
-  const out: string[] = []
-  let courant: string[] = []
-  for (const l of alineas) {
-    if (l === '') {
-      if (courant.length > 0) out.push(courant.join(' '))
-      courant = []
-    } else courant.push(l)
-  }
-  if (courant.length > 0) out.push(courant.join(' '))
-  return out
-}
 
 export interface ContratImprimableProps {
   version: number
@@ -147,30 +80,71 @@ export function ContratImprimable({
   onFermer,
 }: ContratImprimableProps) {
   const { preambule, articles, cloture } = decouperContrat(corps)
+  const signe = signeLe !== null
 
   return (
     <FeuilleImpression
-      document="Contrat de partenariat"
+      document={signe ? 'Contrat de partenariat' : 'Projet de contrat'}
       reference={`CTR-V${version}`}
-      mention="ULAMU · Contrat signé électroniquement — l’empreinte ci-dessous en atteste"
+      mention={
+        signe
+          ? 'ULAMU · Contrat signé électroniquement — l’empreinte ci-dessous en atteste'
+          : 'ULAMU · Projet de contrat — non signé, sans valeur d’engagement'
+      }
       blocs={[
         {
-          titre: 'Praticien partenaire',
+          titre: signe ? 'Praticien signataire' : 'Praticien destinataire',
           lignes: [
-            ['Signataire', signePar],
-            ['Signé le', signeLe ? dateHeureFr(signeLe) : 'Non signé'],
+            ['Nom', signePar],
+            ['Signé le', signe ? dateHeureFr(signeLe) : 'Non signé'],
           ],
         },
         {
           titre: 'Contrat',
           lignes: [
             ['Version', `v${version}`],
-            ['En vigueur depuis', effectifLe ? dateHeureFr(effectifLe) : '—'],
+            signe
+              ? ['En vigueur depuis', effectifLe ? dateHeureFr(effectifLe) : '—']
+              : ['Entrée en vigueur', 'À la signature'],
           ],
         },
       ]}
       onFermer={onFermer}
     >
+      {/*
+        ⚠️ **Ce qui invalide un document se lit AVANT son contenu.** Un projet de contrat tiré sur
+        la même feuille qu'un contrat conclu se présenterait comme un engagement — devant une banque,
+        devant un employeur, devant qui voudra bien le croire.
+      */}
+      {signe ? null : (
+        <div
+          data-insecable
+          style={{
+            border: '2px solid #8A6D1F',
+            background: '#FBF5E4',
+            padding: '11px 15px',
+            marginBottom: 18,
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: IMPRESSION_TITRAGE,
+              fontSize: 13,
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              color: '#6B5417',
+            }}
+          >
+            PROJET DE CONTRAT — NON SIGNÉ
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: 10, lineHeight: 1.55, color: '#6B5417' }}>
+            Ce texte est celui qui vous est proposé. Tant qu’il n’est pas signé depuis votre espace
+            ULAMU, il n’engage ni vous ni la plateforme.
+          </p>
+        </div>
+      )}
+
       {/*
         ⚠️ **La commission d'abord.** C'est la seule clause que le praticien relira, et celle qui
         décide de ce qu'il gagne. Enfouie dans le corps, elle serait introuvable sur une feuille
@@ -228,22 +202,27 @@ export function ContratImprimable({
 
       {/*
         L'EMPREINTE — ce qui relie cette feuille au texte accepté. Sans elle, une copie de contrat
-        ne se distingue pas d'une version réécrite après coup.
+        ne se distingue pas d'une version réécrite après coup. Elle figure sur les DEUX tirages :
+        sur le projet, elle permet de vérifier que le texte signé plus tard est bien celui qu'on a
+        lu — *une preuve ne sert pas qu'après coup, elle sert aussi à comparer avant.*
       */}
       <div data-insecable style={{ marginTop: 22, border: `1px solid ${IMPRESSION_FILET}`, padding: 14 }}>
-        <TitreSection>Preuve de signature</TitreSection>
-        <p style={{ margin: 0, fontSize: 10, lineHeight: 1.6 }}>
-          Signé électroniquement par <strong>{signePar}</strong>
-          {signeLe ? (
-            <>
-              {' '}
-              le <strong>{dateHeureFr(signeLe)}</strong>
-            </>
-          ) : null}
-          , par mot de passe et code à usage unique.
-        </p>
+        <TitreSection>{signe ? 'Preuve de signature' : 'Ce qui reste à faire'}</TitreSection>
+        {signe ? (
+          <p style={{ margin: 0, fontSize: 10, lineHeight: 1.6 }}>
+            Signé électroniquement par <strong>{signePar}</strong> le <strong>{dateHeureFr(signeLe)}</strong>, par
+            mot de passe et code à usage unique.
+          </p>
+        ) : (
+          <p style={{ margin: 0, fontSize: 10, lineHeight: 1.6 }}>
+            Ce texte n’est pas signé. La signature se fait depuis votre espace ULAMU, à la page
+            « Ma vérification », par mot de passe et code à usage unique.
+          </p>
+        )}
         <p style={{ margin: '8px 0 0', fontFamily: IMPRESSION_TITRAGE, fontSize: 8, color: IMPRESSION_GRIS, letterSpacing: '0.04em' }}>
-          EMPREINTE DU TEXTE SIGNÉ (SHA-256) — ELLE CHANGE AU MOINDRE CARACTÈRE MODIFIÉ
+          {signe
+            ? 'EMPREINTE DU TEXTE SIGNÉ (SHA-256) — ELLE CHANGE AU MOINDRE CARACTÈRE MODIFIÉ'
+            : 'EMPREINTE DU TEXTE PROPOSÉ (SHA-256) — ELLE CHANGE AU MOINDRE CARACTÈRE MODIFIÉ'}
         </p>
         <p style={{ margin: '3px 0 0', fontFamily: IMPRESSION_CHIFFRES, fontSize: 9, wordBreak: 'break-all', letterSpacing: '0.02em' }}>
           {bodyHash}

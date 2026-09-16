@@ -24,7 +24,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { Prescription } from '@/lib/api'
 import { OrdonnanceImprimable } from '@/components/impression/OrdonnanceImprimable'
-import { ContratImprimable, decouperContrat } from '@/components/impression/ContratImprimable'
+import { ContratImprimable } from '@/components/impression/ContratImprimable'
+// Le découpage a quitté le composant d'impression au chantier 135 : l'écran de signature le lit
+// lui aussi, et *deux lectures d'un même texte scellé font une lecture gardée et une lecture
+// livrée à elle-même.* Le filet ci-dessous vaut désormais pour les deux rendus.
+import { decouperContrat } from '@/lib/contrat'
+import { ContratLisible } from '@/components/ulamu/ContratLisible'
 import { RecuImprimable } from '@/components/impression/RecuImprimable'
 
 /**
@@ -412,6 +417,26 @@ describe('Comment ces documents sont produits', () => {
 
     // La suite des mots est identique, mot pour mot : c'est elle que l'empreinte scelle.
     expect(mots(rendu)).toEqual(mots(texte))
+
+    /*
+      ⚠️ **Et la même exigence pour l'ÉCRAN.** Depuis le chantier 135, le contrat se lit AUSSI à
+      l'écran où on le signe, par le même découpage. Vérifier le découpage sans vérifier ce que le
+      composant en fait laisserait un rendu libre de perdre un paragraphe en chemin — *ce que le
+      signataire lit à l'écran est ce qu'il croit signer.*
+
+      Le sommaire est retiré avant la comparaison : il répète les intitulés pour naviguer, il
+      n'ajoute aucun contenu.
+
+      ⚠️ Et la lecture se fait BLOC PAR BLOC, pas sur le `textContent` de la racine : celui-ci
+      colle les éléments bout à bout sans séparateur, si bien que « … OBJET » suivi de « La
+      Plateforme » devenait le mot « OBJETLa ». *Un filet qui lit mal compte des pertes qui
+      n'existent pas — et finirait par être désarmé pour avoir crié à tort.*
+    */
+    const { container } = render(<ContratLisible corps={texte} />)
+    container.querySelector('nav')?.remove()
+    const aLEcran = [...container.querySelectorAll('h3, h4, p')].map((e) => e.textContent ?? '').join(' ')
+
+    expect(mots(aLEcran)).toEqual(mots(texte))
   })
 
   /*
@@ -595,5 +620,61 @@ describe('À quoi ces documents doivent ressembler', () => {
     */
     expect(imprime).toBe(!dementi)
     expect(sourceFeuille).not.toMatch(/📌 \*\*Pagination/)
+  })
+})
+
+/*
+  ── ⚠️ Un PROJET de contrat ne s'imprime pas comme un contrat signé — chantier 135 ────────
+
+  Le praticien peut désormais sortir le contrat **avant** de s'engager — pour le lire au calme ou le
+  montrer à un juriste. Le tirage précédent aurait alors porté, mot pour mot, « Contrat signé
+  électroniquement » et « Signé électroniquement par Armel Konaté », sur un texte que personne n'a
+  signé.
+
+  > **Un projet de contrat qui s'imprime comme un contrat signé est un faux que personne n'a voulu
+  > fabriquer.**
+
+  C'est la discipline de l'ordonnance annulée : *ce qui invalide un document doit se lire avant son
+  contenu, pas après.*
+*/
+describe('Le contrat imprimé avant d’être signé', () => {
+  const projet = () => monterContrat({ signeLe: null, effectifLe: null })
+
+  it('le dit en tête, et dit ce que ça implique', () => {
+    projet()
+
+    expect(screen.getByText('PROJET DE CONTRAT — NON SIGNÉ')).toBeInTheDocument()
+    expect(screen.getByText(/il n’engage ni vous ni la plateforme/)).toBeInTheDocument()
+  })
+
+  it('ne prétend nulle part que quelqu’un l’a signé', () => {
+    projet()
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).not.toMatch(/Signé électroniquement par/)
+    expect(texte).not.toMatch(/Contrat signé électroniquement/)
+    expect(texte).not.toContain('Preuve de signature')
+    // Le nom du document change aussi : c'est la première chose qu'on lit en haut à droite.
+    expect(screen.getByText('Projet de contrat')).toBeInTheDocument()
+  })
+
+  /*
+    L'empreinte reste, et c'est voulu : elle permet de vérifier plus tard que le texte signé est bien
+    celui qu'on avait lu. *Une preuve ne sert pas qu'après coup, elle sert aussi à comparer avant.*
+  */
+  it('porte quand même l’empreinte, pour pouvoir comparer plus tard', () => {
+    projet()
+
+    expect(screen.getByText('a3f9beefcafebabedeadbeef0000c210')).toBeInTheDocument()
+    expect(screen.getByText(/EMPREINTE DU TEXTE PROPOSÉ/)).toBeInTheDocument()
+  })
+
+  it('redit tout cela dès qu’il est signé', () => {
+    monterContrat()
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).not.toContain('PROJET DE CONTRAT')
+    expect(screen.getByText('Preuve de signature')).toBeInTheDocument()
+    expect(screen.getByText(/EMPREINTE DU TEXTE SIGNÉ/)).toBeInTheDocument()
   })
 })

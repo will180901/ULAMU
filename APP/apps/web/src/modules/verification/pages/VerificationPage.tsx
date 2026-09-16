@@ -48,6 +48,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Printer } from 'lucide-react'
 import { ContratImprimable } from '@/components/impression/ContratImprimable'
+import { ContratLisible } from '@/components/ulamu/ContratLisible'
 import { formatTaille, MIMES_PIECE, refusFichier, TAILLE_MAX_OCTETS } from '@/lib/fichier'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -96,6 +97,33 @@ const ETATS: Record<VerificationStatus, { libelle: string; aide: string; ton: To
 }
 
 const ETAPES = ['Dossier constitué', 'Déposé', 'En examen', 'Vérifié']
+
+/*
+  ⚠️ **L'historique affichait « Décision : VERIFIED »** — chantier 135, 16/09/2026.
+
+  Le serveur stocke la décision comme une chaîne libre dont le schéma documente les cinq valeurs
+  (`VerificationDecision.decision`). L'écran la recopiait telle quelle : un médecin de Brazzaville
+  lisait le mot-clé anglais d'une base de données dans la colonne de son propre dossier.
+
+  > **Un mot que le produit n'a jamais traduit est un mot que le produit n'a jamais lu.**
+
+  📌 Le repli garde la valeur brute plutôt que de la masquer — *effacer ce qu'on ne sait pas dire
+  fait disparaître l'information avec le problème.* Un filet compare cette table aux valeurs que le
+  schéma du serveur déclare : le jour où une sixième apparaît, il tombe.
+*/
+const DECISIONS: Record<string, string> = {
+  VERIFIED: 'Dossier vérifié',
+  REJECTED: 'Dossier refusé',
+  NEEDS_INFO: 'Complément demandé',
+  REVOKED: 'Vérification révoquée',
+  REINSTATED: 'Vérification rétablie',
+}
+
+const libelleDecision = (code: string) => DECISIONS[code] ?? code
+
+/** « a, b et c » — pour dire ce qui manque sans aligner des puces sous un bouton gris. */
+const enumerer = (xs: string[]) =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} et ${xs.at(-1)}`
 
 /** Frise d'avancement. Le numéro d'étape n'est pas décoratif : il vient de l'état réel du dossier. */
 function Frise({ courante, echoue }: { courante: number; echoue: boolean }) {
@@ -390,6 +418,32 @@ function BlocPiece({
 
 // ── Contrat de partenariat ─────────────────────────────────────────────────
 
+/**
+ * Le contrat de partenariat — chantier 135, 16/09/2026.
+ *
+ * ── Ce qu'on demandait de signer, et comment on le montrait ───────────────────────────────────
+ *
+ * ⚠️ Le texte s'affichait dans un `<pre>` gris de **11 px**, haut de **288 px**, replié derrière un
+ * bouton « Lire le contrat » — et le bouton de signature s'activait **que cette boîte ait été
+ * ouverte ou non**. On pouvait signer onze articles sans en avoir vu un seul.
+ *
+ * > **Un texte qu'on présente en petit, en gris et replié n'est pas présenté : il est rangé.**
+ *
+ * 📌 **Le contrat à signer est DÉPLOYÉ, et la signature se trouve en bas.** Pas de case « j'ai
+ * lu » : *la preuve qu'on a lu, c'est qu'on a dû passer devant.* Une fois signé, il se replie —
+ * *un contrat qu'on doit signer se déplie, un contrat signé se range.*
+ *
+ * 📌 **Il s'imprime AVANT d'être signé.** Le bouton n'apparaissait qu'une fois l'engagement pris :
+ * personne ne pouvait sortir le texte pour le lire au calme ou le montrer à un juriste. *Demander
+ * une signature sans laisser emporter le texte, c'est demander de signer sur place.*
+ *
+ * 📌 **L'empreinte est donnée en entier.** L'écran en montrait huit caractères (`a3f9…c210`) alors
+ * que la feuille imprimée dit, elle, qu'« une empreinte tronquée ne prouve rien ». *Deux versions
+ * d'une même preuve, c'est une preuve de moins.*
+ *
+ * 📌 **Le bouton de signature dit ce qui manque.** Quatre conditions le grisaient, une seule était
+ * expliquée : *un bouton gris sans raison se lit comme une panne.*
+ */
 function BlocContrat({ dossier, nomComplet, recharger }: { dossier: VerificationCase; nomComplet: string; recharger: () => void }) {
   const [ouvert, setOuvert] = useState(false)
   const [nom, setNom] = useState('')
@@ -397,6 +451,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
   const [otp, setOtp] = useState('')
   const [envoye, setEnvoye] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
+  const [imprimable, setImprimable] = useState(false)
   const a = dossier.agreement
 
   const demarrer = useMutation({
@@ -417,21 +472,6 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
     },
     onError: (e) => setErreur(messageErreur(e)),
   })
-
-  /*
-    ── ⚠️ Un contrat signé ne se livre pas en `.txt` — chantier 132, 15/09/2026 ────────────────
-
-    Ce bouton produisait un fichier texte brut : sans en-tête, sans date de signature, sans
-    l'empreinte qui prouve qu'il s'agit bien du texte accepté — et sans rien qui permette de le
-    présenter à une banque, à un comptable ou à un tribunal.
-
-    > **Un contrat qu'on ne peut pas présenter n'engage personne à vos yeux, même s'il vous engage
-    > en droit.**
-
-    L'aperçu imprimable porte les trois choses qui manquaient, et que la base détenait déjà :
-    l'empreinte du texte signé, la date et l'heure de signature, et le nom du signataire.
-  */
-  const [imprimable, setImprimable] = useState(false)
 
   if (!a) {
     return (
@@ -464,6 +504,25 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
    * première signature, et l'écran ne doit surtout pas la présenter comme telle.
    */
   const avenant = a.signedAt === null && dossier.lastSigned !== null ? dossier.lastSigned : null
+  const aSigner = a.signedAt === null
+
+  /*
+    ⚠️ **Ce qui manque encore, dit plutôt que deviné.** Le bouton se grisait sur quatre conditions —
+    nom recopié, mot de passe, code à six chiffres, envoi en cours — et une seule était expliquée.
+    *Un bouton gris sans raison se lit comme une panne, et on recharge la page.*
+  */
+  const manque = [
+    !nomCorrespond ? 'votre nom complet' : null,
+    motDePasse.length === 0 ? 'votre mot de passe' : null,
+    otp.trim().length !== 6 ? 'le code à 6 chiffres' : null,
+  ].filter((x): x is string => x !== null)
+
+  const boutonImprimer = a.body ? (
+    <Button type="button" size="sm" variant="outline" onClick={() => setImprimable(true)}>
+      <Printer size={14} aria-hidden="true" />
+      {aSigner ? 'Imprimer ce projet' : 'Imprimer ou enregistrer en PDF'}
+    </Button>
+  ) : null
 
   return (
     <Carte
@@ -518,128 +577,174 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
       ) : (
         <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
           {/*
-            Le taux n'est pas écrit : il vient du contrat. Et il n'y a pas de calendrier de versement
-            — le retrait se demande, à tout moment (famille 1, points 1 et 2).
+            Le taux n'est pas écrit en dur : il vient du contrat. Et il n'y a pas de calendrier de
+            versement — le retrait se demande, à tout moment (famille 1, points 1 et 2).
           */}
           Commission de {a.commissionPct} % sur les honoraires · vos gains sont retirables à tout
           moment, sans montant minimum.
         </p>
       )}
 
-      <div>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOuvert((v) => !v)}>
-          {ouvert ? 'Masquer le contrat' : avenant ? 'Lire le nouveau contrat' : 'Lire le contrat'}
-        </Button>
-      </div>
-      {ouvert ? (
-        <pre className="max-h-72 overflow-auto rounded-md border border-border bg-secondary p-3 text-[11px] leading-[1.6] whitespace-pre-wrap text-[var(--texte-secondaire)]">
-          {a.body}
-        </pre>
-      ) : null}
-
-      {a.signedAt ? (
+      {a.body === null ? (
+        <Avis ton="erreur">
+          Le texte de ce contrat n'a pas été transmis. Rechargez la page — s'il manque encore,
+          prévenez l'administration ULAMU avant toute signature.
+        </Avis>
+      ) : aSigner ? (
         <>
-          <Avis ton="succes">Contrat signé le {dateHeureFr(a.signedAt)}.</Avis>
-          <p className="font-mono text-[11px] break-all text-[var(--texte-tertiaire)]">
-            Signé électroniquement par {nomComplet} · empreinte {a.bodyHash.slice(0, 4)}…{a.bodyHash.slice(-4)}
-          </p>
-          <div>
-            {/*
-              « Télécharger » ne disait pas QUOI : il sortait un fichier texte. Le mot dit
-              désormais ce que le bouton fait — *un intitulé qui promet moins que ce qu'on obtient
-              fait manquer ce qu'on cherchait.*
-            */}
-            <Button type="button" size="sm" variant="outline" onClick={() => setImprimable(true)}>
-              <Printer size={14} aria-hidden="true" />
-              Imprimer ou enregistrer en PDF
-            </Button>
+          {/*
+            ⚠️ **Emporter le texte AVANT de s'engager.** Le bouton d'impression n'apparaissait
+            qu'une fois le contrat signé : personne ne pouvait sortir le document pour le lire au
+            calme ou le montrer à un juriste. *Demander une signature sans laisser emporter le texte,
+            c'est demander de signer sur place.*
+          */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {boutonImprimer}
+            <span className="ul-aide">
+              Vous pouvez sortir ce texte avant de le signer, pour le lire au calme ou le montrer à
+              un juriste.
+            </span>
           </div>
-          {imprimable && a.body ? (
-            <ContratImprimable
-              version={a.version}
-              commissionPct={a.commissionPct}
-              bodyHash={a.bodyHash}
-              corps={a.body}
-              signePar={nomComplet}
-              signeLe={a.signedAt}
-              effectifLe={a.effectiveAt}
-              onFermer={() => setImprimable(false)}
-            />
-          ) : null}
-        </>
-      ) : (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-secondary p-3">
-          <div>
-            <Label htmlFor="signature-nom" className="mb-1.5 block text-[13px]">
-              Signature — saisissez votre nom complet
-            </Label>
-            <Input id="signature-nom" autoComplete="off" value={nom} onChange={(e) => setNom(e.target.value)} />
-            <p className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
-              Doit correspondre au nom de votre pièce d'identité : {nomComplet}.
-            </p>
-          </div>
+
+          <ContratLisible corps={a.body} />
 
           {/*
-            La maquette s'arrête au nom saisi. Le serveur, lui, exige mot de passe ET code (EF-03-06),
-            et il a raison : ce contrat engage juridiquement. Le nom reste — il ancre l'intention —
-            mais il ne prouve rien à lui seul, et n'importe qui passant derrière un poste laissé
-            ouvert saurait le taper.
+            ⚠️ **La signature se trouve en bas du texte**, et nulle part ailleurs : c'est ce qui fait
+            qu'on a dû passer devant les articles pour l'atteindre.
           */}
-          {envoye ? (
-            <>
-              <Avis ton="info">Un code de confirmation vient de vous être envoyé.</Avis>
-              <div className="flex flex-wrap gap-3">
-                <div className="min-w-0 flex-1 basis-44">
-                  <Label htmlFor="signature-mdp" className="mb-1.5 block text-[13px]">
-                    Mot de passe
-                  </Label>
-                  <Input
-                    id="signature-mdp"
-                    type="password"
-                    autoComplete="current-password"
-                    value={motDePasse}
-                    onChange={(e) => setMotDePasse(e.target.value)}
-                  />
-                </div>
-                <div className="min-w-0 flex-1 basis-44">
-                  <Label htmlFor="signature-otp" className="mb-1.5 block text-[13px]">
-                    Code reçu
-                  </Label>
-                  <Input
-                    id="signature-otp"
-                    inputMode="numeric"
-                    maxLength={6}
-                    autoComplete="one-time-code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div>
-                <Button
-                  type="button"
-                  onClick={() => signer.mutate()}
-                  disabled={signer.isPending || !nomCorrespond || motDePasse.length === 0 || otp.trim().length !== 6}
-                >
-                  {signer.isPending ? 'Signature…' : avenant ? 'Re-signer et reprendre mon activité' : 'Signer le contrat'}
-                </Button>
-              </div>
-            </>
-          ) : (
+          <div className="flex flex-col gap-3 rounded-md border border-[var(--ap-200)] bg-[var(--ap-50)] p-4">
+            <p className="ul-intitule">Signature du contrat</p>
+            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+              En signant, vous acceptez l'intégralité des articles ci-dessus. La signature est
+              électronique : elle demande votre mot de passe et un code à usage unique, et elle a la
+              même valeur qu'une signature manuscrite.
+            </p>
+
             <div>
-              <Button type="button" onClick={() => demarrer.mutate()} disabled={demarrer.isPending || !nomCorrespond}>
-                {demarrer.isPending ? 'Envoi du code…' : 'Continuer'}
-              </Button>
+              {/*
+                Le nom attendu est DANS l'intitulé, pas en note sous le champ : la cérémonie consiste
+                à le recopier, autant dire lequel au moment où on le demande.
+              */}
+              <Label htmlFor="signature-nom" className="mb-1.5 block text-[13px]">
+                Recopiez votre nom complet : <span className="font-semibold text-foreground">{nomComplet}</span>
+              </Label>
+              <Input id="signature-nom" autoComplete="off" value={nom} onChange={(e) => setNom(e.target.value)} />
               {nom.length > 0 && !nomCorrespond ? (
                 <p className="mt-1.5 text-[11px] text-[var(--alerte-texte)]">
                   Le nom saisi ne correspond pas à celui de votre compte.
                 </p>
               ) : null}
             </div>
-          )}
-          {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
-        </div>
+
+            {/*
+              La maquette s'arrête au nom saisi. Le serveur, lui, exige mot de passe ET code
+              (EF-03-06), et il a raison : ce contrat engage juridiquement. Le nom reste — il ancre
+              l'intention — mais il ne prouve rien à lui seul, et n'importe qui passant derrière un
+              poste laissé ouvert saurait le taper.
+            */}
+            {envoye ? (
+              <>
+                <Avis ton="info">Un code de confirmation vient de vous être envoyé.</Avis>
+                <div className="flex flex-wrap gap-3">
+                  <div className="min-w-0 flex-1 basis-44">
+                    <Label htmlFor="signature-mdp" className="mb-1.5 block text-[13px]">
+                      Mot de passe
+                    </Label>
+                    <Input
+                      id="signature-mdp"
+                      type="password"
+                      autoComplete="current-password"
+                      value={motDePasse}
+                      onChange={(e) => setMotDePasse(e.target.value)}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1 basis-44">
+                    <Label htmlFor="signature-otp" className="mb-1.5 block text-[13px]">
+                      Code reçu
+                    </Label>
+                    <Input
+                      id="signature-otp"
+                      inputMode="numeric"
+                      maxLength={6}
+                      autoComplete="one-time-code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Button type="button" onClick={() => signer.mutate()} disabled={signer.isPending || manque.length > 0}>
+                    {signer.isPending ? 'Signature…' : avenant ? 'Re-signer et reprendre mon activité' : 'Signer le contrat'}
+                  </Button>
+                  {manque.length > 0 ? (
+                    <p className="mt-1.5 text-[11px] text-[var(--texte-tertiaire)]">
+                      Il reste à saisir {enumerer(manque)}.
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div>
+                {/*
+                  « Continuer » ne prévenait de rien. Ce bouton envoie un code à usage unique : son
+                  intitulé le dit, sinon le code arrive sans être attendu.
+                */}
+                <Button type="button" onClick={() => demarrer.mutate()} disabled={demarrer.isPending || !nomCorrespond}>
+                  {demarrer.isPending ? 'Envoi du code…' : 'Recevoir mon code de signature'}
+                </Button>
+                {!nomCorrespond ? (
+                  <p className="mt-1.5 text-[11px] text-[var(--texte-tertiaire)]">
+                    Recopiez d'abord votre nom complet ci-dessus.
+                  </p>
+                ) : null}
+              </div>
+            )}
+            {erreur ? <Avis ton="erreur">{erreur}</Avis> : null}
+          </div>
+        </>
+      ) : (
+        <>
+          <Avis ton="succes">Contrat signé le {dateHeureFr(a.signedAt as string)}.</Avis>
+
+          {/*
+            ⚠️ **L'empreinte, en entier.** L'écran en montrait huit caractères. Le document imprimé,
+            lui, affirme qu'« une empreinte tronquée ne prouve rien » — et il a raison : c'est en
+            comparant l'empreinte du papier à celle de l'écran qu'on vérifie qu'ils portent le même
+            texte, et huit caractères ne permettent pas cette comparaison.
+          */}
+          <div className="rounded-md border border-border bg-secondary p-3">
+            <p className="ul-surtitre">Empreinte du texte signé (SHA-256)</p>
+            <p className="mt-1 font-mono text-[11px] leading-[1.5] break-all text-[var(--texte-secondaire)] select-all">
+              {a.bodyHash}
+            </p>
+            <p className="ul-aide mt-1.5">
+              Signé électroniquement par {nomComplet}. Cette empreinte change au moindre caractère
+              modifié : elle prouve que le texte affiché est bien celui que vous avez signé.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => setOuvert((v) => !v)}>
+              {ouvert ? 'Masquer le contrat' : 'Lire le contrat'}
+            </Button>
+            {boutonImprimer}
+          </div>
+          {ouvert ? <ContratLisible corps={a.body} /> : null}
+        </>
       )}
+
+      {imprimable && a.body ? (
+        <ContratImprimable
+          version={a.version}
+          commissionPct={a.commissionPct}
+          bodyHash={a.bodyHash}
+          corps={a.body}
+          signePar={nomComplet}
+          signeLe={a.signedAt}
+          effectifLe={a.effectiveAt}
+          onFermer={() => setImprimable(false)}
+        />
+      ) : null}
     </Carte>
   )
 }
@@ -798,7 +903,7 @@ export function VerificationPage() {
               icone={MessageSquareWarning}
               ton={d.status === 'VERIFIED' ? 'accent' : 'danger'}
               titre="Motif transmis par l'administration"
-              sousTitre={`Décision du ${dateFr(derniereDecision.decidedAt)} · dossier ${d.caseId.slice(0, 8).toUpperCase()}`}
+              sousTitre={`Décision du ${dateFr(derniereDecision.decidedAt)}`}
             >
               {/*
                 La pièce VISÉE, quand la décision en désigne une (24/08/2026). Avant, le motif était
@@ -814,6 +919,18 @@ export function VerificationPage() {
                 </p>
               ) : null}
               <p className="text-[13px] leading-[1.6] whitespace-pre-wrap text-foreground">{derniereDecision.reasons}</p>
+              {/*
+                ⚠️ **Cet identifiant était affiché sans rien dire** (« dossier 3F8A2C10 », en
+                sous-titre). Un numéro technique montré à quelqu'un qui n'a personne à qui le donner
+                n'est pas une information, c'est un reste de machine. À quoi il sert est maintenant
+                écrit à côté, et un clic le sélectionne en entier.
+              */}
+              <p className="ul-aide">
+                Référence à rappeler si vous écrivez à l'administration :{' '}
+                <span className="font-mono text-[var(--texte-secondaire)] select-all">
+                  {d.caseId.slice(0, 8).toUpperCase()}
+                </span>
+              </p>
             </Carte>
           ) : null}
 
@@ -903,7 +1020,7 @@ export function VerificationPage() {
                     <li key={x.id} className="flex gap-2">
                       <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--ap-400)]" />
                       <span className="min-w-0">
-                        <span className="block text-[11px] font-semibold text-foreground">Décision : {x.decision}</span>
+                        <span className="block text-[11px] font-semibold text-foreground">{libelleDecision(x.decision)}</span>
                         <span className="block font-mono text-[10px] text-[var(--texte-tertiaire)]">{dateFr(x.decidedAt)}</span>
                       </span>
                     </li>
