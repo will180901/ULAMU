@@ -49,6 +49,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Printer } from 'lucide-react'
 import { ContratImprimable } from '@/components/impression/ContratImprimable'
 import { ContratLisible } from '@/components/ulamu/ContratLisible'
+import { Checkbox } from '@/components/ui/checkbox'
 import { formatTaille, MIMES_PIECE, refusFichier, TAILLE_MAX_OCTETS } from '@/lib/fichier'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -463,6 +464,15 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
   const [envoi, setEnvoi] = useState<{ hint?: string } | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   const [imprimable, setImprimable] = useState(false)
+  /**
+   * « Lu et approuvé » — chantier 144, demande du porteur.
+   *
+   * ⚠️ Deux états, et pas un : `lu` dit qu'on a **atteint le bas du texte**, `approuve` dit qu'on a
+   * **coché**. La case reste hors d'atteinte tant que le premier n'est pas vrai — *une mention
+   * qu'on peut cocher sans avoir lu n'est pas une mention, c'est une case de plus.*
+   */
+  const [lu, setLu] = useState(false)
+  const [approuve, setApprouve] = useState(false)
   const a = dossier.agreement
 
   const demarrer = useMutation({
@@ -524,6 +534,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
     *Un bouton gris sans raison se lit comme une panne, et on recharge la page.*
   */
   const manque = [
+    !approuve ? 'la mention « lu et approuvé »' : null,
     !nomCorrespond ? 'votre nom complet' : null,
     motDePasse.length === 0 ? 'votre mot de passe' : null,
     otp.trim().length !== 6 ? 'le code à 6 chiffres' : null,
@@ -555,9 +566,20 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
           </Avis>
 
           {/*
-            L'ancien taux à côté du nouveau (S4). Signer sans voir ce qui change reviendrait à signer
-            à l'aveugle — et c'est précisément sur ce chiffre que porte le changement.
+            ⚠️ **Le taux n'a pas toujours changé** — chantier 144, 16/09/2026. Une réédition peut ne
+            porter que sur le TEXTE du contrat (chantiers 133 et 136). L'écran montrait alors
+            « 10 % » barré à côté de « 10 % » : *barrer un chiffre qui n'a pas bougé annonce une
+            modification qui n'existe pas, et cache celle qui existe.*
+
+            La comparaison ne s'affiche donc QUE si le taux diffère. Sinon, une phrase dit ce qui a
+            réellement changé.
           */}
+          {avenant.commissionPct === a.commissionPct ? (
+            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+              C'est le <strong className="font-semibold text-foreground">texte du contrat</strong> qui a
+              changé. Votre commission reste à {a.commissionPct} %.
+            </p>
+          ) : (
           <dl className="flex flex-wrap items-stretch gap-2">
             <div className="min-w-0 flex-1 basis-36 rounded-md border border-border bg-secondary p-2.5">
               <dt className="ul-surtitre">
@@ -580,6 +602,7 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
               <dd className="mt-1 text-[11px] text-[var(--texte-secondaire)]">Version {a.version} · non signée</dd>
             </div>
           </dl>
+          )}
 
           <p className="text-[11px] leading-[1.5] text-[var(--texte-secondaire)]">
             Le taux de votre contrat signé est celui qui s'applique à vos consultations — celles déjà
@@ -618,10 +641,37 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
             </span>
           </div>
 
-          <ContratLisible corps={a.body} />
+          <ContratLisible corps={a.body} onLectureTerminee={() => setLu(true)} />
 
           {/*
-            ⚠️ **La signature se trouve en bas du texte**, et nulle part ailleurs : c'est ce qui fait
+            ⚠️ **« Lu et approuvé », et la case n'est atteignable qu'une fois le bas du texte atteint.**
+            C'est ce qui donne un sens à la mention : *une case qu'on peut cocher sans avoir lu n'est
+            pas une mention, c'est une case de plus.* Et la raison du refus est écrite — *une case
+            grisée sans motif se lit comme une panne.*
+          */}
+          <div className="flex flex-col gap-1.5 rounded-md border border-border bg-secondary p-3">
+            <label htmlFor="lu-et-approuve" className="flex items-start gap-2.5">
+              <Checkbox
+                id="lu-et-approuve"
+                checked={approuve}
+                disabled={!lu}
+                onCheckedChange={(v) => setApprouve(v === true)}
+                className="mt-0.5"
+              />
+              <span className="min-w-0 flex-1 text-[13px] leading-[1.5] text-foreground">
+                <strong className="font-semibold">Lu et approuvé.</strong> J'ai lu l'intégralité du
+                contrat ci-dessus et j'en accepte les termes.
+              </span>
+            </label>
+            {lu ? null : (
+              <p className="ul-aide pl-[26px]">
+                Parcourez le contrat jusqu'en bas pour pouvoir cocher cette mention.
+              </p>
+            )}
+          </div>
+
+          {/*
+            ⚠️ **La signature vient APRÈS la mention**, et nulle part ailleurs : c'est ce qui fait
             qu'on a dû passer devant les articles pour l'atteindre.
           */}
           <div className="flex flex-col gap-3 rounded-md border border-[var(--ap-200)] bg-[var(--ap-50)] p-4">
@@ -708,12 +758,18 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
                   « Continuer » ne prévenait de rien. Ce bouton envoie un code à usage unique : son
                   intitulé le dit, sinon le code arrive sans être attendu.
                 */}
-                <Button type="button" onClick={() => demarrer.mutate()} disabled={demarrer.isPending || !nomCorrespond}>
+                <Button
+                  type="button"
+                  onClick={() => demarrer.mutate()}
+                  disabled={demarrer.isPending || !nomCorrespond || !approuve}
+                >
                   {demarrer.isPending ? 'Envoi du code…' : 'Recevoir mon code de signature'}
                 </Button>
-                {!nomCorrespond ? (
+                {!approuve || !nomCorrespond ? (
                   <p className="mt-1.5 text-[11px] text-[var(--texte-tertiaire)]">
-                    Recopiez d'abord votre nom complet ci-dessus.
+                    {!approuve
+                      ? "Cochez d'abord la mention « lu et approuvé » ci-dessus."
+                      : "Recopiez d'abord votre nom complet ci-dessus."}
                   </p>
                 ) : null}
               </div>

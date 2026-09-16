@@ -69,6 +69,18 @@ const MOI: MeResponse = {
   backupCodesGeneratedAt: null,
 }
 
+/**
+ * Cocher « lu et approuvé » — chantier 144.
+ *
+ * ⚠️ Sous jsdom, la zone de lecture n'a aucune hauteur : elle est donc considérée lue dès
+ * l'affichage, et la case est atteignable. *Le VERROU de lecture demande un vrai moteur de rendu ;
+ * ce que la case commande, lui, s'éprouve ici.*
+ */
+async function cocherLuEtApprouve() {
+  const { fireEvent } = await import('@testing-library/react')
+  fireEvent.click(await screen.findByRole('checkbox', { name: /lu et approuvé/i }))
+}
+
 const TOUTES = (['ID', 'DIPLOMA', 'LICENSE', 'PHOTO'] as const).map((kind, i) => ({
   id: `d${i}`,
   kind,
@@ -261,6 +273,8 @@ describe('C1 — le contrat de partenariat', () => {
       },
     })
 
+    // ⚠️ La mention d'abord : depuis le chantier 144, le bouton l'exige aussi.
+    await cocherLuEtApprouve()
     const champ = screen.getByLabelText(/recopiez votre nom complet/i)
     // « Continuer » ne prévenait de rien : ce bouton envoie un code à usage unique.
     const continuer = screen.getByRole('button', { name: 'Recevoir mon code de signature' })
@@ -484,6 +498,7 @@ describe('C1 — l’avenant au contrat', () => {
     await monter(reedite(10, 12))
 
     const { fireEvent } = await import('@testing-library/react')
+    await cocherLuEtApprouve()
     fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
       target: { value: 'Ange Makaya' },
     })
@@ -492,6 +507,20 @@ describe('C1 — l’avenant au contrat', () => {
     expect(
       await screen.findByRole('button', { name: 'Re-signer et reprendre mon activité' }),
     ).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **« 10 % » barré à côté de « 10 % »** — vu par le porteur sur son écran, le 16/09. Une
+    réédition peut ne porter que sur le TEXTE (chantiers 133 et 136) : le taux n'a alors pas bougé.
+    *Barrer un chiffre qui n'a pas changé annonce une modification qui n'existe pas, et cache celle
+    qui existe.*
+  */
+  it('ne barre pas un taux qui n’a pas bougé, et dit ce qui a vraiment changé', async () => {
+    await monter(reedite(10, 10))
+
+    expect(await screen.findByText(/C'est le/)).toBeInTheDocument()
+    expect(screen.getByText(/texte du contrat/)).toBeInTheDocument()
+    expect(screen.queryByText('Ce que vous aviez signé')).not.toBeInTheDocument()
   })
 
   it('une baisse de taux est un avenant comme un autre — l’écran ne suppose pas le sens', async () => {
@@ -723,14 +752,65 @@ describe('C1 — le contrat qu’on doit signer se lit sans un geste', () => {
   })
 
   /*
-    Onze articles sans table des matières se parcourent au jugé. *Ce qu'on relira — la commission, la
-    résiliation, la responsabilité — doit se trouver sans être cherché.*
+    ⚠️ **Ancre remplacée EN CONSCIENCE au chantier 144.** Elle exigeait un SOMMAIRE — utile tant que
+    le contrat se déroulait sur toute la page. Le porteur l'a écarté le 16/09, et le texte vit
+    désormais dans une zone de lecture à hauteur fixe.
+
+    Ce que le cas défendait — *ne pas laisser parcourir onze articles au jugé* — est maintenant tenu
+    par une progression : *un sommaire dit où l'on POURRAIT aller, une position dit où l'on EST*, et
+    c'est la seconde qui manque quand on lit un texte long dans une fenêtre courte.
   */
-  it('donne un sommaire, avec les intitulés tels qu’ils sont écrits', async () => {
+  it('dit où l’on en est dans la lecture, et n’a plus de sommaire', async () => {
     await monter(aSigner())
 
-    const sommaire = within(await screen.findByRole('navigation', { name: 'Sommaire du contrat' }))
-    expect(sommaire.getByRole('link', { name: 'ARTICLE 3 — HONORAIRES ET COMMISSION' })).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Texte du contrat' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Sommaire du contrat' })).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **La mention commande la signature.** Sans elle, « lu et approuvé » ne serait qu'une case de
+    plus — et le porteur l'a demandée précisément pour qu'elle engage.
+  */
+  it('refuse de demander le code tant que la mention n’est pas cochée', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    await monter(aSigner())
+
+    fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
+      target: { value: 'Ange Makaya' },
+    })
+
+    expect(screen.getByRole('button', { name: 'Recevoir mon code de signature' })).toBeDisabled()
+    expect(screen.getByText(/Cochez d'abord la mention/)).toBeInTheDocument()
+
+    await cocherLuEtApprouve()
+    expect(screen.getByRole('button', { name: 'Recevoir mon code de signature' })).toBeEnabled()
+  })
+
+  /*
+    ⚠️ **Le verrou de lecture ne s'éprouve pas ici.** Sous jsdom, la zone de lecture n'a aucune
+    hauteur : elle est donc « lue » dès l'affichage, et retirer le verrou ne change rien d'observable
+    — l'injection du 16/09 l'a montré. *Une règle que le banc d'essai ne peut pas atteindre s'ancre
+    dans la source, ou elle ne se garde pas du tout.*
+
+    Les commentaires sont retirés avant la recherche : *un filet qui lit la prose comme du code
+    accuse celui qui a pris la peine d'expliquer* — le projet l'a déjà payé trois fois.
+  */
+  it('ne laisse pas cocher la mention avant d’avoir atteint le bas du texte', () => {
+    const source = readFileSync(resolve(__dirname, '../modules/verification/pages/VerificationPage.tsx'), 'utf8')
+    const sansCommentaires = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+    expect(sansCommentaires).toMatch(/disabled=\{!lu\}/)
+    expect(sansCommentaires).toMatch(/onLectureTerminee=\{\(\) => setLu\(true\)\}/)
+  })
+
+  /*
+    Et la mention dit ce qu'elle engage : *« j'accepte » sans dire quoi n'engage à rien.*
+  */
+  it('écrit la mention en toutes lettres', async () => {
+    await monter(aSigner())
+
+    expect(await screen.findByText(/J'ai lu l'intégralité du/)).toBeInTheDocument()
   })
 
   /*
@@ -754,6 +834,7 @@ describe('C1 — le contrat qu’on doit signer se lit sans un geste', () => {
     await monter(aSigner())
 
     const { fireEvent } = await import('@testing-library/react')
+    await cocherLuEtApprouve()
     fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
       target: { value: 'Ange Makaya' },
     })
@@ -897,6 +978,7 @@ describe('C1 — le code de signature dit où il est parti', () => {
     await monter(aSigner)
 
     const { fireEvent } = await import('@testing-library/react')
+    await cocherLuEtApprouve()
     fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
       target: { value: 'Ange Makaya' },
     })
@@ -914,6 +996,7 @@ describe('C1 — le code de signature dit où il est parti', () => {
     await monter(aSigner)
 
     const { fireEvent } = await import('@testing-library/react')
+    await cocherLuEtApprouve()
     fireEvent.change(await screen.findByLabelText(/recopiez votre nom complet/i), {
       target: { value: 'Ange Makaya' },
     })
