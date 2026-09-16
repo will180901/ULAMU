@@ -711,6 +711,8 @@ describe('Le contrat imprimé avant d’être signé', () => {
     expect(screen.getByText(/il n’engage ni lui ni la plateforme/)).toBeInTheDocument()
     // ⚠️ Et sur CHAQUE page : *une page 2 photocopiée seule ne dit plus d'où elle vient.*
     expect(screen.getAllByText('PROJET').length).toBeGreaterThan(0)
+    // ⚠️ Le mot ET la marque : *un filigrane dit ce que vaut la feuille, et de qui elle vient.*
+    expect(document.querySelectorAll('[data-page] svg[viewBox="0 0 32 32"]').length).toBeGreaterThan(1)
   })
 
   it('ne prétend nulle part que quelqu’un l’a signé', () => {

@@ -140,10 +140,15 @@ export interface FeuilleImpressionProps {
   /** Ce que le pied rappelle, en plus de la référence. */
   mention?: string
   /**
-   * Un mot en filigrane, en travers de CHAQUE page — « PROJET » sur un contrat non signé.
+   * Un filigrane en travers de CHAQUE page — « PROJET » sur un contrat non signé.
    *
    * 📌 Sur chaque page, et pas seulement la première : *une page 2 photocopiée seule ne dit plus
    * d'où elle vient.* C'est ainsi qu'un acte non signé se marque depuis toujours.
+   *
+   * 📌 **La marque ULAMU accompagne le mot** — demande du porteur, chantier 147. Un filigrane
+   * porte deux choses : *ce que vaut la feuille* (un projet) et *de qui elle vient*. Le mot seul
+   * disait la première ; la marque dit la seconde, et c'est elle qu'on reconnaît de loin sur une
+   * photocopie.
    */
   filigrane?: string
   children: React.ReactNode
@@ -453,20 +458,33 @@ export function FeuilleImpression({
             position: 'absolute',
             inset: 0,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: 22,
             transform: 'rotate(-32deg)',
-            fontFamily: TITRAGE,
-            fontSize: 108,
-            fontWeight: 800,
-            letterSpacing: '0.18em',
-            color: 'rgba(30,74,143,0.07)',
+            /*
+              L'opacité est portée par le CONTENANT, pas par une couleur : la marque et le mot pâlissent
+              ensemble, du même degré. *Deux pâleurs réglées séparément finissent par se désaccorder.*
+            */
+            opacity: 0.08,
             pointerEvents: 'none',
             userSelect: 'none',
-            whiteSpace: 'nowrap',
           }}
         >
-          {filigrane}
+          <LogoMark size={150} />
+          <span
+            style={{
+              fontFamily: TITRAGE,
+              fontSize: 96,
+              fontWeight: 800,
+              letterSpacing: '0.18em',
+              color: ACCENT,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {filigrane}
+          </span>
         </span>
       ) : null}
       {enTete}
