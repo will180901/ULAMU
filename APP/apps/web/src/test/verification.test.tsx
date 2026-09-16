@@ -617,7 +617,14 @@ describe('C1 — l’avenant au contrat', () => {
         signedAt: '2026-08-22T16:42:00.000Z',
         effectiveAt: '2026-08-22T16:42:00.000Z',
       },
-      lastSigned: { version: 2, commissionPct: 10, signedAt: '2026-07-01T10:00:00.000Z' },
+      lastSigned: {
+        version: 2,
+        commissionPct: 10,
+        signedAt: '2026-07-01T10:00:00.000Z',
+        bodyHash: 'b7c2anciencontratsigne0000000000',
+        body: 'CONTRAT SOIGNANT ULAMU',
+        integrity: true,
+      },
     })
 
     expect(await screen.findByText(/Contrat signé le/)).toBeInTheDocument()
