@@ -42,6 +42,22 @@ import { RecuImprimable } from '@/components/impression/RecuImprimable'
  */
 const SAUT = String.fromCharCode(10)
 
+/**
+ * La source, débarrassée de ses commentaires.
+ *
+ * ⚠️ **Trois filets de suite ont attrapé la prose au lieu du code** — chantiers 140, 142 et 143.
+ * Chaque fois le même scénario : le commentaire qui EXPLIQUE une décision contient les mots de
+ * cette décision, et le filet se déclare satisfait alors que le code, lui, a disparu.
+ *
+ * > **Un filet qui lit la prose comme du code accuse celui qui a pris la peine d'expliquer — et
+ * > absout celui qui a retiré la règle.**
+ *
+ * Corrigé deux fois à la main avant de comprendre qu'il fallait corriger la CAUSE : *une faute
+ * qu'on répare au cas par cas revient sous un autre nom.*
+ */
+const sansCommentaires = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
 // Le QR est fabriqué sur le poste par `qrcode` : on le remplace, les règles testées sont ailleurs.
 vi.mock('qrcode', () => ({ default: { toDataURL: () => Promise.resolve('data:image/png;base64,x') } }))
 
@@ -810,5 +826,118 @@ describe('Le banc de mesure', () => {
   it('déclare une coupure de page entre les feuilles, jamais après la dernière', () => {
     expect(sourceFeuille).toMatch(/\[data-page\] \{[\s\S]*?break-after: page;/)
     expect(sourceFeuille).toMatch(/\[data-page\]:last-of-type \{ break-after: auto; \}/)
+  })
+})
+
+/*
+  ── ⚠️ 32 mm de texte étaient COUPÉS, et rien ne le disait — chantier 142, 16/09/2026 ─────
+
+  **Mesuré en production**, après le déploiement de la pagination : la répartition budgétait 185 mm de
+  blocs sur la première page, et ces blocs en occupaient **224**. Écart : **39 mm**, dont 32 rognés
+  par le `overflow: hidden` de la feuille.
+
+  La cause : `getBoundingClientRect()` rend la hauteur d'un élément **sans ses marges**. Un article
+  porte 13 px de marge basse — dix articles, quarante millimètres.
+
+  > **Mesurer un bloc sans l'espace qu'il pousse devant lui, c'est mesurer un meuble sans compter
+  > qu'on doit ouvrir sa porte.**
+
+  ⚠️ La mesure réelle demande un moteur de rendu : jsdom donne zéro partout. On ancre donc dans la
+  SOURCE la décision qui corrige — comme le fait déjà le filet des promesses d'écran.
+*/
+describe('La mesure compte l’espace entre les blocs', () => {
+  const sourceFeuille = readFileSync(resolve(__dirname, '../components/impression/FeuilleImpression.tsx'), 'utf8')
+
+  it('enferme les marges de chaque bloc dans sa mesure', () => {
+    expect(sansCommentaires(sourceFeuille)).toMatch(/data-mesure-bloc="" style=\{\{ display: 'flow-root' \}\}/)
+  })
+
+  /*
+    Et la feuille ne se laisse plus POUSSER par un corps trop plein : un élément flexible refuse par
+    défaut de descendre sous la hauteur de son contenu, et le débordement se produit alors en silence.
+  */
+  it('contient son corps au lieu de se laisser pousser par lui', () => {
+    expect(sansCommentaires(sourceFeuille)).toMatch(/minHeight: 0/)
+  })
+})
+
+/*
+  ── ⚠️ « Est-ce réellement dynamique pour TOUT document ? » — chantier 143, 16/09/2026 ─────
+
+  **Question du porteur, et la réponse était non.** La répartition se faisait au bloc, et le tableau
+  des médicaments d'une ordonnance était **un seul bloc** : au-delà d'une douzaine de lignes, il
+  dépassait la page et se faisait rogner. Sur une ordonnance, une ligne rognée est un médicament qui
+  disparaît.
+
+  > **Un tableau qu'on ne sait pas couper est un tableau qu'on finit par couper n'importe où.**
+
+  Un GROUPE rend chaque ligne paginable, et fait **repayer l'en-tête** à chaque page où le tableau
+  reprend : *une colonne de chiffres sans son titre n'est plus une colonne, c'est une liste de
+  nombres.*
+*/
+describe('Les groupes : un tableau se coupe sans perdre ses titres', () => {
+  it('paie l’en-tête à chaque page où le groupe repart', () => {
+    // En-tête 20 + deux lignes de 30 = 80 ; la troisième demanderait 110 → page suivante.
+    expect(repartirEnPages([30, 30, 30], 100, [0, 0, 0], { 0: 20 })).toEqual([[0, 1], [2]])
+  })
+
+  /*
+    ⚠️ **Les chiffres comptent ici.** Un premier jet éprouvait `[10, 10, 10]` : l'en-tête repayé à
+    chaque ligne tenait encore sur une page, et la faute passait. *Un cas trop facile ne vérifie
+    que la patience de celui qui l'a écrit.* Avec trois lignes de 20 et un en-tête de 20, repayer
+    trois fois fait 120 pour 100 de place — et la faute se voit.
+  */
+  it('ne le paie qu’une fois par page', () => {
+    expect(repartirEnPages([20, 20, 20], 100, [0, 0, 0], { 0: 20 })).toEqual([[0, 1, 2]])
+  })
+
+  it('n’en fait rien payer aux blocs qui n’appartiennent à aucun groupe', () => {
+    expect(repartirEnPages([50, 50], 100, [null, null], { 0: 40 })).toEqual([[0, 1]])
+  })
+
+  it('le repaie quand deux groupes se succèdent sur la même page', () => {
+    expect(repartirEnPages([30, 30], 100, [0, 1], { 0: 20, 1: 20 })).toEqual([[0, 1]])
+  })
+
+  /*
+    ⚠️ **La même propriété que sans groupe, et c'est la plus importante** : rien ne se perd, rien ne
+    se duplique. Une ligne d'ordonnance perdue est un médicament qui disparaît de la prescription.
+  */
+  it('ne perd et ne duplique aucune ligne, en-têtes compris', () => {
+    let graine = 11
+    const suivant = () => {
+      graine = (graine * 1103515245 + 12345) % 2147483648
+      return graine / 2147483648
+    }
+
+    for (let n = 0; n < 300; n++) {
+      const combien = Math.floor(suivant() * 10)
+      const hauteurs = Array.from({ length: combien }, () => Math.floor(suivant() * 5) * 40)
+      const groupes = hauteurs.map(() => (suivant() < 0.5 ? 0 : null))
+      expect(repartirEnPages(hauteurs, 100, groupes, { 0: 30 }).flat()).toEqual(hauteurs.map((_, i) => i))
+    }
+  })
+
+  /*
+    Et l'ordonnance s'en sert vraiment : déclarer la capacité sans la brancher la laisserait
+    exactement où elle était. *Une capacité qu'aucun écran n'utilise se lit comme une capacité
+    absente* — le projet a déjà payé ce motif treize fois.
+  */
+  it('l’ordonnance confie ses lignes à un groupe, et fige ses colonnes', () => {
+    const source = readFileSync(resolve(__dirname, '../components/impression/OrdonnanceImprimable.tsx'), 'utf8')
+
+    expect(sansCommentaires(source)).toMatch(/<GroupeImprimable/)
+    /*
+      ⚠️ En largeur automatique, chaque page calculerait ses colonnes sur les seules lignes qu'elle
+      porte — et les colonnes se décaleraient d'une page à l'autre.
+    */
+    expect(sansCommentaires(source)).toMatch(/tableLayout: 'fixed'/)
+  })
+
+  it('rend toujours l’en-tête de colonnes avec les lignes', () => {
+    monter()
+
+    expect(screen.getByText('Médicament et posologie')).toBeInTheDocument()
+    expect(screen.getByText('Paracétamol 500 mg')).toBeInTheDocument()
   })
 })

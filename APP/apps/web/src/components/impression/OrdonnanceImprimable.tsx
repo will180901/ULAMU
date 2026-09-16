@@ -41,6 +41,7 @@ import type { Prescription } from '@/lib/api'
 import { TexteMisEnForme } from '@/components/ulamu/TexteMisEnForme'
 import {
   FeuilleImpression,
+  GroupeImprimable,
   IMPRESSION_ACCENT,
   IMPRESSION_CHIFFRES,
   IMPRESSION_DOUX,
@@ -153,16 +154,39 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
 
       <TitreSection>Prescription</TitreSection>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-        <thead>
+      {/*
+        ── ⚠️ Une ordonnance longue était COUPÉE — chantier 143, 16/09/2026 ───────────────
+
+        La pagination du chantier 141 répartit au BLOC, et ce tableau était **un seul bloc** : au-delà
+        d'une douzaine de lignes, il dépassait la page et se faisait rogner en silence. Sur une
+        ordonnance, une ligne rognée est un médicament qui disparaît.
+
+        > **Un tableau qu'on ne sait pas couper est un tableau qu'on finit par couper n'importe où.**
+
+        📌 `GroupeImprimable` rend chaque ligne paginable, et **réimprime l'en-tête de colonnes** en
+        haut de la page où le tableau reprend : *une colonne de chiffres sans son titre n'est plus une
+        colonne, c'est une liste de nombres.*
+
+        ⚠️ **`tableLayout: 'fixed'` n'est pas une préférence.** En largeur automatique, chaque page
+        calculerait ses colonnes sur les seules lignes qu'elle porte — et les colonnes se
+        décaleraient d'une page à l'autre. *Un tableau dont les colonnes bougent d'une page à l'autre
+        ne se lit plus comme un tableau.*
+      */}
+      <GroupeImprimable
+        entete={
           <tr style={{ background: IMPRESSION_DOUX }}>
             <th style={{ ...ENTETE_COLONNE, textAlign: 'left', width: 26 }}>#</th>
             <th style={{ ...ENTETE_COLONNE, textAlign: 'left' }}>Médicament et posologie</th>
             <th style={{ ...ENTETE_COLONNE, textAlign: 'right', width: 118 }}>Quantité</th>
           </tr>
-        </thead>
-        <tbody>
-          {ordonnance.lines.map((l, i) => (
+        }
+        contenant={(entete, lignes) => (
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: 11 }}>
+            {entete ? <thead>{entete}</thead> : null}
+            <tbody>{lignes}</tbody>
+          </table>
+        )}
+        lignes={ordonnance.lines.map((l, i) => (
             <tr key={l.id} data-insecable style={{ borderBottom: `1px solid ${IMPRESSION_FILET}` }}>
               <td style={{ padding: '9px 10px', verticalAlign: 'top', color: IMPRESSION_GRIS, fontFamily: IMPRESSION_CHIFFRES }}>{i + 1}</td>
               <td style={{ padding: '9px 10px', verticalAlign: 'top' }}>
@@ -197,8 +221,7 @@ export function OrdonnanceImprimable({ ordonnance, patient, soignant, onFermer }
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
+      />
 
       {/*
         LE CODE — bas de page, mais grand. C'est ce que le comptoir cherche des yeux, et c'est ce

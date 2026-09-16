@@ -52,7 +52,7 @@
  * main — la preuve est électronique. *Un cadre vide sur un document médical invite à le remplir
  * après coup.*
  */
-import { Children, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Children, Fragment, isValidElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Printer, X } from 'lucide-react'
 import { LogoMark } from '@/components/ulamu/Logo'
@@ -93,6 +93,42 @@ const MARGE = 22 * 3.7795
  * près, c'est parier que deux appareils sont d'accord sur ce qu'est un millimètre.*
  */
 const SECURITE = 6 * 3.7795
+
+/**
+ * Une suite de lignes qui partagent un en-tête — chantier 143, 16/09/2026.
+ *
+ * ── ⚠️ Le trou que le porteur a désigné ───────────────────────────────────────
+ *
+ * « Est-ce réellement dynamique pour tout type de document ? » — la réponse était **non**. La
+ * répartition se faisait au bloc, et le tableau des médicaments d'une ordonnance était **un seul
+ * bloc** : quinze lignes dépassaient une page et se faisaient couper en silence.
+ *
+ * 📌 Un groupe donne à la feuille le droit de couper **entre deux lignes**, et l'obligation de
+ * **réimprimer l'en-tête** en haut de la page où le groupe reprend : *une colonne de chiffres sans
+ * son titre n'est plus une colonne, c'est une liste de nombres.*
+ *
+ * ⚠️ **C'est un marqueur, pas un composant** : il ne rend jamais rien lui-même. La feuille le lit
+ * parmi ses enfants et décide. *Un composant qui se rendrait tout seul empêcherait justement ce
+ * qu'on lui demande : être coupé.*
+ */
+export interface GroupeImprimableProps {
+  /** L'en-tête, réimprimé en haut de chaque page où le groupe se poursuit. */
+  entete?: React.ReactNode
+  /** Les lignes — chacune se pagine indépendamment. */
+  lignes: React.ReactNode[]
+  /** Comment assembler en-tête et lignes : un `<table>`, une `<ul>`… */
+  contenant: (entete: React.ReactNode | null, lignes: React.ReactNode[]) => React.ReactNode
+}
+
+export function GroupeImprimable(_props: GroupeImprimableProps): null {
+  return null
+}
+
+/** Un bloc à paginer : soit un enfant ordinaire, soit une ligne appartenant à un groupe. */
+interface BlocAPaginer {
+  noeud: React.ReactNode
+  groupe: number | null
+}
 
 export interface FeuilleImpressionProps {
   /** Le nom du document, en haut à droite : « Ordonnance », « Reçu de paiement »… */
@@ -151,7 +187,26 @@ function imprimer(idRacine: string): void {
 export function FeuilleImpression({ document: nomDocument, reference, blocs, mention, children, onFermer }: FeuilleImpressionProps) {
   const idRacine = useRef(`feuille-${Math.random().toString(36).slice(2, 9)}`).current
   const refMesure = useRef<HTMLDivElement>(null)
-  const enfants = useMemo(() => Children.toArray(children), [children])
+  /*
+    Les enfants sont dépliés en BLOCS : un groupe donne autant de blocs que de lignes, et la feuille
+    retrouve ensuite son en-tête pour le réimprimer. *Ce qu'on veut pouvoir couper doit se
+    présenter déjà coupé à celui qui compte.*
+  */
+  const { blocs: aPaginer, groupes } = useMemo(() => {
+    const blocs: BlocAPaginer[] = []
+    const groupes: GroupeImprimableProps[] = []
+    for (const enfant of Children.toArray(children)) {
+      if (isValidElement(enfant) && enfant.type === GroupeImprimable) {
+        const props = enfant.props as GroupeImprimableProps
+        const g = groupes.length
+        groupes.push(props)
+        for (const ligne of props.lignes) blocs.push({ noeud: ligne, groupe: g })
+        continue
+      }
+      blocs.push({ noeud: enfant, groupe: null })
+    }
+    return { blocs, groupes }
+  }, [children])
   const [pages, setPages] = useState<number[][] | null>(null)
 
   /* Échap ferme l'aperçu : sur un document qui recouvre l'écran, ne pas trouver la sortie donne
@@ -177,7 +232,7 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
   // Le contenu a changé : la répartition précédente ne vaut plus rien, on remesure.
   useLayoutEffect(() => {
     setPages(null)
-  }, [enfants])
+  }, [aPaginer])
 
   useLayoutEffect(() => {
     if (pages !== null) return
@@ -186,18 +241,31 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
     const mesures = c ? [...c.querySelectorAll('[data-mesure-bloc]')] : []
     const utile = habillage ? HAUTEUR - habillage.getBoundingClientRect().height - SECURITE : 0
 
+    // Ce que coûte l'en-tête de chaque groupe, à payer à chaque page où il repart.
+    const hauteursEntetes: Record<number, number> = {}
+    for (const e of c?.querySelectorAll('[data-mesure-entete]') ?? []) {
+      hauteursEntetes[Number(e.getAttribute('data-mesure-entete'))] = e.getBoundingClientRect().height
+    }
+
     /*
       ⚠️ **Sans mesure exploitable, tout tient sur une feuille — jamais rien.** jsdom rend toutes
       les hauteurs à zéro, et un navigateur peut refuser une mesure sur un onglet en arrière-plan.
       *Un aperçu vide par prudence est un aperçu cassé : il vaut mieux une page trop longue qu'une
       page blanche.*
     */
-    if (!habillage || utile <= 0 || mesures.length !== enfants.length) {
-      setPages([enfants.map((_, i) => i)])
+    if (!habillage || utile <= 0 || mesures.length !== aPaginer.length) {
+      setPages([aPaginer.map((_, i) => i)])
       return
     }
-    setPages(repartirEnPages(mesures.map((e) => e.getBoundingClientRect().height), utile))
-  }, [pages, enfants])
+    setPages(
+      repartirEnPages(
+        mesures.map((e) => e.getBoundingClientRect().height),
+        utile,
+        aPaginer.map((b) => b.groupe),
+        hauteursEntetes,
+      ),
+    )
+  }, [pages, aPaginer])
 
   /**
    * Les pages, une fois mesurées. `null` = la mesure n'a pas encore eu lieu.
@@ -209,6 +277,31 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
    * affichage : personne ne voit ce vide.
    */
   const feuilles = pages
+
+  /*
+    Les lignes consécutives d'un même groupe sont remises dans leur contenant, avec l'en-tête.
+    C'est ici que le tableau se reforme, page par page.
+  */
+  const contenuDePage = (indices: number[]): React.ReactNode[] => {
+    const out: React.ReactNode[] = []
+    let i = 0
+    while (i < indices.length) {
+      const g = aPaginer[indices[i]].groupe
+      if (g === null) {
+        out.push(<Fragment key={indices[i]}>{aPaginer[indices[i]].noeud}</Fragment>)
+        i += 1
+        continue
+      }
+      const debut = indices[i]
+      const lignes: React.ReactNode[] = []
+      while (i < indices.length && aPaginer[indices[i]].groupe === g) {
+        lignes.push(aPaginer[indices[i]].noeud)
+        i += 1
+      }
+      out.push(<Fragment key={`g${g}-${debut}`}>{groupes[g].contenant(groupes[g].entete ?? null, lignes)}</Fragment>)
+    }
+    return out
+  }
 
   const enTete = (
     <div style={{ padding: `${MARGE}px ${MARGE}px 0` }}>
@@ -333,7 +426,12 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
     >
       {enTete}
       {identite}
-      <div style={{ flex: mesure ? 'none' : 1, padding: `20px ${MARGE}px 26px` }}>{contenu}</div>
+      {/*
+        `minHeight: 0` : un élément flexible refuse par défaut de descendre sous la hauteur de son
+        contenu. Sans cela, un corps trop plein POUSSE la feuille au lieu d'être contenu par elle —
+        et le débordement se produit en silence, sous le `overflow: hidden` de la page.
+      */}
+      <div style={{ flex: mesure ? 'none' : 1, minHeight: 0, padding: `20px ${MARGE}px 26px` }}>{contenu}</div>
       {pied(numero, total)}
     </div>
   )
@@ -365,11 +463,7 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
         <div id={idRacine} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
           {(feuilles ?? []).map((indices, i) => (
             <div key={i} style={{ display: 'contents' }}>
-              {feuille(
-                indices.map((j) => enfants[j]),
-                i + 1,
-                (feuilles ?? []).length,
-              )}
+              {feuille(contenuDePage(indices), i + 1, (feuilles ?? []).length)}
             </div>
           ))}
         </div>
@@ -393,9 +487,33 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
         >
           {feuille(null, 1, 1, true)}
           <div style={{ width: LARGEUR - 2 * MARGE, fontFamily: CORPS, color: ENCRE }}>
-            {enfants.map((e, i) => (
-              <div key={i} data-mesure-bloc="">
-                {e}
+            {aPaginer.map((b, i) => (
+              /*
+                ⚠️ **`flow-root`, et ce n'est pas un détail de style** — chantier 142, 16/09/2026.
+
+                `getBoundingClientRect()` rend la hauteur d'un élément SANS ses marges. Or un article
+                porte 13 px de marge basse, et c'est de la place sur la feuille comme le reste.
+                Mesuré en ligne le 16/09 : la répartition budgétait 185 mm de blocs, ces blocs en
+                occupaient **224** — et **32 mm de texte étaient coupés en bas de la première page**,
+                sans que rien ne le signale.
+
+                > **Mesurer un bloc sans l'espace qu'il pousse devant lui, c'est mesurer un meuble
+                > sans compter qu'on doit ouvrir sa porte.**
+
+                `display: flow-root` enferme les marges de l'enfant dans ce conteneur : sa hauteur
+                devient enfin la place réellement occupée.
+              */
+              <div key={i} data-mesure-bloc="" style={{ display: 'flow-root' }}>
+                {b.groupe === null ? b.noeud : groupes[b.groupe].contenant(null, [b.noeud])}
+              </div>
+            ))}
+            {/*
+              L'en-tête de chaque groupe est mesuré à part : c'est ce qu'il coûtera à chaque fois que
+              le groupe reprendra en haut d'une page.
+            */}
+            {groupes.map((g, i) => (
+              <div key={`entete-${i}`} data-mesure-entete={i} style={{ display: 'flow-root' }}>
+                {g.contenant(g.entete ?? null, [])}
               </div>
             ))}
           </div>
