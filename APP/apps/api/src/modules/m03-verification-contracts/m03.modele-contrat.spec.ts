@@ -140,8 +140,107 @@ describe("Le modèle 2026-09 — ce qu'un contrat de télémédecine doit dire",
     expect(buildAgreementText("X", 8, 1, "2026-09")).toContain("commission de 8 %");
   });
 
-  it("est bien le modèle courant", () => {
-    expect(MODELE_CONTRAT_COURANT).toBe("2026-09");
+  /*
+    ⚠️ **FIGÉ à son tour — chantier 145, 16/09/2026.** Ce modèle a vécu une journée : le porteur a
+    demandé que « Version 2 — modèle 2026-09 » disparaîsse du titre, et cette mention étant DANS le
+    texte scellé, il a fallu émettre `2026-09.2`.
+
+    L'empreinte ci-dessous le verrouille, exactement comme celle du modèle d'origine. *On ne peut
+    pas vérifier d'ici si quelqu'un l'a signé ; on peut garantir que ses octets ne bougeront plus.*
+  */
+  it("est figé à l'octet près, et n'est plus le modèle courant", () => {
+    expect(sha256(buildAgreementText("Armel Konaté", 10, 3, "2026-09"))).toBe(
+      "d4d975268202a9f1dc75acfb16364f28cb7ae16fab2aed11af6f56c9d943843f",
+    );
+    expect(MODELE_CONTRAT_COURANT).not.toBe("2026-09");
+  });
+});
+
+/*
+  ── Le modèle 2026-09.2 — chantier 145, 16/09/2026 ────────────────────────────────
+
+  **Demande du porteur, 16/09** : « je veux que le contrat ressemble à un truc créé et écrit par un
+  expert du domaine administratif, et non un truc qui donne l'impression que c'est écrit par l'IA »,
+  « tu vas enlever les expressions comme version du contrat ».
+
+  Ce qui faisait « travail d'IA » tenait à deux endroits du TEXTE lui-même :
+    • un titre qui était une fiche technique — « CONTRAT DE PARTENARIAT ULAMU / Version 2 — modèle
+      2026-09 » ;
+    • une clôture qui était un résumé de métadonnées — « Signataire : X — Version 2 — Commission :
+      10 % ».
+
+  > **Un acte ne s'ouvre pas sur son numéro de série et ne se termine pas sur le résumé de sa fiche.**
+*/
+describe("Le modèle 2026-09.2 — un acte, pas une fiche", () => {
+  const texte = buildAgreementText("Armel Konaté", 10, 3, "2026-09.2");
+  const lignes = texte.split("\n");
+
+  /* ⚠️ LE cas de ce chantier : le titre est un titre. */
+  it("s'ouvre sur son titre, et sur rien d'autre", () => {
+    expect(lignes[0]).toBe("CONTRAT DE PARTENARIAT ULAMU");
+    expect(texte).not.toMatch(/Version \d/);
+    expect(texte).not.toMatch(/modèle 2026/);
+  });
+
+  /*
+    La charnière de tout acte écrit : elle sépare l'identification des parties de leurs engagements.
+  */
+  it("ferme son préambule par la formule d'usage", () => {
+    expect(texte).toContain("Il a été convenu ce qui suit :");
+  });
+
+  /* *Un acte ne se termine pas sur le résumé de sa fiche.* */
+  it("se termine comme un acte se termine", () => {
+    expect(texte.trimEnd().endsWith(
+      "En foi de quoi, le Praticien appose sa signature électronique au bas du présent contrat.",
+    )).toBe(true);
+    expect(texte).not.toMatch(/^Signataire\s*:/m);
+  });
+
+  /*
+    ⚠️ **La rémunération est DANS un article** — demande explicite du porteur — et nulle part
+    ailleurs : ni dans le titre, ni dans la clôture, ni dans un encadré mis en vitrine.
+  */
+  it("garde la rémunération dans ses articles", () => {
+    expect(texte).toContain("ARTICLE 5 — HONORAIRES ET COMMISSION");
+    expect(texte).toContain("commission de 10 %");
+    // La clôture ne la répète plus.
+    expect(texte.trimEnd().split("\n").at(-1)).not.toMatch(/Commission/);
+  });
+
+  /*
+    ⚠️ **DÉTERMINISTE, et sans date.** Ce texte est généré AVANT la signature : *une date dans un
+    texte scellé avant sa signature serait une date inventée.* Le « Fait à Brazzaville, le… » est
+    porté par le document imprimé, qui connaît la date réelle.
+  */
+  it("ne porte aucune date, et reste identique à lui-même", () => {
+    expect(texte).not.toMatch(/\b20\d\d\b/);
+    expect(buildAgreementText("Armel Konaté", 10, 3, "2026-09.2")).toBe(texte);
+  });
+
+  it("porte les onze articles, dont celui qui compte le jour d'un litige", () => {
+    for (let n = 1; n <= 11; n += 1) expect(texte).toContain(`ARTICLE ${n} —`);
+    expect(texte).toContain("RESPONSABILITÉ DE L'ACTE MÉDICAL");
+    expect(texte).toContain("DURÉE ET RÉSILIATION");
+  });
+
+  /* La clause fausse du modèle d'origine ne revient pas : ULAMU n'est relié à aucune officine. */
+  it("ne parle d'aucune pharmacie", () => {
+    expect(texte).not.toMatch(/pharmaci/i);
+    expect(texte).not.toMatch(/stock/i);
+  });
+
+  it("porte le taux injecté, jamais un taux écrit en dur", () => {
+    expect(buildAgreementText("X", 12, 1, "2026-09.2")).toContain("commission de 12 %");
+  });
+
+  it("est le modèle courant", () => {
+    expect(MODELE_CONTRAT_COURANT).toBe("2026-09.2");
+  });
+
+  /* Le verrou d'archive, posé dès maintenant : ce texte sera signé, donc il ne bougera plus. */
+  it("est scellé à l'octet près", () => {
+    expect(sha256(texte)).toBe("c6c5d1f593d81024f9027b762efa21eaee92be3a5497f315ff63a32bb470c771");
   });
 });
 

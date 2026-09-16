@@ -77,7 +77,12 @@ export function decouperContrat(texte: string): {
   if (dernier) {
     while (dernier.alineas.length > 0 && dernier.alineas.at(-1) === '') dernier.alineas.pop()
     const queue = dernier.alineas.at(-1)
-    if (queue && /^Signataire\s*:/.test(queue)) {
+    /*
+      Deux formes de clôture, selon le modèle : « Signataire : … » (origine et 2026-09) et
+      « En foi de quoi… » (2026-09.2, chantier 145). *Un analyseur qui ne connaît qu'une seule
+      formule range la clôture du nouveau modèle dans le dernier article.*
+    */
+    if (queue && /^(Signataire\s*:|En foi de quoi)/.test(queue)) {
       cloture.push(dernier.alineas.pop() as string)
       while (dernier.alineas.length > 0 && dernier.alineas.at(-1) === '') dernier.alineas.pop()
     }

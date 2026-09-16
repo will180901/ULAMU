@@ -127,10 +127,10 @@ export function isOverdue(waitingSinceMs: number, pm11Hours: number, nowMs: numb
  *
  * `null` désigne le modèle d'origine, celui d'avant que les modèles existent.
  */
-export type ModeleContrat = "2026-09" | null;
+export type ModeleContrat = "2026-09" | "2026-09.2" | null;
 
 /** Le modèle employé pour toute NOUVELLE version émise à partir d'aujourd'hui. */
-export const MODELE_CONTRAT_COURANT: ModeleContrat = "2026-09";
+export const MODELE_CONTRAT_COURANT: ModeleContrat = "2026-09.2";
 
 /**
  * Texte du contrat numérique (EF-03-06, D-011) — DÉTERMINISTE : mêmes entrées ⇒ même texte
@@ -142,9 +142,9 @@ export function buildAgreementText(
   version: number,
   modele: ModeleContrat = null,
 ): string {
-  return modele === "2026-09"
-    ? contrat2026_09(name, commissionPct, version)
-    : contratOrigine(name, commissionPct, version);
+  if (modele === "2026-09.2") return contrat2026_09_2(name, commissionPct);
+  if (modele === "2026-09") return contrat2026_09(name, commissionPct, version);
+  return contratOrigine(name, commissionPct, version);
 }
 
 /**
@@ -225,6 +225,20 @@ function contratOrigine(name: string, commissionPct: number, version: number): s
  * 📌 Les montants et délais ne sont PAS écrits en dur : la commission est injectée (PM-01). Les
  * autres paramètres sont nommés sans être chiffrés — *un contrat qui recopie un chiffre réglable
  * ment le jour où l'administration le change.*
+ */
+/**
+ * ⚠️ **MODÈLE FIGÉ à son tour — chantier 145, 16/09/2026.**
+ *
+ * Il a vécu une journée. Le porteur a demandé que le contrat « ressemble à un travail d'expert du
+ * domaine administratif et non à un truc créé par l'IA », et que « Version 2 — modèle 2026-09 »
+ * disparaîsse du titre. Cette mention étant **dans le texte scellé**, la retirer demandait un
+ * nouveau modèle : `2026-09.2`.
+ *
+ * ⚠️ **Pourquoi émettre plutôt que corriger, alors que personne ne l'a sans doute signé ?** Parce
+ * que « sans doute » ne se vérifie pas d'ici : la base de production n'est pas lisible depuis le
+ * poste de développement. Modifier ces octets casserait irrémédiablement toute signature qui s'y
+ * appuierait. *Émettre ne coûte qu'une fonction morte ; corriger à l'aveugle coûte le contrat de
+ * quelqu'un.*
  */
 function contrat2026_09(name: string, commissionPct: number, version: number): string {
   return [
@@ -307,6 +321,118 @@ function contrat2026_09(name: string, commissionPct: number, version: number): s
     `des tribunaux compétents de Brazzaville.`,
     ``,
     `Signataire : ${name} — Version ${version} — Commission : ${commissionPct} %.`,
+  ].join("\n");
+}
+
+/**
+ * Le modèle **2026-09.2** — chantier 145, 16/09/2026.
+ *
+ * ── Ce qui change, et pourquoi ───────────────────────────────────────────────
+ *
+ * **Demande du porteur** : « que le contrat ressemble à un truc écrit par un expert du domaine
+ * administratif, et non à du travail d'IA », « enlever les expressions comme version du contrat ».
+ *
+ * 📌 **Le titre est un titre**, plus une fiche technique : `CONTRAT DE PARTENARIAT ULAMU` seul.
+ * La version reste identifiable — en pied du document imprimé, et dans la référence — *une version
+ * qu'on ne peut plus identifier empêche de savoir lequel de deux contrats on tient.*
+ *
+ * 📌 **« Il a été convenu ce qui suit »** ferme le préambule : c'est la charnière de tout acte écrit,
+ * entre l'identification des parties et leurs engagements.
+ *
+ * 📌 **La clôture devient une clôture d'acte** : « En foi de quoi… », et non plus une ligne de
+ * métadonnées (« Signataire : X — Version 2 — Commission : 10 % »). *Un acte ne se termine pas sur
+ * le résumé de sa fiche.* La commission reste où elle doit être : à l'article 5.
+ *
+ * ⚠️ **Aucune date ici, et ce n'est pas un oubli.** Ce texte est généré AVANT la signature, et il
+ * doit être déterministe : mêmes entrées, même empreinte. *Une date dans un texte scellé avant sa
+ * signature serait une date inventée.* Le « Fait à Brazzaville, le… » est porté par le document
+ * imprimé, qui connaît la date réelle.
+ *
+ * ⚠️ **`version` n'est plus un paramètre** : elle ne figure nulle part dans le texte. La garder
+ * ferait croire qu'elle influence l'empreinte.
+ */
+function contrat2026_09_2(name: string, commissionPct: number): string {
+  return [
+    `CONTRAT DE PARTENARIAT ULAMU`,
+    ``,
+    `ENTRE :`,
+    `ULAMU, plateforme de télémédecine exploitée en République du Congo, ci-après « la Plateforme ».`,
+    ``,
+    `ET :`,
+    `${name}, professionnel de santé vérifié, ci-après « le Praticien ».`,
+    ``,
+    `Il a été convenu ce qui suit :`,
+    ``,
+    `ARTICLE 1 — OBJET`,
+    `La Plateforme met à la disposition du Praticien un service de mise en relation avec des`,
+    `patients, un espace de consultation par messagerie, et les outils associés : compte-rendu,`,
+    `ordonnance électronique et encaissement des honoraires.`,
+    `La Plateforme n'exerce aucune activité de soin et ne s'immisce dans aucune décision médicale.`,
+    ``,
+    `ARTICLE 2 — RESPONSABILITÉ DE L'ACTE MÉDICAL`,
+    `Le Praticien exerce en son nom propre, sous sa seule responsabilité professionnelle, et`,
+    `demeure seul responsable de ses diagnostics, prescriptions et conseils.`,
+    `Il lui appartient d'apprécier si l'état du patient permet une prise en charge à distance et,`,
+    `à défaut, de l'orienter vers une consultation en présentiel ou vers l'urgence.`,
+    `Le Praticien déclare être couvert par une assurance de responsabilité civile professionnelle`,
+    `en cours de validité.`,
+    ``,
+    `ARTICLE 3 — CONDITIONS D'EXERCICE SUR LA PLATEFORME`,
+    `Le Praticien s'engage à exercer sous l'identité vérifiée par la Plateforme, à maintenir à jour`,
+    `ses informations professionnelles, et à répondre aux consultations qu'il a acceptées.`,
+    `Il respecte le secret professionnel et n'utilise les informations auxquelles il accède qu'aux`,
+    `fins du soin.`,
+    ``,
+    `ARTICLE 4 — DONNÉES DE SANTÉ`,
+    `Le Praticien accède au dossier médical du patient pendant la durée de la consultation, et`,
+    `uniquement dans cette limite. Chaque accès est journalisé.`,
+    `Il s'interdit d'extraire, de conserver hors de la Plateforme ou de communiquer à un tiers les`,
+    `données auxquelles il accède, sauf obligation légale ou continuité des soins.`,
+    `Les échanges et les pièces sont chiffrés au repos par la Plateforme.`,
+    ``,
+    `ARTICLE 5 — HONORAIRES ET COMMISSION`,
+    `Le Praticien fixe librement le prix de ses offres, dans les bornes publiées par la Plateforme.`,
+    `Le prix affiché au patient est le prix final : aucun frais ne s'y ajoute.`,
+    `La Plateforme retient une commission de ${commissionPct} % sur chaque prestation payée. Le solde`,
+    `est crédité au Praticien.`,
+    ``,
+    `ARTICLE 6 — VERSEMENT DES GAINS`,
+    `Les gains crédités sont retirables à tout moment, sans montant minimum, vers un numéro Mobile`,
+    `Money dont le Praticien a prouvé qu'il en dispose.`,
+    `Une commission de retrait, publiée par la Plateforme, peut s'appliquer.`,
+    `Tout changement du numéro de retrait ouvre un délai de sécurité avant le retrait suivant.`,
+    ``,
+    `ARTICLE 7 — CONSULTATION NON HONORÉE`,
+    `Lorsqu'une consultation payée reste sans réponse du Praticien, le patient est intégralement`,
+    `remboursé par la Plateforme et aucun gain n'est crédité au Praticien.`,
+    `Lorsque le compte-rendu n'est pas déposé dans le délai publié, les gains correspondants ne sont`,
+    `pas crédités.`,
+    ``,
+    `ARTICLE 8 — DURÉE ET RÉSILIATION`,
+    `Le contrat prend effet à sa signature électronique et se poursuit sans terme fixé.`,
+    `Le Praticien peut y mettre fin à tout moment depuis son espace, sans motif ni préavis. Les`,
+    `consultations déjà payées et en cours sont menées à leur terme, et les gains acquis lui restent`,
+    `dus.`,
+    `La Plateforme peut suspendre ou révoquer le Badge Vérifié en cas de fraude, de manquement grave`,
+    `ou de perte des conditions d'exercice ; la décision est motivée et notifiée.`,
+    `Dans tous les cas, les consultations déjà payées sont honorées ou remboursées.`,
+    ``,
+    `ARTICLE 9 — ÉVOLUTION DU CONTRAT`,
+    `Toute évolution des conditions fait l'objet d'une nouvelle version, notifiée au Praticien.`,
+    `Elle doit être signée pour que l'activité se poursuive ; à défaut, le compte reste accessible`,
+    `mais le Praticien n'apparaît plus dans l'annuaire.`,
+    ``,
+    `ARTICLE 10 — PREUVE`,
+    `La signature s'effectue par mot de passe et code à usage unique. Le texte signé est scellé par`,
+    `une empreinte cryptographique qui permet, à tout moment, de vérifier qu'il n'a pas été modifié.`,
+    `Les parties reconnaissent à ce procédé la valeur de preuve de leur engagement.`,
+    ``,
+    `ARTICLE 11 — LOI APPLICABLE`,
+    `Le présent contrat est régi par le droit de la République du Congo.`,
+    `Les parties rechercheront une solution amiable avant toute action ; à défaut, le litige relève`,
+    `des tribunaux compétents de Brazzaville.`,
+    ``,
+    `En foi de quoi, le Praticien appose sa signature électronique au bas du présent contrat.`,
   ].join("\n");
 }
 

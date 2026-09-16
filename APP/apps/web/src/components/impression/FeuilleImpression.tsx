@@ -139,6 +139,13 @@ export interface FeuilleImpressionProps {
   blocs: Array<{ titre: string; lignes: Array<[string, string]> }>
   /** Ce que le pied rappelle, en plus de la référence. */
   mention?: string
+  /**
+   * Un mot en filigrane, en travers de CHAQUE page — « PROJET » sur un contrat non signé.
+   *
+   * 📌 Sur chaque page, et pas seulement la première : *une page 2 photocopiée seule ne dit plus
+   * d'où elle vient.* C'est ainsi qu'un acte non signé se marque depuis toujours.
+   */
+  filigrane?: string
   children: React.ReactNode
   onFermer: () => void
 }
@@ -184,7 +191,15 @@ function imprimer(idRacine: string): void {
   window.setTimeout(() => style.remove(), 2000)
 }
 
-export function FeuilleImpression({ document: nomDocument, reference, blocs, mention, children, onFermer }: FeuilleImpressionProps) {
+export function FeuilleImpression({
+  document: nomDocument,
+  reference,
+  blocs,
+  mention,
+  filigrane,
+  children,
+  onFermer,
+}: FeuilleImpressionProps) {
   const idRacine = useRef(`feuille-${Math.random().toString(36).slice(2, 9)}`).current
   const refMesure = useRef<HTMLDivElement>(null)
   /*
@@ -332,9 +347,11 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
           >
             {nomDocument}
           </p>
-          <p style={{ margin: '4px 0 0', fontFamily: CHIFFRES, fontSize: 8.5, color: GRIS, letterSpacing: '0.02em' }}>
-            {reference}
-          </p>
+          {/*
+            ⚠️ **La référence a quitté l'en-tête** — chantier 145. « CTR-V2 » en haut à droite d'un
+            contrat, c'est un numéro de série à la place d'un titre : *un acte ne s'ouvre pas sur sa
+            référence de machine.* Elle est en pied, où l'on va la chercher quand on en a besoin.
+          */}
         </div>
       </div>
       <div style={{ height: 2.5, background: ACCENT }} />
@@ -421,9 +438,37 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
         flexDirection: 'column',
         flex: 'none',
         overflow: 'hidden',
+        position: 'relative',
         boxShadow: mesure ? undefined : '0 10px 40px rgba(15,23,42,0.22)',
       }}
     >
+      {/*
+        Le filigrane, DERRIÈRE le texte et sans le gêner : très pâle, non sélectionnable, invisible
+        pour les lecteurs d'écran — la mention encadrée en tête, elle, leur parle.
+      */}
+      {filigrane && !mesure ? (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'rotate(-32deg)',
+            fontFamily: TITRAGE,
+            fontSize: 108,
+            fontWeight: 800,
+            letterSpacing: '0.18em',
+            color: 'rgba(30,74,143,0.07)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {filigrane}
+        </span>
+      ) : null}
       {enTete}
       {identite}
       {/*
@@ -431,7 +476,9 @@ export function FeuilleImpression({ document: nomDocument, reference, blocs, men
         contenu. Sans cela, un corps trop plein POUSSE la feuille au lieu d'être contenu par elle —
         et le débordement se produit en silence, sous le `overflow: hidden` de la page.
       */}
-      <div style={{ flex: mesure ? 'none' : 1, minHeight: 0, padding: `20px ${MARGE}px 26px` }}>{contenu}</div>
+      <div style={{ flex: mesure ? 'none' : 1, minHeight: 0, position: 'relative', padding: `20px ${MARGE}px 26px` }}>
+        {contenu}
+      </div>
       {pied(numero, total)}
     </div>
   )

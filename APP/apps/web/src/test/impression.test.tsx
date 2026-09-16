@@ -254,7 +254,6 @@ const monterContrat = (p: Partial<Parameters<typeof ContratImprimable>[0]> = {})
   render(
     <ContratImprimable
       version={2}
-      commissionPct={10}
       bodyHash="a3f9beefcafebabedeadbeef0000c210"
       corps={'Article 1.\nLe partenaire exerce en son nom propre.'}
       signePar="Armel Konaté"
@@ -286,13 +285,34 @@ describe('Le contrat imprimé', () => {
   })
 
   /*
-    La commission est la seule clause que le soignant relira : elle décide de ce qu'il gagne.
-    Enfouie dans le corps, elle serait introuvable sur une feuille dense.
-  */
-  it('met la commission en évidence, hors du corps', () => {
-    monterContrat({ commissionPct: 12 })
+    ⚠️ **Ancre RENVERSÉE en conscience au chantier 145.** Elle exigeait la commission « en évidence,
+    hors du corps » — un encadré « CE QUE LA PLATEFORME RETIENT · 10 % » en 27 px. Le porteur l'a
+    désigné comme ce qui faisait « travail d'IA » : *c'est un tableau de bord, pas un acte* — et il a
+    demandé que la rémunération rentre dans les articles. Elle y est : article 5.
 
-    expect(screen.getByText('12 %')).toBeInTheDocument()
+    Ce que le cas défend change donc de sens, et il faut le dire : il gardait une mise en vitrine,
+    il garde maintenant son absence. Et il la garde à la racine — **le composant ne reçoit plus le
+    taux** : *une donnée qu'un composant ne reçoit pas est une donnée qu'il ne peut pas remettre en
+    vitrine six mois plus tard.*
+  */
+  it('ne met plus aucun chiffre en vitrine — et ne reçoit même plus le taux', () => {
+    const source = readFileSync(resolve(__dirname, '../components/impression/ContratImprimable.tsx'), 'utf8')
+    const sansCom = sansCommentaires(source)
+
+    expect(sansCom).not.toContain('commissionPct')
+    expect(sansCom).not.toMatch(/PLATEFORME RETIENT/i)
+  })
+
+  /*
+    Et les cases d'identité disparaissent avec : *un acte ne pose pas une fiche technique au-dessus
+    de son propre préambule*, qui nomme déjà les parties en toutes lettres.
+  */
+  it('ne répète pas le préambule dans des cases d’identité', () => {
+    monterContrat()
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).not.toContain('Praticien signataire')
+    expect(texte).not.toContain('Praticien destinataire')
   })
 
   /*
@@ -481,6 +501,34 @@ describe('Comment ces documents sont produits', () => {
     }
   })
 
+  /*
+    ⚠️ **Deux formules de clôture, deux modèles.** « Signataire : … » pour l'origine et le 2026-09,
+    « En foi de quoi… » pour le 2026-09.2 (chantier 145). *Un analyseur qui ne connaît qu'une seule
+    formule range la clôture du nouveau modèle dans le dernier article* — et l'acte se termine alors
+    au milieu de la loi applicable.
+
+    ⚠️ Ce cas manquait : l'injection du 16/09 a remis l'ancienne détection **sans qu'un seul test
+    tombe**, parce qu'aucun corps d'essai n'employait la nouvelle formule. *Un filet n'éprouve que
+    les textes qu'on lui donne à lire.*
+  */
+  it('reconnaît la clôture des DEUX modèles', () => {
+    const ancien = ['ARTICLE 1 — OBJET', 'Un.', '', 'Signataire : X — Version 1.'].join(SAUT)
+    const nouveau = [
+      'ARTICLE 1 — OBJET',
+      'Un.',
+      '',
+      'En foi de quoi, le Praticien appose sa signature électronique au bas du présent contrat.',
+    ].join(SAUT)
+
+    for (const texte of [ancien, nouveau]) {
+      const { articles, cloture } = decouperContrat(texte)
+
+      expect(cloture).toHaveLength(1)
+      expect(articles[0].alineas.join(' ')).not.toContain('foi de quoi')
+      expect(articles[0].alineas.join(' ')).not.toContain('Signataire')
+    }
+  })
+
   it('garde le préambule et la clôture, qui n’appartiennent à aucun article', () => {
     const texte = ['CONTRAT ULAMU', 'ENTRE : la Plateforme', '', 'ARTICLE 1 — OBJET', 'Un.', '', 'Signataire : X — Version 1.'].join(SAUT)
 
@@ -659,8 +707,10 @@ describe('Le contrat imprimé avant d’être signé', () => {
   it('le dit en tête, et dit ce que ça implique', () => {
     projet()
 
-    expect(screen.getByText('PROJET DE CONTRAT — NON SIGNÉ')).toBeInTheDocument()
-    expect(screen.getByText(/il n’engage ni vous ni la plateforme/)).toBeInTheDocument()
+    expect(screen.getByText('Projet — non signé')).toBeInTheDocument()
+    expect(screen.getByText(/il n’engage ni lui ni la plateforme/)).toBeInTheDocument()
+    // ⚠️ Et sur CHAQUE page : *une page 2 photocopiée seule ne dit plus d'où elle vient.*
+    expect(screen.getAllByText('PROJET').length).toBeGreaterThan(0)
   })
 
   it('ne prétend nulle part que quelqu’un l’a signé', () => {
@@ -682,16 +732,16 @@ describe('Le contrat imprimé avant d’être signé', () => {
     projet()
 
     expect(screen.getByText('a3f9beefcafebabedeadbeef0000c210')).toBeInTheDocument()
-    expect(screen.getByText(/EMPREINTE DU TEXTE PROPOSÉ/)).toBeInTheDocument()
+    expect(screen.getByText(/Empreinte du texte proposé/)).toBeInTheDocument()
   })
 
   it('redit tout cela dès qu’il est signé', () => {
     monterContrat()
     const texte = document.body.textContent ?? ''
 
-    expect(texte).not.toContain('PROJET DE CONTRAT')
-    expect(screen.getByText('Preuve de signature')).toBeInTheDocument()
-    expect(screen.getByText(/EMPREINTE DU TEXTE SIGNÉ/)).toBeInTheDocument()
+    expect(texte).not.toContain('Projet — non signé')
+    expect(texte).not.toContain('PROJET')
+    expect(screen.getByText(/Empreinte du texte signé/)).toBeInTheDocument()
   })
 })
 
@@ -939,5 +989,71 @@ describe('Les groupes : un tableau se coupe sans perdre ses titres', () => {
 
     expect(screen.getByText('Médicament et posologie')).toBeInTheDocument()
     expect(screen.getByText('Paracétamol 500 mg')).toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ « Ça ressemble à du travail d'IA » — chantier 145, 16/09/2026 ─────────────────
+
+  **Constat du porteur, et il avait raison.** Quatre choses trahissaient la machine : un chiffre en
+  vitrine, l'information dite deux fois, une référence de machine en haut à droite, et **rien à la
+  fin**. *Un acte se termine par sa date et sa signature.*
+
+  > **Un acte ne s'ouvre pas sur son numéro de série et ne se termine pas sur le résumé de sa fiche.**
+*/
+describe('Le contrat imprimé se termine comme un acte', () => {
+  it('porte la date de signature à la fin, pas au milieu', () => {
+    monterContrat()
+
+    expect(screen.getByText(/Contrat conclu par/)).toBeInTheDocument()
+    expect(screen.getByText(/signature électronique/)).toBeInTheDocument()
+    expect(screen.getByText(/24 août 2026/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Une seule signature, pas deux.** Personne n'appose rien « pour la Plateforme » : elle émet le
+    contrat, le praticien le signe. *Une case de signature vide pour une partie qui ne signe pas
+    fabrique une apparence.*
+  */
+  it('ne fabrique pas une case de signature pour qui ne signe pas', () => {
+    monterContrat()
+    const texte = document.body.textContent ?? ''
+
+    expect(screen.getByText('Le praticien')).toBeInTheDocument()
+    expect(texte).not.toMatch(/Pour la Plateforme/i)
+  })
+
+  /*
+    ⚠️ **Aucun lieu de signature inventé.** « Fait à … » est la formule d'un acte signé de la main, en
+    un lieu. Ici le praticien signe d'où il veut, et le siège d'ULAMU n'est établi nulle part dans ce
+    projet. *Écrire un lieu qu'on ne connaît pas sur un acte, c'est inventer une mention que quelqu'un
+    opposera un jour.*
+  */
+  it('n’invente aucun lieu de signature', () => {
+    monterContrat()
+    const texte = document.body.textContent ?? ''
+
+    expect(texte).not.toMatch(/Fait à /)
+  })
+
+  /* Un contrat non signé ne prétend pas porter une date de signature. */
+  it('ne date pas une signature qui n’a pas eu lieu', () => {
+    monterContrat({ signeLe: null, effectifLe: null })
+    const texte = document.body.textContent ?? ''
+
+    expect(screen.getByText(/n’est pas encore signé/)).toBeInTheDocument()
+    expect(texte).not.toMatch(/Contrat conclu par/)
+  })
+
+  /*
+    La référence a quitté l'en-tête pour le pied : *un acte ne s'ouvre pas sur sa référence de
+    machine* — mais on doit pouvoir savoir quelle version on tient.
+  */
+  it('garde sa référence, mais en pied', () => {
+    monterContrat()
+
+    const enTete = document.querySelector('[data-page]')?.firstElementChild
+    expect(enTete?.textContent ?? '').not.toContain('CTR-V')
+    expect(screen.getAllByText('CTR-V2').length).toBeGreaterThan(0)
   })
 })

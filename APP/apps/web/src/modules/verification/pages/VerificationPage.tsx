@@ -811,7 +811,6 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
       {imprimable && a.body ? (
         <ContratImprimable
           version={a.version}
-          commissionPct={a.commissionPct}
           bodyHash={a.bodyHash}
           corps={a.body}
           signePar={nomComplet}
