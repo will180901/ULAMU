@@ -214,6 +214,26 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
     fausse sur les pharmacies serait restée dans le contrat que les praticiens ont signé.
   */
   const memeTaux = d.agreementCommissionPct === d.currentCommissionPct
+  /*
+    ⚠️ **Le web et l'API se déploient séparément** — mesuré en ligne le 16/09 : le site neuf était
+    en place, l'API tournait encore le processus d'avant. Pendant cette fenêtre, et à chaque retour
+    arrière du serveur, ces deux champs manquent de la réponse — et `Modèle ${undefined}` se serait
+    écrit en toutes lettres sur l'écran d'un administrateur.
+
+    > **Un écran qui affiche « undefined » a l'air cassé ; un écran qui invente une réponse est
+    > pire.**
+
+    📌 On se tait donc sur ce qu'on ne sait pas, et **aucune réédition ne se propose sur une donnée
+    absente** : rééditer suspend le droit d'exercer d'un soignant, ce n'est pas un geste à proposer
+    au hasard. *Le doute ne penche pas du côté du geste coûteux.*
+
+    ⚠️ **Et cela ne demande AUCUNE garde supplémentaire** : quand le serveur se tait, les deux
+    champs valent `undefined`, donc ils sont égaux, donc `memeTexte` est vrai. Un premier jet
+    ajoutait ici un `!texteServi ||` — l'injection de fautes l'a montré mort : aucun scénario ne
+    l'atteint, les deux champs venant de la même réponse. *Du code défensif que rien ne peut
+    déclencher ne protège de rien ; il fait seulement croire qu'on est protégé.*
+  */
+  const texteServi = 'currentTemplate' in d
   const memeTexte = d.agreementTemplate === d.currentTemplate
   const intituleReedition = !memeTaux
     ? `Rééditer au taux de ${d.currentCommissionPct} %${memeTexte ? '' : ' et au nouveau texte'}`
@@ -467,14 +487,18 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               d'elles était invisible. *Ce qui décide d'un geste doit se voir à l'endroit où on le
               décide.*
             */}
-            <div>
-              <dt className="text-[var(--texte-tertiaire)]">Texte du contrat</dt>
-              <dd className="m-0 font-medium text-foreground">{libelleModele(d.agreementTemplate)}</dd>
-            </div>
-            <div>
-              <dt className="text-[var(--texte-tertiaire)]">Texte courant</dt>
-              <dd className="m-0 font-medium text-foreground">{libelleModele(d.currentTemplate)}</dd>
-            </div>
+            {texteServi ? (
+              <>
+                <div>
+                  <dt className="text-[var(--texte-tertiaire)]">Texte du contrat</dt>
+                  <dd className="m-0 font-medium text-foreground">{libelleModele(d.agreementTemplate)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--texte-tertiaire)]">Texte courant</dt>
+                  <dd className="m-0 font-medium text-foreground">{libelleModele(d.currentTemplate)}</dd>
+                </div>
+              </>
+            ) : null}
           </dl>
 
           {d.agreementVersion !== null && memeTaux && memeTexte ? (

@@ -808,3 +808,56 @@ describe('E1 — rééditer parce que le TEXTE a changé', () => {
     expect(screen.getByText(/Le taux de commission et le texte du contrat ont changé/)).toBeInTheDocument()
   })
 })
+
+/*
+  ── ⚠️ L'écran neuf face au serveur d'avant — chantier 137, 16/09/2026 ─────────────────
+
+  **Mesuré EN LIGNE le 16/09, en vérifiant le déploiement du chantier 136** : le site était déjà à jour
+  (ses phrases nouvelles étaient dans le paquet servi), l'API tournait encore le processus d'avant —
+  démarré 23 minutes avant le commit. *Le web et l'API ne se déploient pas ensemble, et il y a
+  toujours une fenêtre où l'écran neuf parle au serveur d'hier.*
+
+  Pendant cette fenêtre, `agreementTemplate` et `currentTemplate` manquent de la réponse, et
+  `Modèle ${undefined}` se serait écrit en toutes lettres sur l'écran d'un administrateur.
+
+  > **Un écran qui affiche « undefined » a l'air cassé ; un écran qui invente une réponse est pire.**
+
+  Et la même fenêtre se rouvre à chaque retour arrière du serveur.
+*/
+describe('E1 — quand le serveur ne sert pas encore le texte du contrat', () => {
+  /** La réponse d'un serveur d'avant le chantier 136 : les deux champs sont absents, pas à `null`. */
+  async function serveurDAvant(over: Parameters<typeof dossier>[0] = {}) {
+    const d = dossier({ status: 'VERIFIED', ...over }) as Record<string, unknown>
+    delete d.agreementTemplate
+    delete d.currentTemplate
+    vi.spyOn(api, 'adminCase').mockResolvedValue(d as Awaited<ReturnType<typeof api.adminCase>>)
+    await monter()
+  }
+
+  it('n’écrit jamais « undefined » sur l’écran', async () => {
+    await serveurDAvant({ agreementCommissionPct: 12, currentCommissionPct: 18 })
+
+    await screen.findByText(/Version 1 · 12 %/)
+    expect(document.body.textContent ?? '').not.toContain('undefined')
+    expect(screen.queryByText(/Texte du contrat/)).not.toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Rééditer **suspend le droit d'exercer** d'un soignant. Ce n'est pas un geste à proposer sur
+    une donnée qu'on n'a pas reçue. *Le doute ne penche pas du côté du geste coûteux.*
+  */
+  it('ne propose aucune réédition sur une donnée absente', async () => {
+    await serveurDAvant({ agreementCommissionPct: 15, currentCommissionPct: 15 })
+
+    expect(await screen.findByText(/il n'y a rien à rééditer/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Rééditer/ })).not.toBeInTheDocument()
+  })
+
+  /* Ce que le serveur dit encore reste dit : seul l'inconnu se tait. */
+  it('continue d’offrir la réédition quand le TAUX, lui, a changé', async () => {
+    await serveurDAvant({ agreementCommissionPct: 12, currentCommissionPct: 18 })
+
+    expect(await screen.findByRole('button', { name: /Rééditer au taux de 18 %/ })).toBeInTheDocument()
+    expect(screen.getByText(/Le taux de commission a changé/)).toBeInTheDocument()
+  })
+})
