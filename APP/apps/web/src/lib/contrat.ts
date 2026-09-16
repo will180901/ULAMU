@@ -104,3 +104,38 @@ export function enParagraphes(alineas: string[]): string[] {
   if (courant.length > 0) out.push(courant.join(' '))
   return out
 }
+
+/**
+ * Où en est la lecture : le numéro de l'article atteint — chantier 146, 16/09/2026.
+ *
+ * ── ⚠️ La progression s'arrêtait deux articles trop tôt ──────────────────────────
+ *
+ * **Signalé par le porteur, mesuré en production le 16/09** : défilé jusqu'en bas, l'écran affichait
+ * « Article 9 sur 11 ». Le défilement maximum était de 1 160 px, et le onzième article commençait à
+ * 1 313 px.
+ *
+ * La règle demandait « quel article a franchi le HAUT de la fenêtre ». **Les derniers articles n'y
+ * arrivent jamais : il n'y a plus rien en dessous pour les pousser vers le haut.**
+ *
+ * > **Mesurer une progression à ce qui a dépassé le haut de l'écran, c'est ne jamais pouvoir
+ * > atteindre la fin.**
+ *
+ * 📌 La règle juste tient en une ligne : **le dernier article visible**. Au maximum de défilement,
+ * la fenêtre atteint la fin du contenu — le dernier article y est donc forcément, et « arrivé en
+ * bas, on est au dernier » en découle, sans avoir à l'écrire.
+ *
+ * ⚠️ **Un premier jet l'écrivait quand même**, avec une hauteur totale et une tolérance en plus.
+ * L'injection de fautes l'a montré mort : retirer cette garantie ne changeait aucune réponse, et
+ * aucun scénario ne pouvait l'atteindre. *Du code défensif que rien ne peut déclencher ne protège
+ * de rien ; il fait seulement croire qu'on est protégé.* Deux paramètres sont partis avec.
+ *
+ * Pure et exportée : *la MESURE des positions demande un vrai moteur de rendu, le CALCUL non.*
+ */
+export function articleCourant(debuts: number[], scrollTop: number, hauteurVisible: number): number {
+  const bas = scrollTop + hauteurVisible
+  let vu = 0
+  debuts.forEach((debut, i) => {
+    if (debut < bas) vu = i + 1
+  })
+  return vu
+}

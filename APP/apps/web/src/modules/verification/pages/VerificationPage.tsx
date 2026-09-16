@@ -464,6 +464,8 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
   const [envoi, setEnvoi] = useState<{ hint?: string } | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   const [imprimable, setImprimable] = useState(false)
+  /** L'ancien contrat, ouvert à la demande — `'lire'` dans un tiroir, `'imprimer'` sur une feuille. */
+  const [ancien, setAncien] = useState<'lire' | 'imprimer' | null>(null)
   /**
    * « Lu et approuvé » — chantier 144, demande du porteur.
    *
@@ -552,62 +554,62 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
       icone={ScrollText}
       ton={avenant ? 'danger' : 'accent'}
       titre="Contrat de partenariat"
-      sousTitre={`Contrat soignant ULAMU · version ${a.version}`}
+      sousTitre="Contrat soignant ULAMU"
     >
       {avenant ? (
         <>
           {/*
-            Le fait le plus coûteux de tout l'écran : il ne peut plus exercer, et il n'y est pour
-            rien. Dit avant tout le reste, avec sa conséquence — pas seulement sa cause.
+            ── ⚠️ Les mentions de version ont disparu — chantier 146, 16/09/2026 ────────────
+
+            **Demande du porteur** : « retire même sur l'app les textes dans le genre version, on a
+            juste besoin d'une bulle informative si le contenu du contrat change ». L'écran affichait
+            « Version 1 · signée le… », « Version 2 · non signée », « Contrat soignant ULAMU · version
+            2 ». *Un numéro de version ne dit à personne ce qui a changé ni ce que ça coûte.*
+
+            ⚠️ **Et il demandait de proposer « de partir sur le nouveau ou de rester sur l'ancien ».**
+            Ce choix n'existe pas : sans signer la version courante, on n'apparaît plus dans
+            l'annuaire (RM-03-01). *Offrir un choix qu'on ne peut pas honorer est pire que de n'en
+            offrir aucun.* Ce qui existe, et qui manquait : **relire et emporter ce qu'on avait
+            accepté**, avant d'accepter autre chose.
           */}
           <Avis ton="erreur">
-            Votre contrat a été modifié par l'administration. Tant que vous ne l'avez pas re-signé,
-            vous n'apparaissez plus dans l'annuaire et ne pouvez recevoir aucune demande.
+            <strong className="font-semibold">Le texte de votre contrat a changé.</strong> Signez-le
+            pour continuer à recevoir des consultations — en attendant, vous n'apparaissez plus dans
+            l'annuaire.
+            {avenant.commissionPct === a.commissionPct ? null : (
+              <> Votre commission passe de {avenant.commissionPct} % à {a.commissionPct} %.</>
+            )}
           </Avis>
 
-          {/*
-            ⚠️ **Le taux n'a pas toujours changé** — chantier 144, 16/09/2026. Une réédition peut ne
-            porter que sur le TEXTE du contrat (chantiers 133 et 136). L'écran montrait alors
-            « 10 % » barré à côté de « 10 % » : *barrer un chiffre qui n'a pas bougé annonce une
-            modification qui n'existe pas, et cache celle qui existe.*
-
-            La comparaison ne s'affiche donc QUE si le taux diffère. Sinon, une phrase dit ce qui a
-            réellement changé.
-          */}
-          {avenant.commissionPct === a.commissionPct ? (
-            <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
-              C'est le <strong className="font-semibold text-foreground">texte du contrat</strong> qui a
-              changé. Votre commission reste à {a.commissionPct} %.
-            </p>
-          ) : (
-          <dl className="flex flex-wrap items-stretch gap-2">
-            <div className="min-w-0 flex-1 basis-36 rounded-md border border-border bg-secondary p-2.5">
-              <dt className="ul-surtitre">
-                Ce que vous aviez signé
-              </dt>
-              <dd className="mt-0.5 text-[19px] font-semibold leading-none text-[var(--texte-tertiaire)] line-through">
-                {avenant.commissionPct} %
-              </dd>
-              <dd className="mt-1 text-[11px] text-[var(--texte-tertiaire)]">
-                Version {avenant.version} · signée le {dateFr(avenant.signedAt)}
-              </dd>
-            </div>
-            <div className="min-w-0 flex-1 basis-36 rounded-md border border-[var(--alerte-bordure)] bg-[var(--alerte-fond)] p-2.5">
-              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--alerte-texte)]">
-                Ce qu'on vous propose
-              </dt>
-              <dd className="mt-0.5 text-[19px] font-semibold leading-none text-[var(--alerte-texte)]">
-                {a.commissionPct} %
-              </dd>
-              <dd className="mt-1 text-[11px] text-[var(--texte-secondaire)]">Version {a.version} · non signée</dd>
-            </div>
-          </dl>
-          )}
-
-          <p className="text-[11px] leading-[1.5] text-[var(--texte-secondaire)]">
-            Le taux de votre contrat signé est celui qui s'applique à vos consultations — celles déjà
-            payées gardent le leur.
+          <p className="ul-aide">
+            Les consultations déjà payées gardent le taux du contrat sous lequel elles ont été réglées.
           </p>
+
+          {/*
+            ⚠️ **« Voir le contrat que j'avais signé »** — la réponse honnête à « rester sur l'ancien ».
+            On ne peut pas y rester, mais on doit pouvoir le relire et le garder. *Un contrat qu'on a
+            signé et qu'on ne peut plus lire n'est pas un contrat.*
+
+            Le bouton n'apparaît que si le texte est réellement servi : son sceau est vérifié côté
+            serveur comme celui du contrat courant, et un texte douteux n'est jamais présenté comme
+            étant celui qui a été signé.
+          */}
+          {avenant.body ? (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setAncien('lire')}>
+                Voir le contrat que j'avais signé
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setAncien('imprimer')}>
+                <Printer size={14} aria-hidden="true" />
+                L'imprimer
+              </Button>
+            </div>
+          ) : (
+            <p className="ul-aide">
+              Le texte que vous aviez signé ne peut pas être relu : son empreinte ne correspond plus.
+              Prévenez l'administration ULAMU.
+            </p>
+          )}
         </>
       ) : (
         <p className="text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
@@ -807,6 +809,49 @@ function BlocContrat({ dossier, nomComplet, recharger }: { dossier: Verification
           {ouvert ? <ContratLisible corps={a.body} /> : null}
         </>
       )}
+
+      {/*
+        L'ancien contrat glisse depuis la DROITE, comme les pièces justificatives : la carte reste
+        visible à gauche pendant qu'on relit — *on compare mal ce qu'on ne peut pas voir ensemble.*
+      */}
+      <Sheet open={ancien === 'lire'} onOpenChange={(v) => (v ? undefined : setAncien(null))}>
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-2xl">
+          <SheetHeader className="border-b border-border">
+            <SheetTitle className="text-[15px]">Le contrat que vous aviez signé</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-auto p-4">
+            {avenant?.body ? (
+              <div className="flex flex-col gap-3">
+                <Avis ton="info">Signé le {dateHeureFr(avenant.signedAt)}. Ce texte n'est plus celui en vigueur.</Avis>
+                <ContratLisible corps={avenant.body} />
+              </div>
+            ) : null}
+          </div>
+          <SheetFooter className="flex-row justify-end border-t border-border">
+            <Button type="button" variant="outline" size="sm" onClick={() => setAncien('imprimer')}>
+              <Printer size={14} aria-hidden="true" />
+              Imprimer
+            </Button>
+            <SheetClose asChild>
+              <Button type="button" size="sm">
+                Fermer
+              </Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {ancien === 'imprimer' && avenant?.body ? (
+        <ContratImprimable
+          version={avenant.version}
+          bodyHash={avenant.bodyHash}
+          corps={avenant.body}
+          signePar={nomComplet}
+          signeLe={avenant.signedAt}
+          effectifLe={null}
+          onFermer={() => setAncien(null)}
+        />
+      ) : null}
 
       {imprimable && a.body ? (
         <ContratImprimable

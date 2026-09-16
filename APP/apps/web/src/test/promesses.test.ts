@@ -390,7 +390,12 @@ const FILET: Array<{ ecran: string; fichier: string; promesses: Promesse[] }> = 
     promesses: [
       {
         quoi: 'un dossier révoqué retire de l’annuaire et coupe toute demande',
-        motif: /n'apparaissez plus dans l'annuaire/,
+        /*
+          ⚠️ `\\s+` et non une espace : la phrase est la même, le formatage l'a coupée en deux
+          lignes (chantier 146). *Un filet qui exige une espace exacte accuse le prettier, pas le
+          développeur qui aurait retiré la promesse.*
+        */
+        motif: /n'apparaissez plus dans\s+l'annuaire/,
       },
       {
         quoi: 'ULAMU n’a pas de messagerie interne — les échanges n’existent qu’en consultation',

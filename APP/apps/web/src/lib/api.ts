@@ -1232,7 +1232,24 @@ export interface VerificationCase {
    *
    * `null` quand aucun avenant n'est en cours : première signature, ou version courante déjà signée.
    */
-  lastSigned: { version: number; commissionPct: number; signedAt: string } | null
+  /**
+   * Le dernier contrat SIGNÉ, avec son texte — chantier 146, 16/09/2026.
+   *
+   * ⚠️ Le porteur voulait pouvoir « rester sur l'ancien ». Ce choix n'existe pas (RM-03-01) : sans
+   * signer la version courante, on n'exerce pas. Mais **relire et emporter** ce qu'on avait
+   * accepté, si — *un contrat qu'on a signé et qu'on ne peut plus lire n'est pas un contrat.*
+   *
+   * `body` est `null` si son sceau ne tient plus : on ne présente jamais un texte douteux comme
+   * étant celui qui a été signé.
+   */
+  lastSigned: {
+    version: number
+    commissionPct: number
+    signedAt: string
+    bodyHash: string
+    body: string | null
+    integrity: boolean
+  } | null
 }
 
 export interface UploadDocumentRequest {

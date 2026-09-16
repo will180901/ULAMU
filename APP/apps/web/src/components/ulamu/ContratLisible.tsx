@@ -40,7 +40,7 @@
  * à celle du texte signé**. Mettre en page : oui. Réécrire, même une majuscule : jamais.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { decouperContrat, enParagraphes } from '@/lib/contrat'
+import { articleCourant, decouperContrat, enParagraphes } from '@/lib/contrat'
 import { Progress } from '@/components/ui/progress'
 
 /** Ce qu'il reste à parcourir pour qu'on considère le texte lu, en pixels. */
@@ -72,11 +72,8 @@ export function ContratLisible({ corps, onLectureTerminee }: ContratLisibleProps
     const part = aParcourir <= RESTE_TOLERE ? 1 : Math.min(1, z.scrollTop / aParcourir)
     setAvance(part)
 
-    let vu = 0
-    for (const s of z.querySelectorAll<HTMLElement>('[data-article]')) {
-      if (s.offsetTop <= z.scrollTop + 24) vu = Number(s.dataset.article)
-    }
-    setCourant(vu)
+    const debuts = [...z.querySelectorAll<HTMLElement>('[data-article]')].map((s) => s.offsetTop)
+    setCourant(articleCourant(debuts, z.scrollTop, z.clientHeight))
 
     if (z.scrollTop + z.clientHeight >= z.scrollHeight - RESTE_TOLERE) onLectureTerminee?.()
   }, [onLectureTerminee])

@@ -269,14 +269,44 @@ describe("Ce que le service ne doit jamais se remettre à faire", () => {
   /*
     ⚠️ On relit un contrat avec les mots qu'il portait quand il a été signé, jamais avec ceux
     d'aujourd'hui.
+
+    ⚠️ **Ancre déplacée EN CONSCIENCE au chantier 146.** Elle visait `latest.template`, écrit à UN
+    endroit. La règle sert maintenant deux lectures — la version courante et la dernière signée — et
+    elle a été extraite dans `relireVersion`. *Une règle recopiée à deux endroits finit par diverger* :
+    ce que ce cas défend n'a pas changé, et il le défend désormais pour les deux d'un seul coup.
   */
   it("relit chaque version avec SON modèle, jamais avec le modèle courant", () => {
-    expect(/latest\.template as ModeleContrat/.test(source)).toBe(true);
+    // La règle est écrite une fois, et prend la version à relire en paramètre.
+    expect(/private relireVersion\(/.test(source)).toBe(true);
+    expect(/v\.template as ModeleContrat/.test(source)).toBe(true);
 
     // La régénération ne doit pas se voir passer le modèle courant : ce serait la faute exacte.
     const appel = /const regenerated = buildAgreementText\(([\s\S]{0,200}?)\);/.exec(source);
     expect(appel).toBeTruthy();
     expect((appel as RegExpExecArray)[1]).not.toContain("MODELE_CONTRAT_COURANT");
+  });
+
+  /*
+    ⚠️ **Le dernier contrat SIGNÉ se relit aussi** — chantier 146. Le porteur voulait pouvoir
+    « rester sur l'ancien » : ce choix n'existe pas (RM-03-01), mais relire et emporter ce qu'on avait
+    accepté, si. *Un contrat qu'on a signé et qu'on ne peut plus lire n'est pas un contrat.*
+
+    ⚠️ Et il passe par la MÊME relecture : son sceau est vérifié comme celui du contrat courant.
+    *Servir un ancien contrat sans vérifier son empreinte reviendrait à dire « voici ce que vous aviez
+    signé » sans en être sûr.*
+  */
+  it("sert le dernier contrat signé avec son texte, et son sceau vérifié", () => {
+    /*
+      Une découpe simple plutôt qu'une expression : la non-gourmande s'arrêtait sur l'accolade du
+      TYPE de retour, avant même d'atteindre le corps de la méthode. *Une ancre qui lit trop peu ne
+      garde rien, et le dit en accusant le code.*
+    */
+    const debut = source.indexOf("private lastSignedVersion(");
+    expect(debut).toBeGreaterThan(0);
+    const corps = source.slice(debut, debut + 1400);
+
+    expect(corps).toContain("this.relireVersion(");
+    expect(corps).toContain("integrity");
   });
 
   /*

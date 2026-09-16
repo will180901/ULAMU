@@ -404,7 +404,23 @@ export class M03Service {
      *
      * `null` s'il n'a jamais rien signé : c'est alors une première signature, pas un avenant.
      */
-    lastSigned: { version: number; commissionPct: number; signedAt: Date } | null;
+    /*
+      ⚠️ **Le TEXTE du dernier contrat signé, depuis le chantier 146.**
+
+      Le porteur a demandé qu'on puisse « rester sur l'ancien ». Ce choix n'existe pas : sans signer
+      la version courante, on ne peut pas exercer (RM-03-01). Mais ce qui existe, et qui manquait,
+      c'est de pouvoir **relire et emporter** ce qu'on avait accepté avant d'accepter autre chose.
+
+      > **Un contrat qu'on a signé et qu'on ne peut plus lire n'est pas un contrat.**
+    */
+    lastSigned: {
+      version: number;
+      commissionPct: number;
+      signedAt: Date;
+      bodyHash: string;
+      body: string | null;
+      integrity: boolean;
+    } | null;
   }> {
     const c = await this.resolveOwnCase(accountId, facilityId);
     const subject = this.subjectOf(c);
@@ -433,19 +449,13 @@ export class M03Service {
         contrat, sans avoir rien fait. *On relit un contrat avec les mots qu'il portait quand il a
         été signé, jamais avec ceux d'aujourd'hui.*
       */
-      const regenerated = buildAgreementText(
-        subject.name,
-        latest.commissionPct,
-        latest.version,
-        latest.template as ModeleContrat,
-      );
-      const integrity = sha256(regenerated) === latest.bodyHash;
+      const relu = this.relireVersion(subject.name, latest);
       agreement = {
         version: latest.version,
         commissionPct: latest.commissionPct,
         bodyHash: latest.bodyHash,
-        body: integrity ? regenerated : null,
-        integrity,
+        body: relu.body,
+        integrity: relu.integrity,
         signedAt: latest.signedAt,
         effectiveAt: latest.effectiveAt,
       };
@@ -460,7 +470,7 @@ export class M03Service {
       canSubmit: manquantes.length === 0 && canTransition(c.status, "SUBMITTED"),
       documentsEditable: canAddDocuments(c.status),
       announcedDelayHours,
-      lastSigned: this.lastSignedVersion(c, latest),
+      lastSigned: this.lastSignedVersion(c, latest, subject.name),
       // La `fileKey` n'est plus servie : c'est une clé de stockage interne, et une clé qui traîne dans
       // un journal ou un cache de navigateur est une pièce d'identité qui traîne. Les pièces se lisent
       // désormais par leur identifiant, à travers une route qui vérifie qui demande.
@@ -945,10 +955,31 @@ export class M03Service {
    * cours et l'écran n'a rien à comparer. Ce champ ne dit qu'une chose — « voici ce que vous aviez
    * accepté avant » — et il ne doit pas répondre quand la question ne se pose pas.
    */
+  /**
+   * Relit une version avec **les mots qu'elle portait**, et dit si son sceau tient toujours.
+   *
+   * ⚠️ Le modèle de CETTE version, jamais le modèle courant : *on relit un contrat avec les mots
+   * qu'il portait quand il a été signé.* Écrit une fois — la version courante et la dernière signée
+   * suivent exactement la même règle, et *une règle recopiée à deux endroits finit par diverger.*
+   */
+  private relireVersion(nom: string, v: AgreementVersionRow): { body: string | null; integrity: boolean } {
+    const regenerated = buildAgreementText(nom, v.commissionPct, v.version, v.template as ModeleContrat);
+    const integrity = sha256(regenerated) === v.bodyHash;
+    return { body: integrity ? regenerated : null, integrity };
+  }
+
   private lastSignedVersion(
     c: CaseFull,
     latest: AgreementVersionRow | null,
-  ): { version: number; commissionPct: number; signedAt: Date } | null {
+    nom: string,
+  ): {
+    version: number;
+    commissionPct: number;
+    signedAt: Date;
+    bodyHash: string;
+    body: string | null;
+    integrity: boolean;
+  } | null {
     if (!c.agreement || !latest) return null;
     // La version courante est SIGNÉE : aucun avenant en cours, donc rien à comparer. Sans cette
     // sortie, un contrat en règle renverrait la version précédente et l'écran laisserait croire
@@ -958,7 +989,16 @@ export class M03Service {
       .filter((v) => v.signedAt !== null && v.version !== latest.version)
       .sort((a, b) => b.version - a.version)
       .at(0);
-    return signee ? { version: signee.version, commissionPct: signee.commissionPct, signedAt: signee.signedAt! } : null;
+    if (!signee) return null;
+    const relu = this.relireVersion(nom, signee);
+    return {
+      version: signee.version,
+      commissionPct: signee.commissionPct,
+      signedAt: signee.signedAt!,
+      bodyHash: signee.bodyHash,
+      body: relu.body,
+      integrity: relu.integrity,
+    };
   }
 
   /** Le contrat est signable : dossier VERIFIED + version courante non signée (EF-03-06). */

@@ -29,7 +29,7 @@ import { repartirEnPages } from '@/lib/pagination-a4'
 // Le découpage a quitté le composant d'impression au chantier 135 : l'écran de signature le lit
 // lui aussi, et *deux lectures d'un même texte scellé font une lecture gardée et une lecture
 // livrée à elle-même.* Le filet ci-dessous vaut désormais pour les deux rendus.
-import { decouperContrat } from '@/lib/contrat'
+import { articleCourant, decouperContrat } from '@/lib/contrat'
 import { ContratLisible } from '@/components/ulamu/ContratLisible'
 import { RecuImprimable } from '@/components/impression/RecuImprimable'
 
@@ -1055,5 +1055,63 @@ describe('Le contrat imprimé se termine comme un acte', () => {
     const enTete = document.querySelector('[data-page]')?.firstElementChild
     expect(enTete?.textContent ?? '').not.toContain('CTR-V')
     expect(screen.getAllByText('CTR-V2').length).toBeGreaterThan(0)
+  })
+})
+
+/*
+  ── ⚠️ La progression s'arrêtait deux articles trop tôt — chantier 146, 16/09/2026 ───────
+
+  **Signalé par le porteur, puis mesuré en production** sur le contrat d'Armel Konaté : défilé jusqu'en
+  bas, l'écran affichait « **Article 9 sur 11** ».
+
+  La zone de lecture faisait 285 px pour 1 445 px de contenu — soit 1 160 px de défilement — et le
+  onzième article commençait à 1 313 px. La règle demandait « quel article a franchi le HAUT de la
+  fenêtre » : **les deux derniers n'y arrivent jamais, il n'y a plus rien en dessous pour les pousser
+  vers le haut.**
+
+  > **Mesurer une progression à ce qui a dépassé le haut de l'écran, c'est ne jamais pouvoir atteindre
+  > la fin.**
+
+  La MESURE des positions demande un vrai moteur de rendu — jsdom donne zéro partout. Le CALCUL, lui,
+  s'éprouve : *on éprouve ce qui se calcule, et on ancre ce qui se mesure.*
+*/
+describe('Où en est la lecture', () => {
+  /** La géométrie réelle du 16/09 : zone de 285 px, contenu de 1 445, dernier article à 1 313. */
+  const ZONE = 285
+  const BAS = 1445 - ZONE // 1 160
+  const DEBUTS = [180, 300, 420, 540, 660, 780, 900, 1020, 1140, 1230, 1313]
+
+  /* ⚠️ LE cas de ce chantier. L'ancienne règle rendait 9. */
+  it('arrive au DERNIER article quand on arrive en bas', () => {
+    expect(articleCourant(DEBUTS, BAS, ZONE)).toBe(11)
+  })
+
+  it('compte le dernier article visible, pas celui qui a franchi le haut', () => {
+    // Fenêtre 0–285 : les articles à 180 ont commencé, celui à 300 non.
+    expect(articleCourant(DEBUTS, 0, ZONE)).toBe(1)
+    // Fenêtre 400–685 : jusqu'à celui de 660.
+    expect(articleCourant(DEBUTS, 400, ZONE)).toBe(5)
+  })
+
+  /*
+    Un contrat qui tient sans défilement est lu dès qu'il s'affiche — et on est donc au dernier
+    article. *Exiger un défilement impossible enfermerait dehors celui qui a le plus grand écran.*
+  */
+  it('est au dernier article quand tout tient sans défilement', () => {
+    expect(articleCourant([0, 50, 100], 0, 400)).toBe(3)
+  })
+
+  it('ne rend rien quand il n’y a aucun article', () => {
+    expect(articleCourant([], 0, 285)).toBe(0)
+  })
+
+  /*
+    ⚠️ **Et sans avoir besoin d'une tolérance.** Un premier jet en prévoyait une, plus la hauteur
+    totale du contenu : l'injection de fautes a montré que retirer cette précaution ne changeait
+    aucune réponse. *Du code défensif que rien ne peut déclencher ne protège de rien.* Un
+    défilement qui s'arrête cinq pixels avant la fin voit toujours le dernier article.
+  */
+  it('voit encore le dernier article à quelques pixels de la fin', () => {
+    expect(articleCourant(DEBUTS, BAS - 5, ZONE)).toBe(11)
   })
 })

@@ -465,7 +465,14 @@ describe('C1 — l’avenant au contrat', () => {
       signedAt: null,
       effectiveAt: null,
     },
-    lastSigned: { version: 2, commissionPct: ancienTaux, signedAt: '2026-07-01T10:00:00.000Z' },
+    lastSigned: {
+      version: 2,
+      commissionPct: ancienTaux,
+      signedAt: '2026-07-01T10:00:00.000Z',
+      bodyHash: 'b7c2anciencontratsigne0000000000',
+      body: 'CONTRAT SOIGNANT ULAMU',
+      integrity: true,
+    },
   })
 
   it('dit la CONSÉQUENCE, pas seulement que le contrat a changé', async () => {
@@ -476,13 +483,21 @@ describe('C1 — l’avenant au contrat', () => {
     expect(await screen.findByText(/vous n'apparaissez plus dans l'annuaire/)).toBeInTheDocument()
   })
 
-  it('montre l’ancien taux À CÔTÉ du nouveau — jamais une signature à l’aveugle', async () => {
+  /*
+    ⚠️ **Ancre changée EN CONSCIENCE au chantier 146.** Elle exigeait DEUX encadrés « Ce que vous
+    aviez signé / Ce qu'on vous propose ». Le porteur les a écartés avec toutes les mentions de
+    version : *un numéro de version ne dit à personne ce qui a changé ni ce que ça coûte.*
+
+    Ce que le cas défend n'a pas bougé d'un pouce — *jamais une signature à l'aveugle sur le chiffre
+    qui décide de ce qu'on gagne* — mais il l'exige désormais en une phrase, là où il l'exigeait en
+    deux cadres.
+  */
+  it('dit d’où et vers où va le taux — jamais une signature à l’aveugle', async () => {
     await monter(reedite(10, 12))
 
-    expect(await screen.findByText('Ce que vous aviez signé')).toBeInTheDocument()
-    expect(screen.getByText('10 %')).toBeInTheDocument()
-    expect(screen.getByText("Ce qu'on vous propose")).toBeInTheDocument()
-    expect(screen.getByText('12 %')).toBeInTheDocument()
+    expect(await screen.findByText(/Votre commission passe de/)).toBeInTheDocument()
+    expect(screen.getByText(/10 %/)).toBeInTheDocument()
+    expect(screen.getByText(/12 %/)).toBeInTheDocument()
   })
 
   /*
@@ -515,19 +530,55 @@ describe('C1 — l’avenant au contrat', () => {
     *Barrer un chiffre qui n'a pas changé annonce une modification qui n'existe pas, et cache celle
     qui existe.*
   */
-  it('ne barre pas un taux qui n’a pas bougé, et dit ce qui a vraiment changé', async () => {
+  it('ne parle pas d’un taux qui n’a pas bougé', async () => {
     await monter(reedite(10, 10))
 
-    expect(await screen.findByText(/C'est le/)).toBeInTheDocument()
-    expect(screen.getByText(/texte du contrat/)).toBeInTheDocument()
-    expect(screen.queryByText('Ce que vous aviez signé')).not.toBeInTheDocument()
+    expect(await screen.findByText(/Le texte de votre contrat a changé/)).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toContain('Votre commission passe de')
   })
 
   it('une baisse de taux est un avenant comme un autre — l’écran ne suppose pas le sens', async () => {
     await monter(reedite(15, 10))
 
-    expect(await screen.findByText('15 %')).toBeInTheDocument()
-    expect(screen.getByText('10 %')).toBeInTheDocument()
+    expect(await screen.findByText(/passe de/)).toBeInTheDocument()
+    expect(screen.getByText(/15 %/)).toBeInTheDocument()
+    expect(screen.getByText(/10 %/)).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ **Plus aucune mention de version à l'écran** — demande du porteur : « retire même sur l'app
+    les textes dans le genre version ». Elles étaient partout : sous-titre de la carte, deux
+    encadrés, la ligne du bas. *Un numéro de version n'apprend rien à celui qui doit signer.*
+  */
+  it('n’écrit plus aucun numéro de version à l’écran', async () => {
+    await monter(reedite(10, 12))
+    await screen.findByText(/Le texte de votre contrat a changé/)
+
+    expect(document.body.textContent ?? '').not.toMatch(/[Vv]ersion \d/)
+  })
+
+  /*
+    ⚠️ **« Rester sur l'ancien » n'existe pas** — sans signer la version courante, on n'apparaît plus
+    dans l'annuaire (RM-03-01). *Offrir un choix qu'on ne peut pas honorer est pire que de n'en
+    offrir aucun.* Ce qui existe : relire et emporter ce qu'on avait accepté.
+  */
+  it('offre de relire et d’imprimer le contrat précédemment signé', async () => {
+    await monter(reedite(10, 12))
+
+    expect(await screen.findByRole('button', { name: /Voir le contrat que j'avais signé/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /L'imprimer/ })).toBeInTheDocument()
+  })
+
+  /*
+    ⚠️ Et jamais un texte dont le sceau ne tient plus : *on ne dit pas « voici ce que vous aviez
+    signé » sans en être sûr.*
+  */
+  it('ne propose pas de relire un ancien contrat dont l’empreinte ne tient plus', async () => {
+    const base = reedite(10, 12)
+    await monter({ ...base, lastSigned: { ...base.lastSigned, body: null, integrity: false } })
+
+    expect(await screen.findByText(/son empreinte ne correspond plus/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Voir le contrat que j'avais signé/ })).not.toBeInTheDocument()
   })
 
   it('aucune comparaison sur une PREMIÈRE signature : il n’y a rien à comparer', async () => {
