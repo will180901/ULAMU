@@ -523,6 +523,29 @@ export class M03Service {
     agreementVersion: number | null;
     agreementCommissionPct: number | null;
     currentCommissionPct: number;
+    /*
+      ── ⚠️ Le TEXTE du contrat, et pas seulement son taux — chantier 136, 16/09/2026 ──────
+
+      Le chantier 133 a réécrit le contrat : l'ancien modèle contenait une clause FAUSSE sur le
+      stock des pharmacies. La réédition côté serveur en tient compte depuis — mais l'écran qui la
+      déclenche ne recevait QUE les taux, et concluait « il n'y a rien à rééditer » dès que le taux
+      coïncidait. **Le contrat corrigé n'aurait donc été proposé à personne**, et l'unique bouton
+      capable de le proposer aurait disparu de l'écran le jour où on en avait besoin.
+
+      > **Une correction de contrat que personne n'est invité à signer n'a corrigé aucun contrat.**
+
+      C'est le piège du chantier 133 remonté d'un étage : le service savait, l'écran ne savait pas.
+      *Une décision prise sur une partie des faits n'est pas une décision prudente, c'est une
+      décision aveugle qui a l'air informée.*
+
+      `null` = rédaction d'origine, antérieure au versionnement des modèles.
+    */
+    agreementTemplate: string | null;
+    /*
+      ⚠️ « string | null » et non « string » : `ModeleContrat` admet `null` — la rédaction d'origine.
+      *Un type qui refuse une valeur que le domaine autorise force à mentir quelque part.*
+    */
+    currentTemplate: string | null;
   }> {
     const c = await this.requireCase(caseId);
     const subject = this.subjectOf(c);
@@ -556,6 +579,8 @@ export class M03Service {
       agreementVersion: latest?.version ?? null,
       agreementCommissionPct: latest?.commissionPct ?? null,
       currentCommissionPct,
+      agreementTemplate: latest?.template ?? null,
+      currentTemplate: MODELE_CONTRAT_COURANT,
     };
   }
 

@@ -191,4 +191,21 @@ describe("Ce que le service ne doit jamais se remettre à faire", () => {
   it("scelle la nouvelle version avec le modèle dont elle est issue", () => {
     expect(/template: MODELE_CONTRAT_COURANT/.test(source)).toBe(true);
   });
+
+  /*
+    ⚠️ **Le chaînon manquant du chantier 133, trouvé le 16/09 (chantier 136).**
+
+    La règle ci-dessus vit dans le service — encore faut-il que quelqu'un puisse la déclencher. La
+    seule voie est le bouton « rééditer » de l'écran d'administration, et cet écran ne recevait que
+    les TAUX. Un contrat au bon taux mais à l'ancienne rédaction s'y affichait donc comme « il n'y a
+    rien à rééditer », **sans bouton** — et le contrat corrigé n'aurait été proposé à personne.
+
+    > **Une correction de contrat que personne n'est invité à signer n'a corrigé aucun contrat.**
+
+    *Une règle juste dans un service que rien n'appelle n'est pas une règle : c'est une intention.*
+  */
+  it("sert le MODÈLE du contrat à l'écran qui décide de le rééditer", () => {
+    expect(/agreementTemplate: latest\?\.template \?\? null/.test(source)).toBe(true);
+    expect(/currentTemplate: MODELE_CONTRAT_COURANT/.test(source)).toBe(true);
+  });
 });

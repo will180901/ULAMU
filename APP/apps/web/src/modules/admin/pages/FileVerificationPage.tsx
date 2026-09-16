@@ -55,6 +55,15 @@ const PIECES: Record<DocumentKind, string> = {
   ADDRESS_PROOF: 'Justificatif d’adresse',
 }
 
+/**
+ * Le nom lisible d'un modèle de contrat — chantier 136.
+ *
+ * `null` n'est pas une absence : c'est la rédaction d'ORIGINE, celle d'avant le versionnement des
+ * modèles. *Écrire « — » là où il y a une réponse ferait croire à une donnée manquante, et on ne
+ * réédite pas un contrat pour une donnée manquante.*
+ */
+const libelleModele = (modele: string | null) => (modele === null ? 'Rédaction d’origine' : `Modèle ${modele}`)
+
 const ETATS: Record<VerificationStatus, { libelle: string; ton: TonPilule }> = {
   DRAFT: { libelle: 'À compléter', ton: 'neutre' },
   SUBMITTED: { libelle: 'À prendre', ton: 'alerte' },
@@ -197,6 +206,18 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
   const etat = ETATS[d.status]
   const enExamen = d.status === 'IN_REVIEW'
   const toutesControlees = d.documents.length > 0 && d.documents.every((x) => controlees.has(x.id))
+
+  /*
+    ⚠️ **Les DEUX raisons de rééditer** — chantier 136, 16/09/2026. La carte n'en connaissait
+    qu'une : le taux. Le chantier 133 ayant réécrit le contrat, un dossier au bon taux mais à
+    l'ancienne rédaction s'affichait comme « rien à rééditer », **sans bouton** — et la clause
+    fausse sur les pharmacies serait restée dans le contrat que les praticiens ont signé.
+  */
+  const memeTaux = d.agreementCommissionPct === d.currentCommissionPct
+  const memeTexte = d.agreementTemplate === d.currentTemplate
+  const intituleReedition = !memeTaux
+    ? `Rééditer au taux de ${d.currentCommissionPct} %${memeTexte ? '' : ' et au nouveau texte'}`
+    : 'Rééditer avec le nouveau texte du contrat'
 
   return (
     <div className="flex flex-col gap-4">
@@ -407,14 +428,26 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
         dit donc avant, et distingue les deux cas — celui qui a signé perd quelque chose, celui qui
         n'a pas encore signé ne perd rien.
 
-        Enfin, quand le contrat est déjà au taux courant, **il n'y a pas de bouton du tout** : un
+        Enfin, quand il n'y a vraiment rien à rééditer, **il n'y a pas de bouton du tout** : un
         interrupteur qui ne change rien est pire qu'un interrupteur absent.
+
+        ⚠️ **« Vraiment rien » ne voulait dire que « même taux » — chantier 136, 16/09/2026.**
+        Le chantier 133 a réécrit le contrat : l'ancien modèle portait une clause FAUSSE sur le
+        stock des pharmacies. Le service savait déjà qu'il fallait rééditer — mais cette carte,
+        qui ne comparait que les TAUX, affichait « il n'y a rien à rééditer » et retirait le
+        bouton. **Le contrat corrigé n'aurait été proposé à personne.**
+
+        > **Une correction de contrat que personne n'est invité à signer n'a corrigé aucun
+        > contrat.**
+
+        *Une décision prise sur une partie des faits n'est pas une décision prudente : c'est une
+        décision aveugle qui a l'air informée.*
       */}
       {d.status === 'VERIFIED' ? (
         <Carte
           icone={FileSignature}
           titre="Contrat d'adhésion"
-          sousTitre="Avenant au taux de commission courant"
+          sousTitre="Avenant au taux et au texte courants"
         >
           <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] leading-[1.5]">
             <div>
@@ -429,15 +462,39 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
               <dt className="text-[var(--texte-tertiaire)]">Taux courant</dt>
               <dd className="m-0 font-medium text-foreground">{d.currentCommissionPct} %</dd>
             </div>
+            {/*
+              Le TEXTE se lit à côté du taux : ce sont les deux raisons de rééditer, et l'une
+              d'elles était invisible. *Ce qui décide d'un geste doit se voir à l'endroit où on le
+              décide.*
+            */}
+            <div>
+              <dt className="text-[var(--texte-tertiaire)]">Texte du contrat</dt>
+              <dd className="m-0 font-medium text-foreground">{libelleModele(d.agreementTemplate)}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--texte-tertiaire)]">Texte courant</dt>
+              <dd className="m-0 font-medium text-foreground">{libelleModele(d.currentTemplate)}</dd>
+            </div>
           </dl>
 
-          {d.agreementVersion !== null && d.agreementCommissionPct === d.currentCommissionPct ? (
+          {d.agreementVersion !== null && memeTaux && memeTexte ? (
             /* Rien à faire, et donc aucun bouton : le dire suffit, et évite un clic sans effet. */
             <Avis ton="succes">
-              Ce contrat est déjà au taux courant. Il n'y a rien à rééditer.
+              Ce contrat est déjà au taux et au texte courants. Il n'y a rien à rééditer.
             </Avis>
           ) : (
             <>
+              {/*
+                CE QUI a changé, avant ce que ça coûte : l'administrateur doit savoir sur quoi il
+                appuie. *Un avertissement sans son motif se lit comme une formalité.*
+              */}
+              <p className="m-0 text-[12px] leading-[1.55] text-[var(--texte-secondaire)]">
+                {!memeTaux && !memeTexte
+                  ? 'Le taux de commission et le texte du contrat ont changé depuis cette version.'
+                  : memeTaux
+                    ? 'Le texte du contrat a changé : cette version porte une rédaction qui n’est plus celle d’ULAMU.'
+                    : 'Le taux de commission a changé depuis cette version.'}
+              </p>
               <Avis ton="alerte">
                 {d.agreementSignedAt === null ? (
                   <>
@@ -471,7 +528,7 @@ function Dossier({ caseId, onDecide }: { caseId: string; onDecide: () => void })
 
               <div>
                 <Button type="button" onClick={() => reediter.mutate()} disabled={reediter.isPending}>
-                  {reediter.isPending ? 'Réédition…' : `Rééditer au taux de ${d.currentCommissionPct} %`}
+                  {reediter.isPending ? 'Réédition…' : intituleReedition}
                 </Button>
               </div>
             </>

@@ -95,6 +95,10 @@ function dossier(over: Partial<Awaited<ReturnType<typeof api.adminCase>>> = {}) 
     agreementVersion: 1,
     agreementCommissionPct: 15,
     currentCommissionPct: 15,
+    // Le TEXTE aligné lui aussi (chantier 136) : c'est la seconde raison de rééditer, et elle
+    // était invisible de l'écran.
+    agreementTemplate: '2026-09',
+    currentTemplate: '2026-09',
     ...over,
   } as Awaited<ReturnType<typeof api.adminCase>>
 }
@@ -614,12 +618,17 @@ describe('E1 — rééditer le contrat d’adhésion (écart C)', () => {
     expect(screen.getByText('18 %')).toBeInTheDocument()
   })
 
-  /* « Un interrupteur qui ne change rien est pire qu'un interrupteur absent. » */
-  it('n’offre AUCUN bouton quand le contrat est déjà au taux courant', async () => {
+  /*
+    « Un interrupteur qui ne change rien est pire qu'un interrupteur absent. »
+
+    ⚠️ **Ancre élargie EN CONSCIENCE au chantier 136.** Elle disait « déjà au taux courant » : le
+    taux était la seule raison de rééditer que l'écran connaissait. Il y en a deux.
+  */
+  it('n’offre AUCUN bouton quand le taux ET le texte sont à jour', async () => {
     await contrat({ agreementCommissionPct: 15, currentCommissionPct: 15 })
 
-    expect(await screen.findByText(/déjà au taux courant/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Rééditer au taux/ })).not.toBeInTheDocument()
+    expect(await screen.findByText(/déjà au taux et au texte courants/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Rééditer/ })).not.toBeInTheDocument()
   })
 
   /*
@@ -728,5 +737,74 @@ describe('E4 — filet de refonte : ce que la décision engage', () => {
     await monter()
 
     expect(await screen.findByText(/définitive, motivée, et attribuée à votre compte/)).toBeInTheDocument()
+  })
+})
+
+/*
+  ── ⚠️ Le contrat corrigé n'aurait été proposé à PERSONNE — chantier 136, 16/09/2026 ────────
+
+  Le chantier 133 a réécrit le contrat : l'ancien modèle portait une clause FAUSSE sur le stock des
+  pharmacies, alors que la chaîne du médicament a été retirée du produit (D-052). Le service savait
+  déjà qu'il fallait rééditer — sa condition d'idempotence tient compte du modèle.
+
+  Mais cette carte, elle, ne comparait que les TAUX. Le contrat d'Armel Konaté étant au taux courant,
+  elle aurait affiché « il n'y a rien à rééditer » et **retiré le seul bouton capable de proposer le
+  texte corrigé**.
+
+  > **Une correction de contrat que personne n'est invité à signer n'a corrigé aucun contrat.**
+
+  *Une décision prise sur une partie des faits n'est pas une décision prudente : c'est une décision
+  aveugle qui a l'air informée.*
+*/
+describe('E1 — rééditer parce que le TEXTE a changé', () => {
+  async function contrat(over: Parameters<typeof dossier>[0] = {}) {
+    vi.spyOn(api, 'adminCase').mockResolvedValue(dossier({ status: 'VERIFIED', ...over }))
+    await monter()
+  }
+
+  /** Le cas réel du 16/09 : même taux, rédaction d'origine. */
+  const texteDepasse = {
+    agreementVersion: 2,
+    agreementCommissionPct: 15,
+    currentCommissionPct: 15,
+    agreementTemplate: null,
+    currentTemplate: '2026-09',
+    agreementSignedAt: '2026-08-22T16:42:00.000Z',
+  }
+
+  it('offre le bouton même quand le taux n’a pas bougé', async () => {
+    await contrat(texteDepasse)
+
+    expect(await screen.findByRole('button', { name: /Rééditer avec le nouveau texte du contrat/ })).toBeInTheDocument()
+    expect(screen.queryByText(/il n'y a rien à rééditer/i)).not.toBeInTheDocument()
+  })
+
+  /* *Un avertissement sans son motif se lit comme une formalité.* */
+  it('dit CE QUI a changé, avant de dire ce que ça coûte', async () => {
+    await contrat(texteDepasse)
+
+    expect(await screen.findByText(/Le texte du contrat a changé/)).toBeInTheDocument()
+    // Et la conséquence pour le soignant reste dite : il cesse de pouvoir exercer au clic.
+    expect(screen.getByText(/Il ne pourra plus exercer/)).toBeInTheDocument()
+  })
+
+  /*
+    Ce qui décide d'un geste doit se voir à l'endroit où on le décide : le texte du contrat se lit
+    désormais à côté de son taux.
+  */
+  it('montre la rédaction du contrat à côté de la rédaction courante', async () => {
+    await contrat(texteDepasse)
+
+    expect(await screen.findByText('Rédaction d’origine')).toBeInTheDocument()
+    expect(screen.getByText('Modèle 2026-09')).toBeInTheDocument()
+  })
+
+  it('dit les DEUX quand le taux et le texte ont changé', async () => {
+    await contrat({ ...texteDepasse, agreementCommissionPct: 12, currentCommissionPct: 18 })
+
+    expect(
+      await screen.findByRole('button', { name: /Rééditer au taux de 18 % et au nouveau texte/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Le taux de commission et le texte du contrat ont changé/)).toBeInTheDocument()
   })
 })

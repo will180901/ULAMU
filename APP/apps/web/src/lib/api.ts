@@ -1760,6 +1760,18 @@ export const api = {
       agreementVersion: number | null
       agreementCommissionPct: number | null
       currentCommissionPct: number
+      /**
+       * Le TEXTE du contrat, et pas seulement son taux — chantier 136, 16/09/2026.
+       *
+       * ⚠️ Sans ces deux champs, l'écran concluait « il n'y a rien à rééditer » dès que les taux
+       * coïncidaient — et **retirait son bouton** alors que la rédaction du contrat avait changé
+       * (chantier 133, clause pharmacie fausse retirée). *Une correction de contrat que personne
+       * n'est invité à signer n'a corrigé aucun contrat.*
+       *
+       * `null` = rédaction d'origine, antérieure au versionnement des modèles.
+       */
+      agreementTemplate: string | null
+      currentTemplate: string | null
     }>('GET', `/v1/admin/verification/${caseId}`, undefined, true),
   /** Lecture d'une pièce PAR L'ADMINISTRATION — tracée au journal d'audit (loi n° 29-2019). */
   adminDocumentUrl: async (caseId: string, documentId: string): Promise<{ url: string; type: string }> => {
